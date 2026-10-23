@@ -1,5 +1,5 @@
 {
-  "ev_id": "EV-NFR1-15-20261023-1355",
+  "ev_id": "EV-NFR1-15-20261023-1405",
   "req_id": "NFR1-15",
   "tc_id": "TC-NFR1-15",
   "commit": "72cc8a6a8d26f5bec9f3ab35c76e9ae6fad558f6",
@@ -12,7 +12,7 @@
     {
       "assertion": "TC-NFR1-15-AS-01",
       "outcome": "pass",
-      "artefact": "tests/lib/htaccess-server.mjs — landing-page headers measured on tests/e2e/harness/landing.html (WordPress pages re-run with LLD_WP_URL on staging)",
+      "artefact": "tests/lib/htaccess-server.mjs — landing-page headers measured on tests/e2e/harness/landing.html (WordPress pages re-run with LLD_WP_URL on staging; frame-src applies to every WordPress page, see PR advisory 1)",
       "oracle": "none"
     },
     {
@@ -168,8 +168,13 @@
   ],
   "mutations": [],
   "red_run": "local-20261023-1354",
-  "green_run": "local-20261023-1355",
+  "green_run": "local-20261023-1405",
+  "reviewer": {
+    "agent": "P-C",
+    "verdict": "PASS",
+    "report": "https://github.com/sudarshanalk/lifeline-daily-stage1/pull/8 (P-C review 20261023-review-NFR1-15)"
+  },
   "human_gate": null,
   "started_at": "2026-10-23T13:54:00Z",
-  "finished_at": "2026-10-23T13:56:30Z"
+  "finished_at": "2026-10-23T14:05:11Z"
 }
