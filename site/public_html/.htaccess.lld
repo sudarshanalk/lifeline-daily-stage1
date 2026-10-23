@@ -8,8 +8,16 @@
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
-  # Tool pages may be framed only by our own hosts (DEC-28; finalised with the landing-page policy in NFR1-15)
+
+  # Embed security policy (NFR1-15, DEC-28). The host already emits `Content-Security-Policy: upgrade-insecure-requests`;
+  # this second header is additive and both are enforced. The same policy is mirrored as Report-Only so that any
+  # violation is observable in browsers and in the e2e suite (TC-NFR1-15-AS-03) without changing enforcement.
+  # Landing pages and every other WordPress page: frames may come only from this site and the configured tool origin.
+  Header always set Content-Security-Policy "frame-src 'self' __LLD_ORIGIN__ https://lifelinedaily.com"
+  Header always set Content-Security-Policy-Report-Only "frame-src 'self' __LLD_ORIGIN__ https://lifelinedaily.com"
+  # Tool pages: may be framed only by our own hosts (the FilesMatch value replaces the page-wide one above).
   <FilesMatch "^(protein-requirement-tool|diabetes-risk-tool|health-tools-hub)\.html$">
     Header always set Content-Security-Policy "frame-ancestors __LLD_ORIGIN__ https://lifelinedaily.com https://www.lifelinedaily.com"
+    Header always set Content-Security-Policy-Report-Only "frame-ancestors __LLD_ORIGIN__ https://lifelinedaily.com https://www.lifelinedaily.com"
   </FilesMatch>
 </IfModule>
