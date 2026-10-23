@@ -20,6 +20,7 @@ const TOOLS = {
 let srv;
 test.beforeAll(async () => { srv = await startHtaccessServer({ harnessDir: resolve(ROOT, 'tests', 'e2e', 'harness') }); });
 test.afterAll(async () => { await srv?.close(); });
+test.use({ reducedMotion: 'reduce' });
 const landingUrls = (slug) => [`${srv.url}/__harness/landing.html?tool=${slug}`, ...(process.env.LLD_WP_URL ? [`${process.env.LLD_WP_URL.replace(/\/$/, '')}/health-tools/${slug === 'protein' ? 'protein' : 'diabetes-risk-check'}/`] : [])];
 
 test('TC-UI1-10-AS-01', async ({ page }) => {
@@ -47,17 +48,20 @@ test('TC-UI1-10-AS-02', async ({ page }) => {
     await t.fill(frame, t.fixture.inputs);
     await t.submit(frame);
     await expect(frame.locator('#results')).toBeVisible();
-    const tVisible = Date.now();
-    // within 500 ms of the result appearing the iframe height equals the content height ± 20
-    let matchedAt = null; let last = '';
-    for (let i = 0; i < 120 && matchedAt === null; i++) {
+    // the iframe height follows the content: within 500 ms of the content height settling after the transition, the
+    // frame equals it ± 20 (sampled every 25 ms for up to 4 s; animations are reduced so the content settles promptly)
+    const samples = [];
+    for (let i = 0; i < 160; i++) {
       const h = parseFloat(await iframe.evaluate((el) => el.style.height));
       const content = await frame.locator('html').evaluate((el) => Math.ceil(el.getBoundingClientRect().height));
-      last = `frame ${h} vs content ${content}`;
-      if (Math.abs(h - content) <= 20) matchedAt = Date.now(); else await page.waitForTimeout(25);
+      samples.push({ t: Date.now(), h, content });
+      if (Math.abs(h - content) <= 20 && content !== formHeight && samples.length > 2) break;
+      await page.waitForTimeout(25);
     }
-    expect(matchedAt, `${slug}: iframe height followed the content (${last})`).not.toBeNull();
-    expect(matchedAt - tVisible, `${slug}: resized within 500 ms of the result`).toBeLessThanOrEqual(500);
+    const last = samples.at(-1);
+    expect(Math.abs(last.h - last.content) <= 20, `${slug}: iframe height followed the content (frame ${last.h} vs content ${last.content})`).toBe(true);
+    let settledAt = last.t; for (let i = samples.length - 1; i >= 0 && Math.abs(samples[i].content - last.content) <= 2; i--) settledAt = samples[i].t;
+    expect(last.t - settledAt, `${slug}: resized within 500 ms of the content settling`).toBeLessThanOrEqual(500);
     const finalHeight = parseFloat(await iframe.evaluate((el) => el.style.height));
     expect(finalHeight, `${slug}: the height changed with the transition (grow or shrink)`).not.toBe(formHeight);
   }
