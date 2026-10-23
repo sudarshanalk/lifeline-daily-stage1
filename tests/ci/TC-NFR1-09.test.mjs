@@ -27,6 +27,7 @@ describe('TC-NFR1-09 reproducible AI development', () => {
     const job = ci.split(/\n  pr-title:\n/)[1].split(/\n  [a-z][a-z0-9-]*:\n/)[0];
     // the grep pattern the job enforces (title "<ID>: <title>", trailing space required), not just the message text
     expect(job).toMatch(/grep -Eq '\^\(FR1\|NFR1\|UI1\)-\[0-9\]\{2\}: '/);
+    expect(job).toMatch(/grep -Eq '\^SPEC: '/); // specification PRs (DEC-55) are the one other accepted class
     expect(job).toMatch(/evidence\//);
     expect(job).toMatch(/exit 1/);
     // the convention holds on the PR under test when GitHub gives us a title (CI), otherwise on the last merged PR titles
