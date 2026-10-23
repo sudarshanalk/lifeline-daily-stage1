@@ -1,8 +1,8 @@
 {
-  "ev_id": "EV-FR1-20-20261023-1318",
+  "ev_id": "EV-FR1-20-20261023-1326",
   "req_id": "FR1-20",
   "tc_id": "TC-FR1-20",
-  "commit": "a3d1fc571c1a60da11ab5000b0c4ecbb5f718589",
+  "commit": "5b15db84e5b6441cee84bb8974294bbcc287667d",
   "tool_hashes": {
     "protein": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
     "diabetes": "27c0e33ce3b98aea495a2f13fca112e32007d9d478ab30ee70401a39ab496292"
@@ -18,7 +18,7 @@
     {
       "assertion": "TC-FR1-20-AS-02",
       "outcome": "pass",
-      "artefact": "tests/lib/htaccess-server.mjs (local full stack; LiteSpeed header check applies on staging via LLD_TOOLS_URL)",
+      "artefact": "tests/lib/htaccess-server.mjs (local full stack; LiteSpeed clause re-run on staging via LLD_TOOLS_URL after first deploy)",
       "oracle": "none"
     },
     {
@@ -108,8 +108,13 @@
   ],
   "mutations": [],
   "red_run": "local-20261023-1316",
-  "green_run": "local-20261023-1318",
+  "green_run": "local-20261023-1326",
+  "reviewer": {
+    "agent": "P-C",
+    "verdict": "PASS",
+    "report": "https://github.com/sudarshanalk/lifeline-daily-stage1/pull/5 (P-C review, run local-20261023-1420; staging re-run with LLD_TOOLS_URL pending OI-1)"
+  },
   "human_gate": null,
-  "started_at": "2026-10-23T13:20:00Z",
-  "finished_at": "2026-10-23T13:18:40Z"
+  "started_at": "2026-10-23T13:05:00Z",
+  "finished_at": "2026-10-23T13:26:54Z"
 }
