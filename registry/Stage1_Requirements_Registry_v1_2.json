@@ -1184,7 +1184,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-01"
       ],
@@ -1221,7 +1221,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-01"
       ],
@@ -1269,7 +1269,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-01"
       ],
@@ -1672,7 +1672,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [],
       "components": [
         "CMP-13"
@@ -1883,7 +1883,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-21"
       ],
