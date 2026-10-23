@@ -348,6 +348,11 @@
     "artefact": "approvals/protein.json, approvals/diabetes.json",
     "status": "pending"
   },
-  "started_at": "2026-10-23T16:58:00Z",
-  "finished_at": "2026-10-23T16:31:59Z"
+  "started_at": "2026-10-23T15:58:00Z",
+  "finished_at": "2026-10-23T16:31:59Z",
+  "reviewer": {
+    "agent": "P-C",
+    "verdict": "PASS",
+    "report": "https://github.com/sudarshanalk/lifeline-daily-stage1/pull/22 (P-C review 20261023-1750)"
+  }
 }

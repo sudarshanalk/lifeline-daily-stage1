@@ -2334,7 +2334,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "hybrid",
-      "status": "draft",
+      "status": "verified",
       "depends_on": [
         "FR1-06"
       ],
