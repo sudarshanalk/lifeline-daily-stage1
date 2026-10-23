@@ -29,6 +29,8 @@
   "emailSubject": "{{firstName}}, your daily protein target from Lifeline Daily",
   "emailSent": "Sent. Check your inbox — and your spam folder, just in case.",
   "emailFailed": "That didn't send. Please check your email address and try again.",
+  "emailRateLimited": "You have sent a few of these already. Please wait ten minutes before trying again.",
+  "emailUnavailable": "Email is not available for this tool right now. Your result is still shown above.",
   "unavailable.title": "This tool is temporarily unavailable",
   "unavailable.body": "We have paused this tool while we check it. Nothing about your health is affected by the pause — please come back soon, or read on below.",
   "unavailable.checking": "Checking this tool is available…",

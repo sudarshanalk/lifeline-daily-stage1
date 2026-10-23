@@ -43,6 +43,8 @@
   "email.success": "Sent — check your inbox (and spam folder just in case).",
   "email.errorValidation": "Please enter a valid email and tick the box.",
   "email.errorServer": "Something went wrong sending that. Your result is still shown above.",
+  "email.errorRateLimited": "You have sent a few of these already. Please wait ten minutes before trying again.",
+  "email.errorUnavailable": "Email is not available for this tool right now. Your result is still shown above.",
   "unavailable.title": "This tool is temporarily unavailable",
   "unavailable.body": "We have paused this tool while we check it. Nothing about your health is affected by the pause — please come back soon, or read on below.",
   "unavailable.checking": "Checking this tool is available…",

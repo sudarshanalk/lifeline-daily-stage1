@@ -410,6 +410,8 @@ const MESSAGES = {
   emailSubject: "{{firstName}}, your daily protein target from Lifeline Daily",
   emailSent: "Sent. Check your inbox — and your spam folder, just in case.",
   emailFailed: "That didn't send. Please check your email address and try again.",
+  emailRateLimited: "You have sent a few of these already. Please wait ten minutes before trying again.",
+  emailUnavailable: "Email is not available for this tool right now. Your result is still shown above.",
   unavailable: {
     title: "This tool is temporarily unavailable",
     body: "We have paused this tool while we check it. Nothing about your health is affected by the pause — please come back soon, or read on below.",
@@ -919,15 +921,17 @@ $('sendBtn').onclick = async ()=>{
     const res = await fetch('./submit-protein.php', {
       method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
     });
-    const j = await res.json();
-    if(j.status==='ok'){
+    let j = null; try { j = await res.json(); } catch(err) {}
+    if(res.ok && j && j.status==='ok'){
       $('emailOk').textContent = MESSAGES.emailSent;
       $('emailOk').classList.remove('hidden');
       $('sendBtn').classList.add('hidden');
-    } else { throw new Error('failed'); }
+    } else { const err = new Error('failed'); err.status = res.status; throw err; }
   }catch(e){
-    $('emailErr').textContent = MESSAGES.emailFailed; $('emailErr').style.display='block';
-    $('sendBtn').disabled=false; $('sendBtn').textContent='Send my results';
+    /* NFR1-10 / UI1-08: a distinct message per outcome and a retry control; the result stays on screen */
+    const msg = e.status===429 ? MESSAGES.emailRateLimited : e.status===503 ? MESSAGES.emailUnavailable : MESSAGES.emailFailed;
+    $('emailErr').textContent = msg; $('emailErr').style.display='block';
+    $('sendBtn').disabled=false; $('sendBtn').textContent='Try again';
   }
   postHeight();
 };

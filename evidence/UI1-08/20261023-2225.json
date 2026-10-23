@@ -1,0 +1,804 @@
+{
+  "ev_id": "EV-UI1-08-20261023-2225",
+  "req_id": "UI1-08",
+  "tc_id": "TC-UI1-08",
+  "commit": "81ceeb1b87109f75e73d61fd62772f2527ad6624",
+  "tool_hashes": {
+    "protein": "e45ae35b83b9055329f374b98a3e9a88e4a75ae97c1dfd74df6eb9e2786aba9c",
+    "diabetes": "0c314054ddc1e586f0b4432eb1667f3a159bd5474663612eec290fb705762ff1"
+  },
+  "fixtures": [],
+  "results": [
+    {
+      "assertion": "TC-UI1-08-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-08-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-08-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-08-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-04-AS-06",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-04-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-04-AS-05",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "NEG-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-22-AS-01",
+      "outcome": "skipped",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-22-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-22-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-22-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-06-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-06-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-06-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-04-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-04-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-04-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-09-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-09-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-09-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-09-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-15-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-15-AS-05",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-15-AS-06",
+      "outcome": "skipped",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-20-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-20-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-20-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-10-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-15-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "SAF-DM-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-DM-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-DM-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-DM-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-CROSS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-WITHDRAW-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-PR-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-PR-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-PR-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-PR-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-07-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-07-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-07-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-07-AS-05",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-07-AS-06",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-07-AS-07",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-07-AS-08",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-08-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-09-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-09-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-09-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-10-AS-01",
+      "outcome": "skipped",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-10-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-10-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-10-AS-05",
+      "outcome": "skipped",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-12-AS-01",
+      "outcome": "skipped",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-12-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-12-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-12-AS-07",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-12-AS-09",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-08-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-08-AS-07",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-11-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-11-AS-06",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-14-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-14-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-14-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-14-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-14-AS-05",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-14-AS-06",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-14-AS-07",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-14-AS-08",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-14-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-14-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-14-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-16-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-16-AS-02",
+      "outcome": "skipped",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-16-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-21-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-21-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-21-AS-06",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-11-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-11-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-11-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-04-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-04-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-04-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-06-AS-03",
+      "outcome": "skipped",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-07-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-08-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-08-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-08-AS-05",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-08-AS-06",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-09-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-09-AS-05",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-10-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-11-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-11-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-11-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-11-AS-05",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-12-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-12-AS-05",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-12-AS-06",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-12-AS-08",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-13-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-13-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-13-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-13-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-15-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-15-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-15-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-21-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-21-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-21-AS-05",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-15-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-10-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-10-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-15-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-04-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-04-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-04-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-04-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-05-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-05-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-05-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-05-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-06-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-06-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-06-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-UI1-06-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    }
+  ],
+  "mutations": [],
+  "red_run": "local-20261023-2208",
+  "green_run": "local-20261023-2225",
+  "human_gate": null,
+  "started_at": "2026-10-23T21:25:19Z",
+  "finished_at": "2026-10-23T21:31:40Z",
+  "reviewer": {
+    "agent": "P-C",
+    "verdict": "PASS",
+    "report": "https://github.com/sudarshanalk/lifeline-daily-stage1/pull/37 (P-C review 20261023-2250; PASS, 5 minor: AS-04 diabetes error text before axe, unavailable.<slug> vs unavailable.body wording (DEC-72), fixtures list, instantaneous count, 4 s axe window)"
+  }
+}
