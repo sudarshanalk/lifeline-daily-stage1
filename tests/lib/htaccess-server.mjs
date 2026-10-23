@@ -90,8 +90,11 @@ export async function startHtaccessServer({ port = 0, overlay = resolve(ROOT, 's
   // PHP built-in server for *.php under /tools (deny rules are enforced here, not in PHP)
   const php = spawn('php', ['-S', `127.0.0.1:${phpPort || 0}`, '-t', docroot], { stdio: ['ignore', 'pipe', 'pipe'], env: phpEnv });
   const phpLog = []; // every line PHP's built-in server prints (request log + error_log output) — the "server log" tests scan
-  php.stdout.on('data', (d) => phpLog.push(...String(d).split(/\r?\n/).filter(Boolean)));
-  php.stderr.on('data', (d) => phpLog.push(...String(d).split(/\r?\n/).filter(Boolean)));
+  // stdout/stderr arrive in chunks that can split a line (seen on the Linux runners): keep the trailing fragment until the
+  // next chunk completes it, so an SCH-07 JSON line is never recorded in two halves
+  const collect = () => { let rest = ''; return (d) => { const parts = (rest + String(d)).split(/\r?\n/); rest = parts.pop(); phpLog.push(...parts.filter(Boolean)); }; };
+  php.stdout.on('data', collect());
+  php.stderr.on('data', collect());
   const phpOrigin = await new Promise((ok, bad) => {
     const t = setTimeout(() => bad(new Error('php -S did not start')), 15000);
     const onData = (d) => { const m = /(https?:\/\/[\d.]+:\d+)/.exec(String(d)); if (m) { clearTimeout(t); ok(m[1]); } };

@@ -56,8 +56,7 @@ function sendMail(string $to, string $subject, string $body, ?array $cfg = null)
     $mail->send();
     return ['ok' => true, 'info' => 'sent'];
   } catch (Exception $e) {
-    // DEC-20: the transport error is logged without any address or payload field
-    error_log('LLD mailer error: ' . preg_replace('/\S+@\S+/', '[address]', (string)$mail->ErrorInfo));
-    return ['ok' => false, 'info' => 'smtp-error'];
+    // DEC-20: endpoints log only the SCH-07 outcome line (the caller records smtp_error); the transport detail is in the return value
+    return ['ok' => false, 'info' => 'smtp-error: ' . preg_replace('/\S+@\S+/', '[address]', (string)$mail->ErrorInfo)];
   }
 }

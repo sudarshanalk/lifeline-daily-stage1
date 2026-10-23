@@ -40,7 +40,8 @@ const subjectFor = (template, inputs) => {
   const key = template === 'diabetes_standard' ? { Low: 'low', Moderate: 'moderate', High: 'high', 'Very high': 'veryhigh' }[inputs.riskBand] : template.replace('diabetes_', '');
   return T.diabetes[`${key}.subject`];
 };
-const jsonLogLines = (s = srv) => s.phpLog().map((l) => l.slice(l.indexOf('{'))).filter((l) => l.startsWith('{"ts"'));
+/** SCH-07 candidates: every JSON object line the PHP server printed (any key order), parsed later by the assertions. */
+const jsonLogLines = (s = srv) => s.phpLog().filter((l) => l.includes('{') && l.includes('"ts"')).map((l) => l.slice(l.indexOf('{'))).filter((l) => l.trim().endsWith('}'));
 
 describe('TC-FR1-14 result email path — server layer', () => {
   test('TC-FR1-14-AS-01', async () => {
