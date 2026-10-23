@@ -26,9 +26,24 @@ const ymd = (d) => d.toISOString().slice(0, 10);
 const yesterday = ymd(new Date(Date.now() - 86400000));
 const ok = (r, what) => { if (r.status !== 0) throw new Error(`${what}: ${r.stdout}${r.stderr}`); return r.stdout.trim(); };
 
+// the landing pages carry Related reading only once `wp lld pages apply` has run; apply it for the run and restore the pages
+// (content and the lld_tool_slug marker) afterwards, as TC-FR1-04 does
+const PAGES = { 'health-tools': 6107, protein: 6102, 'diabetes-risk-check': 6066 };
+const pagesBefore = {};
+function applyPages(stack) {
+  for (const id of Object.values(PAGES)) pagesBefore[id] = { content: stack.wp('post', 'get', String(id), '--field=post_content').stdout, slug: stack.wp('post', 'meta', 'get', String(id), 'lld_tool_slug').stdout.trim() };
+  const r = stack.wp('lld', 'pages', 'apply'); if (r.status !== 0) throw new Error(r.stdout + r.stderr);
+}
+function restorePages(stack) {
+  for (const [id, b] of Object.entries(pagesBefore)) {
+    stack.wp('post', 'update', id, `--post_content=${b.content}`);
+    b.slug ? stack.wp('post', 'meta', 'update', id, 'lld_tool_slug', b.slug) : stack.wp('post', 'meta', 'delete', id, 'lld_tool_slug');
+  }
+}
 test.beforeAll(async () => {
   stack = await startWpStack();
   if (stack.external) return;
+  applyPages(stack);
   const catId = (slug) => stack.wp('term', 'list', 'category', `--slug=${slug}`, '--field=term_id').stdout.trim();
   const seed = (id, inputs) => {
     const pid = ok(stack.wp('post', 'create', '--post_type=post', `--post_status=${inputs.status}`, `--post_title=${id} (TC-FR1-18 seed)`, `--post_content=<p>Seeded by TC-FR1-18 (${id}); removed after the run.</p>`, `--post_category=${catId(inputs.category)}`, '--porcelain'), `seed ${id}`);
@@ -47,6 +62,7 @@ test.beforeAll(async () => {
 });
 test.afterAll(async () => {
   if (stack && !stack.external) {
+    restorePages(stack);
     for (const pid of Object.values(seeded.posts)) stack.wp('post', 'delete', pid, '--force');
     for (const uid of seeded.users) stack.wp('user', 'delete', uid, '--yes');
     for (const [id, before] of Object.entries(landingBefore)) for (const [k, v] of Object.entries(before)) v ? stack.wp('post', 'meta', 'update', id, k, v) : stack.wp('post', 'meta', 'delete', id, k);
