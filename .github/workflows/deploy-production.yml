@@ -48,7 +48,7 @@ jobs:
           PY
   deploy:
     needs: validate
-    if: vars.PROD_DEPLOY_ENABLED == 'true'
+    if: vars.PROD_DEPLOY_ENABLED == 'true' || (github.event_name == 'workflow_dispatch' && inputs.dry_run == true)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:

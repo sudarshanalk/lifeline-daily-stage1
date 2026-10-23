@@ -30,7 +30,7 @@ jobs:
           python3 deploy/preflight.py staging
   deploy:
     needs: validate
-    if: vars.STAGING_DEPLOY_ENABLED == 'true'
+    if: vars.STAGING_DEPLOY_ENABLED == 'true' || (github.event_name == 'workflow_dispatch' && inputs.dry_run == true)
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
