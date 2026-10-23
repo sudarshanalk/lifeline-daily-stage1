@@ -2,7 +2,8 @@
 // re-run under this ID: AS-01 = TC-FR1-10-AS-04 (fidelity-gate withdraws the diabetes tool in a sandbox when the engine disagrees
 // with ORC-01, no production credential), AS-02 = SAF-WITHDRAW-01 / TC-FR1-15-AS-01 (a withdrawn switch → 503 and no mail;
 // protein unaffected; restore → 200), AS-03 = TC-FR1-15-AS-03 (`wp lld status set … active` refuses an unapproved or missing
-// version and leaves status.json byte-identical; local WordPress stack, DEC-69). Fixtures: FX-DM-QD-*, FX-MAIL-01/02.
+// version and leaves status.json byte-identical; local WordPress stack, skipped with reason elsewhere — DEC-08/DEC-10;
+// local-only WordPress e2e is the DEC-69 proposal). Fixtures: FX-DM-QD-*, FX-MAIL-01/02.
 import { describe, expect, test } from 'vitest';
 import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -28,19 +29,26 @@ describe('TC-NFR1-11 graceful clinical feature disable', () => {
       const orcPath = join(sandbox, 'results.json');
       writeFileSync(orcPath, JSON.stringify({ oracle_id: 'ORC-01', implementation: 'sandbox stand-in (engine output, unmutated)', versions: { R: 'n/a' }, run_at: new Date().toISOString(), results: qd.map((f) => ({ fixture_id: f.id, expected: { pct: run(f.inputs).pct } })) }));
       const statusPath = join(sandbox, 'status.json'); cpSync(STATUS, statusPath);
-      expect(fidelityGate({ root: ROOT, orcPath, statusPath }).action, 'unmutated engine: no action').toBe('none');
+      const clean = fidelityGate({ root: ROOT, orcPath, statusPath });
+      expect(clean.ok, 'unmutated engine: ok').toBe(true); expect(clean.action, 'unmutated engine: no action').toBe('none');
+      expect(JSON.parse(readFileSync(statusPath, 'utf8')).tools.diabetes.status, 'status untouched by a clean run').toBe('active');
       const mutRoot = mutatedTree('MUT-04', ['fixtures/diabetes', 'manifests/diabetes.json']);
       try {
         const errors = []; const orig = console.error; console.error = (m) => errors.push(String(m));
         let r; try { r = fidelityGate({ root: mutRoot, orcPath, statusPath }); } finally { console.error = orig; }
-        expect(r.ok).toBe(false); expect(r.action).toBe(`withdrawn:${statusPath}`);
+        expect(r.ok).toBe(false); expect(r.action).toBe(`withdrawn:${statusPath}`); expect(r.problems.length, 'disagreements listed').toBeGreaterThan(0);
         expect(errors.join('\n')).toMatch(/ALERT fidelity-gate/);
         const st = JSON.parse(readFileSync(statusPath, 'utf8'));
         expect(st.tools.diabetes.status, 'diabetes withdrawn, not deleted').toBe('withdrawn');
         expect(st.tools.diabetes.message).toBe('unavailable.diabetes');
+        expect(st.tools.diabetes.since, 'since stamped (ISO)').toMatch(/^\d{4}-\d{2}-\d{2}T/);
         expect(st.tools.protein.status, 'protein untouched').toBe('active');
       } finally { rmSync(mutRoot, { recursive: true, force: true }); }
+      // the repository's status.json template is untouched
+      expect(JSON.parse(readFileSync(STATUS, 'utf8')).tools.diabetes.status).toBe('active');
     } finally { rmSync(sandbox, { recursive: true, force: true }); }
+    // a production credential in the environment makes the gate refuse to run at all
+    process.env.PROD_SSH_HOST = 'x'; try { expect(fidelityGate({ root: ROOT }).action).toBe('refused'); } finally { delete process.env.PROD_SSH_HOST; }
   }, 120000);
 
   test('TC-NFR1-11-AS-02', async () => {
@@ -64,7 +72,8 @@ describe('TC-NFR1-11 graceful clinical feature disable', () => {
     } finally { await srv.close(); }
   }, 60000);
 
-  test.skipIf(!wp.ok)('TC-NFR1-11-AS-03', async () => {
+  test('TC-NFR1-11-AS-03', async (ctx) => {
+    if (!wp.ok) { ctx.skip(wp.reason); return; }
     const stack = await startWpStack();
     try {
       const before = readFileSync(stack.statusPath);
