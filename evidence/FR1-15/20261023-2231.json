@@ -828,5 +828,10 @@
   "green_run": "local-20261023-2231",
   "human_gate": null,
   "started_at": "2026-10-23T21:31:40Z",
-  "finished_at": "2026-10-23T21:44:53Z"
+  "finished_at": "2026-10-23T21:44:53Z",
+  "reviewer": {
+    "agent": "P-C",
+    "verdict": "PASS",
+    "report": "https://github.com/sudarshanalk/lifeline-daily-stage1/pull/34 (P-C review 20261023-2215 FAIL on 4 findings → repaired 41fd572..35027d1 → re-review 20261023-2300 PASS; advisories: switch-before-origin order, plugin fail-open on missing status.json, runbook wording (CMP-13), lld_tools_message key lookup, HG-02 copy notes)"
+  }
 }
