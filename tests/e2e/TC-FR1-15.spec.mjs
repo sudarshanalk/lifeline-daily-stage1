@@ -14,6 +14,7 @@ const here = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const ROOT = resolve(here, '..', '..');
 const fx = (dir, file, id) => JSON.parse(readFileSync(resolve(ROOT, 'fixtures', dir, file), 'utf8')).fixtures.find((f) => f.id === id);
 const NRM01 = fx('protein', 'nrm.json', 'FX-PR-NRM-01'); const QD01 = fx('diabetes', 'qd.json', 'FX-DM-QD-01');
+const DECK = JSON.parse(readFileSync(resolve(ROOT, 'copy', 'diabetes-messages.json'), 'utf8'));
 const status = JSON.parse(readFileSync(resolve(ROOT, 'site', 'public_html', 'tools', 'status.json'), 'utf8'));
 const PAGE_IDS = { 'health-tools': 6107, protein: 6102, 'diabetes-risk-check': 6066 };
 let stack; const original = {};
@@ -52,7 +53,7 @@ test('TC-FR1-15-AS-01', async ({ page }) => {
   expect(await page.locator('form:visible').count(), 'no form').toBe(0);
   // endpoint: 503, no mail
   const r503 = await post('/tools/submit.php', fx('mail', 'mail.json', 'FX-MAIL-02').inputs);
-  expect(r503.status).toBe(503); expect((await r503.json()).status).toBe('unavailable');
+  expect(r503.status).toBe(503); expect((await r503.json()).status).toBe('withdrawn');
   // protein unchanged: FX-PR-NRM-01 passes
   await page.goto(`${stack.url}/tools/protein-requirement-tool.html`);
   await expect(page.locator('#form')).toBeVisible();
@@ -81,7 +82,7 @@ test('TC-FR1-15-AS-03', async () => {
   const before = readFileSync(stack.statusPath);
   const r = stack.wp('lld', 'status', 'set', 'diabetes', 'active', '--version=deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef');
   expect(r.status, 'unapproved version is refused').not.toBe(0);
-  expect(r.stdout + r.stderr).toMatch(/not the deployed file/);
+  expect(r.stdout + r.stderr).toMatch(/not an approved version/);
   expect(Buffer.compare(readFileSync(stack.statusPath), before), 'status.json byte-identical').toBe(0);
   const bad = stack.wp('lld', 'status', 'set', 'diabetes', 'active');
   expect(bad.status, 'active without --version is refused').not.toBe(0);
@@ -94,6 +95,8 @@ test('TC-FR1-15-AS-04', async ({ page, request }) => {
     for (const url of [`${stack.url}/health-tools/diabetes-risk-check/`, `${stack.url}/tools/diabetes-risk-tool.html`]) {
       await page.goto(url);
       await expect(page.locator('[data-test=unavailable]')).toBeVisible();
+      // the card renders approved copy for the status.json message KEY, never the key or free text (DEC-72)
+      expect((await page.locator('[data-test=unavailable] p').first().innerText()).trim(), `${url}: approved unavailable copy`).toBe(DECK['unavailable.body']);
       const links = page.locator('[data-test=unavailable] a');
       const hrefs = await links.evaluateAll((as) => as.map((a) => a.href));
       expect(hrefs.some((h) => /\/health-tools\/$/.test(h)), `${url}: hub link`).toBe(true);

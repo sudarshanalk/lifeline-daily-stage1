@@ -14,6 +14,11 @@ const withdrawn = { ...status, tools: { ...status.tools, diabetes: { ...status.t
 
 describe('TC-FR1-15 safe withdrawal and rollback — endpoints, headers, runbook', () => {
   test('TC-FR1-15-AS-01', async () => {
+    // the plugin's unavailable card renders approved copy for the status.json message key (DEC-72): its text must equal the
+    // copy deck's unavailable.body in both tools, so a drift fails here even where the WordPress e2e cannot run (DEC-69)
+    const plugin = readFileSync(resolve(ROOT, 'site', 'public_html', 'wp-content', 'mu-plugins', 'lld-tools', 'lld-tools.php'), 'utf8');
+    const pluginBody = plugin.match(/'unavailable\.body' => '((?:[^'\]|\.)*)'/)?.[1].replace(/\'/g, "'");
+    for (const deck of ['protein-messages.json', 'diabetes-messages.json']) expect(pluginBody, `plugin copy = copy/${deck} unavailable.body`).toBe(JSON.parse(readFileSync(resolve(ROOT, 'copy', deck), 'utf8'))['unavailable.body']);
     const srv = await startHtaccessServer({ statusJson: withdrawn });
     try {
       const outboxDir = join(srv.docroot, 'tools', 'api', 'outbox');
@@ -21,7 +26,7 @@ describe('TC-FR1-15 safe withdrawal and rollback — endpoints, headers, runbook
       const post = (path, body, ip) => fetch(srv.url + path, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://lifelinedaily.com', 'X-Forwarded-For': ip }, body: JSON.stringify(body) });
       const r = await post('/tools/submit.php', fixtures('FX-MAIL-02')[0].inputs, '10.15.1.1');
       expect(r.status, 'withdrawn diabetes endpoint → 503').toBe(503);
-      expect(await r.json()).toMatchObject({ status: 'unavailable' });
+      expect(await r.json()).toMatchObject({ status: 'withdrawn' });
       expect(outbox().length).toBe(0);
       const lines = srv.phpLog().filter((l) => l.includes('"outcome":"withdrawn"'));
       expect(lines.length, 'SCH-07 line with outcome withdrawn').toBe(1);

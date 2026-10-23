@@ -955,6 +955,7 @@ if(window.ResizeObserver){ new ResizeObserver(postHeight).observe(document.body)
     '<p><a href="__LLD_ORIGIN__/health-tools/">See all health tools</a> · <a href="__LLD_ORIGIN__/how-to-prevent-type-2-diabetes/">Read: how to prevent type 2 diabetes</a></p>'; show(un); hide(form); window.LLD_STATUS='withdrawn'; }
   function notice(){ gate.setAttribute('aria-busy','false'); gate.innerHTML=MESSAGES.unavailable.unknown+' <button type="button" id="lldRetry" data-test="retry">Try again</button>'; document.getElementById('lldRetry').addEventListener('click', check); hide(form); window.LLD_STATUS='unknown'; }
   function check(){ gate.setAttribute('aria-busy','true'); gate.textContent=MESSAGES.unavailable.checking; show(gate); hide(un);
+    if(typeof fetch!=='function'){ notice(); return; }
     fetch('./status.json',{cache:'no-store'}).then(function(r){ if(!r.ok) throw new Error('status '+r.status); return r.json(); }).then(function(s){
       var t=s&&s.tools&&s.tools[slug]; if(!t||t.status!=='active'){ unavailable(); return; }
       hide(gate); show(form); window.LLD_STATUS='active'; if(typeof postHeight==='function') postHeight();
