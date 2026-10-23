@@ -18,7 +18,8 @@ if [[ "$MODE" != '--dry-run' ]]; then
 fi
 # No root-level --delete. Only explicit managed files are sent; obsolete files
 # require a reviewed removal, never inference from a sparse overlay checkout.
-flags=(-az --delay-updates --itemize-changes)
+source deploy/rsync-flags.sh
+flags=("${RSYNC_FLAGS[@]}")
 [[ "$MODE" != '--dry-run' ]] || flags+=(--dry-run)
 rsync "${flags[@]}" -e "$RSYNC_SSH" "$STAGE_DIR/" "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_DOCROOT/"
 if [[ "$MODE" == '--dry-run' ]]; then echo 'Read-only rehearsal complete; no backup, write, purge or POST performed.'; exit 0; fi

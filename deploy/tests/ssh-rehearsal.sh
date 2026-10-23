@@ -26,3 +26,14 @@ after=$(find "$root" -type f -exec sha256sum {} + | sort)
 test "$before" = "$after"
 test ! -e "$HOME/lld-backups"
 echo 'SSH rehearsal passed: document root unchanged, no backup or mutation.'
+
+# Real rsync regression: a private mktemp root must not chmod the web root.
+source deploy/rsync-flags.sh
+release=$(mktemp -d)
+mkdir "$release/tools"
+printf 'permission regression fixture\n' > "$release/tools/permission-test.html"
+mode_before=$(stat -c '%a' "$root")
+rsync "${RSYNC_FLAGS[@]}" -e "ssh -i $key -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$RUNNER_TEMP/lld-known-hosts" "$release/" "$USER@127.0.0.1:$root/"
+test "$(stat -c '%a' "$root")" = "$mode_before"
+test "$(cat "$root/tools/permission-test.html")" = 'permission regression fixture'
+echo 'Real SSH sync passed: existing web-root permissions preserved.'
