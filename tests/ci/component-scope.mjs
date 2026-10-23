@@ -18,6 +18,8 @@ const HARNESS = ['tests/**', 'evidence/**', 'Makefile', 'package-lock.json', 're
 // approvals/copy.json and the copy deck (copy/*.json, UI1-11) carry the DEC-25 per-key copy hashes and texts: a MESSAGES/data-copy change on a tool page
 // cannot pass copy-hash without refreshing them in the same PR (DEC-56 proposal, mirrors the SRS FR1-06 version_hash rule)
 const PROVENANCE_SET = ['approvals/protein.json', 'approvals/diabetes.json', 'approvals/copy.json', 'copy/inventory.json', 'copy/protein-messages.json', 'copy/diabetes-messages.json', 'copy/templates.json', 'copy/inline.json', 'copy/pages.json', 'manifests/protein.json', 'manifests/diabetes.json', 'site/public_html/tools/status.json', 'tests/mutations/MUT-10.patch'];
+// artefacts a requirement produces by its TC page although they live under CMP-12 (DEC-68 proposal): SCH-04 tool cards are FR1-04's
+const EXTRA = { 'FR1-04': ['content/tool-cards.json'], 'UI1-02': ['content/tool-cards.json'] };
 const TOOL_PAGES = ['site/public_html/tools/protein-requirement-tool.html', 'site/public_html/tools/diabetes-risk-tool.html'];
 
 /** Minimal glob → RegExp: `**` any depth (including none), `*` within one segment. Placeholders keep the two apart. */
@@ -50,7 +52,7 @@ export function componentScope({ root = ROOT, req, files }) {
   const touchesToolPage = files.some((f) => TOOL_PAGES.includes(f));
   const problems = [];
   for (const f of files) {
-    if (matches(f, allowed) || matches(f, HARNESS)) continue;
+    if (matches(f, allowed) || matches(f, HARNESS) || (EXTRA[req] || []).includes(f)) continue;
     if (touchesToolPage && PROVENANCE_SET.includes(f)) continue;
     problems.push(`${f} is outside ${req}'s components (${entry.components.join(', ')})`);
   }

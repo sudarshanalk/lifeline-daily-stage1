@@ -1,0 +1,41 @@
+{
+  "_note": "Landing-page copy rendered by `wp lld pages apply` (FR1-04). Clinical sentences derive from approvals/<slug>.json (intended_use, eligibility, limitations, engine_name) and are ratified at HG-02; page copy joins the copy deck via LLD_WP_URL extraction (DEC-60).",
+  "hub": {
+    "slug": "health-tools",
+    "content": "[lld_tools_hub]"
+  },
+  "pages": {
+    "protein": {
+      "slug": "health-tools/protein",
+      "tool_file": "protein-requirement-tool.html",
+      "engine": "Lifeline Daily Daily Protein Target engine",
+      "sections": {
+        "purpose": "<p>The Daily Protein Target is an educational screening aid that estimates a daily protein intake target — grams per day, grams per kilogram and a per-meal split — for healthy adults from published population guidelines. It is not a prescription, not a diagnosis and not individualised clinical nutrition advice.</p>",
+        "who": "<p>Adults aged 18 to 99 with healthy kidney function. If you report kidney disease the tool gives no numeric target, because national kidney guidelines recommend a reduced, supervised protein intake. Pregnancy and breastfeeding use their own recommended-allowance branch. Liver disease and the recovery goal are flagged as clinical and shown with a clinician-referral message. The tool is not for children, dialysis patients or people under medical nutrition therapy.</p>",
+        "enter": "<ul><li>Age and sex</li><li>Height and weight (metric or imperial)</li><li>Ethnicity (sets the healthy-weight cut-offs)</li><li>General activity level and resistance training</li><li>Your goal and how you eat</li><li>Kidney and liver health questions</li></ul>",
+        "limitations": "<ul><li>Population guideline figures, not individual requirements: the tool does not account for kidney function tests, protein quality, energy balance or medical conditions beyond the yes/no questions it asks.</li><li>The plant-diet multipliers (1.1 vegetarian, 1.2 vegan) are an extrapolation from digestibility literature, not a guideline figure.</li><li>Targets are capped at 2.0 g/kg; higher intakes described in the literature apply to supervised, trained individuals only.</li></ul>",
+        "how": "<p>The tool collects the guideline bands that apply to you (Institute of Medicine RDA and AMDR, International Society of Sports Nutrition position stand, Academy of Nutrition and Dietetics, PROT-AGE for older adults, ESPEN for illness and recovery), takes the most demanding applicable band, applies a diet-quality multiplier and caps the result at 2.0 g/kg. Engine: Lifeline Daily Daily Protein Target engine (published-band lookup). Deployed version [lld_tool_version slug=\"protein\"].</p>",
+        "privacy": "<p>The calculation runs in your browser. Nothing you enter is stored on our servers. If you choose to email yourself the result, the e-mail is sent once and not kept; see our <a href=\"/privacy-policy/\">Privacy Policy</a>.</p>",
+        "try": "[lld_tool slug=\"protein\"]",
+        "related": "[lld_tool_related slug=\"protein\"]"
+      }
+    },
+    "diabetes": {
+      "slug": "health-tools/diabetes-risk-check",
+      "tool_file": "diabetes-risk-tool.html",
+      "engine": "QDiabetes-2018 (Model A)",
+      "sections": {
+        "purpose": "<p>The Diabetes Risk Check is an educational screening aid that estimates your 10-year risk of developing type 2 diabetes from self-reported, non-laboratory inputs, and encourages a conversation with a clinician or an NHS Health Check where indicated. It does not diagnose diabetes, type 1 diabetes or any other condition.</p>",
+        "who": "<p>Adults aged 25 to 84 without a diagnosis of diabetes. Age is entered as a five-year band. Classic symptoms trigger a same-day-assessment banner; the emergency checklist suppresses the percentage and directs you to urgent care. The tool is not a diagnosis.</p>",
+        "enter": "<ul><li>Age band and sex</li><li>Height, weight and (optionally) waist</li><li>Ethnicity and smoking</li><li>Family history and medical history</li><li>Current symptoms, checked separately from the score</li></ul>",
+        "limitations": "<ul><li>QDiabetes-2018 was derived and validated in UK primary-care populations; calibration for visitors outside the UK is not established.</li><li>The Townsend deprivation score is fixed at a neutral average, which can under- or over-state risk for individual visitors.</li><li>Band labels and thresholds (5.6 %, 10 %, 20 %) are interpretation cut-points chosen by Lifeline Daily.</li></ul>",
+        "how": "<p>The score is the published QDiabetes-2018 (Model A) algorithm, calibrated in the UK, which uses a deprivation score we hold fixed and estimates type 2 diabetes risk; symptoms are handled separately from the number. Waist-to-height ratio and the Indian Diabetes Risk Score are shown as cross-checks. Engine: QDiabetes-2018 (Model A). Deployed version [lld_tool_version slug=\"diabetes\"].</p>",
+        "privacy": "<p>The calculation runs in your browser. Nothing you enter is stored on our servers. If you choose to email yourself the result, the e-mail is sent once and not kept; see our <a href=\"/privacy-policy/\">Privacy Policy</a>.</p>",
+        "try": "[lld_tool slug=\"diabetes\"]",
+        "related": "[lld_tool_related slug=\"diabetes\"]"
+      }
+    }
+  },
+  "headings": ["Purpose", "Who it is for", "What you will enter", "Limitations", "How it works", "Privacy", "Try the tool", "Related reading"],
+  "section_keys": ["purpose", "who", "enter", "limitations", "how", "privacy", "try", "related"]
+}
