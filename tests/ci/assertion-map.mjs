@@ -27,7 +27,8 @@ export function tcAssertions(req, doc = readFileSync(TC_DOC, 'utf8')) {
   const end = rest.search(/\n### |\n## /);
   const section = rest.slice(0, end < 0 ? undefined : end);
   const ids = new Set([...section.matchAll(new RegExp(`TC-${req}-AS-\\d{2}`, 'g'))].map((m) => m[0]));
-  for (const m of section.matchAll(/\bNEG-\d{2}\b/g)) ids.add(`${m[0]}`);
+  // NEG-nn counts only as a table row of its own (ID column); a prose mention such as "NEG-01/02 → 400" is a fixture reference
+  for (const m of section.matchAll(/^\| (NEG-\d{2}) \|/gm)) ids.add(m[1]);
   return { ids: [...ids], section };
 }
 

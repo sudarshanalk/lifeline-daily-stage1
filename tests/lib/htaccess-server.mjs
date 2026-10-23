@@ -73,18 +73,22 @@ function applyHeaders(rules, fileName, res, { always }) {
 }
 
 /* ---------------------------------------------------------------------------------- the server --- */
-export async function startHtaccessServer({ port = 0, overlay = resolve(ROOT, 'site', 'public_html'), phpPort = 0, harnessDir = null } = {}) {
+export async function startHtaccessServer({ port = 0, overlay = resolve(ROOT, 'site', 'public_html'), phpPort = 0, harnessDir = null, phpConfig = {} } = {}) {
   const docroot = mkdtempSync(join(tmpdir(), 'lld-docroot-'));
   cpSync(overlay, docroot, { recursive: true });
-  // test config for the PHP endpoints: log transport into the temp copy, rate limit on, local origins allowed
+  // test config for the PHP endpoints: log transport into the temp copy (or `phpConfig.transport` — 'smtp' with
+  // `smtpHost`/`smtpPort` simulates a dead SMTP server for TC-FR1-14-AS-05), rate limit on, local origins allowed.
+  // The emulator is the only client PHP sees, so it is the trusted proxy and tests pick their client IP with
+  // X-Forwarded-For (DEC-35); the log salt is fixed so SCH-07 lines are reproducible.
   const cfg = readFileSync(join(docroot, 'tools', 'api', 'config.example.php'), 'utf8')
-    .replace(/'transport'\s*=>\s*[^,]+,/, "'transport' => 'log',")
+    .replace(/'transport'\s*=>\s*[^,]+,/, `'transport' => '${phpConfig.transport || 'log'}',`)
     .replace(/'allowed_origins'\s*=>\s*\[[^\]]*\]/, "'allowed_origins' => ['https://lifelinedaily.com', 'https://www.lifelinedaily.com', 'http://localhost:8080']");
   writeFileSync(join(docroot, 'tools', 'api', 'config.php'), cfg);
   if (!existsSync(join(docroot, 'tools', 'status.json'))) writeFileSync(join(docroot, 'tools', 'status.json'), '{}');
+  const phpEnv = { ...process.env, LLD_TRUSTED_PROXIES: '127.0.0.1', LLD_LOG_SALT: 'harness-salt', ...(phpConfig.smtpHost ? { LLD_SMTP_HOST: phpConfig.smtpHost } : {}), ...(phpConfig.smtpPort ? { LLD_SMTP_PORT: String(phpConfig.smtpPort) } : {}), ...(phpConfig.env || {}) };
 
   // PHP built-in server for *.php under /tools (deny rules are enforced here, not in PHP)
-  const php = spawn('php', ['-S', `127.0.0.1:${phpPort || 0}`, '-t', docroot], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const php = spawn('php', ['-S', `127.0.0.1:${phpPort || 0}`, '-t', docroot], { stdio: ['ignore', 'pipe', 'pipe'], env: phpEnv });
   const phpLog = []; // every line PHP's built-in server prints (request log + error_log output) — the "server log" tests scan
   php.stdout.on('data', (d) => phpLog.push(...String(d).split(/\r?\n/).filter(Boolean)));
   php.stderr.on('data', (d) => phpLog.push(...String(d).split(/\r?\n/).filter(Boolean)));

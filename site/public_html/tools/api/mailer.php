@@ -41,6 +41,7 @@ function sendMail(string $to, string $subject, string $body, ?array $cfg = null)
                         ? PHPMailer::ENCRYPTION_STARTTLS
                         : PHPMailer::ENCRYPTION_SMTPS;
     $mail->CharSet    = 'UTF-8';
+    $mail->Timeout    = (int)($s['timeout'] ?? 10);   // FR1-14: a dead SMTP host fails fast → 502, never a hung request
 
     $mail->setFrom($cfg['from_email'], $cfg['from_name'] ?? 'Lifeline Daily');
     $mail->addAddress($to);
@@ -55,7 +56,8 @@ function sendMail(string $to, string $subject, string $body, ?array $cfg = null)
     $mail->send();
     return ['ok' => true, 'info' => 'sent'];
   } catch (Exception $e) {
-    error_log('LLD mailer error: ' . $mail->ErrorInfo);
+    // DEC-20: the transport error is logged without any address or payload field
+    error_log('LLD mailer error: ' . preg_replace('/\S+@\S+/', '[address]', (string)$mail->ErrorInfo));
     return ['ok' => false, 'info' => 'smtp-error'];
   }
 }
