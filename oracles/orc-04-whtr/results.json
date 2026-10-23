@@ -1,0 +1,55 @@
+{
+  "oracle_id": "ORC-04",
+  "implementation": "Python, waist-to-height ratio with cut-offs 0.5 and 0.6 (Ashwell & Gibson 2016; NICE NG246) per DEC-06",
+  "versions": {
+    "python": "3.14.6"
+  },
+  "source_hash": "87e96c9ffcd9544c16661f6c504caf4c4b3bce0fa02dffd3b94499e5a20ea21c",
+  "run_at": "2026-10-23T13:43:02Z",
+  "results": [
+    {
+      "fixture_id": "FX-DM-WHTR-01",
+      "expected": {
+        "whtr": {
+          "ratio": 0.4882,
+          "band": "healthy"
+        }
+      },
+      "notes": "waist 83 / height 170"
+    },
+    {
+      "fixture_id": "FX-DM-WHTR-02",
+      "expected": {
+        "whtr": {
+          "ratio": 0.5,
+          "band": "raised"
+        }
+      },
+      "notes": "waist 85 / height 170"
+    },
+    {
+      "fixture_id": "FX-DM-WHTR-03",
+      "expected": {
+        "whtr": {
+          "ratio": 0.5941,
+          "band": "raised"
+        }
+      },
+      "notes": "waist 101 / height 170"
+    },
+    {
+      "fixture_id": "FX-DM-WHTR-04",
+      "expected": {
+        "whtr": {
+          "ratio": 0.6,
+          "band": "high"
+        }
+      },
+      "notes": "waist 102 / height 170"
+    }
+  ],
+  "notes": [
+    "Ratio is reported to 4 dp; the deployed tool displays 2 dp. Band classification uses the unrounded ratio.",
+    "Boundaries are inclusive at the upper cut-off: 0.5 -> raised, 0.6 -> high (DEC-06)."
+  ]
+}
