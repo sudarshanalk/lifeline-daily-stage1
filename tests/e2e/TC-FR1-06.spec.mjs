@@ -20,6 +20,6 @@ test('TC-FR1-06-AS-03', async ({ page }) => {
     const shown = page.locator('[data-lld-deployed-version]');
     await expect(shown, `${slug} landing page methodology section`).toHaveCount(1);
     await expect(shown).toHaveAttribute('data-lld-deployed-version', approvals[slug].version_hash);
-    await expect(shown).toContainText(approvals[slug].version_hash.slice(0, 12));
+    await expect(shown).toContainText(approvals[slug].version_hash.slice(0, 8)); // 8-hex prefix contract shared with TC-FR1-04-AS-05
   }
 });

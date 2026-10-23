@@ -1,0 +1,282 @@
+# CI guards for Lifeline Daily Stage 1 — the PR job set from docs/04_AI_Development_Loop_v1_2.md §1 (NFR1-09).
+# Kept in its own workflow next to ci.yml (validate-artefacts, engine-freeze whole-file, oracle-guard by commit subject,
+# and the deployment PR's deploy-dry-run) so the two can evolve without merge conflicts; status contexts are the job ids.
+# Job ids are the status-check contexts. GitHub Free has no branch protection: the convention (every job green before
+# merge) is checked by TC-NFR1-09-AS-02 on the last merged PR. Jobs that need infrastructure not yet available run as
+# far as the harness exists and say so (fidelity-gate: ORC-01/Docker + staging SSH; perf/a11y/crawl/security: later waves).
+name: ci-guards
+on:
+  pull_request:
+    branches: [staging, production]
+  push:
+    branches: [staging]
+concurrency:
+  group: ci-guards-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  PR_TITLE: ${{ github.event.pull_request.title }}
+  PR_BODY: ${{ github.event.pull_request.body }}
+jobs:
+  pr-title:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: "PR title is '<ID>: <title>' and the body links an evidence bundle (TC-NFR1-09-AS-01)"
+        run: |
+          echo "$PR_TITLE" | grep -Eq '^(FR1|NFR1|UI1)-[0-9]{2}: ' || { echo "pr-title: title must match ^(FR1|NFR1|UI1)-\d{2}: <title>"; exit 1; }
+          echo "$PR_BODY" | grep -q 'evidence/' || { echo "pr-title: body must contain the evidence/ path of the run"; exit 1; }
+          echo "pr-title: OK"
+
+  validate-artefacts-all:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install jsonschema
+      - name: Every JSON artefact against its schema
+        run: python3 -I tests/ci/validate-artefacts.py
+
+  registry-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: SCH-01 register ↔ registry (id, status, ratify_at, decided_on)
+        run: node tests/ci/registry-integrity.mjs
+
+  provenance-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - run: npm ci
+      - name: Staged tool hashes vs approval records (pending accepted on PR; approved on rc-* tags)
+        run: node tests/ci/provenance-check.mjs --env ${{ startsWith(github.ref, 'refs/tags/rc-') && 'production' || 'staging' }}
+
+  engine-freeze-objects:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - run: npm ci
+      - name: Frozen engine objects hash-equal the manifests (whole file and per object)
+        run: |
+          for slug in protein diabetes; do
+            f=$([ $slug = protein ] && echo protein-requirement-tool.html || echo diabetes-risk-tool.html)
+            want=$(python3 -c "import json;print([v for v in json.load(open('manifests/$slug.json'))['versions'] if v['is_live']][0]['version_hash'])")
+            got=$(sha256sum site/public_html/tools/$f | cut -d' ' -f1)
+            [ "$want" = "$got" ] && echo "ok file $f" || { echo "engine-freeze: $f hash $got != manifest live $want (refresh approvals: node tests/ci/refresh-approvals.mjs)"; exit 1; }
+          done
+          dec=$(echo "$PR_BODY" | grep -oE 'engine-change: DEC-[0-9]{2}' | head -1 | sed 's/engine-change: //')
+          node tests/ci/engine-freeze.mjs ${dec:+--dec $dec}
+
+  oracle-guard-expected:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - run: npm ci
+      - name: fixtures/**/expected changes only by the oracle runner or a reviewer-signed commit
+        run: node tests/ci/oracle-guard.mjs --base origin/${{ github.base_ref }} --head HEAD
+
+  assertion-map:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - run: npm ci
+      - name: Every AS/NEG id of the PR's requirement exists as a test importing the named fixtures
+        run: node tests/ci/assertion-map.mjs --req "$(echo "$PR_TITLE" | grep -oE '^(FR1|NFR1|UI1)-[0-9]{2}')"
+
+  component-scope:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - run: npm ci
+      - name: Diff touches only the requirement's component paths (+ harness, + provenance refresh set)
+        run: node tests/ci/component-scope.mjs --req "$(echo "$PR_TITLE" | grep -oE '^(FR1|NFR1|UI1)-[0-9]{2}')" --base origin/${{ github.base_ref }} --head HEAD
+
+  copy-hash:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.1' }
+      - run: npm ci
+      - name: Extracted MESSAGES/template hashes equal approvals/copy.json (DEC-25)
+        run: node tests/ci/copy-hash.mjs
+
+  unit:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read   # TC-NFR1-09-AS-02 reads the last merged PR and its check-runs
+      checks: read
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.1' }
+      - run: pip install jsonschema && npm ci
+      - name: unit, ci, http, static, artefact families (vitest)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # lets TC-NFR1-09-AS-02 inspect the last merged PR's check-runs in Actions
+        run: npx vitest run -c tests/vitest.config.mjs tests/unit tests/ci tests/http tests/static tests/artefact
+
+  php-integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.1' }
+      - run: npm ci
+      - name: Endpoints on PHP's built-in server behind the .htaccess emulator (log transport = Mailpit stand-in)
+        run: npx vitest run -c tests/vitest.config.mjs tests/php
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.1' }
+      - run: npm ci && npx playwright install --with-deps chromium
+      - name: Playwright journeys (chromium; the 5-project matrix joins with NFR1-12)
+        run: npx playwright test -c tests/e2e/playwright.config.mjs
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: playwright-traces, path: test-results/, if-no-files-found: ignore }
+
+  saf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - run: npm ci
+      - name: saf-protein
+        run: npx vitest run -c tests/vitest.config.mjs tests/saf/saf-protein.test.mjs
+      - name: saf-diabetes
+        run: npx vitest run -c tests/vitest.config.mjs tests/saf/saf-diabetes.test.mjs
+
+  sentinel:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.1' }
+      - run: npm ci
+      - name: Privacy leak scan of the three sentinel flows
+        run: node tests/ci/sentinel.mjs
+
+  evidence:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install jsonschema
+      - name: Every evidence bundle validates SCH-06e and names a commit and both tool hashes
+        run: |
+          python3 - <<'EOF'
+          import glob, json, subprocess, sys, jsonschema
+          s = json.load(open("schemas/evidence.schema.json")); bad = 0
+          for f in sorted(glob.glob("evidence/*/*.json")):
+              e = json.load(open(f)); errs = list(jsonschema.Draft7Validator(s).iter_errors(e))
+              ok = not errs and all(k in e.get("tool_hashes", {}) for k in ("protein", "diabetes")) and subprocess.run(["git", "cat-file", "-e", e["commit"]]).returncode == 0
+              print(("ok " if ok else "BAD ") + f + ("" if ok else " " + "; ".join(x.message for x in errs)))
+              bad += 0 if ok else 1
+          sys.exit(1 if bad else 0)
+          EOF
+
+  # fidelity-gate (FR1-10): compares ORC-01 results with the deployed diabetes engine and, on disagreement, withdraws the
+  # tool on staging via `wp lld status set` over SSH (DEC-08). Needs the ORC-01 container (Docker, OI-4) and the staging
+  # SSH secrets (OI-1). Until both exist it reports the deferral and succeeds without comparing.
+  fidelity-gate:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ORC-01 vs deployed engine (pending OI-4/OI-1)
+        run: |
+          if [ -f oracles/orc-01-qdiabetes-r/results.json ]; then echo "fidelity-gate: ORC-01 results present — comparison lands with FR1-10"; else echo "fidelity-gate: ORC-01 not yet run (Docker/WSL 2 pending, OI-4; deferred to HG-02 in approvals/hg-01.json)"; fi
+
+  # a11y, perf, crawl, security: minimal real gates now; their requirements (NFR1-05, NFR1-06, NFR1-07/FR1-02, NFR1-03)
+  # replace the bodies with the full acceptance checks.
+  a11y:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.1' }
+      - run: npm ci && npx playwright install --with-deps chromium
+      - name: axe-core over both tool pages (regressions beyond tests/e2e/a11y-baseline.json fail; full WCAG 2.2 AA with NFR1-05)
+        run: npx playwright test -c tests/e2e/playwright.config.mjs tests/e2e/a11y.spec.mjs
+
+  perf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - run: npm ci
+      - name: Static budget for the tool pages (Lighthouse mobile preset joins with NFR1-06, DEC-17)
+        run: node tests/ci/perf-budget.mjs
+
+  crawl:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.1' }
+      - run: npm ci
+      - name: 30-URL sample (tool URLs locally; WordPress URLs with LLD_WP_URL)
+        run: node tests/ci/crawl.mjs
+
+  security:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read   # gitleaks-action reads the PR's commit range
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"   # the PR-comment API call fails with the default token permissions
+          GITLEAKS_ENABLE_SUMMARY: "true"
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.1' }
+      - run: npm ci
+      - name: Backend deny rules, DEC-35 headers, no tracked credentials
+        run: node tests/ci/security-scan.mjs
