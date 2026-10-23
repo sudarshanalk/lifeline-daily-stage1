@@ -9,6 +9,5 @@
 .lld-home-learn__list { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 .lld-home-learn__item h3 { margin: 0 0 4px; font-size: 1.05rem; }
 .lld-home-learn__item time { font-size: 0.85rem; color: #555; }
-/* DEC-23: the hero is desktop-only; its phone copy follows the Tools row */
+/* DEC-23: the hero is desktop-only, so on phones the Tools row is the first content row after the header */
 @media (max-width: 767px) { .lld-home-hero { display: none !important; } }
-@media (min-width: 768px) { .lld-home-hero-phone { display: none !important; } }
