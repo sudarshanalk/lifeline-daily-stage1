@@ -1,6 +1,6 @@
 // TC-FR1-03 Tools-first homepage — e2e + crawl against the local WordPress stack (snapshot + overlay plugin, DEC-69).
-// `wp lld pages apply` transforms the static front page (DEC-23); the original content is restored afterwards.
-// Fixtures: FX-WP-POST-01 (a published post dated today, seeded for the run and deleted afterwards).
+// `wp lld home apply` transforms the static front page (DEC-23); `wp lld home revert` restores it and the run checks the content
+// is byte-identical to what it found. Fixtures: FX-WP-POST-01 (fixtures/site/site.json; seeded dated today, deleted afterwards).
 import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -9,6 +9,7 @@ import { startWpStack, available } from '../lib/wp-stack.mjs';
 
 const here = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const ROOT = resolve(here, '..', '..');
+const POST01 = JSON.parse(readFileSync(resolve(ROOT, 'fixtures', 'site', 'site.json'), 'utf8')).fixtures.find((f) => f.id === 'FX-WP-POST-01').inputs;
 const cards = JSON.parse(readFileSync(resolve(ROOT, 'content', 'tool-cards.json'), 'utf8')).cards;
 const WIDTHS = { phone: { width: 375, height: 812 }, desktop: { width: 1440, height: 900 } };
 const a = available();
@@ -21,18 +22,27 @@ test.beforeAll(async () => {
   if (!stack.external) {
     frontId = stack.wp('option', 'get', 'page_on_front').stdout.trim();
     originalHome = stack.wp('post', 'get', frontId, '--field=post_content').stdout;
-    // FX-WP-POST-01: a recent published post (dated now) — seeded for the run
-    const cat = stack.wp('term', 'list', 'category', '--slug=nutrition-for-healthy-living', '--field=term_id').stdout.trim();
-    const r = stack.wp('post', 'create', '--post_type=post', '--post_author=1', '--post_status=publish', '--post_title=FX-WP-POST-01 recent post (test seed)', '--post_content=<p>Seeded by TC-FR1-03 (FX-WP-POST-01); removed after the run.</p>', ...(cat ? [`--post_category=${cat}`] : []), '--porcelain');
+    // FX-WP-POST-01: a recent published post (dated now) with the fixture's category and review meta — seeded for the run
+    const cat = stack.wp('term', 'list', 'category', `--slug=${POST01.category}`, '--field=term_id').stdout.trim();
+    const r = stack.wp('post', 'create', '--post_type=post', '--post_author=1', `--post_status=${POST01.status}`, '--post_title=FX-WP-POST-01 recent post (test seed)', '--post_content=<p>Seeded by TC-FR1-03 (FX-WP-POST-01); removed after the run.</p>', `--post_category=${cat}`, '--porcelain');
     if (r.status !== 0) throw new Error(r.stdout + r.stderr);
     postId = r.stdout.trim();
-    if (!process.env.LLD_FR103_PRISTINE) { const ap = stack.wp('lld', 'pages', 'apply'); if (ap.status !== 0) throw new Error(ap.stdout + ap.stderr); }
+    for (const [k, v] of Object.entries(POST01)) if (k.startsWith('lld_')) stack.wp('post', 'meta', 'update', postId, k, v);
+    if (!process.env.LLD_FR103_PRISTINE) { const ap = stack.wp('lld', 'home', 'apply'); if (ap.status !== 0) throw new Error(ap.stdout + ap.stderr); }
   }
 });
 test.afterAll(async () => {
   if (stack && !stack.external) {
-    if (frontId && originalHome !== undefined) stack.wp('post', 'update', frontId, `--post_content=${originalHome}`);
     if (postId) stack.wp('post', 'delete', postId, '--force');
+    if (frontId && originalHome !== undefined) {
+      const rv = stack.wp('lld', 'home', 'revert');
+      const now = stack.wp('post', 'get', frontId, '--field=post_content').stdout;
+      if (rv.status !== 0 || now.trim() !== originalHome.trim()) {
+        // fall back to the captured content, and fail loudly: a dirty homepage would poison the next run's pristine red
+        stack.wp('post', 'update', frontId, `--post_content=${originalHome}`);
+        throw new Error(`home revert did not restore the front page exactly (exit ${rv.status}): ${rv.stderr}`);
+      }
+    }
   }
   await stack?.close();
 });
@@ -81,14 +91,18 @@ test('TC-FR1-03-AS-03', async ({ page }) => {
   test.info().annotations.push({ type: 'click-path', description: '/ → Learn row article (1 action)' });
 });
 
-test('TC-FR1-03-AS-04', async ({ page, request }) => {
+test('TC-FR1-03-AS-04', async ({ page }) => {
   await page.setViewportSize(WIDTHS.desktop); await page.goto(home());
   expect(await page.locator('form[role=search], form.td-search-form, form input[name=s], #td-header-search').count(), 'search form present').toBeGreaterThan(0);
-  const r = await request.get(`${stack.url}/?s=protein`);
-  expect(r.status()).toBe(200);
-  await page.goto(`${stack.url}/?s=protein`);
-  const results = await page.locator('.td_module_wrap, .td-module-container, article .entry-title, .td-ss-main-content .td_module_wrap').count();
-  expect(results, 'at least one result for "protein"').toBeGreaterThanOrEqual(1);
+  // post links on a results page, minus those on a no-results page (header, footer and sidebar blocks appear on both)
+  const postLinks = async (q) => {
+    const r = await page.goto(`${stack.url}/?s=${encodeURIComponent(q)}`); expect(r.status()).toBe(200);
+    return new Set(await page.locator('a[href]').evaluateAll((as) => as.map((x) => x.href.split('#')[0])));
+  };
+  const control = await postLinks('zqxv-no-such-term-7741');
+  const results = [...(await postLinks('protein'))].filter((h) => !control.has(h) && !/[?&]s=|\/page\/\d+/.test(h));
+  expect(results.length, '?s=protein returns at least one result beyond the no-results page').toBeGreaterThanOrEqual(1);
+  test.info().annotations.push({ type: 'search', description: `${results.length} result links for "protein", e.g. ${results.slice(0, 3).join(', ')}` });
 });
 
 test('TC-FR1-03-AS-05', async ({ page }) => {
@@ -106,7 +120,8 @@ test('TC-FR1-03-AS-06', async ({ page, request }) => {
   await page.setViewportSize(WIDTHS.desktop); await page.goto(home(), { waitUntil: 'networkidle' });
   expect(errors, 'no console errors on /').toEqual([]);
   const origin = new URL(stack.url).origin;
-  const hrefs = [...new Set(await page.locator('a[href]').evaluateAll((as) => as.map((x) => x.href)))].filter((h) => h.startsWith(origin) && !h.includes('#'));
+  // every same-origin link, fragment stripped (external links are crawled on staging, OI-1 — registry known deviation)
+  const hrefs = [...new Set(await page.locator('a[href]').evaluateAll((as) => as.map((x) => x.href.split('#')[0])))].filter((h) => h.startsWith(origin));
   expect(hrefs.length).toBeGreaterThan(10);
   const bad = [];
   for (const h of hrefs) { const r = await request.get(h, { maxRedirects: 5 }); if (r.status() >= 400) bad.push(`${r.status()} ${h}`); }
