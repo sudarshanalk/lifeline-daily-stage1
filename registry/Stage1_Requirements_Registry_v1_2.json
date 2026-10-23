@@ -502,7 +502,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "hybrid",
-      "status": "ready",
+      "status": "verified",
       "depends_on": [
         "FR1-01"
       ],
