@@ -6,9 +6,32 @@
   "owner": "Lifeline Daily",
   "versions": [
     {
-      "version_hash": "89e81f0ba2485db036faa7a754c9ef1caa858c1043e9ddce324937103151e877",
-      "captured_at": "2026-10-23T21:04:35Z",
+      "version_hash": "0f2f1e5d6f17ca272fe1f4bd6ed5b98858938bf11bbc3c5de9a00c9e4d1d7191",
+      "captured_at": "2026-10-23T21:28:31Z",
       "is_live": true,
+      "size_bytes": 50118,
+      "engine_hashes": {
+        "submit-protein.php": "a8f575f907cdf49f9341e23b0ba7ca2b72259d46296a268eeaaa1fa404ceb64f",
+        "api/mailer.php": "40fc7099b728886bd565d611c26e6f712bb9663691611cbb6d671bba44a83f5e",
+        "api/validate.php": "0d02f48fefedc039308eaa86bd7ba97681c23abae7ac0b1d718cafe64b29815b",
+        "api/render.php": "4cff985b6c5b3e54d8f8e476a4a88c8d3e2d998db519a115484b73e3d112f298",
+        "api/ratelimit.php": "031b03a79bdf2b81cc6f269330a50da2eb9c919cc97b161b1142a1fa4800c9aa",
+        "api/templates.php": "ca2aea12f82ba48d66050aa634dc2fe795a9ad2a1a083c1079f299466d826050",
+        "api/templates-protein.php": "daa9428655d79dcef46ac3dff5a245010ec1bec1acfd10b0959217c83091cd5b",
+        "js:BANDS": "a2e1b967d2696a33710f7c1f9d8f9c3338d427bc599d639fe8d74b8d4f56385c",
+        "js:CEILING": "bb578b99cda544f9b1af45b3a45ccbbc2c2933ffce5374df147f8fcf71854ba1",
+        "js:DIET_MULT": "8224825450d86c01bca2fece8c10db51cb85aabebb817eaae56be66c7d2a0553",
+        "js:PREG_GKG": "62d81d65bdd5f3d533831d10ec7ba76da27c42a1ae99215d528042a0e8292ef6",
+        "js:cutoffs": "a6d234290c4b21f8c76afd6a5eed118db41c8ac9c634b57a7dec7dbee8f1dfb0",
+        "js:computeProtein": "13fbb25ea42ced64ce4a94c71b2ac8040460e5cef0aa42dff53deb3bc9ca96c8",
+        "js:clampMeal": "bb05423509ad04e9c1d2af4fb45aa70a6734edf44f643b3d77ecdb2a20dbfbe4"
+      },
+      "notes": "Shell change; frozen engine objects unchanged (engine-freeze)"
+    },
+    {
+      "version_hash": "89e81f0ba2485db036faa7a754c9ef1caa858c1043e9ddce324937103151e877",
+      "captured_at": "2026-10-23T21:00:02Z",
+      "is_live": false,
       "size_bytes": 50063,
       "engine_hashes": {
         "submit-protein.php": "a8f575f907cdf49f9341e23b0ba7ca2b72259d46296a268eeaaa1fa404ceb64f",

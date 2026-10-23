@@ -46,6 +46,14 @@ function lld_tools_tool_status(string $slug): string {
 function lld_tools_status_label(string $status): string {
   return ['active' => 'Available now', 'withdrawn' => 'Temporarily unavailable', 'label_only' => 'Planned'][$status] ?? 'Available now';
 }
+/* User-facing plugin copy (DEC-25, DEC-72): status.json carries a copy KEY in `message`; the text rendered is always this
+ * approved copy (mirrors MESSAGES.unavailable.body in both tools / copy deck `unavailable.body`), never free text from the file. */
+const LLD_TOOLS_MESSAGES = [
+  'unavailable.body' => 'We have paused this tool while we check it. Nothing about your health is affected by the pause — please come back soon, or read on below.',
+];
+function lld_tools_message(?string $key): string {
+  return LLD_TOOLS_MESSAGES['unavailable.body'];
+}
 
 /* ---------------------------------------------------------------- cards (SCH-04) ---------------------------------- */
 function lld_tools_cards(): array {
@@ -101,8 +109,7 @@ function lld_tools_render_tool(array $atts = []): string {
   $s = lld_tools_settings();
   $status = lld_tools_tool_status($slug);
   if ($status !== 'active') {
-    $msg = lld_tools_status()['tools'][$slug]['message'] ?? null;
-    $text = $msg ?: 'This tool is temporarily unavailable while we check it. Please come back soon.';
+    $text = lld_tools_message(lld_tools_status()['tools'][$slug]['message'] ?? null);
     $post = get_post((int)$c['related_post_id']);
     $out = '<div class="lld-tool-unavailable" data-test="unavailable" data-tool="' . esc_attr($slug) . '" role="status">';
     $out .= '<h2>' . esc_html($c['name']) . ': ' . esc_html(lld_tools_status_label($status)) . '</h2><p>' . esc_html($text) . '</p>';
@@ -120,9 +127,18 @@ function lld_tools_render_tool(array $atts = []): string {
 add_shortcode('lld_tool', 'lld_tools_render_tool');
 
 /* ---------------------------------------------------------------- [lld_tool_version slug=…] (FR1-04 AS-05, FR1-06) */
+/* The approved version of a tool is the SHA-256 of its repository file, which carries the `__LLD_ORIGIN__` placeholder; the
+ * deploy (deploy/prepare.py, DEC-34) substitutes the environment origin before upload, so the deployed file is hashed with that
+ * origin normalised back to the placeholder. In the harness the file is served unsubstituted and the two hashes coincide. */
+function lld_tools_origin(): string {
+  return defined('LLD_TOOLS_ORIGIN') ? (string)LLD_TOOLS_ORIGIN : untrailingslashit(home_url());
+}
 function lld_tools_deployed_version(string $slug): string {
   $file = lld_tools_docroot() . '/tools/' . lld_tools_file($slug);
-  return is_readable($file) ? hash_file('sha256', $file) : '';
+  if (!is_readable($file)) return '';
+  $raw = file_get_contents($file);
+  $origin = lld_tools_origin();
+  return hash('sha256', $origin !== '' ? str_replace($origin, '__LLD_ORIGIN__', $raw) : $raw);
 }
 function lld_tools_render_version(array $atts = []): string {
   $atts = shortcode_atts(['slug' => ''], $atts, 'lld_tool_version');
@@ -186,10 +202,11 @@ if (defined('WP_CLI') && WP_CLI) {
       }
       WP_CLI::success('pages applied');
     }
-    /** wp lld status get [<slug>] | status set <slug> <active|withdrawn> [--version=<sha256>] [--message=<copy key>] [--force]
-     *  FR1-15 (DEC-10, DEC-24, DEC-31): the only writer of tools/status.json. `active` requires --version equal to the SHA-256
-     *  of the deployed tool file (the approved version that CI's provenance-check gated); otherwise the command exits non-zero
-     *  and the file is untouched. Writes atomically, then purges the configured LiteSpeed targets. */
+    /** wp lld status get [<slug>] | status set <slug> <active|withdrawn> [--version=<sha256>] [--message=<copy key>]
+     *  FR1-15 (DEC-10, DEC-24, DEC-31, DEC-71): the only writer of tools/status.json. `active` requires --version equal to the
+     *  approved version — the SHA-256 of the deployed tool file with the environment origin normalised back to __LLD_ORIGIN__
+     *  (= approvals/<slug>.json version_hash, which CI's provenance-check gated); there is no override. Otherwise the command
+     *  exits non-zero and the file is untouched. Writes atomically, then purges the configured LiteSpeed targets. */
     public function status(array $args, array $assoc) {
       $sub = $args[0] ?? 'get';
       $s = lld_tools_status();
@@ -207,7 +224,7 @@ if (defined('WP_CLI') && WP_CLI) {
         $version = (string)($assoc['version'] ?? '');
         if (!preg_match('/^[0-9a-f]{64}$/', $version)) WP_CLI::error('--version=<sha256 of the approved tool file> is required to set active');
         $deployed = lld_tools_deployed_version($slug);
-        if (empty($assoc['force']) && $version !== $deployed) WP_CLI::error("version $version is not the deployed file's hash (" . ($deployed ?: 'unreadable') . "); only an approved, deployed version can be activated (DEC-10)");
+        if ($version !== $deployed) WP_CLI::error("version $version is not an approved version of the deployed tool file (approved hash of the deployed file: " . ($deployed ?: 'unreadable') . "); only an approved, deployed version can be activated (DEC-10, DEC-71)");
         $entry['status'] = 'active'; $entry['approved_version'] = $version; $entry['message'] = null; $entry['since'] = gmdate('Y-m-d\TH:i:s\Z');
       } else {
         $entry['status'] = 'withdrawn'; $entry['message'] = isset($assoc['message']) ? (string)$assoc['message'] : 'unavailable.' . $slug; $entry['since'] = gmdate('Y-m-d\TH:i:s\Z');
