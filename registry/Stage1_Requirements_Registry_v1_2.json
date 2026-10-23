@@ -1269,7 +1269,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "auto",
-      "status": "ready",
+      "status": "verified",
       "depends_on": [
         "FR1-01"
       ],

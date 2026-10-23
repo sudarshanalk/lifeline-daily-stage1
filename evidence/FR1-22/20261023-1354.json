@@ -1,8 +1,8 @@
 {
-  "ev_id": "EV-FR1-22-20261023-1343",
+  "ev_id": "EV-FR1-22-20261023-1354",
   "req_id": "FR1-22",
   "tc_id": "TC-FR1-22",
-  "commit": "a1025638fce6d4a1af5f0a93d7ab2c6b5f833691",
+  "commit": "e42d8cd52db2d7dcc1fefcc38570cb3de78c6cb2",
   "tool_hashes": {
     "protein": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
     "diabetes": "27c0e33ce3b98aea495a2f13fca112e32007d9d478ab30ee70401a39ab496292"
@@ -219,6 +219,24 @@
       "oracle": "characterisation"
     },
     {
+      "assertion": "TC-FR1-20-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-20-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-20-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
       "assertion": "SAF-DM-01",
       "outcome": "pass",
       "artefact": "artefacts/vitest.json",
@@ -277,30 +295,17 @@
       "outcome": "pass",
       "artefact": "artefacts/vitest.json",
       "oracle": "characterisation"
-    },
-    {
-      "assertion": "TC-FR1-20-AS-01",
-      "outcome": "pass",
-      "artefact": "artefacts/vitest.json",
-      "oracle": "characterisation"
-    },
-    {
-      "assertion": "TC-FR1-20-AS-02",
-      "outcome": "pass",
-      "artefact": "artefacts/vitest.json",
-      "oracle": "characterisation"
-    },
-    {
-      "assertion": "TC-FR1-20-AS-03",
-      "outcome": "pass",
-      "artefact": "artefacts/vitest.json",
-      "oracle": "characterisation"
     }
   ],
   "mutations": [],
   "red_run": "local-20261023-1341",
-  "green_run": "local-20261023-1343",
+  "green_run": "local-20261023-1354",
+  "reviewer": {
+    "agent": "P-C",
+    "verdict": "PASS",
+    "report": "https://github.com/sudarshanalk/lifeline-daily-stage1/pull/7 (P-C review, run review-20261023-1447)"
+  },
   "human_gate": null,
   "started_at": "2026-10-23T13:40:00Z",
-  "finished_at": "2026-10-23T13:45:12Z"
+  "finished_at": "2026-10-23T13:54:07Z"
 }
