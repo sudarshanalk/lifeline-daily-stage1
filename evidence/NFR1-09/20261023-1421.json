@@ -18,7 +18,7 @@
     {
       "assertion": "TC-NFR1-09-AS-02",
       "outcome": "pass",
-      "artefact": "structural job set + strict check-run inspection of the last merged PR against the jobs its own workflows declared (gh api)",
+      "artefact": "structural job set + strict check-run inspection of the last merged PR against the jobs its own workflows declared (gh api) | runner note: first Actions runs failed with HTTP 403 from the default GITHUB_TOKEN (pulls/check-runs read) \u2014 an environment permission, not a test regression; fixed by job-level permissions (contents, pull-requests, checks: read)",
       "oracle": "none"
     },
     {
