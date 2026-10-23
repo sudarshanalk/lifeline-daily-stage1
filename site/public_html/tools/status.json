@@ -1,0 +1,24 @@
+{
+  "updated_at": "2026-10-23T12:00:00Z",
+  "tools": {
+    "protein": {
+      "status": "active",
+      "approved_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "message": null,
+      "since": null
+    },
+    "diabetes": {
+      "status": "active",
+      "approved_version": "27c0e33ce3b98aea495a2f13fca112e32007d9d478ab30ee70401a39ab496292",
+      "message": null,
+      "since": null
+    }
+  },
+  "labels": [
+    {
+      "slug": "healthy-weight",
+      "label": "Healthy weight (planned)",
+      "status": "label_only"
+    }
+  ]
+}

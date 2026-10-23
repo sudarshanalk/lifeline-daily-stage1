@@ -1,0 +1,38 @@
+# /tools/ — managed by Git (site/public_html/tools/.htaccess), deployed by deploy/deploy.sh.
+# FR1-20 cache control (DEC-10, DEC-31). Embed/CSP headers are in the managed root block (.htaccess.lld, DEC-28).
+
+# Never list the directory; the backend folder below has its own deny-all .htaccess.
+Options -Indexes
+
+# LiteSpeed: nothing under /tools/ goes through the page cache (DEC-31). Belt and braces: the server directive
+# plus the response header the LiteSpeed Cache plugin honours. A withdrawal must be visible within 60 s.
+<IfModule LiteSpeed>
+  CacheDisable public /tools/
+</IfModule>
+<IfModule mod_headers.c>
+  Header always set X-LiteSpeed-Cache-Control "no-cache"
+
+  # Tool pages (and the embed helper): revalidate on every load against the ETag below.
+  <FilesMatch "\.(html|js)$">
+    Header set Cache-Control "no-cache, must-revalidate"
+  </FilesMatch>
+
+  # Withdrawal switch: never cached anywhere (DEC-10, FR1-20).
+  <Files "status.json">
+    Header always set Cache-Control "no-store"
+  </Files>
+
+  # Endpoints: health results are never cacheable, whatever the status code.
+  <FilesMatch "^submit(-protein)?\.php$">
+    Header always set Cache-Control "no-store"
+  </FilesMatch>
+</IfModule>
+
+# The switch is explicitly allowed so no broader deny can ever hide it (DEC-10).
+<Files "status.json">
+  Require all granted
+</Files>
+
+# Weak validator for the static files (Apache/LiteSpeed default, stated explicitly so the ETag assertion
+# does not depend on server defaults).
+FileETag MTime Size

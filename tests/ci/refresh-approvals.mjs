@@ -3,11 +3,13 @@
 //   approvals/<slug>.json  → version_hash (sha256 of the tool page), copy_hashes (aggregate per source)
 //   approvals/copy.json    → per-key hashes of MESSAGES and templates (SCH-16); inline/pages untouched
 //   copy/inventory.json    → enumeration of every copy key with its source locator
-//   manifests/<slug>.json  → js:* frozen-object hashes on the is_live version (file hashes untouched)
+//   manifests/<slug>.json  → js:* frozen-object hashes on the is_live version (file hashes untouched); a changed
+//                            tool page gets a new is_live version entry (LLD_VERSION_NOTE sets its notes)
+//   site/public_html/tools/status.json → approved_version per tool (the Git template of the switch)
 // Prose fields (intended_use, limitations, sign-off…) are never changed here. Run after any shell change
 // to a tool page; the diff is the "version_hash updated in the same PR" evidence the SRS asks for.
 // Usage: node tests/ci/refresh-approvals.mjs [--check]   (--check: exit 1 if anything would change)
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, writeFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ROOT, TOOL_FILES, toolPath } from '../lib/paths.mjs';
 import { sha256File } from '../lib/hash.mjs';
@@ -34,10 +36,23 @@ for (const slug of ['protein', 'diabetes']) {
   write(`approvals/${slug}.json`, approval);
 
   const manifest = read(`manifests/${slug}.json`);
-  const live = manifest.versions.find((v) => v.is_live);
+  let live = manifest.versions.find((v) => v.is_live);
   const fileHashes = Object.fromEntries(Object.entries(live.engine_hashes).filter(([k]) => !k.startsWith('js:')));
+  if (live.version_hash !== approval.version_hash) {
+    // shell change: record a new live version (SCH-02) at index 0; the previous one stays as history (is_live false)
+    live.is_live = false;
+    live = { version_hash: approval.version_hash, captured_at: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'), is_live: true,
+      size_bytes: statSync(toolPath(slug)).size, engine_hashes: {}, notes: process.env.LLD_VERSION_NOTE || 'Shell change; frozen engine objects unchanged (engine-freeze)' };
+    manifest.versions.unshift(live);
+  }
   live.engine_hashes = { ...fileHashes, ...frozenHashes(slug) };
   write(`manifests/${slug}.json`, manifest);
+
+  // the Git template of the withdrawal switch names the approved version (SCH-08; installed once by hand, DEC-10)
+  const statusPath = 'site/public_html/tools/status.json';
+  const status = read(statusPath);
+  status.tools[slug].approved_version = approval.version_hash;
+  write(statusPath, status);
 }
 
 const copyRecord = (() => { try { return read('approvals/copy.json'); } catch { return { inline: {}, pages: {}, reviewer: 'pending (OI-8)', date: '2026-10-23', decision: 'pending' }; } })();
