@@ -1,0 +1,106 @@
+{
+  "group": "BMI",
+  "tool": "protein",
+  "fixtures": [
+    {
+      "id": "FX-PR-BMI-01",
+      "purpose": "BMI 29.9 actual",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 91.5,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-BMI-02",
+      "purpose": "BMI 30.04 adjusted 24.9",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 92.0,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-BMI-03",
+      "purpose": "adjusted 22.9",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 92.0,
+        "ethnicity": "Indian",
+        "activity": "moderate",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-BMI-04",
+      "purpose": "adjusted second",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 160,
+        "weightKg": 77,
+        "ethnicity": "Indian",
+        "activity": "moderate",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    }
+  ]
+}

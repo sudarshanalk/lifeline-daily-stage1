@@ -1,0 +1,89 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "SCH-05",
+  "title": "Fixture file",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "group": {
+      "type": "string"
+    },
+    "tool": {
+      "enum": [
+        "protein",
+        "diabetes",
+        "site",
+        "mail"
+      ]
+    },
+    "fixtures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "inputs",
+          "oracle",
+          "status"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^FX-(PR|DM|WP|MAIL)(-[A-Z0-9]+)*-\\d{2}$|^FX-WP-(URLS|USERS|TIDY)$"
+          },
+          "purpose": {
+            "type": "string"
+          },
+          "inputs": {
+            "type": "object"
+          },
+          "expected": {
+            "type": [
+              "object",
+              "null"
+            ]
+          },
+          "oracle": {
+            "enum": [
+              "characterisation",
+              "clinical",
+              "none"
+            ]
+          },
+          "source_version": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "pattern": "^[0-9a-f]{64}$"
+              }
+            ]
+          },
+          "reviewer": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "enum": [
+              "pending",
+              "recorded",
+              "signed"
+            ]
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "group",
+    "tool",
+    "fixtures"
+  ]
+}

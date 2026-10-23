@@ -1,0 +1,222 @@
+{
+  "group": "INV",
+  "tool": "protein",
+  "fixtures": [
+    {
+      "id": "FX-PR-INV-01",
+      "purpose": "age 17",
+      "inputs": {
+        "units": "metric",
+        "age": 17,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 75,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": {
+        "error": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-INV-02",
+      "purpose": "age 100",
+      "inputs": {
+        "units": "metric",
+        "age": 100,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 75,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": {
+        "error": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-INV-03",
+      "purpose": "height 139",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 139,
+        "weightKg": 75,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": {
+        "error": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-INV-04",
+      "purpose": "height 211",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 211,
+        "weightKg": 75,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": {
+        "error": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-INV-05",
+      "purpose": "weight below min",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 20,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": {
+        "error": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-INV-06",
+      "purpose": "weight above max",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 400,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": {
+        "error": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-INV-07",
+      "purpose": "sex missing",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": null,
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 75,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": {
+        "error": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-INV-08",
+      "purpose": "kidney missing",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 75,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": null,
+        "liver": "no"
+      },
+      "expected": {
+        "error": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    }
+  ]
+}

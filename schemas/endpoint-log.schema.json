@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "SCH-07",
+  "title": "Endpoint log line",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "ts": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tool": {
+      "type": "string",
+      "enum": [
+        "protein",
+        "diabetes"
+      ]
+    },
+    "outcome": {
+      "enum": [
+        "sent",
+        "rejected_validation",
+        "rejected_rate",
+        "honeypot",
+        "smtp_error",
+        "withdrawn"
+      ]
+    },
+    "ip_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    }
+  },
+  "required": [
+    "ts",
+    "tool",
+    "outcome",
+    "ip_hash"
+  ]
+}

@@ -1,0 +1,181 @@
+{
+  "group": "INV",
+  "tool": "diabetes",
+  "fixtures": [
+    {
+      "id": "FX-DM-INV-01",
+      "purpose": "sex missing",
+      "inputs": {
+        "units": "metric",
+        "sex": null,
+        "ageBand": 47,
+        "heightCm": 170,
+        "weightKg": 75,
+        "ethn": "Indian",
+        "smoke": "Non",
+        "family": [],
+        "htn": 0,
+        "cvd": 0,
+        "gdm": 0,
+        "pcos": 0,
+        "learn": 0,
+        "psy": 0,
+        "ster": 0,
+        "stat": 0,
+        "apsy": 0,
+        "activity": "moderate",
+        "waistCm": null,
+        "hasSym": "no",
+        "symptoms": [],
+        "emergency": false
+      },
+      "expected": {
+        "error": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-DM-INV-02",
+      "purpose": "height 139",
+      "inputs": {
+        "units": "metric",
+        "sex": "Male",
+        "ageBand": 47,
+        "heightCm": 139,
+        "weightKg": 75,
+        "ethn": "Indian",
+        "smoke": "Non",
+        "family": [],
+        "htn": 0,
+        "cvd": 0,
+        "gdm": 0,
+        "pcos": 0,
+        "learn": 0,
+        "psy": 0,
+        "ster": 0,
+        "stat": 0,
+        "apsy": 0,
+        "activity": "moderate",
+        "waistCm": null,
+        "hasSym": "no",
+        "symptoms": [],
+        "emergency": false
+      },
+      "expected": {
+        "error": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-DM-INV-03",
+      "purpose": "weight 181",
+      "inputs": {
+        "units": "metric",
+        "sex": "Male",
+        "ageBand": 47,
+        "heightCm": 170,
+        "weightKg": 181,
+        "ethn": "Indian",
+        "smoke": "Non",
+        "family": [],
+        "htn": 0,
+        "cvd": 0,
+        "gdm": 0,
+        "pcos": 0,
+        "learn": 0,
+        "psy": 0,
+        "ster": 0,
+        "stat": 0,
+        "apsy": 0,
+        "activity": "moderate",
+        "waistCm": null,
+        "hasSym": "no",
+        "symptoms": [],
+        "emergency": false
+      },
+      "expected": {
+        "error": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-DM-INV-04",
+      "purpose": "ethnicity missing",
+      "inputs": {
+        "units": "metric",
+        "sex": "Male",
+        "ageBand": 47,
+        "heightCm": 170,
+        "weightKg": 75,
+        "ethn": null,
+        "smoke": "Non",
+        "family": [],
+        "htn": 0,
+        "cvd": 0,
+        "gdm": 0,
+        "pcos": 0,
+        "learn": 0,
+        "psy": 0,
+        "ster": 0,
+        "stat": 0,
+        "apsy": 0,
+        "activity": "moderate",
+        "waistCm": null,
+        "hasSym": "no",
+        "symptoms": [],
+        "emergency": false
+      },
+      "expected": {
+        "error": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-DM-INV-05",
+      "purpose": "ageBand missing",
+      "inputs": {
+        "units": "metric",
+        "sex": "Male",
+        "ageBand": null,
+        "heightCm": 170,
+        "weightKg": 75,
+        "ethn": "Indian",
+        "smoke": "Non",
+        "family": [],
+        "htn": 0,
+        "cvd": 0,
+        "gdm": 0,
+        "pcos": 0,
+        "learn": 0,
+        "psy": 0,
+        "ster": 0,
+        "stat": 0,
+        "apsy": 0,
+        "activity": "moderate",
+        "waistCm": null,
+        "hasSym": "no",
+        "symptoms": [],
+        "emergency": false
+      },
+      "expected": {
+        "error": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    }
+  ]
+}

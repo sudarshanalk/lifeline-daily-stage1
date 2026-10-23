@@ -1,0 +1,261 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "SCH-01",
+  "title": "Requirements registry",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "version": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "baseline": {
+      "type": "string"
+    },
+    "supersedes": {
+      "type": "string"
+    },
+    "schema": {
+      "type": "string"
+    },
+    "stages": {
+      "type": "array"
+    },
+    "actors": {
+      "type": "array"
+    },
+    "components": {
+      "type": "array"
+    },
+    "use_cases": {
+      "type": "array"
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "category",
+          "title",
+          "priority",
+          "type",
+          "automation",
+          "status",
+          "depends_on",
+          "components",
+          "test_case",
+          "assertions",
+          "fixtures",
+          "decisions",
+          "human_gate",
+          "mutations"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^(FR1|NFR1|UI1)-\\d{2}$"
+          },
+          "category": {
+            "enum": [
+              "functional",
+              "nonfunctional",
+              "ui"
+            ]
+          },
+          "title": {
+            "type": "string"
+          },
+          "priority": {
+            "enum": [
+              "MUST",
+              "SHOULD"
+            ]
+          },
+          "type": {
+            "enum": [
+              "behaviour",
+              "process"
+            ]
+          },
+          "automation": {
+            "enum": [
+              "auto",
+              "hybrid"
+            ]
+          },
+          "status": {
+            "enum": [
+              "draft",
+              "ready",
+              "in_progress",
+              "review",
+              "verified",
+              "blocked",
+              "accepted",
+              "released",
+              "deferred",
+              "retired"
+            ]
+          },
+          "depends_on": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "components": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^CMP-\\d{2}$"
+            }
+          },
+          "must_not_touch": {
+            "type": "array"
+          },
+          "use_cases": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^UC1-\\d{2}$"
+            }
+          },
+          "test_case": {
+            "type": "string",
+            "pattern": "^TC-(FR1|NFR1|UI1)-\\d{2}$"
+          },
+          "assertions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^TC-(FR1|NFR1|UI1)-\\d{2}-AS-\\d{2}$"
+            }
+          },
+          "fixtures": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "decisions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^DEC-\\d{2}$"
+            }
+          },
+          "human_gate": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "type": "string",
+                "pattern": "^HG-0[1-3]$"
+              }
+            ]
+          },
+          "mutations": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^MUT-\\d{2}$"
+            }
+          },
+          "evidence_dir": {
+            "type": "string"
+          },
+          "spec": {
+            "type": "string"
+          },
+          "tests": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "question",
+          "selected",
+          "status",
+          "ratify_at"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^DEC-\\d{2}$"
+          },
+          "question": {
+            "type": "string"
+          },
+          "selected": {
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "default",
+              "ratified",
+              "overridden",
+              "open"
+            ]
+          },
+          "ratify_at": {
+            "anyOf": [
+              {
+                "type": "null"
+              },
+              {
+                "enum": [
+                  "HG-01",
+                  "HG-02",
+                  "HG-03"
+                ]
+              }
+            ]
+          },
+          "decided_on": {
+            "type": "string",
+            "format": "date"
+          }
+        }
+      }
+    },
+    "human_gates": {
+      "type": "array"
+    },
+    "release_gates": {
+      "type": "array"
+    },
+    "oracles": {
+      "type": "array"
+    },
+    "mutations": {
+      "type": "array"
+    },
+    "source_documents": {
+      "type": "array"
+    },
+    "live_hashes_2026_10_20": {
+      "type": "object"
+    },
+    "open_blockers": {
+      "type": "array"
+    }
+  },
+  "required": [
+    "version",
+    "requirements",
+    "decisions",
+    "human_gates",
+    "mutations"
+  ]
+}

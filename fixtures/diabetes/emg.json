@@ -1,0 +1,77 @@
+{
+  "group": "EMG",
+  "tool": "diabetes",
+  "fixtures": [
+    {
+      "id": "FX-DM-EMG-01",
+      "purpose": "emergency low risk",
+      "inputs": {
+        "units": "metric",
+        "sex": "Male",
+        "ageBand": 47,
+        "heightCm": 170,
+        "weightKg": 75,
+        "ethn": "Indian",
+        "smoke": "Non",
+        "family": [],
+        "htn": 0,
+        "cvd": 0,
+        "gdm": 0,
+        "pcos": 0,
+        "learn": 0,
+        "psy": 0,
+        "ster": 0,
+        "stat": 0,
+        "apsy": 0,
+        "activity": "moderate",
+        "waistCm": null,
+        "hasSym": "yes",
+        "symptoms": [],
+        "emergency": true
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-DM-EMG-02",
+      "purpose": "emergency high risk",
+      "inputs": {
+        "units": "metric",
+        "sex": "Male",
+        "ageBand": 72,
+        "heightCm": 170,
+        "weightKg": 101.2,
+        "ethn": "Bangladeshi",
+        "smoke": "Non",
+        "family": [
+          "mother",
+          "father"
+        ],
+        "htn": 0,
+        "cvd": 0,
+        "gdm": 0,
+        "pcos": 0,
+        "learn": 0,
+        "psy": 0,
+        "ster": 0,
+        "stat": 0,
+        "apsy": 0,
+        "activity": "moderate",
+        "waistCm": null,
+        "hasSym": "yes",
+        "symptoms": [
+          "thirst"
+        ],
+        "emergency": true
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    }
+  ]
+}

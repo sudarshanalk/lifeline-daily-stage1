@@ -1,0 +1,69 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "SCH-05b",
+  "title": "Article tool link map",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "generated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "rule_version": {
+      "type": "string"
+    },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "wp_post_id",
+          "decision",
+          "source"
+        ],
+        "properties": {
+          "wp_post_id": {
+            "type": "integer"
+          },
+          "decision": {
+            "enum": [
+              "protein",
+              "diabetes",
+              "none"
+            ]
+          },
+          "source": {
+            "enum": [
+              "rule",
+              "override"
+            ]
+          },
+          "categories": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "review_status": {
+            "enum": [
+              "approved",
+              "pending",
+              "superseded",
+              null
+            ]
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "generated_at",
+    "links"
+  ]
+}

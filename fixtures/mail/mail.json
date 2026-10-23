@@ -1,0 +1,455 @@
+{
+  "group": "MAIL",
+  "tool": "mail",
+  "fixtures": [
+    {
+      "id": "FX-MAIL-01",
+      "purpose": "protein standard",
+      "inputs": {
+        "tool": "protein",
+        "firstName": "Zq7Sentinel",
+        "email": "zq7sentinel@example.test",
+        "consent": true,
+        "suppressed": false,
+        "targetG": 105,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.4,
+        "perMeal": 35,
+        "meals": 3,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "timestamp": "2026-11-01T10:00:00Z",
+        "company": ""
+      },
+      "expected": {
+        "status": 200,
+        "template": "protein_standard",
+        "mails": 1
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-MAIL-02",
+      "purpose": "diabetes standard",
+      "inputs": {
+        "tool": "diabetes-risk",
+        "firstName": "Zq7Sentinel",
+        "email": "zq7sentinel@example.test",
+        "consent": true,
+        "riskPercent": 4.2,
+        "riskBand": "Low",
+        "bmi": 26.0,
+        "whtr": null,
+        "idrsScore": null,
+        "idrsTier": null,
+        "symptomatic": false,
+        "emergency": false,
+        "measurements": {
+          "heightCm": 170,
+          "weightKg": 75,
+          "waistCm": null
+        },
+        "timestamp": "2026-11-01T10:00:00Z",
+        "company": ""
+      },
+      "expected": {
+        "status": 200,
+        "template": "diabetes_standard",
+        "mails": 1
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-MAIL-REN-01",
+      "purpose": "renal",
+      "inputs": {
+        "tool": "protein",
+        "firstName": "Zq7Sentinel",
+        "email": "zq7sentinel@example.test",
+        "consent": true,
+        "suppressed": true,
+        "targetG": null,
+        "lowG": null,
+        "highG": null,
+        "gPerKg": null,
+        "perMeal": null,
+        "meals": 3,
+        "sources": [],
+        "timestamp": "2026-11-01T10:00:00Z",
+        "company": ""
+      },
+      "expected": {
+        "status": 200,
+        "template": "protein_renal",
+        "mails": 1,
+        "no_digits_g": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-MAIL-REN-02",
+      "purpose": "renal forged numbers",
+      "inputs": {
+        "tool": "protein",
+        "firstName": "Zq7Sentinel",
+        "email": "zq7sentinel@example.test",
+        "consent": true,
+        "suppressed": true,
+        "targetG": 150,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.4,
+        "perMeal": 35,
+        "meals": 3,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "timestamp": "2026-11-01T10:00:00Z",
+        "company": ""
+      },
+      "expected": {
+        "status": 200,
+        "template": "protein_renal",
+        "mails": 1,
+        "no_digits_g": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-MAIL-EMG-01",
+      "purpose": "emergency",
+      "inputs": {
+        "tool": "diabetes-risk",
+        "firstName": "Zq7Sentinel",
+        "email": "zq7sentinel@example.test",
+        "consent": true,
+        "riskPercent": 3.2,
+        "riskBand": "Low",
+        "bmi": 26.0,
+        "whtr": null,
+        "idrsScore": null,
+        "idrsTier": null,
+        "symptomatic": false,
+        "emergency": true,
+        "measurements": {
+          "heightCm": 170,
+          "weightKg": 75,
+          "waistCm": null
+        },
+        "timestamp": "2026-11-01T10:00:00Z",
+        "company": ""
+      },
+      "expected": {
+        "status": 200,
+        "template": "diabetes_emergency",
+        "mails": 1,
+        "no_percent": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-MAIL-SYM-01",
+      "purpose": "symptomatic",
+      "inputs": {
+        "tool": "diabetes-risk",
+        "firstName": "Zq7Sentinel",
+        "email": "zq7sentinel@example.test",
+        "consent": true,
+        "riskPercent": 4.2,
+        "riskBand": "Low",
+        "bmi": 26.0,
+        "whtr": null,
+        "idrsScore": null,
+        "idrsTier": null,
+        "symptomatic": true,
+        "emergency": false,
+        "measurements": {
+          "heightCm": 170,
+          "weightKg": 75,
+          "waistCm": null
+        },
+        "timestamp": "2026-11-01T10:00:00Z",
+        "company": ""
+      },
+      "expected": {
+        "status": 200,
+        "template": "diabetes_symptomatic",
+        "mails": 1
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-MAIL-NEG-01",
+      "purpose": "consent false",
+      "inputs": {
+        "tool": "protein",
+        "firstName": "Zq7Sentinel",
+        "email": "zq7sentinel@example.test",
+        "consent": false,
+        "suppressed": false,
+        "targetG": 105,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.4,
+        "perMeal": 35,
+        "meals": 3,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "timestamp": "2026-11-01T10:00:00Z",
+        "company": ""
+      },
+      "expected": {
+        "status": 400,
+        "mails": 0
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-MAIL-NEG-02",
+      "purpose": "bad email",
+      "inputs": {
+        "tool": "protein",
+        "firstName": "Zq7Sentinel",
+        "email": "not-an-email",
+        "consent": true,
+        "suppressed": false,
+        "targetG": 105,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.4,
+        "perMeal": 35,
+        "meals": 3,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "timestamp": "2026-11-01T10:00:00Z",
+        "company": ""
+      },
+      "expected": {
+        "status": 400,
+        "mails": 0
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-MAIL-NEG-03",
+      "purpose": "honeypot",
+      "inputs": {
+        "tool": "protein",
+        "firstName": "Zq7Sentinel",
+        "email": "zq7sentinel@example.test",
+        "consent": true,
+        "suppressed": false,
+        "targetG": 105,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.4,
+        "perMeal": 35,
+        "meals": 3,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "timestamp": "2026-11-01T10:00:00Z",
+        "company": "x"
+      },
+      "expected": {
+        "status": 200,
+        "mails": 0,
+        "log_outcome": "honeypot"
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-MAIL-NEG-04",
+      "purpose": "oversize 9KB",
+      "inputs": {
+        "tool": "protein",
+        "firstName": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        "email": "zq7sentinel@example.test",
+        "consent": true,
+        "suppressed": false,
+        "targetG": 105,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.4,
+        "perMeal": 35,
+        "meals": 3,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "timestamp": "2026-11-01T10:00:00Z",
+        "company": ""
+      },
+      "expected": {
+        "status": [
+          400,
+          413
+        ],
+        "mails": 0
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-MAIL-NEG-05",
+      "purpose": "wrong content-type",
+      "inputs": {
+        "tool": "protein",
+        "firstName": "Zq7Sentinel",
+        "email": "zq7sentinel@example.test",
+        "consent": true,
+        "suppressed": false,
+        "targetG": 105,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.4,
+        "perMeal": 35,
+        "meals": 3,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "timestamp": "2026-11-01T10:00:00Z",
+        "company": "",
+        "_contentType": "text/plain"
+      },
+      "expected": {
+        "status": 400,
+        "mails": 0
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-MAIL-NEG-06",
+      "purpose": "xss name",
+      "inputs": {
+        "tool": "protein",
+        "firstName": "<img src=x onerror=alert(1)>",
+        "email": "zq7sentinel@example.test",
+        "consent": true,
+        "suppressed": false,
+        "targetG": 105,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.4,
+        "perMeal": 35,
+        "meals": 3,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "timestamp": "2026-11-01T10:00:00Z",
+        "company": ""
+      },
+      "expected": {
+        "status": 200,
+        "mails": 1,
+        "escaped": true
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-MAIL-NEG-07",
+      "purpose": "bad tool",
+      "inputs": {
+        "tool": "other",
+        "firstName": "Zq7Sentinel",
+        "email": "zq7sentinel@example.test",
+        "consent": true,
+        "suppressed": false,
+        "targetG": 105,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.4,
+        "perMeal": 35,
+        "meals": 3,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "timestamp": "2026-11-01T10:00:00Z",
+        "company": ""
+      },
+      "expected": {
+        "status": 400,
+        "mails": 0
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-MAIL-RATE-01",
+      "purpose": "6 posts same IP",
+      "inputs": {
+        "tool": "protein",
+        "firstName": "Zq7Sentinel",
+        "email": "zq7sentinel@example.test",
+        "consent": true,
+        "suppressed": false,
+        "targetG": 105,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.4,
+        "perMeal": 35,
+        "meals": 3,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "timestamp": "2026-11-01T10:00:00Z",
+        "company": "",
+        "_repeat": 6
+      },
+      "expected": {
+        "statuses": [
+          200,
+          200,
+          200,
+          200,
+          200,
+          429
+        ]
+      },
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    }
+  ]
+}

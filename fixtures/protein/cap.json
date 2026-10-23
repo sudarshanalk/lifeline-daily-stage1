@@ -1,0 +1,81 @@
+{
+  "group": "CAP",
+  "tool": "protein",
+  "fixtures": [
+    {
+      "id": "FX-PR-CAP-01",
+      "purpose": "vegan athlete capped",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 75,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "5+",
+        "goal": "build",
+        "diet": "vegan",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-CAP-02",
+      "purpose": "vegetarian resMid capped",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 75,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "3-4",
+        "goal": "maintain",
+        "diet": "vegetarian",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-CAP-03",
+      "purpose": "exactly 2.0 uncapped",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 75,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "5+",
+        "goal": "build",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    }
+  ]
+}

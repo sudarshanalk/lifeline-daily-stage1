@@ -1,0 +1,82 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "SCH-12",
+  "title": "Data-flow inventory",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "tool",
+          "key",
+          "classification",
+          "destinations",
+          "lawful_basis",
+          "retention"
+        ],
+        "properties": {
+          "tool": {
+            "type": "string",
+            "enum": [
+              "protein",
+              "diabetes"
+            ]
+          },
+          "key": {
+            "type": "string"
+          },
+          "classification": {
+            "enum": [
+              "identifier",
+              "health",
+              "technical"
+            ]
+          },
+          "destinations": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "screen",
+                "smtp",
+                "log",
+                "analytics",
+                "storage"
+              ]
+            }
+          },
+          "lawful_basis": {
+            "type": "string"
+          },
+          "article9_condition": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "retention": {
+            "type": "string"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "dpia_screening": {
+      "type": "string"
+    },
+    "reviewed_by": {
+      "type": "string"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "fields"
+  ]
+}
