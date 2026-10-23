@@ -1,0 +1,31 @@
+# DRAFT — finalise during deployment set-up (see deploy/DEPLOYMENT.md)
+name: deploy-staging
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+concurrency:
+  group: deploy-staging
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Install key
+        run: |
+          mkdir -p ~/.ssh && printf '%s\n' "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/lld_staging && chmod 600 ~/.ssh/lld_staging
+      - name: Deploy overlay
+        env:
+          DEPLOY_HOST: ${{ secrets.STAGING_SSH_HOST }}
+          DEPLOY_PORT: ${{ secrets.STAGING_SSH_PORT }}
+          DEPLOY_USER: ${{ secrets.STAGING_SSH_USER }}
+          DEPLOY_KEY_FILE: ~/.ssh/lld_staging
+          DEPLOY_DOCROOT: ${{ secrets.STAGING_DOCROOT }}
+          DEPLOY_URL: ${{ secrets.STAGING_URL }}
+        run: bash deploy/deploy.sh staging
+      - name: Upload deploy log
+        uses: actions/upload-artifact@v4
+        with: { name: deploy-log-staging, path: deploy/log/staging.jsonl, if-no-files-found: ignore }

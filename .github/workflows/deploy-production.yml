@@ -1,0 +1,51 @@
+# DRAFT — finalise during deployment set-up (see deploy/DEPLOYMENT.md)
+# Production deploys only from an rc-* tag, after the release-gate job verifies approvals/hg-03.json,
+# and only after the release owner approves the run in the "production" GitHub Environment.
+name: deploy-production
+on:
+  push:
+    tags: ['rc-*']
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+jobs:
+  release-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify release record and HG-03 approval for this tag
+        run: |
+          python3 - <<'EOF'
+          import json, os, sys
+          tag = os.environ["GITHUB_REF_NAME"]
+          rel = json.load(open(f"releases/{tag}.json"))
+          hg = json.load(open("approvals/hg-03.json"))
+          assert hg.get("decision") == "approved" and hg.get("tag") == tag, "HG-03 not approved for this tag"
+          for slug in ("protein", "diabetes"):
+              a = json.load(open(f"approvals/{slug}.json")); assert a["clinical_signoff"]["decision"] == "approved"
+              assert a["version_hash"] == rel["tool_hashes"][slug], f"{slug} hash in release record != approval"
+          print("release-gate OK for", tag)
+          EOF
+  deploy:
+    needs: release-gate
+    runs-on: ubuntu-latest
+    environment: production   # configure with a required reviewer (release owner)
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Install key
+        run: |
+          mkdir -p ~/.ssh && printf '%s\n' "${{ secrets.PROD_SSH_KEY }}" > ~/.ssh/lld_production && chmod 600 ~/.ssh/lld_production
+      - name: Deploy overlay
+        env:
+          DEPLOY_HOST: ${{ secrets.PROD_SSH_HOST }}
+          DEPLOY_PORT: ${{ secrets.PROD_SSH_PORT }}
+          DEPLOY_USER: ${{ secrets.PROD_SSH_USER }}
+          DEPLOY_KEY_FILE: ~/.ssh/lld_production
+          DEPLOY_DOCROOT: ${{ secrets.PROD_DOCROOT }}
+          DEPLOY_URL: https://lifelinedaily.com
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: bash deploy/deploy.sh production
+      - name: Upload deploy log
+        uses: actions/upload-artifact@v4
+        with: { name: deploy-log-production, path: deploy/log/production.jsonl, if-no-files-found: ignore }

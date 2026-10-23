@@ -1,7 +1,7 @@
 node_modules/
 .env
 *.local
-public_html/tools/api/config.php
+site/public_html/tools/api/config.php
 evidence/**/artefacts/*.log
 design/baselines/*.png
 .DS_Store

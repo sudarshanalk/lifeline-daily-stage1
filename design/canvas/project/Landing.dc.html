@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Daily Protein Target landing page</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#ffffff}
+a{color:#157a42}a:hover{color:#0f5a31}
+</style>
+</helmet>
+<div style="display: flex; flex-direction: column; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #ffffff">
+
+  <header style="display: flex; justify-content: center; border-bottom: 1px solid #e4eae6">
+    <div style="width: 100%; max-width: 1240px; display: flex; align-items: center; justify-content: space-between; padding: 22px 24px; box-sizing: border-box; flex-wrap: wrap; gap: 16px">
+      <a href="Main.dc.html" style="font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: #1c1c1c; text-decoration: none">Lifeline Daily</a>
+      <nav aria-label="Primary" style="display: flex; gap: 26px; font-size: 14px; font-weight: 600; flex-wrap: wrap">
+        <a href="#" style="color: #1c1c1c; text-decoration: none">Fitness</a><a href="#" style="color: #1c1c1c; text-decoration: none">Food &amp; Nutrition</a><a href="#" style="color: #1c1c1c; text-decoration: none">Health Conditions</a><a href="#" style="color: #1c1c1c; text-decoration: none">Wellness</a><a href="Hub.dc.html" style="color: #157a42; text-decoration: none; border-bottom: 2px solid #3fd07f; padding-bottom: 2px">Health Tools</a><a href="#" style="color: #1c1c1c; text-decoration: none">The Report</a>
+      </nav>
+    </div>
+  </header>
+
+  <div style="display: flex; justify-content: center; background: #f2f7f4">
+    <div style="width: 100%; max-width: 1240px; padding: 32px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+      <nav aria-label="Breadcrumb" style="font-size: 13px; color: #63706a"><a href="Main.dc.html" style="color: #63706a">Home</a> › <a href="Hub.dc.html" style="color: #63706a">Health Tools</a> › <span aria-current="page" style="color: #161a17; font-weight: 600">Daily Protein Target</span></nav>
+      <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+        <h1 style="margin: 0; font-size: 40px; font-weight: 800; letter-spacing: -0.02em">Daily Protein Target</h1>
+        <span style="font-size: 12px; font-weight: 700; color: #157a42; background: #eafaf0; border-radius: 999px; padding: 6px 12px">Available now</span>
+      </div>
+      <p style="margin: 0; font-size: 17px; line-height: 1.55; color: #3a4440; max-width: 760px">A guideline-based estimate of how much protein you need each day, and roughly how to spread it across meals. Takes about two minutes. Nothing you enter is stored.</p>
+      <div style="display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; color: #63706a"><span>Reviewed by <b style="color: #161a17">[Clinical reviewer]</b> on <b style="color: #161a17">[date]</b></span><span>·</span><span>Method version <b style="color: #161a17">a10d21b0</b></span></div>
+    </div>
+  </div>
+
+  <main style="display: flex; justify-content: center">
+    <div style="width: 100%; max-width: 1240px; padding: 36px 24px; box-sizing: border-box; display: flex; gap: 40px; flex-wrap: wrap">
+
+      <!-- Content column -->
+      <div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 36px">
+
+        <section aria-labelledby="s1"><h2 id="s1" style="margin: 0 0 10px; font-size: 22px; font-weight: 800">Purpose</h2><p style="margin: 0; font-size: 16px; line-height: 1.6; color: #3a4440">This tool estimates a daily protein target for general health. It collects every published intake band that applies to you, takes the most demanding one, adjusts for a plant-based diet, caps the result at 2.0 g per kg, and multiplies by a sensible basis weight.</p></section>
+
+        <section aria-labelledby="s2"><h2 id="s2" style="margin: 0 0 10px; font-size: 22px; font-weight: 800">Who it is for</h2><ul style="margin: 0; padding-left: 20px; font-size: 16px; line-height: 1.7; color: #3a4440"><li>Adults aged 18 and over.</li><li>Not for children, who have separate age-banded requirements.</li><li><b style="color: #161a17">Not for people with kidney disease.</b> National kidney guidelines recommend a reduced, supervised intake, so the tool gives no number and refers you to your renal team.</li></ul></section>
+
+        <section aria-labelledby="s3"><h2 id="s3" style="margin: 0 0 10px; font-size: 22px; font-weight: 800">What you will enter</h2><div style="display: flex; gap: 8px; flex-wrap: wrap">
+          <span style="font-size: 13px; background: #f2f7f4; border-radius: 999px; padding: 6px 12px">Age</span><span style="font-size: 13px; background: #f2f7f4; border-radius: 999px; padding: 6px 12px">Sex</span><span style="font-size: 13px; background: #f2f7f4; border-radius: 999px; padding: 6px 12px">Height &amp; weight (any units)</span><span style="font-size: 13px; background: #f2f7f4; border-radius: 999px; padding: 6px 12px">Ethnicity</span><span style="font-size: 13px; background: #f2f7f4; border-radius: 999px; padding: 6px 12px">Activity level</span><span style="font-size: 13px; background: #f2f7f4; border-radius: 999px; padding: 6px 12px">Resistance training</span><span style="font-size: 13px; background: #f2f7f4; border-radius: 999px; padding: 6px 12px">Goal</span><span style="font-size: 13px; background: #f2f7f4; border-radius: 999px; padding: 6px 12px">Diet</span><span style="font-size: 13px; background: #f2f7f4; border-radius: 999px; padding: 6px 12px">Meals per day</span><span style="font-size: 13px; background: #f2f7f4; border-radius: 999px; padding: 6px 12px">Kidney &amp; liver status</span><span style="font-size: 13px; background: #f2f7f4; border-radius: 999px; padding: 6px 12px">Pregnancy / breastfeeding</span>
+        </div></section>
+
+        <section aria-labelledby="s4"><h2 id="s4" style="margin: 0 0 10px; font-size: 22px; font-weight: 800">Limitations</h2><ul style="margin: 0; padding-left: 20px; font-size: 16px; line-height: 1.7; color: #3a4440"><li>A target for general health, not a prescription. The tool cannot see blood results, medication or medical history.</li><li>The plant-diet adjustment is an extrapolation from digestibility data, not a guideline figure, and is labelled as such in the result.</li><li>The 2.0 g/kg ceiling is deliberate. Higher figures exist only for supervised athletes in a calorie deficit.</li></ul></section>
+
+        <section aria-labelledby="s5"><h2 id="s5" style="margin: 0 0 10px; font-size: 22px; font-weight: 800">How it works</h2><p style="margin: 0 0 12px; font-size: 16px; line-height: 1.6; color: #3a4440">Every gram-per-kilogram figure traces to a named source. Nothing is invented or interpolated beyond what the source states.</p>
+          <div style="overflow-x: auto"><table style="border-collapse: collapse; font-size: 14px; min-width: 520px; width: 100%"><thead><tr style="text-align: left; color: #63706a"><th style="padding: 8px 10px; border-bottom: 1px solid #e4eae6; font-weight: 600">Source</th><th style="padding: 8px 10px; border-bottom: 1px solid #e4eae6; font-weight: 600">Population</th><th style="padding: 8px 10px; border-bottom: 1px solid #e4eae6; font-weight: 600">Figure</th></tr></thead><tbody>
+            <tr><td style="padding: 8px 10px; border-bottom: 1px solid #e4eae6">IOM / DRI (2005)</td><td style="padding: 8px 10px; border-bottom: 1px solid #e4eae6">General adults</td><td style="padding: 8px 10px; border-bottom: 1px solid #e4eae6">RDA 0.8 g/kg</td></tr>
+            <tr><td style="padding: 8px 10px; border-bottom: 1px solid #e4eae6">PROT-AGE / ESPEN</td><td style="padding: 8px 10px; border-bottom: 1px solid #e4eae6">Older adults; illness</td><td style="padding: 8px 10px; border-bottom: 1px solid #e4eae6">1.0–1.2; 1.2–1.5 g/kg</td></tr>
+            <tr><td style="padding: 8px 10px; border-bottom: 1px solid #e4eae6">ISSN (2017) · ACSM (2016)</td><td style="padding: 8px 10px; border-bottom: 1px solid #e4eae6">Exercising adults, athletes</td><td style="padding: 8px 10px; border-bottom: 1px solid #e4eae6">1.2–2.0 g/kg</td></tr>
+            <tr><td style="padding: 8px 10px; border-bottom: 1px solid #e4eae6">IOM / DRI</td><td style="padding: 8px 10px; border-bottom: 1px solid #e4eae6">Pregnancy · Lactation</td><td style="padding: 8px 10px; border-bottom: 1px solid #e4eae6">1.1 · 1.3 g/kg</td></tr>
+          </tbody></table></div>
+          <p style="margin: 12px 0 0; font-size: 13px; color: #63706a">Method version a10d21b0 · approved [date] · <a href="#">full methodology and approval record</a></p></section>
+
+        <section aria-labelledby="s6"><h2 id="s6" style="margin: 0 0 10px; font-size: 22px; font-weight: 800">Privacy</h2><p style="margin: 0; font-size: 16px; line-height: 1.6; color: #3a4440">The calculation runs in your browser. We store none of your answers and set no cookies. If you choose to email yourself a copy, your result is sent once and not retained. Our analytics count page views and completions only, never your answers. <a href="#">Privacy Policy</a></p></section>
+
+        <!-- Tool embed -->
+        <section aria-labelledby="s7" id="tool"><h2 id="s7" style="margin: 0 0 14px; font-size: 22px; font-weight: 800">Try the tool</h2>
+          <div style="border: 1px solid #e4eae6; border-radius: 18px; background: #f2f7f4; min-height: 380px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px; color: #63706a; font-size: 14px; text-align: center; padding: 24px">
+            <span style="font-weight: 600; color: #161a17">Embedded calculator (iframe, auto-height)</span>
+            <span>Source: lifelinedaily.com/tools/protein-requirement-tool.html · see the phone artboards for the form and result states</span>
+            <a href="ProteinForm.dc.html" style="margin-top: 8px; font-weight: 600">Open the tool page directly (no-script fallback link)</a>
+          </div></section>
+
+        <section aria-labelledby="s8"><h2 id="s8" style="margin: 0 0 14px; font-size: 22px; font-weight: 800">Related reading</h2>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px">
+            <article style="display: flex; flex-direction: column; gap: 8px"><div style="aspect-ratio: 16 / 10; border-radius: 12px; background: #e4eae6"></div><h3 style="margin: 0; font-size: 15px; line-height: 1.35; font-weight: 700"><a href="#" style="color: #161a17; text-decoration: none">How much protein do you really need?</a></h3><span style="font-size: 12px; color: #63706a">Reviewed 2026</span></article>
+            <article style="display: flex; flex-direction: column; gap: 8px"><div style="aspect-ratio: 16 / 10; border-radius: 12px; background: #e4eae6"></div><h3 style="margin: 0; font-size: 15px; line-height: 1.35; font-weight: 700"><a href="#" style="color: #161a17; text-decoration: none">Plant protein: getting enough on a vegan diet</a></h3><span style="font-size: 12px; color: #63706a">Reviewed 2026</span></article>
+            <article style="display: flex; flex-direction: column; gap: 8px"><div style="aspect-ratio: 16 / 10; border-radius: 12px; background: #e4eae6"></div><h3 style="margin: 0; font-size: 15px; line-height: 1.35; font-weight: 700"><a href="#" style="color: #161a17; text-decoration: none">Protein after 65: why the floor rises</a></h3><span style="font-size: 12px; color: #63706a">Reviewed 2026</span></article>
+          </div></section>
+      </div>
+
+      <!-- Side column -->
+      <aside style="flex: 1 1 300px; max-width: 360px; display: flex; flex-direction: column; gap: 16px">
+        <div style="border: 1px solid #e4eae6; border-radius: 18px; padding: 22px; display: flex; flex-direction: column; gap: 12px; background: #ffffff; box-shadow: 0 2px 6px rgba(20,40,30,.06)">
+          <span style="font-size: 13px; font-weight: 700; color: #157a42; text-transform: uppercase; letter-spacing: 0.06em">Quick facts</span>
+          <dl style="margin: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14px">
+            <div style="display: flex; justify-content: space-between; gap: 12px"><dt style="color: #63706a">Takes</dt><dd style="margin: 0; font-weight: 600">2 minutes</dd></div>
+            <div style="display: flex; justify-content: space-between; gap: 12px"><dt style="color: #63706a">Age range</dt><dd style="margin: 0; font-weight: 600">18–99</dd></div>
+            <div style="display: flex; justify-content: space-between; gap: 12px"><dt style="color: #63706a">Account</dt><dd style="margin: 0; font-weight: 600">Not needed</dd></div>
+            <div style="display: flex; justify-content: space-between; gap: 12px"><dt style="color: #63706a">Data stored</dt><dd style="margin: 0; font-weight: 600">None</dd></div>
+          </dl>
+          <a href="#tool" style="display: inline-flex; align-items: center; justify-content: center; min-height: 48px; border-radius: 12px; background: #1f9d57; color: #ffffff; font-weight: 700; text-decoration: none; font-size: 15px">Start the check</a>
+        </div>
+        <div style="border: 1px solid #e7c79a; background: #fdf4ea; border-radius: 18px; padding: 18px; display: flex; gap: 12px; align-items: flex-start; color: #7a4c12; font-size: 14px; line-height: 1.5">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: 0 0 auto"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>
+          <span><b>Not a diagnosis.</b> This is screening information. If you are unwell, speak to a clinician. <a href="#" style="color: #7a4c12; font-weight: 600">When to seek urgent care</a></span>
+        </div>
+        <div style="font-size: 13px; color: #63706a; line-height: 1.6; padding: 0 6px"><a href="#">Privacy Policy</a> · <a href="#">Terms</a> · <a href="#">About</a> · <a href="#">Contact</a> · <a href="#">Medical disclaimer</a></div>
+      </aside>
+    </div>
+  </main>
+
+  <footer style="background: #1c1c1c; color: #d9e0dc; display: flex; justify-content: center; margin-top: 24px">
+    <div style="width: 100%; max-width: 1240px; padding: 30px 24px; box-sizing: border-box; display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; font-size: 14px">
+      <span style="font-weight: 800; color: #ffffff">Lifeline Daily</span>
+      <nav aria-label="Footer" style="display: flex; gap: 22px; flex-wrap: wrap"><a href="#" style="color: #ffffff; text-decoration: none">About</a><a href="#" style="color: #ffffff; text-decoration: none">Contact</a><a href="#" style="color: #ffffff; text-decoration: none">Privacy Policy</a><a href="#" style="color: #ffffff; text-decoration: none">Terms &amp; Conditions</a></nav>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

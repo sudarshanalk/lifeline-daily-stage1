@@ -1,0 +1,400 @@
+{
+  "v": 3,
+  "attachments": {},
+  "createdOnFiles": {
+    "v": 1,
+    "at": "2026-10-22T12:00:00Z"
+  },
+  "title": "Lifeline Daily Stage 1 UI",
+  "launch": {
+    "view": "canvas"
+  },
+  "pages": [],
+  "boards": {
+    "Main.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1560,
+      "title": "Home · desktop (FR1-03, UI1-01)",
+      "expand": "fill"
+    },
+    "Hub.dc.html": {
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 1180,
+      "title": "Tools hub · Stage 1 (FR1-04, UI1-02)",
+      "expand": "fill"
+    },
+    "Landing.dc.html": {
+      "x": 3040,
+      "y": 0,
+      "w": 1440,
+      "h": 2080,
+      "title": "Protein landing page (FR1-04, FR1-17)",
+      "expand": "fill"
+    },
+    "HomeMobile.dc.html": {
+      "x": 0,
+      "y": 2320,
+      "w": 390,
+      "h": 1380,
+      "title": "Home · phone",
+      "expand": "fill"
+    },
+    "ProteinForm.dc.html": {
+      "x": 470,
+      "y": 2320,
+      "w": 390,
+      "h": 1560,
+      "title": "Protein · form (UI1-04)",
+      "expand": "fill"
+    },
+    "ProteinResult.dc.html": {
+      "x": 940,
+      "y": 2320,
+      "w": 390,
+      "h": 1440,
+      "title": "Protein · result (UI1-05)",
+      "expand": "fill"
+    },
+    "ProteinRenal.dc.html": {
+      "x": 1410,
+      "y": 2320,
+      "w": 390,
+      "h": 1040,
+      "title": "Protein · renal suppression (FR1-08)",
+      "expand": "fill"
+    },
+    "DiabetesResult.dc.html": {
+      "x": 1880,
+      "y": 2320,
+      "w": 390,
+      "h": 1620,
+      "title": "Diabetes · result (FR1-12)",
+      "expand": "fill"
+    },
+    "DiabetesEmergency.dc.html": {
+      "x": 2350,
+      "y": 2320,
+      "w": 390,
+      "h": 1100,
+      "title": "Diabetes · emergency (FR1-11)",
+      "expand": "fill"
+    },
+    "Unavailable.dc.html": {
+      "x": 2820,
+      "y": 2320,
+      "w": 390,
+      "h": 760,
+      "title": "Tool withdrawn (FR1-15, UI1-08)",
+      "expand": "fill"
+    },
+    "ArticleCta.dc.html": {
+      "x": 3290,
+      "y": 2320,
+      "w": 760,
+      "h": 360,
+      "title": "Article CTA block (FR1-05)"
+    },
+    "S2_Join.dc.html": {
+      "x": 0,
+      "y": 4330,
+      "w": 1440,
+      "h": 1380,
+      "title": "Stage 2 · Join: account, goals, consent",
+      "expand": "fill"
+    },
+    "S2_Dashboard.dc.html": {
+      "x": 1520,
+      "y": 4330,
+      "w": 1440,
+      "h": 1620,
+      "title": "Stage 2 · Member dashboard",
+      "expand": "fill"
+    },
+    "S2_Programme.dc.html": {
+      "x": 3040,
+      "y": 4330,
+      "w": 1440,
+      "h": 1540,
+      "title": "Stage 2 · Four-week Healthy Habits programme",
+      "expand": "fill"
+    },
+    "S2_Membership.dc.html": {
+      "x": 4560,
+      "y": 4330,
+      "w": 1440,
+      "h": 1300,
+      "title": "Stage 2 · Free vs Premium, account & data",
+      "expand": "fill"
+    },
+    "S3_Home.dc.html": {
+      "x": 0,
+      "y": 6340,
+      "w": 390,
+      "h": 844,
+      "title": "Stage 3 app · Home"
+    },
+    "S3_Tools.dc.html": {
+      "x": 470,
+      "y": 6340,
+      "w": 390,
+      "h": 844,
+      "title": "Stage 3 app · Tools"
+    },
+    "S3_Progress.dc.html": {
+      "x": 940,
+      "y": 6340,
+      "w": 390,
+      "h": 844,
+      "title": "Stage 3 app · Progress (BP, weight, waist)"
+    },
+    "S3_Food.dc.html": {
+      "x": 1410,
+      "y": 6340,
+      "w": 390,
+      "h": 844,
+      "title": "Stage 3 app · Food & macros"
+    },
+    "S3_Learn.dc.html": {
+      "x": 1880,
+      "y": 6340,
+      "w": 390,
+      "h": 844,
+      "title": "Stage 3 app · Learn (offline)"
+    },
+    "S3_Profile.dc.html": {
+      "x": 2350,
+      "y": 6340,
+      "w": 390,
+      "h": 844,
+      "title": "Stage 3 app · Profile & subscription"
+    },
+    "Header.dc.html": {
+      "x": 0,
+      "y": 7600,
+      "w": 1440,
+      "h": 420,
+      "title": "Header · desktop, Health Tools menu open",
+      "expand": "fill"
+    },
+    "HeaderMobile.dc.html": {
+      "x": 1520,
+      "y": 7600,
+      "w": 390,
+      "h": 844,
+      "title": "Header · phone, menu open"
+    },
+    "Footer.dc.html": {
+      "x": 1990,
+      "y": 7600,
+      "w": 1440,
+      "h": 460,
+      "title": "Footer · desktop",
+      "expand": "fill"
+    },
+    "Category.dc.html": {
+      "x": 3510,
+      "y": 7600,
+      "w": 1440,
+      "h": 1760,
+      "title": "Category archive · Food & Nutrition",
+      "expand": "fill"
+    },
+    "Article.dc.html": {
+      "x": 5030,
+      "y": 7600,
+      "w": 1440,
+      "h": 2300,
+      "title": "Article page with reviewed-by and tool CTA",
+      "expand": "fill"
+    },
+    "Disclaimer.dc.html": {
+      "x": 6550,
+      "y": 7600,
+      "w": 1440,
+      "h": 1520,
+      "title": "Medical disclaimer & urgent care (new, DEC-12)",
+      "expand": "fill"
+    },
+    "Contact.dc.html": {
+      "x": 8070,
+      "y": 7600,
+      "w": 1440,
+      "h": 1080,
+      "title": "Contact",
+      "expand": "fill"
+    },
+    "About.dc.html": {
+      "x": 9590,
+      "y": 7600,
+      "w": 1440,
+      "h": 1320,
+      "title": "About, editorial & clinical review policy",
+      "expand": "fill"
+    },
+    "Legal.dc.html": {
+      "x": 11110,
+      "y": 7600,
+      "w": 1440,
+      "h": 1420,
+      "title": "Privacy Policy (legal page template)",
+      "expand": "fill"
+    },
+    "HubFull.dc.html": {
+      "x": 0,
+      "y": 10340,
+      "w": 1440,
+      "h": 1900,
+      "title": "Tools hub · all health tools (Stages 1–4)",
+      "expand": "fill"
+    },
+    "DiabetesForm.dc.html": {
+      "x": 1520,
+      "y": 10340,
+      "w": 390,
+      "h": 2080,
+      "title": "Diabetes · form",
+      "expand": "fill"
+    },
+    "WeightForm.dc.html": {
+      "x": 1990,
+      "y": 10340,
+      "w": 390,
+      "h": 1180,
+      "title": "Healthy Weight Check · form (Stage 3)",
+      "expand": "fill"
+    },
+    "WeightResult.dc.html": {
+      "x": 2460,
+      "y": 10340,
+      "w": 390,
+      "h": 1360,
+      "title": "Healthy Weight Check · result (Stage 3)",
+      "expand": "fill"
+    },
+    "EnergyFibre.dc.html": {
+      "x": 2930,
+      "y": 10340,
+      "w": 390,
+      "h": 1520,
+      "title": "Energy & Fibre Targets · result (Stage 3)",
+      "expand": "fill"
+    },
+    "BPCheck.dc.html": {
+      "x": 3400,
+      "y": 10340,
+      "w": 390,
+      "h": 1300,
+      "title": "Blood Pressure Check · result (Stage 3)",
+      "expand": "fill"
+    },
+    "ProteinTool.dc.html": {
+      "x": 4130,
+      "y": 2320,
+      "w": 390,
+      "h": 1560,
+      "title": "Protein · INTERACTIVE prototype (form → result / renal / unsure)",
+      "expand": "fill",
+      "is_interactive": true
+    },
+    "DiabetesTool.dc.html": {
+      "x": 4600,
+      "y": 2320,
+      "w": 390,
+      "h": 2080,
+      "title": "Diabetes · INTERACTIVE prototype (form → result / symptom / emergency)",
+      "expand": "fill",
+      "is_interactive": true
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Hub.dc.html",
+    "Landing.dc.html",
+    "HomeMobile.dc.html",
+    "ProteinForm.dc.html",
+    "ProteinResult.dc.html",
+    "ProteinRenal.dc.html",
+    "DiabetesResult.dc.html",
+    "DiabetesEmergency.dc.html",
+    "Unavailable.dc.html",
+    "ArticleCta.dc.html",
+    "S2_Join.dc.html",
+    "S2_Dashboard.dc.html",
+    "S2_Programme.dc.html",
+    "S2_Membership.dc.html",
+    "S3_Home.dc.html",
+    "S3_Tools.dc.html",
+    "S3_Progress.dc.html",
+    "S3_Food.dc.html",
+    "S3_Learn.dc.html",
+    "S3_Profile.dc.html",
+    "Header.dc.html",
+    "HeaderMobile.dc.html",
+    "Footer.dc.html",
+    "Category.dc.html",
+    "Article.dc.html",
+    "Disclaimer.dc.html",
+    "Contact.dc.html",
+    "About.dc.html",
+    "Legal.dc.html",
+    "HubFull.dc.html",
+    "DiabetesForm.dc.html",
+    "WeightForm.dc.html",
+    "WeightResult.dc.html",
+    "EnergyFibre.dc.html",
+    "BPCheck.dc.html",
+    "ProteinTool.dc.html",
+    "DiabetesTool.dc.html"
+  ],
+  "notes": {
+    "row1": {
+      "x": 7,
+      "y": -438,
+      "w": 240,
+      "text": "Stage 1 — Site pages (WordPress / Newspaper, desktop 1440)",
+      "kind": "title1",
+      "maxW": 4480
+    },
+    "row2": {
+      "x": 0,
+      "y": 2050,
+      "w": 240,
+      "text": "Stage 1 — Tool states (phone 390), the article CTA block, and two INTERACTIVE prototypes (press Play)",
+      "kind": "title1",
+      "maxW": 5000
+    },
+    "row3": {
+      "x": 0,
+      "y": 4060,
+      "text": "Stage 2 — Website membership MVP (logged-in pages, desktop 1440)",
+      "kind": "title1",
+      "maxW": 6000
+    },
+    "row4": {
+      "x": 0,
+      "y": 6070,
+      "text": "Stage 3 — Flutter mobile app (iOS / Android, 390 × 844)",
+      "kind": "title1",
+      "maxW": 2740
+    },
+    "row5": {
+      "x": 0,
+      "y": 7330,
+      "text": "Site components and pages — header, footer, category, article, policies",
+      "kind": "title1",
+      "maxW": 12550
+    },
+    "row6": {
+      "x": 0,
+      "y": 10070,
+      "text": "All health tools — full hub and the tools not yet designed",
+      "kind": "title1",
+      "maxW": 3790
+    }
+  },
+  "designSystems": []
+}

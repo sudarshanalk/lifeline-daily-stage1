@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Protein tool, renal suppression state</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#f2f7f4}
+a{color:#157a42}a:hover{color:#0f5a31}
+</style>
+</helmet>
+<div data-test="result" style="display: flex; flex-direction: column; gap: 14px; padding: 16px; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #f2f7f4">
+
+  <div data-test="banners" style="display: flex; flex-direction: column; gap: 10px">
+    <div role="alert" style="border: 1.5px solid #e7a9a4; background: #fdeceb; color: #7d1f1c; border-radius: 16px; padding: 16px; display: flex; gap: 12px; align-items: flex-start">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true" style="flex: 0 0 auto"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <h2 style="margin: 0; font-size: 18px; font-weight: 800; line-height: 1.2">We can't give you a protein target</h2>
+        <p style="margin: 0; font-size: 14px; line-height: 1.55">In kidney disease, protein guidance runs in the <b>opposite direction</b> to general advice. National kidney guidelines (KDOQI 2020) recommend a reduced, closely supervised protein intake, set individually against your kidney function, dialysis status and whether you have diabetes.</p>
+      </div>
+    </div>
+  </div>
+
+  <section data-test="headline" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 6px rgba(20,40,30,.06)">
+    <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #63706a">Why there is no number</span>
+    <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #3a4440">A general-population figure would not just be unhelpful here. It could cause harm. The right amount depends on things a public calculator cannot see, so this tool refuses to guess.</p>
+    <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #3a4440">Please ask your <b>renal team or a renal dietitian</b> for a target set for you. Take your most recent kidney function results with you.</p>
+  </section>
+
+  <section data-test="advice" style="background: #eafaf0; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 8px">
+    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #157a42">What you can do now</h3>
+    <ul style="margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.6; color: #1f3a2b"><li>Book a review with your renal team or GP if you have not had one recently.</li><li>Do not increase protein intake on the basis of general fitness advice.</li><li>Read our reviewed article on eating well with kidney disease.</li></ul>
+    <a href="#" style="font-size: 14px; font-weight: 600">Read: Protein and kidney health, what changes →</a>
+  </section>
+
+  <details data-test="methodology" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 14px 18px">
+    <summary style="font-size: 15px; font-weight: 700; cursor: pointer">How this was decided</summary>
+    <div style="margin-top: 10px; font-size: 13px; line-height: 1.6; color: #3a4440">You answered <b>Yes</b> to kidney disease, reduced kidney function or dialysis. This is the tool's highest-priority rule: it stops before any calculation runs, so no target, range or per-meal figure exists to show, email or record. Method version a10d21b0.</div>
+  </details>
+
+  <p data-test="disclaimer" style="margin: 0; font-size: 12px; color: #63706a; line-height: 1.5; padding: 0 4px">Screening information, <b>not a diagnosis</b>. If you feel unwell, speak to a clinician. <a href="#">Medical disclaimer and urgent care</a></p>
+
+  <section data-test="email-card" aria-labelledby="em-h" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+    <h3 id="em-h" style="margin: 0; font-size: 16px; font-weight: 700">Email yourself this advice</h3>
+    <p style="margin: 0; font-size: 13px; color: #63706a; line-height: 1.5">Optional. The email contains this guidance and the article link only. It never contains a protein figure.</p>
+    <label for="em" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Email address</label>
+    <input id="em" type="email" placeholder="Email address" style="height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 12px; font: inherit; font-size: 15px">
+    <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: #3a4440">
+      <input type="checkbox" style="width: 20px; height: 20px; margin: 2px 0 0; flex: 0 0 auto">
+      <span>I agree to Lifeline Daily emailing this result, which includes health information I entered, to the address above. Sent once, not stored. <a href="#">Privacy Policy</a></span>
+    </label>
+    <button type="button" disabled style="min-height: 48px; border-radius: 12px; border: 0; background: #c9d3cd; color: #ffffff; font: inherit; font-size: 15px; font-weight: 700">Email me a copy</button>
+  </section>
+
+  <button type="button" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 14px; font-weight: 600; color: #161a17; cursor: pointer">Start again</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1040}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>App food and macronutrient tracker</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#f2f7f4}
+a{color:#157a42}a:hover{color:#0f5a31}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #f2f7f4; border-radius: 40px; overflow: hidden; border: 1px solid #e4eae6">
+
+  <div style="flex: 1 1 auto; overflow: hidden; display: flex; flex-direction: column; gap: 12px; padding: 56px 18px 16px">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em">Food</h1>
+      <span style="font-size: 13px; color: #63706a">Today, Wed 22 Oct</span>
+    </div>
+
+    <!-- Totals -->
+    <section aria-labelledby="tot" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+      <h2 id="tot" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Today's totals</h2>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; text-align: center">
+        <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 18px; font-weight: 800">1,240</span><span style="font-size: 11px; color: #63706a">kcal / 2,000</span><div style="height: 5px; border-radius: 999px; background: #e4eae6; overflow: hidden"><div style="width: 62%; height: 100%; background: #1c1c1c"></div></div></div>
+        <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 18px; font-weight: 800; color: #157a42">62 g</span><span style="font-size: 11px; color: #63706a">protein / 105</span><div style="height: 5px; border-radius: 999px; background: #e4eae6; overflow: hidden"><div style="width: 59%; height: 100%; background: #1f9d57"></div></div></div>
+        <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 18px; font-weight: 800">14 g</span><span style="font-size: 11px; color: #63706a">fibre / 30</span><div style="height: 5px; border-radius: 999px; background: #e4eae6; overflow: hidden"><div style="width: 47%; height: 100%; background: #a8690d"></div></div></div>
+        <div style="display: flex; flex-direction: column; gap: 4px"><span style="font-size: 18px; font-weight: 800">138 g</span><span style="font-size: 11px; color: #63706a">carbs</span><div style="height: 5px; border-radius: 999px; background: #e4eae6; overflow: hidden"><div style="width: 55%; height: 100%; background: #63706a"></div></div></div>
+      </div>
+      <p style="margin: 0; font-size: 11px; color: #63706a; line-height: 1.5">Targets come from your saved protein result (105 g) and the energy and fibre tool. Manual entry only; no photo or barcode features until Stage 4.</p>
+    </section>
+
+    <!-- Meals -->
+    <section aria-labelledby="bf" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 id="bf" style="margin: 0; font-size: 14px; font-weight: 700">Breakfast</h2><span style="font-size: 12px; color: #157a42; font-weight: 700">31 g protein</span></div>
+      <div style="display: flex; justify-content: space-between; font-size: 13px"><span>Greek yoghurt, 200 g</span><span style="color: #63706a">20 g · 130 kcal</span></div>
+      <div style="display: flex; justify-content: space-between; font-size: 13px"><span>Oats with milk</span><span style="color: #63706a">11 g · 290 kcal</span></div>
+    </section>
+
+    <section aria-labelledby="lu" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 id="lu" style="margin: 0; font-size: 14px; font-weight: 700">Lunch</h2><span style="font-size: 12px; color: #157a42; font-weight: 700">31 g protein</span></div>
+      <div style="display: flex; justify-content: space-between; font-size: 13px"><span>Dal with brown rice <span style="font-size: 11px; color: #63706a">(saved meal)</span></span><span style="color: #63706a">18 g · 520 kcal</span></div>
+      <div style="display: flex; justify-content: space-between; font-size: 13px"><span>Paneer, 80 g</span><span style="color: #63706a">13 g · 230 kcal</span></div>
+    </section>
+
+    <section aria-labelledby="dn" style="background: #ffffff; border: 1px dashed #c9d3cd; border-radius: 18px; padding: 14px 16px; display: flex; justify-content: space-between; align-items: center">
+      <div style="display: flex; flex-direction: column; gap: 2px"><h2 id="dn" style="margin: 0; font-size: 14px; font-weight: 700">Dinner</h2><span style="font-size: 12px; color: #63706a">43 g protein still to go for your target</span></div>
+      <button type="button" style="min-height: 40px; padding: 0 14px; border-radius: 12px; border: 0; background: #1f9d57; color: #ffffff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">+ Add</button>
+    </section>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: auto">
+      <button type="button" style="min-height: 46px; border-radius: 14px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Saved meals (6)</button>
+      <button type="button" style="min-height: 46px; border-radius: 14px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Search foods</button>
+    </div>
+  </div>
+
+  <nav aria-label="App sections" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid #e4eae6; background: #ffffff; padding: 10px 6px 26px">
+    <a href="S3_Home.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #63706a; font-size: 11px; font-weight: 600; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+    <a href="S3_Tools.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #63706a; font-size: 11px; font-weight: 600; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20h16M6 20V9M12 20V4M18 20v-7"/></svg>Tools</a>
+    <a href="S3_Progress.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #157a42; font-size: 11px; font-weight: 700; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>Progress</a>
+    <a href="S3_Learn.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #63706a; font-size: 11px; font-weight: 600; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 5h7v14H4zM13 5h7v14h-7z"/></svg>Learn</a>
+    <a href="S3_Profile.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #63706a; font-size: 11px; font-weight: 600; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Contact Lifeline Daily</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#ffffff}
+a{color:#157a42}a:hover{color:#0f5a31}
+</style>
+</helmet>
+<div style="display: flex; flex-direction: column; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #ffffff">
+  <header style="display: flex; justify-content: center; border-bottom: 1px solid #e4eae6">
+    <div style="width: 100%; max-width: 1240px; display: flex; align-items: center; justify-content: space-between; padding: 20px 24px; box-sizing: border-box; gap: 16px; flex-wrap: wrap">
+      <a href="Main.dc.html" style="font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: #1c1c1c; text-decoration: none">Lifeline Daily</a>
+      <nav aria-label="Primary" style="display: flex; gap: 26px; font-size: 14px; font-weight: 600; flex-wrap: wrap"><a href="Category.dc.html" style="color: #1c1c1c; text-decoration: none">Fitness</a><a href="Category.dc.html" style="color: #1c1c1c; text-decoration: none">Food &amp; Nutrition</a><a href="Category.dc.html" style="color: #1c1c1c; text-decoration: none">Health Conditions</a><a href="Category.dc.html" style="color: #1c1c1c; text-decoration: none">Wellness</a><a href="HubFull.dc.html" style="color: #1c1c1c; text-decoration: none">Health Tools</a><a href="#" style="color: #1c1c1c; text-decoration: none">The Report</a></nav>
+    </div>
+  </header>
+
+  <main style="display: flex; justify-content: center; background: #f2f7f4">
+    <div style="width: 100%; max-width: 1240px; padding: 44px 24px 56px; box-sizing: border-box; display: flex; gap: 40px; flex-wrap: wrap; align-items: flex-start">
+      <div style="flex: 1 1 360px; min-width: 0; max-width: 460px; display: flex; flex-direction: column; gap: 18px">
+        <nav aria-label="Breadcrumb" style="font-size: 13px; color: #63706a"><a href="Main.dc.html" style="color: #63706a">Home</a> › <span style="color: #161a17; font-weight: 600">Contact</span></nav>
+        <h1 style="margin: 0; font-size: 40px; font-weight: 800; letter-spacing: -0.02em">Contact us</h1>
+        <p style="margin: 0; font-size: 17px; line-height: 1.55; color: #3a4440">Questions about an article, a tool, your account or our editorial process. We read everything and reply within five working days.</p>
+        <div role="alert" style="border: 1.5px solid #e7a9a4; background: #fdeceb; color: #7d1f1c; border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; font-size: 14px; line-height: 1.5">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: 0 0 auto"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>
+          <span><b>This form is not monitored for emergencies</b> and we cannot give personal medical advice. If you are unwell, speak to a clinician. <a href="Disclaimer.dc.html" style="color: #7d1f1c; font-weight: 600">Urgent care numbers</a></span>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 12px; font-size: 14px; color: #3a4440; line-height: 1.6">
+          <div><b style="color: #161a17">Editorial and corrections</b><br>Spotted an error? Tell us the article and the line. Corrections are logged and shown on the page.</div>
+          <div><b style="color: #161a17">Clinical safety concerns about a tool</b><br>Routed to our named clinical reviewer. A tool may be paused while we check.</div>
+          <div><b style="color: #161a17">Privacy and your data</b><br>Access, export or deletion requests, or anything about the <a href="Legal.dc.html">Privacy Policy</a>.</div>
+          <div><b style="color: #161a17">Partnerships and press</b><br>We do not run advertising based on health data and do not accept sponsored health claims.</div>
+        </div>
+      </div>
+
+      <form aria-label="Contact form" style="flex: 1 1 420px; min-width: 0; max-width: 620px; background: #ffffff; border: 1px solid #e4eae6; border-radius: 22px; padding: 28px; box-sizing: border-box; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 2px 6px rgba(20,40,30,.06)">
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
+          <div style="display: flex; flex-direction: column; gap: 6px"><label for="cn" style="font-size: 14px; font-weight: 600">Name</label><input id="cn" type="text" style="height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 12px; font: inherit; font-size: 15px"></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><label for="ce" style="font-size: 14px; font-weight: 600">Email</label><input id="ce" type="email" style="height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 12px; font: inherit; font-size: 15px"></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><label for="ct" style="font-size: 14px; font-weight: 600">What is this about?</label><select id="ct" style="height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 10px; font: inherit; font-size: 15px; background: #ffffff"><option>Choose a topic…</option><option>An article or a correction</option><option>A health tool (clinical concern)</option><option>A health tool (technical problem)</option><option>My account or my data</option><option>Partnerships and press</option><option>Something else</option></select></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><label for="cm" style="font-size: 14px; font-weight: 600">Message</label><textarea id="cm" rows="6" style="border: 1px solid #c9d3cd; border-radius: 12px; padding: 12px; font: inherit; font-size: 15px; resize: vertical"></textarea><span style="font-size: 12px; color: #63706a">Please do not include medical details such as test results. We cannot advise on them.</span></div>
+        <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: #3a4440"><input type="checkbox" style="width: 20px; height: 20px; margin: 2px 0 0; flex: 0 0 auto"><span>I agree that Lifeline Daily may use these details to reply to me. <a href="Legal.dc.html">Privacy Policy</a></span></label>
+        <button type="submit" style="min-height: 50px; border-radius: 14px; border: 0; background: #1f9d57; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer">Send message</button>
+      </form>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

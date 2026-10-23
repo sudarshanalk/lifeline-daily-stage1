@@ -47,18 +47,18 @@ Rules the agent cannot override: no change to `ENGINE`, `BANDS`, `DIET_MULT`, `P
 | ID | Component | Location | Owner of change |
 |---|---|---|---|
 | CMP-01 | WordPress core, Newspaper theme, posts, menus | WP staging clone | Frozen except menus/pages via WP admin or WP-CLI |
-| CMP-02 | Protein tool page | `public_html/tools/protein-requirement-tool.html` | Shell/copy editable; engine frozen |
-| CMP-03 | Diabetes tool page | `public_html/tools/diabetes-risk-tool.html` | Shell/copy editable; engine frozen |
-| CMP-04 | Protein submit endpoint + template | `public_html/tools/submit-protein.php`, `public_html/tools/api/templates-protein.php` | Security/safety changes only |
-| CMP-05 | Diabetes submit endpoint + template | `public_html/tools/submit.php`, `public_html/tools/api/templates.php` | Security/safety changes only |
-| CMP-06 | Shared mailer and config | `public_html/tools/api/mailer.php`, `public_html/tools/api/config.php` | Change only with both-tool regression (NFR1-04) |
-| CMP-07 | Tool status file | `public_html/tools/status.json` | New (DEC-10) |
-| CMP-08 | `lld-tools` must-use plugin | `wp-content/mu-plugins/lld-tools/` | New (DEC-22) |
+| CMP-02 | Protein tool page | `site/public_html/tools/protein-requirement-tool.html` | Shell/copy editable; engine frozen |
+| CMP-03 | Diabetes tool page | `site/public_html/tools/diabetes-risk-tool.html` | Shell/copy editable; engine frozen |
+| CMP-04 | Protein submit endpoint + template | `site/public_html/tools/submit-protein.php`, `site/public_html/tools/api/templates-protein.php` | Security/safety changes only |
+| CMP-05 | Diabetes submit endpoint + template | `site/public_html/tools/submit.php`, `site/public_html/tools/api/templates.php` | Security/safety changes only |
+| CMP-06 | Shared mailer and config | `site/public_html/tools/api/mailer.php`, `api/config.php` (server-side only, from environment; `config.example.php` in Git) | Change only with both-tool regression (NFR1-04) |
+| CMP-07 | Tool status file | `site/public_html/tools/status.json` | New (DEC-10) |
+| CMP-08 | `lld-tools` must-use plugin | `site/public_html/wp-content/mu-plugins/lld-tools/` | New (DEC-22) |
 | CMP-09 | Homepage, hub page, two landing pages, medical disclaimer page | WP pages | New/edited content via plugin shortcodes |
-| CMP-10 | Web server config | `.htaccess` / vhost: headers, X-Robots-Tag, CSP, rate limit | New (DEC-14/16/28) |
+| CMP-10 | Web server config | `site/public_html/tools/.htaccess` and a managed `# BEGIN lld` block in the root `.htaccess`: headers, CSP, cache control | New (DEC-14/16/28) |
 | CMP-11 | Analytics (Plausible) | script tag in theme header + event calls in CMP-02/03/08 | New (DEC-11) |
 | CMP-12 | Repository artefacts: manifests, approvals, fixtures, evidence, link map | `repo/` (see 04) | New |
-| CMP-13 | CI pipeline | GitHub Actions (or equivalent) | New |
+| CMP-13 | CI and deployment | `.github/workflows/` (ci, deploy-staging, deploy-production) and `deploy/` | New |
 | CMP-14 | Independent oracles ORC-01 (R/QDiabetes), ORC-02 (Python protein reference), ORC-03 (IDRS from Mohan 2005), ORC-04 (WHtR cut-offs) | `oracles/` | New (FR1-22) |
 
 ## 5. Actors

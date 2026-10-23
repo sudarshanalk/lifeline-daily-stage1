@@ -1,0 +1,19 @@
+# Managed by deploy/deploy.sh: inserted between "# BEGIN lld" and "# END lld" in the document-root .htaccess.
+# Everything outside that block (WordPress, LiteSpeed, Yoast rules) is left untouched. DRAFT: finalised in FR1-20/FR1-21/NFR1-03/NFR1-15.
+<IfModule mod_headers.c>
+  # Security headers (NFR1-03, DEC-35)
+  Header always set Strict-Transport-Security "max-age=31536000"
+  Header always set X-Content-Type-Options "nosniff"
+  Header always set Referrer-Policy "strict-origin-when-cross-origin"
+  Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+  # Tool pages: never cached, canonical set in HTML (DEC-14), frame only from our own hosts (DEC-28)
+  <FilesMatch "^(protein-requirement-tool|diabetes-risk-tool|health-tools-hub)\.html$">
+    Header set Cache-Control "no-cache, must-revalidate"
+    Header always set Content-Security-Policy "frame-ancestors https://lifelinedaily.com https://www.lifelinedaily.com"
+  </FilesMatch>
+  # Withdrawal switch: must never be cached (DEC-10, FR1-20)
+  <Files "status.json">
+    Header set Cache-Control "no-store"
+    Require all granted
+  </Files>
+</IfModule>

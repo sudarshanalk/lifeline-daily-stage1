@@ -1,16 +1,16 @@
 # Local WordPress stack for Lifeline Daily (Windows, no Docker)
 # Usage: powershell -File local-stack.ps1 [init|start|import|replace|serve|stop|status]
-# Data stays under C:\MyProjects\lifeline-daily\local-stack ; the snapshot folder is never modified.
+# Data stays under C:\MyProjects\lifeline-daily\local\stack ; the snapshot folder is never modified.
 param([string]$Action = "status")
 $ErrorActionPreference = "Stop"
 $Root     = "C:\MyProjects\lifeline-daily"
-$Snapshot = "$Root\lifeline-daily-local"
-$Stack    = "$Root\local-stack"
+$Snapshot = "$Root\snapshot-production-2026-10-23"
+$Stack    = "$Root\local\stack"
 $DataDir  = "$Stack\mariadb-data"
 $Port     = 3399
 $Db       = "lifelinedaily_local"
 $Url      = "http://localhost:8080"
-$Wp       = "php $Root\tools-bin\wp-cli.phar --path=$Snapshot\public_html"
+$Wp       = "php $Root\local\bin\wp-cli.phar --path=$Snapshot\public_html"
 $MariaBin = (Get-ChildItem "C:\Program Files\MariaDB*\bin" -Directory | Select-Object -First 1).FullName
 if (-not $MariaBin) { throw "MariaDB bin folder not found under C:\Program Files" }
 $env:LLD_LOCAL_DB_NAME = $Db; $env:LLD_LOCAL_DB_USER = "root"; $env:LLD_LOCAL_DB_PASSWORD = ""; $env:LLD_LOCAL_DB_HOST = "127.0.0.1:$Port"; $env:LLD_LOCAL_URL = $Url
@@ -49,7 +49,7 @@ switch ($Action) {
   "serve" {
     Start-Db
     Write-Output "serving $Snapshot\public_html at $Url (Ctrl+C to stop)"
-    php -S 127.0.0.1:8080 -t "$Snapshot\public_html" "$Root\tools-bin\router.php"
+    php -S 127.0.0.1:8080 -t "$Snapshot\public_html" "$Root\local\bin\router.php"
   }
   "stop"   { Get-Process mariadbd -ErrorAction SilentlyContinue | Stop-Process; Write-Output "stopped" }
   "status" {

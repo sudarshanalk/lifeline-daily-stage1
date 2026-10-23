@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Protein tool, interactive prototype</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#f2f7f4}
+a{color:#157a42}a:hover{color:#0f5a31}
+.opt{min-height:46px;border-radius:12px;border:1px solid #c9d3cd;background:#ffffff;font:inherit;font-size:14px;font-weight:600;color:#161a17;cursor:pointer}
+.opt[aria-pressed="true"]{border:2px solid #1f9d57;background:#eafaf0;color:#157a42}
+.inp{height:46px;border:1px solid #c9d3cd;border-radius:12px;padding:0 12px;font:inherit;font-size:16px;box-sizing:border-box;width:100%}
+.card{border:1px solid #e4eae6;border-radius:18px;background:#ffffff;padding:16px;margin:0;display:flex;flex-direction:column;gap:14px}
+.lbl{font-size:14px;font-weight:600}
+.hint{font-size:12px;color:#63706a}
+.err{font-size:13px;color:#b5302f;font-weight:600}
+</style>
+</helmet>
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 16px; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #f2f7f4">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #63706a">
+    <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #1f9d57"></span>Interactive prototype · band table as deployed · illustrative only</span>
+    <sc-if value="{{showResult}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{restart}}" style="border: 0; background: transparent; font: inherit; font-size: 12px; font-weight: 600; color: #157a42; cursor: pointer">Start again</button></sc-if>
+  </div>
+
+  <!-- ===================== FORM ===================== -->
+  <sc-if value="{{showForm}}" hint-placeholder-val="{{true}}">
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #3a4440; background: #ffffff; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px 14px">This tool estimates your daily protein target for general health from published guidelines. It is an educational screening aid, not a prescription. For adults 18 and over.</p>
+
+    <fieldset class="card">
+      <legend style="font-size: 15px; font-weight: 800; padding: 0 6px">About you</legend>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <label for="age" class="lbl">Age <span style="color: #63706a; font-weight: 400">(18–99)</span></label>
+        <input id="age" class="inp" type="number" inputmode="numeric" min="18" max="99" placeholder="e.g. 42" value="{{age}}" onChange="{{setAge}}">
+        <sc-if value="{{errAge}}" hint-placeholder-val="{{false}}"><span class="err" role="alert">Enter an age between 18 and 99. This tool is for adults only.</span></sc-if>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span id="sex-l" class="lbl">Sex</span>
+        <div role="group" aria-labelledby="sex-l" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px">
+          <button type="button" class="opt" aria-pressed="{{isFemale}}" onClick="{{pickFemale}}">Female</button>
+          <button type="button" class="opt" aria-pressed="{{isMale}}" onClick="{{pickMale}}">Male</button>
+        </div>
+      </div>
+      <sc-if value="{{isFemale}}" hint-placeholder-val="{{true}}">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span id="preg-l" class="lbl">Pregnant or breastfeeding?</span>
+        <div role="group" aria-labelledby="preg-l" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+          <sc-for list="{{pregOpts}}" as="o" hint-placeholder-count="3"><button type="button" class="opt" aria-pressed="{{o.on}}" onClick="{{o.pick}}" style="font-size: 13px">{{o.label}}</button></sc-for>
+        </div>
+        <span class="hint">If pregnant, enter your pre-pregnancy weight below.</span>
+      </div>
+      </sc-if>
+    </fieldset>
+
+    <fieldset class="card">
+      <legend style="font-size: 15px; font-weight: 800; padding: 0 6px">Body</legend>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 6px"><label for="ht" class="lbl">Height (cm)</label><input id="ht" class="inp" type="number" inputmode="decimal" placeholder="170" value="{{heightCm}}" onChange="{{setHeight}}"></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><label for="wt" class="lbl">Weight (kg)</label><input id="wt" class="inp" type="number" inputmode="decimal" placeholder="68" value="{{weightKg}}" onChange="{{setWeight}}"></div>
+      </div>
+      <sc-if value="{{errBody}}" hint-placeholder-val="{{false}}"><span class="err" role="alert">Enter a height between 140 and 210 cm and a weight between 35 and 250 kg.</span></sc-if>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span id="eth-l" class="lbl">Ethnicity <span style="color: #63706a; font-weight: 400">(sets healthy-weight bounds only)</span></span>
+        <div role="group" aria-labelledby="eth-l" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+          <sc-for list="{{ethOpts}}" as="o" hint-placeholder-count="6"><button type="button" class="opt" aria-pressed="{{o.on}}" onClick="{{o.pick}}" style="font-size: 12px; min-height: 42px">{{o.label}}</button></sc-for>
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px; font-size: 13px; color: #63706a"><span style="background: #f2f7f4; border-radius: 999px; padding: 6px 12px">BMI <b style="color: #161a17">{{bmiText}}</b></span></div>
+    </fieldset>
+
+    <fieldset class="card">
+      <legend style="font-size: 15px; font-weight: 800; padding: 0 6px">Activity and goals</legend>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="act-l" class="lbl">General activity</span>
+        <div role="group" aria-labelledby="act-l" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><sc-for list="{{actOpts}}" as="o" hint-placeholder-count="4"><button type="button" class="opt" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="res-l" class="lbl">Resistance training per week</span>
+        <div role="group" aria-labelledby="res-l" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px"><sc-for list="{{resOpts}}" as="o" hint-placeholder-count="4"><button type="button" class="opt" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="goal-l" class="lbl">Main goal</span>
+        <div role="group" aria-labelledby="goal-l" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><sc-for list="{{goalOpts}}" as="o" hint-placeholder-count="5"><button type="button" class="opt" aria-pressed="{{o.on}}" onClick="{{o.pick}}" style="font-size: 13px">{{o.label}}</button></sc-for></div></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="diet-l" class="lbl">How you eat</span>
+        <div role="group" aria-labelledby="diet-l" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px"><sc-for list="{{dietOpts}}" as="o" hint-placeholder-count="3"><button type="button" class="opt" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div>
+        <span class="hint">Plant proteins are less completely absorbed, so plant-based targets are adjusted upward.</span></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="meal-l" class="lbl">Meals per day</span>
+        <div role="group" aria-labelledby="meal-l" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px"><sc-for list="{{mealOpts}}" as="o" hint-placeholder-count="4"><button type="button" class="opt" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div></div>
+    </fieldset>
+
+    <fieldset class="card" style="border-color: #e7c79a; background: #fdf4ea">
+      <legend style="font-size: 15px; font-weight: 800; padding: 0 6px; color: #7a4c12">Health check</legend>
+      <p style="margin: 0; font-size: 13px; color: #7a4c12; line-height: 1.5">Protein guidance changes direction in kidney disease. These questions are not optional.</p>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="kid-l" class="lbl">Do you have kidney disease, reduced kidney function, or are you on dialysis?</span>
+        <div role="group" aria-labelledby="kid-l" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px"><sc-for list="{{kidOpts}}" as="o" hint-placeholder-count="3"><button type="button" class="opt" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div>
+        <sc-if value="{{errKidney}}" hint-placeholder-val="{{false}}"><span class="err" role="alert" style="display: flex; gap: 6px; align-items: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>Please answer the kidney question to continue.</span></sc-if></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="liv-l" class="lbl">Liver disease, or recovering from serious illness, injury or surgery?</span>
+        <div role="group" aria-labelledby="liv-l" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><sc-for list="{{livOpts}}" as="o" hint-placeholder-count="2"><button type="button" class="opt" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div></div>
+    </fieldset>
+
+    <button type="button" onClick="{{calculate}}" style="min-height: 52px; border-radius: 14px; border: 0; background: #1f9d57; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer">Calculate my protein target</button>
+    <p style="margin: 0; font-size: 12px; color: #63706a; text-align: center; line-height: 1.5">Nothing you enter is stored. <a href="Legal.dc.html">Privacy</a> · <a href="Disclaimer.dc.html">Not a diagnosis</a></p>
+  </div>
+  </sc-if>
+
+  <!-- ===================== RENAL ===================== -->
+  <sc-if value="{{showRenal}}" hint-placeholder-val="{{false}}">
+  <div data-test="result" style="display: flex; flex-direction: column; gap: 14px">
+    <div role="alert" style="border: 1.5px solid #e7a9a4; background: #fdeceb; color: #7d1f1c; border-radius: 16px; padding: 16px; display: flex; gap: 12px; align-items: flex-start">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true" style="flex: 0 0 auto"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>
+      <div style="display: flex; flex-direction: column; gap: 6px"><h2 style="margin: 0; font-size: 18px; font-weight: 800; line-height: 1.2">We can't give you a protein target</h2><p style="margin: 0; font-size: 14px; line-height: 1.55">In kidney disease, protein guidance runs in the <b>opposite direction</b> to general advice. National kidney guidelines (KDOQI 2020) recommend a reduced, closely supervised protein intake, set individually against your kidney function, dialysis status and whether you have diabetes.</p></div>
+    </div>
+    <section style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #63706a">Why there is no number</span>
+      <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #3a4440">A general-population figure would not just be unhelpful here. It could cause harm. The right amount depends on things a public calculator cannot see, so this tool refuses to guess. Please ask your <b>renal team or a renal dietitian</b> for a target set for you.</p>
+    </section>
+    <section style="background: #eafaf0; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 8px"><h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #157a42">What you can do now</h3><ul style="margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.6; color: #1f3a2b"><li>Book a review with your renal team or GP if you have not had one recently.</li><li>Do not increase protein intake on the basis of general fitness advice.</li></ul><a href="Article.dc.html" style="font-size: 14px; font-weight: 600">Read: Protein and kidney health →</a></section>
+    <p style="margin: 0; font-size: 12px; color: #63706a; line-height: 1.5; padding: 0 4px">Screening information, <b>not a diagnosis</b>. <a href="Disclaimer.dc.html">Medical disclaimer and urgent care</a></p>
+  </div>
+  </sc-if>
+
+  <!-- ===================== RESULT ===================== -->
+  <sc-if value="{{showNormal}}" hint-placeholder-val="{{false}}">
+  <div data-test="result" style="display: flex; flex-direction: column; gap: 14px">
+    <sc-if value="{{showUnsure}}" hint-placeholder-val="{{false}}">
+    <div role="alert" style="border: 1.5px solid #e7c79a; background: #fdf4ea; color: #7a4c12; border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true" style="flex: 0 0 auto"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>
+      <div style="display: flex; flex-direction: column; gap: 4px"><h3 style="margin: 0; font-size: 15px; font-weight: 700">Confirm your kidney function first</h3><p style="margin: 0; font-size: 13px; line-height: 1.5">The target below assumes healthy kidneys. If a blood test later shows reduced function, this number would be too high for you. Treat it as provisional.</p></div>
+    </div>
+    </sc-if>
+    <sc-if value="{{showPreg}}" hint-placeholder-val="{{false}}">
+    <div role="alert" style="border: 1.5px solid #e7c79a; background: #fdf4ea; color: #7a4c12; border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true" style="flex: 0 0 auto"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>
+      <div style="display: flex; flex-direction: column; gap: 4px"><h3 style="margin: 0; font-size: 15px; font-weight: 700">Pregnancy and breastfeeding have their own requirement</h3><p style="margin: 0; font-size: 13px; line-height: 1.5">Your target is the published requirement for this stage, a <b>minimum</b>, not a fitness target. Athletic bands are not added. Please confirm it with your midwife, obstetrician or dietitian.</p></div>
+    </div>
+    </sc-if>
+    <sc-if value="{{showClinical}}" hint-placeholder-val="{{false}}">
+    <div role="alert" style="border: 1.5px solid #e7c79a; background: #fdf4ea; color: #7a4c12; border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true" style="flex: 0 0 auto"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>
+      <div style="display: flex; flex-direction: column; gap: 4px"><h3 style="margin: 0; font-size: 15px; font-weight: 700">Please confirm this with your clinical team</h3><p style="margin: 0; font-size: 13px; line-height: 1.5">Liver disease and recovery from illness change protein needs in ways a calculator cannot judge. The figure below uses the illness-recovery guideline band and should be checked by your clinician or dietitian.</p></div>
+    </div>
+    </sc-if>
+    <sc-if value="{{showUnderweight}}" hint-placeholder-val="{{false}}">
+    <div role="alert" style="border: 1.5px solid #c9d3cd; background: #ffffff; color: #161a17; border-radius: 16px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px"><h3 style="margin: 0; font-size: 15px; font-weight: 700">A note on your weight</h3><p style="margin: 0; font-size: 13px; line-height: 1.5; color: #3a4440">Your BMI is below 18.5. The target below is calculated on your actual weight and is a floor, not a ceiling. If eating feels difficult or worrying, support is available; speak to your GP.</p></div>
+    </sc-if>
+
+    <section style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 2px 6px rgba(20,40,30,.06)">
+      <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #157a42">Your daily protein target</span>
+      <h2 style="margin: 0; font-size: 44px; font-weight: 800; letter-spacing: -0.03em; line-height: 1">{{targetG}} g <span style="font-size: 18px; font-weight: 600; color: #63706a; letter-spacing: 0">per day</span></h2>
+      <p style="margin: 0; font-size: 14px; color: #3a4440; line-height: 1.5">{{rangeText}}</p>
+    </section>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+      <div style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 11px; color: #63706a; text-transform: uppercase; letter-spacing: 0.06em">Per kg</span><span style="font-size: 18px; font-weight: 700">{{gPerKg}} g</span></div>
+      <div style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 11px; color: #63706a; text-transform: uppercase; letter-spacing: 0.06em">Per meal</span><span style="font-size: 18px; font-weight: 700">{{perMeal}} g</span><span style="font-size: 11px; color: #63706a">× {{meals}} meals</span></div>
+      <div style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 11px; color: #63706a; text-transform: uppercase; letter-spacing: 0.06em">Basis</span><span style="font-size: 18px; font-weight: 700">{{basisKg}} kg</span><span style="font-size: 11px; color: #63706a">{{basisNote}}</span></div>
+    </div>
+    <section style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+      <h3 style="margin: 0; font-size: 16px; font-weight: 700">What this means</h3>
+      <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #3a4440">{{interp}}</p>
+      <ul style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; color: #3a4440"><sc-for list="{{sources}}" as="s" hint-placeholder-count="2"><li>{{s.text}}</li></sc-for></ul>
+    </section>
+    <section style="background: #eafaf0; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 8px">
+      <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #157a42">Next step</h3>
+      <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #1f3a2b">Aim for roughly {{perMeal}} g at each of your {{meals}} meals. A palm-sized portion of meat, fish, tofu or two eggs plus dairy gets most people there. Spread it through the day rather than loading one meal.</p>
+      <a href="Article.dc.html" style="font-size: 14px; font-weight: 600">Read: How much protein do you really need? →</a>
+    </section>
+    <details style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 14px 18px"><summary style="font-size: 15px; font-weight: 700; cursor: pointer">How this was calculated</summary><div style="margin-top: 10px; font-size: 13px; line-height: 1.6; color: #3a4440">Every gram-per-kilogram figure traces to a named guideline: IOM/DRI 2005, WHO/FAO/UNU 2007, PROT-AGE 2013, ESPEN 2014, ISSN 2017, ACSM/AND/DC 2016. Bands are collected, the highest applies, a plant-diet multiplier is applied where relevant, the result is capped at 2.0 g/kg and multiplied by your basis weight. Prototype: numbers are illustrative and not clinically approved.</div></details>
+    <p style="margin: 0; font-size: 12px; color: #63706a; line-height: 1.5; padding: 0 4px">This is screening information and <b>not a diagnosis</b> or a prescription. <a href="Disclaimer.dc.html">Medical disclaimer and urgent care</a></p>
+
+    <section style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+      <h3 style="margin: 0; font-size: 16px; font-weight: 700">Email yourself a copy</h3>
+      <p style="margin: 0; font-size: 13px; color: #63706a; line-height: 1.5">Optional. Sent once. We do not keep your email address or your result.</p>
+      <label for="em" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Email address</label>
+      <input id="em" class="inp" type="email" placeholder="Email address" value="{{email}}" onChange="{{setEmail}}">
+      <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: #3a4440"><input type="checkbox" checked="{{consent}}" onChange="{{toggleConsent}}" style="width: 20px; height: 20px; margin: 2px 0 0; flex: 0 0 auto"><span>I agree to Lifeline Daily emailing this result, which includes health information I entered, to the address above. Sent once, not stored. <a href="Legal.dc.html">Privacy Policy</a></span></label>
+      <sc-if value="{{emailSent}}" hint-placeholder-val="{{false}}"><div role="status" style="background: #eafaf0; color: #157a42; border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 600">Sent. Check your inbox (prototype: no email is actually sent).</div></sc-if>
+      <sc-if value="{{emailNotSent}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{sendEmail}}" disabled="{{emailDisabled}}" style="min-height: 48px; border-radius: 12px; border: 0; background: {{emailBg}}; color: #ffffff; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer">Email me a copy</button></sc-if>
+    </section>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1560}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { stage: 'form', age: '', sex: 'female', preg: 'no', heightCm: '', weightKg: '', eth: 'White', activity: 'moderate', resistance: '0', goal: 'maintain', diet: 'omnivore', meals: 3, kidney: '', liver: 'no', errAge: false, errBody: false, errKidney: false, result: null, email: '', consent: false, emailSent: false };
+  }
+  opts(list, key) {
+    return list.map(([val, label]) => ({ label, on: this.state[key] === val, pick: () => this.setState({ [key]: val, errKidney: key === 'kidney' ? false : this.state.errKidney }) }));
+  }
+  compute(s) {
+    const BANDS = { sedentary:{lo:0.8,hi:1.0,src:'IOM RDA 0.8 g/kg (floor)'}, lightMod:{lo:1.0,hi:1.4,src:'IOM AMDR / ISSN lower band: 1.0–1.4 g/kg'}, vigorous:{lo:1.2,hi:1.6,src:'ACSM/AND/DC 2016: 1.2–1.6 g/kg'}, resLow:{lo:1.2,hi:1.6,src:'ISSN 2017, lower end: 1.2–1.6 g/kg'}, resMid:{lo:1.4,hi:2.0,src:'ISSN 2017: 1.4–2.0 g/kg'}, resHigh:{lo:1.6,hi:2.0,src:'ISSN 2017: 1.6–2.0 g/kg'}, buildMuscle:{lo:1.6,hi:2.0,src:'ISSN 2017, muscle gain: 1.6–2.0 g/kg'}, fatLossTrain:{lo:1.6,hi:2.0,src:'ISSN 2017, lean-mass retention: 1.6–2.0 g/kg'}, fatLossOnly:{lo:1.2,hi:1.5,src:'ISSN 2017, lean-mass retention: 1.2–1.5 g/kg'}, older:{lo:1.0,hi:1.2,src:'PROT-AGE 2013 / ESPEN 2014: 1.0–1.2 g/kg'}, olderActive:{lo:1.2,hi:1.5,src:'ESPEN 2014, active older adults: 1.2–1.5 g/kg'}, recovery:{lo:1.2,hi:1.5,src:'ESPEN 2014, illness/recovery: 1.2–1.5 g/kg'} };
+    const DIET = { omnivore:1.0, vegetarian:1.1, vegan:1.2 };
+    const hM = s.heightCm / 100, bmi = s.weightKg / (hM * hM);
+    const asian = ['Indian','Pakistani','Bangladeshi','Other Asian','Chinese'].includes(s.eth);
+    const upper = (asian ? 22.9 : 24.9) * hM * hM;
+    let basisKg = s.weightKg, basisNote = 'current weight';
+    if (bmi >= 30 && s.weightKg > upper) { basisKg = upper + 0.4 * (s.weightKg - upper); basisNote = 'adjusted body weight'; }
+    const clamp = g => Math.round(Math.min(40, Math.max(20, g)));
+    if (s.kidney === 'yes') return { suppressed: true };
+    if (s.sex === 'female' && (s.preg === 'pregnant' || s.preg === 'breastfeeding')) {
+      const g = s.preg === 'pregnant' ? 1.1 : 1.3, t = g * s.weightKg;
+      return { suppressed:false, branch:'pregnancy', bmi, targetG: Math.round(t), lowG: Math.round(t), highG: Math.round(t), gPerKg: g, basisKg: s.weightKg, basisNote:'pre-pregnancy weight', perMeal: clamp(t / s.meals), sources:[ s.preg === 'pregnant' ? 'IOM Dietary Reference Intakes, pregnancy RDA 1.1 g/kg/day' : 'IOM Dietary Reference Intakes, lactation RDA 1.3 g/kg/day' ], interp:'Pregnancy and breastfeeding use their own published requirement, applied to your pre-pregnancy weight. Training and goal bands are not added on top.', capped:false };
+    }
+    const app = []; const older = s.age >= 65;
+    if (s.activity === 'sedentary') app.push(BANDS.sedentary);
+    if (s.activity === 'light' || s.activity === 'moderate') app.push(BANDS.lightMod);
+    if (s.activity === 'vigorous') app.push(BANDS.vigorous);
+    if (s.resistance === '1-2') app.push(BANDS.resLow);
+    if (s.resistance === '3-4') app.push(BANDS.resMid);
+    if (s.resistance === '5+') app.push(BANDS.resHigh);
+    const training = s.resistance !== '0' || s.activity === 'vigorous';
+    if (s.goal === 'build') app.push(BANDS.buildMuscle);
+    if (s.goal === 'fatloss') app.push(training ? BANDS.fatLossTrain : BANDS.fatLossOnly);
+    if (s.goal === 'recovery' || s.liver === 'yes') app.push(BANDS.recovery);
+    if (older) app.push(training ? BANDS.olderActive : BANDS.older);
+    if (!app.length) app.push(BANDS.sedentary);
+    const win = app.reduce((a, b) => (b.hi > a.hi || (b.hi === a.hi && b.lo > a.lo)) ? b : a);
+    const mult = DIET[s.diet]; let hi = win.hi * mult, lo = win.lo * mult, capped = false;
+    if (hi > 2.0) { hi = 2.0; capped = true; } if (lo > 2.0) lo = 2.0;
+    const target = hi * basisKg;
+    return { suppressed:false, branch:'normal', bmi, targetG: Math.round(target), lowG: Math.round(lo * basisKg), highG: Math.round(target), gPerKg: +hi.toFixed(2), basisKg: +basisKg.toFixed(1), basisNote, perMeal: clamp(target / s.meals), sources: app.map(b => b.src).concat(mult > 1 ? ['Plant-diet digestibility adjustment ×' + mult + ' (extrapolation, labelled)'] : []).concat(capped ? ['Ceiling of 2.0 g/kg applied'] : []), interp: 'Guidelines describe minimums, so the most demanding band that applies to you governs: ' + win.src + '.' + (older ? ' Being 65 or over raises the floor.' : '') + (capped ? ' The result was capped at 2.0 g/kg, the ceiling for a public tool.' : ''), capped, underweight: bmi < 18.5, clinical: s.liver === 'yes' || s.goal === 'recovery' };
+  }
+  renderVals() {
+    const s = this.state, r = s.result;
+    const num = v => parseFloat(v);
+    const bmi = (num(s.heightCm) > 0 && num(s.weightKg) > 0) ? (num(s.weightKg) / Math.pow(num(s.heightCm) / 100, 2)).toFixed(1) : '—';
+    const emailDisabled = !(s.consent && /.+@.+\..+/.test(s.email));
+    return {
+      showForm: s.stage === 'form', showResult: s.stage !== 'form',
+      showRenal: s.stage === 'renal', showNormal: s.stage === 'result',
+      showUnsure: s.stage === 'result' && s.kidney === 'unsure',
+      showPreg: !!(r && r.branch === 'pregnancy'), showClinical: !!(r && r.clinical), showUnderweight: !!(r && r.underweight),
+      age: s.age, heightCm: s.heightCm, weightKg: s.weightKg, bmiText: bmi,
+      isFemale: s.sex === 'female', isMale: s.sex === 'male',
+      pickFemale: () => this.setState({ sex: 'female' }), pickMale: () => this.setState({ sex: 'male', preg: 'no' }),
+      setAge: e => this.setState({ age: e.target.value, errAge: false }), setHeight: e => this.setState({ heightCm: e.target.value, errBody: false }), setWeight: e => this.setState({ weightKg: e.target.value, errBody: false }),
+      pregOpts: this.opts([['no','Neither'],['pregnant','Pregnant'],['breastfeeding','Breastfeeding']], 'preg'),
+      ethOpts: this.opts([['White','White'],['Indian','Indian'],['Pakistani','Pakistani'],['Bangladeshi','Bangladeshi'],['Other Asian','Other Asian'],['Chinese','Chinese'],['Black Caribbean','Black Caribbean'],['Black African','Black African'],['Other','Other']], 'eth'),
+      actOpts: this.opts([['sedentary','Sedentary'],['light','Light'],['moderate','Moderate'],['vigorous','Very active']], 'activity'),
+      resOpts: this.opts([['0','None'],['1-2','1–2'],['3-4','3–4'],['5+','5+']], 'resistance'),
+      goalOpts: this.opts([['maintain','Maintain health'],['fatloss','Lose fat'],['build','Build muscle'],['ageing','Age well'],['recovery','Recover from illness']], 'goal'),
+      dietOpts: this.opts([['omnivore','Omnivore'],['vegetarian','Vegetarian'],['vegan','Vegan']], 'diet'),
+      mealOpts: this.opts([[2,'2'],[3,'3'],[4,'4'],[5,'5']], 'meals'),
+      kidOpts: this.opts([['no','No'],['yes','Yes'],['unsure','Not sure']], 'kidney'),
+      livOpts: this.opts([['no','No'],['yes','Yes']], 'liver'),
+      errAge: s.errAge, errBody: s.errBody, errKidney: s.errKidney,
+      calculate: () => {
+        const age = num(s.age), h = num(s.heightCm), w = num(s.weightKg);
+        const errAge = !(age >= 18 && age <= 99), errBody = !(h >= 140 && h <= 210 && w >= 35 && w <= 250), errKidney = !s.kidney;
+        if (errAge || errBody || errKidney) { this.setState({ errAge, errBody, errKidney }); return; }
+        const r = this.compute({ age, heightCm: h, weightKg: w, sex: s.sex, preg: s.preg, eth: s.eth, activity: s.activity, resistance: s.resistance, goal: s.goal, diet: s.diet, meals: s.meals, kidney: s.kidney, liver: s.liver });
+        this.setState({ result: r, stage: r.suppressed ? 'renal' : 'result', emailSent: false });
+      },
+      restart: () => this.setState({ stage: 'form', result: null, emailSent: false }),
+      targetG: r ? r.targetG : '', gPerKg: r ? r.gPerKg : '', perMeal: r ? r.perMeal : '', meals: s.meals, basisKg: r ? r.basisKg : '', basisNote: r ? r.basisNote : '',
+      rangeText: r && !r.suppressed ? (r.lowG === r.highG ? 'This is the published requirement for your stage, presented as a minimum.' : 'A range of ' + r.lowG + '–' + r.highG + ' g applies to you. The upper end is the most demanding guideline that fits your profile, so it is the one we recommend.') : '',
+      interp: r ? r.interp : '', sources: r && r.sources ? r.sources.map(t => ({ text: t })) : [],
+      email: s.email, consent: s.consent, setEmail: e => this.setState({ email: e.target.value }), toggleConsent: e => this.setState({ consent: e.target.checked }),
+      emailDisabled, emailBg: emailDisabled ? '#c9d3cd' : '#1f9d57', emailSent: s.emailSent, emailNotSent: !s.emailSent,
+      sendEmail: () => { if (!emailDisabled) this.setState({ emailSent: true }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Article call-to-action block</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#ffffff}
+a{color:#157a42}a:hover{color:#0f5a31}
+</style>
+</helmet>
+<div style="width: 760px; height: 360px; box-sizing: border-box; padding: 24px; display: flex; flex-direction: column; gap: 18px; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #ffffff">
+
+  <p style="margin: 0; font-size: 17px; line-height: 1.6; color: #3a4440">…which is why the advice to “eat more protein” only makes sense once you know roughly where you stand. Guidelines describe minimums, and the most demanding one that applies to you is the one that matters.</p>
+
+  <aside data-test="tool-cta" aria-labelledby="cta-h" style="border: 1px solid #e4eae6; border-left: 1px solid #e4eae6; border-radius: 18px; background: #f2f7f4; padding: 20px 22px; display: flex; gap: 18px; align-items: center">
+    <span style="width: 56px; height: 56px; flex: 0 0 auto; border-radius: 14px; background: #eafaf0; display: inline-flex; align-items: center; justify-content: center">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#157a42" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 3h10l3 7-8 11L4 10z"/><path d="M4 10h16"/></svg>
+    </span>
+    <div style="display: flex; flex-direction: column; gap: 4px; flex: 1 1 auto; min-width: 0">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #157a42">Lifeline Daily tool</span>
+      <h3 id="cta-h" style="margin: 0; font-size: 18px; font-weight: 800; letter-spacing: -0.01em">Work out your own daily protein target</h3>
+      <span style="font-size: 13px; color: #63706a">Guideline-based · 2 minutes · nothing stored · adults 18+</span>
+    </div>
+    <a href="Landing.dc.html" style="display: inline-flex; align-items: center; min-height: 46px; padding: 0 20px; border-radius: 12px; background: #1f9d57; color: #ffffff; font-weight: 700; text-decoration: none; font-size: 15px; white-space: nowrap">Try the tool</a>
+  </aside>
+
+  <p style="margin: 0; font-size: 17px; line-height: 1.6; color: #3a4440">For most moderately active adults that lands between 1.0 and 1.4 g per kilogram, and it rises with age, training and a plant-based diet…</p>
+  <p style="margin: 0; font-size: 12px; color: #63706a">Block is inserted automatically after the first H2 of qualifying posts (DEC-13) and is omitted or switched by the editor’s per-post override. Rendered by <code style="font-size: 12px">[lld_tool_cta]</code>; link carries <code style="font-size: 12px">utm_source=article&amp;utm_content=&lt;post_id&gt;</code>.</p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":760,"height":360}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

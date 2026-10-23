@@ -175,11 +175,16 @@ repo/
   releases/<tag>.json                                          SCH-10
   incidents/<id>.json                                          SCH-11
   design/tokens.json  design/baselines/<page>-<width>.png
-  public_html/tools/…  (tool files, endpoints, status.json)
-  wp-content/mu-plugins/lld-tools/
+  site/public_html/tools/…                                     deployable overlay: tool files, endpoints, status.json
+  site/public_html/wp-content/mu-plugins/lld-tools/            deployable overlay: the plugin
+  deploy/                                                      deploy.sh, environments/*.env.example, runbooks, DEPLOYMENT.md
+  .github/workflows/                                           ci.yml, deploy-staging.yml, deploy-production.yml
+  tools/  tests/  design/                                      dev tooling, tests, canvas sources and visual baselines
   registry/Stage1_Requirements_Registry_v1_2.json             SCH-01
   schemas/*.schema.json
 ```
+
+**Deployment rule.** Only `site/` is ever copied to a server, by `deploy/deploy.sh` (rsync over SSH) into the WordPress document root, excluding `api/config.php`, `api/outbox/`, `api/state/`. WordPress core, themes, plugins and uploads are never deployed from Git; they are managed in WordPress. Staging deploys on every merge to `staging`; production deploys only from an `rc-*` tag after HG-03 (release-gate check).
 
 ## 7. Data-protection controls
 

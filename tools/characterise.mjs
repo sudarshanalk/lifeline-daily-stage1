@@ -7,7 +7,7 @@ import { createHash } from 'node:crypto';
 import { JSDOM } from 'jsdom';
 
 const ROOT = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
-const TOOLS = `${ROOT}/public_html/tools`;
+const TOOLS = `${ROOT}/site/public_html/tools`;
 const sha = (p) => createHash('sha256').update(readFileSync(p)).digest('hex');
 
 function loadPage(file) {

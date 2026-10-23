@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Member dashboard</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#f2f7f4}
+a{color:#157a42}a:hover{color:#0f5a31}
+</style>
+</helmet>
+<div style="display: flex; flex-direction: column; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #f2f7f4">
+
+  <header style="display: flex; justify-content: center; background: #ffffff; border-bottom: 1px solid #e4eae6">
+    <div style="width: 100%; max-width: 1240px; display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; box-sizing: border-box; flex-wrap: wrap; gap: 16px">
+      <a href="Main.dc.html" style="font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: #1c1c1c; text-decoration: none">Lifeline Daily</a>
+      <nav aria-label="Member" style="display: flex; gap: 24px; font-size: 14px; font-weight: 600; flex-wrap: wrap; align-items: center">
+        <a href="S2_Dashboard.dc.html" style="color: #157a42; text-decoration: none; border-bottom: 2px solid #3fd07f; padding-bottom: 2px">My dashboard</a>
+        <a href="S2_Programme.dc.html" style="color: #1c1c1c; text-decoration: none">Programme</a>
+        <a href="Hub.dc.html" style="color: #1c1c1c; text-decoration: none">Tools</a>
+        <a href="#" style="color: #1c1c1c; text-decoration: none">Articles</a>
+        <a href="S2_Membership.dc.html" style="color: #1c1c1c; text-decoration: none">Account</a>
+        <span style="width: 36px; height: 36px; border-radius: 50%; background: #eafaf0; color: #157a42; display: inline-flex; align-items: center; justify-content: center; font-weight: 800" aria-label="Signed in as Nisha">N</span>
+      </nav>
+    </div>
+  </header>
+
+  <main style="display: flex; justify-content: center">
+    <div style="width: 100%; max-width: 1240px; padding: 32px 24px 48px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px">
+
+      <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 13px; color: #63706a">Wednesday 22 October · Week 2 of your programme</span>
+          <h1 style="margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -0.02em">Good morning, Nisha</h1>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap">
+          <span style="font-size: 13px; font-weight: 600; background: #ffffff; border: 1px solid #e4eae6; border-radius: 999px; padding: 8px 14px">Goal: Eat more protein</span>
+          <span style="font-size: 13px; font-weight: 600; background: #ffffff; border: 1px solid #e4eae6; border-radius: 999px; padding: 8px 14px">Goal: Lower diabetes risk</span>
+          <a href="#" style="font-size: 13px; font-weight: 600; border-radius: 999px; padding: 8px 14px; text-decoration: none">Edit goals</a>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+
+        <!-- Programme card -->
+        <section aria-labelledby="pg-h" style="grid-column: span 2; background: #ffffff; border: 1px solid #e4eae6; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 2px 6px rgba(20,40,30,.06)">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap">
+            <h2 id="pg-h" style="margin: 0; font-size: 20px; font-weight: 800">Healthy Habits programme · Week 2: Protein at breakfast</h2>
+            <a href="S2_Programme.dc.html" style="font-size: 14px; font-weight: 600">Open week →</a>
+          </div>
+          <div role="progressbar" aria-valuenow="9" aria-valuemin="0" aria-valuemax="28" aria-label="Programme actions completed" style="height: 10px; border-radius: 999px; background: #e4eae6; overflow: hidden"><div style="width: 32%; height: 100%; background: #1f9d57"></div></div>
+          <span style="font-size: 13px; color: #63706a">9 of 28 actions done · 4 of 7 this week</span>
+          <ul style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+            <li style="display: flex; gap: 10px; align-items: center; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px 14px; font-size: 14px"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1f9d57; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg></span><span style="text-decoration: line-through; color: #63706a">Add a protein food to breakfast (Mon)</span></li>
+            <li style="display: flex; gap: 10px; align-items: center; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px 14px; font-size: 14px"><span style="width: 24px; height: 24px; border-radius: 50%; background: #1f9d57; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg></span><span style="text-decoration: line-through; color: #63706a">10-minute walk after lunch (Tue)</span></li>
+            <li style="display: flex; gap: 10px; align-items: center; border: 2px solid #1f9d57; background: #eafaf0; border-radius: 14px; padding: 12px 14px; font-size: 14px; font-weight: 600"><input type="checkbox" aria-label="Mark today's action done" style="width: 22px; height: 22px; margin: 0; flex: 0 0 auto">Today: swap white rice for brown or mixed grains</li>
+            <li style="display: flex; gap: 10px; align-items: center; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px 14px; font-size: 14px; color: #63706a"><span style="width: 24px; height: 24px; border-radius: 50%; border: 2px solid #c9d3cd; flex: 0 0 auto"></span>Thu: weekly check-in (2 questions)</li>
+          </ul>
+        </section>
+
+        <!-- Saved results -->
+        <section aria-labelledby="sv-h" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 2px 6px rgba(20,40,30,.06)">
+          <h2 id="sv-h" style="margin: 0; font-size: 18px; font-weight: 800">Saved tool results</h2>
+          <div style="border: 1px solid #e4eae6; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #63706a">Daily Protein Target · 3 Oct 2026</span><span style="font-size: 22px; font-weight: 800">105 g <span style="font-size: 13px; font-weight: 600; color: #63706a">/ day</span></span><a href="#" style="font-size: 13px">Re-run with current weight</a></div>
+          <div style="border: 1px solid #e4eae6; border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #63706a">Diabetes Risk Check · 3 Oct 2026</span><span style="font-size: 22px; font-weight: 800; color: #a8690d">7.9% <span style="font-size: 13px; font-weight: 600">Moderate</span></span><span style="font-size: 12px; color: #63706a">Re-check suggested after 6 months of changes</span></div>
+          <p style="margin: 0; font-size: 12px; color: #63706a; line-height: 1.5">Saved because you opted in. <a href="S2_Membership.dc.html">Delete saved results</a></p>
+        </section>
+
+        <!-- Suggestions -->
+        <section aria-labelledby="sg-h" style="grid-column: span 3; background: #ffffff; border: 1px solid #e4eae6; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 16px; box-shadow: 0 2px 6px rgba(20,40,30,.06)">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap">
+            <h2 id="sg-h" style="margin: 0; font-size: 20px; font-weight: 800">Suggested for you</h2>
+            <span style="font-size: 13px; color: #63706a">Each suggestion explains why. Reviewed content only.</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px">
+            <article style="display: flex; flex-direction: column; gap: 8px"><div style="aspect-ratio: 16 / 9; border-radius: 14px; background: #e4eae6"></div><span style="font-size: 12px; color: #157a42; font-weight: 600">Because your goal is “Eat more protein”</span><h3 style="margin: 0; font-size: 16px; font-weight: 700; line-height: 1.3"><a href="#" style="color: #161a17; text-decoration: none">Five breakfasts with 30 g of protein</a></h3><span style="font-size: 12px; color: #63706a">Reviewed · 6 min</span></article>
+            <article style="display: flex; flex-direction: column; gap: 8px"><div style="aspect-ratio: 16 / 9; border-radius: 14px; background: #e4eae6"></div><span style="font-size: 12px; color: #157a42; font-weight: 600">Because your risk check flagged waist size</span><h3 style="margin: 0; font-size: 16px; font-weight: 700; line-height: 1.3"><a href="#" style="color: #161a17; text-decoration: none">Why waist matters more than weight for South Asians</a></h3><span style="font-size: 12px; color: #63706a">Reviewed · 8 min</span></article>
+            <article style="display: flex; flex-direction: column; gap: 8px"><div style="aspect-ratio: 16 / 9; border-radius: 14px; background: #eafaf0; display: flex; align-items: center; justify-content: center"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#157a42" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20h16M6 20V9M12 20V4M18 20v-7"/></svg></div><span style="font-size: 12px; color: #157a42; font-weight: 600">Because it has been 19 days since your last check</span><h3 style="margin: 0; font-size: 16px; font-weight: 700; line-height: 1.3"><a href="Landing.dc.html" style="color: #161a17; text-decoration: none">Re-run your protein target with this week's weight</a></h3><span style="font-size: 12px; color: #63706a">Tool · 2 min</span></article>
+          </div>
+        </section>
+
+        <!-- Notifications & data -->
+        <section aria-labelledby="nt-h" style="grid-column: span 3; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+          <h2 id="nt-h" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Account shortcuts</h2>
+          <a href="S2_Membership.dc.html" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 16px; padding: 18px; display: flex; gap: 12px; align-items: center; text-decoration: none; color: #161a17"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#157a42" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg><span style="display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 700">Notifications</span><span style="font-size: 12px; color: #63706a">Weekly email on · push off</span></span></a>
+          <a href="S2_Membership.dc.html" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 16px; padding: 18px; display: flex; gap: 12px; align-items: center; text-decoration: none; color: #161a17"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#157a42" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4"/><path d="M4 17v3h16v-3"/></svg><span style="display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 700">Export my data</span><span style="font-size: 12px; color: #63706a">JSON or PDF, ready in a minute</span></span></a>
+          <a href="S2_Membership.dc.html" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 16px; padding: 18px; display: flex; gap: 12px; align-items: center; text-decoration: none; color: #161a17"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#157a42" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6z"/><path d="m9 12 2 2 4-4"/></svg><span style="display: flex; flex-direction: column"><span style="font-size: 14px; font-weight: 700">Premium</span><span style="font-size: 12px; color: #63706a">Free plan · see what Premium adds</span></span></a>
+        </section>
+      </div>
+
+      <p style="margin: 0; font-size: 12px; color: #63706a; line-height: 1.5">Lifeline Daily is an educational service. Tool results are screening aids and not a diagnosis. If you feel unwell, speak to a clinician. <a href="#">Medical disclaimer and urgent care</a></p>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1620}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

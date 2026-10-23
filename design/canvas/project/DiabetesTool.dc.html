@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Diabetes risk check, interactive prototype</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#f2f7f4}
+a{color:#157a42}a:hover{color:#0f5a31}
+.opt{min-height:44px;border-radius:12px;border:1px solid #c9d3cd;background:#ffffff;font:inherit;font-size:13px;font-weight:600;color:#161a17;cursor:pointer}
+.opt[aria-pressed="true"]{border:2px solid #1f9d57;background:#eafaf0;color:#157a42}
+.inp{height:46px;border:1px solid #c9d3cd;border-radius:12px;padding:0 12px;font:inherit;font-size:16px;box-sizing:border-box;width:100%}
+.card{border:1px solid #e4eae6;border-radius:18px;background:#ffffff;padding:16px;margin:0;display:flex;flex-direction:column;gap:14px}
+.lbl{font-size:14px;font-weight:600}
+.err{font-size:13px;color:#b5302f;font-weight:600}
+.chk{display:flex;gap:10px;align-items:center;font-size:14px}
+</style>
+</helmet>
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 16px; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #f2f7f4">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #63706a">
+    <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #1f9d57"></span>Interactive prototype · percentage is illustrative, not the QDiabetes engine</span>
+    <sc-if value="{{showResult}}" hint-placeholder-val="{{false}}"><button type="button" onClick="{{restart}}" style="border: 0; background: transparent; font: inherit; font-size: 12px; font-weight: 600; color: #157a42; cursor: pointer">Start again</button></sc-if>
+  </div>
+
+  <!-- ===================== FORM ===================== -->
+  <sc-if value="{{showForm}}" hint-placeholder-val="{{true}}">
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #3a4440; background: #ffffff; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px 14px">This tool estimates your risk of developing <b>type 2 diabetes</b> over the next 10 years. It is a screening aid, not a diagnosis, and does not assess type 1 or gestational diabetes.</p>
+
+    <fieldset class="card">
+      <legend style="font-size: 15px; font-weight: 800; padding: 0 6px">Step 1 · About you</legend>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="sx" class="lbl">Sex</span>
+        <div role="group" aria-labelledby="sx" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><sc-for list="{{sexOpts}}" as="o" hint-placeholder-count="2"><button type="button" class="opt" aria-pressed="{{o.on}}" onClick="{{o.pick}}" style="font-size: 15px">{{o.label}}</button></sc-for></div>
+        <sc-if value="{{errSex}}" hint-placeholder-val="{{false}}"><span class="err" role="alert">Please choose one.</span></sc-if></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="ag" class="lbl">Age group <span style="color: #63706a; font-weight: 400">(25–84)</span></span>
+        <div role="group" aria-labelledby="ag" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px"><sc-for list="{{ageOpts}}" as="o" hint-placeholder-count="12"><button type="button" class="opt" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div>
+        <sc-if value="{{errAge}}" hint-placeholder-val="{{false}}"><span class="err" role="alert">Please choose your age group.</span></sc-if></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="et" class="lbl">Ethnicity</span>
+        <div role="group" aria-labelledby="et" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px"><sc-for list="{{ethOpts}}" as="o" hint-placeholder-count="9"><button type="button" class="opt" aria-pressed="{{o.on}}" onClick="{{o.pick}}" style="font-size: 12px">{{o.label}}</button></sc-for></div>
+        <sc-if value="{{errEth}}" hint-placeholder-val="{{false}}"><span class="err" role="alert">Please choose one.</span></sc-if></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="sm" class="lbl">Smoking</span>
+        <div role="group" aria-labelledby="sm" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px"><sc-for list="{{smokeOpts}}" as="o" hint-placeholder-count="5"><button type="button" class="opt" aria-pressed="{{o.on}}" onClick="{{o.pick}}" style="font-size: 12px">{{o.label}}</button></sc-for></div></div>
+    </fieldset>
+
+    <fieldset class="card">
+      <legend style="font-size: 15px; font-weight: 800; padding: 0 6px">Step 2 · Measurements</legend>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 6px"><label for="ht" class="lbl">Height (cm)</label><input id="ht" class="inp" type="number" inputmode="decimal" placeholder="165" value="{{heightCm}}" onChange="{{setHeight}}"></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><label for="wt" class="lbl">Weight (kg)</label><input id="wt" class="inp" type="number" inputmode="decimal" placeholder="72" value="{{weightKg}}" onChange="{{setWeight}}"></div>
+      </div>
+      <sc-if value="{{errBody}}" hint-placeholder-val="{{false}}"><span class="err" role="alert">Enter a height between 140 and 210 cm and a weight between 40 and 180 kg.</span></sc-if>
+      <div style="display: flex; flex-direction: column; gap: 6px"><label for="wa" class="lbl">Waist (cm) <span style="color: #63706a; font-weight: 400">· recommended, unlocks two cross-checks</span></label><input id="wa" class="inp" type="number" inputmode="decimal" placeholder="88" value="{{waistCm}}" onChange="{{setWaist}}"></div>
+      <div style="display: flex; gap: 8px; font-size: 13px; color: #63706a"><span style="background: #f2f7f4; border-radius: 999px; padding: 6px 12px">BMI <b style="color: #161a17">{{bmiText}}</b></span><span style="background: #f2f7f4; border-radius: 999px; padding: 6px 12px">Waist-to-height <b style="color: #161a17">{{whtrText}}</b></span></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="ac" class="lbl">Physical activity <span style="color: #63706a; font-weight: 400">(IDRS cross-check)</span></span>
+        <div role="group" aria-labelledby="ac" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px"><sc-for list="{{actOpts}}" as="o" hint-placeholder-count="4"><button type="button" class="opt" aria-pressed="{{o.on}}" onClick="{{o.pick}}" style="font-size: 12px">{{o.label}}</button></sc-for></div></div>
+    </fieldset>
+
+    <fieldset class="card">
+      <legend style="font-size: 15px; font-weight: 800; padding: 0 6px">Step 3 · Background</legend>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="fm" class="lbl">Close family with diabetes</span>
+        <div role="group" aria-labelledby="fm" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px"><sc-for list="{{famOpts}}" as="o" hint-placeholder-count="3"><button type="button" class="opt" aria-pressed="{{o.on}}" onClick="{{o.pick}}">{{o.label}}</button></sc-for></div></div>
+      <sc-for list="{{binaries}}" as="b" hint-placeholder-count="4">
+      <div style="display: flex; flex-direction: column; gap: 6px"><span class="lbl">{{b.label}}</span>
+        <div role="group" aria-label="{{b.label}}" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><button type="button" class="opt" aria-pressed="{{b.noOn}}" onClick="{{b.pickNo}}">No</button><button type="button" class="opt" aria-pressed="{{b.yesOn}}" onClick="{{b.pickYes}}">Yes</button></div></div>
+      </sc-for>
+      <details style="border: 1px solid #e4eae6; border-radius: 12px; padding: 10px 12px"><summary style="font-size: 14px; font-weight: 600; cursor: pointer">Medical history (optional, improves accuracy)</summary>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px"><sc-for list="{{optionals}}" as="o" hint-placeholder-count="5"><label class="chk"><input type="checkbox" checked="{{o.on}}" onChange="{{o.toggle}}" style="width: 20px; height: 20px; margin: 0">{{o.label}}</label></sc-for></div></details>
+    </fieldset>
+
+    <fieldset class="card" style="border-color: #e7c79a; background: #fdf4ea">
+      <legend style="font-size: 15px; font-weight: 800; padding: 0 6px; color: #7a4c12">Step 4 · Symptoms</legend>
+      <p style="margin: 0; font-size: 13px; color: #7a4c12; line-height: 1.5">Symptoms are checked separately from the score and always take priority over it.</p>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="hs" class="lbl">Any of these recently?</span>
+        <div role="group" aria-labelledby="hs" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><button type="button" class="opt" aria-pressed="{{symNo}}" onClick="{{pickSymNo}}">No</button><button type="button" class="opt" aria-pressed="{{symYes}}" onClick="{{pickSymYes}}">Yes</button></div></div>
+      <sc-if value="{{symYes}}" hint-placeholder-val="{{false}}">
+      <div style="display: flex; flex-direction: column; gap: 8px; background: #ffffff; border-radius: 12px; padding: 12px"><sc-for list="{{symptoms}}" as="o" hint-placeholder-count="7"><label class="chk"><input type="checkbox" checked="{{o.on}}" onChange="{{o.toggle}}" style="width: 20px; height: 20px; margin: 0">{{o.label}}</label></sc-for></div>
+      </sc-if>
+      <div style="border: 1.5px solid #e7a9a4; background: #fdeceb; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 13px; font-weight: 700; color: #7d1f1c">Urgent symptoms, please read</span>
+        <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: #7d1f1c; line-height: 1.45"><input type="checkbox" checked="{{emergency}}" onChange="{{toggleEmergency}}" style="width: 20px; height: 20px; margin: 2px 0 0; flex: 0 0 auto">Right now I feel very unwell, with vomiting, drowsiness, rapid or deep breathing, or stomach pain.</label>
+      </div>
+    </fieldset>
+
+    <button type="button" onClick="{{calculate}}" style="min-height: 52px; border-radius: 14px; border: 0; background: #1f9d57; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer">See my result</button>
+    <p style="margin: 0; font-size: 12px; color: #63706a; text-align: center; line-height: 1.5">Nothing you enter is stored. <a href="Legal.dc.html">Privacy</a> · <a href="Disclaimer.dc.html">Not a diagnosis</a></p>
+  </div>
+  </sc-if>
+
+  <!-- ===================== RESULT ===================== -->
+  <sc-if value="{{showResult}}" hint-placeholder-val="{{false}}">
+  <div data-test="result" style="display: flex; flex-direction: column; gap: 14px">
+
+    <sc-if value="{{isEmergency}}" hint-placeholder-val="{{false}}">
+    <div role="alert" style="border: 2px solid #b5302f; background: #fdeceb; color: #7d1f1c; border-radius: 16px; padding: 18px 16px; display: flex; gap: 12px; align-items: flex-start">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: 0 0 auto"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <h2 style="margin: 0; font-size: 20px; font-weight: 800; line-height: 1.2">These symptoms can be serious and need same-day medical assessment</h2>
+        <p style="margin: 0; font-size: 14px; line-height: 1.55">Feeling very unwell with vomiting, drowsiness, rapid or deep breathing, or stomach pain can be signs of a medical emergency. <b>Please contact urgent care or go to A&amp;E now.</b></p>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px"><span><b>UK:</b> call 999 or go to A&amp;E · urgent advice 111</span><span><b>Sri Lanka:</b> 1990 · <b>India:</b> 112 · or your local emergency number</span></div>
+      </div>
+    </div>
+    <section style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 8px"><span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #63706a">Risk estimate paused</span><p style="margin: 0; font-size: 15px; line-height: 1.55; color: #3a4440">We haven't shown a percentage. A 10-year risk score is not relevant while you have symptoms that need assessment today. Once you have been checked, you are welcome to run this again.</p></section>
+    </sc-if>
+
+    <sc-if value="{{isScored}}" hint-placeholder-val="{{false}}">
+    <sc-if value="{{isSymptomatic}}" hint-placeholder-val="{{false}}">
+    <div role="alert" style="border: 1.5px solid #e7c79a; background: #fdf4ea; color: #7a4c12; border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true" style="flex: 0 0 auto"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>
+      <div style="display: flex; flex-direction: column; gap: 4px"><h3 style="margin: 0; font-size: 15px; font-weight: 700">You've reported symptoms that can be caused by high blood sugar</h3><p style="margin: 0; font-size: 13px; line-height: 1.5">Regardless of your risk score below, please see a doctor promptly for a blood test (fasting glucose or HbA1c).</p></div>
+    </div>
+    </sc-if>
+    <section style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 2px 6px rgba(20,40,30,.06)">
+      <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #63706a">Your 10-year risk of type 2 diabetes</span>
+      <div style="display: flex; align-items: center; gap: 16px">
+        <div style="width: 112px; height: 112px; flex: 0 0 auto; border-radius: 50%; background: {{gaugeBg}}; display: flex; align-items: center; justify-content: center" aria-hidden="true"><div style="width: 86px; height: 86px; border-radius: 50%; background: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 22px; font-weight: 800; color: {{bandColor}}">{{pctText}}</div></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><h2 style="margin: 0; font-size: 26px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1">{{bandLabel}} risk</h2><span style="align-self: flex-start; font-size: 12px; font-weight: 700; color: #ffffff; background: {{bandColor}}; border-radius: 999px; padding: 5px 11px">{{bandRange}}</span><span style="font-size: 12px; color: #63706a">About {{per100}} in 100 people like you develop type 2 diabetes within 10 years.</span></div>
+      </div>
+      <p style="margin: 0; font-size: 14px; color: #3a4440; line-height: 1.55">{{bandInterp}}</p>
+    </section>
+    <section style="background: #eafaf0; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 8px"><h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #157a42">Next step</h3><p style="margin: 0; font-size: 14px; line-height: 1.55; color: #1f3a2b">{{nextStep}}</p></section>
+
+    <section style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+      <h3 style="margin: 0; font-size: 16px; font-weight: 700">Cross-checks</h3>
+      <sc-if value="{{hasWaist}}" hint-placeholder-val="{{true}}">
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <div style="border: 1px solid #e4eae6; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 11px; color: #63706a; text-transform: uppercase; letter-spacing: 0.06em">Indian Diabetes Risk Score</span><span style="font-size: 20px; font-weight: 800; color: {{idrsColor}}">{{idrsScore}} <span style="font-size: 13px; font-weight: 600">{{idrsTier}}</span></span><span style="font-size: 11px; color: #63706a">of 100</span></div>
+        <div style="border: 1px solid #e4eae6; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 11px; color: #63706a; text-transform: uppercase; letter-spacing: 0.06em">Waist-to-height</span><span style="font-size: 20px; font-weight: 800; color: {{whtrColor}}">{{whtrVal}} <span style="font-size: 13px; font-weight: 600">{{whtrTier}}</span></span></div>
+      </div>
+      <sc-if value="{{concord}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 13px; line-height: 1.5; color: #3a4440; background: #f2f7f4; border-radius: 12px; padding: 10px 12px"><b>One screening tool flags higher risk than the others.</b> This can happen with central weight gain. Worth mentioning at a check-up. Cross-checks do not change your main result.</p></sc-if>
+      </sc-if>
+      <sc-if value="{{noWaist}}" hint-placeholder-val="{{false}}"><p style="margin: 0; font-size: 13px; color: #63706a">Add your waist measurement to unlock these two cross-checks.</p></sc-if>
+    </section>
+
+    <details style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 14px 18px"><summary style="font-size: 15px; font-weight: 700; cursor: pointer">How this was calculated</summary><div style="margin-top: 10px; font-size: 13px; line-height: 1.6; color: #3a4440; display: flex; flex-direction: column; gap: 6px"><span>The live tool uses <b>QDiabetes-2018 (Model A)</b>, validated on 11.5 million people in English general practice, with no blood tests and separate equations for men and women. Because it was built on UK data, the percentage is best calibrated for UK residents; a UK deprivation score is part of the model and a neutral average is assumed. Symptoms are checked separately and always take priority. Type 2 only; not a diagnosis.</span><span style="color: #7a4c12; font-weight: 600">Prototype: this percentage is a simplified illustration for layout review, not the QDiabetes output.</span></div></details>
+    </sc-if>
+
+    <p style="margin: 0; font-size: 12px; color: #63706a; line-height: 1.5; padding: 0 4px">A screening aid, <b>not a diagnosis</b>. A blood test interpreted by a clinician is required to diagnose diabetes. <a href="Disclaimer.dc.html">Medical disclaimer and urgent care</a></p>
+
+    <section style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+      <h3 style="margin: 0; font-size: 16px; font-weight: 700">Email yourself a copy</h3>
+      <p style="margin: 0; font-size: 13px; color: #63706a; line-height: 1.5">{{emailNote}}</p>
+      <label for="em" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Email address</label>
+      <input id="em" class="inp" type="email" placeholder="Email address" value="{{email}}" onChange="{{setEmail}}">
+      <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: #3a4440"><input type="checkbox" checked="{{consent}}" onChange="{{toggleConsent}}" style="width: 20px; height: 20px; margin: 2px 0 0; flex: 0 0 auto"><span>I agree to Lifeline Daily emailing this result, which includes health information I entered, to the address above. Sent once, not stored. <a href="Legal.dc.html">Privacy Policy</a></span></label>
+      <sc-if value="{{emailSent}}" hint-placeholder-val="{{false}}"><div role="status" style="background: #eafaf0; color: #157a42; border-radius: 12px; padding: 12px; font-size: 14px; font-weight: 600">Sent. Check your inbox (prototype: no email is actually sent).</div></sc-if>
+      <sc-if value="{{emailNotSent}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{sendEmail}}" disabled="{{emailDisabled}}" style="min-height: 48px; border-radius: 12px; border: 0; background: {{emailBg}}; color: #ffffff; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer">Email me a copy</button></sc-if>
+    </section>
+  </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2080}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { stage: 'form', sex: '', ageBand: 0, eth: '', smoke: 'Non', heightCm: '', weightKg: '', waistCm: '', activity: 'moderate', family: 'none', htn: 0, cvd: 0, gdm: 0, pcos: 0, learn: 0, psy: 0, ster: 0, stat: 0, apsy: 0, hasSym: 'no', syms: {}, emergency: false, errSex: false, errAge: false, errEth: false, errBody: false, result: null, email: '', consent: false, emailSent: false };
+  }
+  opts(list, key, errKey) { return list.map(([val, label]) => ({ label, on: this.state[key] === val, pick: () => this.setState(Object.assign({ [key]: val }, errKey ? { [errKey]: false } : {})) })); }
+  illustrativePct(s) {
+    // Simplified illustration for layout review only. NOT the QDiabetes equation.
+    const bmi = s.weightKg / Math.pow(s.heightCm / 100, 2);
+    let score = -4.2 + 0.055 * (s.ageBand - 27) + 0.12 * Math.max(0, bmi - 22);
+    score += ({ Indian: 1.1, Pakistani: 1.3, Bangladeshi: 1.8, 'Other Asian': 1.1, Chinese: 0.9, 'Black Caribbean': 0.4, 'Black African': 0.3, Other: 0.4, 'White / not stated': 0 })[s.eth] || 0;
+    score += ({ Non: 0, Ex: 0.07, Light: 0.3, Moderate: 0.35, Heavy: 0.5 })[s.smoke] || 0;
+    if (s.family !== 'none') score += 0.5;
+    score += 0.45 * s.htn + 0.2 * s.cvd + 1.5 * s.gdm + 0.35 * s.pcos + 0.3 * s.learn + 0.25 * s.psy + 0.25 * s.ster + 0.65 * s.stat + 0.5 * s.apsy;
+    const p = 100 / (1 + Math.exp(-score));
+    return Math.max(0.4, Math.min(60, p));
+  }
+  renderVals() {
+    const s = this.state, r = s.result, num = v => parseFloat(v);
+    const h = num(s.heightCm), w = num(s.weightKg), wa = num(s.waistCm);
+    const bmi = h > 0 && w > 0 ? (w / Math.pow(h / 100, 2)) : NaN;
+    const whtr = h > 0 && wa > 0 ? wa / h : NaN;
+    const bin = (key, label) => ({ label, noOn: s[key] === 0, yesOn: s[key] === 1, pickNo: () => this.setState({ [key]: 0 }), pickYes: () => this.setState({ [key]: 1 }) });
+    const binaries = [bin('htn', 'Treated for high blood pressure?'), bin('cvd', 'Heart disease or stroke in the past?')];
+    if (s.sex === 'Female') { binaries.push(bin('gdm', 'Diabetes during a pregnancy?')); binaries.push(bin('pcos', 'Polycystic ovary syndrome?')); }
+    const optionals = [['learn','Learning disability'],['psy','Schizophrenia or bipolar disorder'],['ster','Regular corticosteroid (steroid) tablets'],['stat','Taking statins'],['apsy','Atypical antipsychotic medication']].map(([k, label]) => ({ label, on: s[k] === 1, toggle: e => this.setState({ [k]: e.target.checked ? 1 : 0 }) }));
+    const symDefs = [['thirst','Excessive thirst',true],['polyuria','Passing urine very often, especially at night',true],['wtloss','Unexplained weight loss',true],['fatigue','Persistent fatigue',false],['vision','Blurred vision',false],['healing','Slow-healing cuts or recurrent infections',false],['tingling','Tingling or numbness in hands or feet',false]];
+    const symptoms = symDefs.map(([k, label]) => ({ label, on: !!s.syms[k], toggle: e => this.setState({ syms: Object.assign({}, s.syms, { [k]: e.target.checked }) }) }));
+    const bandOf = p => p < 5.6 ? 'low' : p < 10 ? 'moderate' : p < 20 ? 'high' : 'veryHigh';
+    const BAND = { low: { label: 'Low', color: '#1f9d57', range: 'under 5.6%', interp: 'Your estimated risk is low. Most of it comes down to habits worth keeping up.', next: 'Re-check every 1–3 years, or sooner if your weight or health changes.' }, moderate: { label: 'Moderate', color: '#a8690d', range: '5.6% to under 10%', interp: 'Your estimated risk is moderate. Most of it comes from factors you can influence: weight, waist and activity.', next: 'A lifestyle review now, and ask your doctor about a blood test within the next few months.' }, high: { label: 'High', color: '#b5302f', range: '10% to under 20%', interp: 'Your estimated risk is high. This is the level at which the NHS recommends a blood test.', next: 'Arrange a blood test (fasting glucose or HbA1c) soon, and discuss a prevention programme.' }, veryHigh: { label: 'Very high', color: '#8a1f1e', range: '20% and above', interp: 'Your estimated risk is very high.', next: 'See your doctor soon for testing. Your estimated risk is very high.' } };
+    let out = {};
+    if (r && r.scored) {
+      const b = BAND[r.band];
+      const idrsTier = r.idrs < 30 ? 'Low' : r.idrs < 60 ? 'Moderate' : 'High';
+      const whtrTier = r.whtr < 0.5 ? 'Healthy' : r.whtr < 0.6 ? 'Raised' : 'High';
+      out = { pctText: r.pct.toFixed(1) + '%', per100: Math.max(1, Math.round(r.pct)), bandLabel: b.label, bandColor: b.color, bandRange: b.range, bandInterp: b.interp, nextStep: r.symptomatic ? 'Because you reported symptoms, book a blood test now. ' + b.next : b.next, gaugeBg: 'conic-gradient(' + b.color + ' 0 ' + Math.min(100, Math.round(r.pct * 2.5)) + '%, #e4eae6 ' + Math.min(100, Math.round(r.pct * 2.5)) + '% 100%)', hasWaist: r.hasWaist, noWaist: !r.hasWaist, idrsScore: r.idrs, idrsTier, idrsColor: idrsTier === 'High' ? '#b5302f' : idrsTier === 'Moderate' ? '#a8690d' : '#1f9d57', whtrVal: r.hasWaist ? r.whtr.toFixed(2) : '', whtrTier, whtrColor: whtrTier === 'High' ? '#b5302f' : whtrTier === 'Raised' ? '#a8690d' : '#1f9d57', concord: r.band === 'low' && r.hasWaist && (idrsTier === 'High' || whtrTier === 'High') };
+    }
+    const emailDisabled = !(s.consent && /.+@.+\..+/.test(s.email));
+    return Object.assign({
+      showForm: s.stage === 'form', showResult: s.stage === 'result',
+      isEmergency: !!(r && r.emergency), isScored: !!(r && r.scored), isSymptomatic: !!(r && r.symptomatic),
+      sexOpts: this.opts([['Female','Female'],['Male','Male']], 'sex', 'errSex'),
+      ageOpts: this.opts([[27,'25–29'],[32,'30–34'],[37,'35–39'],[42,'40–44'],[47,'45–49'],[52,'50–54'],[57,'55–59'],[62,'60–64'],[67,'65–69'],[72,'70–74'],[77,'75–79'],[82,'80–84']], 'ageBand', 'errAge'),
+      ethOpts: this.opts([['White / not stated','White / not stated'],['Indian','Indian'],['Pakistani','Pakistani'],['Bangladeshi','Bangladeshi'],['Other Asian','Other Asian'],['Black Caribbean','Black Caribbean'],['Black African','Black African'],['Chinese','Chinese'],['Other','Other']], 'eth', 'errEth'),
+      smokeOpts: this.opts([['Non','Never'],['Ex','Ex'],['Light','Light'],['Moderate','Moderate'],['Heavy','Heavy']], 'smoke'),
+      actOpts: this.opts([['vigorous','Vigorous'],['moderate','Moderate'],['mild','Mild'],['none','None']], 'activity'),
+      famOpts: this.opts([['none','None'],['one','One parent'],['both','Both / sibling']], 'family'),
+      binaries, optionals, symptoms,
+      heightCm: s.heightCm, weightKg: s.weightKg, waistCm: s.waistCm,
+      setHeight: e => this.setState({ heightCm: e.target.value, errBody: false }), setWeight: e => this.setState({ weightKg: e.target.value, errBody: false }), setWaist: e => this.setState({ waistCm: e.target.value }),
+      bmiText: isNaN(bmi) ? '—' : bmi.toFixed(1), whtrText: isNaN(whtr) ? '—' : whtr.toFixed(2),
+      symNo: s.hasSym === 'no', symYes: s.hasSym === 'yes', pickSymNo: () => this.setState({ hasSym: 'no', syms: {} }), pickSymYes: () => this.setState({ hasSym: 'yes' }),
+      emergency: s.emergency, toggleEmergency: e => this.setState({ emergency: e.target.checked }),
+      errSex: s.errSex, errAge: s.errAge, errEth: s.errEth, errBody: s.errBody,
+      calculate: () => {
+        const errSex = !s.sex, errAge = !s.ageBand, errEth = !s.eth, errBody = !(h >= 140 && h <= 210 && w >= 40 && w <= 180);
+        if (errSex || errAge || errEth || errBody) { this.setState({ errSex, errAge, errEth, errBody }); return; }
+        const classic = s.hasSym === 'yes' && (s.syms.thirst || s.syms.polyuria || s.syms.wtloss);
+        if (s.emergency) { this.setState({ stage: 'result', result: { emergency: true, scored: false }, emailSent: false }); return; }
+        const pct = this.illustrativePct({ ageBand: s.ageBand, heightCm: h, weightKg: w, eth: s.eth, smoke: s.smoke, family: s.family, htn: s.htn, cvd: s.cvd, gdm: s.gdm, pcos: s.pcos, learn: s.learn, psy: s.psy, ster: s.ster, stat: s.stat, apsy: s.apsy });
+        const hasWaist = wa > 0;
+        const pAge = s.ageBand < 35 ? 0 : s.ageBand < 50 ? 20 : 30;
+        const pW = s.sex === 'Male' ? (wa < 90 ? 0 : wa < 100 ? 10 : 20) : (wa < 80 ? 0 : wa < 90 ? 10 : 20);
+        const pA = { vigorous: 0, moderate: 10, mild: 20, none: 30 }[s.activity];
+        const pF = { none: 0, one: 10, both: 20 }[s.family];
+        this.setState({ stage: 'result', emailSent: false, result: { emergency: false, scored: true, symptomatic: !!classic, pct, band: bandOf(pct), hasWaist, idrs: hasWaist ? pAge + pW + pA + pF : 0, whtr: hasWaist ? wa / h : 0 } });
+      },
+      restart: () => this.setState({ stage: 'form', result: null, emailSent: false }),
+      emailNote: r && r.emergency ? 'Optional. The email repeats the urgent-care message above. It contains no risk score.' : 'Optional. Sent once. We do not keep your email address or your result.',
+      email: s.email, consent: s.consent, setEmail: e => this.setState({ email: e.target.value }), toggleConsent: e => this.setState({ consent: e.target.checked }),
+      emailDisabled, emailBg: emailDisabled ? '#c9d3cd' : '#1f9d57', emailSent: s.emailSent, emailNotSent: !s.emailSent, sendEmail: () => { if (!emailDisabled) this.setState({ emailSent: true }); }
+    }, out);
+  }
+}
+</script>
+</body>
+</html>

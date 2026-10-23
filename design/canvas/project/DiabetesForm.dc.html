@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Diabetes risk check, form</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#f2f7f4}
+a{color:#157a42}a:hover{color:#0f5a31}
+</style>
+</helmet>
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 16px; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #f2f7f4">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #63706a">
+    <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #1f9d57"></span>Tool available · version 27c0e33c</span>
+    <span>Step 1 of 4</span>
+  </div>
+  <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #3a4440; background: #ffffff; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px 14px">This tool estimates your risk of developing <b>type 2 diabetes</b> over the next 10 years. It is a screening aid, not a diagnosis, and does not assess type 1 or gestational diabetes. A blood test interpreted by a clinician is required to diagnose diabetes.</p>
+
+  <form style="display: flex; flex-direction: column; gap: 14px" aria-label="Diabetes risk check">
+
+    <fieldset style="border: 1px solid #e4eae6; border-radius: 18px; background: #ffffff; padding: 16px; margin: 0; display: flex; flex-direction: column; gap: 14px">
+      <legend style="font-size: 15px; font-weight: 800; padding: 0 6px">Step 1 · About you</legend>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="sx" style="font-size: 14px; font-weight: 600">Sex <span style="color: #63706a; font-weight: 400">(separate equations)</span></span>
+        <div role="group" aria-labelledby="sx" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><button type="button" aria-pressed="true" style="min-height: 46px; border-radius: 12px; border: 2px solid #1f9d57; background: #eafaf0; font: inherit; font-size: 15px; font-weight: 600; color: #157a42">Female</button><button type="button" aria-pressed="false" style="min-height: 46px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 15px; font-weight: 600">Male</button></div></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="ag" style="font-size: 14px; font-weight: 600">Age group <span style="color: #63706a; font-weight: 400">(25–84)</span></span>
+        <div role="group" aria-labelledby="ag" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+          <button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 13px; font-weight: 600">25–29</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 13px; font-weight: 600">30–34</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 13px; font-weight: 600">35–39</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 13px; font-weight: 600">40–44</button>
+          <button type="button" aria-pressed="true" style="min-height: 44px; border-radius: 12px; border: 2px solid #1f9d57; background: #eafaf0; font: inherit; font-size: 13px; font-weight: 600; color: #157a42">45–49</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 13px; font-weight: 600">50–54</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 13px; font-weight: 600">55–59</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 13px; font-weight: 600">60–64</button>
+          <button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 13px; font-weight: 600">65–69</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 13px; font-weight: 600">70–74</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 13px; font-weight: 600">75–79</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 13px; font-weight: 600">80–84</button>
+        </div></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><label for="eth" style="font-size: 14px; font-weight: 600">Ethnicity <span style="color: #63706a; font-weight: 400">(selects coefficients calibrated to your group)</span></label><select id="eth" style="height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 10px; font: inherit; font-size: 15px; background: #ffffff"><option>Select…</option><option>White / not stated</option><option>Indian</option><option>Pakistani</option><option>Bangladeshi</option><option>Other Asian</option><option>Black Caribbean</option><option>Black African</option><option>Chinese</option><option>Other</option></select></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="sm" style="font-size: 14px; font-weight: 600">Smoking</span>
+        <div role="group" aria-labelledby="sm" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px"><button type="button" aria-pressed="true" style="min-height: 44px; border-radius: 12px; border: 2px solid #1f9d57; background: #eafaf0; font: inherit; font-size: 12px; font-weight: 600; color: #157a42">Never</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 12px; font-weight: 600">Ex</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 12px; font-weight: 600">Light</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 12px; font-weight: 600">Moderate</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 12px; font-weight: 600">Heavy</button></div>
+        <span style="font-size: 12px; color: #63706a">Light &lt;10 a day · Moderate 10–19 · Heavy 20+</span></div>
+    </fieldset>
+
+    <fieldset style="border: 1px solid #e4eae6; border-radius: 18px; background: #ffffff; padding: 16px; margin: 0; display: flex; flex-direction: column; gap: 14px">
+      <legend style="font-size: 15px; font-weight: 800; padding: 0 6px">Step 2 · Measurements</legend>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 6px"><label for="ht" style="font-size: 14px; font-weight: 600">Height</label><div style="display: flex; gap: 6px"><input id="ht" type="number" inputmode="decimal" placeholder="165" style="flex: 1 1 auto; min-width: 0; height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 10px; font: inherit; font-size: 16px"><label for="htu" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Height unit</label><select id="htu" style="height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 8px; font: inherit; font-size: 14px; background: #ffffff"><option>cm</option><option>ft in</option></select></div></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><label for="wt" style="font-size: 14px; font-weight: 600">Weight</label><div style="display: flex; gap: 6px"><input id="wt" type="number" inputmode="decimal" placeholder="72" style="flex: 1 1 auto; min-width: 0; height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 10px; font: inherit; font-size: 16px"><label for="wtu" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Weight unit</label><select id="wtu" style="height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 8px; font: inherit; font-size: 14px; background: #ffffff"><option>kg</option><option>lb</option></select></div></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><label for="wa" style="font-size: 14px; font-weight: 600">Waist <span style="color: #63706a; font-weight: 400">(around the belly button · recommended, unlocks two cross-checks)</span></label><div style="display: flex; gap: 6px"><input id="wa" type="number" inputmode="decimal" placeholder="88" style="flex: 1 1 auto; min-width: 0; height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 10px; font: inherit; font-size: 16px"><label for="wau" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Waist unit</label><select id="wau" style="height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 8px; font: inherit; font-size: 14px; background: #ffffff"><option>cm</option><option>inches</option></select></div></div>
+      <div style="display: flex; gap: 8px; font-size: 13px; color: #63706a"><span style="background: #f2f7f4; border-radius: 999px; padding: 6px 12px">BMI <b style="color: #161a17">26.4</b></span><span style="background: #f2f7f4; border-radius: 999px; padding: 6px 12px">Waist-to-height <b style="color: #161a17">0.53</b></span></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="ac" style="font-size: 14px; font-weight: 600">Physical activity <span style="color: #63706a; font-weight: 400">(used by the IDRS cross-check)</span></span>
+        <div role="group" aria-labelledby="ac" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px"><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 12px; font-weight: 600">Vigorous</button><button type="button" aria-pressed="true" style="min-height: 44px; border-radius: 12px; border: 2px solid #1f9d57; background: #eafaf0; font: inherit; font-size: 12px; font-weight: 600; color: #157a42">Moderate</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 12px; font-weight: 600">Mild</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 12px; font-weight: 600">None</button></div></div>
+    </fieldset>
+
+    <fieldset style="border: 1px solid #e4eae6; border-radius: 18px; background: #ffffff; padding: 16px; margin: 0; display: flex; flex-direction: column; gap: 14px">
+      <legend style="font-size: 15px; font-weight: 800; padding: 0 6px">Step 3 · Background</legend>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="fm" style="font-size: 14px; font-weight: 600">Close family with diabetes</span>
+        <div role="group" aria-labelledby="fm" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px"><label style="display: flex; gap: 8px; align-items: center; border: 1px solid #c9d3cd; border-radius: 12px; padding: 10px 12px; font-size: 13px; font-weight: 600"><input type="checkbox" checked style="width: 20px; height: 20px; margin: 0">Mother</label><label style="display: flex; gap: 8px; align-items: center; border: 1px solid #c9d3cd; border-radius: 12px; padding: 10px 12px; font-size: 13px; font-weight: 600"><input type="checkbox" style="width: 20px; height: 20px; margin: 0">Father</label><label style="display: flex; gap: 8px; align-items: center; border: 1px solid #c9d3cd; border-radius: 12px; padding: 10px 12px; font-size: 13px; font-weight: 600"><input type="checkbox" style="width: 20px; height: 20px; margin: 0">Sibling</label></div></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="ht1" style="font-size: 14px; font-weight: 600">Treated for high blood pressure?</span><div role="group" aria-labelledby="ht1" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><button type="button" aria-pressed="true" style="min-height: 44px; border-radius: 12px; border: 2px solid #1f9d57; background: #eafaf0; font: inherit; font-size: 14px; font-weight: 600; color: #157a42">No</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 14px; font-weight: 600">Yes</button></div></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="cv" style="font-size: 14px; font-weight: 600">Heart disease or stroke in the past?</span><div role="group" aria-labelledby="cv" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><button type="button" aria-pressed="true" style="min-height: 44px; border-radius: 12px; border: 2px solid #1f9d57; background: #eafaf0; font: inherit; font-size: 14px; font-weight: 600; color: #157a42">No</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 14px; font-weight: 600">Yes</button></div></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="gd" style="font-size: 14px; font-weight: 600">Diabetes during a pregnancy?</span><div role="group" aria-labelledby="gd" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><button type="button" aria-pressed="true" style="min-height: 44px; border-radius: 12px; border: 2px solid #1f9d57; background: #eafaf0; font: inherit; font-size: 14px; font-weight: 600; color: #157a42">No</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 14px; font-weight: 600">Yes</button></div></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="pc" style="font-size: 14px; font-weight: 600">Polycystic ovary syndrome?</span><div role="group" aria-labelledby="pc" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><button type="button" aria-pressed="true" style="min-height: 44px; border-radius: 12px; border: 2px solid #1f9d57; background: #eafaf0; font: inherit; font-size: 14px; font-weight: 600; color: #157a42">No</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 14px; font-weight: 600">Yes</button></div></div>
+      <details style="border: 1px solid #e4eae6; border-radius: 12px; padding: 10px 12px">
+        <summary style="font-size: 14px; font-weight: 600; cursor: pointer">Medical history (optional, improves accuracy)</summary>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px; font-size: 14px">
+          <label style="display: flex; gap: 10px; align-items: center"><input type="checkbox" style="width: 20px; height: 20px; margin: 0">Learning disability</label>
+          <label style="display: flex; gap: 10px; align-items: center"><input type="checkbox" style="width: 20px; height: 20px; margin: 0">Schizophrenia or bipolar disorder</label>
+          <label style="display: flex; gap: 10px; align-items: center"><input type="checkbox" style="width: 20px; height: 20px; margin: 0">Regular corticosteroid (steroid) tablets</label>
+          <label style="display: flex; gap: 10px; align-items: center"><input type="checkbox" style="width: 20px; height: 20px; margin: 0">Taking statins</label>
+          <label style="display: flex; gap: 10px; align-items: center"><input type="checkbox" style="width: 20px; height: 20px; margin: 0">Atypical antipsychotic medication</label>
+        </div>
+      </details>
+    </fieldset>
+
+    <fieldset style="border: 1px solid #e7c79a; border-radius: 18px; background: #fdf4ea; padding: 16px; margin: 0; display: flex; flex-direction: column; gap: 14px">
+      <legend style="font-size: 15px; font-weight: 800; padding: 0 6px; color: #7a4c12">Step 4 · Symptoms</legend>
+      <p style="margin: 0; font-size: 13px; color: #7a4c12; line-height: 1.5">Symptoms are checked separately from the score and always take priority over it.</p>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="hs" style="font-size: 14px; font-weight: 600">Any of these recently?</span><div role="group" aria-labelledby="hs" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 14px; font-weight: 600">No</button><button type="button" aria-pressed="true" style="min-height: 44px; border-radius: 12px; border: 2px solid #1f9d57; background: #eafaf0; font: inherit; font-size: 14px; font-weight: 600; color: #157a42">Yes</button></div></div>
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 14px; background: #ffffff; border-radius: 12px; padding: 12px">
+        <label style="display: flex; gap: 10px; align-items: center"><input type="checkbox" checked style="width: 20px; height: 20px; margin: 0">Excessive thirst</label>
+        <label style="display: flex; gap: 10px; align-items: center"><input type="checkbox" style="width: 20px; height: 20px; margin: 0">Passing urine very often, especially at night</label>
+        <label style="display: flex; gap: 10px; align-items: center"><input type="checkbox" style="width: 20px; height: 20px; margin: 0">Unexplained weight loss</label>
+        <label style="display: flex; gap: 10px; align-items: center"><input type="checkbox" style="width: 20px; height: 20px; margin: 0">Persistent fatigue</label>
+        <label style="display: flex; gap: 10px; align-items: center"><input type="checkbox" style="width: 20px; height: 20px; margin: 0">Blurred vision</label>
+        <label style="display: flex; gap: 10px; align-items: center"><input type="checkbox" style="width: 20px; height: 20px; margin: 0">Slow-healing cuts or recurrent infections</label>
+        <label style="display: flex; gap: 10px; align-items: center"><input type="checkbox" style="width: 20px; height: 20px; margin: 0">Tingling or numbness in hands or feet</label>
+      </div>
+      <div style="border: 1.5px solid #e7a9a4; background: #fdeceb; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 13px; font-weight: 700; color: #7d1f1c">Urgent symptoms, please read</span>
+        <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; color: #7d1f1c; line-height: 1.45"><input type="checkbox" style="width: 20px; height: 20px; margin: 2px 0 0; flex: 0 0 auto">Right now I feel very unwell, with vomiting, drowsiness, rapid or deep breathing, or stomach pain.</label>
+      </div>
+    </fieldset>
+
+    <button type="submit" style="min-height: 52px; border-radius: 14px; border: 0; background: #1f9d57; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer">See my result</button>
+    <p style="margin: 0; font-size: 12px; color: #63706a; text-align: center; line-height: 1.5">Nothing you enter is stored. <a href="Legal.dc.html">Privacy</a> · <a href="Disclaimer.dc.html">Not a diagnosis</a></p>
+  </form>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":2080}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
