@@ -82,7 +82,9 @@ export async function startHtaccessServer({ port = 0, overlay = resolve(ROOT, 's
   // X-Forwarded-For (DEC-35); the log salt is fixed so SCH-07 lines are reproducible.
   const cfg = readFileSync(join(docroot, 'tools', 'api', 'config.example.php'), 'utf8')
     .replace(/'transport'\s*=>\s*[^,]+,/, `'transport' => '${phpConfig.transport || 'log'}',`)
-    .replace(/'allowed_origins'\s*=>\s*\[[^\]]*\]/, "'allowed_origins' => ['https://lifelinedaily.com', 'https://www.lifelinedaily.com', 'http://localhost:8080']");
+    .replace(/'allowed_origins'\s*=>\s*\[[^\]]*\]/, "'allowed_origins' => ['https://lifelinedaily.com', 'https://www.lifelinedaily.com', 'http://localhost:8080']")
+    // `phpConfig.logDay` pins the UTC day of the SCH-07 ip_hash salt (TC-NFR1-16-AS-03 compares day N with day N+1)
+    .replace(/'outbox_dir'/, phpConfig.logDay ? `'log_day' => '${phpConfig.logDay}',\n  'outbox_dir'` : "'outbox_dir'");
   writeFileSync(join(docroot, 'tools', 'api', 'config.php'), cfg);
   if (!existsSync(join(docroot, 'tools', 'status.json'))) writeFileSync(join(docroot, 'tools', 'status.json'), '{}');
   const phpEnv = { ...process.env, LLD_TRUSTED_PROXIES: '127.0.0.1', LLD_LOG_SALT: 'harness-salt', ...(phpConfig.smtpHost ? { LLD_SMTP_HOST: phpConfig.smtpHost } : {}), ...(phpConfig.smtpPort ? { LLD_SMTP_PORT: String(phpConfig.smtpPort) } : {}), ...(phpConfig.env || {}) };
