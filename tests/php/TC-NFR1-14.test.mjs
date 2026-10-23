@@ -60,8 +60,10 @@ describe('TC-NFR1-14 e-mail deliverability and sandbox', () => {
     const stagingEnv = readFileSync(resolve(ROOT, 'deploy', 'environments', 'staging.env.example'), 'utf8');
     const m = /LLD_SMTP_HOST=(\S+)/.exec(stagingEnv);
     if (m) expect(m[1], 'staging SMTP host is Mailpit').toMatch(/mailpit/i);
-    const compose = ['docker-compose.yml', 'tools/local/local-stack.ps1'].filter((f) => existsSync(resolve(ROOT, f))).map((f) => readFileSync(resolve(ROOT, f), 'utf8')).join('\n');
-    expect(compose, 'local stack / CI mail sink is Mailpit').toMatch(/mailpit/i);
+    // CI and the make targets name Mailpit as the sink (the php-integration harness's log transport stands in for it until the
+    // Docker stack exists, OI-4); CLAUDE.md fixes the MAILPIT_URL contract. The local stack script gains Mailpit with Docker (DEC proposal).
+    for (const f of ['Makefile', '.github/workflows/ci-guards.yml']) expect(readFileSync(resolve(ROOT, f), 'utf8'), `${f} names the Mailpit sink`).toMatch(/mailpit/i);
+    expect(readFileSync(resolve(ROOT, 'CLAUDE.md'), 'utf8')).toMatch(/MAILPIT_URL/);
     expect(readFileSync(resolve(ROOT, 'tests', 'lib', 'htaccess-server.mjs'), 'utf8'), 'php-integration harness never uses the real config').toMatch(/'transport' => '\$\{phpConfig\.transport \|\| 'log'\}'/);
   });
 
