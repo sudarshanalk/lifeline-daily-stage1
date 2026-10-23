@@ -184,6 +184,7 @@ details.method .body p{margin:9px 0}
 .email-box p{margin:0 0 15px; font-size:.87rem; color:#c8d0cb}
 .email-box input{margin-bottom:11px}
 .email-box .consent{display:flex; gap:11px; align-items:flex-start; font-size:.84rem; color:#e6e8e6; margin-bottom:15px}
+.email-box .consent a{color:#fff;text-decoration:underline}
 .email-box .consent input{width:19px; height:19px; margin-top:2px; accent-color:var(--brand-green); flex:0 0 auto}
 .email-status{font-size:.9rem; margin-top:11px; min-height:1.2em}
 .email-status.ok{color:var(--brand-green)}
@@ -563,7 +564,7 @@ var MESSAGES = {
   email: {
     heading: "Email yourself a copy",
     intro:   "Optional — your result and next steps, sent once to your inbox. We don't store your health details.",
-    consent: "Email my result to me. I understand this is screening information, not medical advice.",
+    consent: "Email my result to me. I agree that Lifeline Daily may use my email address and the health information in this result to send this one email, and nothing else — see our <a href=\"__LLD_ORIGIN__/privacy-policy/\" target=\"_blank\" rel=\"noopener\">Privacy Policy</a>. This is screening information, not medical advice.",
     success: "Sent — check your inbox (and spam folder just in case).",
     errorValidation: "Please enter a valid email and tick the box.",
     errorServer: "Something went wrong sending that. Your result is still shown above."
@@ -902,7 +903,7 @@ function render(r){
   $('#methodBody').innerHTML=MESSAGES.method.map(function(p){return '<p>'+p+'</p>';}).join('')+'<p class="source" data-test="source-version">Source: QDiabetes-2018 Model A &middot; version <span data-lld-version data-lld-version-of="js:ENGINE">036017e4</span></p>';
   $('#emailHead').textContent=MESSAGES.email.heading;
   $('#emailIntro').textContent=MESSAGES.email.intro;
-  $('#consentLabel').textContent=MESSAGES.email.consent;
+  $('#consentLabel').innerHTML=MESSAGES.email.consent;   /* UI1-06: consent copy carries the Privacy Policy link (DEC-21) */
   $('#discZone').textContent=MESSAGES.disclaimer;
 }
 
