@@ -3,10 +3,10 @@
 // components (registry components[].paths), plus the harness paths every requirement needs. Conventions encoded here
 // (adopted in wave 1, recorded in the wave-1 PRs):
 //   * harness: tests/**, evidence/**, Makefile, registry/Stage1_Requirements_Registry_v1_2.json (status only — orchestrator)
-//   * provenance refresh set (SRS FR1-06 "same PR" rule): approvals/{protein,diabetes}.json, manifests/*.json,
-//     site/public_html/tools/status.json, tests/mutations/MUT-10.patch — allowed only when the diff also changes a tool page
+//   * provenance refresh set (SRS FR1-06 "same PR" rule): approvals/{protein,diabetes,copy}.json, copy/inventory.json,
+//     manifests/*.json, site/public_html/tools/status.json, tests/mutations/MUT-10.patch — allowed only when the diff also changes a tool page
 //   * .gitattributes/.gitignore/README.md/CLAUDE.md are never in scope for a requirement branch
-// Usage: node tests/ci/component-scope.mjs --req FR1-21 [--base origin/staging] [--head HEAD]
+// Usage: node tests/ci/component-scope.mjs --req FR1-21 [--base origin/staging] [--head HEAD]   |   --spec for `SPEC: ...` PRs (DEC-55)
 //        (--req defaults to the req/<ID> branch name or the PR title prefix in GITHUB_* env)
 import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
@@ -15,12 +15,28 @@ import { fileURLToPath } from 'node:url';
 import { ROOT } from '../lib/paths.mjs';
 
 const HARNESS = ['tests/**', 'evidence/**', 'Makefile', 'package-lock.json', 'registry/Stage1_Requirements_Registry_v1_2.json'];
-const PROVENANCE_SET = ['approvals/protein.json', 'approvals/diabetes.json', 'manifests/protein.json', 'manifests/diabetes.json', 'site/public_html/tools/status.json', 'tests/mutations/MUT-10.patch'];
+// approvals/copy.json and copy/inventory.json carry the DEC-25 per-key copy hashes: a MESSAGES/data-copy change on a tool page
+// cannot pass copy-hash without refreshing them in the same PR (DEC-56 proposal, mirrors the SRS FR1-06 version_hash rule)
+const PROVENANCE_SET = ['approvals/protein.json', 'approvals/diabetes.json', 'approvals/copy.json', 'copy/inventory.json', 'manifests/protein.json', 'manifests/diabetes.json', 'site/public_html/tools/status.json', 'tests/mutations/MUT-10.patch'];
 const TOOL_PAGES = ['site/public_html/tools/protein-requirement-tool.html', 'site/public_html/tools/diabetes-risk-tool.html'];
 
 /** Minimal glob → RegExp: `**` any depth (including none), `*` within one segment. Placeholders keep the two apart. */
 export const globToRegex = (g) => new RegExp('^' + g.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*\//g, '\u0001').replace(/\*\*/g, '\u0002').replace(/\*/g, '[^/]*').replace(/\u0001/g, '(?:.*/)?').replace(/\u0002/g, '.*') + '$');
 const matches = (file, globs) => globs.some((g) => globToRegex(g).test(file));
+
+/** SPEC PRs (title `SPEC: ...`, DEC-55): specification, register/registry and schema changes with no requirement id. Allowed:
+ *  docs/**, registry/** (any field except a requirement's `status`), schemas/**, the three shared fixture data files. */
+export const SPEC_ALLOWED = ['docs/**', 'registry/**', 'schemas/**', 'fixtures/required-phrases.json', 'fixtures/forbidden-terms.json', 'fixtures/sentinel-values.json'];
+export function specScope({ root = ROOT, files, base = 'origin/staging', head = 'HEAD' }) {
+  const problems = [];
+  for (const f of files) if (!matches(f, SPEC_ALLOWED)) problems.push(`${f} is outside the SPEC PR class (${SPEC_ALLOWED.join(', ')})`);
+  if (files.includes('registry/Stage1_Requirements_Registry_v1_2.json')) {
+    const load = (rev) => { try { return JSON.parse(execSync(`git show ${rev}:registry/Stage1_Requirements_Registry_v1_2.json`, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] })); } catch { return null; } };
+    const a = load(base), b = load(head);
+    if (a && b) for (const r of b.requirements) { const prev = a.requirements.find((x) => x.id === r.id); if (prev && prev.status !== r.status) problems.push(`registry: ${r.id} status ${prev.status} -> ${r.status} is an orchestrator change, not a SPEC change`); }
+  }
+  return { ok: problems.length === 0, problems, allowed: SPEC_ALLOWED, components: ['SPEC'] };
+}
 
 export function componentScope({ root = ROOT, req, files }) {
   const registry = JSON.parse(readFileSync(resolve(root, 'registry', 'Stage1_Requirements_Registry_v1_2.json'), 'utf8'));
@@ -55,10 +71,11 @@ export function inferReq() {
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
   const opt = (k, d) => { const i = args.indexOf(k); return i >= 0 ? args[i + 1] : d; };
-  const req = opt('--req') || inferReq();
-  if (!req) { console.error('component-scope: cannot infer requirement id (use --req or a req/<ID> branch)'); process.exit(2); }
   const files = changedFiles(opt('--base', 'origin/staging'), opt('--head', 'HEAD'));
-  const r = componentScope({ req, files });
+  const spec = args.includes('--spec');
+  const req = spec ? 'SPEC' : (opt('--req') || inferReq());
+  if (!req) { console.error('component-scope: cannot infer requirement id (use --req, --spec, or a req/<ID> branch)'); process.exit(2); }
+  const r = spec ? specScope({ files, base: opt('--base', 'origin/staging'), head: opt('--head', 'HEAD') }) : componentScope({ req, files });
   for (const p of r.problems) console.error('component-scope: ' + p);
   console.log(r.ok ? `component-scope: OK (${req}: ${files.length} files within ${r.components.join(', ')} + harness)` : 'component-scope: FAIL');
   process.exit(r.ok ? 0 : 1);

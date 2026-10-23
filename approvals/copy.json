@@ -72,7 +72,7 @@
     "diabetes.secondary.idrs.moderate": "5c42afc7a23018d32dcff346792b575bcdf63be118b98a61084b1afac32b93e9",
     "diabetes.secondary.idrs.high": "c4ebc6d4a5832cd9415f906ad03661110c705a72381c8b8b145761d02e2dd23a",
     "diabetes.secondary.needWaist": "76b60b7fabe51c222fc053c469da7365e8517df6e04ce733cbdcfcf4d13da767",
-    "diabetes.method": "0f2405fffe03fbe4787008ec5191aa578345ac31fa98eae7ffd69f3c35515de0",
+    "diabetes.method": "8a6b32975b1dced4c5bd3625dc99b64587d8b1a381e37a4aa9bf9f51f5d3785c",
     "diabetes.email.heading": "f25da8b361582351b52c7232234bbdc26e5385c590b00fb72c09f000864c60f9",
     "diabetes.email.intro": "b5dffa920961503df249a4f9fc4b7a685507d1a8bd8e5181a84faaa44d466057",
     "diabetes.email.consent": "c0b231474e9250d0ffc13ee26c3b21765df1bdc2f9ecaeaba93dee08e9990336",
@@ -99,6 +99,6 @@
     "diabetes.symptomatic.subject": "5f3f7b1931eea5e907175bed50a842aee6ab15e502d3cc1786856723a3f1a71c",
     "diabetes.symptomatic.body": "2c096c16e27c50f63e8047ea2483ba98d88691abac86cae515b1339bf36ee180",
     "diabetes.emergency.subject": "141f225804ab4657200f84922f89549634352f2125a98deb5a4f0743de896ef7",
-    "diabetes.emergency.body": "c7f11c57db1a1c22d1fc159384e896127feacf00d3ac849a69846171ef28d65d"
+    "diabetes.emergency.body": "e44786d2d291c6f0368ec9d83d73e439631f18a7e25cf43e4ce1548f03bb1803"
   }
 }

@@ -1,0 +1,13 @@
+diff --git a/site/public_html/tools/diabetes-risk-tool.html b/site/public_html/tools/diabetes-risk-tool.html
+index ceb5015..1be348f 100644
+--- a/site/public_html/tools/diabetes-risk-tool.html
++++ b/site/public_html/tools/diabetes-risk-tool.html
+@@ -628,7 +628,7 @@ var ENGINE = (function(){
+                             : (o.waistCm<80?0:(o.waistCm<90?10:20));
+     var pA={vigorous:0,moderate:10,mild:20,none:30}[o.activity]; if(pA==null)pA=0;
+     var pF={none:0,one:10,both:20}[o.family]; if(pF==null)pF=0;
+-    var s=pAge+pW+pA+pF, tier=s<30?'low':(s<60?'moderate':'high');
++    var s=pAge+pW+pA+pF, tier=s<30?'low':(s<50?'moderate':'high');
+     return {score:s,tier:tier};
+   }
+   return {QDR2018A:QDR2018A, whtr:whtr, idrs:idrs};
