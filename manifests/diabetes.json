@@ -1,0 +1,25 @@
+{
+  "tool_slug": "diabetes",
+  "live_url": "https://lifelinedaily.com/tools/diabetes-risk-tool.html",
+  "landing_url": "https://lifelinedaily.com/health-tools/diabetes-risk-check/",
+  "endpoint": "submit.php",
+  "owner": "Lifeline Daily",
+  "versions": [
+    {
+      "version_hash": "27c0e33ce3b98aea495a2f13fca112e32007d9d478ab30ee70401a39ab496292",
+      "captured_at": "2026-10-23T11:10:03Z",
+      "is_live": true,
+      "size_bytes": 54883,
+      "engine_hashes": {
+        "submit.php": "b7dd197892b71f47758ef6929a7ebfbd19df10867ffe623450334abff76dde10",
+        "api/mailer.php": "40fc7099b728886bd565d611c26e6f712bb9663691611cbb6d671bba44a83f5e",
+        "api/validate.php": "0d02f48fefedc039308eaa86bd7ba97681c23abae7ac0b1d718cafe64b29815b",
+        "api/render.php": "4cff985b6c5b3e54d8f8e476a4a88c8d3e2d998db519a115484b73e3d112f298",
+        "api/ratelimit.php": "031b03a79bdf2b81cc6f269330a50da2eb9c919cc97b161b1142a1fa4800c9aa",
+        "api/templates.php": "ca2aea12f82ba48d66050aa634dc2fe795a9ad2a1a083c1079f299466d826050",
+        "api/templates-protein.php": "daa9428655d79dcef46ac3dff5a245010ec1bec1acfd10b0959217c83091cd5b"
+      },
+      "notes": "Baseline from owner-supplied production snapshot, 23 Oct 2026; matches live HTML hash"
+    }
+  ]
+}
