@@ -33,7 +33,7 @@
     {
       "assertion": "TC-FR1-09-AS-03",
       "outcome": "pass",
-      "artefact": "copy change \u2014 forbidden phrase removed from MESSAGES.underweight.body (HG-02)",
+      "artefact": "copy change — forbidden phrase removed from MESSAGES.underweight.body (HG-02)",
       "oracle": "none"
     },
     {
@@ -382,5 +382,10 @@
     "status": "pending"
   },
   "started_at": "2026-10-23T15:40:00Z",
-  "finished_at": "2026-10-23T15:49:15Z"
+  "finished_at": "2026-10-23T15:49:15Z",
+  "reviewer": {
+    "agent": "P-C",
+    "verdict": "PASS",
+    "report": "https://github.com/sudarshanalk/lifeline-daily-stage1/pull/18 (P-C review 20261023-1651; CI blocked by the Actions spending limit — suites run locally)"
+  }
 }
