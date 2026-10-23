@@ -21,7 +21,7 @@ jobs:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
-      - name: PR title is "<ID>: <title>" and the body links an evidence bundle (TC-NFR1-09-AS-01)
+      - name: "PR title is '<ID>: <title>' and the body links an evidence bundle (TC-NFR1-09-AS-01)"
         run: |
           echo "$PR_TITLE" | grep -Eq '^(FR1|NFR1|UI1)-[0-9]{2}: ' || { echo "pr-title: title must match ^(FR1|NFR1|UI1)-\d{2}: <title>"; exit 1; }
           echo "$PR_BODY" | grep -q 'evidence/' || { echo "pr-title: body must contain the evidence/ path of the run"; exit 1; }
