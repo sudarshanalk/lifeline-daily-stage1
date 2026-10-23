@@ -413,6 +413,11 @@
   "red_run": "local-20261023-2135",
   "green_run": "local-20261023-2145",
   "human_gate": null,
-  "started_at": "2026-10-23T20:30:00Z",
-  "finished_at": "2026-10-23T19:53:49Z"
+  "started_at": "2026-10-23T19:30:00Z",
+  "finished_at": "2026-10-23T19:53:49Z",
+  "reviewer": {
+    "agent": "P-C",
+    "verdict": "PASS",
+    "report": "https://github.com/sudarshanalk/lifeline-daily-stage1/pull/29 (P-C review 20261023-2150; advisory applied: newest ci-guards run by created_at)"
+  }
 }

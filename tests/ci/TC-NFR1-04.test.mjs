@@ -15,7 +15,7 @@ const ghApi = (path, jq) => spawnSync('gh', ['api', path, ...(jq ? ['--jq', jq] 
 const online = () => spawnSync('gh', ['auth', 'status'], { encoding: 'utf8' }).status === 0 || !!(process.env.GITHUB_TOKEN || process.env.GH_TOKEN);
 /** The latest commit on this branch that touched the shared mailer (CMP-06), and the saf job GitHub ran for it (null when none yet). */
 function safJobFor(sha) {
-  const runs = ghApi(`repos/${repo}/actions/runs?head_sha=${sha}&per_page=20`, '[.workflow_runs[] | select(.name == "ci-guards")] | sort_by(.run_attempt) | last | .id');
+  const runs = ghApi(`repos/${repo}/actions/runs?head_sha=${sha}&per_page=20`, '[.workflow_runs[] | select(.name == "ci-guards")] | sort_by(.created_at) | last | .id');
   const runId = (runs.stdout || '').trim();
   if (!runId || runId === 'null') return null;
   const jobs = ghApi(`repos/${repo}/actions/runs/${runId}/jobs?per_page=100`, '.jobs[] | select(.name == "saf") | {conclusion, steps: [.steps[] | {name, conclusion}]}');
