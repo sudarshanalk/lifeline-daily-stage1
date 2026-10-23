@@ -3,8 +3,8 @@
 // components (registry components[].paths), plus the harness paths every requirement needs. Conventions encoded here
 // (adopted in wave 1, recorded in the wave-1 PRs):
 //   * harness: tests/**, evidence/**, Makefile, registry/Stage1_Requirements_Registry_v1_2.json (status only — orchestrator)
-//   * provenance refresh set (SRS FR1-06 "same PR" rule): approvals/{protein,diabetes}.json, manifests/*.json,
-//     site/public_html/tools/status.json, tests/mutations/MUT-10.patch — allowed only when the diff also changes a tool page
+//   * provenance refresh set (SRS FR1-06 "same PR" rule): approvals/{protein,diabetes,copy}.json, copy/inventory.json,
+//     manifests/*.json, site/public_html/tools/status.json, tests/mutations/MUT-10.patch — allowed only when the diff also changes a tool page
 //   * .gitattributes/.gitignore/README.md/CLAUDE.md are never in scope for a requirement branch
 // Usage: node tests/ci/component-scope.mjs --req FR1-21 [--base origin/staging] [--head HEAD]   |   --spec for `SPEC: ...` PRs (DEC-55)
 //        (--req defaults to the req/<ID> branch name or the PR title prefix in GITHUB_* env)
@@ -15,7 +15,9 @@ import { fileURLToPath } from 'node:url';
 import { ROOT } from '../lib/paths.mjs';
 
 const HARNESS = ['tests/**', 'evidence/**', 'Makefile', 'package-lock.json', 'registry/Stage1_Requirements_Registry_v1_2.json'];
-const PROVENANCE_SET = ['approvals/protein.json', 'approvals/diabetes.json', 'manifests/protein.json', 'manifests/diabetes.json', 'site/public_html/tools/status.json', 'tests/mutations/MUT-10.patch'];
+// approvals/copy.json and copy/inventory.json carry the DEC-25 per-key copy hashes: a MESSAGES/data-copy change on a tool page
+// cannot pass copy-hash without refreshing them in the same PR (DEC-56 proposal, mirrors the SRS FR1-06 version_hash rule)
+const PROVENANCE_SET = ['approvals/protein.json', 'approvals/diabetes.json', 'approvals/copy.json', 'copy/inventory.json', 'manifests/protein.json', 'manifests/diabetes.json', 'site/public_html/tools/status.json', 'tests/mutations/MUT-10.patch'];
 const TOOL_PAGES = ['site/public_html/tools/protein-requirement-tool.html', 'site/public_html/tools/diabetes-risk-tool.html'];
 
 /** Minimal glob → RegExp: `**` any depth (including none), `*` within one segment. Placeholders keep the two apart. */
