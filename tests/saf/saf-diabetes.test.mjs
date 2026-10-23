@@ -80,7 +80,7 @@ describe('SAF diabetes', () => {
       const post = (path, body, ip) => fetch(srv.url + path, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://lifelinedaily.com', 'X-Forwarded-For': ip }, body: JSON.stringify(body) });
       const before = outbox().length;
       const r = await post('/tools/submit.php', fixtures('FX-MAIL-02')[0].inputs, '10.5.0.1');
-      expect(r.status, 'withdrawn diabetes endpoint').toBe(503); expect((await r.json()).status).toBe('unavailable'); expect(outbox().length - before).toBe(0);
+      expect(r.status, 'withdrawn diabetes endpoint').toBe(503); expect((await r.json()).status).toBe('withdrawn'); expect(outbox().length - before).toBe(0);
       const p = await post('/tools/submit-protein.php', fixtures('FX-MAIL-01')[0].inputs, '10.5.0.2');
       expect(p.status, 'protein unaffected').toBe(200); expect(outbox().length - before).toBe(1);
       writeFileSync(srv.statusPath, JSON.stringify(status));

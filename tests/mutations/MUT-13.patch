@@ -1,5 +1,5 @@
 diff --git a/site/public_html/tools/submit.php b/site/public_html/tools/submit.php
-index 299ff60..327846f 100644
+index a01d64c..3fef14e 100644
 --- a/site/public_html/tools/submit.php
 +++ b/site/public_html/tools/submit.php
 @@ -41,7 +41,7 @@ if ((int)($_SERVER['CONTENT_LENGTH'] ?? 0) > $maxBody) {
@@ -9,5 +9,5 @@ index 299ff60..327846f 100644
 -if (!lld_tool_active('diabetes', $cfg)) {
 +if (false && !lld_tool_active('diabetes', $cfg)) {   // MUT-13: PHP ignores the withdrawal switch
    lld_log('diabetes', 'withdrawn', $ip, $cfg);
-   respond(503, ['status' => 'unavailable', 'message' => 'This tool is temporarily unavailable']);
+   respond(503, ['status' => 'withdrawn', 'message' => 'This tool is temporarily unavailable']);
  }
