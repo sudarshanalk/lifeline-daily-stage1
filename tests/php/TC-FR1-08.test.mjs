@@ -1,4 +1,4 @@
-// TC-FR1-08 php family: AS-04 FX-MAIL-REN-01/02 → renal template, subject+body match no digits+g; AS-07 server log lines for
+// TC-FR1-08 php family: AS-04 FX-MAIL-REN-01, FX-MAIL-REN-02 → renal template, subject+body match no digits+g; AS-07 server log lines for
 // the run contain no numeric result and no email address. The PHP endpoint runs behind the .htaccess emulator with the
 // log transport (outbox = Mailpit stand-in; CI/staging read Mailpit the same way via MAILPIT_URL when the stack exists).
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
@@ -18,7 +18,9 @@ const post = (body) => fetch(srv.url + '/tools/submit-protein.php', { method: 'P
 
 describe('TC-FR1-08 renal suppression — server layer', () => {
   test('TC-FR1-08-AS-04', async () => {
-    for (const f of fixtures('FX-MAIL-REN-*')) {
+    const ren = fixtures('FX-MAIL-REN-*');
+    expect(ren.map((f) => f.id), 'the TC names both renal mail fixtures').toEqual(['FX-MAIL-REN-01', 'FX-MAIL-REN-02']);
+    for (const f of ren) {
       const before = outbox();
       const r = await post(f.inputs);
       expect(r.status, f.id).toBe(f.expected.status);
