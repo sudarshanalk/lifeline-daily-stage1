@@ -51,7 +51,7 @@ describe('TC-NFR1-14 e-mail deliverability and sandbox', () => {
     expect(cfg).toMatch(/'host'\s*=>\s*getenv\('LLD_SMTP_HOST'\) \?: ''/);
     // no production SMTP host, username or password literal anywhere in the tracked tree (the filled config.php is never committed)
     // configuration, deployment, harness and workflow files (the AS-IS audit under reports/ documents the live WordPress mailer and is not configuration)
-    const tracked = execSync('git ls-files', { cwd: ROOT, encoding: 'utf8' }).split(/\r?\n/).filter((f) => f && /^(site|deploy|tools|tests|\.github)\//.test(f) && /\.(php|env|example|yml|yaml|json|sh|py|ps1|mjs|txt)$/.test(f) && !f.includes('PHPMailer/'));
+    const tracked = execSync('git ls-files', { cwd: ROOT, encoding: 'utf8' }).split(/\r?\n/).filter((f) => f && /^(site|deploy|tools|tests|\.github)\//.test(f) && /\.(php|env|example|yml|yaml|json|sh|py|ps1|mjs|txt)$/.test(f) && !f.includes('PHPMailer/') && !f.endsWith('TC-NFR1-14.test.mjs'));
     const prodHost = /smtp\.(hostinger|titan|gmail|office365|sendgrid|mailgun|zoho)\.[a-z]+|smtp-relay|email-smtp\./i;
     for (const f of tracked) expect(readFileSync(resolve(ROOT, f), 'utf8'), `${f} names a production SMTP host`).not.toMatch(prodHost);
     expect(existsSync(resolve(TOOLS_DIR, 'api', 'config.php')), 'filled config.php is not in the repository').toBe(false);
