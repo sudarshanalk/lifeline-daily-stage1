@@ -144,13 +144,15 @@ details.optional[open]{padding-bottom:16px}
 
 .headline{background:linear-gradient(180deg,#fff,#fbfefc); border:1px solid var(--line); border-radius:22px;
   padding:26px 22px 24px; text-align:center; box-shadow:var(--shadow-lg); position:relative; overflow:hidden}
-.headline .eyebrow{color:var(--muted); font-size:.72rem; letter-spacing:.22em; text-transform:uppercase; font-weight:700}
+.headline .eyebrow{margin:0; color:var(--muted); font-size:.72rem; letter-spacing:.22em; text-transform:uppercase; font-weight:700}
 .gaugebox{margin:8px auto 0; max-width:360px}
 .risk-num{font-size:3.6rem; font-weight:850; line-height:1; margin:2px 0; letter-spacing:-.03em}
 .risk-band{display:inline-flex; align-items:center; gap:7px; padding:6px 16px; border-radius:999px; color:#fff;
   font-weight:750; font-size:.9rem; margin-top:4px; box-shadow:var(--shadow-sm)}
 .risk-band::before{content:""; width:8px; height:8px; border-radius:50%; background:#fff; opacity:.9}
 .interp{margin:16px auto 0; max-width:52ch; color:#333; font-size:.96rem}
+#interpZone{text-align:center}
+#interpZone:empty{display:none}
 .next-step{margin:16px auto 0; max-width:52ch; background:var(--mint); border:1px solid #cdeede;
   border-radius:14px; padding:13px 15px; font-size:.92rem; text-align:left; display:flex; gap:10px}
 .next-step b{color:var(--accent-dark)}
@@ -442,9 +444,11 @@ footer.disc{color:var(--muted); font-size:.8rem; text-align:center; margin-top:2
   <section id="results" aria-live="polite">
     <div id="bannerZone" data-test="banners"></div>
     <div class="headline" id="headlineZone" data-test="headline"></div>
-    <div class="panel" id="secondaryZone"></div>
-    <div class="panel" id="adviceZone"></div>
-    <details class="method"><summary>How this works &amp; important limits</summary><div class="body" id="methodBody"></div></details>
+    <div class="panel" id="secondaryZone" data-test="metrics"></div>
+    <div class="panel" id="interpZone" data-test="interp"></div>
+    <div class="panel" id="adviceZone" data-test="advice"></div>
+    <details class="method" data-test="methodology"><summary>How this works &amp; important limits</summary><div class="body" id="methodBody"></div></details>
+    <footer class="disc" id="discZone" data-test="disclaimer"></footer>
     <div class="email-box" data-test="email-card">
       <h3 id="emailHead"></h3>
       <p id="emailIntro"></p>
@@ -455,7 +459,6 @@ footer.disc{color:var(--muted); font-size:.8rem; text-align:center; margin-top:2
       <button type="button" class="cta secondary" id="emailBtn">Email me a copy</button>
       <div class="email-status" id="emailStatus" role="status"></div>
     </div>
-    <footer class="disc" id="discZone"></footer>
   </section>
 </div>
 
@@ -854,15 +857,16 @@ function render(r){
 
   var hz=$('#headlineZone');
   if(suppress){
-    hz.innerHTML='<div class="eyebrow">Risk estimate paused</div><p class="interp">We haven\u2019t shown a percentage because the urgent symptoms above come first. Once you\u2019ve been checked, you\u2019re welcome to run this again.</p>';
+    $('#interpZone').innerHTML='';
+    hz.innerHTML='<h2 class="eyebrow">Risk estimate paused</h2><p class="interp">We haven\u2019t shown a percentage because the urgent symptoms above come first. Once you\u2019ve been checked, you\u2019re welcome to run this again.</p>';
   } else {
     var b=MESSAGES.bands[r.band];
     hz.innerHTML=
-      '<div class="eyebrow">Your 10-year risk of type 2 diabetes</div>'+
+      '<h2 class="eyebrow">Your 10-year risk of type 2 diabetes</h2>'+
       gaugeSVG(r.pct)+
       '<div class="risk-num tabular" id="riskNum" style="color:'+BAND_COLOR[r.band]+'">0.0%</div>'+
-      '<span class="risk-band" style="background:'+BAND_COLOR[r.band]+'">'+b.label+' risk</span>'+
-      '<p class="interp">'+b.interp+'</p>'+
+      '<span class="risk-band" style="background:'+BAND_COLOR[r.band]+'">'+b.label+' risk</span>';
+    $('#interpZone').innerHTML='<p class="interp">'+b.interp+'</p>'+
       '<div class="next-step"><span class="ns-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><span><b>Next step:</b> '+b.nextStep+'</span></div>';
     animateGauge(r.pct);
   }
