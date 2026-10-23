@@ -912,7 +912,9 @@ $('restart').onclick = ()=>{
 
 /* --- iframe auto-resize (parent half lives on the WP page) --- */
 function postHeight(){
-  const h = document.documentElement.scrollHeight;
+  /* UI1-10: content height, not scrollHeight — inside an iframe scrollHeight is never smaller than the frame, so the
+     embed could grow but never shrink (form → shorter result). Same measure as the diabetes tool. */
+  const h = Math.ceil(document.documentElement.getBoundingClientRect().height);
   /* FR1-21 / DEC-34: one message schema for both tools, posted only to the configured parent origin (never '*'). */
   if(window.parent !== window){ try{ window.parent.postMessage({ type:'lld-tool-height', height:h }, '__LLD_ORIGIN__'); }catch(e){} }
 }
