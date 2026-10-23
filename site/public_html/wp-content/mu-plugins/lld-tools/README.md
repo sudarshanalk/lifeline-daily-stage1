@@ -12,6 +12,10 @@ exactly this markup; until it exists the two landing pages carry it as page cont
         src="https://lifelinedaily.com/tools/protein-requirement-tool.html" loading="eager"></iframe>
 ```
 
+Order and values matter: the `lld_tools_settings` script must come **before** the listener script, and `iframe_origin` is a
+bare origin (`https://lifelinedaily.com`, no trailing slash, no path) — anything else fails closed and the iframe stays at the
+600 px fallback.
+
 Rules the listener enforces: messages are accepted only when `event.origin === lld_tools_settings.iframe_origin`; the only
 schema is `{type:'lld-tool-height', height}`; height is clamped to 600–20000 px; the iframe starts at the 600 px fallback,
 has no fixed `height`/`min-height`, and must not be rewritten by LiteSpeed lazy-load (`data-litespeed-src`/`about:blank`) —

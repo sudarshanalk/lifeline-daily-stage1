@@ -67,6 +67,18 @@ test('TC-FR1-21-AS-03', async ({ page }) => {
     expect(Math.abs(m.client - m.content), `width ${width}: iframe ${m.client} vs content ${m.content}`).toBeLessThanOrEqual(20);
     const scrollbar = await frameEl.evaluate((el) => el.contentWindow.innerWidth - el.contentDocument.documentElement.clientWidth);
     expect(scrollbar, `width ${width}: inner vertical scrollbar`).toBe(0);
+    // diabetes tool (different height formula: getBoundingClientRect) — results render live; fill the mandatory fields
+    await page.goto(landingUrl('diabetes'));
+    const dEl = page.locator('iframe.lld-tool-frame, iframe#lld-tool-frame');
+    const df = page.frameLocator('iframe.lld-tool-frame, iframe#lld-tool-frame');
+    await df.locator('button.tap[data-val="Female"]').click();
+    await df.locator('button.tap[data-val="47"]').click();
+    await df.locator('#ht').fill('165');
+    await df.locator('#wt').fill('70');
+    await page.waitForTimeout(600);
+    const d = await dEl.evaluate((el) => ({ client: el.clientHeight, content: el.contentDocument.documentElement.scrollHeight, scrollbar: el.contentWindow.innerWidth - el.contentDocument.documentElement.clientWidth }));
+    expect(Math.abs(d.client - d.content), `diabetes width ${width}: iframe ${d.client} vs content ${d.content}`).toBeLessThanOrEqual(20);
+    expect(d.scrollbar, `diabetes width ${width}: inner vertical scrollbar`).toBe(0);
   }
 });
 

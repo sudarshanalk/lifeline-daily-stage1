@@ -28,8 +28,8 @@
       if (!origin || event.origin !== origin) return false;              // DEC-34: configured origin only
       var d = event.data;
       if (!d || typeof d !== 'object' || d.type !== 'lld-tool-height') return false;
-      var h = Number(d.height);
-      if (!isFinite(h) || h <= 0) return false;
+      var h = d.height;
+      if (typeof h !== 'number' || !isFinite(h) || h <= 0) return false;   // numbers only, no coercion
       h = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, Math.ceil(h)));
       var applied = false;
       frames().forEach(function (f) {
