@@ -53,6 +53,8 @@ describe('TC-FR1-22 independent oracles', () => {
       expect(hg01.deferred_items.some((d) => /ORC-01/.test(d))).toBe(true);
       return ctx.skip('Docker daemon unavailable on this machine (OI-4); ORC-01 scaffold only — deferred to HG-02 in approvals/hg-01.json');
     }
+    const pins = JSON.parse(readFileSync(resolve(ROOT, 'oracles', 'orc-01-qdiabetes-r', 'pins.json'), 'utf8'));
+    if (!pins.tarball_sha256) return ctx.skip('Docker available but ORC-01 pins not yet recorded (first-run checklist in oracles/orc-01-qdiabetes-r/README.md)');
     const r = spawnSync('bash', [resolve(ROOT, 'oracles', 'orc-01-qdiabetes-r', 'run.sh'), ROOT], { cwd: ROOT, encoding: 'utf8', timeout: 900000 });
     expect(r.status, r.stdout + r.stderr).toBe(0);
     expect(existsSync(resultsPath('ORC-01'))).toBe(true);

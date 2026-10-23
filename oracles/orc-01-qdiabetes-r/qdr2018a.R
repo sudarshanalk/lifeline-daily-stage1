@@ -33,7 +33,7 @@ for (f in sort(list.files(file.path(root, "fixtures", "diabetes"), "\\.json$", f
     pct <- tryCatch(risk_for(fx$inputs), error = function(e) { message(fx$id, ": ", conditionMessage(e)); NA })
     results[[length(results) + 1]] <- list(fixture_id = fx$id,
       expected = if (is.null(pct)) list(pct = NULL) else list(pct = unname(as.numeric(pct))),
-      notes = if (is.null(pct)) "inputs not numeric (BAND fixture pending weight search)" else "unrounded QDR2018A percentage")
+      notes = if (is.null(pct)) "inputs not numeric (BAND fixture pending weight search)" else if (is.na(pct)) "QDR2018A error (see run log)" else "unrounded QDR2018A percentage")
   }
 }
 pins <- fromJSON(file.path(root, "oracles", "orc-01-qdiabetes-r", "pins.json"))
@@ -42,12 +42,12 @@ out <- list(
   implementation = "R QDiabetes::QDR2018A (CRAN Archive 1.0-2, AGPL-3; research-use disclaimer applies) in a pinned rocker/r-ver container",
   versions = list(R = paste(R.version$major, R.version$minor, sep = "."), QDiabetes = as.character(packageVersion("QDiabetes")),
                   tarball_sha256 = pins$tarball_sha256, image = pins$image, image_digest = pins$image_digest, licence = packageDescription("QDiabetes")$License),
-  source_hash = unname(tools::md5sum(file.path(root, "oracles", "orc-01-qdiabetes-r", "qdr2018a.R"))),
+  source_hash = trimws(sub(".*= ", "", system2("openssl", c("dgst", "-sha256", file.path(root, "oracles", "orc-01-qdiabetes-r", "qdr2018a.R")), stdout = TRUE))),
   run_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),
   results = results,
   notes = list("Comparison: abs(js - r) <= 0.05 pp on unrounded values (DEC-02).",
                "BAND fixtures without a numeric weight are reported with pct null; search-weight.R fills them (TC-FR1-12-AS-01 inputs).",
-               "source_hash is the md5 of this script as computed by R (tools::md5sum); run.sh overwrites it with the sha256 for SCH-06.")
+               "source_hash is the sha256 of this script (openssl inside the container).")
 )
-write_json(out, file.path(root, "oracles", "orc-01-qdiabetes-r", "results.json"), auto_unbox = TRUE, pretty = TRUE, digits = NA, null = "null")
+write_json(out, file.path(root, "oracles", "orc-01-qdiabetes-r", "results.json"), auto_unbox = TRUE, pretty = TRUE, digits = NA, null = "null", na = "null")
 cat("ORC-01:", length(results), "fixtures written\n")

@@ -7,10 +7,10 @@ FROM rocker/r-ver:4.4.1
 # SHA-256 against pins.json before installing (install.sh refuses to continue on a mismatch or an unrecorded pin).
 ARG QDIABETES_VERSION=1.0-2
 ENV QDIABETES_VERSION=${QDIABETES_VERSION}
-RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates curl openssl && rm -rf /var/lib/apt/lists/*
 RUN install2.r --error jsonlite
 WORKDIR /oracle
 COPY pins.json install.sh qdr2018a.R ./
 RUN bash install.sh
-# Fixtures are mounted read-only at /repo by run.sh; results are written to /repo/oracles/orc-01-qdiabetes-r/results.json
+# run.sh mounts the repository at /repo (read-write); results are written to /repo/oracles/orc-01-qdiabetes-r/results.json
 ENTRYPOINT ["Rscript", "/oracle/qdr2018a.R", "/repo"]
