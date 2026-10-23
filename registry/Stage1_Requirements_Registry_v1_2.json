@@ -1746,7 +1746,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "verified",
       "depends_on": [
         "FR1-10",
         "FR1-15"
@@ -1773,7 +1773,7 @@
       ],
       "human_gate": null,
       "mutations": [],
-      "known_deviations": {},
+      "known_deviations": {"TC-NFR1-11-AS-02": "method php/http (= SAF-WITHDRAW-01) instead of e2e; the browser half of the withdrawn state is covered by TC-FR1-15-AS-01/AS-04 and TC-UI1-08-AS-02"},
       "evidence_dir": "evidence/NFR1-11/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
