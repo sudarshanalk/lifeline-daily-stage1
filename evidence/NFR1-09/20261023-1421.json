@@ -1,8 +1,8 @@
 {
-  "ev_id": "EV-NFR1-09-20261023-1405",
+  "ev_id": "EV-NFR1-09-20261023-1421",
   "req_id": "NFR1-09",
   "tc_id": "TC-NFR1-09",
-  "commit": "44f111f3ae2903b8fb577b07d4b7b7ec2e332ceb",
+  "commit": "b2f8e724623e6b7a81aee8983313c8a614a486ce",
   "tool_hashes": {
     "protein": "65cffa501f924b7e760d5f03f91b6148e9b5506c5b62b9013e00acd4be4968c0",
     "diabetes": "933063cedbf4644c772863f6e6da4a68a268793c5ccba897ff88a1d94ac9826e"
@@ -18,7 +18,7 @@
     {
       "assertion": "TC-NFR1-09-AS-02",
       "outcome": "pass",
-      "artefact": "workflow job set complete; the 'ran on the last merged PR' clause is inspected via gh (jobs added in this PR first run on this PR — see PR checks)",
+      "artefact": "structural job set + strict check-run inspection of the last merged PR against the jobs its own workflows declared (gh api)",
       "oracle": "none"
     },
     {
@@ -58,24 +58,6 @@
       "oracle": "none"
     },
     {
-      "assertion": "TC-FR1-20-AS-01",
-      "outcome": "pass",
-      "artefact": "artefacts/vitest.json",
-      "oracle": "none"
-    },
-    {
-      "assertion": "TC-FR1-20-AS-02",
-      "outcome": "pass",
-      "artefact": "artefacts/vitest.json",
-      "oracle": "none"
-    },
-    {
-      "assertion": "TC-FR1-20-AS-03",
-      "outcome": "pass",
-      "artefact": "artefacts/vitest.json",
-      "oracle": "none"
-    },
-    {
       "assertion": "TC-FR1-06-AS-01",
       "outcome": "pass",
       "artefact": "artefacts/vitest.json",
@@ -89,6 +71,24 @@
     },
     {
       "assertion": "TC-FR1-06-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-20-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-20-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-20-AS-03",
       "outcome": "pass",
       "artefact": "artefacts/vitest.json",
       "oracle": "none"
@@ -204,8 +204,8 @@
   ],
   "mutations": [],
   "red_run": "local-20261023-1356",
-  "green_run": "local-20261023-1405",
+  "green_run": "local-20261023-1421",
   "human_gate": null,
   "started_at": "2026-10-23T13:56:00Z",
-  "finished_at": "2026-10-23T14:06:27Z"
+  "finished_at": "2026-10-23T14:22:14Z"
 }
