@@ -1,8 +1,8 @@
 diff --git a/site/public_html/tools/diabetes-risk-tool.html b/site/public_html/tools/diabetes-risk-tool.html
-index 52c9bb0..271f26f 100644
+index ceb5015..2e005ff 100644
 --- a/site/public_html/tools/diabetes-risk-tool.html
 +++ b/site/public_html/tools/diabetes-risk-tool.html
-@@ -759,7 +759,7 @@ function updateProgress(){
+@@ -762,7 +762,7 @@ function updateProgress(){
  /* ============================================================================
   * (4) DECISION LOGIC — strict priority order
   * ==========================================================================*/

@@ -440,12 +440,12 @@ footer.disc{color:var(--muted); font-size:.8rem; text-align:center; margin-top:2
   </form>
 
   <section id="results" aria-live="polite">
-    <div id="bannerZone"></div>
-    <div class="headline" id="headlineZone"></div>
+    <div id="bannerZone" data-test="banners"></div>
+    <div class="headline" id="headlineZone" data-test="headline"></div>
     <div class="panel" id="secondaryZone"></div>
     <div class="panel" id="adviceZone"></div>
     <details class="method"><summary>How this works &amp; important limits</summary><div class="body" id="methodBody"></div></details>
-    <div class="email-box">
+    <div class="email-box" data-test="email-card">
       <h3 id="emailHead"></h3>
       <p id="emailIntro"></p>
       <input type="text" id="firstName" placeholder="First name (optional)" autocomplete="given-name">
@@ -553,7 +553,8 @@ var MESSAGES = {
     "This tool uses <strong>QDiabetes-2018 (Model A)</strong>, a risk equation developed and validated on 11.5 million people in English general practice. It uses no blood tests. Separate equations are used for men and women, and it carries coefficients calibrated for each ethnicity you can select.",
     "<strong>Calibration:</strong> because it was built on UK data, the exact percentage is best calibrated for UK residents of any ethnicity. Elsewhere in the world the <em>ranking</em> stays valid (higher inputs mean higher risk), but the precise percentage is less certain — which is why we also show the cross-checks.",
     "Where a value wasn't asked (a UK deprivation score), a neutral average is assumed, so it neither raises nor lowers your estimate.",
-    "Symptoms are handled separately and are never mixed into the score. This tool screens for <strong>type 2 diabetes only</strong>, and is <strong>not a diagnosis</strong>."
+    "Symptoms are handled separately and are never mixed into the score. This tool screens for <strong>type 2 diabetes only</strong>, and is <strong>not a diagnosis</strong>.",
+    "<span data-copy=\"method.attribution\"><strong>Attribution and licence:</strong> QDiabetes-2018 was developed by Julia Hippisley-Cox and Carol Coupland (BMJ 2017;359:j5019). The QDiabetes-2018 algorithm is &copy; ClinRisk Ltd and released under the LGPL-3.0 licence; this page is Lifeline Daily's own implementation of the published equations and is not endorsed by ClinRisk or the NHS. It is screening information, not a diagnosis.</span>"
   ],
 
   email: {
@@ -847,8 +848,8 @@ function animateGauge(pct){
 function render(r){
   var bz=$('#bannerZone'); bz.innerHTML=''; var suppress=false;
   var warnIcon='<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>';
-  if(r.sym.emergency){ bz.innerHTML+='<div class="banner emergency">'+warnIcon+'<div><h3>'+MESSAGES.emergency.title+'</h3><p>'+MESSAGES.emergency.body+'</p></div></div>'; suppress=true; }
-  if(r.sym.classic){ bz.innerHTML+='<div class="banner symptom">'+warnIcon+'<div><h3>'+MESSAGES.symptomatic.title+'</h3><p>'+MESSAGES.symptomatic.body+'</p></div></div>'; }
+  if(r.sym.emergency){ bz.innerHTML+='<div class="banner emergency" role="alert" data-test="banner-emergency">'+warnIcon+'<div><h3>'+MESSAGES.emergency.title+'</h3><p>'+MESSAGES.emergency.body+'</p></div></div>'; suppress=true; }
+  if(r.sym.classic){ bz.innerHTML+='<div class="banner symptom" role="alert" data-test="banner-symptom">'+warnIcon+'<div><h3>'+MESSAGES.symptomatic.title+'</h3><p>'+MESSAGES.symptomatic.body+'</p></div></div>'; }
 
   var hz=$('#headlineZone');
   if(suppress){
@@ -893,7 +894,7 @@ function render(r){
     '<ul class="advice">'+tips.map(function(t){return '<li>'+t+'</li>';}).join('')+'</ul>'+
     '<p style="font-size:.86rem;color:var(--muted);margin:12px 0 0">'+A.dietSwap+'</p>';
 
-  $('#methodBody').innerHTML=MESSAGES.method.map(function(p){return '<p>'+p+'</p>';}).join('');
+  $('#methodBody').innerHTML=MESSAGES.method.map(function(p){return '<p>'+p+'</p>';}).join('')+'<p class="source" data-test="source-version">Source: QDiabetes-2018 Model A &middot; version <span data-lld-version data-lld-version-of="js:ENGINE">036017e4</span></p>';
   $('#emailHead').textContent=MESSAGES.email.heading;
   $('#emailIntro').textContent=MESSAGES.email.intro;
   $('#consentLabel').textContent=MESSAGES.email.consent;
@@ -908,7 +909,7 @@ $('#emailBtn').addEventListener('click',function(){
   if(!valid||!consent){ status.textContent=MESSAGES.email.errorValidation; status.classList.add('bad'); return; }
   if(!LAST){ return; }
   var payload={ tool:'diabetes-risk', firstName:$('#firstName').value.trim(), email:email, consent:true,
-    riskPercent:+LAST.pct.toFixed(1), riskBand:MESSAGES.bands[LAST.band].label, bmi:+LAST.bmi.toFixed(1),
+    riskPercent:LAST.sym.emergency?null:+LAST.pct.toFixed(1), riskBand:LAST.sym.emergency?null:MESSAGES.bands[LAST.band].label, bmi:+LAST.bmi.toFixed(1), /* DEC-09 client layer */
     whtr:LAST.sec?+LAST.sec.whtr.ratio.toFixed(2):null,
     idrsScore:LAST.sec?LAST.sec.idrs.score:null, idrsTier:LAST.sec?LAST.sec.idrs.tier:null,
     symptomatic:LAST.sym.classic, emergency:LAST.sym.emergency,
