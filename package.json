@@ -1,0 +1,34 @@
+{
+  "name": "lifeline-daily-stage1",
+  "version": "1.0.0",
+  "description": "Specification pack: `docs/` (SRS v1.2, data model, test criteria, AI development loop, decision register).\r Machine-readable: `registry/`, `schemas/`, `fixtures/`. Agent instructions: `CLAUDE.md`.",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:unit": "vitest run tests/unit",
+    "test:e2e": "playwright test",
+    "baseline": "node tools/characterise.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sudarshanalk/lifeline-daily-stage1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/sudarshanalk/lifeline-daily-stage1/issues"
+  },
+  "homepage": "https://github.com/sudarshanalk/lifeline-daily-stage1#readme",
+  "private": "true",
+  "devDependencies": {
+    "@playwright/test": "^1.56.1",
+    "jsdom": "^27.1.0",
+    "vitest": "^3.2.4"
+  }
+}

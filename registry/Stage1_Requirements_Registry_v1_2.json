@@ -501,7 +501,9 @@
         "FX-PR-INV-*"
       ],
       "decisions": [
-        "DEC-03"
+        "DEC-03",
+        "DEC-44",
+        "DEC-45"
       ],
       "human_gate": "HG-02",
       "mutations": [
@@ -1190,7 +1192,9 @@
       "decisions": [
         "DEC-02",
         "DEC-03",
-        "DEC-33"
+        "DEC-33",
+        "DEC-44",
+        "DEC-45"
       ],
       "human_gate": null,
       "mutations": [],
@@ -2575,6 +2579,22 @@
       "selected": "Unchanged; no disclaimer link",
       "status": "default",
       "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-44",
+      "question": "Protein cap vs diet multiplier order",
+      "selected": "Preserve deployed: cap lo/hi then midpoint",
+      "status": "default",
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-45",
+      "question": "Protein headline point of band",
+      "selected": "Midpoint of winning band",
+      "status": "default",
+      "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     }
   ],

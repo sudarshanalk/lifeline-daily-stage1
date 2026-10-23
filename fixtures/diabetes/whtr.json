@@ -29,11 +29,26 @@
         "symptoms": [],
         "emergency": false
       },
-      "expected": null,
+      "expected": {
+        "pct": 7.041272,
+        "pctDisplay": 7,
+        "band": "moderate",
+        "bmi": 25.95,
+        "idrs": {
+          "score": 30,
+          "tier": "moderate"
+        },
+        "whtr": {
+          "ratio": 0.4882,
+          "band": "healthy"
+        },
+        "symptomatic": false,
+        "emergency": false
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "27c0e33ce3b98aea495a2f13fca112e32007d9d478ab30ee70401a39ab496292",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-DM-WHTR-02",
@@ -62,11 +77,26 @@
         "symptoms": [],
         "emergency": false
       },
-      "expected": null,
+      "expected": {
+        "pct": 7.041272,
+        "pctDisplay": 7,
+        "band": "moderate",
+        "bmi": 25.95,
+        "idrs": {
+          "score": 30,
+          "tier": "moderate"
+        },
+        "whtr": {
+          "ratio": 0.5,
+          "band": "raised"
+        },
+        "symptomatic": false,
+        "emergency": false
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "27c0e33ce3b98aea495a2f13fca112e32007d9d478ab30ee70401a39ab496292",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-DM-WHTR-03",
@@ -95,11 +125,26 @@
         "symptoms": [],
         "emergency": false
       },
-      "expected": null,
+      "expected": {
+        "pct": 7.041272,
+        "pctDisplay": 7,
+        "band": "moderate",
+        "bmi": 25.95,
+        "idrs": {
+          "score": 50,
+          "tier": "moderate"
+        },
+        "whtr": {
+          "ratio": 0.5941,
+          "band": "raised"
+        },
+        "symptomatic": false,
+        "emergency": false
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "27c0e33ce3b98aea495a2f13fca112e32007d9d478ab30ee70401a39ab496292",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-DM-WHTR-04",
@@ -128,11 +173,26 @@
         "symptoms": [],
         "emergency": false
       },
-      "expected": null,
+      "expected": {
+        "pct": 7.041272,
+        "pctDisplay": 7,
+        "band": "moderate",
+        "bmi": 25.95,
+        "idrs": {
+          "score": 50,
+          "tier": "moderate"
+        },
+        "whtr": {
+          "ratio": 0.6,
+          "band": "high"
+        },
+        "symptomatic": false,
+        "emergency": false
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "27c0e33ce3b98aea495a2f13fca112e32007d9d478ab30ee70401a39ab496292",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     }
   ]
 }

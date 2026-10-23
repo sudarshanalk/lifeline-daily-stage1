@@ -5,3 +5,6 @@ public_html/tools/api/config.php
 evidence/**/artefacts/*.log
 design/baselines/*.png
 .DS_Store
+local-stack/
+test-results/
+playwright-report/

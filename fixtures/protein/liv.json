@@ -21,11 +21,30 @@
         "kidney": "no",
         "liver": "yes"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 101,
+        "lowG": 90,
+        "highG": 113,
+        "gPerKg": 1.35,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 34,
+        "sources": [
+          "IOM RDA 0.8 g/kg (floor)",
+          "ESPEN 2014 (illness / malnutrition)"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "recovery",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-LIV-02",
@@ -46,11 +65,30 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 101,
+        "lowG": 90,
+        "highG": 113,
+        "gPerKg": 1.35,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 34,
+        "sources": [
+          "IOM AMDR / ISSN lower band",
+          "ESPEN 2014 (illness / malnutrition)"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "recovery",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     }
   ]
 }

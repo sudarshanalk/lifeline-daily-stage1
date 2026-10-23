@@ -21,11 +21,28 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "pregnancy",
+        "targetG": 83,
+        "lowG": 83,
+        "highG": 83,
+        "gPerKg": 1.1,
+        "basisKg": 75,
+        "basisNote": "your pre-pregnancy weight",
+        "perMeal": 28,
+        "sources": [
+          "IOM Dietary Reference Intakes — pregnancy RDA 1.1 g/kg/day"
+        ],
+        "capped": false,
+        "dietMult": 1,
+        "interpKey": "baseline",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-PRG-02",
@@ -46,11 +63,28 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "pregnancy",
+        "targetG": 83,
+        "lowG": 83,
+        "highG": 83,
+        "gPerKg": 1.1,
+        "basisKg": 75,
+        "basisNote": "your pre-pregnancy weight",
+        "perMeal": 28,
+        "sources": [
+          "IOM Dietary Reference Intakes — pregnancy RDA 1.1 g/kg/day"
+        ],
+        "capped": false,
+        "dietMult": 1,
+        "interpKey": "baseline",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-PRG-03",
@@ -71,11 +105,28 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "pregnancy",
+        "targetG": 98,
+        "lowG": 98,
+        "highG": 98,
+        "gPerKg": 1.3,
+        "basisKg": 75,
+        "basisNote": "your pre-pregnancy weight",
+        "perMeal": 33,
+        "sources": [
+          "IOM Dietary Reference Intakes — lactation RDA 1.3 g/kg/day"
+        ],
+        "capped": false,
+        "dietMult": 1,
+        "interpKey": "baseline",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-PRG-04",
@@ -96,11 +147,28 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "pregnancy",
+        "targetG": 98,
+        "lowG": 98,
+        "highG": 98,
+        "gPerKg": 1.3,
+        "basisKg": 75,
+        "basisNote": "your pre-pregnancy weight",
+        "perMeal": 33,
+        "sources": [
+          "IOM Dietary Reference Intakes — lactation RDA 1.3 g/kg/day"
+        ],
+        "capped": false,
+        "dietMult": 1,
+        "interpKey": "baseline",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     }
   ]
 }

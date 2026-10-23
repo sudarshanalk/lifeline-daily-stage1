@@ -100,7 +100,7 @@
         "hasSym": "no",
         "symptoms": [],
         "emergency": false,
-        "target_pct": 10.0,
+        "target_pct": 10,
         "side": "below"
       },
       "expected": null,
@@ -136,7 +136,7 @@
         "hasSym": "no",
         "symptoms": [],
         "emergency": false,
-        "target_pct": 10.0,
+        "target_pct": 10,
         "side": "above"
       },
       "expected": null,
@@ -172,7 +172,7 @@
         "hasSym": "no",
         "symptoms": [],
         "emergency": false,
-        "target_pct": 20.0,
+        "target_pct": 20,
         "side": "below"
       },
       "expected": null,
@@ -208,7 +208,7 @@
         "hasSym": "no",
         "symptoms": [],
         "emergency": false,
-        "target_pct": 20.0,
+        "target_pct": 20,
         "side": "above"
       },
       "expected": null,
@@ -316,7 +316,7 @@
         "hasSym": "no",
         "symptoms": [],
         "emergency": false,
-        "target_pct": 10.0,
+        "target_pct": 10,
         "side": "below"
       },
       "expected": null,
@@ -352,7 +352,7 @@
         "hasSym": "no",
         "symptoms": [],
         "emergency": false,
-        "target_pct": 10.0,
+        "target_pct": 10,
         "side": "above"
       },
       "expected": null,
@@ -388,7 +388,7 @@
         "hasSym": "no",
         "symptoms": [],
         "emergency": false,
-        "target_pct": 20.0,
+        "target_pct": 20,
         "side": "below"
       },
       "expected": null,
@@ -424,7 +424,7 @@
         "hasSym": "no",
         "symptoms": [],
         "emergency": false,
-        "target_pct": 20.0,
+        "target_pct": 20,
         "side": "above"
       },
       "expected": null,

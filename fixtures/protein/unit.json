@@ -24,11 +24,29 @@
         "heightIn": 8.9,
         "weightLb": 165.3
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 90,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.2,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 30,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "active",
+        "bmi": 24.488
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-UNIT-02",
@@ -53,11 +71,29 @@
         "weightSt": 14,
         "weightLb": 6.8
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 99,
+        "lowG": 83,
+        "highG": 116,
+        "gPerKg": 1.2,
+        "basisKg": 82.552,
+        "basisNote": "an adjusted body weight of 82.6 kg (used because applying g/kg to full body weight overstates the target when a larger share of that weight is fat mass)",
+        "perMeal": 33,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "active",
+        "bmi": 30.035
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-UNIT-03",
@@ -80,11 +116,29 @@
         "heightUnit": "m",
         "heightM": 1.75
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 90,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.2,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 30,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "active",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     }
   ]
 }

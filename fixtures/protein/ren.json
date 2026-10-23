@@ -21,11 +21,15 @@
         "kidney": "yes",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": true,
+        "reason": "renal",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-REN-02",
@@ -46,11 +50,15 @@
         "kidney": "yes",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": true,
+        "reason": "renal",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-REN-03",
@@ -71,11 +79,15 @@
         "kidney": "yes",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": true,
+        "reason": "renal",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-REN-04",
@@ -96,11 +108,15 @@
         "kidney": "yes",
         "liver": "yes"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": true,
+        "reason": "renal",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     }
   ]
 }

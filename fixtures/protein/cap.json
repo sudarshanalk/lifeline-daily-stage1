@@ -21,11 +21,32 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 147,
+        "lowG": 144,
+        "highG": 150,
+        "gPerKg": 1.96,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 40,
+        "sources": [
+          "IOM AMDR / ISSN lower band",
+          "ISSN 2017 (1.4–2.0 g/kg)",
+          "ISSN 2017",
+          "Plant-protein digestibility uplift (x1.2) — DIAAS-derived, see note"
+        ],
+        "capped": true,
+        "older": false,
+        "dietMult": 1.2,
+        "interpKey": "training",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-CAP-02",
@@ -46,11 +67,31 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 133,
+        "lowG": 116,
+        "highG": 150,
+        "gPerKg": 1.77,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 40,
+        "sources": [
+          "IOM AMDR / ISSN lower band",
+          "ISSN 2017 (1.4–2.0 g/kg)",
+          "Plant-protein digestibility uplift (x1.1) — DIAAS-derived, see note"
+        ],
+        "capped": true,
+        "older": false,
+        "dietMult": 1.1,
+        "interpKey": "training",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-CAP-03",
@@ -71,11 +112,31 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 135,
+        "lowG": 120,
+        "highG": 150,
+        "gPerKg": 1.8,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 40,
+        "sources": [
+          "IOM AMDR / ISSN lower band",
+          "ISSN 2017 (1.4–2.0 g/kg)",
+          "ISSN 2017"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "training",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     }
   ]
 }
