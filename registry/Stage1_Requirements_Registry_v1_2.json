@@ -2150,7 +2150,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "verified",
       "depends_on": [
         "FR1-14"
       ],

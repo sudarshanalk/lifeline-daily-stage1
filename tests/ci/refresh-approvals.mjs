@@ -73,13 +73,15 @@ for (const slug of ['protein', 'diabetes']) {
   if (curPatch !== patch) { changed.push('tests/mutations/MUT-10.patch'); if (!check) writeFileSync(pp, patch); }
 }
 
+// copy deck (UI1-11): copy/*.json and the inventory come from the same generator as `make copy-extract`
+const deck = await extractDeck();
 const copyRecord = (() => { try { return read('approvals/copy.json'); } catch { return { inline: {}, pages: {}, reviewer: 'pending (OI-8)', date: '2026-10-23', decision: 'pending' }; } })();
 copyRecord.messages = copy.messages;
 copyRecord.templates = copy.templates;
+// inline [data-copy] strings (UI1-06 consent copy) are hashed like MESSAGES keys; pages stay untouched until LLD_WP_URL extraction (DEC-60)
+copyRecord.inline = Object.fromEntries(Object.entries(deck.inline).map(([k, v]) => [k, sha256(v)]));
 write('approvals/copy.json', copyRecord);
-
-// copy deck (UI1-11): copy/*.json and the inventory come from the same generator as `make copy-extract`
-for (const [rel, obj] of Object.entries(deckFiles(await extractDeck()))) write(rel, obj);
+for (const [rel, obj] of Object.entries(deckFiles(deck))) write(rel, obj);
 closeAll();
 
 if (changed.length) console.log((check ? 'would change: ' : 'updated: ') + changed.join(', '));
