@@ -2855,6 +2855,15 @@
       "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-55",
+      "question": "PR class for specification-only changes",
+      "selected": "SPEC: title class; docs/registry/schemas/copy-fixtures only; test families skipped",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
     }
   ],
   "human_gates": [
