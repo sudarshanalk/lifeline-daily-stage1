@@ -1,0 +1,115 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "SCH-03",
+  "title": "Methodology approval record",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "approval_id": {
+      "type": "string"
+    },
+    "tool_slug": {
+      "type": "string",
+      "enum": [
+        "protein",
+        "diabetes"
+      ]
+    },
+    "version_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "engine_name": {
+      "type": "string"
+    },
+    "intended_use": {
+      "type": "string"
+    },
+    "eligibility": {
+      "type": "string"
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "limitations": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "regulatory_statement": {
+      "type": "string"
+    },
+    "licence": {
+      "type": "string"
+    },
+    "copy_hashes": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "string",
+        "pattern": "^[0-9a-f]{64}$"
+      }
+    },
+    "oracle_report": {
+      "type": "string"
+    },
+    "decisions_ratified": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^DEC-\\d{2}$"
+      }
+    },
+    "clinical_signoff": {
+      "type": "object",
+      "required": [
+        "name",
+        "date",
+        "decision"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string",
+          "format": "date"
+        },
+        "decision": {
+          "enum": [
+            "approved",
+            "rejected",
+            "pending"
+          ]
+        },
+        "notes": {
+          "type": "string"
+        }
+      }
+    },
+    "review_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "next_review_date": {
+      "type": "string",
+      "format": "date"
+    }
+  },
+  "required": [
+    "approval_id",
+    "tool_slug",
+    "version_hash",
+    "engine_name",
+    "intended_use",
+    "eligibility",
+    "sources",
+    "limitations",
+    "regulatory_statement",
+    "copy_hashes",
+    "clinical_signoff"
+  ]
+}

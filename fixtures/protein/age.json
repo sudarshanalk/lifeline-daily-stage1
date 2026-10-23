@@ -1,0 +1,131 @@
+{
+  "group": "AGE",
+  "tool": "protein",
+  "fixtures": [
+    {
+      "id": "FX-PR-AGE-01",
+      "purpose": "age 18",
+      "inputs": {
+        "units": "metric",
+        "age": 18,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 75,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-AGE-02",
+      "purpose": "64 sedentary",
+      "inputs": {
+        "units": "metric",
+        "age": 64,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 75,
+        "ethnicity": "White",
+        "activity": "sedentary",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-AGE-03",
+      "purpose": "65 sedentary",
+      "inputs": {
+        "units": "metric",
+        "age": 65,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 75,
+        "ethnicity": "White",
+        "activity": "sedentary",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-AGE-04",
+      "purpose": "65 resMid",
+      "inputs": {
+        "units": "metric",
+        "age": 65,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 75,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "3-4",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-AGE-05",
+      "purpose": "age 99",
+      "inputs": {
+        "units": "metric",
+        "age": 99,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 75,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    }
+  ]
+}

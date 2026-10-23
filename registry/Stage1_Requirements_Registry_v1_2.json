@@ -1,0 +1,2780 @@
+{
+  "version": "1.2",
+  "date": "2026-10-20",
+  "baseline": "stage1-loop-ready; stage2-4 roadmap",
+  "supersedes": "1.1",
+  "schema": "schemas/registry.schema.json",
+  "stages": [
+    {
+      "stage": 1,
+      "name": "Existing tools + blog upgrade",
+      "features": [
+        "RETAIN/VERIFY: Daily Protein Target calculator (no engine rewrite; audit source, safety and email)",
+        "RETAIN/VERIFY: Diabetes Risk Screening tool (actual deployed engine must be identified; approved safety pathways)",
+        "ADD: Tools-first homepage, navigation and two-tool hub/landing pages",
+        "ADD: Contextual article-to-tool and tool-to-article links; reviewed methodology/limitation pages",
+        "ADD: Privacy-safe aggregate referral/click analytics; clinical, security and regression controls",
+        "DO NOT ADD: new calculators, member accounts, persistent personal tracking, subscriptions or mobile app."
+      ]
+    },
+    {
+      "stage": 2,
+      "name": "Website membership & improvement MVP",
+      "features": [
+        "ADD: Secure member registration, recovery, consent/preferences and adult eligibility",
+        "ADD: Health Goal Selector (up to three goals) and editable preferences",
+        "ADD: Explainable personalised article/tool suggestions from reviewed WordPress categories",
+        "ADD: Four-week Healthy Habits programme, actions, enrolment and progress check-ins",
+        "ADD: Basic member dashboard, account data export/deletion and notifications settings",
+        "ADD: Optional premium membership/payment and clear free-versus-paid access",
+        "ADD: Secure shared backend/API, clinical tool registry, account entitlements, admin reports and early-access tracking",
+        "REUSE: Two approved public tools; add save-result capability only after privacy/data-governance approval."
+      ]
+    },
+    {
+      "stage": 3,
+      "name": "Cross-platform mobile application",
+      "features": [
+        "ADD: Flutter iOS and Android apps, onboarding, Home/Tools/Progress/Learn/Profile",
+        "ADD: Blood-pressure, weight and waist manual logs and trend charts",
+        "ADD: Protein/energy/fibre targets and manual food/macronutrient tracker, saved meals",
+        "ADD: Goal/programme synchronisation, personalised reviewed content, bookmarks and subscriptions/restore purchase",
+        "ADD: Optional simple activity and sleep diary, reminders and shareable personal progress summary",
+        "ADD: Offline public-article reading, feedback, secure mobile identity and server feature flags",
+        "REUSE: Stage 2 shared backend, approved tool engines and WordPress knowledge content."
+      ]
+    },
+    {
+      "stage": 4,
+      "name": "Unified advanced health platform",
+      "features": [
+        "ADD: Logged-in personalised website dashboard sharing mobile user identity, goals and progress",
+        "ADD: Enhanced explainable recommendation rules, editorial approvals and member data portability",
+        "ADD: Packaged food barcode lookup with source/provenance checks",
+        "OPTIONAL: Recipe nutrition builder and user-correctable AI food-photo suggestions",
+        "OPTIONAL: Consented Apple Health / Android health-platform imports where feasible",
+        "ADD: Cross-platform privacy-preserving conversion analytics and performance reporting",
+        "REASSESS: Newspaper theme performance/compatibility (replace only if justified); localisation and community remain optional."
+      ]
+    }
+  ],
+  "actors": [
+    {
+      "id": "ACT-01",
+      "name": "Public visitor"
+    },
+    {
+      "id": "ACT-02",
+      "name": "WordPress editor/publisher"
+    },
+    {
+      "id": "ACT-03",
+      "name": "Clinical reviewer"
+    },
+    {
+      "id": "ACT-04",
+      "name": "Site administrator / release owner"
+    },
+    {
+      "id": "ACT-05",
+      "name": "AI implementer agent"
+    },
+    {
+      "id": "ACT-06",
+      "name": "AI reviewer agent"
+    },
+    {
+      "id": "ACT-07",
+      "name": "AI oracle author (sealed)"
+    },
+    {
+      "id": "ACT-08",
+      "name": "External services"
+    }
+  ],
+  "components": [
+    {
+      "id": "CMP-01",
+      "name": "WordPress core, Newspaper theme, posts, menus"
+    },
+    {
+      "id": "CMP-02",
+      "name": "public_html/tools/protein-requirement-tool.html"
+    },
+    {
+      "id": "CMP-03",
+      "name": "public_html/tools/diabetes-risk-tool.html"
+    },
+    {
+      "id": "CMP-04",
+      "name": "public_html/tools/submit-protein.php + api/templates-protein.php"
+    },
+    {
+      "id": "CMP-05",
+      "name": "public_html/tools/submit.php + api/templates.php"
+    },
+    {
+      "id": "CMP-06",
+      "name": "public_html/tools/api/mailer.php + api/config.php"
+    },
+    {
+      "id": "CMP-07",
+      "name": "public_html/tools/status.json"
+    },
+    {
+      "id": "CMP-08",
+      "name": "wp-content/mu-plugins/lld-tools/"
+    },
+    {
+      "id": "CMP-09",
+      "name": "WP pages: home, hub, 2 landing, medical disclaimer"
+    },
+    {
+      "id": "CMP-10",
+      "name": "Web server config (.htaccess/vhost)"
+    },
+    {
+      "id": "CMP-11",
+      "name": "Analytics (Plausible) integration"
+    },
+    {
+      "id": "CMP-12",
+      "name": "Repository artefacts"
+    },
+    {
+      "id": "CMP-13",
+      "name": "CI pipeline"
+    },
+    {
+      "id": "CMP-14",
+      "name": "Oracles ORC-01..04"
+    }
+  ],
+  "use_cases": [
+    {
+      "id": "UC1-01",
+      "title": "Visitor uses the protein tool from a campaign link",
+      "e2e": "E2E-01"
+    },
+    {
+      "id": "UC1-02",
+      "title": "Visitor uses the diabetes risk check",
+      "e2e": "E2E-02"
+    },
+    {
+      "id": "UC1-03",
+      "title": "Editor links an article to a tool",
+      "e2e": "E2E-03"
+    },
+    {
+      "id": "UC1-04",
+      "title": "Clinical reviewer withdraws a tool",
+      "e2e": "E2E-04"
+    },
+    {
+      "id": "UC1-05",
+      "title": "Publisher measures a campaign",
+      "e2e": "E2E-05"
+    },
+    {
+      "id": "UC1-06",
+      "title": "Keyboard and screen-reader visitor completes both tools",
+      "e2e": "E2E-06"
+    },
+    {
+      "id": "UC1-07",
+      "title": "Release owner ships Stage 1",
+      "e2e": "E2E-07"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "FR1-01",
+      "category": "functional",
+      "title": "Existing implementation audit and characterisation baseline",
+      "priority": "MUST",
+      "type": "process",
+      "automation": "hybrid",
+      "status": "ready",
+      "depends_on": [],
+      "components": [
+        "CMP-01",
+        "CMP-02",
+        "CMP-03",
+        "CMP-04",
+        "CMP-05",
+        "CMP-06"
+      ],
+      "must_not_touch": [
+        "*"
+      ],
+      "use_cases": [
+        "UC1-01",
+        "UC1-02",
+        "UC1-03",
+        "UC1-04",
+        "UC1-05",
+        "UC1-06",
+        "UC1-07"
+      ],
+      "test_case": "TC-FR1-01",
+      "assertions": [
+        "TC-FR1-01-AS-01",
+        "TC-FR1-01-AS-02",
+        "TC-FR1-01-AS-03",
+        "TC-FR1-01-AS-04",
+        "TC-FR1-01-AS-05",
+        "TC-FR1-01-AS-06"
+      ],
+      "fixtures": [
+        "FX-PR-*",
+        "FX-DM-*",
+        "FX-WP-URLS"
+      ],
+      "decisions": [
+        "DEC-01",
+        "DEC-26"
+      ],
+      "human_gate": "HG-01",
+      "mutations": [],
+      "evidence_dir": "evidence/FR1-01/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-02",
+      "category": "functional",
+      "title": "Preserve WordPress and Newspaper",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01"
+      ],
+      "components": [
+        "CMP-01"
+      ],
+      "must_not_touch": [
+        "wp-content/themes/**",
+        "posts"
+      ],
+      "use_cases": [
+        "UC1-03"
+      ],
+      "test_case": "TC-FR1-02",
+      "assertions": [
+        "TC-FR1-02-AS-01",
+        "TC-FR1-02-AS-02",
+        "TC-FR1-02-AS-03",
+        "TC-FR1-02-AS-04",
+        "TC-FR1-02-AS-05"
+      ],
+      "fixtures": [
+        "FX-WP-URLS"
+      ],
+      "decisions": [],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/FR1-02/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-03",
+      "category": "functional",
+      "title": "Tools-first homepage",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01",
+        "FR1-04"
+      ],
+      "components": [
+        "CMP-08",
+        "CMP-09"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-01",
+        "UC1-02"
+      ],
+      "test_case": "TC-FR1-03",
+      "assertions": [
+        "TC-FR1-03-AS-01",
+        "TC-FR1-03-AS-02",
+        "TC-FR1-03-AS-03",
+        "TC-FR1-03-AS-04",
+        "TC-FR1-03-AS-05",
+        "TC-FR1-03-AS-06",
+        "TC-FR1-03-AS-07"
+      ],
+      "fixtures": [
+        "FX-WP-POST-01"
+      ],
+      "decisions": [
+        "DEC-22",
+        "DEC-23",
+        "DEC-30"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/FR1-03/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-04",
+      "category": "functional",
+      "title": "Tools hub and landing pages",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01"
+      ],
+      "components": [
+        "CMP-07",
+        "CMP-08",
+        "CMP-09"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-01",
+        "UC1-02"
+      ],
+      "test_case": "TC-FR1-04",
+      "assertions": [
+        "TC-FR1-04-AS-01",
+        "TC-FR1-04-AS-02",
+        "TC-FR1-04-AS-03",
+        "TC-FR1-04-AS-04",
+        "TC-FR1-04-AS-05",
+        "TC-FR1-04-AS-06"
+      ],
+      "fixtures": [
+        "FX-WP-URLS"
+      ],
+      "decisions": [
+        "DEC-22",
+        "DEC-24",
+        "DEC-26"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/FR1-04/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-05",
+      "category": "functional",
+      "title": "Blog-to-tool and tool-to-blog linking",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-04"
+      ],
+      "components": [
+        "CMP-08"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-03"
+      ],
+      "test_case": "TC-FR1-05",
+      "assertions": [
+        "TC-FR1-05-AS-01",
+        "TC-FR1-05-AS-02",
+        "TC-FR1-05-AS-03",
+        "TC-FR1-05-AS-04",
+        "TC-FR1-05-AS-05",
+        "TC-FR1-05-AS-06"
+      ],
+      "fixtures": [
+        "FX-WP-POST-01",
+        "FX-WP-POST-02",
+        "FX-WP-POST-03",
+        "FX-WP-POST-04",
+        "FX-WP-POST-05",
+        "FX-WP-POST-07",
+        "FX-WP-POST-08",
+        "FX-WP-POST-09",
+        "FX-WP-POST-10"
+      ],
+      "decisions": [
+        "DEC-13",
+        "DEC-22"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/FR1-05/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-06",
+      "category": "functional",
+      "title": "Clinical method provenance",
+      "priority": "MUST",
+      "type": "process",
+      "automation": "hybrid",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01"
+      ],
+      "components": [
+        "CMP-12"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-04"
+      ],
+      "test_case": "TC-FR1-06",
+      "assertions": [
+        "TC-FR1-06-AS-01",
+        "TC-FR1-06-AS-02",
+        "TC-FR1-06-AS-03",
+        "TC-FR1-06-AS-04"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-25"
+      ],
+      "human_gate": "HG-02",
+      "mutations": [
+        "MUT-10"
+      ],
+      "evidence_dir": "evidence/FR1-06/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-07",
+      "category": "functional",
+      "title": "Protein engine preservation and verification",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "hybrid",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01",
+        "FR1-22"
+      ],
+      "components": [
+        "CMP-02"
+      ],
+      "must_not_touch": [
+        "BANDS",
+        "DIET_MULT",
+        "PREG_GKG",
+        "computeProtein",
+        "clampMeal",
+        "cutoffs"
+      ],
+      "use_cases": [
+        "UC1-01"
+      ],
+      "test_case": "TC-FR1-07",
+      "assertions": [
+        "TC-FR1-07-AS-01",
+        "TC-FR1-07-AS-02",
+        "TC-FR1-07-AS-03",
+        "TC-FR1-07-AS-04",
+        "TC-FR1-07-AS-05",
+        "TC-FR1-07-AS-06",
+        "TC-FR1-07-AS-07",
+        "TC-FR1-07-AS-08"
+      ],
+      "fixtures": [
+        "FX-PR-NRM-*",
+        "FX-PR-AGE-*",
+        "FX-PR-BMI-*",
+        "FX-PR-CAP-*",
+        "FX-PR-UNIT-*",
+        "FX-PR-MEAL-*",
+        "FX-PR-INV-*"
+      ],
+      "decisions": [
+        "DEC-03"
+      ],
+      "human_gate": "HG-02",
+      "mutations": [
+        "MUT-07"
+      ],
+      "evidence_dir": "evidence/FR1-07/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-08",
+      "category": "functional",
+      "title": "Protein renal suppression",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "hybrid",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01"
+      ],
+      "components": [
+        "CMP-02",
+        "CMP-04"
+      ],
+      "must_not_touch": [
+        "renal early return"
+      ],
+      "use_cases": [
+        "UC1-01"
+      ],
+      "test_case": "TC-FR1-08",
+      "assertions": [
+        "TC-FR1-08-AS-01",
+        "TC-FR1-08-AS-02",
+        "TC-FR1-08-AS-03",
+        "TC-FR1-08-AS-04",
+        "TC-FR1-08-AS-05",
+        "TC-FR1-08-AS-06",
+        "TC-FR1-08-AS-07"
+      ],
+      "fixtures": [
+        "FX-PR-REN-01",
+        "FX-PR-REN-02",
+        "FX-PR-REN-03",
+        "FX-PR-REN-04",
+        "FX-PR-UNS-01",
+        "FX-MAIL-REN-01",
+        "FX-MAIL-REN-02"
+      ],
+      "decisions": [
+        "DEC-03",
+        "DEC-25"
+      ],
+      "human_gate": "HG-02",
+      "mutations": [
+        "MUT-01",
+        "MUT-02"
+      ],
+      "evidence_dir": "evidence/FR1-08/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-09",
+      "category": "functional",
+      "title": "Protein life-stage and safety branches",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "hybrid",
+      "status": "draft",
+      "depends_on": [
+        "FR1-07"
+      ],
+      "components": [
+        "CMP-02"
+      ],
+      "must_not_touch": [
+        "pregnancy early return"
+      ],
+      "use_cases": [
+        "UC1-01"
+      ],
+      "test_case": "TC-FR1-09",
+      "assertions": [
+        "TC-FR1-09-AS-01",
+        "TC-FR1-09-AS-02",
+        "TC-FR1-09-AS-03",
+        "TC-FR1-09-AS-04",
+        "TC-FR1-09-AS-05"
+      ],
+      "fixtures": [
+        "FX-PR-PRG-*",
+        "FX-PR-LIV-*",
+        "FX-PR-UWT-*"
+      ],
+      "decisions": [
+        "DEC-03",
+        "DEC-25"
+      ],
+      "human_gate": "HG-02",
+      "mutations": [
+        "MUT-03"
+      ],
+      "evidence_dir": "evidence/FR1-09/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-10",
+      "category": "functional",
+      "title": "Diabetes engine fidelity verification",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "hybrid",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01",
+        "FR1-22"
+      ],
+      "components": [
+        "CMP-03"
+      ],
+      "must_not_touch": [
+        "ENGINE",
+        "bandFor",
+        "idrs",
+        "whtr"
+      ],
+      "use_cases": [
+        "UC1-02"
+      ],
+      "test_case": "TC-FR1-10",
+      "assertions": [
+        "TC-FR1-10-AS-01",
+        "TC-FR1-10-AS-02",
+        "TC-FR1-10-AS-03",
+        "TC-FR1-10-AS-04",
+        "TC-FR1-10-AS-05"
+      ],
+      "fixtures": [
+        "FX-DM-QD-*",
+        "FX-DM-QD-CLAMP-*"
+      ],
+      "decisions": [
+        "DEC-01",
+        "DEC-02",
+        "DEC-08",
+        "DEC-33"
+      ],
+      "human_gate": "HG-02",
+      "mutations": [
+        "MUT-04"
+      ],
+      "evidence_dir": "evidence/FR1-10/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-11",
+      "category": "functional",
+      "title": "Diabetes symptom escalation",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "hybrid",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01"
+      ],
+      "components": [
+        "CMP-03",
+        "CMP-05"
+      ],
+      "must_not_touch": [
+        "priority logic"
+      ],
+      "use_cases": [
+        "UC1-02"
+      ],
+      "test_case": "TC-FR1-11",
+      "assertions": [
+        "TC-FR1-11-AS-01",
+        "TC-FR1-11-AS-02",
+        "TC-FR1-11-AS-03",
+        "TC-FR1-11-AS-04",
+        "TC-FR1-11-AS-05",
+        "TC-FR1-11-AS-06"
+      ],
+      "fixtures": [
+        "FX-DM-EMG-01",
+        "FX-DM-EMG-02",
+        "FX-DM-SYM-01",
+        "FX-DM-SYM-02",
+        "FX-DM-SYM-03",
+        "FX-MAIL-EMG-01",
+        "FX-MAIL-SYM-01"
+      ],
+      "decisions": [
+        "DEC-09",
+        "DEC-25",
+        "DEC-37"
+      ],
+      "human_gate": "HG-02",
+      "mutations": [
+        "MUT-05"
+      ],
+      "evidence_dir": "evidence/FR1-11/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-12",
+      "category": "functional",
+      "title": "Diabetes interpretation and secondary indicators",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "hybrid",
+      "status": "draft",
+      "depends_on": [
+        "FR1-10"
+      ],
+      "components": [
+        "CMP-03"
+      ],
+      "must_not_touch": [
+        "bandFor",
+        "idrs",
+        "whtr"
+      ],
+      "use_cases": [
+        "UC1-02"
+      ],
+      "test_case": "TC-FR1-12",
+      "assertions": [
+        "TC-FR1-12-AS-01",
+        "TC-FR1-12-AS-02",
+        "TC-FR1-12-AS-03",
+        "TC-FR1-12-AS-04",
+        "TC-FR1-12-AS-05",
+        "TC-FR1-12-AS-06",
+        "TC-FR1-12-AS-07",
+        "TC-FR1-12-AS-08",
+        "TC-FR1-12-AS-09"
+      ],
+      "fixtures": [
+        "FX-DM-BAND-*",
+        "FX-DM-IDRS-*",
+        "FX-DM-WHTR-*",
+        "FX-DM-CONC-01",
+        "FX-DM-CONC-02",
+        "FX-DM-NOWAIST-01"
+      ],
+      "decisions": [
+        "DEC-02",
+        "DEC-04",
+        "DEC-05",
+        "DEC-06",
+        "DEC-07",
+        "DEC-29"
+      ],
+      "human_gate": "HG-02",
+      "mutations": [
+        "MUT-06",
+        "MUT-08",
+        "MUT-09"
+      ],
+      "evidence_dir": "evidence/FR1-12/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-13",
+      "category": "functional",
+      "title": "Guest access without account",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01"
+      ],
+      "components": [
+        "CMP-02",
+        "CMP-03"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-01",
+        "UC1-02"
+      ],
+      "test_case": "TC-FR1-13",
+      "assertions": [
+        "TC-FR1-13-AS-01",
+        "TC-FR1-13-AS-02",
+        "TC-FR1-13-AS-03",
+        "TC-FR1-13-AS-04"
+      ],
+      "fixtures": [
+        "FX-PR-NRM-01",
+        "FX-DM-QD-01"
+      ],
+      "decisions": [],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/FR1-13/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-14",
+      "category": "functional",
+      "title": "Result email path",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "hybrid",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01",
+        "FR1-08",
+        "FR1-11"
+      ],
+      "components": [
+        "CMP-04",
+        "CMP-05",
+        "CMP-06"
+      ],
+      "must_not_touch": [
+        "payload key names"
+      ],
+      "use_cases": [
+        "UC1-01",
+        "UC1-02"
+      ],
+      "test_case": "TC-FR1-14",
+      "assertions": [
+        "TC-FR1-14-AS-01",
+        "TC-FR1-14-AS-02",
+        "TC-FR1-14-AS-03",
+        "TC-FR1-14-AS-04",
+        "TC-FR1-14-AS-05",
+        "TC-FR1-14-AS-06",
+        "TC-FR1-14-AS-07",
+        "TC-FR1-14-AS-08"
+      ],
+      "fixtures": [
+        "FX-MAIL-*"
+      ],
+      "decisions": [
+        "DEC-09",
+        "DEC-16",
+        "DEC-21",
+        "DEC-27",
+        "DEC-35"
+      ],
+      "human_gate": "HG-03",
+      "mutations": [
+        "MUT-02"
+      ],
+      "evidence_dir": "evidence/FR1-14/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-15",
+      "category": "functional",
+      "title": "Safe withdrawal and rollback",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-04",
+        "FR1-20"
+      ],
+      "components": [
+        "CMP-02",
+        "CMP-03",
+        "CMP-04",
+        "CMP-05",
+        "CMP-07",
+        "CMP-08"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-04"
+      ],
+      "test_case": "TC-FR1-15",
+      "assertions": [
+        "TC-FR1-15-AS-01",
+        "TC-FR1-15-AS-02",
+        "TC-FR1-15-AS-03",
+        "TC-FR1-15-AS-04",
+        "TC-FR1-15-AS-05",
+        "TC-FR1-15-AS-06"
+      ],
+      "fixtures": [
+        "FX-PR-NRM-01",
+        "FX-DM-QD-01"
+      ],
+      "decisions": [
+        "DEC-08",
+        "DEC-10",
+        "DEC-22",
+        "DEC-24",
+        "DEC-31"
+      ],
+      "human_gate": null,
+      "mutations": [
+        "MUT-13"
+      ],
+      "evidence_dir": "evidence/FR1-15/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-16",
+      "category": "functional",
+      "title": "Privacy-preserving conversion measurement",
+      "priority": "SHOULD",
+      "type": "behaviour",
+      "automation": "hybrid",
+      "status": "draft",
+      "depends_on": [
+        "FR1-04",
+        "FR1-05"
+      ],
+      "components": [
+        "CMP-02",
+        "CMP-03",
+        "CMP-08",
+        "CMP-11"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-05"
+      ],
+      "test_case": "TC-FR1-16",
+      "assertions": [
+        "TC-FR1-16-AS-01",
+        "TC-FR1-16-AS-02",
+        "TC-FR1-16-AS-03",
+        "TC-FR1-16-AS-04"
+      ],
+      "fixtures": [
+        "FX-PR-REN-01",
+        "FX-DM-EMG-01",
+        "FX-DM-QD-01"
+      ],
+      "decisions": [
+        "DEC-11",
+        "DEC-32"
+      ],
+      "human_gate": "HG-03",
+      "mutations": [
+        "MUT-11"
+      ],
+      "evidence_dir": "evidence/FR1-16/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-17",
+      "category": "functional",
+      "title": "Policies, education and safe navigation",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "hybrid",
+      "status": "draft",
+      "depends_on": [
+        "FR1-04"
+      ],
+      "components": [
+        "CMP-09"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-06"
+      ],
+      "test_case": "TC-FR1-17",
+      "assertions": [
+        "TC-FR1-17-AS-01",
+        "TC-FR1-17-AS-02",
+        "TC-FR1-17-AS-03",
+        "TC-FR1-17-AS-04"
+      ],
+      "fixtures": [
+        "FX-DM-EMG-01",
+        "FX-PR-NRM-01"
+      ],
+      "decisions": [
+        "DEC-12",
+        "DEC-25",
+        "DEC-36",
+        "DEC-37",
+        "DEC-43"
+      ],
+      "human_gate": "HG-02",
+      "mutations": [],
+      "evidence_dir": "evidence/FR1-17/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-18",
+      "category": "functional",
+      "title": "Editorial ownership and review metadata",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-04"
+      ],
+      "components": [
+        "CMP-01",
+        "CMP-08"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-03"
+      ],
+      "test_case": "TC-FR1-18",
+      "assertions": [
+        "TC-FR1-18-AS-01",
+        "TC-FR1-18-AS-02",
+        "TC-FR1-18-AS-03",
+        "TC-FR1-18-AS-04",
+        "TC-FR1-18-AS-05"
+      ],
+      "fixtures": [
+        "FX-WP-POST-06",
+        "FX-WP-POST-08",
+        "FX-WP-USERS"
+      ],
+      "decisions": [
+        "DEC-22"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/FR1-18/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-19",
+      "category": "functional",
+      "title": "Staging and production release",
+      "priority": "MUST",
+      "type": "process",
+      "automation": "hybrid",
+      "status": "draft",
+      "depends_on": [
+        "*MUST*"
+      ],
+      "components": [
+        "CMP-13"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-07"
+      ],
+      "test_case": "TC-FR1-19",
+      "assertions": [
+        "TC-FR1-19-AS-01",
+        "TC-FR1-19-AS-02",
+        "TC-FR1-19-AS-03",
+        "TC-FR1-19-AS-04"
+      ],
+      "fixtures": [],
+      "decisions": [],
+      "human_gate": "HG-03",
+      "mutations": [],
+      "evidence_dir": "evidence/FR1-19/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-20",
+      "category": "functional",
+      "title": "Cache control and purge",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01"
+      ],
+      "components": [
+        "CMP-07",
+        "CMP-10"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-04"
+      ],
+      "test_case": "TC-FR1-20",
+      "assertions": [
+        "TC-FR1-20-AS-01",
+        "TC-FR1-20-AS-02",
+        "TC-FR1-20-AS-03"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-10",
+        "DEC-31"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/FR1-20/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-21",
+      "category": "functional",
+      "title": "Standalone tool page hardening",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01"
+      ],
+      "components": [
+        "CMP-02",
+        "CMP-03",
+        "CMP-09",
+        "CMP-10"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-01",
+        "UC1-02"
+      ],
+      "test_case": "TC-FR1-21",
+      "assertions": [
+        "TC-FR1-21-AS-01",
+        "TC-FR1-21-AS-02",
+        "TC-FR1-21-AS-03",
+        "TC-FR1-21-AS-04",
+        "TC-FR1-21-AS-05",
+        "TC-FR1-21-AS-06"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-14",
+        "DEC-15",
+        "DEC-28",
+        "DEC-31",
+        "DEC-34"
+      ],
+      "human_gate": null,
+      "mutations": [
+        "MUT-12"
+      ],
+      "evidence_dir": "evidence/FR1-21/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-22",
+      "category": "functional",
+      "title": "Independent oracles",
+      "priority": "MUST",
+      "type": "process",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01"
+      ],
+      "components": [
+        "CMP-14"
+      ],
+      "must_not_touch": [],
+      "use_cases": [],
+      "test_case": "TC-FR1-22",
+      "assertions": [
+        "TC-FR1-22-AS-01",
+        "TC-FR1-22-AS-02",
+        "TC-FR1-22-AS-03",
+        "TC-FR1-22-AS-04"
+      ],
+      "fixtures": [
+        "FX-PR-*",
+        "FX-DM-*"
+      ],
+      "decisions": [
+        "DEC-02",
+        "DEC-03",
+        "DEC-33"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/FR1-22/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "FR1-23",
+      "category": "functional",
+      "title": "Category tidy-up",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01",
+        "FR1-02"
+      ],
+      "components": [
+        "CMP-01",
+        "CMP-08",
+        "CMP-10"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-03"
+      ],
+      "test_case": "TC-FR1-23",
+      "assertions": [
+        "TC-FR1-23-AS-01",
+        "TC-FR1-23-AS-02",
+        "TC-FR1-23-AS-03",
+        "TC-FR1-23-AS-04",
+        "TC-FR1-23-AS-05",
+        "TC-FR1-23-AS-06",
+        "TC-FR1-23-AS-07"
+      ],
+      "fixtures": [
+        "FX-WP-URLS",
+        "FX-WP-TIDY"
+      ],
+      "decisions": [
+        "DEC-39",
+        "DEC-40",
+        "DEC-41",
+        "DEC-42",
+        "DEC-43"
+      ],
+      "human_gate": "HG-01",
+      "mutations": [],
+      "evidence_dir": "evidence/FR1-23/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "NFR1-01",
+      "category": "nonfunctional",
+      "title": "Privacy and special-category data",
+      "priority": "MUST",
+      "type": "process",
+      "automation": "hybrid",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01"
+      ],
+      "components": [
+        "CMP-12"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-05"
+      ],
+      "test_case": "TC-NFR1-01",
+      "assertions": [
+        "TC-NFR1-01-AS-01",
+        "TC-NFR1-01-AS-02",
+        "TC-NFR1-01-AS-03",
+        "TC-NFR1-01-AS-04"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-11",
+        "DEC-20",
+        "DEC-21",
+        "DEC-32",
+        "DEC-36"
+      ],
+      "human_gate": "HG-03",
+      "mutations": [],
+      "evidence_dir": "evidence/NFR1-01/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "NFR1-02",
+      "category": "nonfunctional",
+      "title": "Clinical governance",
+      "priority": "MUST",
+      "type": "process",
+      "automation": "hybrid",
+      "status": "draft",
+      "depends_on": [
+        "FR1-06",
+        "FR1-07",
+        "FR1-10",
+        "FR1-12"
+      ],
+      "components": [
+        "CMP-12"
+      ],
+      "must_not_touch": [],
+      "use_cases": [],
+      "test_case": "TC-NFR1-02",
+      "assertions": [
+        "TC-NFR1-02-AS-01",
+        "TC-NFR1-02-AS-02",
+        "TC-NFR1-02-AS-03"
+      ],
+      "fixtures": [],
+      "decisions": [],
+      "human_gate": "HG-02",
+      "mutations": [],
+      "evidence_dir": "evidence/NFR1-02/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "NFR1-03",
+      "category": "nonfunctional",
+      "title": "Security",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01",
+        "FR1-14",
+        "FR1-21"
+      ],
+      "components": [
+        "CMP-04",
+        "CMP-05",
+        "CMP-10"
+      ],
+      "must_not_touch": [],
+      "use_cases": [],
+      "test_case": "TC-NFR1-03",
+      "assertions": [
+        "TC-NFR1-03-AS-01",
+        "TC-NFR1-03-AS-02",
+        "TC-NFR1-03-AS-03",
+        "TC-NFR1-03-AS-04",
+        "TC-NFR1-03-AS-05",
+        "TC-NFR1-03-AS-06",
+        "TC-NFR1-03-AS-07"
+      ],
+      "fixtures": [
+        "FX-MAIL-NEG-06",
+        "FX-MAIL-RATE-01"
+      ],
+      "decisions": [
+        "DEC-15",
+        "DEC-16",
+        "DEC-28",
+        "DEC-35"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/NFR1-03/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "NFR1-04",
+      "category": "nonfunctional",
+      "title": "Isolation of the two pipelines",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-14"
+      ],
+      "components": [
+        "CMP-13"
+      ],
+      "must_not_touch": [],
+      "use_cases": [],
+      "test_case": "TC-NFR1-04",
+      "assertions": [
+        "TC-NFR1-04-AS-01",
+        "TC-NFR1-04-AS-02",
+        "TC-NFR1-04-AS-03"
+      ],
+      "fixtures": [
+        "FX-MAIL-01",
+        "FX-MAIL-02"
+      ],
+      "decisions": [],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/NFR1-04/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "NFR1-05",
+      "category": "nonfunctional",
+      "title": "Accessibility",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-03",
+        "FR1-04"
+      ],
+      "components": [
+        "CMP-02",
+        "CMP-03",
+        "CMP-08",
+        "CMP-09"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-06"
+      ],
+      "test_case": "TC-NFR1-05",
+      "assertions": [
+        "TC-NFR1-05-AS-01",
+        "TC-NFR1-05-AS-02",
+        "TC-NFR1-05-AS-03",
+        "TC-NFR1-05-AS-04",
+        "TC-NFR1-05-AS-05",
+        "TC-NFR1-05-AS-06"
+      ],
+      "fixtures": [],
+      "decisions": [],
+      "human_gate": null,
+      "mutations": [
+        "MUT-14"
+      ],
+      "evidence_dir": "evidence/NFR1-05/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "NFR1-06",
+      "category": "nonfunctional",
+      "title": "Mobile performance",
+      "priority": "SHOULD",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-03"
+      ],
+      "components": [
+        "CMP-08",
+        "CMP-09",
+        "CMP-11"
+      ],
+      "must_not_touch": [],
+      "use_cases": [],
+      "test_case": "TC-NFR1-06",
+      "assertions": [
+        "TC-NFR1-06-AS-01",
+        "TC-NFR1-06-AS-02",
+        "TC-NFR1-06-AS-03"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-17"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/NFR1-06/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "NFR1-07",
+      "category": "nonfunctional",
+      "title": "SEO preservation",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-02",
+        "FR1-21"
+      ],
+      "components": [
+        "CMP-01",
+        "CMP-09",
+        "CMP-10"
+      ],
+      "must_not_touch": [],
+      "use_cases": [],
+      "test_case": "TC-NFR1-07",
+      "assertions": [
+        "TC-NFR1-07-AS-01",
+        "TC-NFR1-07-AS-02",
+        "TC-NFR1-07-AS-03",
+        "TC-NFR1-07-AS-04",
+        "TC-NFR1-07-AS-05"
+      ],
+      "fixtures": [
+        "FX-WP-URLS"
+      ],
+      "decisions": [
+        "DEC-14"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/NFR1-07/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "NFR1-08",
+      "category": "nonfunctional",
+      "title": "Backup and restore",
+      "priority": "MUST",
+      "type": "process",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-01"
+      ],
+      "components": [
+        "CMP-13"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-07"
+      ],
+      "test_case": "TC-NFR1-08",
+      "assertions": [
+        "TC-NFR1-08-AS-01",
+        "TC-NFR1-08-AS-02",
+        "TC-NFR1-08-AS-03",
+        "TC-NFR1-08-AS-04",
+        "TC-NFR1-08-AS-05"
+      ],
+      "fixtures": [
+        "FX-PR-NRM-01",
+        "FX-DM-QD-01",
+        "FX-MAIL-01"
+      ],
+      "decisions": [
+        "DEC-19"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/NFR1-08/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "NFR1-09",
+      "category": "nonfunctional",
+      "title": "Reproducible AI development",
+      "priority": "MUST",
+      "type": "process",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [],
+      "components": [
+        "CMP-13"
+      ],
+      "must_not_touch": [],
+      "use_cases": [],
+      "test_case": "TC-NFR1-09",
+      "assertions": [
+        "TC-NFR1-09-AS-01",
+        "TC-NFR1-09-AS-02",
+        "TC-NFR1-09-AS-03",
+        "TC-NFR1-09-AS-04"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-38"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/NFR1-09/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "NFR1-10",
+      "category": "nonfunctional",
+      "title": "Error handling and observability",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-14",
+        "FR1-15"
+      ],
+      "components": [
+        "CMP-02",
+        "CMP-03",
+        "CMP-04",
+        "CMP-05"
+      ],
+      "must_not_touch": [],
+      "use_cases": [],
+      "test_case": "TC-NFR1-10",
+      "assertions": [
+        "TC-NFR1-10-AS-01",
+        "TC-NFR1-10-AS-02",
+        "TC-NFR1-10-AS-03"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-20"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/NFR1-10/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "NFR1-11",
+      "category": "nonfunctional",
+      "title": "Graceful clinical feature disable",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-10",
+        "FR1-15"
+      ],
+      "components": [
+        "CMP-07",
+        "CMP-13"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-04"
+      ],
+      "test_case": "TC-NFR1-11",
+      "assertions": [
+        "TC-NFR1-11-AS-01",
+        "TC-NFR1-11-AS-02",
+        "TC-NFR1-11-AS-03"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-01",
+        "DEC-08",
+        "DEC-10"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/NFR1-11/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "NFR1-12",
+      "category": "nonfunctional",
+      "title": "Browser and device support",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-03"
+      ],
+      "components": [
+        "CMP-02",
+        "CMP-03",
+        "CMP-09"
+      ],
+      "must_not_touch": [],
+      "use_cases": [],
+      "test_case": "TC-NFR1-12",
+      "assertions": [
+        "TC-NFR1-12-AS-01",
+        "TC-NFR1-12-AS-02"
+      ],
+      "fixtures": [
+        "FX-PR-NRM-01",
+        "FX-DM-QD-01"
+      ],
+      "decisions": [
+        "DEC-18"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/NFR1-12/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "NFR1-13",
+      "category": "nonfunctional",
+      "title": "Monitoring",
+      "priority": "SHOULD",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-19"
+      ],
+      "components": [
+        "CMP-13"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-07"
+      ],
+      "test_case": "TC-NFR1-13",
+      "assertions": [
+        "TC-NFR1-13-AS-01",
+        "TC-NFR1-13-AS-02",
+        "TC-NFR1-13-AS-03"
+      ],
+      "fixtures": [],
+      "decisions": [],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/NFR1-13/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "NFR1-14",
+      "category": "nonfunctional",
+      "title": "Email deliverability and sandbox",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-14"
+      ],
+      "components": [
+        "CMP-06"
+      ],
+      "must_not_touch": [],
+      "use_cases": [],
+      "test_case": "TC-NFR1-14",
+      "assertions": [
+        "TC-NFR1-14-AS-01",
+        "TC-NFR1-14-AS-02",
+        "TC-NFR1-14-AS-03"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-27"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/NFR1-14/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "NFR1-15",
+      "category": "nonfunctional",
+      "title": "Embed security policy",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-21"
+      ],
+      "components": [
+        "CMP-10"
+      ],
+      "must_not_touch": [],
+      "use_cases": [],
+      "test_case": "TC-NFR1-15",
+      "assertions": [
+        "TC-NFR1-15-AS-01",
+        "TC-NFR1-15-AS-02",
+        "TC-NFR1-15-AS-03"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-28"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/NFR1-15/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "NFR1-16",
+      "category": "nonfunctional",
+      "title": "Logging and retention",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-14"
+      ],
+      "components": [
+        "CMP-04",
+        "CMP-05"
+      ],
+      "must_not_touch": [],
+      "use_cases": [],
+      "test_case": "TC-NFR1-16",
+      "assertions": [
+        "TC-NFR1-16-AS-01",
+        "TC-NFR1-16-AS-02",
+        "TC-NFR1-16-AS-03"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-20",
+        "DEC-35"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/NFR1-16/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "UI1-01",
+      "category": "ui",
+      "title": "Homepage hierarchy",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-03"
+      ],
+      "components": [
+        "CMP-08",
+        "CMP-09"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-01"
+      ],
+      "test_case": "TC-UI1-01",
+      "assertions": [
+        "TC-UI1-01-AS-01",
+        "TC-UI1-01-AS-02",
+        "TC-UI1-01-AS-03"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-23",
+        "DEC-30"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/UI1-01/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "UI1-02",
+      "category": "ui",
+      "title": "Tool cards and landing pages",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-04"
+      ],
+      "components": [
+        "CMP-08",
+        "CMP-09"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-01",
+        "UC1-02"
+      ],
+      "test_case": "TC-UI1-02",
+      "assertions": [
+        "TC-UI1-02-AS-01",
+        "TC-UI1-02-AS-02",
+        "TC-UI1-02-AS-03"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-24"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/UI1-02/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "UI1-03",
+      "category": "ui",
+      "title": "Responsive layout",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-03",
+        "FR1-04",
+        "FR1-21"
+      ],
+      "components": [
+        "CMP-02",
+        "CMP-03",
+        "CMP-08",
+        "CMP-09"
+      ],
+      "must_not_touch": [],
+      "use_cases": [],
+      "test_case": "TC-UI1-03",
+      "assertions": [
+        "TC-UI1-03-AS-01",
+        "TC-UI1-03-AS-02",
+        "TC-UI1-03-AS-03"
+      ],
+      "fixtures": [],
+      "decisions": [],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/UI1-03/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "UI1-04",
+      "category": "ui",
+      "title": "Calculator input clarity",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-07",
+        "FR1-12"
+      ],
+      "components": [
+        "CMP-02",
+        "CMP-03"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-06"
+      ],
+      "test_case": "TC-UI1-04",
+      "assertions": [
+        "TC-UI1-04-AS-01",
+        "TC-UI1-04-AS-02",
+        "TC-UI1-04-AS-03",
+        "TC-UI1-04-AS-04"
+      ],
+      "fixtures": [
+        "FX-PR-INV-*",
+        "FX-DM-INV-*"
+      ],
+      "decisions": [],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/UI1-04/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "UI1-05",
+      "category": "ui",
+      "title": "Clinically safe result layout",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "hybrid",
+      "status": "draft",
+      "depends_on": [
+        "FR1-08",
+        "FR1-11"
+      ],
+      "components": [
+        "CMP-02",
+        "CMP-03"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-06"
+      ],
+      "test_case": "TC-UI1-05",
+      "assertions": [
+        "TC-UI1-05-AS-01",
+        "TC-UI1-05-AS-02",
+        "TC-UI1-05-AS-03",
+        "TC-UI1-05-AS-04"
+      ],
+      "fixtures": [
+        "FX-PR-REN-01",
+        "FX-PR-UNS-01",
+        "FX-DM-EMG-01",
+        "FX-DM-SYM-01",
+        "FX-DM-BAND-*"
+      ],
+      "decisions": [
+        "DEC-25"
+      ],
+      "human_gate": "HG-02",
+      "mutations": [
+        "MUT-14"
+      ],
+      "evidence_dir": "evidence/UI1-05/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "UI1-06",
+      "category": "ui",
+      "title": "Email consent interface",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-14"
+      ],
+      "components": [
+        "CMP-02",
+        "CMP-03"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-01"
+      ],
+      "test_case": "TC-UI1-06",
+      "assertions": [
+        "TC-UI1-06-AS-01",
+        "TC-UI1-06-AS-02",
+        "TC-UI1-06-AS-03",
+        "TC-UI1-06-AS-04"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-21",
+        "DEC-36"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/UI1-06/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "UI1-07",
+      "category": "ui",
+      "title": "Navigation and educational links",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-05",
+        "FR1-17"
+      ],
+      "components": [
+        "CMP-08",
+        "CMP-09"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-03"
+      ],
+      "test_case": "TC-UI1-07",
+      "assertions": [
+        "TC-UI1-07-AS-01",
+        "TC-UI1-07-AS-02",
+        "TC-UI1-07-AS-03"
+      ],
+      "fixtures": [],
+      "decisions": [],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/UI1-07/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "UI1-08",
+      "category": "ui",
+      "title": "Loading, unavailable and error states",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-15",
+        "NFR1-10"
+      ],
+      "components": [
+        "CMP-02",
+        "CMP-03",
+        "CMP-08"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-01",
+        "UC1-02",
+        "UC1-04"
+      ],
+      "test_case": "TC-UI1-08",
+      "assertions": [
+        "TC-UI1-08-AS-01",
+        "TC-UI1-08-AS-02",
+        "TC-UI1-08-AS-03",
+        "TC-UI1-08-AS-04"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-10"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/UI1-08/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "UI1-09",
+      "category": "ui",
+      "title": "Visual consistency",
+      "priority": "SHOULD",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-03",
+        "FR1-04"
+      ],
+      "components": [
+        "CMP-02",
+        "CMP-03",
+        "CMP-08"
+      ],
+      "must_not_touch": [],
+      "use_cases": [],
+      "test_case": "TC-UI1-09",
+      "assertions": [
+        "TC-UI1-09-AS-01",
+        "TC-UI1-09-AS-02"
+      ],
+      "fixtures": [],
+      "decisions": [],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/UI1-09/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "UI1-10",
+      "category": "ui",
+      "title": "Iframe embed behaviour",
+      "priority": "MUST",
+      "type": "behaviour",
+      "automation": "auto",
+      "status": "draft",
+      "depends_on": [
+        "FR1-21"
+      ],
+      "components": [
+        "CMP-02",
+        "CMP-03",
+        "CMP-08"
+      ],
+      "must_not_touch": [],
+      "use_cases": [
+        "UC1-01",
+        "UC1-02"
+      ],
+      "test_case": "TC-UI1-10",
+      "assertions": [
+        "TC-UI1-10-AS-01",
+        "TC-UI1-10-AS-02",
+        "TC-UI1-10-AS-03",
+        "TC-UI1-10-AS-04"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-15",
+        "DEC-31",
+        "DEC-34"
+      ],
+      "human_gate": null,
+      "mutations": [],
+      "evidence_dir": "evidence/UI1-10/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    },
+    {
+      "id": "UI1-11",
+      "category": "ui",
+      "title": "Copy deck freeze",
+      "priority": "MUST",
+      "type": "process",
+      "automation": "hybrid",
+      "status": "draft",
+      "depends_on": [
+        "FR1-06"
+      ],
+      "components": [
+        "CMP-02",
+        "CMP-03",
+        "CMP-04",
+        "CMP-05",
+        "CMP-12"
+      ],
+      "must_not_touch": [],
+      "use_cases": [],
+      "test_case": "TC-UI1-11",
+      "assertions": [
+        "TC-UI1-11-AS-01",
+        "TC-UI1-11-AS-02",
+        "TC-UI1-11-AS-03"
+      ],
+      "fixtures": [],
+      "decisions": [
+        "DEC-25"
+      ],
+      "human_gate": "HG-02",
+      "mutations": [],
+      "evidence_dir": "evidence/UI1-11/",
+      "spec": "01_SRS_Stage1_v1_2.md",
+      "tests": "03_Test_Criteria_Stage1_v1_2.md"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "DEC-01",
+      "question": "Deployed diabetes engine identity",
+      "selected": "Model A confirmed",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-02",
+      "question": "QDiabetes oracle",
+      "selected": "CRAN QDiabetes (ORC-01)",
+      "status": "default",
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-03",
+      "question": "Protein oracle",
+      "selected": "Sealed Python reference (ORC-02)",
+      "status": "default",
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-04",
+      "question": "Band thresholds",
+      "selected": "5.6/10/20",
+      "status": "default",
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-05",
+      "question": "IDRS tiers",
+      "selected": "<30 / 30-59 / >=60",
+      "status": "default",
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-06",
+      "question": "Secondary indicator",
+      "selected": "Waist-to-height ratio 0.5/0.6",
+      "status": "default",
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-07",
+      "question": "Townsend",
+      "selected": "Fixed 0, disclosed",
+      "status": "default",
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-08",
+      "question": "Fidelity failure handling",
+      "selected": "Automatic withdrawal",
+      "status": "default",
+      "ratify_at": null,
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-09",
+      "question": "Email during emergency",
+      "selected": "Allowed, emergency template without %",
+      "status": "default",
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-10",
+      "question": "Feature switch",
+      "selected": "status.json",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-11",
+      "question": "Analytics",
+      "selected": "Plausible cookieless",
+      "status": "default",
+      "ratify_at": "HG-03",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-12",
+      "question": "Five policies",
+      "selected": "Privacy, Terms, About, Contact, Medical Disclaimer",
+      "status": "default",
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-13",
+      "question": "Article CTA rule",
+      "selected": "Category/tag rule + override",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-14",
+      "question": "Standalone indexing",
+      "selected": "noindex,follow + canonical",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-15",
+      "question": "Iframe host/messaging",
+      "selected": "Apex host, pinned origin",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-16",
+      "question": "Rate limit/honeypot",
+      "selected": "5/IP/10min 429; honeypot silent 200",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-17",
+      "question": "Perf measurement",
+      "selected": "Lighthouse mobile, median of 5",
+      "status": "default",
+      "ratify_at": null,
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-18",
+      "question": "Browser matrix",
+      "selected": "Last 2 versions + iOS15 + Android 9",
+      "status": "default",
+      "ratify_at": null,
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-19",
+      "question": "Backup objectives",
+      "selected": "RPO 24h RTO 4h",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-20",
+      "question": "Logging",
+      "selected": "SCH-07 only, 30 days",
+      "status": "default",
+      "ratify_at": null,
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-21",
+      "question": "Lawful basis emails",
+      "selected": "Consent incl. Art 9(2)(a); no persistence",
+      "status": "default",
+      "ratify_at": "HG-03",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-22",
+      "question": "WP vehicle",
+      "selected": "mu-plugin lld-tools",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-23",
+      "question": "Homepage placement",
+      "selected": "Tools row below header/hero",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-24",
+      "question": "Status enum",
+      "selected": "active|withdrawn|label_only",
+      "status": "default",
+      "ratify_at": null,
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-25",
+      "question": "Copy freeze",
+      "selected": "MESSAGES/templates hashed in approvals",
+      "status": "default",
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-26",
+      "question": "Healthy-weight tool",
+      "selected": "Out of scope",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-27",
+      "question": "Test SMTP",
+      "selected": "Mailpit",
+      "status": "default",
+      "ratify_at": null,
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-28",
+      "question": "CSP",
+      "selected": "frame-src/frame-ancestors apex",
+      "status": "default",
+      "ratify_at": null,
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-29",
+      "question": "Diabetes age handling",
+      "selected": "Band midpoints",
+      "status": "default",
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-30",
+      "question": "One action definition",
+      "selected": "Tap/click; menu open counts",
+      "status": "default",
+      "ratify_at": null,
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-31",
+      "question": "LiteSpeed Cache configuration",
+      "selected": "Exclude /tools/*, no lazy-load on iframe, purge on status change",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-32",
+      "question": "Existing CookieYes banner",
+      "selected": "Keep; Plausible cookieless",
+      "status": "default",
+      "ratify_at": "HG-03",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-33",
+      "question": "ORC-01 package source and input mapping",
+      "selected": "CRAN Archive 1.0-2 tarball; gdm; fhdm=any; unrounded compare",
+      "status": "default",
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-34",
+      "question": "Per-environment origins and message schema",
+      "selected": "iframe_origin setting; {type:lld-tool-height,height}",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-35",
+      "question": "Hosting facts",
+      "selected": "htaccess headers; forwarded IP; APCu store; HSTS",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-36",
+      "question": "Legal copy ownership",
+      "selected": "Agent drafts; HG-02 clinical; HG-03 legal",
+      "status": "default",
+      "ratify_at": "HG-03",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-37",
+      "question": "Urgent-care guidance non-UK",
+      "selected": "999/111 then 1990, 112",
+      "status": "default",
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-38",
+      "question": "Register-registry sync",
+      "selected": "Registry authoritative; Affects generated",
+      "status": "default",
+      "ratify_at": null,
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-39",
+      "question": "Category womens-health",
+      "selected": "Delete; 301 to wellness",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-40",
+      "question": "Category the-report",
+      "selected": "Hide: remove menu item, noindex, keep term",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-41",
+      "question": "Category uncategorised",
+      "selected": "Set default to wellness, delete, 301 to /",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-42",
+      "question": "Categories healthy-living, stress",
+      "selected": "Remove now; planned-categories.json",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-43",
+      "question": "Footer composition",
+      "selected": "Unchanged; no disclaimer link",
+      "status": "default",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-20"
+    }
+  ],
+  "human_gates": [
+    {
+      "id": "HG-01",
+      "who": "Product owner",
+      "when": "after FR1-01",
+      "artefact": "approvals/hg-01.json"
+    },
+    {
+      "id": "HG-02",
+      "who": "Clinical reviewer",
+      "when": "after wave 6",
+      "artefact": "approvals/protein.json, approvals/diabetes.json, approvals/copy.json"
+    },
+    {
+      "id": "HG-03",
+      "who": "Product owner + privacy reviewer",
+      "when": "release candidate",
+      "artefact": "approvals/hg-03.json"
+    }
+  ],
+  "release_gates": [
+    {
+      "id": "G-01",
+      "name": "Baseline"
+    },
+    {
+      "id": "G-02",
+      "name": "Safety"
+    },
+    {
+      "id": "G-03",
+      "name": "Clinical"
+    },
+    {
+      "id": "G-04",
+      "name": "Quality"
+    },
+    {
+      "id": "G-05",
+      "name": "Site regression"
+    },
+    {
+      "id": "G-06",
+      "name": "Release"
+    }
+  ],
+  "oracles": [
+    {
+      "id": "ORC-01",
+      "impl": "R / CRAN QDiabetes QDR2018A",
+      "scope": [
+        "FX-DM-QD-*",
+        "FX-DM-QD-CLAMP-*",
+        "FX-DM-BAND-*",
+        "FX-DM-CONC-*"
+      ],
+      "tolerance": "0.05 pp after 1dp rounding"
+    },
+    {
+      "id": "ORC-02",
+      "impl": "Sealed Python protein reference",
+      "scope": [
+        "FX-PR-* except INV"
+      ],
+      "tolerance": "1 g; gPerKg exact 2dp"
+    },
+    {
+      "id": "ORC-03",
+      "impl": "IDRS Mohan 2005",
+      "scope": [
+        "FX-DM-IDRS-*",
+        "FX-DM-CONC-*"
+      ],
+      "tolerance": "exact"
+    },
+    {
+      "id": "ORC-04",
+      "impl": "WHtR cut-offs",
+      "scope": [
+        "FX-DM-WHTR-*"
+      ],
+      "tolerance": "exact"
+    }
+  ],
+  "mutations": [
+    {
+      "id": "MUT-01",
+      "description": "Delete protein renal early return",
+      "must_redden": [
+        "TC-FR1-08-AS-01",
+        "TC-FR1-08-AS-02",
+        "TC-FR1-08-AS-03"
+      ]
+    },
+    {
+      "id": "MUT-02",
+      "description": "submit-protein.php always standard template",
+      "must_redden": [
+        "TC-FR1-08-AS-04",
+        "TC-FR1-14-AS-07"
+      ]
+    },
+    {
+      "id": "MUT-03",
+      "description": "Remove pregnancy early return",
+      "must_redden": [
+        "TC-FR1-09-AS-01"
+      ]
+    },
+    {
+      "id": "MUT-04",
+      "description": "Female s0 -> 0.980",
+      "must_redden": [
+        "TC-FR1-10-AS-01"
+      ]
+    },
+    {
+      "id": "MUT-05",
+      "description": "Remove emergency suppress",
+      "must_redden": [
+        "TC-FR1-11-AS-01"
+      ]
+    },
+    {
+      "id": "MUT-06",
+      "description": "bandFor 5.6 -> 6.0",
+      "must_redden": [
+        "TC-FR1-12-AS-01"
+      ]
+    },
+    {
+      "id": "MUT-07",
+      "description": "Cap 2.0 -> 2.5",
+      "must_redden": [
+        "TC-FR1-07-AS-01",
+        "TC-FR1-07-AS-02"
+      ]
+    },
+    {
+      "id": "MUT-08",
+      "description": "IDRS 60 -> 50",
+      "must_redden": [
+        "TC-FR1-12-AS-02"
+      ]
+    },
+    {
+      "id": "MUT-09",
+      "description": "WHtR 0.5 -> 0.55",
+      "must_redden": [
+        "TC-FR1-12-AS-03"
+      ]
+    },
+    {
+      "id": "MUT-10",
+      "description": "Alter approval hash",
+      "must_redden": [
+        "TC-FR1-06-AS-02"
+      ]
+    },
+    {
+      "id": "MUT-11",
+      "description": "Add riskPercent prop to analytics",
+      "must_redden": [
+        "TC-FR1-16-AS-01"
+      ]
+    },
+    {
+      "id": "MUT-12",
+      "description": "postMessage '*'",
+      "must_redden": [
+        "TC-FR1-21-AS-02"
+      ]
+    },
+    {
+      "id": "MUT-13",
+      "description": "PHP ignores withdrawn status",
+      "must_redden": [
+        "TC-FR1-15-AS-01"
+      ]
+    },
+    {
+      "id": "MUT-14",
+      "description": "Remove role=alert from emergency banner",
+      "must_redden": [
+        "TC-NFR1-05-AS-03",
+        "TC-UI1-05-AS-02"
+      ]
+    }
+  ],
+  "source_documents": [
+    "Diabetes Risk Screening Tool.docx (design note of deployed engine)",
+    "Protein-Tool-Engine-Reference.docx",
+    "live site snapshot 2026-10-20 (see live_hashes_2026_10_20)"
+  ],
+  "live_hashes_2026_10_20": {
+    "protein": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+    "diabetes": "27c0e33ce3b98aea495a2f13fca112e32007d9d478ab30ee70401a39ab496292"
+  },
+  "open_blockers": []
+}

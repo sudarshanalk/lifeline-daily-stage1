@@ -1,0 +1,81 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "SCH-11",
+  "title": "Clinical incident / withdrawal",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "incident_id": {
+      "type": "string"
+    },
+    "tool_slug": {
+      "type": "string",
+      "enum": [
+        "protein",
+        "diabetes"
+      ]
+    },
+    "raised_by": {
+      "type": "string"
+    },
+    "raised_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "affected_version": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "severity": {
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "decision": {
+      "enum": [
+        "withdraw",
+        "monitor",
+        "no_action"
+      ]
+    },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "restored_at": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "restored_version": {
+      "anyOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      ]
+    }
+  },
+  "required": [
+    "incident_id",
+    "tool_slug",
+    "raised_by",
+    "raised_at",
+    "affected_version",
+    "severity",
+    "description",
+    "decision"
+  ]
+}

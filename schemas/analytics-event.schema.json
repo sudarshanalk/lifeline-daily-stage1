@@ -1,0 +1,49 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "SCH-09",
+  "title": "Analytics event",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "enum": [
+        "tool_landing_view",
+        "tool_start",
+        "tool_complete",
+        "tool_unavailable_view",
+        "article_cta_click",
+        "email_sent"
+      ]
+    },
+    "props": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "tool": {
+          "type": "string",
+          "enum": [
+            "protein",
+            "diabetes"
+          ]
+        },
+        "source": {
+          "enum": [
+            "article",
+            "hub",
+            "home",
+            "nav",
+            "campaign",
+            "direct"
+          ]
+        }
+      },
+      "required": [
+        "tool"
+      ]
+    }
+  },
+  "required": [
+    "name",
+    "props"
+  ]
+}

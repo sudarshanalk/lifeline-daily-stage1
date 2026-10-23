@@ -1,0 +1,56 @@
+{
+  "group": "UWT",
+  "tool": "protein",
+  "fixtures": [
+    {
+      "id": "FX-PR-UWT-01",
+      "purpose": "BMI 18.3",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 56,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "0",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-PR-UWT-02",
+      "purpose": "underweight fatloss",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 175,
+        "weightKg": 52,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "0",
+        "goal": "fatloss",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no"
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    }
+  ]
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "SCH-13",
+  "title": "WordPress meta keys",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "meta": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "key",
+          "applies_to",
+          "type"
+        ],
+        "properties": {
+          "key": {
+            "enum": [
+              "lld_review_owner",
+              "lld_reviewed_date",
+              "lld_next_review_date",
+              "lld_review_status",
+              "lld_tool_override",
+              "lld_tool_slug"
+            ]
+          },
+          "applies_to": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "post",
+                "page"
+              ]
+            }
+          },
+          "type": {
+            "type": "string"
+          },
+          "enum": {
+            "type": "array"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "meta"
+  ]
+}

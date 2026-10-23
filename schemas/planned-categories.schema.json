@@ -1,0 +1,43 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "SCH-14",
+  "title": "Planned categories",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "removed_at": {
+      "type": "string",
+      "format": "date"
+    },
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "slug",
+          "name",
+          "parent",
+          "recreate_when"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "parent": {
+            "type": "string"
+          },
+          "recreate_when": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "removed_at",
+    "categories"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "notDiagnosis": "not a diagnosis",
+  "urgentCare": "same-day medical assessment",
+  "methodology": {
+    "engine": "QDiabetes-2018 (Model A)",
+    "calibration": "UK",
+    "townsend": "Townsend",
+    "type2": "type 2",
+    "symptomDesign": "symptom"
+  },
+  "protein": {
+    "scope": "18 and over"
+  }
+}

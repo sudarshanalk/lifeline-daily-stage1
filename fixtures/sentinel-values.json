@@ -1,0 +1,8 @@
+{
+  "firstName": "Zq7Sentinel",
+  "email": "zq7sentinel@example.test",
+  "weightKg": 83.7,
+  "waistCm": 97.3,
+  "heightCm": 173,
+  "note": "Unique values used in privacy flows; any appearance in analytics, logs or URLs is a leak."
+}

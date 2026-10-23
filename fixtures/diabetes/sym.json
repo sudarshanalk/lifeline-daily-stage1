@@ -1,0 +1,112 @@
+{
+  "group": "SYM",
+  "tool": "diabetes",
+  "fixtures": [
+    {
+      "id": "FX-DM-SYM-01",
+      "purpose": "thirst",
+      "inputs": {
+        "units": "metric",
+        "sex": "Male",
+        "ageBand": 47,
+        "heightCm": 170,
+        "weightKg": 75,
+        "ethn": "Indian",
+        "smoke": "Non",
+        "family": [],
+        "htn": 0,
+        "cvd": 0,
+        "gdm": 0,
+        "pcos": 0,
+        "learn": 0,
+        "psy": 0,
+        "ster": 0,
+        "stat": 0,
+        "apsy": 0,
+        "activity": "moderate",
+        "waistCm": null,
+        "hasSym": "yes",
+        "symptoms": [
+          "thirst"
+        ],
+        "emergency": false
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-DM-SYM-02",
+      "purpose": "fatigue only",
+      "inputs": {
+        "units": "metric",
+        "sex": "Male",
+        "ageBand": 47,
+        "heightCm": 170,
+        "weightKg": 75,
+        "ethn": "Indian",
+        "smoke": "Non",
+        "family": [],
+        "htn": 0,
+        "cvd": 0,
+        "gdm": 0,
+        "pcos": 0,
+        "learn": 0,
+        "psy": 0,
+        "ster": 0,
+        "stat": 0,
+        "apsy": 0,
+        "activity": "moderate",
+        "waistCm": null,
+        "hasSym": "yes",
+        "symptoms": [
+          "fatigue"
+        ],
+        "emergency": false
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-DM-SYM-03",
+      "purpose": "polyuria+wtloss",
+      "inputs": {
+        "units": "metric",
+        "sex": "Male",
+        "ageBand": 47,
+        "heightCm": 170,
+        "weightKg": 75,
+        "ethn": "Indian",
+        "smoke": "Non",
+        "family": [],
+        "htn": 0,
+        "cvd": 0,
+        "gdm": 0,
+        "pcos": 0,
+        "learn": 0,
+        "psy": 0,
+        "ster": 0,
+        "stat": 0,
+        "apsy": 0,
+        "activity": "moderate",
+        "waistCm": null,
+        "hasSym": "yes",
+        "symptoms": [
+          "polyuria",
+          "wtloss"
+        ],
+        "emergency": false
+      },
+      "expected": null,
+      "oracle": "characterisation",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    }
+  ]
+}

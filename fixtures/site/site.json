@@ -1,0 +1,200 @@
+{
+  "group": "WP",
+  "tool": "site",
+  "fixtures": [
+    {
+      "id": "FX-WP-URLS",
+      "purpose": "30-URL sample (SRS §13), generated at FR1-01",
+      "inputs": {
+        "rule": "8 pages + 5 nav categories + 12 recent posts + 5 most viewed/next recent"
+      },
+      "expected": null,
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-WP-POST-01",
+      "purpose": "published nutrition-for-healthy-living post -> protein CTA",
+      "inputs": {
+        "status": "publish",
+        "category": "nutrition-for-healthy-living"
+      },
+      "expected": null,
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-WP-POST-02",
+      "purpose": "health-conditions + tag diabetes -> diabetes CTA (tag rule)",
+      "inputs": {
+        "status": "publish",
+        "category": "health-conditions",
+        "tags": [
+          "diabetes"
+        ]
+      },
+      "expected": null,
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-WP-POST-03",
+      "purpose": "sleep-and-recovery -> none",
+      "inputs": {
+        "status": "publish",
+        "category": "sleep-and-recovery"
+      },
+      "expected": null,
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-WP-POST-04",
+      "purpose": "food-nutrition, override none",
+      "inputs": {
+        "status": "publish",
+        "category": "food-nutrition",
+        "lld_tool_override": "none"
+      },
+      "expected": null,
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-WP-POST-05",
+      "purpose": "draft nutrition-for-healthy-living",
+      "inputs": {
+        "status": "draft",
+        "category": "nutrition-for-healthy-living"
+      },
+      "expected": null,
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-WP-POST-06",
+      "purpose": "stale review date",
+      "inputs": {
+        "status": "publish",
+        "category": "nutrition-for-healthy-living",
+        "lld_next_review_date": "<yesterday>"
+      },
+      "expected": null,
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-WP-POST-07",
+      "purpose": "fitness, override diabetes",
+      "inputs": {
+        "status": "publish",
+        "category": "fitness",
+        "lld_tool_override": "diabetes"
+      },
+      "expected": null,
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-WP-POST-08",
+      "purpose": "healthy-eating-for-longevity, review pending",
+      "inputs": {
+        "status": "publish",
+        "category": "healthy-eating-for-longevity",
+        "lld_review_status": "pending"
+      },
+      "expected": null,
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-WP-POST-09",
+      "purpose": "fitness + tag blood-sugar -> diabetes (tag beats category)",
+      "inputs": {
+        "status": "publish",
+        "category": "fitness",
+        "tags": [
+          "blood-sugar"
+        ]
+      },
+      "expected": null,
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-WP-POST-10",
+      "purpose": "metabolic-health, no tags -> diabetes (category)",
+      "inputs": {
+        "status": "publish",
+        "category": "metabolic-health"
+      },
+      "expected": null,
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-WP-TIDY",
+      "purpose": "six empty categories and DEC-39..42 dispositions",
+      "inputs": {
+        "delete_redirect_wellness": [
+          "womens-health",
+          "healthy-living",
+          "stress"
+        ],
+        "delete_redirect_root": [
+          "uncategorised"
+        ],
+        "hide_noindex": [
+          "the-report"
+        ],
+        "keep": [
+          "health_tools"
+        ],
+        "default_category": "wellness"
+      },
+      "expected": null,
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-WP-USERS",
+      "purpose": "role accounts",
+      "inputs": {
+        "users": [
+          "contributor",
+          "editor",
+          "administrator"
+        ]
+      },
+      "expected": null,
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    }
+  ]
+}

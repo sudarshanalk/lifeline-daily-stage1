@@ -1,0 +1,113 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "SCH-08",
+  "title": "Tool status file",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "tools": {
+      "type": "object",
+      "required": [
+        "protein",
+        "diabetes"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "protein": {
+          "type": "object",
+          "required": [
+            "status",
+            "approved_version"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "active",
+                "withdrawn"
+              ]
+            },
+            "approved_version": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "message": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "since": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            }
+          }
+        },
+        "diabetes": {
+          "type": "object",
+          "required": [
+            "status",
+            "approved_version"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "active",
+                "withdrawn"
+              ]
+            },
+            "approved_version": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "message": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "since": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            }
+          }
+        }
+      }
+    },
+    "labels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "slug",
+          "label",
+          "status"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "status": {
+            "const": "label_only"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "updated_at",
+    "tools"
+  ]
+}

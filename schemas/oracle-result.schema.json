@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "SCH-06",
+  "title": "Oracle results",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "oracle_id": {
+      "type": "string",
+      "pattern": "^ORC-0[1-4]$"
+    },
+    "implementation": {
+      "type": "string"
+    },
+    "versions": {
+      "type": "object"
+    },
+    "source_hash": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "run_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "fixture_id",
+          "expected"
+        ],
+        "properties": {
+          "fixture_id": {
+            "type": "string"
+          },
+          "expected": {
+            "type": "object"
+          },
+          "notes": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "oracle_id",
+    "implementation",
+    "versions",
+    "run_at",
+    "results"
+  ]
+}
