@@ -1,0 +1,12 @@
+diff --git a/site/public_html/tools/protein-requirement-tool.html b/site/public_html/tools/protein-requirement-tool.html
+index bba3682..b6a0e1c 100644
+--- a/site/public_html/tools/protein-requirement-tool.html
++++ b/site/public_html/tools/protein-requirement-tool.html
+@@ -497,7 +497,6 @@ function computeProtein(s){
+   }
+ 
+   /* --- P0: RENAL OVERRIDE. Nothing else runs. ------------------------- */
+-  if (s.kidney === 'yes') return { suppressed:true, reason:'renal', bmi };
+ 
+   /* --- P1: PREGNANCY / LACTATION — own branch, never stacked ---------- */
+   if (s.preg === 'pregnant' || s.preg === 'breastfeeding'){

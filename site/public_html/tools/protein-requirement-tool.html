@@ -223,10 +223,10 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
 </form>
 
 <!-- ============================ RESULTS ============================ -->
-<div id="results" class="hidden">
+<div id="results" class="hidden" data-test="result">
 
   <div class="card">
-    <div id="banners"></div>
+    <div id="banners" data-test="banners"></div>
     <div id="headlineBlock"></div>
     <div class="metrics" id="metrics"></div>
     <div id="interp" style="margin-top:16px;font-size:15px"></div>
@@ -240,7 +240,7 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
     <div class="disclaimer" id="disclaimerText"></div>
   </div>
 
-  <div class="card" id="emailCard">
+  <div class="card" id="emailCard" data-test="email-card">
     <h2>Email yourself a copy</h2>
     <div class="sub">Optional — your result and next steps, sent once to your inbox. We don't store your health details.</div>
     <div class="field">
@@ -741,7 +741,7 @@ function render(r){
 
   /* ---- P0: renal suppression. No numbers. At all. ---- */
   if(r.suppressed){
-    B.innerHTML = `<div class="banner stop"><h3>${MESSAGES.renalStop.title}</h3>${MESSAGES.renalStop.body}</div>`;
+    B.innerHTML = `<div class="banner stop" role="alert" data-test="renal-stop"><h3>${MESSAGES.renalStop.title}</h3>${MESSAGES.renalStop.body}</div>`;
     $('metrics').innerHTML = '';
     $('methodology').innerHTML = methodologyHTML(r);
     $('emailCard').classList.add('hidden');
@@ -751,7 +751,7 @@ function render(r){
 
   /* ---- banners ---- */
   if(state.kidney==='unsure')
-    B.innerHTML += `<div class="banner care"><h3>${MESSAGES.renalUnsure.title}</h3>${MESSAGES.renalUnsure.body}</div>`;
+    B.innerHTML += `<div class="banner care" role="alert" data-test="renal-unsure"><h3>${MESSAGES.renalUnsure.title}</h3>${MESSAGES.renalUnsure.body}</div>`;
   if(r.branch==='pregnancy')
     B.innerHTML += `<div class="banner care"><h3>${MESSAGES.pregnancy.title}</h3>${MESSAGES.pregnancy.body}</div>`;
   if(state.liver==='yes')
