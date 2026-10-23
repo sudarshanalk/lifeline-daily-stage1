@@ -29,7 +29,9 @@ describe('TC-FR1-06 clinical method provenance', () => {
     for (const [approval, manifest] of [[approvalProtein, manifestProtein], [approvalDiabetes, manifestDiabetes]]) {
       expect(['pending', 'approved']).toContain(approval.clinical_signoff.decision); // compared regardless of sign-off state (SRS FR1-06)
       expect(approval.version_hash).toBe(manifest.versions.find((v) => v.is_live).version_hash);
-      expect(Object.keys(approval.copy_hashes).sort()).toEqual([`messages.${approval.tool_slug}`, `templates.${approval.tool_slug}`]);
+      // the two per-source aggregates are mandatory; per-banner hashes (e.g. pregnancy, TC-FR1-09-AS-05) are added by later requirements
+      expect(Object.keys(approval.copy_hashes)).toEqual(expect.arrayContaining([`messages.${approval.tool_slug}`, `templates.${approval.tool_slug}`]));
+      for (const v of Object.values(approval.copy_hashes)) expect(v).toMatch(/^[0-9a-f]{64}$/);
     }
   });
 

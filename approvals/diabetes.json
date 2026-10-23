@@ -25,7 +25,9 @@
   "licence": "QDiabetes-2018 algorithm © ClinRisk Ltd, released under LGPL-3.0; the deployed JavaScript port is Lifeline Daily's own implementation of the published equations. IDRS and WHtR are published, unlicensed scoring rules. R oracle package QDiabetes 1.0-2 is AGPL-3 (research-use disclaimer recorded in ORC-01).",
   "copy_hashes": {
     "messages.diabetes": "3779d9adb6ddca4c5a984d7c86ea7787c23b91e925d327b22f69c1793da07a40",
-    "templates.diabetes": "9d78227a2a323e64fdc0efb1b3eb8fb648850570568480e6d4ebea6ec9a9855f"
+    "templates.diabetes": "9d78227a2a323e64fdc0efb1b3eb8fb648850570568480e6d4ebea6ec9a9855f",
+    "emergency": "39ede8389073eaec0f7615d86a36242aebbe0f1dcdc0274b71257be0db7f5f1a",
+    "symptomatic": "0e4e4a6221261edad261aa6970095975fb30858685dab94519a4b373cb6ee586"
   },
   "oracle_report": "oracles/orc-01-qdiabetes-r/results.json (pending Docker, OI-4); oracles/orc-03-idrs/results.json; oracles/orc-04-whtr/results.json",
   "decisions_ratified": [],
