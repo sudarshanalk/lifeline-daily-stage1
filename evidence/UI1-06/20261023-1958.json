@@ -621,5 +621,10 @@
   "green_run": "local-20261023-1958",
   "human_gate": null,
   "started_at": "2026-10-23T18:45:00Z",
-  "finished_at": "2026-10-23T19:38:14Z"
+  "finished_at": "2026-10-23T19:38:14Z",
+  "reviewer": {
+    "agent": "P-C",
+    "verdict": "PASS",
+    "report": "https://github.com/sudarshanalk/lifeline-daily-stage1/pull/26 (P-C review 20261023-2055; consent copy notes for HG-02/HG-03 in the review)"
+  }
 }
