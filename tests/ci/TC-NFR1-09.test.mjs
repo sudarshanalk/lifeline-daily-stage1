@@ -56,19 +56,25 @@ describe('TC-NFR1-09 reproducible AI development', () => {
     // REST calls with an explicit repository: `gh pr list` needs a configured default repo, which an Actions checkout lacks
     const repo = process.env.GITHUB_REPOSITORY || 'sudarshanalk/lifeline-daily-stage1';
     const ghApi = (path, jq) => spawnSync('gh', ['api', path, ...(jq ? ['--jq', jq] : [])], { cwd: ROOT, encoding: 'utf8' });
-    const merged = ghApi(`repos/${repo}/pulls?state=closed&base=staging&sort=updated&direction=desc&per_page=20`, '[.[] | select(.merged_at != null)] | sort_by(.merged_at) | last | {number, head: .head.sha}');
+    const merged = ghApi(`repos/${repo}/pulls?state=closed&base=staging&sort=updated&direction=desc&per_page=20`, '[.[] | select(.merged_at != null)] | sort_by(.merged_at) | last | {number, title, head: .head.sha}');
     expect(merged.status, merged.stderr).toBe(0);
     const pr = JSON.parse(merged.stdout || 'null');
     if (!pr) return;
     const head = pr.head; const prs = [pr];
     // make sure the merged PR's head commit is available locally (CI checkouts may be shallow / lack the branch)
     if (spawnSync('git', ['cat-file', '-e', head], { cwd: ROOT }).status !== 0) spawnSync('git', ['fetch', '-q', 'origin', head], { cwd: ROOT });
-    const declared = new Set();
+    const declared = new Set(); const specSkipped = new Set();
     for (const f of ['ci.yml', 'ci-guards.yml']) {
       const text = spawnSync('git', ['show', `${head}:.github/workflows/${f}`], { cwd: ROOT, encoding: 'utf8' });
       if (text.status !== 0) continue; // workflow did not exist at that commit
-      for (const m of (text.stdout.split(/\njobs:\n/)[1] || '').matchAll(/^  ([a-z][a-z0-9-]*):\s*$/gm)) declared.add(m[1]);
+      for (const block of (text.stdout.split(/\njobs:\n/)[1] || '').split(/^(?=  [a-z][a-z0-9-]*:\s*$)/m)) {
+        const m = block.match(/^  ([a-z][a-z0-9-]*):\s*$/m); if (!m) continue;
+        declared.add(m[1]);
+        // a job whose `if:` excludes SPEC PRs (DEC-55) is skipped by design when the merged PR is a SPEC PR
+        if (/^\s+if:.*SPEC: /m.test(block)) specSkipped.add(m[1]);
+      }
     }
+    const isSpec = /^SPEC: /.test(pr.title || '');
     expect(declared.size, `workflow files of ${head} readable`).toBeGreaterThan(0);
     const api = ghApi(`repos/${repo}/commits/${head}/check-runs?per_page=100`, '.check_runs[] | [.name, .conclusion] | @tsv');
     expect(api.status, api.stderr).toBe(0);
@@ -77,7 +83,11 @@ describe('TC-NFR1-09 reproducible AI development', () => {
     const notDeclared = required.filter((j) => !declared.has(j));
     if (notDeclared.length) console.info(`last merged PR #${prs[0].number} (${head.slice(0, 7)}) did not yet declare: ${notDeclared.join(', ')}`);
     expect(mustHaveRun.length).toBeGreaterThan(0);
-    for (const j of mustHaveRun) expect(byName[j], `last merged PR #${prs[0].number}: job ${j}`).toBe('success');
+    for (const j of mustHaveRun) {
+      // SPEC PRs (DEC-55) legitimately skip the test-family and requirement-scope jobs; every other job must have succeeded
+      if (isSpec && specSkipped.has(j)) { expect(byName[j], `SPEC PR #${prs[0].number}: job ${j}`).toMatch(/^(success|skipped)$/); continue; }
+      expect(byName[j], `last merged PR #${prs[0].number}: job ${j}`).toBe('success');
+    }
   });
 
   test('TC-NFR1-09-AS-03', () => {
