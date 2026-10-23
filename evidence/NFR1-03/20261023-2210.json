@@ -33,7 +33,7 @@
     {
       "assertion": "TC-NFR1-03-AS-04",
       "outcome": "pass",
-      "artefact": "artefacts/vitest.json",
+      "artefact": "artefacts/vitest.json (tool pages, hub and the harness landing double; the four WordPress URLs are re-measured on staging after OI-1, before HG-02)",
       "oracle": "characterisation"
     },
     {
@@ -437,6 +437,11 @@
   "red_run": null,
   "green_run": "local-20261023-2210",
   "human_gate": null,
-  "started_at": "2026-10-23T21:00:00Z",
-  "finished_at": "2026-10-23T19:56:38Z"
+  "started_at": "2026-10-23T19:50:00Z",
+  "finished_at": "2026-10-23T19:56:38Z",
+  "reviewer": {
+    "agent": "P-C",
+    "verdict": "PASS",
+    "report": "https://github.com/sudarshanalk/lifeline-daily-stage1/pull/30 (P-C review 20261023-2215; conditions: ZAP/WPScan as release-gate checks via DEC rows, staging header bundle for AS-04 after OI-1)"
+  }
 }
