@@ -573,7 +573,9 @@ var MESSAGES = {
     consent: "Email my result to me. I agree that Lifeline Daily may use my email address and the health information in this result to send this one email, and nothing else — see our <a href=\"__LLD_ORIGIN__/privacy-policy/\" target=\"_blank\" rel=\"noopener\">Privacy Policy</a>. This is screening information, not medical advice.",
     success: "Sent — check your inbox (and spam folder just in case).",
     errorValidation: "Please enter a valid email and tick the box.",
-    errorServer: "Something went wrong sending that. Your result is still shown above."
+    errorServer: "Something went wrong sending that. Your result is still shown above.",
+    errorRateLimited: "You have sent a few of these already. Please wait ten minutes before trying again.",
+    errorUnavailable: "Email is not available for this tool right now. Your result is still shown above."
   },
   unavailable: {
     title: "This tool is temporarily unavailable",
@@ -933,11 +935,15 @@ $('#emailBtn').addEventListener('click',function(){
     symptomatic:LAST.sym.classic, emergency:LAST.sym.emergency,
     measurements:{heightCm:Math.round(S.heightCm), weightKg:Math.round(S.weightKg), waistCm:S.waistCm?Math.round(S.waistCm):null},
     timestamp:new Date().toISOString(), company:hp };
-  status.textContent='Sending…';
+  status.textContent='Sending…'; var btn=$('#emailBtn'); btn.disabled=true;
   fetch('./submit.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
-    .then(function(res){ if(!res.ok)throw new Error('bad'); return res.json(); })
-    .then(function(){ status.textContent=MESSAGES.email.success; status.classList.add('ok'); })
-    .catch(function(){ status.textContent=MESSAGES.email.errorServer; status.classList.add('bad'); });
+    .then(function(res){ if(!res.ok){ var e=new Error('bad'); e.status=res.status; throw e; } return res.json(); })
+    .then(function(){ status.textContent=MESSAGES.email.success; status.classList.add('ok'); btn.hidden=true; })
+    .catch(function(e){
+      /* NFR1-10 / UI1-08: a distinct message per outcome and a retry control; the result stays on screen */
+      status.textContent = e.status===429 ? MESSAGES.email.errorRateLimited : e.status===503 ? MESSAGES.email.errorUnavailable : MESSAGES.email.errorServer;
+      status.classList.add('bad'); btn.disabled=false; btn.textContent='Try again';
+    });
 });
 
 /* iframe auto-resize */

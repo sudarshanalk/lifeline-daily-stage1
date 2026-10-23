@@ -170,6 +170,16 @@
       "locator": "MESSAGES.emailFailed"
     },
     {
+      "key": "messages.protein.emailRateLimited",
+      "source": "site/public_html/tools/protein-requirement-tool.html",
+      "locator": "MESSAGES.emailRateLimited"
+    },
+    {
+      "key": "messages.protein.emailUnavailable",
+      "source": "site/public_html/tools/protein-requirement-tool.html",
+      "locator": "MESSAGES.emailUnavailable"
+    },
+    {
       "key": "messages.protein.unavailable.title",
       "source": "site/public_html/tools/protein-requirement-tool.html",
       "locator": "MESSAGES.unavailable.title"
@@ -433,6 +443,16 @@
       "key": "messages.diabetes.email.errorServer",
       "source": "site/public_html/tools/diabetes-risk-tool.html",
       "locator": "MESSAGES.email.errorServer"
+    },
+    {
+      "key": "messages.diabetes.email.errorRateLimited",
+      "source": "site/public_html/tools/diabetes-risk-tool.html",
+      "locator": "MESSAGES.email.errorRateLimited"
+    },
+    {
+      "key": "messages.diabetes.email.errorUnavailable",
+      "source": "site/public_html/tools/diabetes-risk-tool.html",
+      "locator": "MESSAGES.email.errorUnavailable"
     },
     {
       "key": "messages.diabetes.unavailable.title",
