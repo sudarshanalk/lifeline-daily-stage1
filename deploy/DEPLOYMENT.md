@@ -1,65 +1,35 @@
-# Deployment — staging and production (brief for the automation set-up)
+# LLD overlay deployment
 
-Scope: automate deployment of **only** `site/` (the deployable overlay) to Hostinger shared hosting, first to staging on every merge to `staging`, then to production from a release tag after the human release gate. WordPress core, themes, normal plugins, uploads and the database are never deployed from Git.
+Only site/public_html is prepared and sent. Staging uses pushes to staging; production uses rc-* tags after the signed HG-03 and clinical approvals pass. Both workflows have manual read-only rehearsal. Production is never deployed by this setup task. No database dumps or patches are applied in this file-only phase (TASK_FOR_CODEX scope).
 
-## What gets deployed
+## Activation
 
-`site/public_html/` mirrors the server document root. Today it contains:
+GitHub Free private repositories cannot rely on protected environment reviewers. Repository secrets are used; the workflows do not claim an enforced human reviewer gate. Anyone able to modify workflows with write access could change these checks. Owner accepted Free-plan conventions; never put production credentials in GitHub until the owner accepts this specific deployment arrangement and DEC-46 is verified.
 
-| Path | Deployed? | Notes |
-|---|---|---|
-| `tools/*.html`, `tools/*.php`, `tools/api/*.php`, `tools/api/PHPMailer/`, `tools/api/.htaccess` | yes | hash-frozen tool files and endpoints |
-| `tools/api/config.example.php` | yes (as example only) | the real `config.php` lives on the server, created once from environment values; **never** overwritten or deleted by a deploy |
-| `tools/api/outbox/`, `tools/api/state/` | `.htaccess` only | contents are runtime state; excluded both ways |
-| `tools/status.json` | **no** | the withdrawal switch (DEC-10) lives on the server; excluded from every deploy. Only `wp lld status set` writes it (validates version, writes, purges). The Git copy is the initial template, installed once by hand |
-| `wp-content/mu-plugins/lld-tools/` | yes | the plugin (built in later waves) |
-| `wp-content/mu-plugins/lld-tools-loader.php` | yes | mu-plugin loader (later) |
-| root `.htaccess` | managed block only | deploy rewrites the text between `# BEGIN lld` and `# END lld`, never the rest of the file |
+STAGING_DEPLOY_ENABLED and PROD_DEPLOY_ENABLED repository variables default to false. Enable staging only after dedicated LLD SSH access, verified host keys, server-owned config/status and a successful rehearsal are ready. Enable production only after signed release approvals, verified production configuration, a successful staging release and owner authorization. Missing/false variables skip delivery, not validation.
 
-Excluded from every deploy: `api/config.php`, `api/outbox/*`, `api/state/*`, `tools/status.json`, anything outside `site/`.
+Secrets per prefix STAGING / PROD: SSH_HOST, SSH_PORT, SSH_USER, SSH_KEY, SSH_KNOWN_HOSTS, DOCROOT (for example STAGING_SSH_KEY). Staging URL is fixed to https://stg.lifelinedaily.com; production to https://lifelinedaily.com. Document roots are fixed relative to the SSH home: domains/lifelinedaily.com/public_html/stg and domains/lifelinedaily.com/public_html. No cross-project credential reuse. SSH_KNOWN_HOSTS must contain an independently verified host-key line; deployments use StrictHostKeyChecking=yes.
 
-**Origin substitution (DEC-34).** Before rsync, `deploy.sh` copies `site/` to a temp dir and replaces the placeholder `__LLD_ORIGIN__` in `tools/*.html` and `.htaccess.lld` with `DEPLOY_ORIGIN` from the environment file (apex on production, the staging hostname on staging). The Git copy stays environment-neutral; the hash-frozen engine objects contain no placeholder.
+## Safeguards
 
-## Environments
+- Local manifest/approval checks run before SSH. Missing/pending clinical approval is accepted only on staging; rejected or mismatched approval is refused. Production needs an rc tag, matching tool approvals and HG-03 signer/date/tag. The release record commit must be an ancestor with unchanged site/deploy/workflow content up to the tagged commit, allowing the later release-record commit without a self-referential commit hash.
+- Source preparation admits only tools and lld-tools mu-plugin paths. config.php and status.json are excluded. Runtime directories deploy their .htaccess only. WordPress core, themes, ordinary plugins, uploads and the database stay server-owned.
+- Origins are substituted in a temporary copy. Until FR1-21 supplies an origin placeholder, the prepared staging header adds its own hostname to frame-ancestors. Frozen tool source bytes are unchanged.
+- Remote preflight checks fixed real paths, refuses managed symlinks and requires WordPress, rsync, WP-CLI, config.php and status.json. No credentials are printed.
+- A private per-environment verified backup is made before writes. A server-side lock prevents overlapping changes. Backups exclude credentials, withdrawal state and runtime data. Last 10 successful-history backups retained only after smoke succeeds.
+- Sync has NO --delete at the document root. Obsolete files require explicit reviewed removal; sparse overlays must never delete WordPress files.
+- Managed .htaccess block updates are idempotent; other rules are preserved. WP-CLI LiteSpeed purge failures and smoke failures stop the run. Partial deployment is reported as failure; rollback is explicit, not automatic.
+- --dry-run performs read-only preflight and rsync rehearsal only. No remote backup, lock, upload, cache purge or HTTP POST occurs.
+- Smoke requires all five landing/tool routes plus hub HTML, denied private API paths, valid no-store status JSON, exact served transformed tool hashes and HTTP 400 for invalid submission JSON.
 
-| | Staging | Production |
-|---|---|---|
-| Trigger | push to `staging` (after PR merge) | tag `rc-*` pushed **and** `release-gate` check green (`approvals/hg-03.json` with `decision: approved` for that tag) |
-| Host / user / key / docroot | secrets `STAGING_SSH_HOST`, `STAGING_SSH_PORT`, `STAGING_SSH_USER`, `STAGING_SSH_KEY`, `STAGING_DOCROOT` | `PROD_SSH_HOST`, `PROD_SSH_PORT`, `PROD_SSH_USER`, `PROD_SSH_KEY`, `PROD_DOCROOT` |
-| Site URL (for smoke) | `STAGING_URL` | `https://lifelinedaily.com` |
-| Approval | none (automatic) | GitHub Environment `production` with a required reviewer = the release owner, plus the `release-gate` job |
-| Concurrency | one deploy at a time per environment (`concurrency: deploy-<env>`) | same |
+## Server prerequisites still required
 
-Existing empty placeholders `STAGING_SFTP_HOST/USER/KEY` may be renamed to the `_SSH_` names above or kept; the workflows reference the names in this table. Never put secret values in files, PR text or chat.
+Authorize the public key ~/.ssh/lifelinedaily_staging.pub in Hostinger; never send the private key in chat. Confirm host/port/user and paths. Provision staging config.php without live SMTP credentials and install the approved status template separately. Confirm WP-CLI and LiteSpeed purge are available. Staging config must use the test mail destination, not production SMTP. Live config and DEC-46 must be independently verified before enabling production.
 
-## Deploy steps (identical for both environments; `deploy/deploy.sh`)
+## Verification and operation
 
-1. **Pre-flight**: verify the two tool-page hashes in `site/` equal the `version_hash` in `manifests/*.json` and that an approval record with `decision: approved` exists for them (`provenance-check`); abort otherwise. Production additionally requires the tag's release record (`releases/<tag>.json`, SCH-10).
-2. **Backup**: on the server, `tar` the current `tools/` and `wp-content/mu-plugins/lld-tools*` into `~/lld-backups/<timestamp>-<sha>.tgz` (keep last 10). The DB is not touched, so no DB backup is needed for an overlay deploy.
-3. **Sync**: `rsync -az --delete-after --exclude-from=deploy/rsync-exclude.txt site/public_html/ user@host:$DOCROOT/` over SSH with the deploy key. `--delete-after` is limited to the directories we own (`tools/`, `wp-content/mu-plugins/lld-tools/`) via `--filter` rules; it must never delete WordPress files.
-4. **Managed `.htaccess` block**: replace the `# BEGIN lld … # END lld` block in `$DOCROOT/.htaccess` with `site/public_html/.htaccess.lld` content (headers, CSP, cache-control, `status.json` allow rule). Create the block if absent; leave everything else untouched.
-5. **status.json**: never touched by deploy. If absent on a fresh server, the deploy prints an instruction to install it once from Git by hand.
-6. **Cache purge**: `wp litespeed-purge all` via WP-CLI over SSH if WP-CLI is available on the host; otherwise call the LiteSpeed purge endpoint documented in the runbook. Without a purge the withdrawal switch can be invisible for up to 7 days (TTL 604800 s).
-7. **Smoke**: HTTP 200 on `/health-tools/`, both landing pages, both `/tools/*.html`; `/tools/api/config.php` → 403; `/tools/status.json` → 200 with `Cache-Control: no-store`; both tool hashes served equal the manifests; `POST /tools/submit.php` with an invalid body → 400 (no mail sent).
-8. **Record**: append `deploy/log/<env>.jsonl` with timestamp, sha/tag, hashes, smoke result; on production also update `releases/<tag>.json.deployed_at`.
-9. **Rollback**: `deploy/rollback.sh <env> <timestamp>` restores the backup tarball from step 2 and re-runs steps 4, 6, 7. Target: under 5 minutes.
+CI deploy-dry-run uses a disposable localhost SSH server, stub WordPress command and real rsync; verifies no remote file changes or backup creation. Python regression tests cover path protections, header idempotency, backup/rollback, runtime preservation and production approval refusal. This does not prove Hostinger connectivity or real WordPress operation; first staging rehearsal and deployment remain required.
 
-## Repository conventions (GitHub Free)
-Branch protection and tag rulesets are not available on the current plan; the owner accepted this on 22 Oct 2026. Conventions: feature branches `req/<ID>` → PR into `staging`; no force-push to `staging`/`production`; `rc-*` tags are never moved; CI results are inspected before merge; the `production` Environment's required reviewer is the enforced gate.
+Run locally with documented environment variables: bash deploy/deploy.sh staging --dry-run. Real runs omit --dry-run. Successful runs emit deploy/log/<environment>.jsonl as an Actions artifact. Release records in Git are immutable; workflow success and artifacts provide deployed-at evidence rather than rewriting signed Git release records.
 
-## Non-negotiables
-
-- CI never holds production write credentials except inside the `production` GitHub Environment, which requires the release owner's approval per run.
-- No step edits WordPress core, theme files, normal plugins, uploads or the database.
-- `api/config.php` is created **once per server by a human** from `config.example.php` with values from the hosting control panel; deploys never touch it.
-- Production `transport` must be `smtp` and `bcc_owner` empty (DEC-21); the smoke step reads `/tools/status.json` only and cannot see config, so this is checked by the human at HG-03 and recorded in the release record.
-- Nothing from `snapshot-production-*/` or `local/` is ever deployed or committed.
-
-## Runbooks
-
-- `deploy/runbooks/runbook-withdrawal.md` — toggling `status.json` on staging and production, purge, verification (FR1-15).
-- `deploy/runbooks/runbook-rollback.md` — restoring a backup tarball.
-
-## Status
-
-Draft workflows are in `.github/workflows/` (`ci.yml`, `deploy-staging.yml`, `deploy-production.yml`) and `deploy/deploy.sh` is a working skeleton. They need: secret names created in GitHub, the `production` Environment with a required reviewer, the real host details, and a first manual run against staging. Owner notes on access are in `spec/OWNER_ACTIONS_STAGING.md`.
+See runbooks/runbook-rollback.md. No automatic database migration is implemented by this phase.
