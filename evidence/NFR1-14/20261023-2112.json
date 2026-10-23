@@ -2,16 +2,16 @@
   "ev_id": "EV-NFR1-14-20261023-2112",
   "req_id": "NFR1-14",
   "tc_id": "TC-NFR1-14",
-  "commit": "7ef67b7a2c6aa0060352eac89a4f5c2ce35960ed",
+  "commit": "9ef9d75e4c9d51945542368b506e32635270ed0c",
   "tool_hashes": {
-    "protein": "e6fbd340e8c77429bd40f8423eb0fcc90a96a50e5ee972a51877d9e64fe0d083",
-    "diabetes": "0f59af413f09ec2ab58c0ba3b236e7a43401867f1d04103f42233e09f32e2966"
+    "protein": "3ca2d2739ce8685f19e6792b94debad628a72f03f2dfc30c8ad5904a4f5d2a9d",
+    "diabetes": "0d68e064375f433af46f6bd675849587169429aece4b0f897deaf1b9d94b3719"
   },
   "fixtures": [],
   "results": [
     {
       "assertion": "TC-NFR1-14-AS-01",
-      "outcome": "fail",
+      "outcome": "pass",
       "artefact": "artefacts/vitest.json",
       "oracle": "none"
     },
@@ -411,5 +411,5 @@
   "green_run": "local-20261023-2112",
   "human_gate": null,
   "started_at": "2026-10-23T20:00:00Z",
-  "finished_at": "2026-10-23T19:50:38Z"
+  "finished_at": "2026-10-23T19:52:38Z"
 }
