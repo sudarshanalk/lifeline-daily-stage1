@@ -94,7 +94,7 @@ if (!$suppressed) {
   if (!isset($p['targetG']) || !is_numeric($p['targetG'])) $errors[] = 'Result payload is incomplete.';
   else $num('targetG', 20, 400, false);
   $num('lowG', 20, 400, true);
-  $num('highG', 20, 400, true);
+  $num('highG', 20, 600, true);   // a 2.0 g/kg band on a heavy basis weight can exceed the 400 g target ceiling
   $num('gPerKg', 0.5, 3.0, true);
   $num('perMeal', 20, 40, true);
 }
