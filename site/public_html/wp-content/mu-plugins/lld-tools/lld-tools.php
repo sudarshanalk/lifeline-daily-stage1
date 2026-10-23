@@ -72,6 +72,7 @@ function lld_tools_render_hub(array $atts = []): string {
   $atts = shortcode_atts(['compact' => '0'], $atts, 'lld_tools_hub');
   $compact = $atts['compact'] === '1';
   $out = '<section class="lld-tools-hub' . ($compact ? ' lld-tools-hub--compact' : '') . '" data-test="tools-hub"><ul class="lld-tools-hub__list">';
+  if ($compact) $out = '<section class="lld-home-row lld-home-tools" data-test="tools-row"><h2 class="lld-home-row__title">Tools</h2>' . $out;
   foreach (lld_tools_cards() as $slug => $c) {
     $status = lld_tools_tool_status($slug);
     $out .= '<li class="lld-tool-card lld-tool-card--' . esc_attr($status) . '" data-tool-card data-tool="' . esc_attr($slug) . '" data-status="' . esc_attr($status) . '">';
@@ -90,14 +91,14 @@ function lld_tools_render_hub(array $atts = []): string {
     if ($post && $post->post_status === 'publish') $out .= '<p class="lld-tool-card__related" data-test="card-related"><a href="' . esc_url(get_permalink($post)) . '">' . esc_html(get_the_title($post)) . '</a></p>';
     $out .= '</li>';
   }
-  // planned tools: label-only chips, never a link (DEC-24, DEC-26)
-  foreach ((lld_tools_status()['labels'] ?? []) as $l) {
+  // planned tools: label-only chips, never a link (DEC-24, DEC-26); the compact homepage row shows the two active cards only
+  foreach (($compact ? [] : (lld_tools_status()['labels'] ?? [])) as $l) {
     if (($l['status'] ?? '') !== 'label_only') continue;
     $out .= '<li class="lld-tool-card lld-tool-card--label_only" data-tool-card data-tool="' . esc_attr($l['slug'] ?? '') . '" data-status="label_only">';
     $out .= '<h3 class="lld-tool-card__name" data-test="card-name">' . esc_html($l['label'] ?? '') . '</h3>';
     $out .= '<span class="lld-tool-card__status" data-test="status-label">' . esc_html(lld_tools_status_label('label_only')) . '</span></li>';
   }
-  return $out . '</ul></section>';
+  return $out . '</ul></section>' . ($compact ? '</section>' : '');
 }
 add_shortcode('lld_tools_hub', 'lld_tools_render_hub');
 
@@ -165,6 +166,46 @@ function lld_tools_render_cta(array $atts = []): string {
 }
 add_shortcode('lld_tool_cta', 'lld_tools_render_cta');
 
+/* ---------------------------------------------------------------- [lld_learn_row limit=…] (FR1-03 "Learn" row) ---- */
+function lld_tools_render_learn_row(array $atts = []): string {
+  $atts = shortcode_atts(['limit' => '6'], $atts, 'lld_learn_row');
+  $limit = max(4, min(12, (int)$atts['limit']));
+  $out = '<section class="lld-home-row lld-home-learn" data-test="learn-row"><h2 class="lld-home-row__title">Learn</h2><div class="lld-home-learn__list">';
+  $q = new WP_Query(['post_type' => 'post', 'post_status' => 'publish', 'posts_per_page' => $limit, 'orderby' => 'date', 'order' => 'DESC', 'ignore_sticky_posts' => true, 'no_found_rows' => true]);
+  foreach ($q->posts as $p) {
+    $out .= '<article class="lld-home-learn__item" data-post-id="' . (int)$p->ID . '"><a href="' . esc_url(get_permalink($p)) . '"><h3>' . esc_html(get_the_title($p)) . '</h3></a>';
+    $out .= '<time datetime="' . esc_attr(get_the_date('c', $p)) . '">' . esc_html(get_the_date('', $p)) . '</time></article>';
+  }
+  return $out . '</div></section>';
+}
+add_shortcode('lld_learn_row', 'lld_tools_render_learn_row');
+if (function_exists('add_action')) add_action('wp_enqueue_scripts', function () {
+  wp_enqueue_style('lld-tools', home_url('/wp-content/mu-plugins/lld-tools/assets/lld-tools.css'), [], LLD_TOOLS_VERSION);
+});
+
+/* ---------------------------------------------------------------- homepage (FR1-03, DEC-23): Composer template transform */
+function lld_tools_home_doc(): array { return json_decode((string)file_get_contents(LLD_TOOLS_DIR . '/data/home.json'), true) ?: []; }
+/** Insert the Tools row (compact hub) and the Learn row directly after the first Composer row (the hero), which becomes
+ *  desktop-only; a phone-only copy of the hero follows the Tools row so mobile loses nothing (DEC-23: Tools directly below the
+ *  header on mobile, below the hero on desktop). Idempotent: content already carrying the marker row is returned unchanged. */
+function lld_tools_home_content(string $content): string {
+  $doc = lld_tools_home_doc();
+  $marker = $doc['marker_class'] ?? 'lld-home-tools-row';
+  if (strpos($content, $marker) !== false) return $content;
+  if (!preg_match('/\[vc_row\b[^\]]*\].*?\[\/vc_row\]/s', $content, $m, PREG_OFFSET_CAPTURE)) return $content;
+  [$hero, $pos] = $m[0];
+  $withClass = function (string $row, string $cls): string {
+    return preg_match('/^\[vc_row\b[^\]]*\bel_class="([^"]*)"/', $row)
+      ? preg_replace('/^(\[vc_row\b[^\]]*\bel_class=")([^"]*)"/', '$1$2 ' . $cls . '"', $row, 1)
+      : preg_replace('/^\[vc_row\b/', '[vc_row el_class="' . $cls . '"', $row, 1);
+  };
+  $rowAttrs = $doc['row_attrs'] ?? 'full_width="stretch_row_1200 td-stretch-content"';
+  $tools = '[vc_row ' . $rowAttrs . ' el_class="' . $marker . '"][vc_column width="1/1"]' . ($doc['tools_shortcode'] ?? '[lld_tools_hub compact=1]') . '[/vc_column][/vc_row]';
+  $learn = '[vc_row ' . $rowAttrs . ' el_class="lld-home-learn-row"][vc_column width="1/1"]' . ($doc['learn_shortcode'] ?? '[lld_learn_row limit=6]') . '[/vc_column][/vc_row]';
+  $new = $withClass($hero, 'lld-home-hero') . $tools . $withClass($hero, 'lld-home-hero-phone') . $learn;
+  return substr($content, 0, $pos) . $new . substr($content, $pos + strlen($hero));
+}
+
 /* ---------------------------------------------------------------- landing pages (CMP-09 content, applied by WP-CLI) */
 function lld_tools_landing_content(string $slug): string {
   $doc = json_decode((string)file_get_contents(LLD_TOOLS_DIR . '/data/landing-pages.json'), true);
@@ -190,8 +231,12 @@ if (defined('WP_CLI') && WP_CLI) {
       $doc = json_decode((string)file_get_contents(LLD_TOOLS_DIR . '/data/landing-pages.json'), true);
       $targets = [[$doc['hub']['slug'], lld_tools_hub_content()]];
       foreach ($doc['pages'] as $slug => $p) $targets[] = [$p['slug'], lld_tools_landing_content($slug)];
+      // the homepage (FR1-03): the static front page's Composer template, transformed in place
+      $front = get_option('show_on_front') === 'page' ? get_post((int)get_option('page_on_front')) : null;
+      if ($front) $targets[] = ['home:' . $front->ID, lld_tools_home_content((string)$front->post_content)];
+      else WP_CLI::warning('no static front page (show_on_front != page) — homepage rows skipped');
       foreach ($targets as [$pageSlug, $content]) {
-        $page = get_page_by_path($pageSlug, OBJECT, 'page');
+        $page = strpos($pageSlug, 'home:') === 0 ? $front : get_page_by_path($pageSlug, OBJECT, 'page');
         if (!$page) { WP_CLI::warning("page '$pageSlug' not found — skipped"); continue; }
         $changed = trim((string)$page->post_content) !== trim($content);
         if (!$changed) { WP_CLI::log("$pageSlug: unchanged"); continue; }
