@@ -1,5 +1,7 @@
 {
-  "inline": {},
+  "inline": {
+    "protein.consent": "61b8e62846e3bbf6afcbf4ff0d9805ee01422f0717ca7f2c77ba3d97739754c9"
+  },
   "pages": {},
   "reviewer": "pending (OI-8)",
   "date": "2026-10-23",
@@ -75,7 +77,7 @@
     "diabetes.method": "8a6b32975b1dced4c5bd3625dc99b64587d8b1a381e37a4aa9bf9f51f5d3785c",
     "diabetes.email.heading": "f25da8b361582351b52c7232234bbdc26e5385c590b00fb72c09f000864c60f9",
     "diabetes.email.intro": "b5dffa920961503df249a4f9fc4b7a685507d1a8bd8e5181a84faaa44d466057",
-    "diabetes.email.consent": "c0b231474e9250d0ffc13ee26c3b21765df1bdc2f9ecaeaba93dee08e9990336",
+    "diabetes.email.consent": "13a1127f0b2ce965c0be2e48952cb65f49a277f73998c3c147b382ff51f73923",
     "diabetes.email.success": "b7843dbba8fb10b9944e5eb3365fb6f3eb833496f6982dd0a396abf67e1e1898",
     "diabetes.email.errorValidation": "aac7e6409e4b58a5ed2d1b460b5009430086d3125d22b89cb0d39d3f22f8dfb1",
     "diabetes.email.errorServer": "cf07e21b53d1212ea0b7b1e8080818aa9c4f352206916644fb4599b0c140dba4",

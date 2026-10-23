@@ -2150,7 +2150,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "verified",
       "depends_on": [
         "FR1-14"
       ],
@@ -2860,6 +2860,60 @@
       "id": "DEC-55",
       "question": "PR class for specification-only changes",
       "selected": "SPEC: title class; docs/registry/schemas/copy-fixtures only; test families skipped",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-56",
+      "question": "Provenance refresh set includes copy deck",
+      "selected": "approvals/copy.json + copy/inventory.json refreshed by refresh-approvals only",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-57",
+      "question": "component-scope with stacked requirement branches",
+      "selected": "exclude files identical to merged-in reviewed req/* parent",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-58",
+      "question": "Platform-specific visual baselines",
+      "selected": "Linux CI set is reference; other platforms skip with reason",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-59",
+      "question": "Band screenshots before ORC-01",
+      "selected": "FX-DM-QD-71/73 stand in for FX-DM-BAND-01/12",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-60",
+      "question": "WordPress pages in copy deck",
+      "selected": "extract via LLD_WP_URL from staging; pending until OI-1",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-61",
+      "question": "Definition of gate G-02",
+      "selected": "all Wave 2 merged >= verified, auto accepted, hybrid verified until HG-02",
       "status": "default",
       "ratified_on": null,
       "ratify_at": "HG-02",
