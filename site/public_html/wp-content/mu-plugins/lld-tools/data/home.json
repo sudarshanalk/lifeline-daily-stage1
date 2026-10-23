@@ -1,0 +1,8 @@
+{
+  "_note": "Homepage transform applied by `wp lld home apply` and undone by `wp lld home revert` (FR1-03, DEC-23). The static front page is a tagDiv Composer template (content, not a theme file): the first row (the hero) becomes desktop-only, then the Tools row ([lld_tools_hub compact=1]: h2 \"Tools\" + the two active cards) and the Learn row ([lld_learn_row]: h2 \"Learn\" + the latest posts). Nothing is duplicated. Idempotent via marker_class.",
+  "marker_class": "lld-home-tools-row",
+  "row_attrs": "full_width=\"stretch_row_1200 td-stretch-content\"",
+  "tools_shortcode": "[lld_tools_hub compact=1]",
+  "learn_shortcode": "[lld_learn_row limit=6]",
+  "headings_in_order": ["Tools", "Learn"]
+}

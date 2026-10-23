@@ -363,7 +363,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "verified",
       "depends_on": [
         "FR1-01",
         "FR1-04"
@@ -397,7 +397,7 @@
       ],
       "human_gate": null,
       "mutations": [],
-      "known_deviations": {},
+      "known_deviations": {"TC-FR1-03-AS-06": "local stack: same-origin links only (fragments stripped); external links are crawled on staging (OI-1)"},
       "evidence_dir": "evidence/FR1-03/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
