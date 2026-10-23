@@ -13,7 +13,9 @@ chk 403 /tools/api/mailer.php
 sj=$(curl -s -D - -o /tmp/status.json -A lld-smoke "$BASE/tools/status.json" | tr -d '\r'); echo "$sj" | grep -qi '^HTTP/.* 200' && echo "ok   200 /tools/status.json" || { echo "FAIL status.json"; fail=1; }
 echo "$sj" | grep -qi 'cache-control:.*no-store' && echo "ok   status.json no-store" || echo "WARN status.json lacks Cache-Control: no-store"
 for f in protein-requirement-tool.html diabetes-risk-tool.html; do
-  served=$(curl -s -A lld-smoke "$BASE/tools/$f" | sha256sum | cut -d' ' -f1); local_=$(sha256sum "site/public_html/tools/$f" | cut -d' ' -f1)
+  served=$(curl -s -A lld-smoke "$BASE/tools/$f" | sha256sum | cut -d' ' -f1)
+  # the deployed copy has __LLD_ORIGIN__ substituted (DEC-34); compare against the same substitution
+  local_=$(sed "s#__LLD_ORIGIN__#${DEPLOY_ORIGIN:-$BASE}#g" "site/public_html/tools/$f" | sha256sum | cut -d' ' -f1)
   [ "$served" = "$local_" ] && echo "ok   hash $f" || { echo "FAIL hash mismatch $f"; fail=1; }
 done
 code=$(curl -s -o /dev/null -w '%{http_code}' -A lld-smoke -X POST -H 'Content-Type: application/json' --data 'not json' "$BASE/tools/submit.php"); [ "$code" = "400" ] && echo "ok   400 invalid body submit.php" || { echo "FAIL submit.php invalid body -> $code"; fail=1; }
