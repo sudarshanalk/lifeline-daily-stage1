@@ -540,7 +540,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "hybrid",
-      "status": "draft",
+      "status": "verified",
       "depends_on": [
         "FR1-01",
         "FR1-22"
@@ -1228,6 +1228,7 @@
       "components": [
         "CMP-02",
         "CMP-03",
+        "CMP-08",
         "CMP-09",
         "CMP-10"
       ],
@@ -1251,7 +1252,10 @@
         "DEC-15",
         "DEC-28",
         "DEC-31",
-        "DEC-34"
+        "DEC-34",
+        "DEC-47",
+        "DEC-48",
+        "DEC-54"
       ],
       "human_gate": null,
       "mutations": [
@@ -2778,6 +2782,87 @@
       "status": "ratified",
       "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-47",
+      "question": "Iframe listener location",
+      "selected": "In lld-tools plugin; CMP-08 added to FR1-21",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-48",
+      "question": "Provenance refresh set",
+      "selected": "approvals/manifests/status/MUT-10 allowed on tool-page branches",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-49",
+      "question": "Harness paths on every branch",
+      "selected": "tests, evidence, Makefile, lockfile, registry status",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-50",
+      "question": "TC-FR1-06-AS-03 timing",
+      "selected": "Re-run after FR1-04",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-51",
+      "question": "FR1-20 staging evidence",
+      "selected": "Record after first deploy",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-52",
+      "question": "TC-NFR1-09-AS-02 strictness",
+      "selected": "Strict from NFR1-09 merge",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-53",
+      "question": "ORC-02 scope",
+      "selected": "INV rows included, noted",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-54",
+      "question": "CSP frame-src site-wide",
+      "selected": "htaccess site-wide; verify admin/embeds on staging",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-55",
+      "question": "PR class for specification-only changes",
+      "selected": "SPEC: title class; docs/registry/schemas/copy-fixtures only; test families skipped",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     }
   ],

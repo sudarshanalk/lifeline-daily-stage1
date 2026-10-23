@@ -7,6 +7,7 @@ Operating manual for building Stage 1 with Claude Code (or equivalent) with thre
 - One Git repository (layout in `02_Data_Model_Stage1_v1_2.md` §6). `templates/CLAUDE.md` is copied to the repo root.
 - Environments: **local** (Docker Compose: WordPress + MariaDB + PHP tools dir + Mailpit + Plausible stub + R oracle + Python oracle + Playwright), **staging** (clone of production, synthetic data, Mailpit), **production** (deploy only via P-E after HG-03).
 - CI jobs (GitHub Actions). Branch protection is not available on the current GitHub plan; "PR" jobs are conventions checked before merge, "tag" jobs run on `rc-*` tags.
+- Two PR classes (DEC-55). A **requirement PR** is `req/<ID>` titled `<ID>: <title>` and runs every PR job. A **SPEC PR** is titled `SPEC: <title>`, may touch only `docs/**`, `registry/**` (never a requirement `status`), `schemas/**` and the three copy/sentinel fixture lists, and skips `assertion-map`, `unit`, `php-integration`, `e2e`, `a11y`, `perf`, `crawl`, `saf`, `sentinel` and `evidence`; the integrity, freeze, oracle, copy-hash, security and fidelity jobs still run.
 
 | Job | Runs on | Checks |
 |---|---|---|
