@@ -104,6 +104,8 @@ export async function startHtaccessServer({ port = 0, overlay = resolve(ROOT, 's
     if (harnessDir && urlPath.startsWith('/__harness/')) {
       const hp = join(harnessDir, urlPath.slice('/__harness/'.length));
       if (!existsSync(hp) || statSync(hp).isDirectory()) return finish(404, 'no harness file', 'text/plain');
+      // harness pages stand in for WordPress pages: they get the managed root block's headers, like every page on the host
+      applyHeaders(rules, basename(hp), res, { always: false });
       res.setHeader('Content-Type', extname(hp) === '.js' ? 'application/javascript' : 'text/html; charset=utf-8');
       return res.end(substitute(readFileSync(hp, 'utf8')));
     }
