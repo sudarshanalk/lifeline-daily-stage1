@@ -1,0 +1,13 @@
+diff --git a/site/public_html/tools/diabetes-risk-tool.html b/site/public_html/tools/diabetes-risk-tool.html
+index 1898a1f..ccd6edc 100644
+--- a/site/public_html/tools/diabetes-risk-tool.html
++++ b/site/public_html/tools/diabetes-risk-tool.html
+@@ -851,7 +851,7 @@ function animateGauge(pct){
+ function render(r){
+   var bz=$('#bannerZone'); bz.innerHTML=''; var suppress=false;
+   var warnIcon='<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>';
+-  if(r.sym.emergency){ bz.innerHTML+='<div class="banner emergency" role="alert" data-test="banner-emergency">'+warnIcon+'<div><h3>'+MESSAGES.emergency.title+'</h3><p>'+MESSAGES.emergency.body+'</p></div></div>'; suppress=true; }
++  if(r.sym.emergency){ bz.innerHTML+='<div class="banner emergency" data-test="banner-emergency">'+warnIcon+'<div><h3>'+MESSAGES.emergency.title+'</h3><p>'+MESSAGES.emergency.body+'</p></div></div>'; suppress=true; }
+   if(r.sym.classic){ bz.innerHTML+='<div class="banner symptom" role="alert" data-test="banner-symptom">'+warnIcon+'<div><h3>'+MESSAGES.symptomatic.title+'</h3><p>'+MESSAGES.symptomatic.body+'</p></div></div>'; }
+ 
+   var hz=$('#headlineZone');
