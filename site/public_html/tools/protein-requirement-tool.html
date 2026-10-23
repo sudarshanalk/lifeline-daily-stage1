@@ -349,7 +349,7 @@ const MESSAGES = {
   underweight: {
     title: "Your weight is below the healthy range",
     body: "Your target below is calculated on your current weight, so it is a supportive " +
-          "floor, not a reduction. Nothing in this result asks you to lose weight or eat less."
+          "floor, not a reduction. Nothing in this result asks you to reduce your weight or eat less."
   },
 
   eatingConcern:
@@ -753,11 +753,11 @@ function render(r){
   if(state.kidney==='unsure')
     B.innerHTML += `<div class="banner care" role="alert" data-test="renal-unsure"><h3>${MESSAGES.renalUnsure.title}</h3>${MESSAGES.renalUnsure.body}</div>`;
   if(r.branch==='pregnancy')
-    B.innerHTML += `<div class="banner care"><h3>${MESSAGES.pregnancy.title}</h3>${MESSAGES.pregnancy.body}</div>`;
-  if(state.liver==='yes')
-    B.innerHTML += `<div class="banner care"><h3>${MESSAGES.clinical.title}</h3>${MESSAGES.clinical.body}</div>`;
+    B.innerHTML += `<div class="banner care" role="alert" data-test="banner-pregnancy" data-copy="pregnancy"><h3>${MESSAGES.pregnancy.title}</h3>${MESSAGES.pregnancy.body}</div>`;
+  if(state.liver==='yes' || state.goal==='recovery')   /* FR1-09: recovery goal adds the ESPEN band and the clinical banner (SRS FR1-09) */
+    B.innerHTML += `<div class="banner care" role="alert" data-test="banner-clinical" data-copy="clinical"><h3>${MESSAGES.clinical.title}</h3>${MESSAGES.clinical.body}</div>`;
   if(r.bmi < 18.5)
-    B.innerHTML += `<div class="banner care"><h3>${MESSAGES.underweight.title}</h3>${MESSAGES.underweight.body}</div>`;
+    B.innerHTML += `<div class="banner care" role="alert" data-test="banner-underweight" data-copy="underweight"><h3>${MESSAGES.underweight.title}</h3>${MESSAGES.underweight.body}</div>`;
 
   /* ---- headline ---- */
   const isRange = r.lowG !== r.highG;
