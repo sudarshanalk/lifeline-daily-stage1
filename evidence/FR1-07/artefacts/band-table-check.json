@@ -1,0 +1,140 @@
+{
+  "generated": "2026-10-23T14:46:49.810Z",
+  "ceiling": 2,
+  "rows": [
+    {
+      "key": "sedentary",
+      "lo": 0.8,
+      "hi": 1,
+      "src": "IOM RDA 0.8 g/kg (floor)",
+      "cited": [
+        "IOM"
+      ],
+      "derivable": false,
+      "note": "figures not derivable from the cited primary source(s) — for HG-02 (DEC-03)"
+    },
+    {
+      "key": "lightMod",
+      "lo": 1,
+      "hi": 1.4,
+      "src": "IOM AMDR / ISSN lower band",
+      "cited": [
+        "IOM",
+        "ISSN"
+      ],
+      "derivable": false,
+      "note": "figures not derivable from the cited primary source(s) — for HG-02 (DEC-03)"
+    },
+    {
+      "key": "vigorous",
+      "lo": 1.2,
+      "hi": 1.6,
+      "src": "ACSM/AND/DC 2016 (1.2–2.0 g/kg)",
+      "cited": [
+        "ACSM"
+      ],
+      "derivable": true,
+      "note": null
+    },
+    {
+      "key": "resLow",
+      "lo": 1.2,
+      "hi": 1.6,
+      "src": "ISSN 2017 (1.4–2.0), lower end",
+      "cited": [
+        "ISSN"
+      ],
+      "derivable": false,
+      "note": "figures not derivable from the cited primary source(s) — for HG-02 (DEC-03)"
+    },
+    {
+      "key": "resMid",
+      "lo": 1.4,
+      "hi": 2,
+      "src": "ISSN 2017 (1.4–2.0 g/kg)",
+      "cited": [
+        "ISSN"
+      ],
+      "derivable": true,
+      "note": null
+    },
+    {
+      "key": "resHigh",
+      "lo": 1.6,
+      "hi": 2,
+      "src": "ISSN 2017 (1.4–2.0 g/kg)",
+      "cited": [
+        "ISSN"
+      ],
+      "derivable": true,
+      "note": null
+    },
+    {
+      "key": "buildMuscle",
+      "lo": 1.6,
+      "hi": 2,
+      "src": "ISSN 2017",
+      "cited": [
+        "ISSN"
+      ],
+      "derivable": true,
+      "note": null
+    },
+    {
+      "key": "fatLossTrain",
+      "lo": 1.6,
+      "hi": 2,
+      "src": "ISSN 2017 (lean-mass retention)",
+      "cited": [
+        "ISSN"
+      ],
+      "derivable": true,
+      "note": null
+    },
+    {
+      "key": "fatLossOnly",
+      "lo": 1.2,
+      "hi": 1.5,
+      "src": "ISSN 2017 (lean-mass retention)",
+      "cited": [
+        "ISSN"
+      ],
+      "derivable": false,
+      "note": "figures not derivable from the cited primary source(s) — for HG-02 (DEC-03)"
+    },
+    {
+      "key": "older",
+      "lo": 1,
+      "hi": 1.2,
+      "src": "PROT-AGE 2013 / ESPEN 2014",
+      "cited": [
+        "PROT-AGE",
+        "ESPEN"
+      ],
+      "derivable": true,
+      "note": null
+    },
+    {
+      "key": "olderActive",
+      "lo": 1.2,
+      "hi": 1.5,
+      "src": "ESPEN 2014",
+      "cited": [
+        "ESPEN"
+      ],
+      "derivable": true,
+      "note": null
+    },
+    {
+      "key": "recovery",
+      "lo": 1.2,
+      "hi": 1.5,
+      "src": "ESPEN 2014 (illness / malnutrition)",
+      "cited": [
+        "ESPEN"
+      ],
+      "derivable": true,
+      "note": null
+    }
+  ]
+}

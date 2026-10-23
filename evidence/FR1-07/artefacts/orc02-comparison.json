@@ -1,0 +1,183 @@
+{
+  "generated": "2026-10-23T14:46:15.819Z",
+  "tolerance": "±1 g; gPerKg exact 2 dp",
+  "record": [
+    {
+      "fixture": "FX-PR-NRM-01",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-NRM-02",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-NRM-03",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-NRM-04",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-NRM-05",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-NRM-06",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-NRM-07",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-NRM-08",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-NRM-09",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-NRM-10",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-NRM-11",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-NRM-12",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-NRM-13",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-NRM-14",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-AGE-01",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-AGE-02",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-AGE-03",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-AGE-04",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-AGE-05",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-BMI-01",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-BMI-02",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-BMI-03",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-BMI-04",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-CAP-01",
+      "oracle": "characterisation",
+      "known_deviation": "DEC-44",
+      "orc02": {
+        "targetG": 150,
+        "gPerKg": 2
+      },
+      "js": {
+        "targetG": 147,
+        "gPerKg": 1.96
+      }
+    },
+    {
+      "fixture": "FX-PR-CAP-02",
+      "oracle": "characterisation",
+      "known_deviation": "DEC-44",
+      "orc02": {
+        "targetG": 140,
+        "gPerKg": 1.87
+      },
+      "js": {
+        "targetG": 133,
+        "gPerKg": 1.77
+      }
+    },
+    {
+      "fixture": "FX-PR-CAP-03",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-UNIT-01",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-UNIT-02",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-UNIT-03",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-MEAL-01",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-MEAL-02",
+      "oracle": "clinical",
+      "agree": true
+    },
+    {
+      "fixture": "FX-PR-MEAL-03",
+      "oracle": "clinical",
+      "agree": true
+    }
+  ],
+  "disagreements": []
+}
