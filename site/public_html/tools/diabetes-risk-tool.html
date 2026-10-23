@@ -440,12 +440,12 @@ footer.disc{color:var(--muted); font-size:.8rem; text-align:center; margin-top:2
   </form>
 
   <section id="results" aria-live="polite">
-    <div id="bannerZone"></div>
-    <div class="headline" id="headlineZone"></div>
+    <div id="bannerZone" data-test="banners"></div>
+    <div class="headline" id="headlineZone" data-test="headline"></div>
     <div class="panel" id="secondaryZone"></div>
     <div class="panel" id="adviceZone"></div>
     <details class="method"><summary>How this works &amp; important limits</summary><div class="body" id="methodBody"></div></details>
-    <div class="email-box">
+    <div class="email-box" data-test="email-card">
       <h3 id="emailHead"></h3>
       <p id="emailIntro"></p>
       <input type="text" id="firstName" placeholder="First name (optional)" autocomplete="given-name">
@@ -848,8 +848,8 @@ function animateGauge(pct){
 function render(r){
   var bz=$('#bannerZone'); bz.innerHTML=''; var suppress=false;
   var warnIcon='<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>';
-  if(r.sym.emergency){ bz.innerHTML+='<div class="banner emergency">'+warnIcon+'<div><h3>'+MESSAGES.emergency.title+'</h3><p>'+MESSAGES.emergency.body+'</p></div></div>'; suppress=true; }
-  if(r.sym.classic){ bz.innerHTML+='<div class="banner symptom">'+warnIcon+'<div><h3>'+MESSAGES.symptomatic.title+'</h3><p>'+MESSAGES.symptomatic.body+'</p></div></div>'; }
+  if(r.sym.emergency){ bz.innerHTML+='<div class="banner emergency" role="alert" data-test="banner-emergency">'+warnIcon+'<div><h3>'+MESSAGES.emergency.title+'</h3><p>'+MESSAGES.emergency.body+'</p></div></div>'; suppress=true; }
+  if(r.sym.classic){ bz.innerHTML+='<div class="banner symptom" role="alert" data-test="banner-symptom">'+warnIcon+'<div><h3>'+MESSAGES.symptomatic.title+'</h3><p>'+MESSAGES.symptomatic.body+'</p></div></div>'; }
 
   var hz=$('#headlineZone');
   if(suppress){
@@ -909,7 +909,7 @@ $('#emailBtn').addEventListener('click',function(){
   if(!valid||!consent){ status.textContent=MESSAGES.email.errorValidation; status.classList.add('bad'); return; }
   if(!LAST){ return; }
   var payload={ tool:'diabetes-risk', firstName:$('#firstName').value.trim(), email:email, consent:true,
-    riskPercent:+LAST.pct.toFixed(1), riskBand:MESSAGES.bands[LAST.band].label, bmi:+LAST.bmi.toFixed(1),
+    riskPercent:LAST.sym.emergency?null:+LAST.pct.toFixed(1), riskBand:LAST.sym.emergency?null:MESSAGES.bands[LAST.band].label, bmi:+LAST.bmi.toFixed(1), /* DEC-09 client layer */
     whtr:LAST.sec?+LAST.sec.whtr.ratio.toFixed(2):null,
     idrsScore:LAST.sec?LAST.sec.idrs.score:null, idrsTier:LAST.sec?LAST.sec.idrs.tier:null,
     symptomatic:LAST.sym.classic, emergency:LAST.sym.emergency,
