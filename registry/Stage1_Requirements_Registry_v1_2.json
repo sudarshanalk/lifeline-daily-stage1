@@ -870,7 +870,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-01"
       ],
@@ -2065,7 +2065,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-07",
         "FR1-12"
@@ -2338,7 +2338,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "hybrid",
-      "status": "draft",
+      "status": "verified",
       "depends_on": [
         "FR1-06"
       ],

@@ -11,7 +11,7 @@ REQ ?=
 ORC ?= all
 MUT ?=
 
-.PHONY: help up test unit php e2e saf oracle mutate unmutate evidence validate ci-checks sentinel
+.PHONY: help up test unit php e2e saf oracle mutate unmutate evidence validate ci-checks sentinel copy-extract
 
 help:
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
@@ -53,3 +53,6 @@ ci-checks: ## the PR guard jobs locally: provenance, engine-freeze, copy-hash, c
 
 sentinel: ## privacy leak scan with fixtures/sentinel-values.json
 	node tests/ci/sentinel.mjs
+
+copy-extract: ## regenerate the copy deck copy/*.json + inventory (UI1-11, DEC-25); CHECK=1 only verifies
+	node tests/ci/copy-extract.mjs $(if $(CHECK),--check,)
