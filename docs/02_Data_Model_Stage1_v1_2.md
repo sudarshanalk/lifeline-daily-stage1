@@ -79,7 +79,7 @@ Cardinalities and invariants:
 | SCH-13 | `schemas/wp-meta.schema.json` | WordPress post meta key set and allowed values | plugin registers | TC-FR1-18 |
 | SCH-14 | `schemas/planned-categories.schema.json` | `content/planned-categories.json`: slugs removed in FR1-23 to be re-created when content exists | `wp lld tidy apply` | TC-FR1-23 |
 
-## 4. Frozen interface contracts (deployed, audited 20 Oct 2026)
+## 4. Frozen interface contracts (deployed; key names confirmed from the endpoint source on 23 Oct 2026)
 
 These are preserved byte-for-byte in key names during Stage 1 (NFR1-04). Server validation (FR1-14) is added without changing keys.
 
@@ -100,7 +100,7 @@ These are preserved byte-for-byte in key names during Stage 1 (NFR1-04). Server 
 | timestamp | ISO 8601 | technical | |
 | company | `""` | technical | honeypot, must be empty |
 
-Server selects template: `suppressed === true` → `protein_renal` (no numeric tokens exist in that template); otherwise `protein_standard`.
+Server selects template: `suppressed === true` → `protein_renal` (no numeric tokens exist in that template); otherwise `protein_standard`. Confirmed in `submit-protein.php`: numeric fields of a suppressed payload are never read. Current validation only checks `consent`, email syntax, `tool` and `targetG` 20–400; the remaining ranges in this table are added by FR1-14. Confirmed in `submit-protein.php`: numeric fields of a suppressed payload are never read. Current validation only checks `consent`, email syntax, `tool` and `targetG` 20–400; the remaining ranges in this table are added by FR1-14.
 
 ### 4.2 Diabetes POST `./submit.php` (JSON)
 
@@ -120,7 +120,7 @@ Server selects template: `suppressed === true` → `protein_renal` (no numeric t
 | measurements.weightKg | integer 40–180 | health | |
 | measurements.waistCm | integer 50–200 ∣ null | health | |
 
-Server selects template: `emergency === true` → `diabetes_emergency` (no `{{riskPercent}}` token); `symptomatic === true` → `diabetes_symptomatic` (banner first, % allowed); otherwise `diabetes_standard`.
+Server selects template: `emergency === true` → `diabetes_emergency` (no `{{riskPercent}}` token); `symptomatic === true` → `diabetes_symptomatic` (banner first, % allowed); otherwise the band template `low|moderate|high|veryhigh` keyed from `riskBand`. Confirmed in `render.php`/`validate.php`: a payload must carry a numeric `riskPercent` in 0–100 or an override flag; `bmi`, `whtr`, `idrsScore` and measurements are escaped but not range-checked today (added by FR1-14).
 
 ### 4.3 `status.json` (SCH-08)
 

@@ -855,7 +855,8 @@
         "DEC-16",
         "DEC-21",
         "DEC-27",
-        "DEC-35"
+        "DEC-35",
+        "DEC-46"
       ],
       "human_gate": "HG-03",
       "mutations": [
@@ -1211,8 +1212,7 @@
       "automation": "auto",
       "status": "draft",
       "depends_on": [
-        "FR1-01",
-        "FR1-02"
+        "FR1-01"
       ],
       "components": [
         "CMP-01",
@@ -1281,7 +1281,8 @@
         "DEC-20",
         "DEC-21",
         "DEC-32",
-        "DEC-36"
+        "DEC-36",
+        "DEC-46"
       ],
       "human_gate": "HG-03",
       "mutations": [],
@@ -2595,6 +2596,14 @@
       "selected": "Midpoint of winning band",
       "status": "default",
       "ratify_at": "HG-02",
+      "decided_on": "2026-10-20"
+    },
+    {
+      "id": "DEC-46",
+      "question": "Production config.php values",
+      "selected": "Assumed smtp, no bcc; verify via staging SSH",
+      "status": "default",
+      "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     }
   ],

@@ -118,13 +118,13 @@ The orchestrator parses this; prose outside it is ignored.
 
 | Wave | Requirements | Gate reached |
 |---|---|---|
-| 0 | FR1-01 (P-A0), FR1-22 oracles, NFR1-09 CI skeleton | G-01 after HG-01 |
-| 1 | FR1-06, FR1-20, FR1-21, NFR1-15, NFR1-16, NFR1-03 | |
+| 0 | FR1-01 (P-A0), FR1-22 oracles, NFR1-09 CI skeleton — delivered 23 Oct 2026: manifests, 141 characterisation fixtures, ORC-02 (51/53 agree; DEC-44/45), 30-URL crawl, endpoint and WordPress audits in `reports/as-is/`; ORC-01 and visual baselines pending OI-4 | G-01 after HG-01 |
+| 1 | FR1-06, FR1-20, FR1-21, NFR1-15 | |
 | 2 | FR1-07, FR1-08, FR1-09, FR1-10, FR1-11, FR1-12, FR1-13, UI1-04, UI1-05, UI1-11 | G-02 |
-| 3 | FR1-14, NFR1-04, NFR1-14, NFR1-10, UI1-06 | |
-| 4 | FR1-15, NFR1-11, UI1-08, UI1-10 | |
-| 5 | FR1-04, FR1-03, FR1-05, FR1-18, FR1-17, FR1-23, UI1-01, UI1-02, UI1-03, UI1-07, UI1-09, NFR1-05, NFR1-12 | |
-| 6 | FR1-16, NFR1-01, NFR1-06, NFR1-07, FR1-02 (final diff) | HG-02 → G-03, G-04, G-05 |
+| 3 | FR1-14, NFR1-03, NFR1-04, NFR1-14, NFR1-16, UI1-06 | |
+| 4 | FR1-04, FR1-15, NFR1-10, NFR1-11, UI1-08, UI1-10, UI1-02 | |
+| 5 | FR1-03, FR1-05, FR1-17, FR1-18, FR1-23, UI1-01, UI1-03, UI1-07, UI1-09, NFR1-05, NFR1-12 | |
+| 6 | FR1-16, NFR1-01, NFR1-02, NFR1-06, NFR1-07, FR1-02 (final diff) | HG-02 → G-03, G-04, G-05 |
 | 7 | NFR1-08, NFR1-13, FR1-19 (P-E) | HG-03 → G-06 |
 
 Within a wave, items are independent and may run in parallel sessions on separate branches; two sessions never share a component.
