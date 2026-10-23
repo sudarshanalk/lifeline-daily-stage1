@@ -11,7 +11,6 @@ import { oracleGuard } from './oracle-guard.mjs';
 const WORKFLOWS = ['ci.yml', 'ci-guards.yml'].map((f) => readFileSync(resolve(ROOT, '.github', 'workflows', f), 'utf8'));
 const ci = WORKFLOWS.join('\n');
 const loopDoc = readFileSync(resolve(ROOT, 'docs', '04_AI_Development_Loop_v1_2.md'), 'utf8');
-/** Job ids declared in ci.yml (two-space indented keys under `jobs:`). */
 /** Job ids declared across both workflows (each file parsed on its own, so an `on:` block never leaks ids). */
 const jobIds = () => WORKFLOWS.flatMap((w) => [...(w.split(/\njobs:\n/)[1] || '').matchAll(/^  ([a-z][a-z0-9-]*):\s*$/gm)].map((x) => x[1]));
 /** Jobs the docs/04 §1 table marks as running on PR (first column, backticked names; family cells may list several). */
