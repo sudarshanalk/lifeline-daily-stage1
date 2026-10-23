@@ -17,10 +17,9 @@ Options -Indexes
     Header set Cache-Control "no-cache, must-revalidate"
   </FilesMatch>
 
-  # Withdrawal switch: never cached anywhere (DEC-10, FR1-20); explicitly allowed so no broader deny can hide it.
+  # Withdrawal switch: never cached anywhere (DEC-10, FR1-20).
   <Files "status.json">
     Header always set Cache-Control "no-store"
-    Require all granted
   </Files>
 
   # Endpoints: health results are never cacheable, whatever the status code.
@@ -28,6 +27,11 @@ Options -Indexes
     Header always set Cache-Control "no-store"
   </FilesMatch>
 </IfModule>
+
+# The switch is explicitly allowed so no broader deny can ever hide it (DEC-10).
+<Files "status.json">
+  Require all granted
+</Files>
 
 # Weak validator for the static files (Apache/LiteSpeed default, stated explicitly so the ETag assertion
 # does not depend on server defaults).

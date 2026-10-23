@@ -87,7 +87,7 @@ describe('TC-FR1-20 cache control', () => {
     writeFileSync(path, original);
   });
 
-  test('TC-FR1-20 status.json template validates SCH-08 and names the live versions', () => {
+  test('SUPPORT-FR1-20-01 status.json template validates SCH-08 and names the live versions', () => {
     // supporting check (not a TC id): the Git template is the one installed by hand on a fresh server
     expect(Object.keys(statusTemplate.tools).sort()).toEqual(['diabetes', 'protein']);
     for (const slug of ['protein', 'diabetes']) {
