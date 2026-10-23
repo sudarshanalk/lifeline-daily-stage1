@@ -95,7 +95,7 @@ return [
       '<p>Hi {{firstName}},</p>'.
       '<p>You told us you feel very unwell right now — with symptoms such as vomiting, drowsiness, fast '.
       'or deep breathing, or stomach pain. These can signal a serious problem with blood sugar.</p>'.
-      '<p><strong>Please seek same-day urgent care or go to A&amp;E.</strong> We haven\'t included a risk '.
+      '<p><strong>Please seek a same-day medical assessment — urgent care or A&amp;E.</strong> We haven\'t included a risk '.
       'estimate, because getting checked comes first.</p>',
   ],
 ];
