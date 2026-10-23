@@ -3,13 +3,13 @@
   "tools": {
     "protein": {
       "status": "active",
-      "approved_version": "54d325d60447277508cac006e892274efedaa8b4ab99ac600f405f8c7731235e",
+      "approved_version": "482ce1bc1b2a9c25ede1b717c128df682fae3cad5bb7b78469e4bf22b244c14c",
       "message": null,
       "since": null
     },
     "diabetes": {
       "status": "active",
-      "approved_version": "0c314054ddc1e586f0b4432eb1667f3a159bd5474663612eec290fb705762ff1",
+      "approved_version": "119ae4a163b32741be9285cf7ad4845e83d1ac19f1a3b8dd8a1420288f7b4821",
       "message": null,
       "since": null
     }

@@ -46,7 +46,7 @@ if ((int)($_SERVER['CONTENT_LENGTH'] ?? 0) > $maxBody) {
 // ---- withdrawal switch (FR1-15, DEC-10): a withdrawn or unreadable status.json closes the endpoint ------------
 if (!lld_tool_active('protein', $cfg)) {
   lld_log('protein', 'withdrawn', $ip, $cfg);
-  respond_protein(503, ['status' => 'unavailable', 'errors' => ['This tool is temporarily unavailable.']]);
+  respond_protein(503, ['status' => 'withdrawn', 'errors' => ['This tool is temporarily unavailable.']]);
 }
 
 /* ---- origin allow-list ----------------------------------------------------- */
