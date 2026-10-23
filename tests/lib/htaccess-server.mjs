@@ -7,7 +7,8 @@
 // `FileETag` (MTime Size, Apache/LiteSpeed default) — and proxies *.php to PHP's built-in server rooted at the same
 // copy with a generated `api/config.php` (transport log → temp outbox; never the real config).
 // Scope: `.htaccess.lld` (the managed root block) applies to every path; `tools/.htaccess` to /tools/**;
-// `tools/api/.htaccess` to /tools/api/**. Anything not under /tools/ answers 404 (WordPress is not emulated).
+// `tools/api/.htaccess` to /tools/api/**. Static files under /wp-content/mu-plugins/lld-tools/ are served as WordPress
+// would; anything else answers 404 (WordPress pages are not emulated — tests/e2e/harness stands in for landing pages).
 //
 //   import { startHtaccessServer } from '../lib/htaccess-server.mjs';
 //   const srv = await startHtaccessServer();   // { url, docroot, close() }
@@ -106,7 +107,8 @@ export async function startHtaccessServer({ port = 0, overlay = resolve(ROOT, 's
       res.setHeader('Content-Type', extname(hp) === '.js' ? 'application/javascript' : 'text/html; charset=utf-8');
       return res.end(substitute(readFileSync(hp, 'utf8')));
     }
-    if (!urlPath.startsWith('/tools/')) return finish(404, 'not emulated (WordPress)', 'text/plain');
+    const staticPrefixes = ['/tools/', '/wp-content/mu-plugins/lld-tools/'];
+    if (!staticPrefixes.some((p) => urlPath.startsWith(p))) return finish(404, 'not emulated (WordPress)', 'text/plain');
     // access control (Require) — last applicable wins, like Apache's merge order
     let allowed = true;
     for (const r of rules) if (r.kind === 'require' && r.match(fileName)) allowed = r.allow;
