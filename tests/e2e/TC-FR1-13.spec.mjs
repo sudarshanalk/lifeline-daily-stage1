@@ -55,9 +55,12 @@ test('TC-FR1-13-AS-02', async ({ browser }) => {
     expect(newSession, `${flow.slug}: no sessionStorage key added`).toEqual([]);
     const stored = JSON.stringify(after).toLowerCase();
     for (const v of enteredValues(flow.fixture.inputs)) expect(stored, `${flow.slug}: stored data contains entered value ${v}`).not.toContain(v.toLowerCase());
-    const resultText = await page.locator(flow.result).innerText();
-    const figure = (resultText.match(flow.slug === 'protein' ? /(\d+)\s?g\b/ : /(\d+\.\d)\s?%/) || [])[1];
-    if (figure) expect(stored, `${flow.slug}: stored data contains the result ${figure}`).not.toContain(figure);
+    // result figure: protein from the headline text; diabetes from the gauge's aria-label (set synchronously — innerText shows the animated 0.0 first)
+    const figure = flow.slug === 'protein'
+      ? ((await page.locator(flow.result).innerText()).match(/(\d+)\s?g\b/) || [])[1]
+      : await page.evaluate(() => (document.querySelector('#headlineZone svg[aria-label]')?.getAttribute('aria-label') || '').match(/(\d+(?:\.\d)?)/)?.[1] || null);
+    expect(figure, `${flow.slug}: result figure found`).toBeTruthy();
+    expect(stored, `${flow.slug}: stored data contains the result ${figure}`).not.toContain(figure);
     await context.close();
   }
 });
@@ -67,7 +70,12 @@ test('TC-FR1-13-AS-03', async ({ browser }) => {
     const { context, page } = await complete(browser, flow);
     await page.reload();
     await expect(page.locator(flow.result)).toBeHidden();
-    const filled = await page.evaluate((sel) => [...document.querySelectorAll(sel)].filter((el) => el.type === 'checkbox' || el.type === 'radio' ? el.checked : (el.tagName === 'SELECT' ? el.selectedIndex > 0 && el.value !== el.querySelector('option')?.value && false : el.value !== '')).map((el) => el.id || el.name), flow.inputsSel);
+    // checkboxes unchecked, text inputs empty, selects back at their fresh-load default (the option marked `selected`, else the first)
+    const filled = await page.evaluate((sel) => [...document.querySelectorAll(sel)].filter((el) => {
+      if (el.type === 'checkbox' || el.type === 'radio') return el.checked;
+      if (el.tagName === 'SELECT') { const def = el.querySelector('option[selected]') || el.options[0]; return def ? el.value !== def.value : false; }
+      return el.value !== '';
+    }).map((el) => el.id || el.name), flow.inputsSel);
     expect(filled, `${flow.slug}: inputs empty after reload`).toEqual([]);
     // option buttons (sex, age band, …) must be unselected; the Metric/Imperial unit toggle is a display preference with a default, not an input
     expect(await page.locator('button.tap[aria-pressed="true"]:not(#allMetric):not(#allImperial), button.opt[aria-pressed="true"]').count(), `${flow.slug}: no option pre-selected after reload`).toBe(0);
