@@ -1,7 +1,7 @@
 {
   "approval_id": "APR-DIABETES-2026-10-23",
   "tool_slug": "diabetes",
-  "version_hash": "0c314054ddc1e586f0b4432eb1667f3a159bd5474663612eec290fb705762ff1",
+  "version_hash": "119ae4a163b32741be9285cf7ad4845e83d1ac19f1a3b8dd8a1420288f7b4821",
   "engine_name": "QDiabetes-2018 Model A (10-year type 2 diabetes risk, non-laboratory) with Indian Diabetes Risk Score (Mohan 2005, live 4-level activity mapping) and waist-to-height ratio as secondary indicators; symptom and emergency escalation layer",
   "intended_use": "Educational screening aid that estimates a visitor's 10-year risk of developing type 2 diabetes from self-reported, non-laboratory inputs and encourages a conversation with a clinician or an NHS Health Check where indicated. It does not diagnose diabetes, type 1 diabetes or any other condition.",
   "eligibility": "Adults aged 25 to 84 (QDiabetes-2018 derivation range; age entered as 5-year bands, midpoint used — DEC-29) without a diagnosis of diabetes. BMI is clamped to 20–40 as in the published model. Classic symptoms trigger a same-day-assessment banner; the emergency checklist suppresses the percentage and directs to urgent care (DEC-09, DEC-37). Townsend deprivation score fixed at 0 and disclosed (DEC-07).",
