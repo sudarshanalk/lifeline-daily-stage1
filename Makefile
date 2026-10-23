@@ -42,8 +42,8 @@ mutate: ## apply a mutation patch: make mutate MUT=01
 unmutate: ## revert it: make unmutate MUT=01
 	node tests/lib/mutate.mjs revert MUT-$(MUT)
 
-evidence: ## build the evidence bundle: make evidence REQ=FR1-08 RUN=YYYYMMDD-HHMM VITEST=path.json [PW=path.json]
-	node tests/lib/evidence.mjs --req $(REQ) --run $(RUN) --vitest $(VITEST) $(if $(PW),--playwright $(PW),)
+evidence: ## build the evidence bundle: make evidence REQ=FR1-08 RUN=YYYYMMDD-HHMM VITEST_JSON=path.json [PW_JSON=path.json]
+	node tests/lib/evidence.mjs --req $(REQ) --run $(RUN) --vitest $(VITEST_JSON) $(if $(PW_JSON),--playwright $(PW_JSON),)
 
 validate: ## every JSON artefact against schemas/
 	$(PY) -I tests/ci/validate-artefacts.py

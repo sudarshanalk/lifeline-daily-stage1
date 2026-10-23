@@ -8,10 +8,12 @@ import { ROOT } from '../lib/paths.mjs';
 import { validateFile } from '../lib/validate.mjs';
 import { oracleGuard } from './oracle-guard.mjs';
 
-const ci = ['ci.yml', 'ci-guards.yml'].map((f) => readFileSync(resolve(ROOT, '.github', 'workflows', f), 'utf8')).join('\n');
+const WORKFLOWS = ['ci.yml', 'ci-guards.yml'].map((f) => readFileSync(resolve(ROOT, '.github', 'workflows', f), 'utf8'));
+const ci = WORKFLOWS.join('\n');
 const loopDoc = readFileSync(resolve(ROOT, 'docs', '04_AI_Development_Loop_v1_2.md'), 'utf8');
 /** Job ids declared in ci.yml (two-space indented keys under `jobs:`). */
-const jobIds = () => ci.split(/\njobs:\n/).slice(1).flatMap((m) => [...m.matchAll(/^  ([a-z][a-z0-9-]*):\s*$/gm)].map((x) => x[1]));
+/** Job ids declared across both workflows (each file parsed on its own, so an `on:` block never leaks ids). */
+const jobIds = () => WORKFLOWS.flatMap((w) => [...(w.split(/\njobs:\n/)[1] || '').matchAll(/^  ([a-z][a-z0-9-]*):\s*$/gm)].map((x) => x[1]));
 /** Jobs the docs/04 §1 table marks as running on PR (first column, backticked names; family cells may list several). */
 const prJobsFromTable = () => {
   const rows = loopDoc.split('\n').filter((l) => /^\| `/.test(l) && /\| PR/.test(l));
@@ -24,7 +26,8 @@ describe('TC-NFR1-09 reproducible AI development', () => {
     // PR title regex check job present and enforced; body must contain an evidence/ path
     expect(jobIds()).toContain('pr-title');
     const job = ci.split(/\n  pr-title:\n/)[1].split(/\n  [a-z][a-z0-9-]*:\n/)[0];
-    expect(job).toMatch(/\^\(FR1\|NFR1\|UI1\)-\\d\{2\}:/);
+    // the grep pattern the job enforces (title "<ID>: <title>", trailing space required), not just the message text
+    expect(job).toMatch(/grep -Eq '\^\(FR1\|NFR1\|UI1\)-\[0-9\]\{2\}: '/);
     expect(job).toMatch(/evidence\//);
     expect(job).toMatch(/exit 1/);
     // the convention holds on the PR under test when GitHub gives us a title (CI), otherwise on the last merged PR titles
@@ -44,18 +47,29 @@ describe('TC-NFR1-09 reproducible AI development', () => {
     const missing = required.filter((j) => !ids.includes(j) && !(j === 'fidelity-gate' && ids.includes('fidelity-gate')));
     // fidelity-gate needs ORC-01 (Docker/OI-4) and staging SSH (OI-1): declared but conditional until then
     expect(missing, `jobs in the docs/04 table but not in ci.yml`).toEqual([]);
-    // GitHub Free: no branch protection, so "required" is checked by inspecting the last merged PR's run when a token exists
+    // GitHub Free: no branch protection, so "required" is checked by inspecting the last merged PR: every PR-marked job
+    // that the merged PR's OWN workflow files declared (both workflows, read from its head commit) must have a check-run
+    // with conclusion success on that head. Strict — no warning path. Jobs the table names but that commit did not yet
+    // declare are reported (they could not have run) and are covered by the structural check above for the current tree.
     const gh = spawnSync('gh', ['auth', 'status'], { encoding: 'utf8' });
-    if (gh.status !== 0) return; // offline: the structural part above is the assertion
-    const prs = JSON.parse(execSync('gh pr list --state merged --base staging --limit 1 --json number,headRefName,mergeCommit', { cwd: ROOT, encoding: 'utf8' }));
+    if (gh.status !== 0 && !process.env.GITHUB_TOKEN) return; // offline: the structural part above is the assertion
+    const prs = JSON.parse(execSync('gh pr list --state merged --base staging --limit 1 --json number,headRefOid', { cwd: ROOT, encoding: 'utf8' }));
     if (!prs.length) return;
-    const runs = JSON.parse(execSync(`gh run list --branch ${prs[0].headRefName} --workflow ci --limit 1 --json databaseId,conclusion`, { cwd: ROOT, encoding: 'utf8' }));
-    if (!runs.length) return;
-    const jobs = JSON.parse(execSync(`gh run view ${runs[0].databaseId} --json jobs`, { cwd: ROOT, encoding: 'utf8' })).jobs.map((j) => j.name);
-    const ranAll = required.filter((j) => j !== 'fidelity-gate').every((j) => jobs.includes(j));
-    // the job set grows wave by wave; the run of the *last merged* PR predates this change, so record rather than fail
-    if (!ranAll) console.warn(`last merged PR #${prs[0].number} ran ${jobs.length} jobs; missing: ${required.filter((j) => !jobs.includes(j)).join(', ')} (jobs added in this PR)`);
-    expect(runs[0].conclusion).toBe('success');
+    const head = prs[0].headRefOid;
+    const declared = new Set();
+    for (const f of ['ci.yml', 'ci-guards.yml']) {
+      const text = spawnSync('git', ['show', `${head}:.github/workflows/${f}`], { cwd: ROOT, encoding: 'utf8' });
+      if (text.status !== 0) continue; // workflow did not exist at that commit
+      for (const m of (text.stdout.split(/\njobs:\n/)[1] || '').matchAll(/^  ([a-z][a-z0-9-]*):\s*$/gm)) declared.add(m[1]);
+    }
+    const api = spawnSync('gh', ['api', `repos/{owner}/{repo}/commits/${head}/check-runs?per_page=100`, '--jq', '.check_runs[] | [.name, .conclusion] | @tsv'], { cwd: ROOT, encoding: 'utf8' });
+    expect(api.status, api.stderr).toBe(0);
+    const byName = Object.fromEntries(api.stdout.split(/\r?\n/).filter(Boolean).map((l) => l.split('\t')));
+    const mustHaveRun = required.filter((j) => declared.has(j));
+    const notDeclared = required.filter((j) => !declared.has(j));
+    if (notDeclared.length) console.info(`last merged PR #${prs[0].number} (${head.slice(0, 7)}) did not yet declare: ${notDeclared.join(', ')}`);
+    expect(mustHaveRun.length).toBeGreaterThan(0);
+    for (const j of mustHaveRun) expect(byName[j], `last merged PR #${prs[0].number}: job ${j}`).toBe('success');
   });
 
   test('TC-NFR1-09-AS-03', () => {
@@ -86,7 +100,11 @@ describe('TC-NFR1-09 reproducible AI development', () => {
       git('commit -q -am "FR1-07: purpose text"');
       expect(oracleGuard({ root: repo, base: 'staging', head: 'HEAD' }).ok).toBe(true);
     } finally { rmSync(repo, { recursive: true, force: true }); }
-    expect(jobIds()).toContain('oracle-guard');
+    // the job that enforces this rule is oracle-guard-expected (runs the module above); ci.yml's subject-only oracle-guard stays as a second line
+    expect(jobIds()).toContain('oracle-guard-expected');
+    const guardJob = ci.split(/\n  oracle-guard-expected:\n/)[1].split(/\n  [a-z][a-z0-9-]*:\n/)[0];
+    expect(guardJob).toMatch(/node tests\/ci\/oracle-guard\.mjs/);
+    expect(guardJob).toMatch(/fetch-depth: 0/);
   });
 
   test('TC-NFR1-09-AS-04', () => {

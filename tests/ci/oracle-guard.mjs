@@ -8,7 +8,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ROOT } from '../lib/paths.mjs';
 
-const git = (cmd, cwd) => execSync(`git ${cmd}`, { cwd, encoding: 'utf8' });
+const git = (cmd, cwd) => execSync(`git ${cmd}`, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 
 /** Does the diff of a fixture file change anything inside an `expected` object? Compares parsed JSON per fixture id. */
 function expectedChanged(base, head, file, cwd) {

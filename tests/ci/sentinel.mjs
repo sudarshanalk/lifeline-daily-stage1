@@ -25,7 +25,7 @@ function walk(dir, out = []) {
 }
 const isMailOutbox = (p) => /[\\/]tools[\\/]api[\\/]outbox[\\/]/.test(p);
 // fixtures are synthetic by design (SCH-05) and may carry the sentinel values as inputs; tests/docs/evidence describe them
-const isAllowedRepoFile = (rel) => rel.startsWith('fixtures/') || rel.startsWith('tests/') || rel.startsWith('docs/') || rel.startsWith('evidence/');
+const isAllowedRepoFile = (rel) => rel.startsWith('fixtures/') || rel.startsWith('tests/') || rel.startsWith('docs/'); // evidence/ is generated output: scanned
 
 export async function sentinelScan() {
   const srv = await startHtaccessServer();
