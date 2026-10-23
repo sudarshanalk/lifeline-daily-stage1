@@ -42,6 +42,9 @@ Existing empty placeholders `STAGING_SFTP_HOST/USER/KEY` may be renamed to the `
 8. **Record**: append `deploy/log/<env>.jsonl` with timestamp, sha/tag, hashes, smoke result; on production also update `releases/<tag>.json.deployed_at`.
 9. **Rollback**: `deploy/rollback.sh <env> <timestamp>` restores the backup tarball from step 2 and re-runs steps 4, 6, 7. Target: under 5 minutes.
 
+## Repository conventions (GitHub Free)
+Branch protection and tag rulesets are not available on the current plan; the owner accepted this on 22 Oct 2026. Conventions: feature branches `req/<ID>` → PR into `staging`; no force-push to `staging`/`production`; `rc-*` tags are never moved; CI results are inspected before merge; the `production` Environment's required reviewer is the enforced gate.
+
 ## Non-negotiables
 
 - CI never holds production write credentials except inside the `production` GitHub Environment, which requires the release owner's approval per run.
