@@ -1,0 +1,26 @@
+{
+  "cards": [
+    {
+      "tool_slug": "protein",
+      "name": "Daily Protein Target",
+      "purpose": "Find out how much protein you need each day, adjusted for your age, training, goal and how you eat.",
+      "time_minutes": 2,
+      "inputs": ["Age and sex", "Height and weight", "Ethnicity", "Activity and resistance training", "Goal and how you eat", "Kidney and liver health"],
+      "eligibility": "Adults aged 18 to 99 with healthy kidney function. Not for children, dialysis patients or people under medical nutrition therapy.",
+      "cta_label": "Find my target",
+      "landing_url": "/health-tools/protein/",
+      "related_post_id": 2288
+    },
+    {
+      "tool_slug": "diabetes",
+      "name": "Diabetes Risk Check",
+      "purpose": "Estimate your risk of developing type 2 diabetes over the next 10 years and see which of your own factors drive it.",
+      "time_minutes": 3,
+      "inputs": ["Age band and sex", "Height, weight and waist", "Ethnicity and smoking", "Family history and medical history", "Current symptoms"],
+      "eligibility": "Adults aged 25 to 84 without a diagnosis of diabetes. Not a diagnosis; symptoms are handled separately from the score.",
+      "cta_label": "Check my risk",
+      "landing_url": "/health-tools/diabetes-risk-check/",
+      "related_post_id": 1869
+    }
+  ]
+}
