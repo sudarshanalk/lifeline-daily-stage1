@@ -3,7 +3,7 @@
 // Usage:
 //   node tests/lib/evidence.mjs --req FR1-06 --run 20261023-1500 [--vitest out.json] [--playwright out.json]
 //        [--red-run local-20261023-1455|null] [--mutations MUT-10:true,MUT-04:true] [--started 2026-10-23T14:55:00Z]
-//        [--note "AS-03:skipped:reason"]  → writes evidence/<REQ>/<run>.json
+//        [--note "AS-03:skipped:reason"] [--reviewer PASS|FAIL --review-report <path or url>]  → writes evidence/<REQ>/<run>.json
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ROOT, toolPath } from './paths.mjs';
@@ -49,7 +49,7 @@ const out = {
   mutations: (opt('--mutations', '') || '').split(',').filter(Boolean).map((s) => { const [id, red] = s.split(':'); return { id, red: red === 'true', run: `local-${run}` }; }),
   red_run: opt('--red-run', 'null') === 'null' ? null : opt('--red-run'),
   green_run: `local-${run}`,
-  reviewer: { agent: 'P-C', verdict: 'FAIL', report: 'artefacts/review.md' },
+  ...(opt('--reviewer') ? { reviewer: { agent: 'P-C', verdict: opt('--reviewer'), report: opt('--review-report', 'PR review comment') } } : {}),
   human_gate: entry.human_gate ? { id: entry.human_gate, artefact: entry.human_gate === 'HG-02' ? 'approvals/protein.json, approvals/diabetes.json' : `approvals/${entry.human_gate.toLowerCase()}.json`, status: 'pending' } : null,
   started_at: opt('--started', new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')),
   finished_at: new Date().toISOString().replace(/\.\d{3}Z$/, 'Z'),

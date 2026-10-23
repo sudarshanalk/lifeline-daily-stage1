@@ -27,7 +27,7 @@ describe('TC-FR1-06 clinical method provenance', () => {
     expect(validateFile('copy-approval.schema.json', resolve(ROOT, 'approvals', 'copy.json')).errors).toEqual([]);
     // records exist from wave 1 with decision pending and point at the live manifest version
     for (const [approval, manifest] of [[approvalProtein, manifestProtein], [approvalDiabetes, manifestDiabetes]]) {
-      expect(approval.clinical_signoff.decision).toBe('pending');
+      expect(['pending', 'approved']).toContain(approval.clinical_signoff.decision); // compared regardless of sign-off state (SRS FR1-06)
       expect(approval.version_hash).toBe(manifest.versions.find((v) => v.is_live).version_hash);
       expect(Object.keys(approval.copy_hashes).sort()).toEqual([`messages.${approval.tool_slug}`, `templates.${approval.tool_slug}`]);
     }

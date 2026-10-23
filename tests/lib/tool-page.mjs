@@ -68,10 +68,32 @@ function matchBracket(src, open) {
   return i;
 }
 
-/** Source text of one declaration from its start to the end of the matched block (plus a trailing `;`). */
+/** Copy of `src` with every comment and string-literal body replaced by spaces (same length, same offsets),
+ *  so declaration searches cannot be fooled by an original copy hidden in a comment or string. */
+export function maskCommentsAndStrings(src) {
+  let out = '';
+  let i = 0;
+  while (i < src.length) {
+    const c = src[i], n = src[i + 1];
+    if (c === '/' && n === '/') { let j = src.indexOf('\n', i); if (j < 0) j = src.length; out += ' '.repeat(j - i); i = j; continue; }
+    if (c === '/' && n === '*') { let j = src.indexOf('*/', i + 2); j = j < 0 ? src.length : j + 2; out += ' '.repeat(j - i); i = j; continue; }
+    if (c === "'" || c === '"' || c === '`') {
+      let j = i + 1;
+      while (j < src.length && src[j] !== c) { if (src[j] === '\\') j++; j++; }
+      out += c + ' '.repeat(Math.max(0, j - i - 1)) + (j < src.length ? c : ''); i = j + 1; continue;
+    }
+    out += c; i++;
+  }
+  return out;
+}
+
+/** Source text of one declaration from its start to the end of the matched block (plus a trailing `;`).
+ *  The declaration must occur exactly once in the code (comments and strings masked). */
 export function extractDeclaration(src, startRe) {
-  const m = startRe.exec(src);
-  if (!m) throw new Error(`frozen object not found: ${startRe}`);
+  const masked = maskCommentsAndStrings(src);
+  const all = [...masked.matchAll(new RegExp(startRe.source, startRe.flags.includes('g') ? startRe.flags : startRe.flags + 'g'))];
+  if (all.length !== 1) throw new Error(`frozen object ${startRe} must occur exactly once in code, found ${all.length}`);
+  const m = all[0];
   const start = m.index;
   if (m[0].endsWith(';')) return m[0];
   const open = start + m[0].length - 1;
