@@ -1,0 +1,101 @@
+{
+  "gate": "G-02",
+  "wave": 2,
+  "date": "2026-10-23",
+  "evaluated_by": "orchestrator (Wave 2 build loop session)",
+  "rule": "docs/04 §5 marks G-02 as the gate reached when Wave 2 completes; applied as: every Wave 2 requirement merged to staging with P-C PASS and both CI workflows green (>= verified); auto items promoted to accepted; hybrid items stay verified until HG-02 (docs/04 §2 deadlock-avoidance rule). Formal G-02 wording proposed as DEC-61.",
+  "result": "PASS",
+  "items": {
+    "FR1-07": {
+      "status": "verified",
+      "automation": "hybrid",
+      "human_gate": "HG-02"
+    },
+    "FR1-08": {
+      "status": "verified",
+      "automation": "hybrid",
+      "human_gate": "HG-02"
+    },
+    "FR1-09": {
+      "status": "verified",
+      "automation": "hybrid",
+      "human_gate": "HG-02"
+    },
+    "FR1-10": {
+      "status": "verified",
+      "automation": "hybrid",
+      "human_gate": "HG-02"
+    },
+    "FR1-11": {
+      "status": "verified",
+      "automation": "hybrid",
+      "human_gate": "HG-02"
+    },
+    "FR1-12": {
+      "status": "verified",
+      "automation": "hybrid",
+      "human_gate": "HG-02"
+    },
+    "FR1-13": {
+      "status": "accepted",
+      "automation": "auto",
+      "human_gate": null
+    },
+    "UI1-04": {
+      "status": "accepted",
+      "automation": "auto",
+      "human_gate": null
+    },
+    "UI1-05": {
+      "status": "verified",
+      "automation": "hybrid",
+      "human_gate": "HG-02"
+    },
+    "UI1-11": {
+      "status": "verified",
+      "automation": "hybrid",
+      "human_gate": "HG-02"
+    }
+  },
+  "merged_prs": {
+    "FR1-07": 11,
+    "FR1-08": 15,
+    "FR1-09": 18,
+    "FR1-10": 13,
+    "FR1-11": 16,
+    "FR1-12": 19,
+    "FR1-13": 17,
+    "UI1-04": 20,
+    "UI1-05": 21,
+    "UI1-11": 22,
+    "NFR1-09 (SPEC-skip fix)": 23
+  },
+  "pending_human_gate": {
+    "HG-02": [
+      "FR1-07",
+      "FR1-08",
+      "FR1-09",
+      "FR1-10",
+      "FR1-11",
+      "FR1-12",
+      "UI1-05",
+      "UI1-11"
+    ]
+  },
+  "known_deferrals": [
+    "ORC-01 run and FX-DM-BAND inputs (OI-4 Docker/WSL2): TC-FR1-10-AS-01, TC-FR1-12-AS-01 skipped with reason; UI1-05 band screenshots use FX-DM-QD-71/73 stand-ins (DEC-59)",
+    "staging re-runs with LLD_TOOLS_URL / LLD_WP_URL (OI-1)",
+    "WordPress page copy in the deck via LLD_WP_URL (DEC-60, OI-1)",
+    "Linux visual baselines for TC-UI1-05-AS-03 to be recorded on the CI runner (DEC-58)"
+  ],
+  "dec_proposals": [
+    "DEC-56 copy.json/inventory in the provenance refresh set",
+    "DEC-57 component-scope merge-parent exclusion (restrict to reviewed req/* branches)",
+    "DEC-58 platform-specific visual baselines",
+    "DEC-59 QD-71/QD-73 stand in for FX-DM-BAND screenshots",
+    "DEC-60 WordPress pages in the copy deck via LLD_WP_URL",
+    "DEC-55 amendment: SPEC PRs may skip the jobs their if: condition excludes",
+    "DEC-61 G-02 definition (this record)",
+    "HG-02 notes: FR1-09 clinical banner for goal=recovery, FR1-09 underweight copy, FR1-11 emergency email phrase, UI1-05 diabetes interpretation panel order"
+  ]
+}
