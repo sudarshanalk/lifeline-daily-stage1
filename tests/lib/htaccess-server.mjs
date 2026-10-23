@@ -85,6 +85,9 @@ export async function startHtaccessServer({ port = 0, overlay = resolve(ROOT, 's
 
   // PHP built-in server for *.php under /tools (deny rules are enforced here, not in PHP)
   const php = spawn('php', ['-S', `127.0.0.1:${phpPort || 0}`, '-t', docroot], { stdio: ['ignore', 'pipe', 'pipe'] });
+  const phpLog = []; // every line PHP's built-in server prints (request log + error_log output) — the "server log" tests scan
+  php.stdout.on('data', (d) => phpLog.push(...String(d).split(/\r?\n/).filter(Boolean)));
+  php.stderr.on('data', (d) => phpLog.push(...String(d).split(/\r?\n/).filter(Boolean)));
   const phpOrigin = await new Promise((ok, bad) => {
     const t = setTimeout(() => bad(new Error('php -S did not start')), 15000);
     const onData = (d) => { const m = /(https?:\/\/[\d.]+:\d+)/.exec(String(d)); if (m) { clearTimeout(t); ok(m[1]); } };
@@ -142,7 +145,7 @@ export async function startHtaccessServer({ port = 0, overlay = resolve(ROOT, 's
   const url = `http://127.0.0.1:${server.address().port}`;
   ORIGIN = url;
   return {
-    url, docroot, phpOrigin,
+    url, docroot, phpOrigin, phpLog: () => [...phpLog],
     close: () => new Promise((ok) => { php.kill(); server.close(() => { rmSync(docroot, { recursive: true, force: true }); ok(); }); }),
   };
 }

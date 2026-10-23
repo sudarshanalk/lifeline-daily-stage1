@@ -1,0 +1,13 @@
+diff --git a/site/public_html/tools/submit-protein.php b/site/public_html/tools/submit-protein.php
+index 2f9a244..eae7056 100644
+--- a/site/public_html/tools/submit-protein.php
++++ b/site/public_html/tools/submit-protein.php
+@@ -52,7 +52,7 @@ if ($errors) {
+  * kidney disease must never receive an email containing a g/day figure — the
+  * on-screen suppression is worthless if the email undoes it.
+  * -------------------------------------------------------------------------- */
+-$key = $suppressed ? 'protein_renal' : 'protein_standard';
++$key = 'protein_standard';
+ $tpl = $T[$key];
+ 
+ /* ---- token data ------------------------------------------------------------ */
