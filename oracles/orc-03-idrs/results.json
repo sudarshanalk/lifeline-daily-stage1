@@ -1,0 +1,99 @@
+{
+  "oracle_id": "ORC-03",
+  "implementation": "Python, IDRS points table from Mohan et al. 2005 (JAPI 53:759-763) with the live 4-level activity mapping (DEC-05)",
+  "versions": {
+    "python": "3.14.6",
+    "activity_mapping": "live 4-level (vigorous 0 / moderate 10 / mild 20 / none 30)",
+    "activity_mapping_published": "vigorous 0 / moderate 20 / none 30"
+  },
+  "source_hash": "25dfd5619aba9780e9d6e54f6416fc91e0e7a309a371cd527f8fa700f559e7fc",
+  "run_at": "2026-10-23T13:43:02Z",
+  "results": [
+    {
+      "fixture_id": "FX-DM-CONC-01",
+      "expected": {
+        "idrs": {
+          "score": 70,
+          "tier": "high"
+        }
+      },
+      "notes": "age 27, waist 102 cm, activity none, family ['mother', 'father']"
+    },
+    {
+      "fixture_id": "FX-DM-CONC-02",
+      "expected": {
+        "idrs": {
+          "score": 0,
+          "tier": "low"
+        }
+      },
+      "notes": "age 27, waist 80 cm, activity vigorous, family []"
+    },
+    {
+      "fixture_id": "FX-DM-IDRS-01",
+      "expected": {
+        "idrs": {
+          "score": 20,
+          "tier": "low"
+        }
+      },
+      "notes": "age 37, waist 85 cm, activity vigorous, family []"
+    },
+    {
+      "fixture_id": "FX-DM-IDRS-02",
+      "expected": {
+        "idrs": {
+          "score": 30,
+          "tier": "moderate"
+        }
+      },
+      "notes": "age 37, waist 85 cm, activity moderate, family []"
+    },
+    {
+      "fixture_id": "FX-DM-IDRS-03",
+      "expected": {
+        "idrs": {
+          "score": 50,
+          "tier": "moderate"
+        }
+      },
+      "notes": "age 52, waist 85 cm, activity mild, family []"
+    },
+    {
+      "fixture_id": "FX-DM-IDRS-04",
+      "expected": {
+        "idrs": {
+          "score": 60,
+          "tier": "high"
+        }
+      },
+      "notes": "age 52, waist 95 cm, activity mild, family []"
+    },
+    {
+      "fixture_id": "FX-DM-IDRS-05",
+      "expected": {
+        "idrs": {
+          "score": 0,
+          "tier": "low"
+        }
+      },
+      "notes": "age 27, waist 85 cm, activity vigorous, family []"
+    },
+    {
+      "fixture_id": "FX-DM-IDRS-06",
+      "expected": {
+        "idrs": {
+          "score": 70,
+          "tier": "high"
+        }
+      },
+      "notes": "age 52, waist 100 cm, activity mild, family []"
+    }
+  ],
+  "notes": [
+    "Family history: only diabetic parents score (one 10, both 20); a diabetic sibling scores 0, as in the published item.",
+    "Activity: the live tool's 4-level mapping is an adaptation of the published 3-level item; ORC-03 reproduces the live mapping (DEC-05), so this item is characterisation until HG-02 ratifies it. 'mild' has no published equivalent.",
+    "Tiers <30 / 30-59 / >=60 per DEC-05 (attainable scores are multiples of 10, so 30-50 and 30-59 are the same set).",
+    "Expected object is {idrs: {score, tier}} or {idrs: null} when no waist measurement was entered."
+  ]
+}

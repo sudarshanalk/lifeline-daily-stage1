@@ -1,0 +1,13 @@
+diff --git a/site/public_html/tools/protein-requirement-tool.html b/site/public_html/tools/protein-requirement-tool.html
+index 8f77d7c..9a5f8e7 100644
+--- a/site/public_html/tools/protein-requirement-tool.html
++++ b/site/public_html/tools/protein-requirement-tool.html
+@@ -470,7 +470,7 @@ const BANDS = {
+   olderActive: {lo:1.2, hi:1.5, src:'ESPEN 2014',                          key:'older'},
+   recovery:    {lo:1.2, hi:1.5, src:'ESPEN 2014 (illness / malnutrition)', key:'recovery'}
+ };
+-const CEILING = 2.0;                       // DO NOT RAISE. See header note.
++const CEILING = 2.5;                       // DO NOT RAISE. See header note.
+ const DIET_MULT = { omnivore:1.0, vegetarian:1.1, vegan:1.2 };
+ const PREG_GKG = { pregnant:1.1, breastfeeding:1.3 };   // IOM DRI
+ 

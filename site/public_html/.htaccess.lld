@@ -1,19 +1,23 @@
 # Managed by deploy/deploy.sh: inserted between "# BEGIN lld" and "# END lld" in the document-root .htaccess.
-# Everything outside that block (WordPress, LiteSpeed, Yoast rules) is left untouched. DRAFT: finalised in FR1-20/FR1-21/NFR1-03/NFR1-15.
+# Everything outside that block (WordPress, LiteSpeed, Yoast rules) is left untouched.
+# __LLD_ORIGIN__ is substituted per environment at deploy time (DEC-34); the Git copy stays environment-neutral.
+# Cache-control rules for /tools/* live in site/public_html/tools/.htaccess (FR1-20).
 <IfModule mod_headers.c>
   # Security headers (NFR1-03, DEC-35)
   Header always set Strict-Transport-Security "max-age=31536000"
   Header always set X-Content-Type-Options "nosniff"
   Header always set Referrer-Policy "strict-origin-when-cross-origin"
   Header always set Permissions-Policy "camera=(), microphone=(), geolocation=()"
-  # Tool pages: never cached, canonical set in HTML (DEC-14), frame only from our own hosts (DEC-28)
+
+  # Embed security policy (NFR1-15, DEC-28). The host already emits `Content-Security-Policy: upgrade-insecure-requests`;
+  # this second header is additive and both are enforced. The same policy is mirrored as Report-Only so that any
+  # violation is observable in browsers and in the e2e suite (TC-NFR1-15-AS-03) without changing enforcement.
+  # Landing pages and every other WordPress page: frames may come only from this site and the configured tool origin.
+  Header always set Content-Security-Policy "frame-src 'self' __LLD_ORIGIN__ https://lifelinedaily.com"
+  Header always set Content-Security-Policy-Report-Only "frame-src 'self' __LLD_ORIGIN__ https://lifelinedaily.com"
+  # Tool pages: may be framed only by our own hosts (the FilesMatch value replaces the page-wide one above).
   <FilesMatch "^(protein-requirement-tool|diabetes-risk-tool|health-tools-hub)\.html$">
-    Header set Cache-Control "no-cache, must-revalidate"
-    Header always set Content-Security-Policy "frame-ancestors https://lifelinedaily.com https://www.lifelinedaily.com"
+    Header always set Content-Security-Policy "frame-ancestors __LLD_ORIGIN__ https://lifelinedaily.com https://www.lifelinedaily.com"
+    Header always set Content-Security-Policy-Report-Only "frame-ancestors __LLD_ORIGIN__ https://lifelinedaily.com https://www.lifelinedaily.com"
   </FilesMatch>
-  # Withdrawal switch: must never be cached (DEC-10, FR1-20)
-  <Files "status.json">
-    Header set Cache-Control "no-store"
-    Require all granted
-  </Files>
 </IfModule>

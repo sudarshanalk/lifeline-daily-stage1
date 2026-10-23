@@ -1,0 +1,13 @@
+diff --git a/site/public_html/tools/diabetes-risk-tool.html b/site/public_html/tools/diabetes-risk-tool.html
+index 52c9bb0..271f26f 100644
+--- a/site/public_html/tools/diabetes-risk-tool.html
++++ b/site/public_html/tools/diabetes-risk-tool.html
+@@ -759,7 +759,7 @@ function updateProgress(){
+ /* ============================================================================
+  * (4) DECISION LOGIC — strict priority order
+  * ==========================================================================*/
+-function bandFor(p){ return p<5.6?'low':(p<10?'moderate':(p<20?'high':'veryHigh')); }
++function bandFor(p){ return p<6.0?'low':(p<10?'moderate':(p<20?'high':'veryHigh')); }
+ function collectOptional(){ var o={}; $$('[data-opt]').forEach(function(cb){o[cb.getAttribute('data-opt')]=cb.checked?1:0;}); return o; }
+ function collectFamily(){ var f={}; $$('[data-fam]').forEach(function(cb){f[cb.getAttribute('data-fam')]=cb.checked;}); return f; }
+ function collectSymptoms(){
