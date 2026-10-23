@@ -410,6 +410,11 @@
   "red_run": "local-20261023-2105",
   "green_run": "local-20261023-2112",
   "human_gate": null,
-  "started_at": "2026-10-23T20:00:00Z",
-  "finished_at": "2026-10-23T19:52:38Z"
+  "started_at": "2026-10-23T19:40:00Z",
+  "finished_at": "2026-10-23T19:52:38Z",
+  "reviewer": {
+    "agent": "P-C",
+    "verdict": "PASS",
+    "report": "https://github.com/sudarshanalk/lifeline-daily-stage1/pull/28 (P-C review 20261023-2155; condition DEC-67: re-run AS-01 against the real staging environment before HG-02; advisories applied: DNS skip only on resolver errors, DKIM key must be non-empty)"
+  }
 }

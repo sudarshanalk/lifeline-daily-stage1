@@ -69,7 +69,8 @@ describe('TC-NFR1-14 e-mail deliverability and sandbox', () => {
 
   test('TC-NFR1-14-AS-02', async (ctx) => {
     let spf;
-    try { spf = (await dns.resolveTxt(DOMAIN)).map((r) => r.join('')); } catch (e) { ctx.skip(`DNS unavailable in this environment (${e.code}); run on a networked runner`); return; }
+    // skip only when the resolver itself is unreachable; a missing record (ENOTFOUND/ENODATA) is a failure, not an environment problem
+    try { spf = (await dns.resolveTxt(DOMAIN)).map((r) => r.join('')); } catch (e) { if (['EAI_AGAIN', 'ETIMEOUT', 'ECONNREFUSED', 'ESERVFAIL', 'EREFUSED'].includes(e.code)) { ctx.skip(`DNS unavailable in this environment (${e.code}); run on a networked runner`); return; } throw e; }
     const spfRecord = spf.find((t) => /^v=spf1/i.test(t));
     expect(spfRecord, `${DOMAIN} publishes SPF`).toBeTruthy();
     expect(spfRecord, 'SPF names the sending provider (include:/a/mx/ip4)').toMatch(/include:|\ba\b|\bmx\b|ip4:/);
@@ -79,9 +80,8 @@ describe('TC-NFR1-14 e-mail deliverability and sandbox', () => {
     let dkim = null;
     for (const sel of DKIM_SELECTORS) {
       const name = `${sel}._domainkey.${DOMAIN}`;
-      const txt = (await dns.resolveTxt(name).catch(() => [])).map((r) => r.join('')).find((t) => /v=DKIM1|k=rsa|p=/i.test(t));
-      const cname = txt ? null : await dns.resolveCname(name).catch(() => []);
-      if (txt || (cname && cname.length)) { dkim = sel; break; }
+      const txt = (await dns.resolveTxt(name).catch(() => [])).map((r) => r.join('')).find((t) => /v=DKIM1/i.test(t) && /p=[A-Za-z0-9+/]{20,}/.test(t));   // a published key, not an empty placeholder
+      if (txt) { dkim = sel; break; }
     }
     expect(dkim, `a DKIM selector resolves for ${DOMAIN} (tried ${DKIM_SELECTORS.join(', ')}; set LLD_DKIM_SELECTORS when the provider's selector is known — DEC proposal)`).toBeTruthy();
   });
