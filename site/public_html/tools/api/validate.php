@@ -67,3 +67,14 @@ function validate(array $p): array {
 
   return $errors;
 }
+
+/* ---------------------------------------------------------------------------- withdrawal switch (FR1-15, DEC-10) --
+ * lld_tool_active($slug, $cfg): false when tools/status.json says the tool is not active, or the file is unreadable (fail closed).
+ * The server's status.json next to the api folder is the source of truth; `status_path` in the config may override it. */
+function lld_tool_active(string $slug, array $cfg): bool {
+  $path = $cfg['status_path'] ?? (__DIR__ . '/../status.json');
+  $raw = is_readable($path) ? file_get_contents($path) : false;
+  if ($raw === false) return false;
+  $doc = json_decode($raw, true);
+  return is_array($doc) && (($doc['tools'][$slug]['status'] ?? '') === 'active');
+}

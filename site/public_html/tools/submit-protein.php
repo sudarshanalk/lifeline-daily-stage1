@@ -17,6 +17,7 @@ header('Content-Type: application/json');
 $cfg = require __DIR__ . '/api/config.php';
 require_once __DIR__ . '/api/mailer.php';
 require_once __DIR__ . '/api/ratelimit.php';
+require_once __DIR__ . '/api/validate.php';   // lld_tool_active() — the withdrawal switch (FR1-15)
 $T = require __DIR__ . '/api/templates-protein.php';
 
 function respond_protein(int $code, array $data): void {

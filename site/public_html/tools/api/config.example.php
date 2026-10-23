@@ -16,7 +16,6 @@ return [
   'client_ip'       => ['header' => getenv('LLD_CLIENT_IP_HEADER') ?: 'X-Forwarded-For',
                         'trusted_proxies' => array_values(array_filter(array_map('trim', explode(',', getenv('LLD_TRUSTED_PROXIES') ?: ''))))],
   'log_salt'        => getenv('LLD_LOG_SALT') ?: '',                    // DEC-20: secret behind the daily ip_hash salt (random per install when empty)
-  'status_path'     => __DIR__.'/../status.json',                      // FR1-15: the server's tools/status.json switch (DEC-10)
   'outbox_dir'      => __DIR__.'/outbox',
   'state_dir'       => __DIR__.'/state',
 ];

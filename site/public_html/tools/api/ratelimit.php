@@ -4,7 +4,6 @@
  *   lld_client_ip($cfg): string              real client IP behind the CDN edge (DEC-35: trusted proxy + forwarded header)
  *   rateLimitOk($ip,$cfg,$bucket): bool       per-IP, per-endpoint throttle, flat-file, best-effort (DEC-16: 5 / 10 min)
  *   lld_log($tool,$outcome,$ip,$cfg): void    one SCH-07 line — ts, tool, outcome, daily-salted ip_hash — nothing else (DEC-20)
- *   lld_tool_active($slug,$cfg): bool          tools/status.json gate (FR1-15, DEC-10): false when the tool is not active or the file is unreadable (fail closed)
  * No payload field ever reaches this file's output.
  * ==========================================================================*/
 
@@ -76,12 +75,4 @@ function lld_log(string $tool, string $outcome, string $ip, array $cfg): void {
     'ip_hash' => hash('sha256', $ip . lld_daily_salt($cfg)),
   ], JSON_UNESCAPED_SLASHES);
   error_log($line);
-}
-
-function lld_tool_active(string $slug, array $cfg): bool {
-  $path = $cfg['status_path'] ?? (__DIR__ . '/../status.json');
-  $raw = is_readable($path) ? file_get_contents($path) : false;
-  if ($raw === false) return false;                       // no readable switch → fail closed (DEC-10)
-  $doc = json_decode($raw, true);
-  return is_array($doc) && (($doc['tools'][$slug]['status'] ?? '') === 'active');
 }
