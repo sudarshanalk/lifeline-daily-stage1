@@ -21,11 +21,29 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 110,
+        "lowG": 92,
+        "highG": 128,
+        "gPerKg": 1.2,
+        "basisKg": 91.5,
+        "basisNote": "your current weight",
+        "perMeal": 37,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "active",
+        "bmi": 29.878
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-BMI-02",
@@ -36,7 +54,7 @@
         "sex": "male",
         "preg": "no",
         "heightCm": 175,
-        "weightKg": 92.0,
+        "weightKg": 92,
         "ethnicity": "White",
         "activity": "moderate",
         "resistance": "0",
@@ -46,11 +64,29 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 99,
+        "lowG": 83,
+        "highG": 116,
+        "gPerKg": 1.2,
+        "basisKg": 82.554,
+        "basisNote": "an adjusted body weight of 82.6 kg (used because applying g/kg to full body weight overstates the target when a larger share of that weight is fat mass)",
+        "perMeal": 33,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "active",
+        "bmi": 30.041
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-BMI-03",
@@ -61,7 +97,7 @@
         "sex": "male",
         "preg": "no",
         "heightCm": 175,
-        "weightKg": 92.0,
+        "weightKg": 92,
         "ethnicity": "Indian",
         "activity": "moderate",
         "resistance": "0",
@@ -71,11 +107,29 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 95,
+        "lowG": 79,
+        "highG": 110,
+        "gPerKg": 1.2,
+        "basisKg": 78.879,
+        "basisNote": "an adjusted body weight of 78.9 kg (used because applying g/kg to full body weight overstates the target when a larger share of that weight is fat mass)",
+        "perMeal": 32,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "active",
+        "bmi": 30.041
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-BMI-04",
@@ -96,11 +150,29 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 79,
+        "lowG": 66,
+        "highG": 92,
+        "gPerKg": 1.2,
+        "basisKg": 65.974,
+        "basisNote": "an adjusted body weight of 66.0 kg (used because applying g/kg to full body weight overstates the target when a larger share of that weight is fat mass)",
+        "perMeal": 26,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "active",
+        "bmi": 30.078
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     }
   ]
 }

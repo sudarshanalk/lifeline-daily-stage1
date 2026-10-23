@@ -1,6 +1,6 @@
 {
   "version": "1.2",
-  "date": "2026-10-20",
+  "date": "2026-10-23",
   "baseline": "stage1-loop-ready; stage2-4 roadmap",
   "supersedes": "1.1",
   "schema": "schemas/registry.schema.json",
@@ -95,59 +95,132 @@
   "components": [
     {
       "id": "CMP-01",
-      "name": "WordPress core, Newspaper theme, posts, menus"
+      "name": "WordPress core, Newspaper theme, posts, menus",
+      "paths": [],
+      "in_scope_for_component_scope": false
     },
     {
       "id": "CMP-02",
-      "name": "public_html/tools/protein-requirement-tool.html"
+      "name": "public_html/tools/protein-requirement-tool.html",
+      "paths": [
+        "site/public_html/tools/protein-requirement-tool.html"
+      ],
+      "in_scope_for_component_scope": true
     },
     {
       "id": "CMP-03",
-      "name": "public_html/tools/diabetes-risk-tool.html"
+      "name": "public_html/tools/diabetes-risk-tool.html",
+      "paths": [
+        "site/public_html/tools/diabetes-risk-tool.html"
+      ],
+      "in_scope_for_component_scope": true
     },
     {
       "id": "CMP-04",
-      "name": "public_html/tools/submit-protein.php + api/templates-protein.php"
+      "name": "public_html/tools/submit-protein.php + api/templates-protein.php",
+      "paths": [
+        "site/public_html/tools/submit-protein.php",
+        "site/public_html/tools/api/templates-protein.php"
+      ],
+      "in_scope_for_component_scope": true
     },
     {
       "id": "CMP-05",
-      "name": "public_html/tools/submit.php + api/templates.php"
+      "name": "public_html/tools/submit.php + api/templates.php",
+      "paths": [
+        "site/public_html/tools/submit.php",
+        "site/public_html/tools/api/templates.php",
+        "site/public_html/tools/api/render.php",
+        "site/public_html/tools/api/validate.php"
+      ],
+      "in_scope_for_component_scope": true
     },
     {
       "id": "CMP-06",
-      "name": "public_html/tools/api/mailer.php + api/config.php"
+      "name": "public_html/tools/api/mailer.php + api/config.php",
+      "paths": [
+        "site/public_html/tools/api/mailer.php",
+        "site/public_html/tools/api/ratelimit.php",
+        "site/public_html/tools/api/config.example.php"
+      ],
+      "in_scope_for_component_scope": true
     },
     {
       "id": "CMP-07",
-      "name": "public_html/tools/status.json"
+      "name": "public_html/tools/status.json",
+      "paths": [
+        "site/public_html/tools/status.json"
+      ],
+      "in_scope_for_component_scope": true
     },
     {
       "id": "CMP-08",
-      "name": "wp-content/mu-plugins/lld-tools/"
+      "name": "wp-content/mu-plugins/lld-tools/",
+      "paths": [
+        "site/public_html/wp-content/mu-plugins/**"
+      ],
+      "in_scope_for_component_scope": true
     },
     {
       "id": "CMP-09",
-      "name": "WP pages: home, hub, 2 landing, medical disclaimer"
+      "name": "WP pages: home, hub, 2 landing, medical disclaimer",
+      "paths": [],
+      "in_scope_for_component_scope": false
     },
     {
       "id": "CMP-10",
-      "name": "Web server config (.htaccess/vhost)"
+      "name": "Web server config (.htaccess/vhost)",
+      "paths": [
+        "site/public_html/.htaccess.lld",
+        "site/public_html/tools/.htaccess",
+        "site/public_html/tools/api/.htaccess"
+      ],
+      "in_scope_for_component_scope": true
     },
     {
       "id": "CMP-11",
-      "name": "Analytics (Plausible) integration"
+      "name": "Analytics (Plausible) integration",
+      "paths": [
+        "site/public_html/wp-content/mu-plugins/lld-tools/analytics/**"
+      ],
+      "in_scope_for_component_scope": true
     },
     {
       "id": "CMP-12",
-      "name": "Repository artefacts"
+      "name": "Repository artefacts",
+      "paths": [
+        "manifests/**",
+        "approvals/**",
+        "fixtures/**",
+        "evidence/**",
+        "content/**",
+        "copy/**",
+        "privacy/**",
+        "releases/**",
+        "incidents/**",
+        "reports/**"
+      ],
+      "in_scope_for_component_scope": true
     },
     {
       "id": "CMP-13",
-      "name": "CI pipeline"
+      "name": "CI pipeline",
+      "paths": [
+        ".github/**",
+        "deploy/**",
+        "tools/**",
+        "tests/**",
+        "package.json"
+      ],
+      "in_scope_for_component_scope": true
     },
     {
       "id": "CMP-14",
-      "name": "Oracles ORC-01..04"
+      "name": "Oracles ORC-01..04",
+      "paths": [
+        "oracles/**"
+      ],
+      "in_scope_for_component_scope": true
     }
   ],
   "use_cases": [
@@ -195,7 +268,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "hybrid",
-      "status": "ready",
+      "status": "accepted",
       "depends_on": [],
       "components": [
         "CMP-01",
@@ -237,6 +310,7 @@
       ],
       "human_gate": "HG-01",
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-01/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -276,6 +350,7 @@
       "decisions": [],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-02/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -321,6 +396,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-03/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -365,6 +441,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-04/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -413,6 +490,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-05/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -424,7 +502,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "hybrid",
-      "status": "draft",
+      "status": "ready",
       "depends_on": [
         "FR1-01"
       ],
@@ -450,6 +528,7 @@
       "mutations": [
         "MUT-10"
       ],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-06/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -501,12 +580,20 @@
         "FX-PR-INV-*"
       ],
       "decisions": [
-        "DEC-03"
+        "DEC-03",
+        "DEC-44",
+        "DEC-45"
       ],
       "human_gate": "HG-02",
       "mutations": [
         "MUT-07"
       ],
+      "known_deviations": {
+        "DEC-44": [
+          "FX-PR-CAP-01",
+          "FX-PR-CAP-02"
+        ]
+      },
       "evidence_dir": "evidence/FR1-07/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -560,6 +647,7 @@
         "MUT-01",
         "MUT-02"
       ],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-08/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -605,6 +693,7 @@
       "mutations": [
         "MUT-03"
       ],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-09/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -655,6 +744,7 @@
       "mutations": [
         "MUT-04"
       ],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-10/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -707,6 +797,7 @@
       "mutations": [
         "MUT-05"
       ],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-11/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -767,6 +858,7 @@
         "MUT-08",
         "MUT-09"
       ],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-12/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -805,6 +897,7 @@
       "decisions": [],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-13/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -853,12 +946,14 @@
         "DEC-16",
         "DEC-21",
         "DEC-27",
-        "DEC-35"
+        "DEC-35",
+        "DEC-46"
       ],
       "human_gate": "HG-03",
       "mutations": [
         "MUT-02"
       ],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-14/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -911,6 +1006,7 @@
       "mutations": [
         "MUT-13"
       ],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-15/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -957,6 +1053,7 @@
       "mutations": [
         "MUT-11"
       ],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-16/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -999,6 +1096,7 @@
       ],
       "human_gate": "HG-02",
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-17/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1040,6 +1138,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-18/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1073,6 +1172,7 @@
       "decisions": [],
       "human_gate": "HG-03",
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-19/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1084,7 +1184,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "ready",
       "depends_on": [
         "FR1-01"
       ],
@@ -1109,6 +1209,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-20/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1120,7 +1221,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "ready",
       "depends_on": [
         "FR1-01"
       ],
@@ -1156,6 +1257,7 @@
       "mutations": [
         "MUT-12"
       ],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-21/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1167,7 +1269,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "auto",
-      "status": "draft",
+      "status": "ready",
       "depends_on": [
         "FR1-01"
       ],
@@ -1190,10 +1292,13 @@
       "decisions": [
         "DEC-02",
         "DEC-03",
-        "DEC-33"
+        "DEC-33",
+        "DEC-44",
+        "DEC-45"
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-22/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1207,8 +1312,7 @@
       "automation": "auto",
       "status": "draft",
       "depends_on": [
-        "FR1-01",
-        "FR1-02"
+        "FR1-01"
       ],
       "components": [
         "CMP-01",
@@ -1242,6 +1346,7 @@
       ],
       "human_gate": "HG-01",
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-23/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1277,10 +1382,12 @@
         "DEC-20",
         "DEC-21",
         "DEC-32",
-        "DEC-36"
+        "DEC-36",
+        "DEC-46"
       ],
       "human_gate": "HG-03",
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-01/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1314,6 +1421,7 @@
       "decisions": [],
       "human_gate": "HG-02",
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-02/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1360,6 +1468,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-03/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1393,6 +1502,7 @@
       "decisions": [],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-04/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1434,6 +1544,7 @@
       "mutations": [
         "MUT-14"
       ],
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-05/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1468,6 +1579,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-06/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1507,6 +1619,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-07/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1547,6 +1660,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-08/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1558,7 +1672,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "auto",
-      "status": "draft",
+      "status": "ready",
       "depends_on": [],
       "components": [
         "CMP-13"
@@ -1578,6 +1692,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-09/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1614,6 +1729,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-10/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1652,6 +1768,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-11/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1688,6 +1805,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-12/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1720,6 +1838,7 @@
       "decisions": [],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-13/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1752,6 +1871,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-14/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1763,7 +1883,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "ready",
       "depends_on": [
         "FR1-21"
       ],
@@ -1784,6 +1904,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-15/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1818,6 +1939,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-16/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1854,6 +1976,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/UI1-01/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1890,6 +2013,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/UI1-02/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1925,6 +2049,7 @@
       "decisions": [],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/UI1-03/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1963,6 +2088,7 @@
       "decisions": [],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/UI1-04/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -2008,6 +2134,7 @@
       "mutations": [
         "MUT-14"
       ],
+      "known_deviations": {},
       "evidence_dir": "evidence/UI1-05/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -2045,6 +2172,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/UI1-06/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -2079,6 +2207,7 @@
       "decisions": [],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/UI1-07/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -2119,6 +2248,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/UI1-08/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -2151,6 +2281,7 @@
       "decisions": [],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/UI1-09/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -2191,6 +2322,7 @@
       ],
       "human_gate": null,
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/UI1-10/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -2227,6 +2359,7 @@
       ],
       "human_gate": "HG-02",
       "mutations": [],
+      "known_deviations": {},
       "evidence_dir": "evidence/UI1-11/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -2237,7 +2370,8 @@
       "id": "DEC-01",
       "question": "Deployed diabetes engine identity",
       "selected": "Model A confirmed",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2246,6 +2380,7 @@
       "question": "QDiabetes oracle",
       "selected": "CRAN QDiabetes (ORC-01)",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2254,6 +2389,7 @@
       "question": "Protein oracle",
       "selected": "Sealed Python reference (ORC-02)",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2262,6 +2398,7 @@
       "question": "Band thresholds",
       "selected": "5.6/10/20",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2270,6 +2407,7 @@
       "question": "IDRS tiers",
       "selected": "<30 / 30-59 / >=60",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2278,6 +2416,7 @@
       "question": "Secondary indicator",
       "selected": "Waist-to-height ratio 0.5/0.6",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2286,15 +2425,17 @@
       "question": "Townsend",
       "selected": "Fixed 0, disclosed",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
     {
       "id": "DEC-08",
       "question": "Fidelity failure handling",
-      "selected": "Automatic withdrawal",
-      "status": "default",
-      "ratify_at": null,
+      "selected": "Staging automatic via wp lld status set; production by ACT-04",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
+      "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
     {
@@ -2302,6 +2443,7 @@
       "question": "Email during emergency",
       "selected": "Allowed, emergency template without %",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2309,7 +2451,8 @@
       "id": "DEC-10",
       "question": "Feature switch",
       "selected": "status.json",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2318,6 +2461,7 @@
       "question": "Analytics",
       "selected": "Plausible cookieless",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-03",
       "decided_on": "2026-10-20"
     },
@@ -2326,6 +2470,7 @@
       "question": "Five policies",
       "selected": "Privacy, Terms, About, Contact, Medical Disclaimer",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2333,7 +2478,8 @@
       "id": "DEC-13",
       "question": "Article CTA rule",
       "selected": "Category/tag rule + override",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2341,7 +2487,8 @@
       "id": "DEC-14",
       "question": "Standalone indexing",
       "selected": "noindex,follow + canonical",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2349,7 +2496,8 @@
       "id": "DEC-15",
       "question": "Iframe host/messaging",
       "selected": "Apex host, pinned origin",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2357,7 +2505,8 @@
       "id": "DEC-16",
       "question": "Rate limit/honeypot",
       "selected": "5/IP/10min 429; honeypot silent 200",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2366,6 +2515,7 @@
       "question": "Perf measurement",
       "selected": "Lighthouse mobile, median of 5",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": null,
       "decided_on": "2026-10-20"
     },
@@ -2374,6 +2524,7 @@
       "question": "Browser matrix",
       "selected": "Last 2 versions + iOS15 + Android 9",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": null,
       "decided_on": "2026-10-20"
     },
@@ -2381,7 +2532,8 @@
       "id": "DEC-19",
       "question": "Backup objectives",
       "selected": "RPO 24h RTO 4h",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2390,6 +2542,7 @@
       "question": "Logging",
       "selected": "SCH-07 only, 30 days",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": null,
       "decided_on": "2026-10-20"
     },
@@ -2398,6 +2551,7 @@
       "question": "Lawful basis emails",
       "selected": "Consent incl. Art 9(2)(a); no persistence",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-03",
       "decided_on": "2026-10-20"
     },
@@ -2405,7 +2559,8 @@
       "id": "DEC-22",
       "question": "WP vehicle",
       "selected": "mu-plugin lld-tools",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2413,7 +2568,8 @@
       "id": "DEC-23",
       "question": "Homepage placement",
       "selected": "Tools row below header/hero",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2422,6 +2578,7 @@
       "question": "Status enum",
       "selected": "active|withdrawn|label_only",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": null,
       "decided_on": "2026-10-20"
     },
@@ -2430,6 +2587,7 @@
       "question": "Copy freeze",
       "selected": "MESSAGES/templates hashed in approvals",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2437,7 +2595,8 @@
       "id": "DEC-26",
       "question": "Healthy-weight tool",
       "selected": "Out of scope",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2446,6 +2605,7 @@
       "question": "Test SMTP",
       "selected": "Mailpit",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": null,
       "decided_on": "2026-10-20"
     },
@@ -2454,6 +2614,7 @@
       "question": "CSP",
       "selected": "frame-src/frame-ancestors apex",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": null,
       "decided_on": "2026-10-20"
     },
@@ -2462,6 +2623,7 @@
       "question": "Diabetes age handling",
       "selected": "Band midpoints",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2470,6 +2632,7 @@
       "question": "One action definition",
       "selected": "Tap/click; menu open counts",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": null,
       "decided_on": "2026-10-20"
     },
@@ -2477,105 +2640,145 @@
       "id": "DEC-31",
       "question": "LiteSpeed Cache configuration",
       "selected": "Exclude /tools/*, no lazy-load on iframe, purge on status change",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
-      "decided_on": "2026-10-20"
+      "decided_on": "2026-10-22"
     },
     {
       "id": "DEC-32",
       "question": "Existing CookieYes banner",
       "selected": "Keep; Plausible cookieless",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-03",
-      "decided_on": "2026-10-20"
+      "decided_on": "2026-10-22"
     },
     {
       "id": "DEC-33",
       "question": "ORC-01 package source and input mapping",
       "selected": "CRAN Archive 1.0-2 tarball; gdm; fhdm=any; unrounded compare",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
-      "decided_on": "2026-10-20"
+      "decided_on": "2026-10-22"
     },
     {
       "id": "DEC-34",
       "question": "Per-environment origins and message schema",
       "selected": "iframe_origin setting; {type:lld-tool-height,height}",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
-      "decided_on": "2026-10-20"
+      "decided_on": "2026-10-22"
     },
     {
       "id": "DEC-35",
       "question": "Hosting facts",
       "selected": "htaccess headers; forwarded IP; APCu store; HSTS",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
-      "decided_on": "2026-10-20"
+      "decided_on": "2026-10-22"
     },
     {
       "id": "DEC-36",
       "question": "Legal copy ownership",
       "selected": "Agent drafts; HG-02 clinical; HG-03 legal",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-03",
-      "decided_on": "2026-10-20"
+      "decided_on": "2026-10-22"
     },
     {
       "id": "DEC-37",
       "question": "Urgent-care guidance non-UK",
       "selected": "999/111 then 1990, 112",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
-      "decided_on": "2026-10-20"
+      "decided_on": "2026-10-22"
     },
     {
       "id": "DEC-38",
       "question": "Register-registry sync",
       "selected": "Registry authoritative; Affects generated",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": null,
-      "decided_on": "2026-10-20"
+      "decided_on": "2026-10-22"
     },
     {
       "id": "DEC-39",
       "question": "Category womens-health",
       "selected": "Delete; 301 to wellness",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
-      "decided_on": "2026-10-20"
+      "decided_on": "2026-10-23"
     },
     {
       "id": "DEC-40",
       "question": "Category the-report",
       "selected": "Hide: remove menu item, noindex, keep term",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
-      "decided_on": "2026-10-20"
+      "decided_on": "2026-10-23"
     },
     {
       "id": "DEC-41",
       "question": "Category uncategorised",
       "selected": "Set default to wellness, delete, 301 to /",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
-      "decided_on": "2026-10-20"
+      "decided_on": "2026-10-23"
     },
     {
       "id": "DEC-42",
       "question": "Categories healthy-living, stress",
       "selected": "Remove now; planned-categories.json",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
-      "decided_on": "2026-10-20"
+      "decided_on": "2026-10-23"
     },
     {
       "id": "DEC-43",
       "question": "Footer composition",
       "selected": "Unchanged; no disclaimer link",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
-      "decided_on": "2026-10-20"
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-44",
+      "question": "Protein cap vs diet multiplier order",
+      "selected": "Preserve deployed: cap lo/hi then midpoint",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-45",
+      "question": "Protein headline point of band",
+      "selected": "Midpoint of winning band",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-46",
+      "question": "Production config.php values",
+      "selected": "Assumed smtp, no bcc; verify via staging SSH",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
+      "ratify_at": "HG-01",
+      "decided_on": "2026-10-23"
     }
   ],
   "human_gates": [
@@ -2634,7 +2837,7 @@
         "FX-DM-BAND-*",
         "FX-DM-CONC-*"
       ],
-      "tolerance": "0.05 pp after 1dp rounding"
+      "tolerance": "abs(js-r) <= 0.05 pp on unrounded values"
     },
     {
       "id": "ORC-02",
@@ -2705,7 +2908,8 @@
       "id": "MUT-06",
       "description": "bandFor 5.6 -> 6.0",
       "must_redden": [
-        "TC-FR1-12-AS-01"
+        "TC-FR1-12-AS-01",
+        "TC-FR1-12-AS-09"
       ]
     },
     {

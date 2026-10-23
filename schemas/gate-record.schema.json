@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "SCH-15",
+  "title": "Human gate record",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "gate": {
+      "enum": [
+        "HG-01",
+        "HG-02",
+        "HG-03"
+      ]
+    },
+    "decision": {
+      "enum": [
+        "approved",
+        "rejected",
+        "pending"
+      ]
+    },
+    "signer": {
+      "type": "string"
+    },
+    "role": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "ratified_decisions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^DEC-\\d{2}$"
+      }
+    },
+    "deferred_items": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tag": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "gate",
+    "decision",
+    "signer",
+    "date"
+  ]
+}

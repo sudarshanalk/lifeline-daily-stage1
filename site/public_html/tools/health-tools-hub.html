@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Health Tools | Lifeline Daily</title>
+<style>
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:#22252a;
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .hub{max-width:960px;margin:0 auto;padding:4px 16px 32px}
+  .lead {font-size:17px;color:#245b3e;background:#eafaf0;
+    padding:18px 22px;border-radius:8px;max-width:640px;margin:0 auto 28px;text-align:center}
+  .grid{display:flex;flex-wrap:wrap;gap:18px}
+  .card,.soon{flex:1 1 calc(50% - 9px);min-width:270px;border-radius:12px;padding:24px}
+  .card{border:1px solid #e4e6e5;background:#fff;text-decoration:none;color:inherit;
+    display:flex;flex-direction:column;transition:border-color .15s,transform .15s}
+  .card:hover{border-color:#1f9d57;transform:translateY(-2px)}
+  .card:focus-visible{outline:3px solid #3fd07f;outline-offset:2px}
+  .eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    color:#1f9d57;margin-bottom:8px}
+  .card h3{margin:0 0 8px;font-size:21px;font-weight:700;color:#1c1c1c;line-height:1.25}
+  .card p{margin:0 0 16px;font-size:14.5px;color:#4a5058;flex-grow:1}
+  .go{font-size:14px;font-weight:700;color:#1f9d57;margin-bottom:14px}
+  .meta{font-size:12.5px;color:#6b7280;border-top:1px solid #eef0ef;padding-top:12px}
+  .soon{border:1px dashed #d6d9d8;background:#fafbfa}
+  .soon h3{margin:0 0 6px;font-size:20px;font-weight:700;color:#6b7280;line-height:1.25}
+  .soon p{margin:0;font-size:14px;color:#8b9199}
+  .note{margin-top:28px;background:#eafaf0;border-left:4px solid #1f9d57;
+    padding:16px 18px;border-radius:6px;font-size:14px;color:#245b3e}
+  @media(max-width:700px){.card,.soon{flex:1 1 100%}}
+</style>
+</head>
+<body>
+<div class="hub">
+
+  <p class="lead">Know where you stand. Each check takes a couple of minutes, uses the same guidelines your doctor's would, and gives you numbers you can actually act on. Everything runs in your browser — nothing is stored, and nothing leaves your device unless you ask for a copy by email.</p>
+
+  <div class="grid">
+
+    <a class="card" href="/dm-risk-test/" target="_top">
+      <div class="eyebrow">Screening</div>
+      <h3>Diabetes Risk Check</h3>
+      <p>Estimate your risk of developing type 2 diabetes over the next 10 years, and see which of your own factors are driving it.</p>
+      <div class="go">Check my risk &rarr;</div>
+      <div class="meta">Uses QDiabetes-2018 &middot; ~3 minutes &middot; No blood test needed</div>
+    </a>
+
+    <a class="card" href="/protein/" target="_top">
+      <div class="eyebrow">Nutrition</div>
+      <h3>Daily Protein Target</h3>
+      <p>Find out how much protein you actually need each day — adjusted for your age, training, goal and how you eat.</p>
+      <div class="go">Find my target &rarr;</div>
+      <div class="meta">Uses IOM, ESPEN &amp; ISSN guidelines &middot; ~2 minutes</div>
+    </a>
+
+    <div class="soon">
+      <h3>Healthy Weight Check</h3>
+      <p>Coming soon — BMI, waist-to-height and a healthy weight range set to your own ethnicity.</p>
+    </div>
+
+  </div>
+
+  <div class="note"><strong>These are screening aids, not diagnoses.</strong> They apply published clinical guidelines to the information you give them — they can't see your blood results, your medications or your medical history. Use them to start a conversation with a clinician, not to replace one.</div>
+
+</div>
+</body>
+</html>

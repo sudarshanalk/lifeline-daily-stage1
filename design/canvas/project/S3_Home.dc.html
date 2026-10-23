@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>App home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#f2f7f4}
+a{color:#157a42}a:hover{color:#0f5a31}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #f2f7f4; border-radius: 40px; overflow: hidden; border: 1px solid #e4eae6">
+
+  <div style="flex: 1 1 auto; overflow: hidden; display: flex; flex-direction: column; gap: 14px; padding: 56px 18px 16px">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <div style="display: flex; flex-direction: column"><span style="font-size: 13px; color: #63706a">Wednesday 22 Oct</span><h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em">Morning, Nisha</h1></div>
+      <button type="button" aria-label="Notifications" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #e4eae6; background: #ffffff; display: inline-flex; align-items: center; justify-content: center; cursor: pointer"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 0 0 4 0"/></svg></button>
+    </div>
+
+    <!-- Today's action -->
+    <section aria-labelledby="ta" style="background: #1c1c1c; color: #ffffff; border-radius: 22px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #3fd07f">Today · Week 2, day 3</span>
+      <h2 id="ta" style="margin: 0; font-size: 18px; font-weight: 700; line-height: 1.3">Swap white rice for brown or mixed grains at one meal</h2>
+      <div style="display: flex; gap: 10px; align-items: center">
+        <button type="button" style="min-height: 44px; padding: 0 18px; border-radius: 12px; border: 0; background: #3fd07f; color: #1c1c1c; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer">Mark done</button>
+        <a href="#" style="font-size: 13px; color: #d9e0dc">Why this?</a>
+      </div>
+    </section>
+
+    <!-- Targets -->
+    <section aria-labelledby="tg" style="display: flex; flex-direction: column; gap: 8px">
+      <h2 id="tg" style="margin: 0; font-size: 15px; font-weight: 700">Today so far</h2>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+        <a href="S3_Food.dc.html" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: #161a17"><span style="font-size: 11px; color: #63706a">Protein</span><span style="font-size: 18px; font-weight: 800">62<span style="font-size: 11px; font-weight: 600; color: #63706a"> / 105 g</span></span><div style="height: 6px; border-radius: 999px; background: #e4eae6; overflow: hidden"><div style="width: 59%; height: 100%; background: #1f9d57"></div></div></a>
+        <a href="S3_Food.dc.html" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: #161a17"><span style="font-size: 11px; color: #63706a">Fibre</span><span style="font-size: 18px; font-weight: 800">14<span style="font-size: 11px; font-weight: 600; color: #63706a"> / 30 g</span></span><div style="height: 6px; border-radius: 999px; background: #e4eae6; overflow: hidden"><div style="width: 47%; height: 100%; background: #a8690d"></div></div></a>
+        <a href="S3_Progress.dc.html" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 6px; text-decoration: none; color: #161a17"><span style="font-size: 11px; color: #63706a">Steps</span><span style="font-size: 18px; font-weight: 800">4.2k<span style="font-size: 11px; font-weight: 600; color: #63706a"> / 7k</span></span><div style="height: 6px; border-radius: 999px; background: #e4eae6; overflow: hidden"><div style="width: 60%; height: 100%; background: #1f9d57"></div></div></a>
+      </div>
+    </section>
+
+    <!-- Quick log -->
+    <section aria-labelledby="ql" style="display: flex; flex-direction: column; gap: 8px">
+      <h2 id="ql" style="margin: 0; font-size: 15px; font-weight: 700">Quick log</h2>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+        <a href="S3_Food.dc.html" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 14px; padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; color: #161a17; font-size: 11px; font-weight: 600"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#157a42" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 11h16M6 11a6 6 0 0 1 12 0M5 15h14l-1 4H6z"/></svg>Meal</a>
+        <a href="S3_Progress.dc.html" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 14px; padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; color: #161a17; font-size: 11px; font-weight: 600"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#157a42" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 21s-7-4.5-7-11a7 7 0 0 1 14 0c0 6.5-7 11-7 11z"/><path d="M9 10h6M12 7v6"/></svg>Blood pressure</a>
+        <a href="S3_Progress.dc.html" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 14px; padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; color: #161a17; font-size: 11px; font-weight: 600"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#157a42" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"/><path d="M12 9v4l2 1"/></svg>Weight</a>
+        <a href="S3_Progress.dc.html" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 14px; padding: 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-decoration: none; color: #161a17; font-size: 11px; font-weight: 600"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#157a42" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h18M6 12v-3M10 12v-4M14 12v-3M18 12v-4"/></svg>Waist</a>
+      </div>
+    </section>
+
+    <!-- For you -->
+    <section aria-labelledby="fy" style="display: flex; flex-direction: column; gap: 8px">
+      <h2 id="fy" style="margin: 0; font-size: 15px; font-weight: 700">For you</h2>
+      <a href="S3_Learn.dc.html" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 16px; padding: 12px; display: flex; gap: 12px; align-items: center; text-decoration: none; color: #161a17">
+        <span style="width: 72px; height: 56px; flex: 0 0 auto; border-radius: 12px; background: #e4eae6"></span>
+        <span style="display: flex; flex-direction: column; gap: 3px; min-width: 0"><span style="font-size: 11px; color: #157a42; font-weight: 600">Because your goal is “Eat more protein”</span><span style="font-size: 14px; font-weight: 700; line-height: 1.3">Five breakfasts with 30 g of protein</span><span style="font-size: 11px; color: #63706a">Reviewed · 6 min · saved offline</span></span>
+      </a>
+    </section>
+  </div>
+
+  <!-- Tab bar -->
+  <nav aria-label="App sections" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid #e4eae6; background: #ffffff; padding: 10px 6px 26px">
+    <a href="S3_Home.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #157a42; font-size: 11px; font-weight: 700; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+    <a href="S3_Tools.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #63706a; font-size: 11px; font-weight: 600; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20h16M6 20V9M12 20V4M18 20v-7"/></svg>Tools</a>
+    <a href="S3_Progress.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #63706a; font-size: 11px; font-weight: 600; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>Progress</a>
+    <a href="S3_Learn.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #63706a; font-size: 11px; font-weight: 600; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 5h7v14H4zM13 5h7v14h-7z"/></svg>Learn</a>
+    <a href="S3_Profile.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #63706a; font-size: 11px; font-weight: 600; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

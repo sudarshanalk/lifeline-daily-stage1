@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Protein Requirement | Lifeline Daily</title>
+<style>
+:root{
+  --charcoal:#1c1c1c; --charcoal-soft:#2b2b2b;
+  --brand-green:#3fd07f; --brand-green-soft:#eafaf0;
+  --accent:#1f9d57; --accent-dark:#157a42;
+  --green:#1f9d57; --amber:#a8690d; --red:#b5302f;
+  --line:#e4e6e5; --ink:#22252a; --muted:#6b7280; --bg:#f7f8f8;
+  --radius:10px;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
+.wrap{max-width:760px;margin:0 auto;padding:0 0 48px;}
+header.lld{background:var(--charcoal);color:#fff;padding:26px 20px;}
+header.lld h1{margin:0;font-size:24px;font-weight:700;letter-spacing:-.2px}
+header.lld .tag{color:var(--brand-green);font-size:13px;margin-top:4px;font-weight:600}
+.scope{background:var(--brand-green-soft);border-left:4px solid var(--accent);
+  padding:14px 16px;margin:18px 16px;border-radius:6px;font-size:14px;color:#245b3e}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);
+  margin:16px;padding:20px}
+.card h2{margin:0 0 4px;font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.card .sub{font-size:13px;color:var(--muted);margin-bottom:16px}
+.field{margin-bottom:18px}
+label.q{display:block;font-weight:600;margin-bottom:8px;font-size:15px}
+.hint{font-size:12.5px;color:var(--muted);margin-top:6px}
+.opts{display:flex;flex-wrap:wrap;gap:8px}
+.opt{border:1.5px solid var(--line);background:#fff;border-radius:8px;padding:9px 14px;
+  cursor:pointer;font-size:14px;font-weight:500;color:var(--ink)}
+.opt:hover{border-color:var(--accent)}
+.opt[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.opt:focus-visible,select:focus-visible,input:focus-visible,button:focus-visible{outline:3px solid var(--brand-green);outline-offset:2px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input[type=number],input[type=text],input[type=email],select{
+  padding:10px 12px;border:1.5px solid var(--line);border-radius:8px;font-size:15px;
+  background:#fff;color:var(--ink);min-width:0}
+input[type=number]{width:110px}
+select{width:auto}
+.derived{background:#f2f4f3;border-radius:8px;padding:10px 12px;font-size:13.5px;color:#3d4450;margin-top:8px}
+.toggle{display:inline-flex;border:1.5px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:14px}
+.toggle button{border:0;background:#fff;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;color:var(--muted)}
+.toggle button.on{background:var(--charcoal);color:#fff}
+.cta{width:100%;background:var(--accent);color:#fff;border:0;border-radius:8px;
+  padding:15px;font-size:16px;font-weight:700;cursor:pointer}
+.cta:hover{background:var(--accent-dark)}
+.err{color:var(--red);font-size:13px;margin-top:10px;display:none}
+.banner{border-radius:8px;padding:16px;margin-bottom:16px;font-size:14.5px;line-height:1.5}
+.banner h3{margin:0 0 6px;font-size:15px}
+.banner.stop{background:#fdecec;border:1.5px solid var(--red);color:#7d1f1e}
+.banner.care{background:#fdf3e5;border:1.5px solid var(--amber);color:#7a4c08}
+.banner.ok{background:var(--brand-green-soft);border:1.5px solid var(--accent);color:#245b3e}
+.headline{text-align:center;padding:24px 16px;border-radius:10px;background:#fff;border:1px solid var(--line)}
+.headline .num{font-size:46px;font-weight:800;letter-spacing:-1px;line-height:1.05;color:var(--accent)}
+.headline .unit{font-size:16px;font-weight:600;color:var(--muted);margin-top:2px}
+.headline .range{font-size:14px;color:var(--muted);margin-top:10px}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px}
+.metric{border:1px solid var(--line);border-radius:8px;padding:12px;background:#fff}
+.metric .k{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.metric .v{font-size:20px;font-weight:700;margin-top:2px}
+.metric .n{font-size:12px;color:var(--muted);margin-top:2px}
+ul.adv{margin:10px 0 0;padding-left:20px;font-size:14.5px}
+ul.adv li{margin-bottom:7px}
+details{border-top:1px solid var(--line);padding-top:12px;margin-top:16px}
+summary{cursor:pointer;font-weight:600;font-size:14px}
+details .body{font-size:13.5px;color:#4a5058;margin-top:10px}
+details .body table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12.5px}
+details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;text-align:left}
+.disclaimer{font-size:12.5px;color:var(--muted);border-top:1px solid var(--line);margin-top:16px;padding-top:12px}
+.hp{position:absolute;left:-9999px}
+.hidden{display:none}
+/* --- email card: charcoal, matching the Diabetes Risk Check --- */
+#emailCard{background:var(--charcoal);border-color:var(--charcoal);color:#fff}
+#emailCard h2{color:#fff;font-size:19px;text-transform:none;letter-spacing:0;font-weight:700;margin-bottom:6px}
+#emailCard .sub{color:#a9b0ad;font-size:14px;margin-bottom:18px}
+#emailCard .field{margin-bottom:12px}
+#emailCard input[type=text],#emailCard input[type=email]{
+  width:100%;border:0;border-radius:999px;padding:14px 20px;font-size:15px;background:#fff;color:var(--ink)}
+#emailCard .consent{display:flex;gap:10px;align-items:flex-start;color:#e7eae9;font-size:14px;
+  margin:14px 2px 18px;cursor:pointer;font-weight:400}
+#emailCard .consent input{width:18px;height:18px;accent-color:var(--brand-green);margin-top:2px;flex:0 0 auto}
+#emailCard .cta{background:#fff;color:var(--accent);border-radius:999px;padding:16px;
+  font-size:16px;font-weight:700;box-shadow:0 0 0 2px var(--brand-green)}
+#emailCard .cta:hover{background:#f4fbf7}
+#emailCard .err{color:#ff9b99}
+#emailCard .banner.ok{background:transparent;border:0;color:var(--brand-green);padding:0;
+  font-weight:600;font-size:14px;margin-top:12px}
+@media(max-width:560px){.metrics{grid-template-columns:1fr}input[type=number]{width:100%}}
+@media(prefers-reduced-motion:no-preference){.card{transition:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="lld">
+  <h1>Daily Protein Requirement</h1>
+  <div class="tag">Start Small, Change Big, Live Healthier</div>
+</header>
+
+<div class="scope" id="scopeStatement"></div>
+
+<!-- ============================ FORM ============================ -->
+<form id="form" novalidate>
+
+<div class="card">
+  <h2>About you</h2>
+  <div class="sub">Used to select which published guideline applies to you.</div>
+
+  <div class="toggle" role="group" aria-label="Unit system">
+    <button type="button" id="tMetric" class="on">Metric</button>
+    <button type="button" id="tImperial">Imperial</button>
+  </div>
+
+  <div class="field">
+    <label class="q" for="age">Age</label>
+    <input type="number" id="age" min="18" max="99" placeholder="e.g. 42" inputmode="numeric">
+    <div class="hint">Adults 18 and over. Children have separate age-banded requirements.</div>
+  </div>
+
+  <div class="field">
+    <label class="q">Sex</label>
+    <div class="opts" id="sex" data-single></div>
+  </div>
+
+  <div class="field" id="pregWrap" style="display:none">
+    <label class="q">Are you currently pregnant or breastfeeding?</label>
+    <div class="opts" id="preg" data-single></div>
+  </div>
+
+  <div class="field">
+    <label class="q" for="hVal">Height</label>
+    <div class="row">
+      <input type="number" id="hVal" step="0.1" inputmode="decimal" placeholder="170">
+      <input type="number" id="hVal2" step="0.1" inputmode="decimal" placeholder="in" class="hidden" style="width:80px">
+      <select id="hUnit">
+        <option value="cm">cm</option><option value="m">m</option>
+        <option value="ftin">ft + in</option><option value="in">inches</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="field">
+    <label class="q" for="wVal">Weight</label>
+    <div class="row">
+      <input type="number" id="wVal" step="0.1" inputmode="decimal" placeholder="70">
+      <input type="number" id="wVal2" step="0.1" inputmode="decimal" placeholder="lb" class="hidden" style="width:80px">
+      <select id="wUnit">
+        <option value="kg">kg</option><option value="lb">lb</option><option value="stlb">st + lb</option>
+      </select>
+    </div>
+    <div class="hint" id="pregWeightHint" style="display:none">If pregnant, enter your pre-pregnancy weight.</div>
+    <div class="derived" id="derived">Enter height and weight to see your BMI.</div>
+  </div>
+
+  <div class="field">
+    <label class="q">Ethnicity</label>
+    <div class="opts" id="eth" data-single></div>
+    <div class="hint">Used only to select the correct healthy-weight bounds, which set the basis weight for your target.</div>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Activity &amp; goal</h2>
+  <div class="sub">These decide which guideline band applies.</div>
+
+  <div class="field">
+    <label class="q">General activity level</label>
+    <div class="opts" id="act" data-single></div>
+  </div>
+
+  <div class="field">
+    <label class="q">Resistance training (weights, bodyweight, resistance bands)</label>
+    <div class="opts" id="res" data-single></div>
+  </div>
+
+  <div class="field">
+    <label class="q">What are you aiming for?</label>
+    <div class="opts" id="goal" data-single></div>
+  </div>
+
+  <div class="field">
+    <label class="q">How you eat</label>
+    <div class="opts" id="diet" data-single></div>
+    <div class="hint">Plant proteins are less completely absorbed, so plant-based targets are adjusted upward.</div>
+  </div>
+
+  <div class="field">
+    <label class="q" for="meals">Meals you eat per day</label>
+    <select id="meals">
+      <option value="2">2</option><option value="3" selected>3</option>
+      <option value="4">4</option><option value="5">5</option>
+    </select>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Health check</h2>
+  <div class="sub">Protein guidance changes direction in kidney disease. This question is not optional.</div>
+
+  <div class="field">
+    <label class="q">Do you have kidney disease, reduced kidney function, or are you on dialysis?</label>
+    <div class="opts" id="kidney" data-single></div>
+  </div>
+
+  <div class="field">
+    <label class="q">Do you have liver disease, or are you recovering from a serious illness, injury or surgery?</label>
+    <div class="opts" id="liver" data-single></div>
+  </div>
+</div>
+
+<div class="card">
+  <input type="text" class="hp" id="company" tabindex="-1" autocomplete="off" aria-hidden="true" placeholder="Leave blank">
+  <button type="submit" class="cta">Calculate my protein target</button>
+  <div class="err" id="err"></div>
+</div>
+
+</form>
+
+<!-- ============================ RESULTS ============================ -->
+<div id="results" class="hidden">
+
+  <div class="card">
+    <div id="banners"></div>
+    <div id="headlineBlock"></div>
+    <div class="metrics" id="metrics"></div>
+    <div id="interp" style="margin-top:16px;font-size:15px"></div>
+    <div id="adviceBlock"></div>
+
+    <details>
+      <summary>How this was calculated</summary>
+      <div class="body" id="methodology"></div>
+    </details>
+
+    <div class="disclaimer" id="disclaimerText"></div>
+  </div>
+
+  <div class="card" id="emailCard">
+    <h2>Email yourself a copy</h2>
+    <div class="sub">Optional — your result and next steps, sent once to your inbox. We don't store your health details.</div>
+    <div class="field">
+      <label class="q hidden" for="fname">First name</label>
+      <input type="text" id="fname" placeholder="First name (optional)">
+    </div>
+    <div class="field">
+      <label class="q hidden" for="email">Email</label>
+      <input type="email" id="email" placeholder="Email address">
+    </div>
+    <label class="consent">
+      <input type="checkbox" id="consent">
+      <span>Email my result to me. I understand this is screening information, not medical advice.</span>
+    </label>
+    <button type="button" class="cta" id="sendBtn">Email me a copy</button>
+    <div class="err" id="emailErr"></div>
+    <div id="emailOk" class="banner ok hidden"></div>
+  </div>
+
+  <div class="card" style="text-align:center">
+    <button type="button" class="opt" id="restart">Start again</button>
+  </div>
+</div>
+
+</div>
+
+<script>
+/* =====================================================================
+   LIFELINE DAILY — TOOL 3: DAILY PROTEIN REQUIREMENT
+   Self-contained. All calculation is client-side. Nothing is stored.
+
+   EVIDENCE BASE — every g/kg figure below is traceable. Do not invent values.
+     IOM/DRI (2005)        RDA 0.8 g/kg; AMDR 10–35% energy
+     WHO/FAO/UNU (2007)    safe level 0.83 g/kg
+     PROT-AGE (Bauer 2013) older adults >=1.0–1.2 g/kg
+     ESPEN (Deutz 2014)    older healthy 1.0–1.2; illness/malnutrition 1.2–1.5
+     ISSN (Jager 2017)     exercising 1.4–2.0 g/kg; per-serving 0.25 g/kg or 20–40 g
+     ACSM/AND/DC (2016)    athletes 1.2–2.0 g/kg
+     IOM/DRI              pregnancy RDA 1.1 g/kg; lactation RDA 1.3 g/kg
+     KDOQI (2020)         CKD 3–5 not on dialysis: RESTRICT to 0.55–0.60 g/kg IBW
+                          (0.6–0.8 with diabetes) — opposite direction to this tool.
+
+   CEILING: 2.0 g/kg. ISSN's 2.3–3.1 g/kg band exists only for resistance-trained
+   individuals in a deliberate energy deficit under supervision. A public tool
+   must not emit it. Do not raise this cap.
+   ===================================================================== */
+
+
+/* =====================================================================
+   MESSAGES — EDITABLE TEXT LAYER
+   Safe to reword. Do NOT change the logic below this block.
+   Placeholders: {{firstName}} {{targetG}} {{lowG}} {{highG}} {{gPerKg}}
+                 {{perMeal}} {{meals}} {{bmi}} {{basisWeight}} {{basisNote}}
+   ===================================================================== */
+const MESSAGES = {
+
+  scope:
+    "This tool estimates your daily protein target for general health, using published " +
+    "intake guidelines. It is an educational screening aid, not a prescription or a " +
+    "diagnosis. It is for adults aged 18 and over. If you have kidney or liver disease, " +
+    "your protein needs must be set by your clinical team — not by a calculator.",
+
+  /* --- P0: RENAL OVERRIDE. SAFETY-CRITICAL.
+         MUST NOT display any g/day figure. MUST NOT suggest a target.
+         Guideline direction here is RESTRICTION, not increase (KDOQI 2020).
+         Do not soften this into "check with your doctor" while still showing a number. --- */
+  renalStop: {
+    title: "We can't give you a protein target",
+    body: "In kidney disease, protein guidance runs in the opposite direction to general " +
+          "advice — national kidney guidelines recommend a <strong>reduced</strong>, closely " +
+          "supervised protein intake, individually set against your kidney function. A " +
+          "general-population number could be actively harmful here, so this tool will not " +
+          "produce one for you. Please ask your kidney team or a renal dietitian for your " +
+          "personal target. That is the right answer for you, and it is not something a " +
+          "public calculator can safely replace."
+  },
+
+  /* --- P0b: kidney status unknown --- */
+  renalUnsure: {
+    title: "Confirm your kidney function first",
+    body: "You said you're not sure about your kidney function. The target below assumes " +
+          "healthy kidneys. If a blood test later shows reduced kidney function, this number " +
+          "would be too high for you — protein guidance is lowered, not raised, in kidney " +
+          "disease. Please treat this as provisional until a simple blood test confirms."
+  },
+
+  /* --- P1: pregnancy / breastfeeding branch --- */
+  pregnancy: {
+    title: "Pregnancy and breastfeeding have their own requirement",
+    body: "Your target below is the published requirement for this stage, not a general " +
+          "fitness target — and it is a <strong>minimum</strong>, not a ceiling. Please " +
+          "confirm it with your midwife, obstetrician or dietitian, who can account for your " +
+          "individual pregnancy."
+  },
+
+  /* --- P1b: liver disease / recovery --- */
+  clinical: {
+    title: "Confirm this with your clinician",
+    body: "You've told us about a liver condition or a recovery from serious illness, injury " +
+          "or surgery. Both change protein needs in ways a general calculator can't capture — " +
+          "recovery often raises them, liver disease can complicate them. Take the number " +
+          "below to your clinical team rather than acting on it alone."
+  },
+
+  /* --- P2: underweight --- */
+  underweight: {
+    title: "Your weight is below the healthy range",
+    body: "Your target below is calculated on your current weight, so it is a supportive " +
+          "floor, not a reduction. Nothing in this result asks you to lose weight or eat less."
+  },
+
+  eatingConcern:
+    "If food, eating or your weight is a source of worry for you, that's worth talking to " +
+    "someone about — a GP or a registered dietitian is a good place to start.",
+
+  /* --- interpretation per band --- */
+  interp: {
+    baseline: "Your target reflects the general adult requirement. This is a floor for basic " +
+              "health, not an optimum — most guidelines now regard it as the minimum to avoid " +
+              "losing body protein.",
+    active:   "You're active enough that your requirement sits above the general adult minimum.",
+    training: "You're training in a way that raises protein needs. This target supports muscle " +
+              "maintenance and growth alongside that training.",
+    fatloss:  "When you're eating less, protein is what protects your muscle while you lose fat. " +
+              "This is the one situation where protein matters most — it is the last thing to cut.",
+    older:    "From around 65, muscle responds less readily to protein — so the requirement goes " +
+              "up, not down. The old 0.8 g/kg figure was never designed for older adults.",
+    recovery: "Recovery and illness raise protein needs, sometimes substantially."
+  },
+
+  advice: {
+    spread:  "Spread it out. Aim for roughly {{perMeal}} g at each of your {{meals}} meals — " +
+             "your body uses protein better in even portions than in one large evening dose.",
+    spreadOlder: "Spread it out, and don't skip breakfast protein. Around {{perMeal}} g per meal " +
+             "works better than one big serving — this matters more with age, not less.",
+    quality: "Favour complete sources: eggs, dairy, fish, poultry, lean meat, soy.",
+    plant:   "On a plant-based diet, combine sources across the day — legumes, soy, grains, nuts " +
+             "and seeds — and lean on soy, tofu, tempeh and seitan, which come closest to " +
+             "complete. Your target has already been adjusted upward for this.",
+    training:"Protein does its work alongside resistance training. Without the training stimulus, " +
+             "extra protein has little to build.",
+    hydrate: "Higher protein intakes are safe for healthy kidneys, but drink to thirst.",
+    food:    "As a rough guide: a palm-sized portion of chicken, fish or tofu is about 25–30 g; " +
+             "two eggs about 12 g; a 170 g pot of Greek yoghurt about 17 g; a cup of cooked " +
+             "lentils about 18 g."
+  },
+
+  crossLink:
+    "Protein sits inside the bigger metabolic picture. If you haven't yet, our " +
+    "<a href='/dm-risk-test/'>diabetes risk check</a> and " +
+    "<a href='/healthy-weight/'>healthy weight tool</a> cover the rest of it.",
+
+  disclaimer:
+    "Lifeline Daily provides health education, not medical advice. This tool applies published " +
+    "population guidelines to the information you entered; it cannot see your bloods, your " +
+    "medications or your medical history. It does not diagnose anything. Always speak to a " +
+    "qualified clinician before making significant changes to your diet, particularly if you " +
+    "have a medical condition. Nothing you entered has been stored.",
+
+  emailSubject: "{{firstName}}, your daily protein target from Lifeline Daily",
+  emailSent: "Sent. Check your inbox — and your spam folder, just in case.",
+  emailFailed: "That didn't send. Please check your email address and try again."
+};
+
+
+/* =====================================================================
+   SHARED MODULE 1 — UNITS. Canonical storage: cm and kg. Never store display values.
+   ===================================================================== */
+const CONV = { IN_CM:2.54, FT_CM:30.48, LB_KG:0.453592, ST_KG:6.35029 };
+
+function toCm(unit, a, b){
+  a = parseFloat(a)||0; b = parseFloat(b)||0;
+  switch(unit){
+    case 'cm':   return a;
+    case 'm':    return a*100;
+    case 'in':   return a*CONV.IN_CM;
+    case 'ftin': return a*CONV.FT_CM + b*CONV.IN_CM;
+  }
+  return 0;
+}
+function toKg(unit, a, b){
+  a = parseFloat(a)||0; b = parseFloat(b)||0;
+  switch(unit){
+    case 'kg':   return a;
+    case 'lb':   return a*CONV.LB_KG;
+    case 'stlb': return a*CONV.ST_KG + b*CONV.LB_KG;
+  }
+  return 0;
+}
+function fromKg(kg, unit){
+  if(unit==='kg') return kg.toFixed(1)+' kg';
+  if(unit==='lb') return (kg/CONV.LB_KG).toFixed(1)+' lb';
+  const st = Math.floor(kg/CONV.ST_KG);
+  const lb = (kg - st*CONV.ST_KG)/CONV.LB_KG;
+  return st+' st '+lb.toFixed(1)+' lb';
+}
+
+/* =====================================================================
+   SHARED MODULE 2 — ETHNICITY -> CUTOFFS
+   Only job here: pick the upper healthy-BMI bound, which sets basis weight.
+   ===================================================================== */
+const ETHNICITIES = [
+  ['WhiteNA','White / not stated'], ['Indian','Indian'], ['Pakistani','Pakistani'],
+  ['Bangladeshi','Bangladeshi'], ['OtherAsian','Other Asian'], ['Chinese','Chinese'],
+  ['BlackCaribbean','Black Caribbean'], ['BlackAfrican','Black African'], ['Other','Other']
+];
+const ASIAN_CUTOFFS = ['Indian','Pakistani','Bangladeshi','OtherAsian','Chinese'];
+function cutoffs(eth){
+  return ASIAN_CUTOFFS.includes(eth)
+    ? { healthyLow:18.5, healthyHigh:22.9, obese:27.5, asian:true }
+    : { healthyLow:18.5, healthyHigh:24.9, obese:30,   asian:false };
+}
+
+/* =====================================================================
+   SHARED MODULE 3 — THE PROTEIN ENGINE
+   Rule: collect every applicable published band, take the highest, cap at 2.0.
+   ===================================================================== */
+const BANDS = {
+  sedentary:   {lo:0.8, hi:1.0, src:'IOM RDA 0.8 g/kg (floor)',            key:'baseline'},
+  lightMod:    {lo:1.0, hi:1.4, src:'IOM AMDR / ISSN lower band',          key:'active'},
+  vigorous:    {lo:1.2, hi:1.6, src:'ACSM/AND/DC 2016 (1.2–2.0 g/kg)',     key:'active'},
+  resLow:      {lo:1.2, hi:1.6, src:'ISSN 2017 (1.4–2.0), lower end',      key:'training'},
+  resMid:      {lo:1.4, hi:2.0, src:'ISSN 2017 (1.4–2.0 g/kg)',            key:'training'},
+  resHigh:     {lo:1.6, hi:2.0, src:'ISSN 2017 (1.4–2.0 g/kg)',            key:'training'},
+  buildMuscle: {lo:1.6, hi:2.0, src:'ISSN 2017',                           key:'training'},
+  fatLossTrain:{lo:1.6, hi:2.0, src:'ISSN 2017 (lean-mass retention)',     key:'fatloss'},
+  fatLossOnly: {lo:1.2, hi:1.5, src:'ISSN 2017 (lean-mass retention)',     key:'fatloss'},
+  older:       {lo:1.0, hi:1.2, src:'PROT-AGE 2013 / ESPEN 2014',          key:'older'},
+  olderActive: {lo:1.2, hi:1.5, src:'ESPEN 2014',                          key:'older'},
+  recovery:    {lo:1.2, hi:1.5, src:'ESPEN 2014 (illness / malnutrition)', key:'recovery'}
+};
+const CEILING = 2.0;                       // DO NOT RAISE. See header note.
+const DIET_MULT = { omnivore:1.0, vegetarian:1.1, vegan:1.2 };
+const PREG_GKG = { pregnant:1.1, breastfeeding:1.3 };   // IOM DRI
+
+function computeProtein(s){
+  const hM  = s.heightCm/100;
+  const bmi = s.weightKg / (hM*hM);
+  const co  = cutoffs(s.ethnicity);
+
+  /* --- basis weight ---------------------------------------------------
+     BMI < 30: actual weight.
+     BMI >= 30: adjusted body weight = upperHealthy + 0.4 x (actual - upperHealthy).
+     Rationale: g/kg applied to raw weight in obesity inflates the target, because
+     fat mass is not metabolically demanding tissue. Standard dietetic practice;
+     KDOQI itself specifies ideal body weight for the same reason.            */
+  const upperHealthyKg = co.healthyHigh * hM * hM;
+  let basisKg = s.weightKg, basisNote = 'your current weight';
+  if (bmi >= 30 && s.weightKg > upperHealthyKg){
+    basisKg = upperHealthyKg + 0.4*(s.weightKg - upperHealthyKg);
+    basisNote = 'an adjusted body weight of ' + basisKg.toFixed(1) +
+                ' kg (used because applying g/kg to full body weight overstates the target ' +
+                'when a larger share of that weight is fat mass)';
+  }
+
+  /* --- P0: RENAL OVERRIDE. Nothing else runs. ------------------------- */
+  if (s.kidney === 'yes') return { suppressed:true, reason:'renal', bmi };
+
+  /* --- P1: PREGNANCY / LACTATION — own branch, never stacked ---------- */
+  if (s.preg === 'pregnant' || s.preg === 'breastfeeding'){
+    const g = PREG_GKG[s.preg];
+    const target = g * s.weightKg;                 // pre-pregnancy weight, actual
+    return {
+      suppressed:false, branch:'pregnancy', bmi,
+      lowG: Math.round(target), highG: Math.round(target), targetG: Math.round(target),
+      gPerKg: g, basisKg: s.weightKg, basisNote:'your pre-pregnancy weight',
+      perMeal: clampMeal(target / s.meals),
+      sources: [ s.preg==='pregnant'
+        ? 'IOM Dietary Reference Intakes — pregnancy RDA 1.1 g/kg/day'
+        : 'IOM Dietary Reference Intakes — lactation RDA 1.3 g/kg/day' ],
+      interpKey:'baseline', dietMult:1.0, capped:false
+    };
+  }
+
+  /* --- P3: NORMAL PATH — collect applicable bands --------------------- */
+  const applicable = [];
+  const older = s.age >= 65;
+
+  if (s.activity==='sedentary') applicable.push(BANDS.sedentary);
+  if (s.activity==='light' || s.activity==='moderate') applicable.push(BANDS.lightMod);
+  if (s.activity==='vigorous') applicable.push(BANDS.vigorous);
+
+  if (s.resistance==='1-2') applicable.push(BANDS.resLow);
+  if (s.resistance==='3-4') applicable.push(BANDS.resMid);
+  if (s.resistance==='5+')  applicable.push(BANDS.resHigh);
+
+  const training = s.resistance !== '0' || s.activity === 'vigorous';
+  if (s.goal==='build')    applicable.push(BANDS.buildMuscle);
+  if (s.goal==='fatloss')  applicable.push(training ? BANDS.fatLossTrain : BANDS.fatLossOnly);
+  if (s.goal==='recovery') applicable.push(BANDS.recovery);
+  if (s.liver==='yes')     applicable.push(BANDS.recovery);
+  // 'Age well' does not by itself justify the ESPEN active/illness band (1.2-1.5).
+  // A sedentary healthy older adult belongs at PROT-AGE 1.0-1.2; only training lifts them.
+  if (s.goal==='ageing')   applicable.push(older ? (training ? BANDS.olderActive : BANDS.older) : BANDS.lightMod);
+
+  if (older) applicable.push(training ? BANDS.olderActive : BANDS.older);
+  if (!applicable.length) applicable.push(BANDS.sedentary);
+
+  // highest applicable band wins
+  let lo = Math.max(...applicable.map(b=>b.lo));
+  let hi = Math.max(...applicable.map(b=>b.hi));
+  if (lo > hi) lo = hi;
+
+  const winner = applicable.reduce((a,b)=> b.hi > a.hi ? b : (b.hi===a.hi && b.lo>a.lo ? b : a));
+
+  /* --- digestibility uplift (DIAAS-derived; flagged in methodology) ---- */
+  const mult = DIET_MULT[s.diet] || 1.0;
+  lo *= mult; hi *= mult;
+
+  /* --- ceiling -------------------------------------------------------- */
+  let capped = false;
+  if (hi > CEILING){ hi = CEILING; capped = true; }
+  if (lo > CEILING) lo = CEILING;
+
+  const lowG  = lo * basisKg;
+  const highG = hi * basisKg;
+  const targetG = (lowG + highG) / 2;
+
+  const sources = [...new Set(applicable.map(b=>b.src))];
+  if (mult !== 1.0) sources.push('Plant-protein digestibility uplift (x'+mult+') — DIAAS-derived, see note');
+
+  return {
+    suppressed:false, branch:'standard', bmi,
+    lowG: Math.round(lowG), highG: Math.round(highG), targetG: Math.round(targetG),
+    gPerKg: +((lo+hi)/2).toFixed(2), basisKg, basisNote,
+    perMeal: clampMeal(targetG / s.meals),
+    sources, interpKey: winner.key, dietMult: mult, capped, older
+  };
+}
+function clampMeal(g){ return Math.round(Math.min(40, Math.max(20, g))); }   // ISSN: 20–40 g per serving
+
+
+/* =====================================================================
+   UI
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const state = {
+  sex:null, preg:'no', ethnicity:null, activity:null, resistance:null,
+  goal:null, diet:null, kidney:null, liver:null,
+  heightCm:0, weightKg:0, age:null, meals:3,
+  hUnit:'cm', wUnit:'kg'
+};
+
+function buildOpts(containerId, items, key, onPick){
+  const c = $(containerId);
+  c.innerHTML = '';
+  items.forEach(([val,label])=>{
+    const b = document.createElement('button');
+    b.type='button'; b.className='opt'; b.textContent=label;
+    b.setAttribute('aria-pressed','false'); b.dataset.val=val;
+    b.onclick = ()=>{
+      [...c.children].forEach(x=>x.setAttribute('aria-pressed','false'));
+      b.setAttribute('aria-pressed','true');
+      state[key]=val;
+      if(onPick) onPick(val);
+    };
+    c.appendChild(b);
+  });
+}
+
+buildOpts('sex', [['male','Male'],['female','Female']], 'sex', v=>{
+  $('pregWrap').style.display = v==='female' ? 'block' : 'none';
+  $('pregWeightHint').style.display = v==='female' ? 'block' : 'none';
+  if(v!=='female') state.preg='no';
+});
+buildOpts('preg', [['no','Neither'],['pregnant','Pregnant'],['breastfeeding','Breastfeeding']], 'preg');
+buildOpts('eth', ETHNICITIES, 'ethnicity', updateDerived);
+buildOpts('act', [
+  ['sedentary','Mostly sitting'], ['light','Lightly active'],
+  ['moderate','Moderately active'], ['vigorous','Very active / endurance']
+], 'activity');
+buildOpts('res', [['0','None'],['1-2','1–2 / week'],['3-4','3–4 / week'],['5+','5+ / week']], 'resistance');
+buildOpts('goal', [
+  ['maintain','Stay as I am'], ['fatloss','Lose fat'], ['build','Build muscle'],
+  ['ageing','Age well / keep strength'], ['recovery','Recover from illness or surgery']
+], 'goal');
+buildOpts('diet', [['omnivore','I eat meat or fish'],['vegetarian','Vegetarian'],['vegan','Vegan']], 'diet');
+buildOpts('kidney', [['no','No'],['yes','Yes'],['unsure',"I'm not sure"]], 'kidney');
+buildOpts('liver', [['no','No'],['yes','Yes']], 'liver');
+
+$('scopeStatement').textContent = MESSAGES.scope;
+$('disclaimerText').textContent = MESSAGES.disclaimer;
+
+/* --- unit handling: convert, never wipe --- */
+function setHeightInputs(){
+  const u = $('hUnit').value;
+  $('hVal2').classList.toggle('hidden', u!=='ftin');
+  if(state.heightCm > 0){
+    if(u==='cm')  $('hVal').value = state.heightCm.toFixed(0);
+    if(u==='m')   $('hVal').value = (state.heightCm/100).toFixed(2);
+    if(u==='in')  $('hVal').value = (state.heightCm/CONV.IN_CM).toFixed(1);
+    if(u==='ftin'){
+      const ft = Math.floor(state.heightCm/CONV.FT_CM);
+      $('hVal').value  = ft;
+      $('hVal2').value = ((state.heightCm - ft*CONV.FT_CM)/CONV.IN_CM).toFixed(1);
+    }
+  }
+  state.hUnit = u;
+}
+function setWeightInputs(){
+  const u = $('wUnit').value;
+  $('wVal2').classList.toggle('hidden', u!=='stlb');
+  if(state.weightKg > 0){
+    if(u==='kg') $('wVal').value = state.weightKg.toFixed(1);
+    if(u==='lb') $('wVal').value = (state.weightKg/CONV.LB_KG).toFixed(1);
+    if(u==='stlb'){
+      const st = Math.floor(state.weightKg/CONV.ST_KG);
+      $('wVal').value  = st;
+      $('wVal2').value = ((state.weightKg - st*CONV.ST_KG)/CONV.LB_KG).toFixed(1);
+    }
+  }
+  state.wUnit = u;
+}
+function readHeight(){ state.heightCm = toCm($('hUnit').value, $('hVal').value, $('hVal2').value); updateDerived(); }
+function readWeight(){ state.weightKg = toKg($('wUnit').value, $('wVal').value, $('wVal2').value); updateDerived(); }
+
+$('hUnit').onchange = setHeightInputs;
+$('wUnit').onchange = setWeightInputs;
+['hVal','hVal2'].forEach(i=>$(i).oninput = readHeight);
+['wVal','wVal2'].forEach(i=>$(i).oninput = readWeight);
+$('age').oninput  = ()=>{ state.age = parseInt($('age').value)||null; };
+$('meals').onchange = ()=>{ state.meals = parseInt($('meals').value); };
+
+$('tMetric').onclick = ()=>{
+  $('tMetric').classList.add('on'); $('tImperial').classList.remove('on');
+  $('hUnit').value='cm'; $('wUnit').value='kg'; setHeightInputs(); setWeightInputs();
+};
+$('tImperial').onclick = ()=>{
+  $('tImperial').classList.add('on'); $('tMetric').classList.remove('on');
+  $('hUnit').value='ftin'; $('wUnit').value='lb'; setHeightInputs(); setWeightInputs();
+};
+
+function updateDerived(){
+  if(state.heightCm>=100 && state.weightKg>=30){
+    const hM = state.heightCm/100;
+    const bmi = state.weightKg/(hM*hM);
+    const co = state.ethnicity ? cutoffs(state.ethnicity) : null;
+    let txt = 'BMI ' + bmi.toFixed(1);
+    if(co){
+      const lowKg  = co.healthyLow  * hM*hM;
+      const highKg = co.healthyHigh * hM*hM;
+      txt += ' · healthy range for you: ' + fromKg(lowKg, state.wUnit) + ' – ' + fromKg(highKg, state.wUnit);
+    } else {
+      txt += ' · select ethnicity to see your healthy range';
+    }
+    $('derived').textContent = txt;
+  } else {
+    $('derived').textContent = 'Enter height and weight to see your BMI.';
+  }
+}
+
+/* --- validation --- */
+function validate(){
+  const e = [];
+  if(!state.age || state.age<18 || state.age>99) e.push('Enter an age between 18 and 99. This tool is for adults only.');
+  if(!state.sex) e.push('Select your sex.');
+  if(state.heightCm<140 || state.heightCm>210) e.push('Enter a height between 140 cm and 210 cm (4ft 7in – 6ft 11in).');
+  if(state.weightKg<35 || state.weightKg>250) e.push('Enter a weight between 35 kg and 250 kg (77 lb – 551 lb).');
+  if(!state.ethnicity) e.push('Select your ethnicity — it sets which healthy-weight bounds apply to you.');
+  if(!state.activity) e.push('Select your activity level.');
+  if(!state.resistance) e.push('Select how often you do resistance training.');
+  if(!state.goal) e.push('Select what you are aiming for.');
+  if(!state.diet) e.push('Select how you eat.');
+  if(!state.kidney) e.push('Answer the kidney disease question — protein guidance changes direction with kidney disease, so we cannot skip it.');
+  if(!state.liver) e.push('Answer the liver disease / recovery question.');
+  return e;
+}
+
+/* --- render --- */
+let lastResult = null;
+
+$('form').onsubmit = (ev)=>{
+  ev.preventDefault();
+  if($('company').value) return;                                  // honeypot
+  const errs = validate();
+  if(errs.length){
+    $('err').innerHTML = errs.map(x=>'• '+x).join('<br>');
+    $('err').style.display='block';
+    $('err').scrollIntoView({behavior:'smooth', block:'center'});
+    return;
+  }
+  $('err').style.display='none';
+  const r = computeProtein(state);
+  lastResult = r;
+  render(r);
+  $('results').classList.remove('hidden');
+  $('form').classList.add('hidden');
+  $('results').scrollIntoView({behavior:'smooth'});
+  postHeight();
+};
+
+function fill(tpl, d){ return tpl.replace(/\{\{(\w+)\}\}/g, (_,k)=> d[k]!==undefined ? d[k] : ''); }
+
+function render(r){
+  const B = $('banners'), H = $('headlineBlock'), M = $('metrics');
+  B.innerHTML=''; H.innerHTML=''; M.innerHTML='';
+  $('interp').innerHTML=''; $('adviceBlock').innerHTML='';
+
+  /* ---- P0: renal suppression. No numbers. At all. ---- */
+  if(r.suppressed){
+    B.innerHTML = `<div class="banner stop"><h3>${MESSAGES.renalStop.title}</h3>${MESSAGES.renalStop.body}</div>`;
+    $('metrics').innerHTML = '';
+    $('methodology').innerHTML = methodologyHTML(r);
+    $('emailCard').classList.add('hidden');
+    return;
+  }
+  $('emailCard').classList.remove('hidden');
+
+  /* ---- banners ---- */
+  if(state.kidney==='unsure')
+    B.innerHTML += `<div class="banner care"><h3>${MESSAGES.renalUnsure.title}</h3>${MESSAGES.renalUnsure.body}</div>`;
+  if(r.branch==='pregnancy')
+    B.innerHTML += `<div class="banner care"><h3>${MESSAGES.pregnancy.title}</h3>${MESSAGES.pregnancy.body}</div>`;
+  if(state.liver==='yes')
+    B.innerHTML += `<div class="banner care"><h3>${MESSAGES.clinical.title}</h3>${MESSAGES.clinical.body}</div>`;
+  if(r.bmi < 18.5)
+    B.innerHTML += `<div class="banner care"><h3>${MESSAGES.underweight.title}</h3>${MESSAGES.underweight.body}</div>`;
+
+  /* ---- headline ---- */
+  const isRange = r.lowG !== r.highG;
+  H.innerHTML = `
+    <div class="headline">
+      <div class="num">${r.targetG} g</div>
+      <div class="unit">of protein per day${r.branch==='pregnancy' ? ' (minimum)' : ''}</div>
+      ${isRange ? `<div class="range">Target range ${r.lowG}–${r.highG} g per day</div>` : ''}
+    </div>`;
+
+  /* ---- metrics ---- */
+  M.innerHTML = `
+    <div class="metric"><div class="k">Per meal</div><div class="v">${r.perMeal} g</div>
+      <div class="n">across ${state.meals} meals</div></div>
+    <div class="metric"><div class="k">Intensity</div><div class="v">${r.gPerKg} g/kg</div>
+      <div class="n">applied to ${r.basisKg.toFixed(1)} kg</div></div>
+    <div class="metric"><div class="k">Your BMI</div><div class="v">${r.bmi.toFixed(1)}</div>
+      <div class="n">${cutoffs(state.ethnicity).asian ? 'Asian cutoffs applied' : 'standard cutoffs applied'}</div></div>
+    <div class="metric"><div class="k">Basis weight</div><div class="v">${fromKg(r.basisKg, state.wUnit)}</div>
+      <div class="n">${r.basisKg < state.weightKg ? 'adjusted for body composition' : 'your current weight'}</div></div>`;
+
+  /* ---- interpretation ---- */
+  $('interp').innerHTML = `<p>${MESSAGES.interp[r.interpKey] || MESSAGES.interp.baseline}</p>` +
+    (r.capped ? `<p style="font-size:13.5px;color:#6b7280">Your target has been capped at ${CEILING} g/kg — the top of the
+       range published for exercising adults. Higher intakes exist in the literature, but only for trained individuals
+       in a deliberate calorie deficit, under supervision.</p>` : '');
+
+  /* ---- advice ---- */
+  const d = { perMeal:r.perMeal, meals:state.meals };
+  const bullets = [];
+  bullets.push(fill(r.older ? MESSAGES.advice.spreadOlder : MESSAGES.advice.spread, d));
+  bullets.push(state.diet==='omnivore' ? MESSAGES.advice.quality : MESSAGES.advice.plant);
+  bullets.push(MESSAGES.advice.food);
+  if(r.interpKey==='training' || r.interpKey==='fatloss' || state.resistance!=='0') bullets.push(MESSAGES.advice.training);
+  bullets.push(MESSAGES.advice.hydrate);
+
+  $('adviceBlock').innerHTML = `
+    <h2 style="margin-top:22px;font-size:15px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)">
+      Making it work</h2>
+    <ul class="adv">${bullets.map(b=>`<li>${b}</li>`).join('')}</ul>
+    <div class="banner ok" style="margin-top:16px">${MESSAGES.eatingConcern}</div>
+    <p style="font-size:13.5px;color:#4a5058;margin-top:14px">${MESSAGES.crossLink}</p>`;
+
+  $('methodology').innerHTML = methodologyHTML(r);
+}
+
+function methodologyHTML(r){
+  if(r.suppressed){
+    return `<p>Because you told us you have kidney disease or reduced kidney function, this tool
+      deliberately produced no number.</p>
+      <p>The 2020 KDOQI nutrition guideline recommends that adults with CKD stages 3–5 who are not on
+      dialysis and are metabolically stable <em>restrict</em> protein to roughly 0.55–0.60 g/kg of ideal
+      body weight per day (0.6–0.8 g/kg where diabetes is also present). That runs directly opposite to
+      the general-population guidance this tool is built on. People on dialysis, by contrast, typically
+      need <em>more</em> protein, around 1.0–1.2 g/kg.</p>
+      <p>Which of those applies to you depends on your kidney function, your stage, whether you're on
+      dialysis and whether you have diabetes — none of which a public calculator can see. So we don't guess.</p>`;
+  }
+  const co = cutoffs(state.ethnicity);
+  return `
+    <p><strong>What was applied to you</strong></p>
+    <ul style="padding-left:18px">
+      ${r.sources.map(s=>`<li>${s}</li>`).join('')}
+    </ul>
+    <p><strong>How the number was built</strong><br>
+      Applicable guideline bands were collected from your age, activity, resistance training and goal.
+      Where more than one applied, the highest was taken — guidelines describe minimums, so the most
+      demanding applicable band governs. The result was then multiplied by ${r.dietMult} for protein
+      digestibility, and capped at ${CEILING} g/kg.</p>
+    <p><strong>Basis weight</strong><br>
+      The g/kg figure was applied to ${r.basisNote}. Your ethnicity selects the healthy-BMI bound used
+      for this (${co.healthyLow}–${co.healthyHigh}${co.asian ? ', Asian cutoffs' : ', standard cutoffs'}).
+      Ethnicity is used for nothing else in this tool.</p>
+    <p><strong>Per-meal split</strong><br>
+      The ISSN position stand suggests roughly 0.25 g/kg per serving, or 20–40 g in absolute terms; the
+      per-meal figure is bounded to that window.</p>
+    <p><strong>Where the numbers come from</strong></p>
+    <table>
+      <tr><th>Group</th><th>g/kg/day</th><th>Source</th></tr>
+      <tr><td>General adult (floor)</td><td>0.8</td><td>IOM Dietary Reference Intakes, 2005</td></tr>
+      <tr><td>Exercising adults</td><td>1.4–2.0</td><td>ISSN Position Stand, Jäger et al. 2017</td></tr>
+      <tr><td>Athletes</td><td>1.2–2.0</td><td>ACSM / AND / DC joint position, 2016</td></tr>
+      <tr><td>Healthy older adults</td><td>1.0–1.2</td><td>PROT-AGE (Bauer 2013), ESPEN (Deutz 2014)</td></tr>
+      <tr><td>Illness / recovery</td><td>1.2–1.5</td><td>ESPEN, 2014</td></tr>
+      <tr><td>Pregnancy</td><td>1.1</td><td>IOM DRI</td></tr>
+      <tr><td>Breastfeeding</td><td>1.3</td><td>IOM DRI</td></tr>
+      <tr><td>Kidney disease</td><td><em>restricted, clinician-set</em></td><td>KDOQI, 2020</td></tr>
+    </table>
+    <p style="margin-top:12px"><strong>One honest caveat.</strong> The plant-protein uplift
+      (×1.1 vegetarian, ×1.2 vegan) is derived from digestibility scoring (DIAAS), not lifted from a
+      position stand. It is the one adjustment in this tool without a guideline sentence directly behind
+      it, and we would rather say so than dress it up.</p>
+    <p><strong>Limits.</strong> This applies population guidelines to self-reported inputs. It cannot
+      account for your bloods, medications, or medical history. It does not diagnose anything.</p>`;
+}
+
+/* --- email (non-blocking; results already shown) --- */
+$('sendBtn').onclick = async ()=>{
+  const email = $('email').value.trim();
+  const name  = $('fname').value.trim();
+  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    $('emailErr').textContent = 'Enter a valid email address.'; $('emailErr').style.display='block'; return;
+  }
+  if(!$('consent').checked){
+    $('emailErr').textContent = 'Please tick the consent box so we can email you.'; $('emailErr').style.display='block'; return;
+  }
+  $('emailErr').style.display='none';
+  $('sendBtn').disabled = true; $('sendBtn').textContent = 'Sending…';
+
+  const R = lastResult;
+  const payload = {
+    tool: 'protein',
+    firstName: name,
+    email: email,
+    consent: true,
+    suppressed: !!R.suppressed,
+    targetG: R.suppressed ? null : R.targetG,
+    lowG:    R.suppressed ? null : R.lowG,
+    highG:   R.suppressed ? null : R.highG,
+    gPerKg:  R.suppressed ? null : R.gPerKg,
+    perMeal: R.suppressed ? null : R.perMeal,
+    meals:   state.meals,
+    sources: R.suppressed ? [] : (R.sources || []),
+    timestamp: new Date().toISOString(),
+    company: $('company').value
+  };
+
+  try{
+    const res = await fetch('./submit-protein.php', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)
+    });
+    const j = await res.json();
+    if(j.status==='ok'){
+      $('emailOk').textContent = MESSAGES.emailSent;
+      $('emailOk').classList.remove('hidden');
+      $('sendBtn').classList.add('hidden');
+    } else { throw new Error('failed'); }
+  }catch(e){
+    $('emailErr').textContent = MESSAGES.emailFailed; $('emailErr').style.display='block';
+    $('sendBtn').disabled=false; $('sendBtn').textContent='Send my results';
+  }
+  postHeight();
+};
+
+$('restart').onclick = ()=>{
+  $('results').classList.add('hidden');
+  $('form').classList.remove('hidden');
+  window.scrollTo({top:0, behavior:'smooth'});
+  postHeight();
+};
+
+/* --- iframe auto-resize (parent half lives on the WP page) --- */
+function postHeight(){
+  const h = document.documentElement.scrollHeight;
+  if(window.parent !== window) window.parent.postMessage({ lldToolHeight: h, frame:'lld-tool-frame' }, '*');
+}
+window.addEventListener('load', postHeight);
+window.addEventListener('resize', postHeight);
+new MutationObserver(postHeight).observe(document.body, {childList:true, subtree:true, attributes:true});
+setInterval(postHeight, 1000);
+</script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+# Byte-exact storage: tool files are hash-frozen (engine-freeze, provenance-check).
+* -text

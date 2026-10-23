@@ -21,11 +21,29 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 90,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.2,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 30,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "active",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-NRM-02",
@@ -46,11 +64,29 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 68,
+        "lowG": 60,
+        "highG": 75,
+        "gPerKg": 0.9,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 23,
+        "sources": [
+          "IOM RDA 0.8 g/kg (floor)"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "baseline",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-NRM-03",
@@ -71,11 +107,29 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 90,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.2,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 30,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "active",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-NRM-04",
@@ -96,11 +150,29 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 105,
+        "lowG": 90,
+        "highG": 120,
+        "gPerKg": 1.4,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 35,
+        "sources": [
+          "ACSM/AND/DC 2016 (1.2–2.0 g/kg)"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "active",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-NRM-05",
@@ -121,11 +193,30 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 105,
+        "lowG": 90,
+        "highG": 120,
+        "gPerKg": 1.4,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 35,
+        "sources": [
+          "IOM AMDR / ISSN lower band",
+          "ISSN 2017 (1.4–2.0), lower end"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "training",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-NRM-06",
@@ -146,11 +237,30 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 128,
+        "lowG": 105,
+        "highG": 150,
+        "gPerKg": 1.7,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 40,
+        "sources": [
+          "IOM AMDR / ISSN lower band",
+          "ISSN 2017 (1.4–2.0 g/kg)"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "training",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-NRM-07",
@@ -171,11 +281,30 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 135,
+        "lowG": 120,
+        "highG": 150,
+        "gPerKg": 1.8,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 40,
+        "sources": [
+          "IOM AMDR / ISSN lower band",
+          "ISSN 2017 (1.4–2.0 g/kg)"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "training",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-NRM-08",
@@ -196,11 +325,30 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 135,
+        "lowG": 120,
+        "highG": 150,
+        "gPerKg": 1.8,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 40,
+        "sources": [
+          "IOM AMDR / ISSN lower band",
+          "ISSN 2017"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "training",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-NRM-09",
@@ -221,11 +369,30 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 101,
+        "lowG": 90,
+        "highG": 113,
+        "gPerKg": 1.35,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 34,
+        "sources": [
+          "IOM AMDR / ISSN lower band",
+          "ISSN 2017 (lean-mass retention)"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "fatloss",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-NRM-10",
@@ -246,11 +413,31 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 135,
+        "lowG": 120,
+        "highG": 150,
+        "gPerKg": 1.8,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 40,
+        "sources": [
+          "IOM AMDR / ISSN lower band",
+          "ISSN 2017 (1.4–2.0 g/kg)",
+          "ISSN 2017 (lean-mass retention)"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "fatloss",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-NRM-11",
@@ -271,11 +458,29 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 90,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.2,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 30,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "active",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-NRM-12",
@@ -296,11 +501,30 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 99,
+        "lowG": 83,
+        "highG": 116,
+        "gPerKg": 1.32,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 33,
+        "sources": [
+          "IOM AMDR / ISSN lower band",
+          "Plant-protein digestibility uplift (x1.1) — DIAAS-derived, see note"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1.1,
+        "interpKey": "active",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-NRM-13",
@@ -321,11 +545,30 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 108,
+        "lowG": 90,
+        "highG": 126,
+        "gPerKg": 1.44,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 36,
+        "sources": [
+          "IOM AMDR / ISSN lower band",
+          "Plant-protein digestibility uplift (x1.2) — DIAAS-derived, see note"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1.2,
+        "interpKey": "active",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     },
     {
       "id": "FX-PR-NRM-14",
@@ -346,11 +589,29 @@
         "kidney": "no",
         "liver": "no"
       },
-      "expected": null,
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 90,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.2,
+        "basisKg": 75,
+        "basisNote": "your current weight",
+        "perMeal": 30,
+        "sources": [
+          "IOM AMDR / ISSN lower band"
+        ],
+        "capped": false,
+        "older": false,
+        "dietMult": 1,
+        "interpKey": "active",
+        "bmi": 24.49
+      },
       "oracle": "characterisation",
-      "source_version": null,
+      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
       "reviewer": null,
-      "status": "pending"
+      "status": "recorded"
     }
   ]
 }

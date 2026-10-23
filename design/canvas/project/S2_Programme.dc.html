@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Four-week Healthy Habits programme</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#f2f7f4}
+a{color:#157a42}a:hover{color:#0f5a31}
+</style>
+</helmet>
+<div style="display: flex; flex-direction: column; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #f2f7f4">
+
+  <header style="display: flex; justify-content: center; background: #ffffff; border-bottom: 1px solid #e4eae6">
+    <div style="width: 100%; max-width: 1240px; display: flex; align-items: center; justify-content: space-between; padding: 18px 24px; box-sizing: border-box; flex-wrap: wrap; gap: 16px">
+      <a href="Main.dc.html" style="font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: #1c1c1c; text-decoration: none">Lifeline Daily</a>
+      <nav aria-label="Member" style="display: flex; gap: 24px; font-size: 14px; font-weight: 600; flex-wrap: wrap; align-items: center">
+        <a href="S2_Dashboard.dc.html" style="color: #1c1c1c; text-decoration: none">My dashboard</a>
+        <a href="S2_Programme.dc.html" style="color: #157a42; text-decoration: none; border-bottom: 2px solid #3fd07f; padding-bottom: 2px">Programme</a>
+        <a href="Hub.dc.html" style="color: #1c1c1c; text-decoration: none">Tools</a>
+        <a href="#" style="color: #1c1c1c; text-decoration: none">Articles</a>
+        <a href="S2_Membership.dc.html" style="color: #1c1c1c; text-decoration: none">Account</a>
+        <span style="width: 36px; height: 36px; border-radius: 50%; background: #eafaf0; color: #157a42; display: inline-flex; align-items: center; justify-content: center; font-weight: 800" aria-label="Signed in as Nisha">N</span>
+      </nav>
+    </div>
+  </header>
+
+  <main style="display: flex; justify-content: center">
+    <div style="width: 100%; max-width: 1240px; padding: 32px 24px 48px; box-sizing: border-box; display: flex; flex-direction: column; gap: 24px">
+
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <nav aria-label="Breadcrumb" style="font-size: 13px; color: #63706a"><a href="S2_Dashboard.dc.html" style="color: #63706a">My dashboard</a> › <span style="color: #161a17; font-weight: 600">Healthy Habits programme</span></nav>
+        <h1 style="margin: 0; font-size: 34px; font-weight: 800; letter-spacing: -0.02em">Four-week Healthy Habits programme</h1>
+        <p style="margin: 0; font-size: 16px; color: #3a4440; line-height: 1.55; max-width: 760px">One small action a day, built around your goals. Each week has a theme, seven actions and a two-question check-in. Nothing is scored against you; the aim is to notice what sticks.</p>
+      </div>
+
+      <!-- Week tabs -->
+      <div role="tablist" aria-label="Programme weeks" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px">
+        <button type="button" role="tab" aria-selected="false" style="text-align: left; border: 1px solid #e4eae6; background: #ffffff; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 6px; font: inherit; cursor: pointer"><span style="font-size: 12px; font-weight: 700; color: #157a42">WEEK 1 · DONE</span><span style="font-size: 15px; font-weight: 700">Know your numbers</span><span style="font-size: 12px; color: #63706a">7 of 7 actions</span></button>
+        <button type="button" role="tab" aria-selected="true" style="text-align: left; border: 2px solid #1f9d57; background: #ffffff; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 6px; font: inherit; cursor: pointer"><span style="font-size: 12px; font-weight: 700; color: #157a42">WEEK 2 · NOW</span><span style="font-size: 15px; font-weight: 700">Protein at breakfast</span><span style="font-size: 12px; color: #63706a">4 of 7 actions</span></button>
+        <button type="button" role="tab" aria-selected="false" style="text-align: left; border: 1px solid #e4eae6; background: #ffffff; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 6px; font: inherit; cursor: pointer"><span style="font-size: 12px; font-weight: 700; color: #63706a">WEEK 3</span><span style="font-size: 15px; font-weight: 700">Move after meals</span><span style="font-size: 12px; color: #63706a">Unlocks 27 Oct</span></button>
+        <button type="button" role="tab" aria-selected="false" style="text-align: left; border: 1px solid #e4eae6; background: #ffffff; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 6px; font: inherit; cursor: pointer"><span style="font-size: 12px; font-weight: 700; color: #63706a">WEEK 4</span><span style="font-size: 15px; font-weight: 700">Smarter carbohydrates</span><span style="font-size: 12px; color: #63706a">Unlocks 3 Nov</span></button>
+      </div>
+
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px">
+
+        <!-- Week detail -->
+        <section role="tabpanel" aria-labelledby="w2-h" style="grid-column: span 2; background: #ffffff; border: 1px solid #e4eae6; border-radius: 20px; padding: 24px; display: flex; flex-direction: column; gap: 18px; box-shadow: 0 2px 6px rgba(20,40,30,.06)">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <h2 id="w2-h" style="margin: 0; font-size: 22px; font-weight: 800">Week 2 · Protein at breakfast</h2>
+            <p style="margin: 0; font-size: 14px; color: #3a4440; line-height: 1.55">Why this week: your protein target is 105 g and most people get the least at breakfast. Front-loading 25–30 g keeps you fuller and spreads intake, which the ISSN per-meal guidance supports.</p>
+          </div>
+          <ol style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px">
+            <li style="display: flex; gap: 12px; align-items: center; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px 14px; font-size: 14px"><span style="width: 26px; height: 26px; border-radius: 50%; background: #1f9d57; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg></span><span style="flex: 1 1 auto"><b>Mon</b> · Add a protein food to breakfast</span><span style="font-size: 12px; color: #63706a">Done</span></li>
+            <li style="display: flex; gap: 12px; align-items: center; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px 14px; font-size: 14px"><span style="width: 26px; height: 26px; border-radius: 50%; background: #1f9d57; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg></span><span style="flex: 1 1 auto"><b>Tue</b> · 10-minute walk after lunch</span><span style="font-size: 12px; color: #63706a">Done</span></li>
+            <li style="display: flex; gap: 12px; align-items: center; border: 2px solid #1f9d57; background: #eafaf0; border-radius: 14px; padding: 12px 14px; font-size: 14px; font-weight: 600"><input type="checkbox" aria-label="Mark Wednesday action done" style="width: 24px; height: 24px; margin: 0; flex: 0 0 auto"><span style="flex: 1 1 auto"><b>Wed · Today</b> · Swap white rice for brown or mixed grains at one meal</span><a href="#" style="font-size: 12px">Why?</a></li>
+            <li style="display: flex; gap: 12px; align-items: center; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px 14px; font-size: 14px; color: #63706a"><span style="width: 26px; height: 26px; border-radius: 50%; border: 2px solid #c9d3cd; flex: 0 0 auto"></span><span style="flex: 1 1 auto"><b>Thu</b> · Weekly check-in (2 questions)</span></li>
+            <li style="display: flex; gap: 12px; align-items: center; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px 14px; font-size: 14px; color: #63706a"><span style="width: 26px; height: 26px; border-radius: 50%; border: 2px solid #c9d3cd; flex: 0 0 auto"></span><span style="flex: 1 1 auto"><b>Fri</b> · Try a 30 g protein breakfast recipe</span></li>
+            <li style="display: flex; gap: 12px; align-items: center; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px 14px; font-size: 14px; color: #63706a"><span style="width: 26px; height: 26px; border-radius: 50%; border: 2px solid #c9d3cd; flex: 0 0 auto"></span><span style="flex: 1 1 auto"><b>Sat</b> · Measure your waist, same spot as week 1</span></li>
+            <li style="display: flex; gap: 12px; align-items: center; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px 14px; font-size: 14px; color: #63706a"><span style="width: 26px; height: 26px; border-radius: 50%; border: 2px solid #c9d3cd; flex: 0 0 auto"></span><span style="flex: 1 1 auto"><b>Sun</b> · Plan next week's breakfasts</span></li>
+          </ol>
+        </section>
+
+        <!-- Check-in + reading -->
+        <div style="display: flex; flex-direction: column; gap: 24px">
+          <section aria-labelledby="ci-h" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 2px 6px rgba(20,40,30,.06)">
+            <h2 id="ci-h" style="margin: 0; font-size: 18px; font-weight: 800">Thursday check-in</h2>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <span id="q1" style="font-size: 14px; font-weight: 600">How did the breakfast habit feel this week?</span>
+              <div role="group" aria-labelledby="q1" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+                <button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 13px; font-weight: 600">Hard</button>
+                <button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 13px; font-weight: 600">OK</button>
+                <button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 13px; font-weight: 600">Easy</button>
+              </div>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <label for="q2" style="font-size: 14px; font-weight: 600">One thing that got in the way (optional)</label>
+              <textarea id="q2" rows="3" style="border: 1px solid #c9d3cd; border-radius: 12px; padding: 10px 12px; font: inherit; font-size: 14px; resize: vertical"></textarea>
+            </div>
+            <button type="button" disabled style="min-height: 46px; border-radius: 12px; border: 0; background: #c9d3cd; color: #ffffff; font: inherit; font-size: 14px; font-weight: 700">Opens Thursday</button>
+          </section>
+
+          <section aria-labelledby="rd-h" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 20px; padding: 22px; display: flex; flex-direction: column; gap: 12px">
+            <h2 id="rd-h" style="margin: 0; font-size: 18px; font-weight: 800">This week's reading</h2>
+            <a href="#" style="display: flex; gap: 12px; align-items: center; text-decoration: none; color: #161a17"><span style="width: 72px; height: 54px; flex: 0 0 auto; border-radius: 10px; background: #e4eae6"></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 700; line-height: 1.3">Five breakfasts with 30 g of protein</span><span style="font-size: 12px; color: #63706a">Reviewed · 6 min</span></span></a>
+            <a href="#" style="display: flex; gap: 12px; align-items: center; text-decoration: none; color: #161a17"><span style="width: 72px; height: 54px; flex: 0 0 auto; border-radius: 10px; background: #e4eae6"></span><span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 700; line-height: 1.3">Plant protein: getting enough on a vegan diet</span><span style="font-size: 12px; color: #63706a">Reviewed · 7 min</span></span></a>
+          </section>
+        </div>
+      </div>
+
+      <p style="margin: 0; font-size: 12px; color: #63706a; line-height: 1.5">The programme is general lifestyle education and not a treatment plan. If you have a diagnosed condition, follow your clinician's advice first. <a href="#">Leave the programme</a> · <a href="#">Medical disclaimer</a></p>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1540}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

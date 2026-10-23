@@ -1,0 +1,18 @@
+{
+  "compared_at": "2026-10-23",
+  "live_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+  "oracle": "ORC-02",
+  "agree": 51,
+  "disagree": [
+    {
+      "fixture": "FX-PR-CAP-01",
+      "kind": "numeric",
+      "detail": "targetG live=147 orc=150; gPerKg live=1.96 orc=2.0"
+    },
+    {
+      "fixture": "FX-PR-CAP-02",
+      "kind": "numeric",
+      "detail": "targetG live=133 orc=140; gPerKg live=1.77 orc=1.87"
+    }
+  ]
+}

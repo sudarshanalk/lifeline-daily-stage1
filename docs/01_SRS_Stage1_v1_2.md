@@ -6,6 +6,12 @@ Related: `02_Data_Model_Stage1_v1_2.md`, `03_Test_Criteria_Stage1_v1_2.md`, `04_
 
 ---
 
+## 0. How to read this pack (for the product owner)
+
+Five documents, read in this order: this SRS (what is built and how each item is accepted), the Decision Register (every choice already made for the agent, and the three points where you sign), the Data Model (what data exists and where), the Test Criteria (the exact checks per requirement), and the AI Development Loop (how the agent works through it). You sign three times: **HG-01** after the baseline audit (ratify the decisions marked HG-01 and supply the open owner inputs listed at the end of the Decision Register), **HG-02** with your clinical reviewer (methods, copy, oracle results), **HG-03** before production release (privacy and release record).
+
+Glossary. **Oracle**: an independent source of correct answers used to check a calculation (here the CRAN QDiabetes package, and a second protein engine written only from the clinical reference). **Characterisation fixture**: a recorded "what the live engine does today" value; it proves nothing changed, not that it is correct. **Mutation**: a deliberate break of the code to prove a test would catch it. **Hybrid requirement**: automated checks plus one human signature. **Sentinel value**: a unique fake input used to detect leaks to analytics or logs. **SAF**: the mandatory safety test suite. **P-A0, P-B…**: the agent prompts in the Development Loop. **Mailpit**: a local inbox that captures test emails. **Playwright**: the browser automation tool used for end-to-end tests. **Canonical URL**: the address search engines should treat as the original. **Must-use plugin**: a WordPress plugin that is always active and lives in its own folder.
+
 ## 1. What changed from v1.1 and why
 
 1. **Rebaselined to the live system.** v1.1 treated the diabetes engine as unknown and the tools hub as new. Both were checked against the public site on 20 Oct 2026 (section 3). The deployed diabetes tool is a QDiabetes-2018 Model A port; the hub, navigation entry and both landing pages already exist. Requirements now say "verify" or "improve" where v1.1 said "identify" or "add".
@@ -13,7 +19,7 @@ Related: `02_Data_Model_Stage1_v1_2.md`, `03_Test_Criteria_Stage1_v1_2.md`, `04_
 3. **Independent oracles replace per-case clinical arithmetic** (DEC-02, DEC-03): the CRAN QDiabetes package and a sealed reference implementation of the protein engine. Clinicians sign the method once, not each number.
 4. **All open questions are closed by default decisions** in `05_Decision_Register_v1_2.md`. An agent never asks; it applies the DEC row and cites it.
 5. **New requirements** cover gaps found in review: cache control and purge (FR1-20), standalone-page hardening (FR1-21), independent oracle implementation (FR1-22), browser support (NFR1-12), monitoring (NFR1-13), email deliverability and sandbox (NFR1-14), embed security policy (NFR1-15), log retention (NFR1-16), iframe behaviour (UI1-10), copy-deck freeze (UI1-11).
-6. **Corrections:** waist-hip ratio → waist-to-height ratio throughout (DEC-06); IDRS tier gap closed (DEC-05); "five named policies" enumerated (DEC-12); 30-URL sample defined (section 9.2).
+6. **Corrections:** waist-hip ratio → waist-to-height ratio throughout (DEC-06); IDRS tier gap closed (DEC-05); "five named policies" enumerated (DEC-12); 30-URL sample defined (section 13).
 
 ## 2. Scope and controlling rules
 
@@ -21,9 +27,9 @@ Stage 1 = the two deployed public tools (Daily Protein Target, Diabetes Risk Che
 
 Source hierarchy: (1) served source of the live tools and WordPress staging clone, hashed in the AS-IS report; (2) this SRS v1.2 and the Decision Register; (3) `Protein-Tool-Engine-Reference.docx` (16 Jul 2026) and `Diabetes Risk Screening Tool.docx` as design notes; (4) SRS v1.0 for context. A discrepancy between (1) and (3) is recorded as a DEC row with `status: open` and the live behaviour is preserved until the row is decided at HG-02.
 
-Rules the agent cannot override: no change to `ENGINE`, `BANDS`, `DIET_MULT`, `PREG_GKG`, `bandFor`, `idrs`, `whtr` or the renal/emergency suppression logic without a DEC row ratified at HG-02; no production deployment without HG-03; no editing of a fixture's `expected` value except by the oracle runner (ORC-01/02) or a signed clinical fixture.
+Rules the agent cannot override: no change to any **frozen object** (the canonical list is the key set of `engine_hashes` in `manifests/<slug>.json`: for protein `BANDS`, `DIET_MULT`, `PREG_GKG`, `cutoffs`, `computeProtein`, `clampMeal`; for diabetes `ENGINE`, `bandFor`, `idrs`, `whtr`, and the emergency/symptom priority block of the result renderer; plus both PHP template-selection branches) without a DEC row ratified at HG-02; no production deployment without HG-03; no editing of a fixture's `expected` value except by the oracle runner (ORC-01/02) or a signed clinical fixture.
 
-## 3. AS-IS baseline (verified 20 Oct 2026, public HTML only)
+## 3. AS-IS baseline (verified 20–23 Oct 2026: public HTML, then the owner-supplied production snapshot)
 
 | Item | Finding | Reference |
 |---|---|---|
@@ -33,32 +39,36 @@ Rules the agent cannot override: no change to `ENGINE`, `BANDS`, `DIET_MULT`, `P
 | Landing pages | `/health-tools/protein/`, `/health-tools/diabetes-risk-check/`; each iframes a standalone HTML tool from `https://www.lifelinedaily.com/tools/…` via LiteSpeed lazy-load (`src="about:blank"`, `data-litespeed-src`); diabetes iframe `min-height:2200px`, protein `height:1600px`; **no `message` listener** on either page, and the two tools post different message shapes to `'*'`; canonical is apex host | FR1-21, UI1-10, DEC-15, DEC-31 |
 | Protein tool | `/tools/protein-requirement-tool.html` (SHA-256 `a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca`). Engine matches reference §4: `BANDS`, 0.4 adjusted-body-weight rule when BMI ≥ 30 and weight > upper-healthy weight, `DIET_MULT` 1.0/1.1/1.2, `PREG_GKG` 1.1/1.3, cap 2.0, per-meal clamp 20–40 g, renal `suppressed:true` early return, `renalUnsure` banner. Inputs: age 18–99, height 140–210 cm, sex, pregnancy (female), ethnicity (Asian cut-off 22.9 else 24.9), activity sedentary/light/moderate/vigorous, resistance 0/1-2/3-4/5+, goal maintain/fatloss/build/ageing/recovery, diet, meals 2–5, kidney no/yes/unsure, liver no/yes. POSTs flat JSON to `./submit-protein.php`. | CMP-02, CMP-04 |
 | Diabetes tool | `/tools/diabetes-risk-tool.html` (SHA-256 `27c0e33ce3b98aea495a2f13fca112e32007d9d478ab30ee70401a39ab496292`). QDiabetes-2018 Model A: sex-specific `s0`, ethnicity (9), smoking (5), age and BMI fractional polynomials, BMI clamped 20–40, Townsend fixed 0, binaries htn/cvd/gdm/pcos/learn/psy/ster/stat/apsy, family history mother/father/sibling → none/one/both. Age as band midpoints 27…82. Bands 5.6/10/20. IDRS (age, waist, activity, family) tiers <30/<60/≥60. WHtR 0.5/0.6. Symptom layer: classic (thirst, polyuria, weight loss) → banner above score; emergency → banner and score suppressed on screen (client still POSTs riskPercent today, DEC-09 changes this). Methodology copy says "a UK deprivation score", not "Townsend" (DEC-07). POSTs JSON incl. riskPercent, riskBand, bmi, whtr, idrsScore, idrsTier, symptomatic, emergency, heightCm, weightKg, waistCm to `./submit.php`. | CMP-03, CMP-05 |
-| Protected paths | `/tools/`, `/tools/api/config.php`, `/tools/api/templates-protein.php`, `/tools/api/mailer.php` → 403; `/tools/status.json` → 404 (does not exist yet) | NFR1-03, DEC-10 |
-| Hosting | Hostinger shared hosting behind `hcdn`; LiteSpeed Cache active (`X-LiteSpeed-Cache: hit`); host emits `Content-Security-Policy: upgrade-insecure-requests`; no HSTS, X-Robots-Tag or frame-ancestors | DEC-31, DEC-35 |
+| Protected paths | `/tools/`, `/tools/api/config.php`, `/tools/api/templates-protein.php`, `/tools/api/mailer.php` → 403 (deny-all `.htaccess` in `api/`, `outbox/`, `state/`); `/tools/status.json` → 404 (does not exist yet) | NFR1-03, DEC-10 |
+| Endpoints (from source) | Diabetes `submit.php`: POST only, optional origin allow-list, per-IP flat-file rate limit on `REMOTE_ADDR`, honeypot → silent 200, validation → 422, SMTP failure → 502; template chosen emergency → symptomatic → band, and the emergency template has no percentage token. Protein `submit-protein.php`: **no rate limit, no origin check**, honeypot → silent 200, `targetG` 20–400 checked when not suppressed, renal template chosen unconditionally when `suppressed`, send failure → 500. Neither checks `Content-Type` or body size. Shared `mailer.php` supports `transport: log` (writes whole emails to `api/outbox/`) and an optional `bcc_owner` copy | FR1-14, NFR1-03, NFR1-10, DEC-16, DEC-21, DEC-46 |
+| Persistence | None in the database or logs; only rate-limit files (`md5(ip)` + timestamps) and, if `transport` is `log`, full emails in `api/outbox/`. Production `config.php` values are unknown (DEC-46) | NFR1-01, DEC-21 |
+| WordPress platform | WordPress 7.1.3, Newspaper 12.7.9 with tagDiv Composer 5.4.8 and Cloud Library 3.9.6; 14 active plugins incl. Yoast SEO + Premium, LiteSpeed Cache 7.9.2, CookieYes 3.5.7, WP Mail SMTP, Link Whisper, WPForms Lite; permalinks `/%postname%/`; 1 administrator, 3 editors, 60 subscribers; 103 published and 102 unpublished posts; default category = Uncategorised | FR1-02, FR1-18, FR1-23, NFR1-01 |
+| Menus | Header menu (16 items) includes Health Tools with the two tool pages and The Report; footer menu = About, Contact, Privacy Policy, Terms & Conditions | DEC-40, DEC-43 |
+| LiteSpeed settings | Page cache on (public TTL 7 days, mobile cache on, no exclusions), image and **iframe** lazy-load on, CSS/JS minify and JS defer on, CDN and object cache off | DEC-31, FR1-20 |
+| Hosting | Hostinger shared hosting behind `hcdn`; LiteSpeed Cache active (`X-LiteSpeed-Cache: hit`); host emits `Content-Security-Policy: upgrade-insecure-requests`; no HSTS, X-Robots-Tag or frame-ancestors. Deployment is an rsync overlay of `site/` (Data Model §6) | DEC-31, DEC-35 |
 | Consent banner | CookieYes (`cookie-law-info`) banner active with an "Analytics" category defaulting off | DEC-11, DEC-32 |
 | Taxonomy | 103 published posts, 22 categories (6 empty: `womens-health`, `stress`, `healthy-living`, `health_tools`, `the-report`, `uncategorised`), 100+ tags, 8 pages (inventory `reports_live_inventory.json`, 23 Oct 2026). Category slugs include `nutrition-for-healthy-living`, `healthy-eating-for-longevity`, `healthy-diet-plans-for-longevity`, `food-nutrition`, `fitness`, `health-conditions`, `metabolic-health`, `gut-health`; tags `diabetes` (6 posts), `blood-sugar` (1), `insulin-resistance` (1) | DEC-13 |
 | Sitemap | 8 pages incl. hub and both landing pages; standalone `/tools/*.html` not listed, indexable | DEC-14 |
 | Policies | Privacy, Terms, About, Contact exist; no medical disclaimer / urgent-care page | DEC-12 |
 | Analytics in tools | No gtag/fbq/dataLayer/plausible in tool HTML or WordPress pages | FR1-16 |
-| Unknown (needs source access) | PHP persistence, SMTP logs, mailer behaviour, WordPress plugins and caching layer | FR1-01 |
 
 ## 4. Components
 
 | ID | Component | Location | Owner of change |
 |---|---|---|---|
 | CMP-01 | WordPress core, Newspaper theme, posts, menus | WP staging clone | Frozen except menus/pages via WP admin or WP-CLI |
-| CMP-02 | Protein tool page | `public_html/tools/protein-requirement-tool.html` | Shell/copy editable; engine frozen |
-| CMP-03 | Diabetes tool page | `public_html/tools/diabetes-risk-tool.html` | Shell/copy editable; engine frozen |
-| CMP-04 | Protein submit endpoint + template | `public_html/tools/submit-protein.php`, `public_html/tools/api/templates-protein.php` | Security/safety changes only |
-| CMP-05 | Diabetes submit endpoint + template | `public_html/tools/submit.php`, `public_html/tools/api/templates.php` | Security/safety changes only |
-| CMP-06 | Shared mailer and config | `public_html/tools/api/mailer.php`, `public_html/tools/api/config.php` | Change only with both-tool regression (NFR1-04) |
-| CMP-07 | Tool status file | `public_html/tools/status.json` | New (DEC-10) |
-| CMP-08 | `lld-tools` must-use plugin | `wp-content/mu-plugins/lld-tools/` | New (DEC-22) |
+| CMP-02 | Protein tool page | `site/public_html/tools/protein-requirement-tool.html` | Shell/copy editable; engine frozen |
+| CMP-03 | Diabetes tool page | `site/public_html/tools/diabetes-risk-tool.html` | Shell/copy editable; engine frozen |
+| CMP-04 | Protein submit endpoint + template | `site/public_html/tools/submit-protein.php`, `site/public_html/tools/api/templates-protein.php` | Security/safety changes only |
+| CMP-05 | Diabetes submit endpoint + template | `site/public_html/tools/submit.php`, `site/public_html/tools/api/templates.php` | Security/safety changes only |
+| CMP-06 | Shared mailer and config | `site/public_html/tools/api/mailer.php`, `api/config.php` (server-side only, from environment; `config.example.php` in Git) | Change only with both-tool regression (NFR1-04) |
+| CMP-07 | Tool status file | `site/public_html/tools/status.json` | New (DEC-10) |
+| CMP-08 | `lld-tools` must-use plugin | `site/public_html/wp-content/mu-plugins/lld-tools/` | New (DEC-22) |
 | CMP-09 | Homepage, hub page, two landing pages, medical disclaimer page | WP pages | New/edited content via plugin shortcodes |
-| CMP-10 | Web server config | `.htaccess` / vhost: headers, X-Robots-Tag, CSP, rate limit | New (DEC-14/16/28) |
+| CMP-10 | Web server config | `site/public_html/tools/.htaccess` and a managed `# BEGIN lld` block in the root `.htaccess`: headers, CSP, cache control | New (DEC-14/16/28) |
 | CMP-11 | Analytics (Plausible) | script tag in theme header + event calls in CMP-02/03/08 | New (DEC-11) |
 | CMP-12 | Repository artefacts: manifests, approvals, fixtures, evidence, link map | `repo/` (see 04) | New |
-| CMP-13 | CI pipeline | GitHub Actions (or equivalent) | New |
+| CMP-13 | CI and deployment | `.github/workflows/` (ci, deploy-staging, deploy-production) and `deploy/` | New |
 | CMP-14 | Independent oracles ORC-01 (R/QDiabetes), ORC-02 (Python protein reference), ORC-03 (IDRS from Mohan 2005), ORC-04 (WHtR cut-offs) | `oracles/` | New (FR1-22) |
 
 ## 5. Actors
@@ -101,7 +111,7 @@ Actor ACT-04. Main flow: all MUST items `accepted` → P-E release candidate →
 
 ## 7. Requirement format
 
-Status lifecycle: `draft → ready → in_progress → review → verified → accepted → released` (`blocked` from any active state). `verified` = automated assertions green and reviewer PASS; it satisfies dependencies. `accepted` additionally requires the human-gate artefact for hybrid items (see 04 §2). Each requirement has: **ID, title, priority** (MUST = release blocker; SHOULD = may be deferred by a DEC row), **type** (`behaviour` = code; `process` = artefact), **automation** (`auto` = fully automated; `hybrid` = automated plus a human gate), **depends_on**, **components**, **must_not_touch**, **statement**, **acceptance** as automated assertions (full detail in TC page) and **human gate**, plus **fixtures**, **decisions**, **use cases**. The registry JSON holds the same fields.
+Status lifecycle: `draft → ready → in_progress → review → verified → accepted → released` (`blocked` from any active state). `verified` = automated assertions green and reviewer PASS; it satisfies dependencies. `accepted` additionally requires the human-gate artefact for hybrid items (see 04 §2). The `decisions`, `fixtures` and `mutations` lists in the registry are authoritative; the DEC references in the requirement headers below are a convenience and are regenerated from the registry (DEC-38). Each requirement has: **ID, title, priority** (MUST = release blocker; SHOULD = may be deferred by a DEC row), **type** (`behaviour` = code; `process` = artefact), **automation** (`auto` = fully automated; `hybrid` = automated plus a human gate), **depends_on**, **components**, **must_not_touch**, **statement**, **acceptance** as automated assertions (full detail in TC page) and **human gate**, plus **fixtures**, **decisions**, **use cases**. The registry JSON holds the same fields.
 
 ---
 
@@ -110,7 +120,7 @@ Status lifecycle: `draft → ready → in_progress → review → verified → a
 ### FR1-01 Existing implementation audit and characterisation baseline — MUST, process, hybrid
 depends_on: — · components: CMP-01…CMP-06 · must_not_touch: all code · UC: all · TC-FR1-01 · HG-01
 
-Statement. Produce the AS-IS report: inventory of WordPress (version, plugins, theme version, caching layer, server), both tool HTML files, both PHP endpoints, shared mailer/config, server headers, DNS/host behaviour, email transport, any persistence (files, DB tables, third-party CRM), logs and retention. Hash every file (SHA-256). Record characterisation outputs for every fixture in `fixtures/*.json` (`oracle: characterisation`), visual baselines at 320/375/768/1440 for homepage, hub, both landing pages and both tools, and a crawl of the 30-URL sample (section 9.2). Mark each v1.1 and reference-document statement as confirmed, corrected or unknown.
+Statement. Produce the AS-IS report: inventory of WordPress (version, plugins, theme version, caching layer, server), both tool HTML files, both PHP endpoints, shared mailer/config, server headers, DNS/host behaviour, email transport, any persistence (files, DB tables, third-party CRM), logs and retention. Hash every file (SHA-256). Record characterisation outputs for every fixture in `fixtures/*.json` (`oracle: characterisation`), visual baselines at 320/375/768/1440 for homepage, hub, both landing pages and both tools, and a crawl of the 30-URL sample (section 13). Mark each v1.1 and reference-document statement as confirmed, corrected or unknown.
 
 Acceptance. AS-01 `reports/as-is/inventory.json` validates against SCH-02 and lists ≥ 2 tool manifests with hashes matching served files. AS-02 every fixture file has `expected` filled with `oracle: characterisation` and `source_version` equal to the manifest hash. AS-03 visual baseline PNGs exist for 6 pages × 4 widths. AS-04 crawl report lists 30 URLs with status 200 and canonical. AS-05 discrepancy ledger has zero rows with `status: unclassified`. HG-01 ratifies.
 
@@ -119,7 +129,7 @@ depends_on: FR1-01 · components: CMP-01 · must_not_touch: theme files, posts �
 
 Statement. Keep the live WordPress installation, Newspaper theme, articles, media, menus, metadata, URLs and editorial roles. All work happens in a staging clone; no theme replacement, no theme file edits (new behaviour lives in CMP-08). The only permitted taxonomy and menu changes are those enumerated in FR1-23 (DEC-39…42) and the Health Tools menu items; the regression crawl treats those URLs as expected redirects, not failures.
 
-Acceptance. AS-01 before/after crawl of the 30-URL sample: identical status codes, canonical, title, meta description, `robots`, H1 and word count ± 2 %. AS-02 sitemap diff: no removed URLs other than the four category archives listed in FR1-23, which must 301 to their documented targets. AS-03 `git diff` of `wp-content/themes/` is empty. AS-04 media sample (20 images) returns 200. AS-05 WP roles and capabilities unchanged (WP-CLI `role list` diff empty).
+Acceptance. AS-01 before/after crawl of the 30-URL sample: identical status codes, canonical, title, meta description, `robots`, H1 and word count ± 2 %. AS-02 sitemap diff: no removed URLs other than the FR1-23 set (four deleted archives, which must 301 to their DEC targets, and `the-report`, which leaves the sitemap when marked noindex). AS-03 `git diff` of `wp-content/themes/` is empty. AS-04 media sample (20 images) returns 200. AS-05 WP roles and capabilities unchanged (WP-CLI `role list` diff empty).
 
 ### FR1-03 Tools-first homepage — MUST, behaviour, auto
 depends_on: FR1-01, FR1-04 · components: CMP-08, CMP-09 · UC1-01, UC1-02 · TC-FR1-03 · DEC-23, DEC-30
@@ -145,7 +155,7 @@ Acceptance. AS-01 for every published post the rendered CTA presence equals the 
 ### FR1-06 Clinical method provenance — MUST, process, hybrid
 depends_on: FR1-01 · components: CMP-12 · TC-FR1-06 · HG-02 · DEC-25
 
-Statement. Maintain one methodology approval record per tool (SCH-03) referencing the exact file hash, engine object hashes (`ENGINE`, `BANDS`, `MESSAGES`, templates), intended use, eligibility, sources, limitations, regulatory position statement, reviewer and dates. Deployment of a tool version whose hash is not in an approval record with `decision: approved` is blocked by CI.
+Statement. Maintain one methodology approval record per tool (SCH-03) referencing the exact file hash, engine object hashes, intended use, eligibility, sources, limitations, regulatory position statement, reviewer and dates. Records exist from wave 1 with `clinical_signoff.decision: pending`; whenever a shell change alters the file hash while `engine_hashes` are unchanged, the implementer updates `version_hash` in the record in the same PR. `provenance-check` on **staging** accepts `pending` or `approved`; on **production** it requires `approved` (set at HG-02). Assertions that compare a page or copy hash to the approval record compare to the record's current value regardless of sign-off state; the sign-off itself is checked by `clinical-gate`.
 
 Acceptance. AS-01 `approvals/protein.json` and `approvals/diabetes.json` validate against SCH-03. AS-02 CI job `provenance-check` fails when the staged file hash ≠ approved hash (tested by MUT-10). AS-03 landing page methodology section displays `deployed_version` equal to the approval record. AS-04 `git log` of engine objects shows no change without a linked DEC. HG-02 signs the records.
 
@@ -154,7 +164,7 @@ depends_on: FR1-01, FR1-22 · components: CMP-02 · must_not_touch: `BANDS`, `DI
 
 Statement. Preserve the deployed protein engine exactly. Verify it against ORC-02 for all FX-PR fixtures: basis weight (actual vs adjusted), band collection and highest-band rule, age ≥ 65 bands, training flag, goal bands, diet multiplier, 2.0 cap, per-meal clamp, unit conversion, validation ranges 18–99 / 140–210 cm / weight range, 18 and 99 boundaries.
 
-Acceptance. AS-01 engine unit tests pass for all FX-PR-NRM, FX-PR-BMI, FX-PR-AGE, FX-PR-CAP, FX-PR-UNIT fixtures against characterisation values. AS-02 ORC-02 agreement: targetG, lowG, highG, gPerKg, perMeal equal within ±1 g / ±0.01 g/kg for every fixture, else a DEC row is auto-created and the loop stops. AS-03 invalid fixtures FX-PR-INV produce an error message and no result in the DOM. AS-04 imperial fixtures yield the same result as their metric twins. AS-05 hash of engine objects unchanged from manifest. AS-06 basis-weight arithmetic; AS-07 per-meal clamp (see TC). AS-08 every `BANDS` row's lo/hi and cited source are consistent with the primary-source table in the reference document §2 (DEC-03); mismatches become DEC rows. HG-02 signs the ORC-02 report and the band-table check.
+Acceptance. AS-01 engine unit tests pass for all FX-PR-NRM, FX-PR-BMI, FX-PR-AGE, FX-PR-CAP, FX-PR-UNIT fixtures against characterisation values. AS-02 ORC-02 agreement: targetG, lowG, highG, perMeal within ±1 g and gPerKg exact at 2 dp for every fixture, except fixtures listed under a DEC row with a preserve-deployed default (`known_deviations` in the registry: FX-PR-CAP-01, CAP-02 → DEC-44), which are compared to characterisation only and recorded in evidence as `known_deviation: DEC-44` until the row is ratified or overridden; any other disagreement creates a DEC row and blocks. AS-03 invalid fixtures FX-PR-INV produce an error message and no result in the DOM. AS-04 imperial fixtures yield the same result as their metric twins. AS-05 hash of engine objects unchanged from manifest. AS-06 basis-weight arithmetic; AS-07 per-meal clamp (see TC). AS-08 every `BANDS` row's lo/hi and cited source are consistent with the primary-source table in the reference document §2 (DEC-03); mismatches become DEC rows. HG-02 signs the ORC-02 report and the band-table check.
 
 ### FR1-08 Protein renal suppression — MUST, behaviour, hybrid
 depends_on: FR1-01 · components: CMP-02, CMP-04 · must_not_touch: renal early return · UC1-01 · TC-FR1-08 · SAF-PR-01, SAF-PR-02 · HG-02 (copy)
@@ -189,7 +199,7 @@ depends_on: FR1-10 · components: CMP-03 · UC1-02 · TC-FR1-12 · SAF-DM-03, SA
 
 Statement. Bands: <5.6 low, 5.6–<10 moderate, 10–<20 high, ≥20 very high. IDRS per ORC-03 with tiers <30/30–59/≥60. WHtR per ORC-04 with <0.5 healthy, 0.5–<0.6 raised, ≥0.6 high. Concordance note when band = low and (IDRS = high or WHtR = high). Without waist, secondary panel shows `MESSAGES.secondary.needWaist`. Methodology panel discloses QDiabetes-2018 Model A, UK calibration caveat, the fixed deprivation score (live wording "a UK deprivation score … neutral average", DEC-07), symptom-override design, type 2 only, not a diagnosis, source version.
 
-Acceptance. AS-01 FX-DM-BAND-01…12 (inputs engineered by the ORC-01 runner to straddle 5.6, 10 and 20 % for reachable profiles) map to the expected band label. AS-02 FX-DM-IDRS-01…06 (scores 20/30/50/60/0/70) → tier per ORC-03; the score-50 case detects MUT-08. AS-03 FX-DM-WHTR-01…04 (0.49/0.50/0.59/0.60) → band per ORC-04. AS-04 FX-DM-CONC-01 → concordance note visible; FX-DM-CONC-02 (low/low) → absent. AS-05 FX-DM-NOWAIST-01 → needWaist text, no IDRS/WHtR values. AS-06 methodology text contains the six disclosure phrases from `fixtures/required-phrases.json`. AS-07 no "waist-hip" string anywhere in CMP-03 or CMP-09. AS-08 result shows source and version. AS-09 `bandFor` unit test at 5.59/5.60/9.99/10.00/19.99/20.00 → low/moderate/moderate/high/high/very high (classification on the unrounded value, DEC-04).
+Acceptance. AS-01 FX-DM-BAND-01…12 (inputs engineered by the ORC-01 runner to straddle 5.6, 10 and 20 % for reachable profiles) map to the expected band label. AS-02 FX-DM-IDRS-01…06 (scores 20/30/50/60/0/70) → tier per ORC-03; the score-50 case detects MUT-08. AS-03 FX-DM-WHTR-01…04 (0.49/0.50/0.59/0.60) → band per ORC-04. AS-04 FX-DM-CONC-01 → concordance note visible; FX-DM-CONC-02 (low/low) → absent. AS-05 FX-DM-NOWAIST-01 → needWaist text, no IDRS/WHtR values. AS-06 methodology text contains every `methodology.*` phrase in `fixtures/required-phrases.json`. AS-07 no "waist-hip" string anywhere in CMP-03 or CMP-09. AS-08 result shows source and version. AS-09 `bandFor` unit test at 5.59/5.60/9.99/10.00/19.99/20.00 → low/moderate/moderate/high/high/very high (classification on the unrounded value, DEC-04).
 
 ### FR1-13 Guest access without account — MUST, behaviour, auto
 depends_on: FR1-01 · components: CMP-02, CMP-03 · UC1-01, UC1-02 · TC-FR1-13
@@ -201,30 +211,30 @@ Acceptance. AS-01 Playwright incognito contexts complete FX-PR-NRM-01 and FX-DM-
 ### FR1-14 Result email path — MUST, behaviour, hybrid
 depends_on: FR1-01, FR1-08, FR1-11 · components: CMP-04, CMP-05, CMP-06 · UC1-01, UC1-02 · TC-FR1-14 · DEC-16, DEC-21, DEC-27 · HG-03 (DEC-21)
 
-Statement. Keep the two separate endpoints. Server validates: email RFC 5322 syntax, `consent === true`, `company` empty, tool enum, numeric fields typed and ranged, payload ≤ 8 KB, JSON only. Reject otherwise with 400 JSON. Rate limit per DEC-16 using the CDN forwarded client IP (DEC-35). Honeypot per DEC-16. Templates escape all interpolated values. No marketing list, no persistence beyond the SMTP transaction (if audit finds persistence → DEC-21 blocked). Delivery failure → 502 JSON and friendly UI message.
+Statement. Keep the two separate endpoints and their payload keys. Close the gaps found in the audit: add the shared rate limit and origin allow-list to the protein endpoint, add `Content-Type` and body-size checks (≤ 8 KB, JSON only) to both, range-check `perMeal`, `meals`, `gPerKg`, `bmi` and measurements per Data Model §4, and return 502 (not 500) on send failure in both. Server validates: email RFC 5322 syntax, `consent === true`, `company` empty, tool enum. Reject otherwise with 400 JSON on both endpoints (the diabetes endpoint's current 422 changes to 400). Rate limit per DEC-16 using the CDN forwarded client IP (DEC-35). Honeypot per DEC-16. Templates escape all interpolated values. No marketing list, no persistence beyond the SMTP transaction (if audit finds persistence → DEC-21 blocked). Delivery failure → 502 JSON and friendly UI message.
 
 Acceptance. AS-01 valid POST (FX-MAIL-01/02) → 200, one message in Mailpit with expected template. AS-02 NEG: missing consent, bad email, non-empty honeypot (200 but no mail), oversize body, wrong content-type → expected status, zero mail. AS-03 6th POST within 10 min from same IP → 429. AS-04 payload with `<script>` in firstName → email HTML has it escaped. AS-05 SMTP down → 502 and UI shows `MESSAGES.emailFailed`; calculator result still visible. AS-06 server log lines for the run validate against SCH-07 field by field and contain no sentinel value, email address or symptom key. AS-07 FX-MAIL-REN-01 → renal template; FX-MAIL-EMG-01 → emergency template.
 
 ### FR1-15 Safe withdrawal and rollback — MUST, behaviour, auto
 depends_on: FR1-04, FR1-20 · components: CMP-07, CMP-02, CMP-03, CMP-04, CMP-05, CMP-08 · UC1-04 · TC-FR1-15 · SAF-WITHDRAW-01 · DEC-10, DEC-24
 
-Statement. `status.json` (SCH-08) controls each tool: `active | withdrawn | label_only`, with `message`, `since`, `approved_version`. Tool JS fetches it (`cache: 'no-store'`) before rendering and shows the unavailable state when not active; PHP endpoints return 503 JSON when not active; the plugin renders an unavailable card instead of the iframe; hub card shows the status label. Restore requires `approved_version` to equal a hash in an approval record (CI check). The runbook records the one-line toggle command and the LiteSpeed purge step (DEC-31). CI may toggle staging only; production is toggled by ACT-04 (DEC-08).
+Statement. `status.json` (SCH-08) on the server is the source of truth and controls each tool: `tools.<slug>.status ∈ {active, withdrawn}` with `message`, `since`, `approved_version`; planned tools appear only as `labels[]` entries with `label_only` (DEC-24). It is excluded from deploys; its only writer is `wp lld status set`, which validates the version against the approval records, writes the file and purges the configured LiteSpeed targets (DEC-10). Tool JS fetches it (`cache: 'no-store'`) before rendering and shows the unavailable state when not active; PHP endpoints return 503 JSON when not active; the plugin renders an unavailable card instead of the iframe; hub card shows the status label. Restore requires `approved_version` to equal a hash in an approval record (CI check). The runbook records the one-line toggle command and the LiteSpeed purge step (DEC-31). CI may toggle staging only; production is toggled by ACT-04 (DEC-08).
 
-Acceptance. AS-01 set diabetes withdrawn → within 60 s: hub card label "Temporarily unavailable", landing page has no iframe, direct `/tools/diabetes-risk-tool.html` shows unavailable state and no form, `submit.php` → 503; protein unchanged (FX-PR-NRM-01 passes). AS-02 restore → all routes active, FX-DM-QD-01 passes. AS-03 restore with `approved_version` not in approvals → CI `provenance-check` fails. AS-04 unavailable state links to `/health-tools/` and one educational article. AS-05 `status.json` response header `Cache-Control: no-store`.
+Acceptance. AS-01 set diabetes withdrawn → within 60 s: hub card label "Temporarily unavailable", landing page has no iframe, direct `/tools/diabetes-risk-tool.html` shows unavailable state and no form, `submit.php` → 503; protein unchanged (FX-PR-NRM-01 passes). AS-02 restore → all routes active, FX-DM-QD-01 passes. AS-03 `wp lld status set diabetes active --version=<hash not in approvals>` exits non-zero and leaves `status.json` unchanged. AS-04 unavailable state links to `/health-tools/` and one educational article. AS-05 `status.json` response header `Cache-Control: no-store`.
 
 ### FR1-16 Privacy-preserving conversion measurement — SHOULD, behaviour, hybrid
 depends_on: FR1-04, FR1-05 · components: CMP-11, CMP-02, CMP-03, CMP-08 · UC1-05 · TC-FR1-16 · DEC-11 · HG-03
 
-Statement. Plausible events with the allow-list in SCH-09: `tool_landing_view`, `tool_start`, `tool_complete`, `tool_unavailable_view`, `article_cta_click`, `email_sent` (count only), each with props `tool` and `source` (`article|hub|home|nav|campaign`). UTM handled by Plausible. No other props. The existing CookieYes banner is kept (DEC-32); Plausible loads as a cookieless script, or under the banner's Analytics category if the privacy reviewer so decides at HG-03 (DEC-11). No events fire when the script is blocked and tools still work.
+Statement. Plausible events with the allow-list in SCH-09: `tool_landing_view`, `tool_start`, `tool_complete`, `tool_unavailable_view`, `article_cta_click`, `email_sent` (count only), each with props `tool` and `source` (`article|hub|home|nav|campaign|direct`). UTM handled by Plausible. No other props. The existing CookieYes banner is kept (DEC-32); Plausible loads as a cookieless script, or under the banner's Analytics category if the privacy reviewer so decides at HG-03 (DEC-11). No events fire when the script is blocked and tools still work.
 
 Acceptance. AS-01 during FX-PR-REN-01, FX-DM-EMG-01 and FX-DM-QD-01 flows, every outbound request to the analytics host is captured; union of all query strings and bodies contains none of the values in `fixtures/sentinel-values.json` (unique synthetic numbers and strings entered) and no key outside SCH-09. AS-02 each event fires exactly once per action. AS-03 with analytics host blocked, flows complete and no console error above warning. AS-04 Plausible API (or stub) reports counts equal to the test's actions.
 
 ### FR1-17 Policies, education and safe navigation — MUST, behaviour, hybrid
 depends_on: FR1-04 · components: CMP-09 · UC1-06 · TC-FR1-17 · DEC-12 · HG-02 (disclaimer copy)
 
-Statement. The five DEC-12 pages are reachable by keyboard from each landing page and from each tool result zone; the four existing policy pages stay in the footer, and the footer is otherwise unchanged (DEC-43). The new `/medical-disclaimer/` page covers: screening not diagnosis, when to seek urgent care (UK 999 / NHS 111 first, then Sri Lanka 1990, India 112, "or your local emergency number", DEC-37), tool limitations, and contact. Copy is drafted by the agent and approved per DEC-36. Result zones of both tools state "not a diagnosis" and link to the disclaimer.
+Statement. The five DEC-12 pages are reachable by keyboard from each landing page (all five) and from each tool result zone (disclaimer and privacy links in the result zone; the standalone `/tools/*.html` pages gain a minimal footer with all five links). The WordPress footer keeps its four existing links and is otherwise unchanged (DEC-43). The new `/medical-disclaimer/` page covers: screening not diagnosis, when to seek urgent care (UK 999 / NHS 111 first, then Sri Lanka 1990, India 112, "or your local emergency number", DEC-37), tool limitations, and contact. Copy is drafted by the agent and approved per DEC-36. Result zones of both tools state "not a diagnosis" and link to the disclaimer.
 
-Acceptance. AS-01 the five URLs return 200; all five are reachable by keyboard (Tab) from each landing page and each tool result zone; the footer link set equals the baseline (About, Contact, Privacy Policy, Terms & Conditions). AS-02 result zone of both tools (any fixture) contains the phrase from `required-phrases.json#notDiagnosis` and a link to `/medical-disclaimer/`. AS-03 emergency fixture result contains the urgent-care phrase and a link to the disclaimer's urgent-care anchor. AS-04 copy hash of `/medical-disclaimer/` equals the approved hash in `approvals/copy.json` (after HG-02).
+Acceptance. AS-01 the five URLs return 200; all five are reachable by keyboard (Tab) on each landing page and on each standalone tool page; the result zone contains links to the disclaimer and privacy pages; the WordPress footer link set equals the baseline (About, Contact, Privacy Policy, Terms & Conditions). AS-02 result zone of both tools (any fixture) contains the phrase from `required-phrases.json#notDiagnosis` and a link to `/medical-disclaimer/`. AS-03 emergency fixture result contains the urgent-care phrase and a link to the disclaimer's urgent-care anchor. AS-04 copy hash of `/medical-disclaimer/` equals the approved hash in `approvals/copy.json` (after HG-02).
 
 ### FR1-18 Editorial ownership and review metadata — MUST, behaviour, auto
 depends_on: FR1-04 · components: CMP-08, CMP-01 · UC1-03 · TC-FR1-18
@@ -236,9 +246,9 @@ Acceptance. AS-01 meta fields present on both landing pages and visible in rende
 ### FR1-19 Staging and production release — MUST, process, hybrid
 depends_on: all MUST · components: CMP-13 · UC1-07 · TC-FR1-19 · HG-03
 
-Statement. Release candidate = tagged commit with release record (SCH-10) listing tool hashes, approval IDs, backup ID, evidence IDs for every MUST requirement, rollback command. Deployment is a scripted step run by ACT-04 after HG-03. Post-deploy smoke suite runs at +0 h, +1 h, +24 h.
+Statement. P-E runs when every MUST requirement is at least `verified`. Release candidate = tagged commit with release record (SCH-10) listing tool hashes, approval IDs, backup ID, evidence IDs for every MUST requirement, rollback command. HG-03 moves hybrid items to `accepted`; G-06 requires every MUST `accepted`. Deployment is the `deploy-production` workflow, approved by ACT-04 in the protected environment. Post-deploy smoke suite runs at +0 h, +1 h, +24 h.
 
-Acceptance. AS-01 `releases/<tag>.json` validates against SCH-10 and references an `accepted` evidence bundle for every MUST ID. AS-02 restore drill log (NFR1-08) dated within 7 days of the tag. AS-03 smoke suite (hub, both landing pages, both tools happy path, both emails to Mailpit-equivalent sink or seeded inbox, status.json) passes at all three times. AS-04 rollback drill: deploy previous tag to staging and smoke passes.
+Acceptance. AS-01 `releases/<tag>.json` validates against SCH-10 and, for every MUST ID, references an evidence bundle whose `results[].outcome` are all `pass` and `reviewer.verdict` is `PASS`, with registry status ≥ `verified`. AS-02 restore drill log (NFR1-08) dated within 7 days of the tag. AS-03 smoke suite (hub, both landing pages, both tools happy path, both emails to Mailpit-equivalent sink or seeded inbox, status.json) passes at all three times. AS-04 rollback drill: deploy previous tag to staging and smoke passes.
 
 ### FR1-20 Cache control and purge — MUST, behaviour, auto
 depends_on: FR1-01 · components: CMP-10, CMP-07 · UC1-04 · TC-FR1-20 · DEC-10
@@ -250,9 +260,9 @@ Acceptance. AS-01 headers as specified on the four paths. AS-02 after toggling s
 ### FR1-21 Standalone tool page hardening — MUST, behaviour, auto
 depends_on: FR1-01 · components: CMP-02, CMP-03, CMP-09, CMP-10 · UC1-01, UC1-02 · TC-FR1-21 · DEC-14, DEC-15, DEC-28
 
-Statement. Iframe `src` uses the apex host and is excluded from LiteSpeed lazy-load (DEC-31). Both tools post one message schema `{type:'lld-tool-height', height}` to the configured origin only (DEC-34); the `lld-tools` parent listener verifies `event.origin`. Fixed `height`/`min-height` removed; height set from messages with a 600 px fallback. `<noscript>` fallback link to the standalone page. `/tools/*.html` carry `<link rel="canonical">` to the landing page; no `noindex` (DEC-14). CSP per DEC-28; HSTS per DEC-35.
+Statement. Iframe `src` uses the environment's configured origin (apex on production) and is excluded from LiteSpeed lazy-load (DEC-31). Both tools post one message schema `{type:'lld-tool-height', height}` to the configured origin only, substituted from the `__LLD_ORIGIN__` placeholder at deploy time (DEC-34); the `lld-tools` parent listener verifies `event.origin`. Fixed `height`/`min-height` removed; height set from messages with a 600 px fallback. `<noscript>` fallback link to the standalone page. `/tools/*.html` carry `<link rel="canonical">` to the landing page; no `noindex` (DEC-14). CSP per DEC-28; HSTS per DEC-35.
 
-Acceptance. AS-01 landing HTML iframe has a real `src="https://lifelinedaily.com/tools/…"` (not `about:blank`/`data-litespeed-src`). AS-02 tool JS source contains no `postMessage(…, '*')`; parent listener rejects a message from a different origin (unit test). AS-03 at 320/375/768/1440 the iframe height equals content height ± 20 px after result render; no inner scrollbar. AS-04 `/tools/*.html` has no `noindex` header or meta; HTML has canonical to the landing page. AS-05 CSP headers present as DEC-28; a test page on another origin cannot frame the tool (Playwright reports blocked).
+Acceptance. AS-01 landing HTML iframe has a real `src="<configured origin>/tools/…"` (not `about:blank`/`data-litespeed-src`). AS-02 tool JS source contains no `postMessage(…, '*')`; parent listener rejects a message from a different origin (unit test). AS-03 at 320/375/768/1440 the iframe height equals content height ± 20 px after result render; no inner scrollbar. AS-04 `/tools/*.html` has no `noindex` header or meta; HTML has canonical to the landing page. AS-05 CSP headers present as DEC-28; a test page on another origin cannot frame the tool (Playwright reports blocked).
 
 ### FR1-22 Independent oracles — MUST, process, auto
 depends_on: FR1-01 · components: CMP-14 · TC-FR1-22 · DEC-02, DEC-03
@@ -262,11 +272,11 @@ Statement. ORC-01: Dockerised R script using `QDiabetes` 1.0-2 installed from th
 Acceptance. AS-01 oracle containers build and run from clean checkout in CI. AS-02 ORC-02 session log exists with file-access list excluding `*.html`. AS-03 each oracle result file validates against SCH-06 and covers every fixture ID in its scope. AS-04 oracle versions pinned (R package version, Python hash) and recorded in results.
 
 ### FR1-23 Category tidy-up — MUST, behaviour, auto
-depends_on: FR1-01, FR1-02 · components: CMP-01, CMP-08, CMP-10 · UC1-03 · TC-FR1-23 · DEC-39, DEC-40, DEC-41, DEC-42 · HG-01
+depends_on: FR1-01 · components: CMP-01, CMP-08, CMP-10 · UC1-03 · TC-FR1-23 · DEC-39, DEC-40, DEC-41, DEC-42 · HG-01
 
 Statement. Apply exactly these editorial changes via WP-CLI on staging, scripted and re-runnable (`wp lld tidy apply`), after the baseline crawl: delete `womens-health`, `healthy-living`, `stress` (all 0 posts) with 301 redirects to `/category/wellness/`; set the default category to `wellness` then delete `uncategorised` with a redirect to `/`; remove `the-report` from the primary menu and set its archive to `noindex`, keeping the term; record `healthy-living` and `stress` in `content/planned-categories.json` with their slugs and parent. No post changes its categories as a result. The footer is not changed.
 
-Acceptance. AS-01 after `wp lld tidy apply`, `wp term list category` lacks the four deleted slugs and `the-report` remains. AS-02 the five archive URLs return 301 to their DEC targets; `the-report` archive returns 200 with `noindex`. AS-03 primary menu has no item linking to `the-report`. AS-04 every post's category set is byte-identical to the baseline inventory. AS-05 `wp option get default_category` is the `wellness` term ID. AS-06 `content/planned-categories.json` validates and lists the two slugs. AS-07 footer link set equals baseline (DEC-43).
+Acceptance. AS-01 after `wp lld tidy apply`, `wp term list category` lacks the four deleted slugs and `the-report` remains. AS-02 the four deleted archive URLs return 301 to their DEC targets; the `the-report` archive returns 200 with `noindex`. AS-03 primary menu has no item linking to `the-report`. AS-04 every post's category set is byte-identical to the baseline inventory. AS-05 `wp option get default_category` is the `wellness` term ID. AS-06 `content/planned-categories.json` validates and lists the two slugs. AS-07 footer link set equals baseline (DEC-43).
 
 ---
 
@@ -277,7 +287,7 @@ depends_on: FR1-01 · TC-NFR1-01 · DEC-11, DEC-20, DEC-21 · HG-03
 
 Statement. Data-flow inventory (SCH-12) listing every field in both POST payloads, email templates, logs and analytics with classification (`identifier|health|technical`), destination, lawful basis, retention. No new health datastore. DPIA screening checklist completed.
 
-Acceptance. AS-01 `privacy/data-flow.json` validates against SCH-12 and contains every key found by static scan of both payload builders and both templates. AS-02 every `health` field has destination ∈ {`screen`, `smtp`} only. AS-03 sentinel scan (FR1-16 AS-01) passes. AS-04 DPIA checklist file complete (no `TODO`). HG-03 signs.
+Acceptance. AS-01 `privacy/data-flow.json` validates against SCH-12 and contains every key found by static scan of both payload builders and both templates. AS-02 every `health` field has destination ∈ {`screen`, `smtp`} only. AS-03 sentinel scan: during the three sentinel flows no request to any host other than the site origin contains a sentinel value, whether or not analytics is installed (holds even if FR1-16 is deferred). AS-04 DPIA checklist file complete (no `TODO`). HG-03 signs.
 
 ### NFR1-02 Clinical governance — MUST, process, hybrid
 depends_on: FR1-06, FR1-07, FR1-10, FR1-12 · TC-NFR1-02 · HG-02
@@ -305,7 +315,7 @@ depends_on: FR1-03, FR1-04 · TC-NFR1-05 · UC1-06
 
 Statement. WCAG 2.2 AA on homepage, hub, both landing pages, both tools (form and result states incl. renal, emergency, symptom, unavailable).
 
-Acceptance. AS-01 axe-core: 0 `critical` and 0 `serious` violations on 10 states. AS-02 keyboard script completes both tools; focus order equals DOM order; no focus trap. AS-03 every input has an associated label; errors use `role=alert` or `aria-live=assertive`; banners use `role=alert`. AS-04 contrast of band colours and banners ≥ 4.5:1 (computed). AS-05 Lighthouse accessibility ≥ 95 on all 6 pages. AS-06 heading outline has no skipped levels.
+Acceptance. AS-01 axe-core: 0 `critical` and 0 `serious` violations on the 11 states enumerated in TC-NFR1-05. AS-02 keyboard script completes both tools; focus order equals DOM order; no focus trap. AS-03 every input has an associated label; errors use `role=alert` or `aria-live=assertive`; banners use `role=alert`. AS-04 contrast of band colours and banners ≥ 4.5:1 (computed). AS-05 Lighthouse accessibility ≥ 95 on all 6 pages. AS-06 heading outline has no skipped levels.
 
 ### NFR1-06 Mobile performance — SHOULD, behaviour, auto
 depends_on: FR1-03 · TC-NFR1-06 · DEC-17
@@ -428,9 +438,9 @@ Acceptance. AS-01 `copy/inventory.json` (DEC-25) enumerates every copy source; `
 | Gate | Condition (all machine-checked unless marked HG) | Evidence |
 |---|---|---|
 | G-01 Baseline | FR1-01 accepted; manifests and hashes in repo; HG-01 signed | EV-FR1-01-* , `approvals/hg-01.json` |
-| G-02 Safety | TC-FR1-08, FR1-09, FR1-11, FR1-12, FR1-14 green incl. Mailpit assertions; all MUT-01…09 proven red-then-green | CI run id |
+| G-02 Safety | TC-FR1-08, FR1-09, FR1-11, FR1-12, FR1-14 green incl. Mailpit assertions; MUT-01…09 proven red-then-green | CI run id |
 | G-03 Clinical | ORC-01/02 reports 100 % within tolerance; approval records signed; HG-02 signed; zero open HG-02 DEC rows | `approvals/*.json`, `oracles/*/results.json` |
-| G-04 Quality | Every MUST FR/NFR/UI `accepted`; ZAP 0 High; axe 0 critical/serious; SHOULD items accepted or deferred by DEC | registry status report |
+| G-04 Quality | Every MUST FR/NFR/UI `accepted`; MUT-10…14 proven; ZAP 0 High; axe 0 critical/serious; SHOULD items accepted or deferred by DEC | registry status report |
 | G-05 Site regression | FR1-02, NFR1-07, UI1-07 green; restore and rollback drills recorded | EV bundles |
 | G-06 Release | Release record valid; HG-03 signed | `releases/<tag>.json`, `approvals/hg-03.json` |
 
@@ -438,7 +448,7 @@ Acceptance. AS-01 `copy/inventory.json` (DEC-25) enumerates every copy source; `
 
 All 23 FR, 16 NFR and 11 UI requirements have `status: accepted` (MUST) or `deferred` with a DEC row (SHOULD); every evidence bundle validates against SCH-06; gates G-01…G-06 satisfied; production smoke at +24 h green.
 
-## 13. The 30-URL regression sample (section 9.2 reference)
+## 13. The 30-URL regression sample (section 13 reference)
 
 Deterministic rule, generated by `tools/sample-urls.js` at FR1-01 and frozen in `fixtures/site/url-sample.json`: the 8 page-sitemap URLs; the 5 category archive URLs in primary navigation; the 12 most recent posts by `post-sitemap.xml` lastmod; the 5 most-viewed posts if a view counter exists, otherwise the next 5 posts by lastmod. Total 30.
 

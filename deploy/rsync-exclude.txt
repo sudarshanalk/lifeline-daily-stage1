@@ -1,0 +1,10 @@
+tools/status.json
+tools/api/config.php
+tools/api/config.example.php.bak
+tools/api/outbox/*
+tools/api/state/*
+!tools/api/outbox/.htaccess
+!tools/api/state/.htaccess
+.DS_Store
+Thumbs.db
+*.log

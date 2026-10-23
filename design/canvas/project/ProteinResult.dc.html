@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Protein tool, result</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#f2f7f4}
+a{color:#157a42}a:hover{color:#0f5a31}
+</style>
+</helmet>
+<div data-test="result" style="display: flex; flex-direction: column; gap: 14px; padding: 16px; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #f2f7f4">
+
+  <div data-test="banners" style="display: flex; flex-direction: column; gap: 10px">
+    <div role="alert" style="border: 1.5px solid #e7c79a; background: #fdf4ea; color: #7a4c12; border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true" style="flex: 0 0 auto"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>
+      <div style="display: flex; flex-direction: column; gap: 4px"><h3 style="margin: 0; font-size: 15px; font-weight: 700">Confirm your kidney function first</h3><p style="margin: 0; font-size: 13px; line-height: 1.5">You said you're not sure about your kidney function. The target below assumes healthy kidneys. If a blood test later shows reduced function, this number would be too high for you. Treat it as provisional.</p></div>
+    </div>
+  </div>
+
+  <section data-test="headline" aria-labelledby="hl" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 2px 6px rgba(20,40,30,.06)">
+    <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #157a42">Your daily protein target</span>
+    <h2 id="hl" style="margin: 0; font-size: 44px; font-weight: 800; letter-spacing: -0.03em; line-height: 1">105 g <span style="font-size: 18px; font-weight: 600; color: #63706a; letter-spacing: 0">per day</span></h2>
+    <p style="margin: 0; font-size: 14px; color: #3a4440; line-height: 1.5">A range of <b>75–105 g</b> applies to you. The upper end is the most demanding guideline that fits your profile, so it is the one we recommend.</p>
+  </section>
+
+  <div data-test="metrics" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+    <div style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 11px; color: #63706a; text-transform: uppercase; letter-spacing: 0.06em">Per kg</span><span style="font-size: 18px; font-weight: 700">1.4 g</span></div>
+    <div style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 11px; color: #63706a; text-transform: uppercase; letter-spacing: 0.06em">Per meal</span><span style="font-size: 18px; font-weight: 700">35 g</span><span style="font-size: 11px; color: #63706a">× 3 meals</span></div>
+    <div style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 11px; color: #63706a; text-transform: uppercase; letter-spacing: 0.06em">Basis</span><span style="font-size: 18px; font-weight: 700">75 kg</span><span style="font-size: 11px; color: #63706a">current weight</span></div>
+  </div>
+
+  <section data-test="interp" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+    <h3 style="margin: 0; font-size: 16px; font-weight: 700">What this means</h3>
+    <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #3a4440">You are moderately active with no resistance training, so the guideline band that governs is the general active-adult range (1.0–1.4 g per kg). Guidelines describe minimums, so we take the most demanding one that applies to you.</p>
+    <ul style="margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.6; color: #3a4440"><li>IOM AMDR / ISSN lower band: 1.0–1.4 g/kg</li><li>Diet adjustment: none (omnivore)</li><li>Ceiling of 2.0 g/kg: not reached</li></ul>
+  </section>
+
+  <section data-test="advice" style="background: #eafaf0; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 8px">
+    <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: #157a42">Next step</h3>
+    <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #1f3a2b">Aim for roughly 35 g at each of your three meals. A palm-sized portion of meat, fish, tofu or two eggs plus dairy gets most people there. Spread it through the day rather than loading one meal.</p>
+    <a href="#" style="font-size: 14px; font-weight: 600">Read: How much protein do you really need? →</a>
+  </section>
+
+  <details data-test="methodology" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 14px 18px">
+    <summary style="font-size: 15px; font-weight: 700; cursor: pointer">How this was calculated</summary>
+    <div style="margin-top: 10px; font-size: 13px; line-height: 1.6; color: #3a4440; display: flex; flex-direction: column; gap: 6px">
+      <span>Every gram-per-kilogram figure traces to a named guideline: IOM/DRI 2005, WHO/FAO/UNU 2007, PROT-AGE 2013, ESPEN 2014, ISSN 2017, ACSM/AND/DC 2016. Bands are collected, the highest applies, a plant-diet multiplier is applied where relevant, the result is capped at 2.0 g/kg and multiplied by your basis weight.</span>
+      <span style="color: #63706a">Method version a10d21b0 · reviewed [date] by [Clinical reviewer]</span>
+    </div>
+  </details>
+
+  <p data-test="disclaimer" style="margin: 0; font-size: 12px; color: #63706a; line-height: 1.5; padding: 0 4px">This is screening information for general health and <b>not a diagnosis</b> or a prescription. The tool cannot see your blood results, medication or medical history. <a href="#">Medical disclaimer and urgent care</a></p>
+
+  <section data-test="email-card" aria-labelledby="em-h" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+    <h3 id="em-h" style="margin: 0; font-size: 16px; font-weight: 700">Email yourself a copy</h3>
+    <p style="margin: 0; font-size: 13px; color: #63706a; line-height: 1.5">Optional. Sent once. We do not keep your email address or your result.</p>
+    <label for="fn" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">First name (optional)</label>
+    <input id="fn" type="text" placeholder="First name (optional)" style="height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 12px; font: inherit; font-size: 15px">
+    <label for="em" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Email address</label>
+    <input id="em" type="email" placeholder="Email address" style="height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 12px; font: inherit; font-size: 15px">
+    <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: #3a4440">
+      <input type="checkbox" style="width: 20px; height: 20px; margin: 2px 0 0; flex: 0 0 auto">
+      <span>I agree to Lifeline Daily emailing this result, which includes health information I entered, to the address above. It is sent once and not stored. <a href="#">Privacy Policy</a></span>
+    </label>
+    <button type="button" disabled style="min-height: 48px; border-radius: 12px; border: 0; background: #c9d3cd; color: #ffffff; font: inherit; font-size: 15px; font-weight: 700">Email me a copy</button>
+  </section>
+
+  <button type="button" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 14px; font-weight: 600; color: #161a17; cursor: pointer">Start again</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1440}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

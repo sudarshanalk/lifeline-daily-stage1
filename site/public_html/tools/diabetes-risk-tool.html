@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Diabetes Risk Assessment — Lifeline Daily</title>
+<style>
+:root{
+  --charcoal:#1c1c1c; --charcoal-soft:#2b2b2b;
+  --brand-green:#3fd07f; --brand-green-soft:#eafaf0;
+  --accent:#1f9d57; --accent-dark:#157a42;
+  --band-low:#1f9d57; --band-mod:#a8690d; --band-high:#b5302f; --band-vhigh:#8a1f1e;
+  --ink:#161a17; --muted:#63706a; --line:#e4eae6; --paper:#ffffff; --wash:#f2f7f4;
+  --mint:#eafaf0; --radius:18px;
+  --shadow-sm:0 1px 2px rgba(20,40,30,.06);
+  --shadow:0 2px 6px rgba(20,40,30,.06),0 14px 34px rgba(20,40,30,.07);
+  --shadow-lg:0 8px 20px rgba(20,40,30,.10),0 30px 60px rgba(20,40,30,.10);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color:var(--ink); line-height:1.5; -webkit-font-smoothing:antialiased;
+  background:
+    radial-gradient(1200px 400px at 50% -140px, rgba(63,208,127,.10), transparent 70%),
+    var(--wash);
+}
+.wrap{max-width:780px; margin:0 auto; padding:0 16px 64px}
+.tabular{font-variant-numeric:tabular-nums}
+
+/* ===== Hero with pulse-line signature ===== */
+header.hero{position:relative; overflow:hidden; background:linear-gradient(160deg,#232626,#141616); color:#fff; padding:34px 20px 30px; text-align:center}
+header.hero .pulse{position:absolute; left:0; right:0; bottom:0; width:100%; height:70px; opacity:.5}
+header.hero .pulse path{fill:none; stroke:var(--brand-green); stroke-width:2.5;
+  stroke-dasharray:1400; stroke-dashoffset:1400; animation:draw 3.2s ease-out .2s forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+header.hero .eyebrow{display:inline-block; letter-spacing:.28em; text-transform:uppercase;
+  font-size:.66rem; font-weight:700; color:var(--brand-green); background:rgba(63,208,127,.12);
+  border:1px solid rgba(63,208,127,.28); padding:5px 12px; border-radius:999px; margin-bottom:12px}
+header.hero h1{margin:0; font-size:2rem; font-weight:800; letter-spacing:-.02em; position:relative; z-index:1}
+header.hero .tagline{margin:8px 0 0; color:var(--brand-green); font-weight:600; font-size:.95rem; position:relative; z-index:1}
+
+/* progress bar */
+.progress{position:sticky; top:0; z-index:20; height:5px; background:var(--line); border-radius:0 0 6px 6px; margin-bottom:4px}
+.progress-fill{height:100%; width:0%; background:linear-gradient(90deg,var(--accent),var(--brand-green));
+  border-radius:0 6px 6px 0; transition:width .35s cubic-bezier(.2,.8,.2,1)}
+
+.scope{background:var(--mint); border:1px solid #cdeede; color:#245b41; border-radius:var(--radius);
+  padding:15px 17px; margin:18px 0; font-size:.92rem}
+.scope strong{color:var(--accent-dark)}
+
+/* ===== Section cards ===== */
+.card{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius);
+  padding:22px; margin:16px 0; box-shadow:var(--shadow)}
+.sec-head{display:flex; align-items:center; gap:13px; margin-bottom:6px}
+.sec-icon{flex:0 0 auto; width:42px; height:42px; border-radius:13px; background:var(--mint);
+  display:grid; place-items:center; color:var(--accent); box-shadow:inset 0 0 0 1px #cdeede}
+.sec-icon svg{width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round}
+.sec-titles{min-width:0}
+.sec-num{font-size:.66rem; letter-spacing:.24em; text-transform:uppercase; color:var(--brand-green); font-weight:700}
+.sec-titles h2{margin:1px 0 0; font-size:1.12rem; font-weight:750; letter-spacing:-.01em}
+.card > .hint{margin:2px 0 16px; color:var(--muted); font-size:.87rem}
+.field{margin:16px 0}
+.field:last-child{margin-bottom:2px}
+.field > label{display:block; font-weight:650; margin-bottom:9px; font-size:.95rem}
+.field .sub{font-weight:400; color:var(--muted); font-size:.82rem}
+
+/* tap-select */
+.taps{display:flex; flex-wrap:wrap; gap:8px}
+.tap{border:1.5px solid var(--line); background:#fff; color:var(--ink); border-radius:12px;
+  padding:10px 15px; font-size:.9rem; cursor:pointer; font-family:inherit; font-weight:550;
+  transition:transform .1s, border-color .12s, background .12s, color .12s, box-shadow .12s}
+.tap:hover{border-color:#a9d8bd; transform:translateY(-1px)}
+.tap[aria-pressed="true"]{background:linear-gradient(150deg,var(--accent),#25b566); border-color:transparent;
+  color:#fff; box-shadow:0 6px 14px rgba(31,157,87,.28)}
+.tap:focus-visible{outline:3px solid #9fe0bd; outline-offset:2px}
+.taps.age .tap{min-width:74px; text-align:center}
+
+input[type=number],input[type=email],input[type=text],select{
+  font-family:inherit; font-size:1rem; padding:12px 13px; border:1.5px solid var(--line);
+  border-radius:12px; background:#fff; color:var(--ink); width:100%}
+input:focus,select:focus{outline:3px solid #9fe0bd; outline-offset:1px; border-color:var(--accent)}
+.measure{display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center}
+.measure .split{display:flex; gap:6px}
+.measure .split input{min-width:0}
+.unit-sel{min-width:104px}
+.derived{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px}
+.derived .chip{flex:1 1 auto; background:var(--wash); border:1px solid var(--line); border-radius:12px;
+  padding:10px 14px; font-size:.85rem; color:var(--muted)}
+.derived .chip b{display:block; color:var(--ink); font-size:1.15rem; font-weight:750; margin-top:2px}
+
+.toggle-row{display:flex; gap:8px; align-items:center; margin-bottom:16px; flex-wrap:wrap}
+.toggle-row .lbl{font-size:.82rem; color:var(--muted)}
+
+/* checklists */
+.checks{display:grid; gap:9px}
+.checks.two{grid-template-columns:1fr 1fr}
+.check{display:flex; gap:11px; align-items:center; padding:12px 14px; border:1.5px solid var(--line);
+  border-radius:13px; cursor:pointer; font-size:.92rem; transition:border-color .12s, background .12s}
+.check:hover{border-color:#a9d8bd}
+.check input{width:19px; height:19px; accent-color:var(--accent); flex:0 0 auto}
+.check.armed{border-color:var(--accent); background:var(--mint)}
+
+details.optional{border:1.5px dashed var(--line); border-radius:14px; padding:0 16px; margin-top:6px}
+details.optional summary{cursor:pointer; padding:14px 0; font-weight:650; font-size:.92rem; list-style:none}
+details.optional summary::-webkit-details-marker{display:none}
+details.optional summary::before{content:"＋"; color:var(--accent); font-weight:700; margin-right:8px}
+details.optional[open] summary::before{content:"－"}
+details.optional[open]{padding-bottom:16px}
+
+.danger-box{border:1.5px solid #f0c9c7; background:#fdf4f3; border-radius:14px; padding:2px 16px; margin-top:14px}
+.danger-box summary{color:var(--band-high); list-style:none}
+.danger-box summary::before{content:"⚠"; margin-right:8px}
+
+#symList[hidden]{display:none}
+
+.err{color:var(--band-high); font-size:.85rem; margin-top:8px; display:none}
+.err.show{display:block}
+
+.cta{display:block; width:100%; background:linear-gradient(150deg,var(--accent),#23b062); color:#fff;
+  border:0; border-radius:14px; padding:16px; font-size:1.08rem; font-weight:750; cursor:pointer;
+  font-family:inherit; margin-top:8px; box-shadow:0 10px 24px rgba(31,157,87,.28); transition:transform .1s, box-shadow .12s}
+.cta:hover{transform:translateY(-1px); box-shadow:0 14px 30px rgba(31,157,87,.34)}
+.cta:active{transform:translateY(0)}
+.cta:focus-visible{outline:3px solid #9fe0bd; outline-offset:3px}
+.cta.secondary{background:#fff; color:var(--accent-dark); border:1.5px solid var(--accent); box-shadow:none}
+
+/* ===== Results ===== */
+#results{display:none}
+#results.show{display:block}
+#results.show > *{animation:rise .45s ease both}
+#results.show > *:nth-child(2){animation-delay:.05s}
+#results.show > *:nth-child(3){animation-delay:.1s}
+#results.show > *:nth-child(4){animation-delay:.15s}
+@keyframes rise{from{opacity:0; transform:translateY(10px)}to{opacity:1; transform:none}}
+
+.banner{border-radius:var(--radius); padding:17px 19px; margin:16px 0; border:1.5px solid; display:flex; gap:13px; align-items:flex-start}
+.banner .bi{flex:0 0 auto; width:26px; height:26px}
+.banner.emergency{background:#fdeceb; border-color:#e7a9a4; color:#7d1f1c}
+.banner.symptom{background:#fdf4ea; border-color:#e7c79a; color:#7a4c12}
+.banner h3{margin:0 0 5px; font-size:1.05rem}
+.banner p{margin:0; font-size:.92rem; line-height:1.5}
+
+.headline{background:linear-gradient(180deg,#fff,#fbfefc); border:1px solid var(--line); border-radius:22px;
+  padding:26px 22px 24px; text-align:center; box-shadow:var(--shadow-lg); position:relative; overflow:hidden}
+.headline .eyebrow{color:var(--muted); font-size:.72rem; letter-spacing:.22em; text-transform:uppercase; font-weight:700}
+.gaugebox{margin:8px auto 0; max-width:360px}
+.risk-num{font-size:3.6rem; font-weight:850; line-height:1; margin:2px 0; letter-spacing:-.03em}
+.risk-band{display:inline-flex; align-items:center; gap:7px; padding:6px 16px; border-radius:999px; color:#fff;
+  font-weight:750; font-size:.9rem; margin-top:4px; box-shadow:var(--shadow-sm)}
+.risk-band::before{content:""; width:8px; height:8px; border-radius:50%; background:#fff; opacity:.9}
+.interp{margin:16px auto 0; max-width:52ch; color:#333; font-size:.96rem}
+.next-step{margin:16px auto 0; max-width:52ch; background:var(--mint); border:1px solid #cdeede;
+  border-radius:14px; padding:13px 15px; font-size:.92rem; text-align:left; display:flex; gap:10px}
+.next-step b{color:var(--accent-dark)}
+.next-step .ns-ic{flex:0 0 auto; color:var(--accent)}
+
+.panel{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:20px; margin:16px 0; box-shadow:var(--shadow)}
+.panel h3{margin:0 0 14px; font-size:1.05rem; display:flex; align-items:center; gap:9px}
+.panel h3 svg{width:19px;height:19px;stroke:var(--accent);fill:none;stroke-width:1.9}
+.tiles{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.tile{border:1px solid var(--line); border-left-width:5px; border-radius:13px; padding:13px 15px; background:#fff}
+.tile .t-label{font-size:.8rem; color:var(--muted)}
+.tile .t-value{font-size:1.5rem; font-weight:800; margin:3px 0 2px; letter-spacing:-.02em}
+.tile .t-tag{font-size:.78rem; font-weight:700}
+.tile .t-note{font-size:.8rem; color:var(--muted); margin-top:3px}
+.concord{background:#fff8ec; border:1px solid #ead6ab; border-radius:13px; padding:13px 15px; margin-top:14px; font-size:.9rem; color:#6d4e14}
+.advice li{margin:9px 0; font-size:.93rem; padding-left:4px}
+.advice{margin:0; padding-left:20px}
+
+details.method{background:var(--paper); border:1px solid var(--line); border-radius:var(--radius); padding:0 20px; margin:16px 0; box-shadow:var(--shadow-sm)}
+details.method summary{cursor:pointer; padding:17px 0; font-weight:750; list-style:none}
+details.method summary::-webkit-details-marker{display:none}
+details.method summary::after{content:"▾"; float:right; color:var(--muted)}
+details.method[open] summary::after{content:"▴"}
+details.method .body{padding-bottom:17px; font-size:.88rem; color:#3f4a44}
+details.method .body p{margin:9px 0}
+
+.email-box{background:linear-gradient(160deg,#242726,#161817); color:#fff; border-radius:var(--radius); padding:22px; margin:16px 0; box-shadow:var(--shadow)}
+.email-box h3{margin:0 0 4px; font-size:1.08rem}
+.email-box p{margin:0 0 15px; font-size:.87rem; color:#c8d0cb}
+.email-box input{margin-bottom:11px}
+.email-box .consent{display:flex; gap:11px; align-items:flex-start; font-size:.84rem; color:#e6e8e6; margin-bottom:15px}
+.email-box .consent input{width:19px; height:19px; margin-top:2px; accent-color:var(--brand-green); flex:0 0 auto}
+.email-status{font-size:.9rem; margin-top:11px; min-height:1.2em}
+.email-status.ok{color:var(--brand-green)}
+.email-status.bad{color:#ffb3ad}
+.hp{position:absolute; left:-9999px; width:1px; height:1px; overflow:hidden}
+
+footer.disc{color:var(--muted); font-size:.8rem; text-align:center; margin-top:22px; padding:0 10px; line-height:1.55}
+
+@media (max-width:520px){
+  header.hero h1{font-size:1.6rem}
+  .risk-num{font-size:3rem}
+  .measure{grid-template-columns:1fr}
+  .unit-sel{width:100%}
+  .tiles{grid-template-columns:1fr}
+  .checks.two{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation:none!important; transition:none!important}
+  header.hero .pulse path{stroke-dashoffset:0}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <span class="eyebrow">Lifeline Daily · Health Tools</span>
+    <h1>Diabetes Risk Assessment</h1>
+    <p class="tagline">Start Small, Change Big, Live Healthier</p>
+    <svg class="pulse" viewBox="0 0 1200 70" preserveAspectRatio="none" aria-hidden="true">
+      <path d="M0 40 L360 40 L390 40 L410 14 L436 60 L456 26 L474 40 L560 40 L590 40 L610 12 L636 62 L656 40 L1200 40"/>
+    </svg>
+  </header>
+
+  <div class="progress" aria-hidden="true"><div class="progress-fill" id="progFill"></div></div>
+
+  <div class="scope" id="scopeStatement"></div>
+
+  <form id="tool" novalidate>
+
+    <div class="card">
+      <div class="sec-head">
+        <div class="sec-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg></div>
+        <div class="sec-titles"><div class="sec-num">Step 01</div><h2>About you</h2></div>
+      </div>
+      <p class="hint">These select the right risk equation for you.</p>
+
+      <div class="field">
+        <label>Sex <span class="sub">— separate equations are used for each</span></label>
+        <div class="taps" data-tap="sex" role="group" aria-label="Sex">
+          <button type="button" class="tap" data-val="Female">Female</button>
+          <button type="button" class="tap" data-val="Male">Male</button>
+        </div>
+        <div class="err" data-err="sex">Please choose one.</div>
+      </div>
+
+      <div class="field">
+        <label>Age <span class="sub">— choose your age group</span></label>
+        <div class="taps age" data-tap="ageBand" role="group" aria-label="Age group">
+          <button type="button" class="tap" data-val="27">25–29</button>
+          <button type="button" class="tap" data-val="32">30–34</button>
+          <button type="button" class="tap" data-val="37">35–39</button>
+          <button type="button" class="tap" data-val="42">40–44</button>
+          <button type="button" class="tap" data-val="47">45–49</button>
+          <button type="button" class="tap" data-val="52">50–54</button>
+          <button type="button" class="tap" data-val="57">55–59</button>
+          <button type="button" class="tap" data-val="62">60–64</button>
+          <button type="button" class="tap" data-val="67">65–69</button>
+          <button type="button" class="tap" data-val="72">70–74</button>
+          <button type="button" class="tap" data-val="77">75–79</button>
+          <button type="button" class="tap" data-val="82">80–84</button>
+        </div>
+        <div class="err" data-err="ageBand">Please choose your age group.</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-head">
+        <div class="sec-icon"><svg viewBox="0 0 24 24"><path d="M3 8h18v8H3z"/><path d="M7 8v3M11 8v4M15 8v3M19 8v4"/></svg></div>
+        <div class="sec-titles"><div class="sec-num">Step 02</div><h2>Measurements</h2></div>
+      </div>
+      <p class="hint">Use any units you like — switch each field independently.</p>
+
+      <div class="toggle-row">
+        <span class="lbl">Quick switch all:</span>
+        <button type="button" class="tap" id="allMetric" aria-pressed="true">Metric</button>
+        <button type="button" class="tap" id="allImperial" aria-pressed="false">Imperial</button>
+      </div>
+
+      <div class="field">
+        <label for="ht">Height</label>
+        <div class="measure">
+          <div id="htInputs"></div>
+          <select class="unit-sel" id="htUnit" aria-label="Height unit">
+            <option value="cm">cm</option><option value="m">m</option>
+            <option value="ftin">ft + in</option><option value="in">inches</option>
+          </select>
+        </div>
+        <div class="err" data-err="ht">Enter a height between 1.40 m and 2.10 m.</div>
+      </div>
+
+      <div class="field">
+        <label for="wt">Weight</label>
+        <div class="measure">
+          <div id="wtInputs"></div>
+          <select class="unit-sel" id="wtUnit" aria-label="Weight unit">
+            <option value="kg">kg</option><option value="lb">lb</option><option value="stlb">st + lb</option>
+          </select>
+        </div>
+        <div class="err" data-err="wt">Enter a weight between 40 kg and 180 kg.</div>
+      </div>
+
+      <div class="field">
+        <label>Waist <span class="sub">— around the belly button. Recommended: powers two cross-checks.</span></label>
+        <div class="measure">
+          <div id="waistInputs"></div>
+          <select class="unit-sel" id="waistUnit" aria-label="Waist unit">
+            <option value="cm">cm</option><option value="in">inches</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="derived">
+        <div class="chip">BMI <b id="bmiOut">—</b></div>
+        <div class="chip">Waist-to-height <b id="whtrOut">—</b></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-head">
+        <div class="sec-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg></div>
+        <div class="sec-titles"><div class="sec-num">Step 03</div><h2>Background</h2></div>
+      </div>
+
+      <div class="field">
+        <label>Ethnicity <span class="sub">— required; selects coefficients calibrated to your group</span></label>
+        <div class="taps" data-tap="ethn" role="group" aria-label="Ethnicity" id="ethnTaps"></div>
+        <div class="err" data-err="ethn">Please choose one.</div>
+      </div>
+
+      <div class="field">
+        <label>Smoking</label>
+        <div class="taps" data-tap="smoke" role="group" aria-label="Smoking status">
+          <button type="button" class="tap" data-val="Non">Non-smoker</button>
+          <button type="button" class="tap" data-val="Ex">Ex-smoker</button>
+          <button type="button" class="tap" data-val="Light">Light (&lt;10/day)</button>
+          <button type="button" class="tap" data-val="Moderate">Moderate (10–19)</button>
+          <button type="button" class="tap" data-val="Heavy">Heavy (20+)</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Physical activity <span class="sub">— used by the IDRS cross-check</span></label>
+        <div class="taps" data-tap="activity" role="group" aria-label="Physical activity">
+          <button type="button" class="tap" data-val="vigorous">Vigorous</button>
+          <button type="button" class="tap" data-val="moderate">Moderate</button>
+          <button type="button" class="tap" data-val="mild">Mild / light</button>
+          <button type="button" class="tap" data-val="none">Little or none</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="sec-head">
+        <div class="sec-icon"><svg viewBox="0 0 24 24"><path d="M12 21C7 17 3 13.5 3 9a4.5 4.5 0 0 1 9-1 4.5 4.5 0 0 1 9 1c0 4.5-4 8-9 12z"/></svg></div>
+        <div class="sec-titles"><div class="sec-num">Step 04</div><h2>Health history</h2></div>
+      </div>
+      <p class="hint">A few conditions meaningfully change diabetes risk.</p>
+
+      <div class="field">
+        <label>Family history of diabetes <span class="sub">— tick anyone diagnosed (parents or siblings)</span></label>
+        <div class="checks two" id="famChecks">
+          <label class="check"><input type="checkbox" data-fam="mother"><span>Mother</span></label>
+          <label class="check"><input type="checkbox" data-fam="father"><span>Father</span></label>
+          <label class="check"><input type="checkbox" data-fam="sibling"><span>Brother or sister</span></label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Are you treated for high blood pressure?</label>
+        <div class="taps" data-tap="htn" role="group" aria-label="Treated hypertension">
+          <button type="button" class="tap" data-val="0">No</button><button type="button" class="tap" data-val="1">Yes</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>History of heart disease or stroke?</label>
+        <div class="taps" data-tap="cvd" role="group" aria-label="Cardiovascular disease">
+          <button type="button" class="tap" data-val="0">No</button><button type="button" class="tap" data-val="1">Yes</button>
+        </div>
+      </div>
+
+      <div class="field womenOnly" hidden>
+        <label>Have you ever had diabetes in pregnancy (gestational)?</label>
+        <div class="taps" data-tap="gdm" role="group" aria-label="Gestational diabetes">
+          <button type="button" class="tap" data-val="0">No</button><button type="button" class="tap" data-val="1">Yes</button>
+        </div>
+      </div>
+
+      <div class="field womenOnly" hidden>
+        <label>Have you been diagnosed with PCOS?</label>
+        <div class="taps" data-tap="pcos" role="group" aria-label="PCOS">
+          <button type="button" class="tap" data-val="0">No</button><button type="button" class="tap" data-val="1">Yes</button>
+        </div>
+      </div>
+
+      <details class="optional">
+        <summary>Medical history (optional) — tick any that apply</summary>
+        <div class="checks">
+          <label class="check"><input type="checkbox" data-opt="learn"><span>Learning disability</span></label>
+          <label class="check"><input type="checkbox" data-opt="psy"><span>Schizophrenia or bipolar disorder</span></label>
+          <label class="check"><input type="checkbox" data-opt="ster"><span>Regular corticosteroid (steroid) tablets</span></label>
+          <label class="check"><input type="checkbox" data-opt="stat"><span>Taking statins</span></label>
+          <label class="check"><input type="checkbox" data-opt="apsy"><span>Second-generation (atypical) antipsychotics</span></label>
+        </div>
+      </details>
+    </div>
+
+    <div class="card">
+      <div class="sec-head">
+        <div class="sec-icon"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg></div>
+        <div class="sec-titles"><div class="sec-num">Step 05</div><h2>Symptoms right now</h2></div>
+      </div>
+      <p class="hint">Checked separately from the score — symptoms are never averaged into a number.</p>
+
+      <div class="field">
+        <label>Do you have any of these symptoms right now?</label>
+        <div class="taps" data-tap="hasSym" role="group" aria-label="Current symptoms">
+          <button type="button" class="tap" data-val="no">No, none</button>
+          <button type="button" class="tap" data-val="yes">Yes</button>
+        </div>
+      </div>
+
+      <div id="symList" hidden>
+        <div class="checks" id="symChecks">
+          <label class="check"><input type="checkbox" data-sym="thirst" data-classic="1"><span>Excessive thirst</span></label>
+          <label class="check"><input type="checkbox" data-sym="polyuria" data-classic="1"><span>Passing urine very often, especially at night</span></label>
+          <label class="check"><input type="checkbox" data-sym="wtloss" data-classic="1"><span>Unexplained weight loss</span></label>
+          <label class="check"><input type="checkbox" data-sym="fatigue"><span>Persistent fatigue</span></label>
+          <label class="check"><input type="checkbox" data-sym="vision"><span>Blurred vision</span></label>
+          <label class="check"><input type="checkbox" data-sym="healing"><span>Slow-healing cuts or recurrent infections</span></label>
+          <label class="check"><input type="checkbox" data-sym="tingling"><span>Tingling or numbness in hands or feet</span></label>
+        </div>
+      </div>
+
+      <details class="danger-box optional" open>
+        <summary>Urgent symptoms — please read</summary>
+        <label class="check" style="margin-bottom:12px">
+          <input type="checkbox" id="emergency">
+          <span>Right now I feel very unwell — with vomiting, drowsiness, rapid or deep breathing, or stomach pain.</span>
+        </label>
+      </details>
+    </div>
+
+    <button type="submit" class="cta" id="submitBtn">See my result</button>
+  </form>
+
+  <section id="results" aria-live="polite">
+    <div id="bannerZone"></div>
+    <div class="headline" id="headlineZone"></div>
+    <div class="panel" id="secondaryZone"></div>
+    <div class="panel" id="adviceZone"></div>
+    <details class="method"><summary>How this works &amp; important limits</summary><div class="body" id="methodBody"></div></details>
+    <div class="email-box">
+      <h3 id="emailHead"></h3>
+      <p id="emailIntro"></p>
+      <input type="text" id="firstName" placeholder="First name (optional)" autocomplete="given-name">
+      <input type="email" id="email" placeholder="your@email.com" autocomplete="email">
+      <label class="consent"><input type="checkbox" id="consent"><span id="consentLabel"></span></label>
+      <input type="text" class="hp" id="company" tabindex="-1" autocomplete="off" aria-hidden="true" placeholder="Leave blank">
+      <button type="button" class="cta secondary" id="emailBtn">Email me a copy</button>
+      <div class="email-status" id="emailStatus" role="status"></div>
+    </div>
+    <footer class="disc" id="discZone"></footer>
+  </section>
+</div>
+
+<script>
+/* ============================================================================
+ *  LIFELINE DAILY — DIABETES RISK TOOL  (self-contained, no external deps)
+ *  (1) MESSAGES  (2) ENGINE (verified vs R)  (3) STATE+UI  (4) LOGIC  (5) RENDER
+ * ==========================================================================*/
+
+/* ============================================================================
+ * (1) MESSAGES — EDITABLE COPY LAYER
+ * Reword freely; keep the keys and {{tokens}}. SAFETY-marked lines are
+ * safeguards (never state a diagnosis; emergency = same-day care).
+ * ==========================================================================*/
+var MESSAGES = {
+
+  scope:
+    "This tool estimates your risk of developing <strong>type 2 diabetes</strong> over the " +
+    "next 10 years. It is a screening aid, not a diagnosis, and does not assess type 1 or " +
+    "gestational diabetes. A blood test interpreted by a clinician is required to diagnose diabetes.",
+
+  // Result bands. nextStep is shown in the green "next step" box.
+  bands: {
+    low: {
+      label: "Low",
+      interp: "Your estimated 10-year risk of type 2 diabetes is low. That's good news — most of it comes down to habits worth keeping up.",
+      nextStep: "Re-check every 1–3 years, or sooner if your weight or health changes."
+    },
+    moderate: {
+      label: "Moderate",
+      interp: "Your estimated risk is moderate. Small, sustained changes now make a real difference at this stage.",
+      nextStep: "Consider a lifestyle review, and ask your doctor about a blood test in the coming months."
+    },
+    high: {
+      label: "High",
+      interp: "Your estimated risk is high. This is the level at which health services recommend a check.",
+      nextStep: "Arrange a blood test (fasting glucose or HbA1c) with your doctor soon."
+    },
+    veryHigh: {
+      label: "Very high",
+      interp: "Your estimated risk is very high. Please don't be alarmed — it means action now is especially worthwhile.",
+      nextStep: "See your doctor soon to arrange a blood test and discuss next steps."
+    }
+  },
+
+  // SAFETY: EMERGENCY must always point to SAME-DAY urgent care. Do not soften.
+  emergency: {
+    title: "These symptoms may need urgent attention",
+    body:  "Feeling very unwell with vomiting, drowsiness, fast or deep breathing, or stomach pain " +
+           "can be a sign of a serious problem with blood sugar. Please seek <strong>same-day</strong> " +
+           "urgent care or go to A&amp;E. We haven't shown a risk estimate because getting checked comes first."
+  },
+
+  // SAFETY: symptomatic override MUST NOT state a diagnosis. Use "can be caused
+  // by", never "you have". The score is shown underneath but clearly secondary.
+  symptomatic: {
+    title: "Some symptoms are worth checking promptly",
+    body:  "The symptoms you ticked can be caused by high blood sugar. Whatever your score below, " +
+           "it's worth seeing a doctor soon for a simple blood test. This is not a diagnosis."
+  },
+
+  // SAFETY: reconciliation is a NOTE only — it never changes the band above.
+  reconcile:
+    "One of the cross-checks below flags a higher risk than the main estimate. This can happen with " +
+    "weight carried around the middle, and it's worth mentioning at a check-up.",
+
+  // Personalised advice fragments, shown when the matching factor is elevated.
+  advice: {
+    intro: "Based on what you entered, these tend to help most:",
+    overweight: "Losing even 5–10% of your body weight measurably lowers diabetes risk.",
+    waist:      "Trimming your waistline matters as much as overall weight — aim to keep your waist under half your height.",
+    smoking:    "Stopping smoking lowers your risk of diabetes and much else; free support is usually available locally.",
+    inactivity: "Building up to regular movement — brisk walking counts — improves how your body handles blood sugar.",
+    family:     "A family history can't be changed, but it makes the habit changes above especially worthwhile.",
+    hypertension:"Keeping blood pressure well controlled protects against the same problems diabetes causes.",
+    general:    "A pattern of more vegetables, whole grains and unprocessed foods, with fewer sugary drinks, protects against diabetes.",
+    // Optional, localisable diet example — reword to suit your audience's cuisine.
+    dietSwap:   "One easy swap: replace refined carbohydrates (white rice, white bread, sugary drinks) with wholegrain or higher-fibre versions."
+  },
+
+  secondary: {
+    heading: "Cross-checks",
+    idrsLabel: "Indian Diabetes Risk Score",
+    whtrLabel: "Waist-to-height ratio",
+    whtr: {
+      healthy: "Healthy — waist is under half your height.",
+      raised:  "Raised — worth keeping an eye on.",
+      high:    "High — waist is 60% or more of your height."
+    },
+    idrs: { low:"Low", moderate:"Moderate", high:"High" },
+    needWaist: "Add your waist measurement above to unlock these two cross-checks."
+  },
+
+  method: [
+    "This tool uses <strong>QDiabetes-2018 (Model A)</strong>, a risk equation developed and validated on 11.5 million people in English general practice. It uses no blood tests. Separate equations are used for men and women, and it carries coefficients calibrated for each ethnicity you can select.",
+    "<strong>Calibration:</strong> because it was built on UK data, the exact percentage is best calibrated for UK residents of any ethnicity. Elsewhere in the world the <em>ranking</em> stays valid (higher inputs mean higher risk), but the precise percentage is less certain — which is why we also show the cross-checks.",
+    "Where a value wasn't asked (a UK deprivation score), a neutral average is assumed, so it neither raises nor lowers your estimate.",
+    "Symptoms are handled separately and are never mixed into the score. This tool screens for <strong>type 2 diabetes only</strong>, and is <strong>not a diagnosis</strong>."
+  ],
+
+  email: {
+    heading: "Email yourself a copy",
+    intro:   "Optional — your result and next steps, sent once to your inbox. We don't store your health details.",
+    consent: "Email my result to me. I understand this is screening information, not medical advice.",
+    success: "Sent — check your inbox (and spam folder just in case).",
+    errorValidation: "Please enter a valid email and tick the box.",
+    errorServer: "Something went wrong sending that. Your result is still shown above."
+  },
+
+  disclaimer:
+    "Lifeline Daily health tools are for general information and screening only. They do not " +
+    "diagnose any condition and are not a substitute for professional medical advice. Always " +
+    "speak to a qualified clinician about your health."
+};
+
+var ENGINE = (function(){
+  var C = {
+    Female:{ s0:0.986227273941040,
+      ethn:{WhiteNA:0,Indian:1.0695857881565456,Pakistani:1.3430172097414006,Bangladeshi:1.8029022579794518,OtherAsian:1.127465451770802,BlackCaribbean:0.42146314902399101,BlackAfrican:0.2850919645908353,Chinese:0.88151087975891995,Other:0.36605733431684873},
+      smoke:{Non:0,Ex:0.065601690175059055,Light:0.28450988673698374,Moderate:0.3567664381700702,Heavy:0.53595171106787753},
+      age:{c1:2.123332023620606,c2:91.644744873046875,b1:4.3400852699139278,b2:0.0048771702696158879},
+      bmi:{c1:2.571253299713135,c2:16.999439239501953,b1:2.9320361259524925,b2:0.04740020587484349},
+      tds:{c:0.391116052865982,b:0.037340569618049151},
+      bin:{apsy:0.55267646110984381,ster:0.26792233680674599,cvd:0.17797229054586691,gdm:1.5248871531467574,learn:0.27835143587172717,psy:0.26180852109179059,pcos:0.34061739882066661,stat:0.65907287732808217,htn:0.43947582858137119,fhdm:0.53133594565587339},
+      int:{apsy:[-0.80315183983163951,0.00046840411810210498],learn:[-0.86415960028820571,0.00067249688089533602],stat:[-1.9757776696583935,0.0023750534194347966],bmi_1:[0.65531387575629452,-0.0044719662445263054],bmi_2:[-0.036209657201630177,0.0001185479967753342],fhdm:[-0.26411714505588962,0.00041610258289047683]} },
+    Male:{ s0:0.978732228279114,
+      ethn:{WhiteNA:0,Indian:1.1000230829124793,Pakistani:1.290384012614721,Bangladeshi:1.6740908848727458,OtherAsian:1.1400446789147816,BlackCaribbean:0.46824681690655806,BlackAfrican:0.69905649963015448,Chinese:0.68943657127111568,Other:0.41722228467738209},
+      smoke:{Non:0,Ex:0.16387409105485573,Light:0.31851449113958979,Moderate:0.32207266567783432,Heavy:0.45052437163409531},
+      age:{c1:1.496392488479614,c2:89.048171997070313,b1:4.4642324388691348,b2:0.0040750108019255568},
+      bmi:{c1:6.817805767059326,c2:17.801923751831055,b1:0.95129027867120675,b2:0.14352488277885475},
+      tds:{c:0.515986680984497,b:0.025918182067678725},
+      bin:{apsy:0.42101092346005436,ster:0.22183580932925384,cvd:0.20269605756290021,learn:0.23315321407986961,psy:0.22770449520517727,stat:0.58490075431141342,htn:0.33379392183501078,fhdm:0.64799284899369536},
+      int:{apsy:[-0.94637722268534152,-0.0000519927442172335],learn:[-0.93842375526499833,0.00071026438559688141],stat:[-1.7479070653003299,0.0013508364599531669],bmi_1:[0.45147599241879766,-0.0011797722394560309],bmi_2:[-0.10795481262776381,0.00021471509139319291],fhdm:[-0.60118530429301198,0.00049141855940878034]} }
+  };
+  function b(v){return v?1:0;}
+
+  function QDR2018A(i){
+    var sex=i.sex, age=+i.age, bmi=+i.bmi;
+    var ethn=i.ethn||'WhiteNA', smoke=i.smoke||'Non', tds=(i.tds==null)?0:+i.tds;
+    if(bmi<20)bmi=20; if(bmi>40)bmi=40;               // engine clamps BMI internally
+    var k=C[sex], dage=age/10, dbmi=bmi/10;
+    var age_1=(sex==='Female'?Math.sqrt(dage):Math.log(dage))-k.age.c1;
+    var age_2=Math.pow(dage,3)-k.age.c2;
+    var bmi_1=(sex==='Female'?dbmi:dbmi*dbmi)-k.bmi.c1;
+    var bmi_2=Math.pow(dbmi,3)-k.bmi.c2;
+    var ageTerm=k.age.b1*age_1-k.age.b2*age_2;
+    var bmiTerm=k.bmi.b1*bmi_1-k.bmi.b2*bmi_2;
+    var tdsTerm=k.tds.b*(tds-k.tds.c);
+    var bin=0,bk=k.bin,key; for(key in bk){if(bk.hasOwnProperty(key))bin+=bk[key]*b(i[key]);}
+    var t=k.int;
+    var intTerm=
+      t.apsy[0]*age_1*b(i.apsy)+t.apsy[1]*age_2*b(i.apsy)+
+      t.learn[0]*age_1*b(i.learn)+t.learn[1]*age_2*b(i.learn)+
+      t.stat[0]*age_1*b(i.stat)+t.stat[1]*age_2*b(i.stat)+
+      t.bmi_1[0]*age_1*bmi_1+t.bmi_1[1]*age_2*bmi_1+
+      t.bmi_2[0]*age_1*bmi_2+t.bmi_2[1]*age_2*bmi_2+
+      t.fhdm[0]*age_1*b(i.fhdm)+t.fhdm[1]*age_2*b(i.fhdm);
+    var score=k.ethn[ethn]+k.smoke[smoke]+bmiTerm+ageTerm+tdsTerm+bin+intTerm;
+    return 100*(1-Math.pow(k.s0,Math.exp(score)));
+  }
+
+  function whtr(waistCm,heightCm){
+    var r=waistCm/heightCm, band = r<0.5?'healthy':(r<0.6?'raised':'high');
+    return {ratio:r,band:band};
+  }
+  function idrs(o){
+    var pAge=o.age<35?0:(o.age<50?20:30);
+    var pW = o.sex==='Male' ? (o.waistCm<90?0:(o.waistCm<100?10:20))
+                            : (o.waistCm<80?0:(o.waistCm<90?10:20));
+    var pA={vigorous:0,moderate:10,mild:20,none:30}[o.activity]; if(pA==null)pA=0;
+    var pF={none:0,one:10,both:20}[o.family]; if(pF==null)pF=0;
+    var s=pAge+pW+pA+pF, tier=s<30?'low':(s<60?'moderate':'high');
+    return {score:s,tier:tier};
+  }
+  return {QDR2018A:QDR2018A, whtr:whtr, idrs:idrs};
+})();
+
+/* ============================================================================
+ * (3) STATE + UI WIRING
+ * ==========================================================================*/
+var ETHN = [
+  {value:'WhiteNA',label:'White / not stated'},{value:'Indian',label:'Indian'},
+  {value:'Pakistani',label:'Pakistani'},{value:'Bangladeshi',label:'Bangladeshi'},
+  {value:'OtherAsian',label:'Other Asian'},{value:'BlackCaribbean',label:'Black Caribbean'},
+  {value:'BlackAfrican',label:'Black African'},{value:'Chinese',label:'Chinese'},
+  {value:'Other',label:'Other / mixed'}
+];
+var IN_CM=2.54, FT_CM=30.48, LB_KG=0.453592, ST_KG=6.35029;
+var REDUCED = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+var S = { sex:null, ageBand:null, ethn:null, smoke:'Non', activity:null,
+          htn:0, cvd:0, gdm:0, pcos:0, hasSym:null,
+          heightCm:null, weightKg:null, waistCm:null };
+
+var $=function(s,r){return (r||document).querySelector(s);};
+var $$=function(s,r){return Array.prototype.slice.call((r||document).querySelectorAll(s));};
+function safeScroll(el,block){ if(el&&typeof el.scrollIntoView==='function'){ try{ el.scrollIntoView({behavior:'smooth',block:block||'start'}); }catch(e){} } }
+
+$('#scopeStatement').innerHTML = MESSAGES.scope;
+$('#ethnTaps').innerHTML = ETHN.map(function(e){
+  return '<button type="button" class="tap" data-val="'+e.value+'">'+e.label+'</button>';
+}).join('');
+
+/* measurement inputs (unit-aware) */
+function lengthInputs(id,unit){
+  if(unit==='ftin') return '<div class="split"><input type="number" id="'+id+'_a" inputmode="numeric" placeholder="ft"><input type="number" id="'+id+'_b" inputmode="numeric" placeholder="in"></div>';
+  var ph = unit==='m'?'e.g. 1.75':(unit==='in'?'e.g. 69':'e.g. 175');
+  return '<input type="number" id="'+id+'" inputmode="decimal" placeholder="'+ph+'">';
+}
+function massInputs(id,unit){
+  if(unit==='stlb') return '<div class="split"><input type="number" id="'+id+'_a" inputmode="numeric" placeholder="st"><input type="number" id="'+id+'_b" inputmode="numeric" placeholder="lb"></div>';
+  return '<input type="number" id="'+id+'" inputmode="decimal" placeholder="'+(unit==='lb'?'e.g. 165':'e.g. 75')+'">';
+}
+function renderHt(){ $('#htInputs').innerHTML=lengthInputs('ht',$('#htUnit').value); bindMeasure(); }
+function renderWt(){ $('#wtInputs').innerHTML=massInputs('wt',$('#wtUnit').value); bindMeasure(); }
+function renderWaist(){ $('#waistInputs').innerHTML=lengthInputs('waist',$('#waistUnit').value==='in'?'in':'cm'); bindMeasure(); }
+
+function readLenCm(id,unit){
+  if(unit==='ftin'){ var ft=parseFloat(($('#'+id+'_a')||{}).value), inch=parseFloat(($('#'+id+'_b')||{}).value);
+    if(isNaN(ft)&&isNaN(inch))return null; return (ft||0)*FT_CM+(inch||0)*IN_CM; }
+  var v=parseFloat(($('#'+id)||{}).value); if(isNaN(v))return null;
+  if(unit==='cm')return v; if(unit==='m')return v*100; if(unit==='in')return v*IN_CM; return v;
+}
+function readKg(id,unit){
+  if(unit==='stlb'){ var st=parseFloat(($('#'+id+'_a')||{}).value), lb=parseFloat(($('#'+id+'_b')||{}).value);
+    if(isNaN(st)&&isNaN(lb))return null; return (st||0)*ST_KG+(lb||0)*LB_KG; }
+  var v=parseFloat(($('#'+id)||{}).value); if(isNaN(v))return null;
+  if(unit==='kg')return v; if(unit==='lb')return v*LB_KG; return v;
+}
+function recompute(){
+  S.heightCm = readLenCm('ht',$('#htUnit').value);
+  S.weightKg = readKg('wt',$('#wtUnit').value);
+  S.waistCm  = readLenCm('waist',$('#waistUnit').value==='in'?'in':'cm');
+  if(S.heightCm && S.weightKg){ var m=S.heightCm/100; $('#bmiOut').textContent=(S.weightKg/(m*m)).toFixed(1); }
+  else $('#bmiOut').textContent='—';
+  if(S.heightCm && S.waistCm) $('#whtrOut').textContent=(S.waistCm/S.heightCm).toFixed(2);
+  else $('#whtrOut').textContent='—';
+  updateProgress(); postHeight();
+}
+function bindMeasure(){ $$('#tool input[type=number]').forEach(function(el){ el.oninput=recompute; }); }
+
+renderHt(); renderWt(); renderWaist();
+function prefillLen(id,unit,cm){
+  if(unit==='ftin'){ var t=cm/IN_CM, ft=Math.floor(t/12); if($('#'+id+'_a'))$('#'+id+'_a').value=ft; if($('#'+id+'_b'))$('#'+id+'_b').value=(t-ft*12).toFixed(1); return; }
+  var out=unit==='m'?(cm/100):(unit==='in'?(cm/IN_CM):cm);
+  if($('#'+id))$('#'+id).value=(unit==='m'?out.toFixed(2):out.toFixed(1));
+}
+function prefillKg(id,unit,kg){
+  if(unit==='stlb'){ var t=kg/LB_KG, st=Math.floor(t/14); if($('#'+id+'_a'))$('#'+id+'_a').value=st; if($('#'+id+'_b'))$('#'+id+'_b').value=(t-st*14).toFixed(1); return; }
+  var out=unit==='lb'?(kg/LB_KG):kg; if($('#'+id))$('#'+id).value=out.toFixed(1);
+}
+$('#htUnit').onchange=function(){ var v=S.heightCm; renderHt(); if(v!=null)prefillLen('ht',$('#htUnit').value,v); recompute(); };
+$('#wtUnit').onchange=function(){ var v=S.weightKg; renderWt(); if(v!=null)prefillKg('wt',$('#wtUnit').value,v); recompute(); };
+$('#waistUnit').onchange=function(){ var v=S.waistCm; renderWaist(); if(v!=null)prefillLen('waist',$('#waistUnit').value==='in'?'in':'cm',v); recompute(); };
+
+function setAll(metric){
+  $('#allMetric').setAttribute('aria-pressed',metric?'true':'false');
+  $('#allImperial').setAttribute('aria-pressed',metric?'false':'true');
+  var hc=S.heightCm, wc=S.weightKg, wa=S.waistCm;
+  $('#htUnit').value=metric?'cm':'ftin'; renderHt(); if(hc!=null)prefillLen('ht',$('#htUnit').value,hc);
+  $('#wtUnit').value=metric?'kg':'stlb'; renderWt(); if(wc!=null)prefillKg('wt',$('#wtUnit').value,wc);
+  $('#waistUnit').value=metric?'cm':'in'; renderWaist(); if(wa!=null)prefillLen('waist',$('#waistUnit').value==='in'?'in':'cm',wa);
+  recompute();
+}
+$('#allMetric').onclick=function(){setAll(true);};
+$('#allImperial').onclick=function(){setAll(false);};
+
+/* tap-select groups */
+$$('[data-tap]').forEach(function(group){
+  var key=group.getAttribute('data-tap');
+  group.addEventListener('click',function(e){
+    var btn=e.target.closest('.tap'); if(!btn)return;
+    $$('.tap',group).forEach(function(b){b.setAttribute('aria-pressed','false');});
+    btn.setAttribute('aria-pressed','true');
+    var val=btn.getAttribute('data-val');
+    if(key==='htn'||key==='cvd'||key==='gdm'||key==='pcos'){ S[key]=+val; } else { S[key]=val; }
+    if(key==='sex'){ toggleWomenOnly(val==='Female'); }
+    if(key==='hasSym'){ toggleSymList(val==='yes'); }
+    clearErr(key); updateProgress(); postHeight();
+  });
+});
+function toggleWomenOnly(show){ $$('.womenOnly').forEach(function(el){ el.hidden=!show; if(!show){S.gdm=0;S.pcos=0;} }); postHeight(); }
+function toggleSymList(show){
+  $('#symList').hidden=!show;
+  if(!show){ $$('[data-sym]').forEach(function(cb){ cb.checked=false; cb.closest('.check').classList.remove('armed'); }); }
+  postHeight();
+}
+
+/* checkbox armed styling (family, optional, symptoms) */
+$$('.check input').forEach(function(cb){
+  cb.addEventListener('change',function(){ cb.closest('.check').classList.toggle('armed',cb.checked); postHeight(); });
+});
+
+/* live progress across required fields */
+function updateProgress(){
+  var done=0, total=5;
+  if(S.sex)done++; if(S.ageBand)done++; if(S.ethn)done++;
+  if(S.heightCm!=null && S.heightCm>=140 && S.heightCm<=210)done++;
+  if(S.weightKg!=null && S.weightKg>=40 && S.weightKg<=180)done++;
+  $('#progFill').style.width=Math.round(done/total*100)+'%';
+}
+
+/* ============================================================================
+ * (4) DECISION LOGIC — strict priority order
+ * ==========================================================================*/
+function bandFor(p){ return p<5.6?'low':(p<10?'moderate':(p<20?'high':'veryHigh')); }
+function collectOptional(){ var o={}; $$('[data-opt]').forEach(function(cb){o[cb.getAttribute('data-opt')]=cb.checked?1:0;}); return o; }
+function collectFamily(){ var f={}; $$('[data-fam]').forEach(function(cb){f[cb.getAttribute('data-fam')]=cb.checked;}); return f; }
+function collectSymptoms(){
+  var classic=false, all=[];
+  $$('[data-sym]').forEach(function(cb){ if(cb.checked){ all.push(cb.getAttribute('data-sym')); if(cb.getAttribute('data-classic'))classic=true; } });
+  return {classic:classic, all:all, emergency:$('#emergency').checked};
+}
+function clearErr(k){ var e=$('[data-err="'+k+'"]'); if(e)e.classList.remove('show'); }
+function validate(){
+  var ok=true; function fail(k){ var e=$('[data-err="'+k+'"]'); if(e)e.classList.add('show'); ok=false; }
+  if(!S.sex)fail('sex'); if(!S.ageBand)fail('ageBand');
+  if(S.heightCm==null||S.heightCm<140||S.heightCm>210)fail('ht');
+  if(S.weightKg==null||S.weightKg<40||S.weightKg>180)fail('wt');
+  if(!S.ethn)fail('ethn');
+  return ok;
+}
+
+var LAST=null;
+$('#tool').addEventListener('submit',function(ev){
+  ev.preventDefault();
+  $$('.err').forEach(function(e){e.classList.remove('show');});
+  if(!validate()){ var f=$('.err.show'); if(f)safeScroll(f,'center'); return; }
+
+  var age=parseInt(S.ageBand,10);
+  var m=S.heightCm/100, bmi=S.weightKg/(m*m);
+  var opt=collectOptional();
+  var fam=collectFamily();
+  var fhdm=(fam.mother||fam.father||fam.sibling)?1:0;
+  var parents=(fam.mother?1:0)+(fam.father?1:0);
+  var idrsFamily=parents===2?'both':(parents===1?'one':'none');
+
+  var qin={ sex:S.sex, age:age, bmi:bmi, ethn:S.ethn, smoke:S.smoke, tds:0,
+            fhdm:fhdm, htn:S.htn, cvd:S.cvd, gdm:S.gdm, pcos:S.pcos,
+            learn:opt.learn, psy:opt.psy, ster:opt.ster, stat:opt.stat, apsy:opt.apsy };
+  var pct=ENGINE.QDR2018A(qin), band=bandFor(pct);
+
+  var sec=null;
+  if(S.waistCm){
+    sec={ whtr:ENGINE.whtr(S.waistCm,S.heightCm),
+          idrs:ENGINE.idrs({sex:S.sex==='Male'?'Male':'Female', age:age, waistCm:S.waistCm, activity:S.activity||'moderate', family:idrsFamily}) };
+  }
+  var sym=collectSymptoms();
+  LAST={ pct:pct, band:band, bmi:bmi, sec:sec, sym:sym, age:age, qin:qin };
+  render(LAST);
+  $('#results').classList.add('show');
+  safeScroll($('#results'));
+  postHeight();
+});
+
+/* ============================================================================
+ * (5) RENDER
+ * ==========================================================================*/
+var BAND_COLOR={low:'var(--band-low)',moderate:'var(--band-mod)',high:'var(--band-high)',veryHigh:'var(--band-vhigh)'};
+
+function gaugeSVG(pct){
+  var cx=180,cy=170,R=140, max=40;
+  function pt(frac,rad){ var th=Math.PI*(1-frac); return [cx+(rad||R)*Math.cos(th), cy-(rad||R)*Math.sin(th)]; }
+  function arc(f0,f1,color){ var a=pt(f0),b=pt(f1),lg=(f1-f0)>0.5?1:0;
+    return '<path d="M'+a[0].toFixed(1)+' '+a[1].toFixed(1)+' A'+R+' '+R+' 0 '+lg+' 1 '+b[0].toFixed(1)+' '+b[1].toFixed(1)+'" fill="none" stroke="'+color+'" stroke-width="20" stroke-linecap="round"/>'; }
+  var track=arc(0,1,'#eef2ef');
+  var segs=arc(0.004,5.6/max,'var(--band-low)')+arc(5.6/max,10/max,'var(--band-mod)')+arc(10/max,20/max,'var(--band-high)')+arc(20/max,0.996,'var(--band-vhigh)');
+  var labels=''; [[0,'0'],[5.6,'5.6'],[10,'10'],[20,'20'],[40,'40+']].forEach(function(d){
+    var p=pt(d[0]/max,R+22); labels+='<text x="'+p[0].toFixed(1)+'" y="'+(p[1]+4).toFixed(1)+'" text-anchor="middle" font-size="12" fill="var(--muted)">'+d[1]+'</text>'; });
+  // needle points up at rotation 0; rotate by (f*180-90). Start at 0.
+  var needle='<g id="lldNeedle" transform="rotate(-90 '+cx+' '+cy+')">'+
+    '<polygon points="'+(cx-5)+','+cy+' '+(cx+5)+','+cy+' '+cx+','+(cy-(R-24))+'" fill="var(--charcoal)"/>'+
+    '<circle cx="'+cx+'" cy="'+(cy-(R-24))+'" r="4.5" fill="var(--brand-green)"/></g>'+
+    '<circle cx="'+cx+'" cy="'+cy+'" r="9" fill="var(--charcoal)"/><circle cx="'+cx+'" cy="'+cy+'" r="4" fill="#fff"/>';
+  return '<svg class="gaugebox" viewBox="0 0 360 200" role="img" aria-label="Risk gauge, '+pct.toFixed(1)+' percent">'+track+segs+labels+needle+'</svg>';
+}
+function animateGauge(pct){
+  var cx=180,cy=170, max=40, f=Math.max(0,Math.min(pct,max))/max, deg=f*180-90;
+  var needle=$('#lldNeedle'), num=$('#riskNum');
+  if(REDUCED){ if(needle)needle.setAttribute('transform','rotate('+deg+' '+cx+' '+cy+')'); if(num)num.textContent=pct.toFixed(1)+'%'; return; }
+  var t0=null, dur=850;
+  function step(ts){ if(!t0)t0=ts; var k=Math.min((ts-t0)/dur,1), e=1-Math.pow(1-k,3);
+    if(needle)needle.setAttribute('transform','rotate('+(-90+(deg+90)*e)+' '+cx+' '+cy+')');
+    if(num)num.textContent=(pct*e).toFixed(1)+'%';
+    if(k<1)requestAnimationFrame(step); }
+  requestAnimationFrame(step);
+}
+
+function render(r){
+  var bz=$('#bannerZone'); bz.innerHTML=''; var suppress=false;
+  var warnIcon='<svg class="bi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>';
+  if(r.sym.emergency){ bz.innerHTML+='<div class="banner emergency">'+warnIcon+'<div><h3>'+MESSAGES.emergency.title+'</h3><p>'+MESSAGES.emergency.body+'</p></div></div>'; suppress=true; }
+  if(r.sym.classic){ bz.innerHTML+='<div class="banner symptom">'+warnIcon+'<div><h3>'+MESSAGES.symptomatic.title+'</h3><p>'+MESSAGES.symptomatic.body+'</p></div></div>'; }
+
+  var hz=$('#headlineZone');
+  if(suppress){
+    hz.innerHTML='<div class="eyebrow">Risk estimate paused</div><p class="interp">We haven\u2019t shown a percentage because the urgent symptoms above come first. Once you\u2019ve been checked, you\u2019re welcome to run this again.</p>';
+  } else {
+    var b=MESSAGES.bands[r.band];
+    hz.innerHTML=
+      '<div class="eyebrow">Your 10-year risk of type 2 diabetes</div>'+
+      gaugeSVG(r.pct)+
+      '<div class="risk-num tabular" id="riskNum" style="color:'+BAND_COLOR[r.band]+'">0.0%</div>'+
+      '<span class="risk-band" style="background:'+BAND_COLOR[r.band]+'">'+b.label+' risk</span>'+
+      '<p class="interp">'+b.interp+'</p>'+
+      '<div class="next-step"><span class="ns-ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><span><b>Next step:</b> '+b.nextStep+'</span></div>';
+    animateGauge(r.pct);
+  }
+
+  var sz=$('#secondaryZone');
+  var head='<h3><svg viewBox="0 0 24 24"><path d="M9 11l3 3 8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9"/></svg>'+MESSAGES.secondary.heading+'</h3>';
+  if(r.sec){
+    var w=r.sec.whtr, ir=r.sec.idrs;
+    var wc=w.band==='healthy'?'var(--band-low)':(w.band==='raised'?'var(--band-mod)':'var(--band-high)');
+    var icr=ir.tier==='low'?'var(--band-low)':(ir.tier==='moderate'?'var(--band-mod)':'var(--band-high)');
+    sz.innerHTML=head+'<div class="tiles">'+
+      '<div class="tile" style="border-left-color:'+wc+'"><div class="t-label">'+MESSAGES.secondary.whtrLabel+'</div><div class="t-value tabular">'+w.ratio.toFixed(2)+'</div><div class="t-tag" style="color:'+wc+'">'+w.band.toUpperCase()+'</div><div class="t-note">'+MESSAGES.secondary.whtr[w.band]+'</div></div>'+
+      '<div class="tile" style="border-left-color:'+icr+'"><div class="t-label">'+MESSAGES.secondary.idrsLabel+'</div><div class="t-value tabular">'+ir.score+'</div><div class="t-tag" style="color:'+icr+'">'+MESSAGES.secondary.idrs[ir.tier].toUpperCase()+'</div><div class="t-note">Cross-check score (max 100)</div></div>'+
+      '</div>';
+    if(!suppress && r.band==='low' && (ir.tier==='high'||w.band==='high')) sz.innerHTML+='<div class="concord">'+MESSAGES.reconcile+'</div>';
+  } else {
+    sz.innerHTML=head+'<p style="color:var(--muted);font-size:.9rem;margin:0">'+MESSAGES.secondary.needWaist+'</p>';
+  }
+
+  var az=$('#adviceZone'), A=MESSAGES.advice, tips=[];
+  if(r.bmi>=25)tips.push(A.overweight);
+  if(r.sec && r.sec.whtr.band!=='healthy')tips.push(A.waist);
+  if(S.smoke && S.smoke!=='Non')tips.push(A.smoking);
+  if(S.activity==='mild'||S.activity==='none')tips.push(A.inactivity);
+  if(r.qin.htn)tips.push(A.hypertension);
+  if(r.qin.fhdm)tips.push(A.family);
+  tips.push(A.general);
+  az.innerHTML='<h3><svg viewBox="0 0 24 24"><path d="M12 21C7 17 3 13.5 3 9a4.5 4.5 0 0 1 9-1 4.5 4.5 0 0 1 9 1c0 4.5-4 8-9 12z"/></svg>What helps most</h3>'+
+    '<p style="color:var(--muted);font-size:.9rem;margin:0 0 8px">'+A.intro+'</p>'+
+    '<ul class="advice">'+tips.map(function(t){return '<li>'+t+'</li>';}).join('')+'</ul>'+
+    '<p style="font-size:.86rem;color:var(--muted);margin:12px 0 0">'+A.dietSwap+'</p>';
+
+  $('#methodBody').innerHTML=MESSAGES.method.map(function(p){return '<p>'+p+'</p>';}).join('');
+  $('#emailHead').textContent=MESSAGES.email.heading;
+  $('#emailIntro').textContent=MESSAGES.email.intro;
+  $('#consentLabel').textContent=MESSAGES.email.consent;
+  $('#discZone').textContent=MESSAGES.disclaimer;
+}
+
+$('#emailBtn').addEventListener('click',function(){
+  var status=$('#emailStatus'); status.className='email-status';
+  var email=$('#email').value.trim(), consent=$('#consent').checked, hp=$('#company').value;
+  var valid=/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email);
+  if(hp){ return; }
+  if(!valid||!consent){ status.textContent=MESSAGES.email.errorValidation; status.classList.add('bad'); return; }
+  if(!LAST){ return; }
+  var payload={ tool:'diabetes-risk', firstName:$('#firstName').value.trim(), email:email, consent:true,
+    riskPercent:+LAST.pct.toFixed(1), riskBand:MESSAGES.bands[LAST.band].label, bmi:+LAST.bmi.toFixed(1),
+    whtr:LAST.sec?+LAST.sec.whtr.ratio.toFixed(2):null,
+    idrsScore:LAST.sec?LAST.sec.idrs.score:null, idrsTier:LAST.sec?LAST.sec.idrs.tier:null,
+    symptomatic:LAST.sym.classic, emergency:LAST.sym.emergency,
+    measurements:{heightCm:Math.round(S.heightCm), weightKg:Math.round(S.weightKg), waistCm:S.waistCm?Math.round(S.waistCm):null},
+    timestamp:new Date().toISOString(), company:hp };
+  status.textContent='Sending…';
+  fetch('./submit.php',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+    .then(function(res){ if(!res.ok)throw new Error('bad'); return res.json(); })
+    .then(function(){ status.textContent=MESSAGES.email.success; status.classList.add('ok'); })
+    .catch(function(){ status.textContent=MESSAGES.email.errorServer; status.classList.add('bad'); });
+});
+
+/* iframe auto-resize */
+function postHeight(){ var h=Math.ceil(document.documentElement.getBoundingClientRect().height); try{ parent.postMessage({type:'lld-tool-height',height:h},'*'); }catch(e){} }
+window.addEventListener('load',postHeight);
+window.addEventListener('resize',postHeight);
+if(window.ResizeObserver){ new ResizeObserver(postHeight).observe(document.body); }
+updateProgress(); recompute();
+
+</script>
+</body>
+</html>

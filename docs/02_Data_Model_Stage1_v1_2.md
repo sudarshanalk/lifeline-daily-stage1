@@ -78,8 +78,10 @@ Cardinalities and invariants:
 | SCH-12 | `schemas/data-flow.schema.json` | `privacy/data-flow.json` | agent at FR1-01 | TC-NFR1-01 |
 | SCH-13 | `schemas/wp-meta.schema.json` | WordPress post meta key set and allowed values | plugin registers | TC-FR1-18 |
 | SCH-14 | `schemas/planned-categories.schema.json` | `content/planned-categories.json`: slugs removed in FR1-23 to be re-created when content exists | `wp lld tidy apply` | TC-FR1-23 |
+| SCH-15 | `schemas/gate-record.schema.json` | `approvals/hg-01.json`, `hg-02.json`, `hg-03.json`: gate id, decision, signer, date, ratified DEC ids, tag (HG-03) | humans at the gates | `clinical-gate`, `release-gate` |
+| SCH-16 | `schemas/copy-approval.schema.json` | `approvals/copy.json`: hash per copy source (`messages{}`, `templates{}`, `inline{}`, `pages{}`), reviewer, date | agent drafts, clinician signs | TC-UI1-11, TC-FR1-17 |
 
-## 4. Frozen interface contracts (deployed, audited 20 Oct 2026)
+## 4. Frozen interface contracts (deployed; key names confirmed from the endpoint source on 23 Oct 2026)
 
 These are preserved byte-for-byte in key names during Stage 1 (NFR1-04). Server validation (FR1-14) is added without changing keys.
 
@@ -100,7 +102,7 @@ These are preserved byte-for-byte in key names during Stage 1 (NFR1-04). Server 
 | timestamp | ISO 8601 | technical | |
 | company | `""` | technical | honeypot, must be empty |
 
-Server selects template: `suppressed === true` → `protein_renal` (no numeric tokens exist in that template); otherwise `protein_standard`.
+Server selects template: `suppressed === true` → `protein_renal` (no numeric tokens exist in that template); otherwise `protein_standard`. Confirmed in `submit-protein.php`: numeric fields of a suppressed payload are never read. Current validation only checks `consent`, email syntax, `tool` and `targetG` 20–400; the remaining ranges in this table are added by FR1-14. Confirmed in `submit-protein.php`: numeric fields of a suppressed payload are never read. Current validation only checks `consent`, email syntax, `tool` and `targetG` 20–400; the remaining ranges in this table are added by FR1-14.
 
 ### 4.2 Diabetes POST `./submit.php` (JSON)
 
@@ -109,7 +111,7 @@ Server selects template: `suppressed === true` → `protein_renal` (no numeric t
 | tool | `"diabetes-risk"` | technical | required |
 | firstName, email, consent, timestamp, company | as 4.1 | | |
 | riskPercent | number 1 dp ∣ null | health | **null when emergency**: client nulls it and server ignores any value (DEC-09) |
-| riskBand | `Low|Moderate|High|Very high` ∣ null | health | null when emergency (same two layers) |
+| riskBand | `Low|Moderate|High|Very high` ∣ null | health | null when emergency (same two layers). Mapping: engine key `low|moderate|high|veryHigh` → payload label `Low|Moderate|High|Very high` → email template key `low|moderate|high|veryhigh` |
 | bmi | number 1 dp | health | 10–80 |
 | whtr | number 2 dp ∣ null | health | |
 | idrsScore | integer 0–100 ∣ null | health | |
@@ -120,7 +122,7 @@ Server selects template: `suppressed === true` → `protein_renal` (no numeric t
 | measurements.weightKg | integer 40–180 | health | |
 | measurements.waistCm | integer 50–200 ∣ null | health | |
 
-Server selects template: `emergency === true` → `diabetes_emergency` (no `{{riskPercent}}` token); `symptomatic === true` → `diabetes_symptomatic` (banner first, % allowed); otherwise `diabetes_standard`.
+Server selects template: `emergency === true` → `diabetes_emergency` (no `{{riskPercent}}` token); `symptomatic === true` → `diabetes_symptomatic` (banner first, % allowed); otherwise the band template `low|moderate|high|veryhigh` keyed from `riskBand`. Confirmed in `render.php`/`validate.php`: a payload must carry a numeric `riskPercent` in 0–100 or an override flag; `bmi`, `whtr`, `idrsScore` and measurements are escaped but not range-checked today (added by FR1-14).
 
 ### 4.3 `status.json` (SCH-08)
 
@@ -164,7 +166,7 @@ Shortcodes: `[lld_tools_hub compact=0|1]`, `[lld_tool slug=…]` (renders iframe
 ```
 repo/
   manifests/{protein,diabetes}.json          SCH-02
-  approvals/{protein,diabetes,copy,hg-01,hg-02,hg-03}.json   SCH-03 (+ gate records)
+  approvals/{protein,diabetes}.json SCH-03 · copy.json SCH-16 · hg-0{1,2,3}.json SCH-15
   fixtures/protein/*.json  fixtures/diabetes/*.json  fixtures/site/*.json  fixtures/mail/*.json   SCH-05
   fixtures/{required-phrases,forbidden-terms,sentinel-values}.json
   oracles/orc-01-qdiabetes-r/  orc-02-protein-ref/  orc-03-idrs/  orc-04-whtr/   → results.json SCH-06
@@ -175,11 +177,16 @@ repo/
   releases/<tag>.json                                          SCH-10
   incidents/<id>.json                                          SCH-11
   design/tokens.json  design/baselines/<page>-<width>.png
-  public_html/tools/…  (tool files, endpoints, status.json)
-  wp-content/mu-plugins/lld-tools/
+  site/public_html/tools/…                                     deployable overlay: tool files, endpoints, status.json
+  site/public_html/wp-content/mu-plugins/lld-tools/            deployable overlay: the plugin
+  deploy/                                                      deploy.sh, environments/*.env.example, runbooks, DEPLOYMENT.md
+  .github/workflows/                                           ci.yml, deploy-staging.yml, deploy-production.yml
+  tools/  tests/  design/                                      dev tooling, tests, canvas sources and visual baselines
   registry/Stage1_Requirements_Registry_v1_2.json             SCH-01
   schemas/*.schema.json
 ```
+
+**Deployment rule.** Only `site/` is ever copied to a server, by `deploy/deploy.sh` (rsync over SSH) into the WordPress document root, excluding `api/config.php`, `api/outbox/`, `api/state/` and `tools/status.json` (the server copy is the source of truth; `wp lld status set` is its only writer). `deploy.sh` substitutes `__LLD_ORIGIN__` in tool HTML and the managed `.htaccess` block from the environment file (DEC-34). WordPress core, themes, plugins and uploads are never deployed from Git; they are managed in WordPress. Staging deploys on every merge to `staging`; production deploys only from an `rc-*` tag after HG-03 (release-gate check).
 
 ## 7. Data-protection controls
 
@@ -200,7 +207,7 @@ repo/
 | Which pages/scripts under `/tools/`? | `protein-requirement-tool.html`, `diabetes-risk-tool.html`, `submit-protein.php`, `submit.php`, `api/{config,mailer,templates,templates-protein}.php` (directory listing 403) |
 | Does the diabetes code include QDiabetes/IDRS/WHR? | QDiabetes-2018 Model A, IDRS, waist-to-height ratio (not WHR) — DEC-01, DEC-06 |
 | Healthy-weight tool deployed? | No — DEC-26 |
-| Does `submit*.php` persist? | Unknown until source access; FR1-01 must answer; DEC-21 default assumes no |
+| Does `submit*.php` persist? | No database or log persistence (source read 23 Oct 2026). Rate-limit files hold `md5(ip)` only. Full emails persist only if production `transport` is `log` (DEC-46, pending verification) |
 | What does the email provider store? | FR1-01 to document from provider dashboard/config |
 
 ## 9. Stage 2+ (not designed here)

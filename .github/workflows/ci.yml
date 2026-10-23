@@ -1,0 +1,54 @@
+# DRAFT — the full job set from docs/04_AI_Development_Loop_v1_2.md §1 is added wave by wave.
+# Job names are the status-check contexts referenced in reports/as-is/git-remote.md.
+name: ci
+on:
+  pull_request:
+    branches: [staging, production]
+  push:
+    branches: [staging]
+jobs:
+  validate-artefacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - run: pip install jsonschema
+      - name: Validate every JSON artefact against its schema
+        run: |
+          python3 - <<'EOF'
+          import json, glob, jsonschema
+          S = lambda n: json.load(open(f"schemas/{n}"))
+          jsonschema.validate(json.load(open("registry/Stage1_Requirements_Registry_v1_2.json")), S("registry.schema.json"))
+          fs = S("fixture.schema.json")
+          for f in glob.glob("fixtures/*/*.json"):
+              d = json.load(open(f));  "fixtures" in d and jsonschema.validate(d, fs)
+          for f in glob.glob("manifests/*.json"): jsonschema.validate(json.load(open(f)), S("tool-manifest.schema.json"))
+          for f in glob.glob("oracles/*/results.json"): jsonschema.validate(json.load(open(f)), S("oracle-result.schema.json"))
+          print("artefacts valid")
+          EOF
+  engine-freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Tool page hashes must equal the manifests
+        run: |
+          for slug in protein diabetes; do
+            f=$([ $slug = protein ] && echo protein-requirement-tool.html || echo diabetes-risk-tool.html)
+            want=$(python3 -c "import json;print(json.load(open('manifests/$slug.json'))['versions'][0]['version_hash'])")
+            got=$(sha256sum site/public_html/tools/$f | cut -d' ' -f1)
+            [ "$want" = "$got" ] && echo "ok $f" || { echo "engine-freeze: $f changed ($got != $want). Needs a ratified DEC row and a new manifest version."; exit 1; }
+          done
+  oracle-guard:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: Fixture expected values may change only via the oracle/baseline runner
+        run: |
+          git fetch origin ${{ github.base_ref }} --depth=1
+          changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'fixtures/**/*.json' || true)
+          [ -z "$changed" ] && { echo "no fixture changes"; exit 0; }
+          if git log -1 --format=%s | grep -Eq '^(FR1-01|FR1-22|ORC-0[1-4]):'; then echo "fixture change by baseline/oracle commit: $changed"; exit 0; fi
+          echo "oracle-guard: fixtures changed outside a baseline/oracle commit: $changed"; exit 1

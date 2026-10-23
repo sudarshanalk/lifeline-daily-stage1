@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Diabetes risk check, emergency state</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#f2f7f4}
+a{color:#157a42}a:hover{color:#0f5a31}
+</style>
+</helmet>
+<div data-test="result" style="display: flex; flex-direction: column; gap: 14px; padding: 16px; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #f2f7f4">
+
+  <div data-test="banners" style="display: flex; flex-direction: column; gap: 10px">
+    <div role="alert" class="banner emergency" style="border: 2px solid #b5302f; background: #fdeceb; color: #7d1f1c; border-radius: 16px; padding: 18px 16px; display: flex; gap: 12px; align-items: flex-start">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: 0 0 auto"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <h2 style="margin: 0; font-size: 20px; font-weight: 800; line-height: 1.2">These symptoms can be serious and need same-day medical assessment</h2>
+        <p style="margin: 0; font-size: 14px; line-height: 1.55">Feeling very unwell with vomiting, drowsiness, rapid or deep breathing, or stomach pain can be signs of a medical emergency. <b>Please contact urgent care or go to A&amp;E now.</b> Do not wait for a routine appointment.</p>
+        <div style="display: flex; flex-direction: column; gap: 6px; font-size: 14px; margin-top: 2px">
+          <span><b>UK:</b> call 999 or go to A&amp;E · urgent advice 111</span>
+          <span><b>Sri Lanka:</b> 1990 · <b>India:</b> 112 · or your local emergency number</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section data-test="headline" id="headlineZone" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 20px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 2px 6px rgba(20,40,30,.06)">
+    <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #63706a">Risk estimate paused</span>
+    <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #3a4440">We haven't shown a percentage. A 10-year risk score is not relevant while you have symptoms that need assessment today. Once you have been checked, you are welcome to run this again.</p>
+  </section>
+
+  <section data-test="advice" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 8px">
+    <h3 style="margin: 0; font-size: 16px; font-weight: 700">What to tell them</h3>
+    <ul style="margin: 0; padding-left: 18px; font-size: 14px; line-height: 1.6; color: #3a4440"><li>The symptoms you ticked and when they started</li><li>Any thirst, frequent urination or weight loss</li><li>Any diabetes in the family and any medication you take</li></ul>
+  </section>
+
+  <p data-test="disclaimer" style="margin: 0; font-size: 12px; color: #63706a; line-height: 1.5; padding: 0 4px">This tool is a screening aid, <b>not a diagnosis</b>, and cannot assess an emergency. <a href="#">Medical disclaimer and urgent care</a></p>
+
+  <section data-test="email-card" aria-labelledby="em-h" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+    <h3 id="em-h" style="margin: 0; font-size: 16px; font-weight: 700">Email yourself this advice</h3>
+    <p style="margin: 0; font-size: 13px; color: #63706a; line-height: 1.5">Optional. The email repeats the urgent-care message above. It contains no risk score.</p>
+    <label for="em" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Email address</label>
+    <input id="em" type="email" placeholder="Email address" style="height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 12px; font: inherit; font-size: 15px">
+    <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.5; color: #3a4440">
+      <input type="checkbox" style="width: 20px; height: 20px; margin: 2px 0 0; flex: 0 0 auto">
+      <span>I agree to Lifeline Daily emailing this advice to the address above. Sent once, not stored. <a href="#">Privacy Policy</a></span>
+    </label>
+    <button type="button" disabled style="min-height: 48px; border-radius: 12px; border: 0; background: #c9d3cd; color: #ffffff; font: inherit; font-size: 15px; font-weight: 700">Email me a copy</button>
+  </section>
+
+  <button type="button" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 14px; font-weight: 600; color: #161a17; cursor: pointer">Start again</button>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tool temporarily unavailable</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#f2f7f4}
+a{color:#157a42}a:hover{color:#0f5a31}
+</style>
+</helmet>
+<div data-test="unavailable" style="display: flex; flex-direction: column; gap: 14px; padding: 16px; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #f2f7f4">
+
+  <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: #63706a"><span style="width: 8px; height: 8px; border-radius: 50%; background: #a8690d"></span>Status: temporarily unavailable</div>
+
+  <section aria-labelledby="un-h" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 24px 20px; display: flex; flex-direction: column; gap: 12px; align-items: flex-start; box-shadow: 0 2px 6px rgba(20,40,30,.06)">
+    <span style="width: 52px; height: 52px; border-radius: 14px; background: #fdf4ea; display: inline-flex; align-items: center; justify-content: center">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#a8690d" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+    </span>
+    <h2 id="un-h" style="margin: 0; font-size: 22px; font-weight: 800; line-height: 1.2">The Diabetes Risk Check is paused while we review it</h2>
+    <p style="margin: 0; font-size: 15px; line-height: 1.55; color: #3a4440">We take this tool offline whenever our clinical reviewers are checking its method or wording. It will return once that review is complete. Nothing is wrong with any result you received earlier, but if you have questions about it, please speak to a clinician.</p>
+    <p style="margin: 0; font-size: 13px; color: #63706a">Paused since 22 Oct 2026</p>
+  </section>
+
+  <section aria-labelledby="mw-h" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 18px; display: flex; flex-direction: column; gap: 12px">
+    <h3 id="mw-h" style="margin: 0; font-size: 16px; font-weight: 700">Meanwhile</h3>
+    <a href="#" style="display: flex; gap: 12px; align-items: center; text-decoration: none; color: #161a17; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px">
+      <span style="width: 64px; height: 48px; flex: 0 0 auto; border-radius: 10px; background: #e4eae6"></span>
+      <span style="display: flex; flex-direction: column; gap: 2px"><span style="font-size: 14px; font-weight: 700">Prediabetes: the early signs most people miss</span><span style="font-size: 12px; color: #63706a">Reviewed article · 8 min</span></span>
+    </a>
+    <a href="Hub.dc.html" style="display: inline-flex; align-items: center; justify-content: center; min-height: 48px; border-radius: 12px; background: #1f9d57; color: #ffffff; font-weight: 700; text-decoration: none; font-size: 15px">See all health tools</a>
+    <p style="margin: 0; font-size: 13px; color: #3a4440; line-height: 1.5">The <a href="Landing.dc.html">Daily Protein Target</a> tool is unaffected and available now.</p>
+  </section>
+
+  <div role="alert" style="border: 1.5px solid #e7a9a4; background: #fdeceb; color: #7d1f1c; border-radius: 16px; padding: 14px 16px; display: flex; gap: 12px; align-items: flex-start; font-size: 13px; line-height: 1.5">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true" style="flex: 0 0 auto"><path d="M12 3 2 20h20L12 3z"/><path d="M12 10v5M12 18h.01"/></svg>
+    <span><b>Feeling unwell now?</b> Excessive thirst, passing urine very often, unexplained weight loss, or feeling very unwell with vomiting or drowsiness need medical attention. <a href="#" style="color: #7d1f1c; font-weight: 600">When to seek urgent care</a></span>
+  </div>
+
+  <p style="margin: 0; font-size: 12px; color: #63706a; line-height: 1.5; padding: 0 4px; text-align: center"><a href="#">Privacy</a> · <a href="#">Contact us</a> · <a href="#">Medical disclaimer</a></p>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":760}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

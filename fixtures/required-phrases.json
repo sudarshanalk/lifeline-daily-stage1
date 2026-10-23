@@ -4,7 +4,7 @@
   "methodology": {
     "engine": "QDiabetes-2018 (Model A)",
     "calibration": "UK",
-    "townsend": "Townsend",
+    "townsend": "deprivation score",
     "type2": "type 2",
     "symptomDesign": "symptom"
   },

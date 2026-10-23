@@ -6,7 +6,25 @@ Operating manual for building Stage 1 with Claude Code (or equivalent) with thre
 
 - One Git repository (layout in `02_Data_Model_Stage1_v1_2.md` §6). `templates/CLAUDE.md` is copied to the repo root.
 - Environments: **local** (Docker Compose: WordPress + MariaDB + PHP tools dir + Mailpit + Plausible stub + R oracle + Python oracle + Playwright), **staging** (clone of production, synthetic data, Mailpit), **production** (deploy only via P-E after HG-03).
-- CI (GitHub Actions or equivalent) jobs: `validate-artefacts` (all SCH), `registry-integrity` (SCH-01), `provenance-check` (FR1-06), `oracle-guard` (NFR1-09 AS-03), `engine-freeze` (hash compare of frozen objects), `unit`, `php-integration`, `e2e` (Playwright, 5 projects), `a11y`, `security` (gitleaks, ZAP baseline, WPScan), `perf` (Lighthouse CI), `crawl` (site regression), `fidelity-gate` (FR1-10, may write `status.json` withdrawn), `clinical-gate` (NFR1-02), `evidence` (SCH-06e bundle per run). Branch protection requires all.
+- CI jobs (GitHub Actions). Branch protection is not available on the current GitHub plan; "PR" jobs are conventions checked before merge, "tag" jobs run on `rc-*` tags.
+
+| Job | Runs on | Checks |
+|---|---|---|
+| `validate-artefacts` | PR | every JSON artefact against its schema |
+| `registry-integrity` | PR | SCH-01; register ↔ registry: `id`, `status`, `ratify_at`, `decided_on` equal |
+| `provenance-check` | PR, tag | staged tool hashes vs approval records (`pending` ok on PR, `approved` on tag) |
+| `oracle-guard` | PR | `fixtures/**/expected` changed only by baseline/oracle commits |
+| `engine-freeze` | PR | frozen object hashes = manifest `engine_hashes` |
+| `assertion-map` | PR | every AS/NEG id in the TC page exists as a test importing the named fixture |
+| `component-scope` | PR | diff touches only the requirement's component `paths[]` |
+| `copy-hash` | PR | extracted copy hashes = `approvals/copy.json` |
+| `unit`, `php-integration`, `e2e` (5 Playwright projects), `a11y`, `perf`, `crawl`, `security` | PR | the test families |
+| `saf` (steps `saf-protein`, `saf-diabetes`) | PR | mandatory safety suite |
+| `sentinel` | PR | privacy leak scan |
+| `fidelity-gate` | PR (staging) | FR1-10; may set staging `status.json` withdrawn via `wp lld status set` over SSH |
+| `evidence` | PR | SCH-06e bundle per run |
+| `clinical-gate` | tag | HG-02 artefacts (`decision: approved`) |
+| `release-gate` | tag | HG-03 artefact and release record |
 
 ## 2. Requirement state machine
 
@@ -27,6 +45,10 @@ draft ──► ready ──► in_progress ──► review ──► verified 
 | `accepted` | `verified` plus, for `hybrid` items, the HG artefact with `decision: approved` | orchestrator |
 | `blocked` | P-B or P-C emits a `blocker` (new DEC row needed, oracle disagreement, human gate pending) | agent |
 | `released` | included in a release record deployed to production | P-E |
+| `deferred` | SHOULD item only, when a DEC row with `ratify_at: HG-03` records the deferral | orchestrator at HG-03 |
+| `retired` | requirement withdrawn by a DEC row; keeps its ID | pack author |
+
+Review failure: P-C FAIL → `in_progress` with `repair_count + 1` and P-D runs; at `repair_count = 3` the item becomes `blocked` with a blocker listing the unresolved AS ids. `depends_on: ["*MUST*"]` (FR1-19 only) expands to every MUST requirement except itself.
 
 Deadlock avoidance (review finding F01): human gates HG-02 and HG-03 are batch events, so hybrid items sit in `verified` until the gate; dependants build on `verified`. Release gates G-03…G-06 require `accepted`. P-E is triggered when every MUST item is at least `verified`; HG-03 items become `accepted` when `approvals/hg-03.json` is signed, and only then is the deploy command run. Branch protection requires the automated jobs; `clinical-gate` and `release-gate` are release-tag checks, not PR checks.
 
@@ -37,7 +59,7 @@ The orchestrator picks the lowest-numbered `ready` requirement in dependency ord
 | Role | Model session | May write | May not |
 |---|---|---|---|
 | Orchestrator | long-running Claude Code session | registry `status`, branch/PR creation, evidence index | code, tests, fixtures |
-| Implementer (P-B, P-D) | fresh session per requirement, context = CLAUDE.md + registry entry + TC page + referenced DEC rows + components | code, tests, copy extraction, artefacts for its requirement | `expected` in fixtures; frozen engine objects; other requirements' files; `status` field |
+| Implementer (P-B, P-D) | fresh session per requirement, context = CLAUDE.md + the requirement's full SRS section (statement and acceptance) + registry entry + TC page + referenced DEC rows + components | code, tests, copy extraction, artefacts for its requirement | `expected` in fixtures; frozen engine objects; other requirements' files; `status` field |
 | Reviewer (P-C) | fresh session, read-only tools + test execution | review report | implementation, tests, fixtures, acceptance criteria |
 | Oracle author (P-O2) | sealed session with access only to `Protein-Tool-Engine-Reference.docx` and `oracles/orc-02-protein-ref/` | ORC-02 code | anything else (transcript file-access list is evidence) |
 | Baseline runner (P-A0) | fresh session | manifests, characterisation `expected`, baselines, AS-IS report | code |
@@ -61,7 +83,7 @@ Stop conditions: a file hash differs from the registry `live_hashes` (report, do
 
 ### P-B Implement one requirement
 ```
-Implement ONLY {REQ-ID} from SRS v1.2. Inputs: registry entry, TC-{REQ-ID}, DEC rows {list}, components {list}, must_not_touch {list}.
+Implement ONLY {REQ-ID} from SRS v1.2. Inputs: the SRS section for {REQ-ID} (statement + acceptance, verbatim), registry entry, TC-{REQ-ID}, DEC rows {list}, components {list}, must_not_touch {list}.
 1. List affected files. Confirm by hash that frozen objects (engine-freeze list) are unchanged before and after.
 2. Load fixtures {FX list}. Write the automated assertions TC-{REQ-ID}-AS-* and NEG-* as tests in the designated families. Run them: they must FAIL where new behaviour is required (record the red run id). Where behaviour already exists (verification-only requirements), record the green run and proceed.
 3. Make the minimal change. No edits outside the component list. No change to fixtures/**/expected. No change to acceptance criteria.
@@ -81,7 +103,7 @@ Output PASS or FAIL with reasons keyed by AS/NEG id. FAIL on any weakened assert
 
 ### P-D Repair
 ```
-Repair only the FAIL items from the reviewer for {REQ-ID}: {list}. Same constraints as P-B. Re-run everything that previously passed. If a fix requires touching another requirement's component, stop and emit blocker.
+Repair only the FAIL items from the reviewer for {REQ-ID}: {list}. Same inputs and constraints as P-B. Re-run everything that previously passed. If a fix requires touching another requirement's component, stop and emit blocker.
 ```
 
 ### P-O2 Sealed oracle author
@@ -97,7 +119,10 @@ All MUST requirements show status verified or accepted. Create tag rc-{date}. Ru
 ### 4.7 Output contract (all prompts)
 ```json
 {
+  "role": "implementer",          // implementer | reviewer | baseline | oracle | release
   "req_id": "FR1-08",
+  "verdict": null,                // reviewer only: "PASS" | "FAIL"
+  "findings": [],                 // reviewer only: [{"id": "TC-FR1-08-AS-03", "reason": "…"}]
   "run_id": "20261101-1430",
   "commit": "<sha>",
   "files_changed": ["…"],
@@ -112,22 +137,22 @@ All MUST requirements show status verified or accepted. Create tag rc-{date}. Ru
   "status_request": "review"   // or "verified", "blocked"
 }
 ```
-The orchestrator parses this; prose outside it is ignored.
+The orchestrator parses this; prose outside it is ignored. Fields that do not apply to a role are `null` or empty.
 
 ## 5. Build order (dependency-resolved)
 
 | Wave | Requirements | Gate reached |
 |---|---|---|
-| 0 | FR1-01 (P-A0), FR1-22 oracles, NFR1-09 CI skeleton | G-01 after HG-01 |
-| 1 | FR1-06, FR1-20, FR1-21, NFR1-15, NFR1-16, NFR1-03 | |
+| 0 | FR1-01 (P-A0), FR1-22 oracles, NFR1-09 CI skeleton — delivered 23 Oct 2026: manifests, 141 characterisation fixtures, ORC-02 (51/53 agree; DEC-44/45), 30-URL crawl, endpoint and WordPress audits in `reports/as-is/`; ORC-01 and visual baselines pending OI-4 | G-01 after HG-01 |
+| 1 | FR1-06, FR1-20, FR1-21, NFR1-15 | |
 | 2 | FR1-07, FR1-08, FR1-09, FR1-10, FR1-11, FR1-12, FR1-13, UI1-04, UI1-05, UI1-11 | G-02 |
-| 3 | FR1-14, NFR1-04, NFR1-14, NFR1-10, UI1-06 | |
-| 4 | FR1-15, NFR1-11, UI1-08, UI1-10 | |
-| 5 | FR1-04, FR1-03, FR1-05, FR1-18, FR1-17, FR1-23, UI1-01, UI1-02, UI1-03, UI1-07, UI1-09, NFR1-05, NFR1-12 | |
-| 6 | FR1-16, NFR1-01, NFR1-06, NFR1-07, FR1-02 (final diff) | HG-02 → G-03, G-04, G-05 |
+| 3 | FR1-14, NFR1-03, NFR1-04, NFR1-14, NFR1-16, UI1-06 | |
+| 4 | FR1-04, FR1-15, NFR1-10, NFR1-11, UI1-08, UI1-10, UI1-02 | |
+| 5 | FR1-03, FR1-05, FR1-17, FR1-18, FR1-23, UI1-01, UI1-03, UI1-07, UI1-09, NFR1-05, NFR1-12 | |
+| 6 | FR1-16, NFR1-01, NFR1-02, NFR1-06, NFR1-07, FR1-02 (final diff) | HG-02 → G-03, G-04, G-05 |
 | 7 | NFR1-08, NFR1-13, FR1-19 (P-E) | HG-03 → G-06 |
 
-Within a wave, items are independent and may run in parallel sessions on separate branches; two sessions never share a component.
+Within a wave the orchestrator still applies the `ready` rule and the registry `depends_on`: an item whose dependency is in the same wave starts after it, and items sharing a component run sequentially (wave 2 order: FR1-07, FR1-08, FR1-10, FR1-11, FR1-13 → FR1-09, FR1-12 → UI1-04, UI1-05, UI1-11). Only items with no shared component and no same-wave dependency run in parallel sessions.
 
 ## 6. Evidence bundle (SCH-06e)
 

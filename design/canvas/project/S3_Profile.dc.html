@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>App profile and subscription</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#f2f7f4}
+a{color:#157a42}a:hover{color:#0f5a31}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #f2f7f4; border-radius: 40px; overflow: hidden; border: 1px solid #e4eae6">
+
+  <div style="flex: 1 1 auto; overflow: hidden; display: flex; flex-direction: column; gap: 12px; padding: 56px 18px 16px">
+    <div style="display: flex; gap: 14px; align-items: center">
+      <span style="width: 56px; height: 56px; border-radius: 50%; background: #eafaf0; color: #157a42; display: inline-flex; align-items: center; justify-content: center; font-weight: 800; font-size: 22px" aria-hidden="true">N</span>
+      <div style="display: flex; flex-direction: column; gap: 2px"><h1 style="margin: 0; font-size: 22px; font-weight: 800; letter-spacing: -0.02em">Nisha</h1><span style="font-size: 13px; color: #63706a">Member since Oct 2026 · same account as the website</span></div>
+    </div>
+
+    <section aria-labelledby="gl" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 id="gl" style="margin: 0; font-size: 14px; font-weight: 700">My goals</h2><a href="#" style="font-size: 12px; font-weight: 600">Edit</a></div>
+      <div style="display: flex; gap: 8px; flex-wrap: wrap"><span style="font-size: 12px; font-weight: 600; background: #eafaf0; color: #157a42; border-radius: 999px; padding: 6px 12px">Eat more protein</span><span style="font-size: 12px; font-weight: 600; background: #eafaf0; color: #157a42; border-radius: 999px; padding: 6px 12px">Lower my diabetes risk</span><span style="font-size: 12px; font-weight: 600; border: 1px dashed #c9d3cd; color: #63706a; border-radius: 999px; padding: 6px 12px">+ one more</span></div>
+    </section>
+
+    <section aria-labelledby="sb" style="background: #1c1c1c; color: #ffffff; border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; justify-content: space-between; align-items: center"><h2 id="sb" style="margin: 0; font-size: 14px; font-weight: 700">Plan: Free</h2><span style="font-size: 11px; font-weight: 700; color: #3fd07f; border: 1px solid #3fd07f; border-radius: 999px; padding: 4px 10px">Premium optional</span></div>
+      <p style="margin: 0; font-size: 12px; color: #d9e0dc; line-height: 1.5">Premium adds result history with trends, several programmes at once and early access to new tools. Health tools stay free for everyone.</p>
+      <div style="display: flex; gap: 10px"><button type="button" style="min-height: 40px; padding: 0 14px; border-radius: 12px; border: 0; background: #3fd07f; color: #1c1c1c; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">See Premium</button><button type="button" style="min-height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid #4a524d; background: transparent; color: #ffffff; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Restore purchase</button></div>
+    </section>
+
+    <section aria-labelledby="st" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; display: flex; flex-direction: column">
+      <h2 id="st" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Settings</h2>
+      <a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #e4eae6; text-decoration: none; color: #161a17; font-size: 14px; font-weight: 600; min-height: 48px; box-sizing: border-box"><span>Reminders</span><span style="font-size: 12px; color: #63706a">Daily action 8:00 · weekly weigh-in Sat</span></a>
+      <a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #e4eae6; text-decoration: none; color: #161a17; font-size: 14px; font-weight: 600; min-height: 48px; box-sizing: border-box"><span>Units</span><span style="font-size: 12px; color: #63706a">kg · cm · kcal</span></a>
+      <a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #e4eae6; text-decoration: none; color: #161a17; font-size: 14px; font-weight: 600; min-height: 48px; box-sizing: border-box"><span>Security</span><span style="font-size: 12px; color: #63706a">Face ID on · passkey</span></a>
+      <a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #e4eae6; text-decoration: none; color: #161a17; font-size: 14px; font-weight: 600; min-height: 48px; box-sizing: border-box"><span>Offline articles</span><span style="font-size: 12px; color: #63706a">12 saved · 38 MB</span></a>
+      <a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #e4eae6; text-decoration: none; color: #161a17; font-size: 14px; font-weight: 600; min-height: 48px; box-sizing: border-box"><span>Export my data</span><span style="font-size: 12px; color: #63706a">JSON / PDF</span></a>
+      <a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; border-bottom: 1px solid #e4eae6; text-decoration: none; color: #161a17; font-size: 14px; font-weight: 600; min-height: 48px; box-sizing: border-box"><span>Send feedback</span><span style="font-size: 12px; color: #63706a">About the app or an article</span></a>
+      <a href="#" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; text-decoration: none; color: #7d1f1c; font-size: 14px; font-weight: 600; min-height: 48px; box-sizing: border-box"><span>Delete my account</span><span style="font-size: 12px; color: #63706a">Permanent, 30 days</span></a>
+    </section>
+
+    <p style="margin: auto 0 0; font-size: 11px; color: #63706a; line-height: 1.5; text-align: center">Lifeline Daily app v1.0 · <a href="#">Privacy</a> · <a href="#">Terms</a> · <a href="#">Medical disclaimer</a></p>
+  </div>
+
+  <nav aria-label="App sections" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid #e4eae6; background: #ffffff; padding: 10px 6px 26px">
+    <a href="S3_Home.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #63706a; font-size: 11px; font-weight: 600; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+    <a href="S3_Tools.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #63706a; font-size: 11px; font-weight: 600; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20h16M6 20V9M12 20V4M18 20v-7"/></svg>Tools</a>
+    <a href="S3_Progress.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #63706a; font-size: 11px; font-weight: 600; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>Progress</a>
+    <a href="S3_Learn.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #63706a; font-size: 11px; font-weight: 600; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 5h7v14H4zM13 5h7v14h-7z"/></svg>Learn</a>
+    <a href="S3_Profile.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #157a42; font-size: 11px; font-weight: 700; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

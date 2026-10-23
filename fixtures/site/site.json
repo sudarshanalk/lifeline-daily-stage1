@@ -16,10 +16,14 @@
     },
     {
       "id": "FX-WP-POST-01",
-      "purpose": "published nutrition-for-healthy-living post -> protein CTA",
+      "purpose": "published nutrition-for-healthy-living post -> protein CTA; approved review meta",
       "inputs": {
         "status": "publish",
-        "category": "nutrition-for-healthy-living"
+        "category": "nutrition-for-healthy-living",
+        "lld_review_owner": "[Clinical reviewer]",
+        "lld_reviewed_date": "2026-10-01",
+        "lld_next_review_date": "2027-10-01",
+        "lld_review_status": "approved"
       },
       "expected": null,
       "oracle": "none",
@@ -147,6 +151,26 @@
       "inputs": {
         "status": "publish",
         "category": "metabolic-health"
+      },
+      "expected": null,
+      "oracle": "none",
+      "source_version": null,
+      "reviewer": null,
+      "status": "pending"
+    },
+    {
+      "id": "FX-WP-POST-11",
+      "purpose": "health-conditions + tag diabetes, approved review meta -> diabetes CTA; approved article for unavailable state",
+      "inputs": {
+        "status": "publish",
+        "category": "health-conditions",
+        "tags": [
+          "diabetes"
+        ],
+        "lld_review_owner": "[Clinical reviewer]",
+        "lld_reviewed_date": "2026-10-01",
+        "lld_next_review_date": "2027-10-01",
+        "lld_review_status": "approved"
       },
       "expected": null,
       "oracle": "none",

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>App progress, measurements and trends</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#f2f7f4}
+a{color:#157a42}a:hover{color:#0f5a31}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; display: flex; flex-direction: column; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #f2f7f4; border-radius: 40px; overflow: hidden; border: 1px solid #e4eae6">
+
+  <div style="flex: 1 1 auto; overflow: hidden; display: flex; flex-direction: column; gap: 12px; padding: 56px 18px 16px">
+    <div style="display: flex; justify-content: space-between; align-items: center">
+      <h1 style="margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em">Progress</h1>
+      <div role="group" aria-label="Range" style="display: flex; border: 1px solid #e4eae6; border-radius: 999px; background: #ffffff; padding: 3px">
+        <button type="button" aria-pressed="false" style="min-height: 32px; padding: 0 12px; border-radius: 999px; border: 0; background: transparent; font: inherit; font-size: 12px; font-weight: 600; color: #63706a">4w</button>
+        <button type="button" aria-pressed="true" style="min-height: 32px; padding: 0 12px; border-radius: 999px; border: 0; background: #1c1c1c; color: #ffffff; font: inherit; font-size: 12px; font-weight: 700">3m</button>
+        <button type="button" aria-pressed="false" style="min-height: 32px; padding: 0 12px; border-radius: 999px; border: 0; background: transparent; font: inherit; font-size: 12px; font-weight: 600; color: #63706a">1y</button>
+      </div>
+    </div>
+
+    <!-- Weight -->
+    <section aria-labelledby="w-h" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 id="w-h" style="margin: 0; font-size: 14px; font-weight: 700">Weight</h2><span style="font-size: 12px; color: #157a42; font-weight: 700">−1.2 kg in 3 months</span></div>
+      <div style="display: flex; align-items: flex-end; gap: 12px">
+        <span style="font-size: 26px; font-weight: 800">73.8 <span style="font-size: 13px; font-weight: 600; color: #63706a">kg</span></span>
+        <svg viewBox="0 0 220 56" width="220" height="56" role="img" aria-label="Weight trend, gently falling from 75.0 to 73.8 kilograms over three months" style="flex: 1 1 auto"><polyline fill="none" stroke="#1f9d57" stroke-width="2.5" stroke-linejoin="round" points="0,14 22,16 44,12 66,20 88,22 110,19 132,28 154,30 176,34 198,36 220,40"/><circle cx="220" cy="40" r="4" fill="#1f9d57"/></svg>
+      </div>
+      <span style="font-size: 11px; color: #63706a">Logged weekly · last entry today</span>
+    </section>
+
+    <!-- Waist -->
+    <section aria-labelledby="ws-h" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 id="ws-h" style="margin: 0; font-size: 14px; font-weight: 700">Waist</h2><span style="font-size: 12px; color: #a8690d; font-weight: 700">0.55 waist-to-height · raised</span></div>
+      <div style="display: flex; align-items: flex-end; gap: 12px">
+        <span style="font-size: 26px; font-weight: 800">94 <span style="font-size: 13px; font-weight: 600; color: #63706a">cm</span></span>
+        <svg viewBox="0 0 220 56" width="220" height="56" role="img" aria-label="Waist trend, from 97 to 94 centimetres over three months" style="flex: 1 1 auto"><line x1="0" y1="30" x2="220" y2="30" stroke="#e4eae6" stroke-dasharray="4 4"/><polyline fill="none" stroke="#a8690d" stroke-width="2.5" stroke-linejoin="round" points="0,12 44,14 88,18 132,22 176,26 220,30"/><circle cx="220" cy="30" r="4" fill="#a8690d"/></svg>
+      </div>
+      <span style="font-size: 11px; color: #63706a">Dashed line: 0.5 waist-to-height (85 cm for your height)</span>
+    </section>
+
+    <!-- Blood pressure -->
+    <section aria-labelledby="bp-h" style="background: #ffffff; border: 1px solid #e4eae6; border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><h2 id="bp-h" style="margin: 0; font-size: 14px; font-weight: 700">Blood pressure</h2><span style="font-size: 12px; color: #63706a; font-weight: 600">manual log · 14 readings</span></div>
+      <div style="display: flex; align-items: flex-end; gap: 12px">
+        <span style="font-size: 26px; font-weight: 800">128<span style="font-size: 16px; color: #63706a">/</span>82 <span style="font-size: 13px; font-weight: 600; color: #63706a">mmHg</span></span>
+        <svg viewBox="0 0 220 56" width="220" height="56" role="img" aria-label="Systolic and diastolic blood pressure trend, broadly stable" style="flex: 1 1 auto"><polyline fill="none" stroke="#1c1c1c" stroke-width="2" stroke-linejoin="round" points="0,18 44,14 88,20 132,16 176,18 220,17"/><polyline fill="none" stroke="#63706a" stroke-width="2" stroke-linejoin="round" points="0,42 44,40 88,44 132,41 176,42 220,42"/></svg>
+      </div>
+      <p style="margin: 0; font-size: 11px; color: #63706a; line-height: 1.5">Home readings are for your own tracking and are not a diagnosis. A reading of 180/120 or higher, or symptoms such as chest pain, need urgent care.</p>
+    </section>
+
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+      <button type="button" style="min-height: 48px; border-radius: 14px; border: 0; background: #1f9d57; color: #ffffff; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer">+ Log a measurement</button>
+      <button type="button" style="min-height: 48px; border-radius: 14px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer">Share summary (PDF)</button>
+    </div>
+    <span style="font-size: 11px; color: #63706a; text-align: center">Shared summaries contain only what you select. Nothing is sent without your action.</span>
+  </div>
+
+  <nav aria-label="App sections" style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid #e4eae6; background: #ffffff; padding: 10px 6px 26px">
+    <a href="S3_Home.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #63706a; font-size: 11px; font-weight: 600; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 11 12 4l9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+    <a href="S3_Tools.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #63706a; font-size: 11px; font-weight: 600; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20h16M6 20V9M12 20V4M18 20v-7"/></svg>Tools</a>
+    <a href="S3_Progress.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #157a42; font-size: 11px; font-weight: 700; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>Progress</a>
+    <a href="S3_Learn.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #63706a; font-size: 11px; font-weight: 600; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 5h7v14H4zM13 5h7v14h-7z"/></svg>Learn</a>
+    <a href="S3_Profile.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 4px; text-decoration: none; color: #63706a; font-size: 11px; font-weight: 600; min-height: 44px; justify-content: center"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profile</a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

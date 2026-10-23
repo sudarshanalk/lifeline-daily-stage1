@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Healthy Weight Check, form</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#f2f7f4}
+a{color:#157a42}a:hover{color:#0f5a31}
+</style>
+</helmet>
+<div style="display: flex; flex-direction: column; gap: 14px; padding: 16px; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #f2f7f4">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: #63706a">
+    <span style="display: inline-flex; align-items: center; gap: 6px"><span style="width: 8px; height: 8px; border-radius: 50%; background: #a8690d"></span>Design preview · Stage 3 · awaiting clinical review</span>
+    <span>1 minute</span>
+  </div>
+  <p style="margin: 0; font-size: 14px; line-height: 1.5; color: #3a4440; background: #ffffff; border: 1px solid #e4eae6; border-radius: 14px; padding: 12px 14px">This tool shows where your weight and waist sit against published healthy ranges for adults 18+, using ethnicity-aware BMI cut-offs. It is a screening aid, not a diagnosis, and does not give a diet plan.</p>
+
+  <form style="display: flex; flex-direction: column; gap: 14px" aria-label="Healthy weight check">
+    <fieldset style="border: 1px solid #e4eae6; border-radius: 18px; background: #ffffff; padding: 16px; margin: 0; display: flex; flex-direction: column; gap: 14px">
+      <legend style="font-size: 15px; font-weight: 800; padding: 0 6px">About you</legend>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 6px"><label for="age" style="font-size: 14px; font-weight: 600">Age <span style="color: #63706a; font-weight: 400">(18+)</span></label><input id="age" type="number" inputmode="numeric" min="18" max="99" placeholder="42" style="height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 12px; font: inherit; font-size: 16px"></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><span id="sx" style="font-size: 14px; font-weight: 600">Sex</span><div role="group" aria-labelledby="sx" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px"><button type="button" aria-pressed="true" style="min-height: 46px; border-radius: 12px; border: 2px solid #1f9d57; background: #eafaf0; font: inherit; font-size: 14px; font-weight: 600; color: #157a42">F</button><button type="button" aria-pressed="false" style="min-height: 46px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 14px; font-weight: 600">M</button></div></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><label for="eth" style="font-size: 14px; font-weight: 600">Ethnicity <span style="color: #63706a; font-weight: 400">(sets the healthy BMI range)</span></label><select id="eth" style="height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 10px; font: inherit; font-size: 15px; background: #ffffff"><option>Indian</option><option>White</option><option>Pakistani</option><option>Bangladeshi</option><option>Other Asian</option><option>Chinese</option><option>Black Caribbean</option><option>Black African</option><option>Other</option></select><span style="font-size: 12px; color: #63706a">South Asian, Chinese and other Asian backgrounds use lower cut-offs (23 / 27.5) because risk rises at a lower BMI.</span></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span id="pg" style="font-size: 14px; font-weight: 600">Pregnant?</span><div role="group" aria-labelledby="pg" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px"><button type="button" aria-pressed="true" style="min-height: 44px; border-radius: 12px; border: 2px solid #1f9d57; background: #eafaf0; font: inherit; font-size: 14px; font-weight: 600; color: #157a42">No</button><button type="button" aria-pressed="false" style="min-height: 44px; border-radius: 12px; border: 1px solid #c9d3cd; background: #ffffff; font: inherit; font-size: 14px; font-weight: 600">Yes</button></div><span style="font-size: 12px; color: #63706a">BMI is not used in pregnancy; the tool will stop and refer you to your midwife.</span></div>
+    </fieldset>
+
+    <fieldset style="border: 1px solid #e4eae6; border-radius: 18px; background: #ffffff; padding: 16px; margin: 0; display: flex; flex-direction: column; gap: 14px">
+      <legend style="font-size: 15px; font-weight: 800; padding: 0 6px">Measurements</legend>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <div style="display: flex; flex-direction: column; gap: 6px"><label for="ht" style="font-size: 14px; font-weight: 600">Height</label><div style="display: flex; gap: 6px"><input id="ht" type="number" inputmode="decimal" placeholder="162" style="flex: 1 1 auto; min-width: 0; height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 10px; font: inherit; font-size: 16px"><label for="htu" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Height unit</label><select id="htu" style="height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 8px; font: inherit; font-size: 14px; background: #ffffff"><option>cm</option><option>ft in</option></select></div></div>
+        <div style="display: flex; flex-direction: column; gap: 6px"><label for="wt" style="font-size: 14px; font-weight: 600">Weight</label><div style="display: flex; gap: 6px"><input id="wt" type="number" inputmode="decimal" placeholder="68" style="flex: 1 1 auto; min-width: 0; height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 10px; font: inherit; font-size: 16px"><label for="wtu" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Weight unit</label><select id="wtu" style="height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 8px; font: inherit; font-size: 14px; background: #ffffff"><option>kg</option><option>lb</option><option>st lb</option></select></div></div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><label for="wa" style="font-size: 14px; font-weight: 600">Waist <span style="color: #63706a; font-weight: 400">(recommended · around the belly button, relaxed)</span></label><div style="display: flex; gap: 6px"><input id="wa" type="number" inputmode="decimal" placeholder="86" style="flex: 1 1 auto; min-width: 0; height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 10px; font: inherit; font-size: 16px"><label for="wau" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Waist unit</label><select id="wau" style="height: 46px; border: 1px solid #c9d3cd; border-radius: 12px; padding: 0 8px; font: inherit; font-size: 14px; background: #ffffff"><option>cm</option><option>inches</option></select></div><span style="font-size: 12px; color: #63706a">Waist-to-height is a better guide than BMI alone for people who carry weight centrally.</span></div>
+    </fieldset>
+
+    <fieldset style="border: 1px solid #e4eae6; border-radius: 18px; background: #ffffff; padding: 16px; margin: 0; display: flex; flex-direction: column; gap: 10px">
+      <legend style="font-size: 15px; font-weight: 800; padding: 0 6px">Context (optional)</legend>
+      <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45"><input type="checkbox" style="width: 20px; height: 20px; margin: 2px 0 0; flex: 0 0 auto">I do regular strength training or have a muscular build</label>
+      <label style="display: flex; gap: 10px; align-items: flex-start; font-size: 14px; line-height: 1.45"><input type="checkbox" style="width: 20px; height: 20px; margin: 2px 0 0; flex: 0 0 auto">I have, or am recovering from, an eating disorder</label>
+      <span style="font-size: 12px; color: #63706a; line-height: 1.5">Either answer changes how the result is worded. With an eating-disorder history the tool shows no BMI category and points to support instead.</span>
+    </fieldset>
+
+    <button type="submit" style="min-height: 52px; border-radius: 14px; border: 0; background: #1f9d57; color: #ffffff; font: inherit; font-size: 16px; font-weight: 700; cursor: pointer">Check my result</button>
+    <p style="margin: 0; font-size: 12px; color: #63706a; text-align: center; line-height: 1.5">Nothing you enter is stored. <a href="Legal.dc.html">Privacy</a> · <a href="Disclaimer.dc.html">Not a diagnosis</a></p>
+  </form>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":1180}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lifeline Daily home, desktop</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;font-family:Inter,system-ui,sans-serif;color:#161a17;background:#ffffff}
+a{color:#157a42}a:hover{color:#0f5a31}
+</style>
+</helmet>
+<div style="max-width: 100%; display: flex; flex-direction: column; font-family: Inter, system-ui, sans-serif; color: #161a17; background: #ffffff">
+
+  <!-- Top bar -->
+  <div style="background: #1c1c1c; color: #ffffff; display: flex; justify-content: center">
+    <div style="width: 100%; max-width: 1240px; display: flex; align-items: center; justify-content: space-between; padding: 10px 24px; box-sizing: border-box; font-size: 13px">
+      <div style="display: flex; gap: 20px"><span>Wednesday, 22 October 2026</span><span style="color: #a9b5ae">Start Small. Change Big. Live Healthier.</span></div>
+      <div style="display: flex; gap: 14px; color: #a9b5ae"><span>Facebook</span><span>Instagram</span><span>Pinterest</span><span>X</span><span>YouTube</span></div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header style="display: flex; justify-content: center; border-bottom: 1px solid #e4eae6">
+    <div style="width: 100%; max-width: 1240px; display: flex; align-items: center; justify-content: space-between; padding: 22px 24px; box-sizing: border-box; flex-wrap: wrap; gap: 16px">
+      <a href="Main.dc.html" style="display: flex; align-items: center; gap: 10px; text-decoration: none; color: #1c1c1c">
+        <span style="width: 34px; height: 34px; border-radius: 10px; background: #3fd07f; display: inline-flex; align-items: center; justify-content: center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>
+        </span>
+        <span style="font-size: 24px; font-weight: 800; letter-spacing: -0.02em">Lifeline Daily</span>
+      </a>
+      <nav aria-label="Primary" style="display: flex; gap: 26px; font-size: 14px; font-weight: 600; flex-wrap: wrap">
+        <a href="#" style="color: #1c1c1c; text-decoration: none">Fitness</a>
+        <a href="#" style="color: #1c1c1c; text-decoration: none">Food &amp; Nutrition</a>
+        <a href="#" style="color: #1c1c1c; text-decoration: none">Health Conditions</a>
+        <a href="#" style="color: #1c1c1c; text-decoration: none">Wellness</a>
+        <a href="Hub.dc.html" style="color: #157a42; text-decoration: none; display: inline-flex; align-items: center; gap: 6px">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M4 20h16M6 20V9M12 20V4M18 20v-7"/></svg>Health Tools</a>
+        <a href="#" style="color: #1c1c1c; text-decoration: none">The Report</a>
+      </nav>
+      <form role="search" style="display: flex; gap: 0">
+        <label for="q" style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Search articles</label>
+        <input id="q" type="search" placeholder="Search" style="height: 40px; width: 200px; border: 1px solid #e4eae6; border-radius: 10px 0 0 10px; padding: 0 12px; font: inherit; font-size: 14px">
+        <button type="submit" aria-label="Search" style="height: 40px; width: 44px; border: 1px solid #e4eae6; border-left: 0; border-radius: 0 10px 10px 0; background: #f2f7f4; cursor: pointer">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1c1c1c" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <!-- Hero (existing featured article) -->
+  <section aria-label="Featured" style="display: flex; justify-content: center; background: #f2f7f4">
+    <div style="width: 100%; max-width: 1240px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px; padding: 36px 24px; box-sizing: border-box; align-items: center">
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #157a42">Featured · Food &amp; Nutrition</span>
+        <h1 style="margin: 0; font-size: 42px; line-height: 1.1; font-weight: 800; letter-spacing: -0.02em">Japanese Diet Secrets: Simple Lessons for Better Health</h1>
+        <p style="margin: 0; font-size: 17px; line-height: 1.55; color: #3a4440">Portion rhythm, fermented foods and the habit of stopping at eighty percent full. What the evidence actually supports.</p>
+        <a href="#" style="align-self: flex-start; font-weight: 600; font-size: 15px">Read the article →</a>
+      </div>
+      <div style="aspect-ratio: 16 / 10; border-radius: 18px; background: #d9e8df; display: flex; align-items: center; justify-content: center; color: #4e5e55; font-size: 14px">[Featured image]</div>
+    </div>
+  </section>
+
+  <!-- TOOLS ROW (new, DEC-23) -->
+  <section aria-labelledby="tools-h" data-test="tools-row" style="display: flex; justify-content: center">
+    <div style="width: 100%; max-width: 1240px; padding: 40px 24px 8px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+        <h2 id="tools-h" style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.02em">Tools</h2>
+        <a href="Hub.dc.html" style="font-size: 14px; font-weight: 600">All health tools →</a>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px">
+
+        <article data-tool-card data-status="active" style="border: 1px solid #e4eae6; border-radius: 18px; padding: 26px; display: flex; flex-direction: column; gap: 14px; background: #ffffff; box-shadow: 0 2px 6px rgba(20,40,30,.06)">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+            <span style="width: 44px; height: 44px; border-radius: 12px; background: #eafaf0; display: inline-flex; align-items: center; justify-content: center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#157a42" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 3h10l3 7-8 11L4 10z"/><path d="M4 10h16"/></svg>
+            </span>
+            <span style="font-size: 12px; font-weight: 700; color: #157a42; background: #eafaf0; border-radius: 999px; padding: 6px 12px">Available now</span>
+          </div>
+          <h3 style="margin: 0; font-size: 22px; font-weight: 700">Daily Protein Target</h3>
+          <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #3a4440">A guideline-based daily protein estimate for adults 18+, with a per-meal split.</p>
+          <dl style="margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; font-size: 13px">
+            <div><dt style="color: #63706a">Takes</dt><dd style="margin: 0; font-weight: 600">2 minutes</dd></div>
+            <div><dt style="color: #63706a">You enter</dt><dd style="margin: 0; font-weight: 600">Age, height, weight, activity</dd></div>
+            <div><dt style="color: #63706a">For</dt><dd style="margin: 0; font-weight: 600">Adults 18+</dd></div>
+          </dl>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 4px">
+            <a href="Landing.dc.html" style="display: inline-flex; align-items: center; min-height: 46px; padding: 0 20px; border-radius: 12px; background: #1f9d57; color: #ffffff; font-weight: 700; text-decoration: none; font-size: 15px">Start protein check</a>
+            <a href="#" style="font-size: 13px">Read: How much protein do you need?</a>
+          </div>
+        </article>
+
+        <article data-tool-card data-status="active" style="border: 1px solid #e4eae6; border-radius: 18px; padding: 26px; display: flex; flex-direction: column; gap: 14px; background: #ffffff; box-shadow: 0 2px 6px rgba(20,40,30,.06)">
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+            <span style="width: 44px; height: 44px; border-radius: 12px; background: #eafaf0; display: inline-flex; align-items: center; justify-content: center">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#157a42" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 21s-7-4.5-7-11a7 7 0 0 1 14 0c0 6.5-7 11-7 11z"/><path d="M9 10h6M12 7v6"/></svg>
+            </span>
+            <span style="font-size: 12px; font-weight: 700; color: #157a42; background: #eafaf0; border-radius: 999px; padding: 6px 12px">Available now</span>
+          </div>
+          <h3 style="margin: 0; font-size: 22px; font-weight: 700">Diabetes Risk Check</h3>
+          <p style="margin: 0; font-size: 15px; line-height: 1.5; color: #3a4440">Your estimated 10-year risk of type 2 diabetes using QDiabetes-2018, with no blood tests. A screening aid, not a diagnosis.</p>
+          <dl style="margin: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; font-size: 13px">
+            <div><dt style="color: #63706a">Takes</dt><dd style="margin: 0; font-weight: 600">4 minutes</dd></div>
+            <div><dt style="color: #63706a">You enter</dt><dd style="margin: 0; font-weight: 600">Age, body size, history, symptoms</dd></div>
+            <div><dt style="color: #63706a">For</dt><dd style="margin: 0; font-weight: 600">Adults 25–84</dd></div>
+          </dl>
+          <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 4px">
+            <a href="#" style="display: inline-flex; align-items: center; min-height: 46px; padding: 0 20px; border-radius: 12px; background: #1f9d57; color: #ffffff; font-weight: 700; text-decoration: none; font-size: 15px">Start risk check</a>
+            <a href="#" style="font-size: 13px">Read: Prediabetes, the early signs</a>
+          </div>
+        </article>
+      </div>
+      <p style="margin: 0; font-size: 13px; color: #63706a">Both tools are free, need no account, and store none of your answers. They are educational screening aids and not a diagnosis. <a href="#">Medical disclaimer and urgent care</a></p>
+    </div>
+  </section>
+
+  <!-- LEARN ROW -->
+  <section aria-labelledby="learn-h" data-test="learn-row" style="display: flex; justify-content: center">
+    <div style="width: 100%; max-width: 1240px; padding: 40px 24px; box-sizing: border-box; display: flex; flex-direction: column; gap: 20px">
+      <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+        <h2 id="learn-h" style="margin: 0; font-size: 28px; font-weight: 800; letter-spacing: -0.02em">Learn</h2>
+        <div style="display: flex; gap: 18px; font-size: 14px; font-weight: 600"><a href="#">Latest</a><a href="#" style="color: #63706a">Popular</a><a href="#" style="color: #63706a">Gut Health</a><a href="#" style="color: #63706a">Sleep</a></div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px">
+        <article style="display: flex; flex-direction: column; gap: 10px">
+          <div style="aspect-ratio: 4 / 3; border-radius: 14px; background: #e4eae6"></div>
+          <span style="font-size: 12px; font-weight: 700; color: #157a42; text-transform: uppercase; letter-spacing: 0.06em">Fitness</span>
+          <h3 style="margin: 0; font-size: 17px; line-height: 1.3; font-weight: 700"><a href="#" style="color: #161a17; text-decoration: none">Pilates for Beginners: A Four-Week Start</a></h3>
+          <span style="font-size: 13px; color: #63706a">18 Oct 2026 · 6 min read</span>
+        </article>
+        <article style="display: flex; flex-direction: column; gap: 10px">
+          <div style="aspect-ratio: 4 / 3; border-radius: 14px; background: #e4eae6"></div>
+          <span style="font-size: 12px; font-weight: 700; color: #157a42; text-transform: uppercase; letter-spacing: 0.06em">Mental Health</span>
+          <h3 style="margin: 0; font-size: 17px; line-height: 1.3; font-weight: 700"><a href="#" style="color: #161a17; text-decoration: none">The Lifestyle Factors That Make Depression Better or Worse</a></h3>
+          <span style="font-size: 13px; color: #63706a">15 Oct 2026 · 9 min read</span>
+        </article>
+        <article style="display: flex; flex-direction: column; gap: 10px">
+          <div style="aspect-ratio: 4 / 3; border-radius: 14px; background: #e4eae6"></div>
+          <span style="font-size: 12px; font-weight: 700; color: #157a42; text-transform: uppercase; letter-spacing: 0.06em">Gut Health</span>
+          <h3 style="margin: 0; font-size: 17px; line-height: 1.3; font-weight: 700"><a href="#" style="color: #161a17; text-decoration: none">Fibre, Fermented Foods and the Microbiome</a></h3>
+          <span style="font-size: 13px; color: #63706a">12 Oct 2026 · 7 min read</span>
+        </article>
+        <article style="display: flex; flex-direction: column; gap: 10px">
+          <div style="aspect-ratio: 4 / 3; border-radius: 14px; background: #e4eae6"></div>
+          <span style="font-size: 12px; font-weight: 700; color: #157a42; text-transform: uppercase; letter-spacing: 0.06em">Health Conditions</span>
+          <h3 style="margin: 0; font-size: 17px; line-height: 1.3; font-weight: 700"><a href="#" style="color: #161a17; text-decoration: none">Prediabetes: The Early Signs Most People Miss</a></h3>
+          <span style="font-size: 13px; color: #63706a">9 Oct 2026 · 8 min read</span>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer style="background: #1c1c1c; color: #d9e0dc; display: flex; justify-content: center; margin-top: 24px">
+    <div style="width: 100%; max-width: 1240px; padding: 36px 24px; box-sizing: border-box; display: flex; justify-content: space-between; gap: 24px; flex-wrap: wrap; font-size: 14px">
+      <div style="display: flex; flex-direction: column; gap: 8px; max-width: 420px">
+        <span style="font-weight: 800; color: #ffffff; font-size: 18px">Lifeline Daily</span>
+        <span style="color: #a9b5ae; line-height: 1.5">Science-backed insights on nutrition, exercise, sleep and mental well-being. Our tools are screening aids, not medical advice.</span>
+      </div>
+      <nav aria-label="Footer" style="display: flex; gap: 22px; flex-wrap: wrap; align-items: flex-start">
+        <a href="#" style="color: #ffffff; text-decoration: none">About</a>
+        <a href="#" style="color: #ffffff; text-decoration: none">Contact</a>
+        <a href="#" style="color: #ffffff; text-decoration: none">Privacy Policy</a>
+        <a href="#" style="color: #ffffff; text-decoration: none">Terms &amp; Conditions</a>
+        
+      </nav>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1560}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>
