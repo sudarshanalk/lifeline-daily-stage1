@@ -1,0 +1,342 @@
+{
+  "ev_id": "EV-FR1-10-20261023-1452",
+  "req_id": "FR1-10",
+  "tc_id": "TC-FR1-10",
+  "commit": "049f34da0e48ea75a1272e61d814078009a067f5",
+  "tool_hashes": {
+    "protein": "65cffa501f924b7e760d5f03f91b6148e9b5506c5b62b9013e00acd4be4968c0",
+    "diabetes": "a2e04f0b2b31848f19327fc089d3da4ed8778dd9f5939c0a77b6e6a77c25d321"
+  },
+  "fixtures": [
+    "FX-DM-QD-CLAMP-01",
+    "FX-DM-QD-CLAMP-02",
+    "FX-DM-QD-CLAMP-03",
+    "FX-DM-QD-CLAMP-04",
+    "FX-DM-QD-01",
+    "FX-DM-QD-02",
+    "FX-DM-QD-03",
+    "FX-DM-QD-04",
+    "FX-DM-QD-05",
+    "FX-DM-QD-06",
+    "FX-DM-QD-07",
+    "FX-DM-QD-08",
+    "FX-DM-QD-09",
+    "FX-DM-QD-10",
+    "FX-DM-QD-11",
+    "FX-DM-QD-12",
+    "FX-DM-QD-13",
+    "FX-DM-QD-14",
+    "FX-DM-QD-15",
+    "FX-DM-QD-16",
+    "FX-DM-QD-17",
+    "FX-DM-QD-18",
+    "FX-DM-QD-19",
+    "FX-DM-QD-20",
+    "FX-DM-QD-21",
+    "FX-DM-QD-22",
+    "FX-DM-QD-23",
+    "FX-DM-QD-24",
+    "FX-DM-QD-25",
+    "FX-DM-QD-26",
+    "FX-DM-QD-27",
+    "FX-DM-QD-28",
+    "FX-DM-QD-29",
+    "FX-DM-QD-30",
+    "FX-DM-QD-31",
+    "FX-DM-QD-32",
+    "FX-DM-QD-33",
+    "FX-DM-QD-34",
+    "FX-DM-QD-35",
+    "FX-DM-QD-36",
+    "FX-DM-QD-37",
+    "FX-DM-QD-38",
+    "FX-DM-QD-39",
+    "FX-DM-QD-40",
+    "FX-DM-QD-41",
+    "FX-DM-QD-42",
+    "FX-DM-QD-43",
+    "FX-DM-QD-44",
+    "FX-DM-QD-45",
+    "FX-DM-QD-46",
+    "FX-DM-QD-47",
+    "FX-DM-QD-48",
+    "FX-DM-QD-49",
+    "FX-DM-QD-50",
+    "FX-DM-QD-51",
+    "FX-DM-QD-52",
+    "FX-DM-QD-53",
+    "FX-DM-QD-54",
+    "FX-DM-QD-55",
+    "FX-DM-QD-56",
+    "FX-DM-QD-57",
+    "FX-DM-QD-58",
+    "FX-DM-QD-59",
+    "FX-DM-QD-60",
+    "FX-DM-QD-61",
+    "FX-DM-QD-62",
+    "FX-DM-QD-63",
+    "FX-DM-QD-64",
+    "FX-DM-QD-65",
+    "FX-DM-QD-66",
+    "FX-DM-QD-67",
+    "FX-DM-QD-68",
+    "FX-DM-QD-69",
+    "FX-DM-QD-70",
+    "FX-DM-QD-71",
+    "FX-DM-QD-72",
+    "FX-DM-QD-73",
+    "FX-DM-QD-74"
+  ],
+  "results": [
+    {
+      "assertion": "TC-FR1-10-AS-01",
+      "outcome": "skipped",
+      "artefact": "characterisation agreement for all 74 FX-DM-QD fixtures recorded (pass); ORC-01 comparison pending the R container run (Docker/WSL 2, OI-4; HG-01 deferral) \u2014 correctness not yet claimed",
+      "oracle": "clinical"
+    },
+    {
+      "assertion": "TC-FR1-10-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-10-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-10-AS-04",
+      "outcome": "pass",
+      "artefact": "sandbox copy of status.json; MUT-04 \u2192 withdrawn + ALERT; production env vars asserted absent",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-10-AS-05",
+      "outcome": "skipped",
+      "artefact": "pins.json present (1.0-2, CRAN Archive URL, AGPL-3); tarball SHA-256 and R version recorded at the first ORC-01 run (OI-4)",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-22-AS-01",
+      "outcome": "skipped",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-22-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-22-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-22-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-20-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-20-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-20-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-15-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-06-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-06-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-06-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-09-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-09-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-09-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-09-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-DM-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-DM-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-DM-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-DM-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-CROSS-01",
+      "outcome": "skipped",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-WITHDRAW-01",
+      "outcome": "skipped",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-PR-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-PR-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-PR-03",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "SAF-PR-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-21-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-21-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-21-AS-06",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-06-AS-03",
+      "outcome": "skipped",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-21-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-21-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-FR1-21-AS-05",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-15-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-15-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "characterisation"
+    }
+  ],
+  "mutations": [
+    {
+      "id": "MUT-04",
+      "red": true,
+      "run": "local-20261023-1452"
+    }
+  ],
+  "red_run": "local-20261023-1451",
+  "green_run": "local-20261023-1452",
+  "human_gate": {
+    "id": "HG-02",
+    "artefact": "approvals/protein.json, approvals/diabetes.json",
+    "status": "pending"
+  },
+  "started_at": "2026-10-23T14:50:00Z",
+  "finished_at": "2026-10-23T14:57:46Z"
+}
