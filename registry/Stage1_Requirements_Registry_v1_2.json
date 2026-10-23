@@ -409,7 +409,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-01"
       ],
@@ -966,7 +966,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-04",
         "FR1-20"
@@ -1709,7 +1709,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-14",
         "FR1-15"
@@ -1746,7 +1746,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-10",
         "FR1-15"
@@ -1993,7 +1993,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-04"
       ],
@@ -2224,7 +2224,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-15",
         "NFR1-10"
@@ -2298,7 +2298,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-21"
       ],
