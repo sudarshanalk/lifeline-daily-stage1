@@ -52,3 +52,17 @@ jobs:
           [ -z "$changed" ] && { echo "no fixture changes"; exit 0; }
           if git log -1 --format=%s | grep -Eq '^(FR1-01|FR1-22|ORC-0[1-4]):'; then echo "fixture change by baseline/oracle commit: $changed"; exit 0; fi
           echo "oracle-guard: fixtures changed outside a baseline/oracle commit: $changed"; exit 1
+
+  deploy-dry-run:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803
+        with:
+          persist-credentials: false
+      - name: Deployment safety regression tests
+        run: python3 -m unittest discover -s deploy/tests -v
+      - name: Rehearse against a disposable local SSH server
+        run: bash deploy/tests/ssh-rehearsal.sh

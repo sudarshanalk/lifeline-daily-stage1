@@ -8,3 +8,6 @@ design/baselines/*.png
 local-stack/
 test-results/
 playwright-report/
+
+deploy/log/
+__pycache__/
