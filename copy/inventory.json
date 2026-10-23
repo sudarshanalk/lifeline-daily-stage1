@@ -170,6 +170,26 @@
       "locator": "MESSAGES.emailFailed"
     },
     {
+      "key": "messages.protein.unavailable.title",
+      "source": "site/public_html/tools/protein-requirement-tool.html",
+      "locator": "MESSAGES.unavailable.title"
+    },
+    {
+      "key": "messages.protein.unavailable.body",
+      "source": "site/public_html/tools/protein-requirement-tool.html",
+      "locator": "MESSAGES.unavailable.body"
+    },
+    {
+      "key": "messages.protein.unavailable.checking",
+      "source": "site/public_html/tools/protein-requirement-tool.html",
+      "locator": "MESSAGES.unavailable.checking"
+    },
+    {
+      "key": "messages.protein.unavailable.unknown",
+      "source": "site/public_html/tools/protein-requirement-tool.html",
+      "locator": "MESSAGES.unavailable.unknown"
+    },
+    {
       "key": "templates.protein._shared.disclaimer",
       "source": "site/public_html/tools/api/templates-protein.php",
       "locator": "_shared.disclaimer"
@@ -413,6 +433,26 @@
       "key": "messages.diabetes.email.errorServer",
       "source": "site/public_html/tools/diabetes-risk-tool.html",
       "locator": "MESSAGES.email.errorServer"
+    },
+    {
+      "key": "messages.diabetes.unavailable.title",
+      "source": "site/public_html/tools/diabetes-risk-tool.html",
+      "locator": "MESSAGES.unavailable.title"
+    },
+    {
+      "key": "messages.diabetes.unavailable.body",
+      "source": "site/public_html/tools/diabetes-risk-tool.html",
+      "locator": "MESSAGES.unavailable.body"
+    },
+    {
+      "key": "messages.diabetes.unavailable.checking",
+      "source": "site/public_html/tools/diabetes-risk-tool.html",
+      "locator": "MESSAGES.unavailable.checking"
+    },
+    {
+      "key": "messages.diabetes.unavailable.unknown",
+      "source": "site/public_html/tools/diabetes-risk-tool.html",
+      "locator": "MESSAGES.unavailable.unknown"
     },
     {
       "key": "messages.diabetes.disclaimer",

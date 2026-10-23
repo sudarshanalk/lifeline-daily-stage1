@@ -1,7 +1,7 @@
 {
   "approval_id": "APR-DIABETES-2026-10-23",
   "tool_slug": "diabetes",
-  "version_hash": "0d68e064375f433af46f6bd675849587169429aece4b0f897deaf1b9d94b3719",
+  "version_hash": "ed629110084b643172f4fb2ae36a8996a0e2698d9ba15f4bbd6c45be9fb365ce",
   "engine_name": "QDiabetes-2018 Model A (10-year type 2 diabetes risk, non-laboratory) with Indian Diabetes Risk Score (Mohan 2005, live 4-level activity mapping) and waist-to-height ratio as secondary indicators; symptom and emergency escalation layer",
   "intended_use": "Educational screening aid that estimates a visitor's 10-year risk of developing type 2 diabetes from self-reported, non-laboratory inputs and encourages a conversation with a clinician or an NHS Health Check where indicated. It does not diagnose diabetes, type 1 diabetes or any other condition.",
   "eligibility": "Adults aged 25 to 84 (QDiabetes-2018 derivation range; age entered as 5-year bands, midpoint used — DEC-29) without a diagnosis of diabetes. BMI is clamped to 20–40 as in the published model. Classic symptoms trigger a same-day-assessment banner; the emergency checklist suppresses the percentage and directs to urgent care (DEC-09, DEC-37). Townsend deprivation score fixed at 0 and disclosed (DEC-07).",
@@ -24,7 +24,7 @@
   "regulatory_statement": "Pending clinical review (HG-02). Working position: the tool reproduces a published, openly licensed risk algorithm for general health information and screening encouragement; it does not diagnose, treat or recommend treatment, and every result screen and email states that the output is not a diagnosis and names urgent-care routes (UK 999 / NHS 111, Sri Lanka 1990, India 112 — DEC-37). It is operated as an educational/screening information service and not placed on the market as a medical device. The clinical reviewer confirms or amends this position at HG-02.",
   "licence": "QDiabetes-2018 algorithm © ClinRisk Ltd, released under LGPL-3.0; the deployed JavaScript port is Lifeline Daily's own implementation of the published equations. IDRS and WHtR are published, unlicensed scoring rules. R oracle package QDiabetes 1.0-2 is AGPL-3 (research-use disclaimer recorded in ORC-01).",
   "copy_hashes": {
-    "messages.diabetes": "0c58e9d8a272bcc396a3b8fe4e3d3ed89033fda6b3dd9703300df5241527c4b6",
+    "messages.diabetes": "bcc898c60490ae8b1ac326d6a5ee02e8c82d1dda44aeba8449623adc4558d75f",
     "templates.diabetes": "c91459fc5e9f4b850d43acb7ee4ed13b87284cd480736a571a5633694eac88da",
     "emergency": "39ede8389073eaec0f7615d86a36242aebbe0f1dcdc0274b71257be0db7f5f1a",
     "symptomatic": "0e4e4a6221261edad261aa6970095975fb30858685dab94519a4b373cb6ee586"

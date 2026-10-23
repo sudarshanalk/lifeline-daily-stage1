@@ -28,5 +28,9 @@
   "disclaimer": "Lifeline Daily provides health education, not medical advice. This tool applies published population guidelines to the information you entered; it cannot see your bloods, your medications or your medical history. It does not diagnose anything. Always speak to a qualified clinician before making significant changes to your diet, particularly if you have a medical condition. Nothing you entered has been stored.",
   "emailSubject": "{{firstName}}, your daily protein target from Lifeline Daily",
   "emailSent": "Sent. Check your inbox — and your spam folder, just in case.",
-  "emailFailed": "That didn't send. Please check your email address and try again."
+  "emailFailed": "That didn't send. Please check your email address and try again.",
+  "unavailable.title": "This tool is temporarily unavailable",
+  "unavailable.body": "We have paused this tool while we check it. Nothing about your health is affected by the pause — please come back soon, or read on below.",
+  "unavailable.checking": "Checking this tool is available…",
+  "unavailable.unknown": "We can't confirm this tool is available right now, so it has not been started. Please check your connection and try again."
 }

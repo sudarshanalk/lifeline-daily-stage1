@@ -51,6 +51,13 @@ export async function startWpStack({ overlay = resolve(ROOT, 'site', 'public_htm
   if (process.env.LLD_WP_URL) return { url: process.env.LLD_WP_URL.replace(/\/$/, ''), external: true, wp: () => { throw new Error('wp-cli is not available against LLD_WP_URL'); }, close: async () => {} };
   const a = available(); if (!a.ok) throw new Error(a.reason);
   ensureDb();
+  // the overlay is served from a temp copy: `wp lld status set` writes tools/status.json there, the endpoints get a generated
+  // config.php (log transport, outbox in the copy), and the repository's site/ stays untouched
+  const overlayCopy = mkdtempSync(join(tmpdir(), 'lld-overlay-'));
+  cpSync(overlay, overlayCopy, { recursive: true });
+  const cfg = readFileSync(join(overlayCopy, 'tools', 'api', 'config.example.php'), 'utf8').replace(/'transport'\s*=>\s*[^,]+,/, "'transport' => 'log',").replace(/'allowed_origins'\s*=>\s*\[[^\]]*\]/, "'allowed_origins' => []");
+  writeFileSync(join(overlayCopy, 'tools', 'api', 'config.php'), cfg);
+  overlay = overlayCopy;
   const mu = assembleMu(overlay);
   const port = await freePort();
   const url = `http://localhost:${port}`;
@@ -71,7 +78,7 @@ export async function startWpStack({ overlay = resolve(ROOT, 'site', 'public_htm
   while (Date.now() - t0 < 180000) { try { const r = await get(url + '/', 150000); if (r.status === 200) { ready = true; break; } } catch {} await new Promise((r) => setTimeout(r, 1000)); }
   if (!ready) { php.kill(); throw new Error('test WordPress did not answer: ' + log.slice(-5).join(' | ')); }
   return {
-    url, external: false, wp, snapshot: SNAPSHOT, muDir: mu, log: () => [...log],
-    close: async () => { try { if (original.home && original.home !== url) { wp('option', 'update', 'home', original.home); wp('option', 'update', 'siteurl', original.siteurl); } } catch {} php.kill(); rmSync(mu, { recursive: true, force: true }); },
+    url, external: false, wp, snapshot: SNAPSHOT, muDir: mu, overlayDir: overlay, statusPath: join(overlay, 'tools', 'status.json'), outboxDir: join(overlay, 'tools', 'api', 'outbox'), log: () => [...log],
+    close: async () => { try { if (original.home && original.home !== url) { wp('option', 'update', 'home', original.home); wp('option', 'update', 'siteurl', original.siteurl); } } catch {} php.kill(); rmSync(mu, { recursive: true, force: true }); rmSync(overlay, { recursive: true, force: true }); },
   };
 }

@@ -73,7 +73,7 @@ function applyHeaders(rules, fileName, res, { always }) {
 }
 
 /* ---------------------------------------------------------------------------------- the server --- */
-export async function startHtaccessServer({ port = 0, overlay = resolve(ROOT, 'site', 'public_html'), phpPort = 0, harnessDir = null, phpConfig = {} } = {}) {
+export async function startHtaccessServer({ port = 0, overlay = resolve(ROOT, 'site', 'public_html'), phpPort = 0, harnessDir = null, phpConfig = {}, statusJson = null } = {}) {
   const docroot = mkdtempSync(join(tmpdir(), 'lld-docroot-'));
   cpSync(overlay, docroot, { recursive: true });
   // test config for the PHP endpoints: log transport into the temp copy (or `phpConfig.transport` — 'smtp' with
@@ -87,6 +87,8 @@ export async function startHtaccessServer({ port = 0, overlay = resolve(ROOT, 's
     .replace(/'outbox_dir'/, phpConfig.logDay ? `'log_day' => '${phpConfig.logDay}',\n  'outbox_dir'` : "'outbox_dir'");
   writeFileSync(join(docroot, 'tools', 'api', 'config.php'), cfg);
   if (!existsSync(join(docroot, 'tools', 'status.json'))) writeFileSync(join(docroot, 'tools', 'status.json'), '{}');
+  // `statusJson` (object) replaces the served tools/status.json — the FR1-15 withdrawal switch under test
+  if (statusJson) writeFileSync(join(docroot, 'tools', 'status.json'), JSON.stringify(statusJson, null, 2));
   const phpEnv = { ...process.env, LLD_TRUSTED_PROXIES: '127.0.0.1', LLD_LOG_SALT: 'harness-salt', ...(phpConfig.smtpHost ? { LLD_SMTP_HOST: phpConfig.smtpHost } : {}), ...(phpConfig.smtpPort ? { LLD_SMTP_PORT: String(phpConfig.smtpPort) } : {}), ...(phpConfig.env || {}) };
 
   // PHP built-in server for *.php under /tools (deny rules are enforced here, not in PHP)
@@ -154,7 +156,7 @@ export async function startHtaccessServer({ port = 0, overlay = resolve(ROOT, 's
   const url = `http://127.0.0.1:${server.address().port}`;
   ORIGIN = url;
   return {
-    url, docroot, phpOrigin, phpLog: () => [...phpLog],
+    url, docroot, phpOrigin, phpLog: () => [...phpLog], statusPath: join(docroot, 'tools', 'status.json'),
     close: () => new Promise((ok) => { php.kill(); server.close(() => { rmSync(docroot, { recursive: true, force: true }); ok(); }); }),
   };
 }
