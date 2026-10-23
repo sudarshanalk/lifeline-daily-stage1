@@ -125,20 +125,20 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
 
   <div class="field">
     <label class="q">Sex</label>
-    <div class="opts" id="sex" data-single></div>
+    <div class="opts" id="sex" data-single role="group" aria-label="Sex"></div>
   </div>
 
   <div class="field" id="pregWrap" style="display:none">
     <label class="q">Are you currently pregnant or breastfeeding?</label>
-    <div class="opts" id="preg" data-single></div>
+    <div class="opts" id="preg" data-single role="group" aria-label="Are you currently pregnant or breastfeeding?"></div>
   </div>
 
   <div class="field">
     <label class="q" for="hVal">Height</label>
     <div class="row">
       <input type="number" id="hVal" step="0.1" inputmode="decimal" placeholder="170">
-      <input type="number" id="hVal2" step="0.1" inputmode="decimal" placeholder="in" class="hidden" style="width:80px">
-      <select id="hUnit">
+      <input type="number" id="hVal2" step="0.1" inputmode="decimal" placeholder="in" class="hidden" style="width:80px" aria-label="Height, inches part">
+      <select id="hUnit" aria-label="Height unit">
         <option value="cm">cm</option><option value="m">m</option>
         <option value="ftin">ft + in</option><option value="in">inches</option>
       </select>
@@ -149,8 +149,8 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
     <label class="q" for="wVal">Weight</label>
     <div class="row">
       <input type="number" id="wVal" step="0.1" inputmode="decimal" placeholder="70">
-      <input type="number" id="wVal2" step="0.1" inputmode="decimal" placeholder="lb" class="hidden" style="width:80px">
-      <select id="wUnit">
+      <input type="number" id="wVal2" step="0.1" inputmode="decimal" placeholder="lb" class="hidden" style="width:80px" aria-label="Weight, pounds part">
+      <select id="wUnit" aria-label="Weight unit">
         <option value="kg">kg</option><option value="lb">lb</option><option value="stlb">st + lb</option>
       </select>
     </div>
@@ -160,7 +160,7 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
 
   <div class="field">
     <label class="q">Ethnicity</label>
-    <div class="opts" id="eth" data-single></div>
+    <div class="opts" id="eth" data-single role="group" aria-label="Ethnicity"></div>
     <div class="hint">Used only to select the correct healthy-weight bounds, which set the basis weight for your target.</div>
   </div>
 </div>
@@ -171,22 +171,22 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
 
   <div class="field">
     <label class="q">General activity level</label>
-    <div class="opts" id="act" data-single></div>
+    <div class="opts" id="act" data-single role="group" aria-label="General activity level"></div>
   </div>
 
   <div class="field">
     <label class="q">Resistance training (weights, bodyweight, resistance bands)</label>
-    <div class="opts" id="res" data-single></div>
+    <div class="opts" id="res" data-single role="group" aria-label="Resistance training (weights, bodyweight, resistance bands)"></div>
   </div>
 
   <div class="field">
     <label class="q">What are you aiming for?</label>
-    <div class="opts" id="goal" data-single></div>
+    <div class="opts" id="goal" data-single role="group" aria-label="What are you aiming for?"></div>
   </div>
 
   <div class="field">
     <label class="q">How you eat</label>
-    <div class="opts" id="diet" data-single></div>
+    <div class="opts" id="diet" data-single role="group" aria-label="How you eat"></div>
     <div class="hint">Plant proteins are less completely absorbed, so plant-based targets are adjusted upward.</div>
   </div>
 
@@ -205,19 +205,19 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
 
   <div class="field">
     <label class="q">Do you have kidney disease, reduced kidney function, or are you on dialysis?</label>
-    <div class="opts" id="kidney" data-single></div>
+    <div class="opts" id="kidney" data-single role="group" aria-label="Do you have kidney disease, reduced kidney function, or are you on dialysis?"></div>
   </div>
 
   <div class="field">
     <label class="q">Do you have liver disease, or are you recovering from a serious illness, injury or surgery?</label>
-    <div class="opts" id="liver" data-single></div>
+    <div class="opts" id="liver" data-single role="group" aria-label="Do you have liver disease, or are you recovering from a serious illness, injury or surgery?"></div>
   </div>
 </div>
 
 <div class="card">
   <input type="text" class="hp" id="company" tabindex="-1" autocomplete="off" aria-hidden="true" placeholder="Leave blank">
   <button type="submit" class="cta">Calculate my protein target</button>
-  <div class="err" id="err"></div>
+  <div class="err" id="err" role="alert" data-test="form-error"></div>
 </div>
 
 </form>

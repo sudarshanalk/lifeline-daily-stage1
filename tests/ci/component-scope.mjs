@@ -57,8 +57,17 @@ export function componentScope({ root = ROOT, req, files }) {
   return { ok: problems.length === 0, problems, allowed, components: entry.components };
 }
 
+/** Files the PR changes relative to its base. A requirement branch may merge another requirement's branch to build on it
+ *  (e.g. UI1-04 on top of both tool stacks): files whose head blob is byte-identical to the same path in a merged-in parent
+ *  were brought in by that merge, not changed by this PR, so they are excluded (DEC-57 proposal: merge-parent exclusion). */
 export function changedFiles(base, head, root = ROOT) {
-  return execSync(`git diff --name-only ${base}...${head}`, { cwd: root, encoding: 'utf8' }).split(/\r?\n/).filter(Boolean);
+  const git = (cmd) => execSync(`git ${cmd}`, { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim();
+  const files = git(`diff --name-only ${base}...${head}`).split(/\r?\n/).filter(Boolean);
+  const merges = git(`rev-list --merges ${base}..${head}`).split(/\r?\n/).filter(Boolean);
+  const parents = merges.flatMap((m) => git(`log -1 --format=%P ${m}`).split(' ').slice(1)); // %P avoids `^2`, which cmd.exe eats
+  if (parents.length === 0) return files;
+  const blob = (rev, f) => { try { return git(`rev-parse ${rev}:${f}`); } catch { return null; } };
+  return files.filter((f) => { const h = blob(head, f); return !(h && parents.some((p) => blob(p, f) === h)); });
 }
 
 export function inferReq() {
