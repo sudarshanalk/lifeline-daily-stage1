@@ -35,6 +35,11 @@ class Safety(unittest.TestCase):
             self.assertEqual((root/'tools/api/config.php').read_text(),'secret')
             self.assertEqual((root/'tools/status.json').read_text(),'withdrawn')
             self.assertEqual((root/'.htaccess').read_text(),'WordPress\n')
+    def test_template_comment_markers_do_not_break_idempotency(self):
+        comment='# template mentions "# BEGIN lld" and "# END lld" inline\n'
+        content='# BEGIN lld\n'+comment+'Header x y\n# END lld\n'
+        once=r.block('WordPress\n',content)
+        self.assertEqual(r.block(once,content),once)
     def test_wrong_destination_rejected(self):
         with self.assertRaises(ValueError):r.run('staging',Path('/tmp/live'),'check','20261023T120000Z-123456789abc')
     def test_staging_allows_missing_approval_production_rejects(self):

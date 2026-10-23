@@ -10,6 +10,7 @@ on:
         default: true
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: deploy-production
   cancel-in-progress: false
@@ -28,6 +29,23 @@ jobs:
         run: |
           python3 -m unittest discover -s deploy/tests -v
           python3 deploy/preflight.py production
+      - name: Require a successful automatic staging deployment of this commit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          python3 - <<'PY'
+          import json, os, subprocess
+          repo=os.environ['REPO']; sha=os.environ['SHA']
+          def api(path): return json.loads(subprocess.check_output(['gh','api',path],text=True))
+          runs=api(f'repos/{repo}/actions/workflows/deploy-staging.yml/runs?status=success&event=push&head_sha={sha}&per_page=100')['workflow_runs']
+          for run in runs:
+              jobs=api(f"repos/{repo}/actions/runs/{run['id']}/jobs")['jobs']
+              if any(j['name']=='deploy' and j['conclusion']=='success' for j in jobs):
+                  print('Verified real staging deployment:',run['html_url']);break
+          else: raise SystemExit('No successful automatic staging deployment for this exact commit')
+          PY
   deploy:
     needs: validate
     if: vars.PROD_DEPLOY_ENABLED == 'true'
