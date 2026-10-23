@@ -6,10 +6,10 @@
   "owner": "Lifeline Daily",
   "versions": [
     {
-      "version_hash": "35fb9bf1f0ddb0a3a779ddd0919ce04c91de90b968546ffe3b96b5cd31904a44",
-      "captured_at": "2026-10-23T20:40:27Z",
+      "version_hash": "89e81f0ba2485db036faa7a754c9ef1caa858c1043e9ddce324937103151e877",
+      "captured_at": "2026-10-23T21:04:35Z",
       "is_live": true,
-      "size_bytes": 49810,
+      "size_bytes": 50063,
       "engine_hashes": {
         "submit-protein.php": "a8f575f907cdf49f9341e23b0ba7ca2b72259d46296a268eeaaa1fa404ceb64f",
         "api/mailer.php": "40fc7099b728886bd565d611c26e6f712bb9663691611cbb6d671bba44a83f5e",
@@ -29,10 +29,10 @@
       "notes": "Shell change; frozen engine objects unchanged (engine-freeze)"
     },
     {
-      "version_hash": "4822fdbd45145fb6d843833382d7a0d029be51e4d50ec13e4d705c944c5f1790",
-      "captured_at": "2026-10-23T20:34:44Z",
+      "version_hash": "01fcdc0a9f61b18376ac3232e1b037e4ad63f00b7f3d417c9cf9d883bb557ffa",
+      "captured_at": "2026-10-23T20:07:49Z",
       "is_live": false,
-      "size_bytes": 49758,
+      "size_bytes": 47118,
       "engine_hashes": {
         "submit-protein.php": "a8f575f907cdf49f9341e23b0ba7ca2b72259d46296a268eeaaa1fa404ceb64f",
         "api/mailer.php": "40fc7099b728886bd565d611c26e6f712bb9663691611cbb6d671bba44a83f5e",

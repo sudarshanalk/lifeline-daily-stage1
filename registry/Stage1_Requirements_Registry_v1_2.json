@@ -141,7 +141,8 @@
       "paths": [
         "site/public_html/tools/api/mailer.php",
         "site/public_html/tools/api/ratelimit.php",
-        "site/public_html/tools/api/config.example.php"
+        "site/public_html/tools/api/config.example.php",
+        "site/public_html/tools/api/log.php"
       ],
       "in_scope_for_component_scope": true
     },
@@ -1437,7 +1438,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "verified",
       "depends_on": [
         "FR1-01",
         "FR1-14",
@@ -1484,7 +1485,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-14"
       ],
@@ -1854,7 +1855,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-14"
       ],
@@ -2150,7 +2151,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-14"
       ],
@@ -2297,7 +2298,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "verified",
       "depends_on": [
         "FR1-21"
       ],
@@ -2914,6 +2915,60 @@
       "id": "DEC-61",
       "question": "Definition of gate G-02",
       "selected": "all Wave 2 merged >= verified, auto accepted, hybrid verified until HG-02",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-62",
+      "question": "Real client IP behind hcdn",
+      "selected": "X-Forwarded-For + LLD_TRUSTED_PROXIES; fail-closed until ranges known",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-63",
+      "question": "Egress check for e-mail endpoints",
+      "selected": "static scan now; container egress capture at OI-4",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-64",
+      "question": "Home for request-side helpers",
+      "selected": "api/log.php added to CMP-06",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-65",
+      "question": "package.json as harness path",
+      "selected": "yes; html-validate for NFR1-14-AS-03",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-66",
+      "question": "Production mail provider facts",
+      "selected": "Hostinger mail facts recorded; DMARC p=none until HG-03",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-67",
+      "question": "NFR1-14 deliverability on real staging",
+      "selected": "re-run AS-01 on staging before HG-02",
       "status": "default",
       "ratified_on": null,
       "ratify_at": "HG-02",
