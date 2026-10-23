@@ -1,0 +1,13 @@
+diff --git a/site/public_html/tools/submit.php b/site/public_html/tools/submit.php
+index a01d64c..3fef14e 100644
+--- a/site/public_html/tools/submit.php
++++ b/site/public_html/tools/submit.php
+@@ -41,7 +41,7 @@ if ((int)($_SERVER['CONTENT_LENGTH'] ?? 0) > $maxBody) {
+ }
+ 
+ // ---- withdrawal switch (FR1-15, DEC-10): a withdrawn or unreadable status.json closes the endpoint ------------
+-if (!lld_tool_active('diabetes', $cfg)) {
++if (false && !lld_tool_active('diabetes', $cfg)) {   // MUT-13: PHP ignores the withdrawal switch
+   lld_log('diabetes', 'withdrawn', $ip, $cfg);
+   respond(503, ['status' => 'withdrawn', 'message' => 'This tool is temporarily unavailable']);
+ }

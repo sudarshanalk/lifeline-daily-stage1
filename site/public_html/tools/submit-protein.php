@@ -17,6 +17,7 @@ header('Content-Type: application/json');
 $cfg = require __DIR__ . '/api/config.php';
 require_once __DIR__ . '/api/mailer.php';
 require_once __DIR__ . '/api/ratelimit.php';
+require_once __DIR__ . '/api/validate.php';   // lld_tool_active() — the withdrawal switch (FR1-15)
 $T = require __DIR__ . '/api/templates-protein.php';
 
 function respond_protein(int $code, array $data): void {
@@ -40,6 +41,12 @@ $maxBody = (int)($cfg['max_body_bytes'] ?? 8192);
 if ((int)($_SERVER['CONTENT_LENGTH'] ?? 0) > $maxBody) {
   lld_log('protein', 'rejected_validation', $ip, $cfg);
   respond_protein(413, ['status' => 'error', 'errors' => ['Request body too large.']]);
+}
+
+// ---- withdrawal switch (FR1-15, DEC-10): a withdrawn or unreadable status.json closes the endpoint ------------
+if (!lld_tool_active('protein', $cfg)) {
+  lld_log('protein', 'withdrawn', $ip, $cfg);
+  respond_protein(503, ['status' => 'withdrawn', 'errors' => ['This tool is temporarily unavailable.']]);
 }
 
 /* ---- origin allow-list ----------------------------------------------------- */

@@ -54,6 +54,10 @@ select{width:auto}
 .banner h3{margin:0 0 6px;font-size:15px}
 .banner.stop{background:#fdecec;border:1.5px solid var(--red);color:#7d1f1e}
 .banner.care{background:#fdf3e5;border:1.5px solid var(--amber);color:#7a4c08}
+.lld-gate{border-radius:8px;padding:14px 16px;margin-bottom:16px;background:#fdf3e5;border:1.5px solid var(--amber);color:#7a4c08;font-size:14.5px}
+.lld-gate button{margin-left:8px;padding:6px 12px;border-radius:6px;border:1px solid var(--amber);background:#fff;color:#7a4c08;cursor:pointer}
+.lld-unavailable{border-radius:10px;padding:20px;background:#fff;border:1px solid var(--line);margin-bottom:16px}
+.lld-unavailable h2{margin:0 0 8px;font-size:20px}
 .banner.ok{background:var(--brand-green-soft);border:1.5px solid var(--accent);color:#245b3e}
 .headline{text-align:center;padding:24px 16px;border-radius:10px;background:#fff;border:1px solid var(--line)}
 .headline .num{margin:0;font-size:46px;font-weight:800;letter-spacing:-1px;line-height:1.05;color:var(--accent)}
@@ -107,7 +111,9 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
 <div class="scope" id="scopeStatement"></div>
 
 <!-- ============================ FORM ============================ -->
-<form id="form" novalidate>
+<div id="lldGate" class="lld-gate" data-test="loading" aria-busy="true" role="status">Checking this tool is available…</div>
+<div id="lldUnavailable" class="lld-unavailable" data-test="unavailable" data-tool="protein" role="status" hidden></div>
+<form id="form" novalidate hidden>
 
 <div class="card">
   <h2>About you</h2>
@@ -403,7 +409,13 @@ const MESSAGES = {
 
   emailSubject: "{{firstName}}, your daily protein target from Lifeline Daily",
   emailSent: "Sent. Check your inbox — and your spam folder, just in case.",
-  emailFailed: "That didn't send. Please check your email address and try again."
+  emailFailed: "That didn't send. Please check your email address and try again.",
+  unavailable: {
+    title: "This tool is temporarily unavailable",
+    body: "We have paused this tool while we check it. Nothing about your health is affected by the pause — please come back soon, or read on below.",
+    checking: "Checking this tool is available…",
+    unknown: "We can't confirm this tool is available right now, so it has not been started. Please check your connection and try again."
+  }
 };
 
 
@@ -622,6 +634,23 @@ buildOpts('diet', [['omnivore','I eat meat or fish'],['vegetarian','Vegetarian']
 buildOpts('kidney', [['no','No'],['yes','Yes'],['unsure',"I'm not sure"]], 'kidney');
 buildOpts('liver', [['no','No'],['yes','Yes']], 'liver');
 
+/* FR1-15 / NFR1-10 / UI1-08: status gate (DEC-10). The tool renders only when tools/status.json says this tool is active;
+   a failed or unreadable fetch fails closed with a retry control; a withdrawn tool shows the approved unavailable copy. */
+(function(){
+  var slug='protein', gate=document.getElementById('lldGate'), un=document.getElementById('lldUnavailable'), form=document.getElementById('form');
+  function show(el){ el.hidden=false; el.classList.remove('hidden'); } function hide(el){ el.hidden=true; el.classList.add('hidden'); if(el===gate) el.setAttribute('aria-busy','false'); }
+  function unavailable(){ hide(gate); un.innerHTML='<h2>'+MESSAGES.unavailable.title+'</h2><p>'+MESSAGES.unavailable.body+'</p>'+
+    '<p><a href="__LLD_ORIGIN__/health-tools/">See all health tools</a> · <a href="__LLD_ORIGIN__/high-protein-foods/">Read: high-protein foods</a></p>'; show(un); hide(form); window.LLD_STATUS='withdrawn'; }
+  function notice(){ gate.setAttribute('aria-busy','false'); gate.innerHTML=MESSAGES.unavailable.unknown+' <button type="button" id="lldRetry" data-test="retry">Try again</button>'; document.getElementById('lldRetry').addEventListener('click', check); hide(form); window.LLD_STATUS='unknown'; }
+  function check(){ gate.setAttribute('aria-busy','true'); gate.textContent=MESSAGES.unavailable.checking; show(gate); hide(un);
+    if(typeof fetch!=='function'){ notice(); return; }
+    fetch('./status.json',{cache:'no-store'}).then(function(r){ if(!r.ok) throw new Error('status '+r.status); return r.json(); }).then(function(s){
+      var t=s&&s.tools&&s.tools[slug]; if(!t||t.status!=='active'){ unavailable(); return; }
+      hide(gate); show(form); window.LLD_STATUS='active'; if(typeof postHeight==='function') postHeight();
+    }).catch(function(){ notice(); if(typeof postHeight==='function') postHeight(); });
+  }
+  check();
+})();
 $('scopeStatement').textContent = MESSAGES.scope;
 $('disclaimerText').textContent = MESSAGES.disclaimer;
 

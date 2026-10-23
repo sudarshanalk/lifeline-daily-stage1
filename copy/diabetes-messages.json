@@ -43,5 +43,9 @@
   "email.success": "Sent — check your inbox (and spam folder just in case).",
   "email.errorValidation": "Please enter a valid email and tick the box.",
   "email.errorServer": "Something went wrong sending that. Your result is still shown above.",
+  "unavailable.title": "This tool is temporarily unavailable",
+  "unavailable.body": "We have paused this tool while we check it. Nothing about your health is affected by the pause — please come back soon, or read on below.",
+  "unavailable.checking": "Checking this tool is available…",
+  "unavailable.unknown": "We can't confirm this tool is available right now, so it has not been started. Please check your connection and try again.",
   "disclaimer": "Lifeline Daily health tools are for general information and screening only. They do not diagnose any condition and are not a substitute for professional medical advice. Always speak to a qualified clinician about your health."
 }

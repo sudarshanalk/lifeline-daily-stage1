@@ -37,6 +37,10 @@
     "protein.emailSubject": "6c3330c26e57402d81737bb939df66b5d663deca481dc2e2f2e13c2d3610be04",
     "protein.emailSent": "c770896887a5081ace8cd2f1867da3646ebed4b78b26a3c95f2939dd7de0882e",
     "protein.emailFailed": "a481727f417f94bf9125aaa5ad7c0f006ec5202ade565e7026b4e7c0ef01224b",
+    "protein.unavailable.title": "afa5be4bda9789c834b32e75c3077ce4d3134d6ee3e433b187206a35fe82a744",
+    "protein.unavailable.body": "11d0e266a0eed430288696cd2c8ec1f66e0f4bc345f830b478601e482e3fa54e",
+    "protein.unavailable.checking": "68ea019296a778f2198660b50694721f1ef2a8c3b79d48e16abaf0fb29290905",
+    "protein.unavailable.unknown": "7d9e28fe5a1a04e11dc2b446a3b6aeadf86dccbfa2940d701e97cd3a668b50d4",
     "diabetes.scope": "df18eb9f1bf9f1ae2576c1a750042173e321a46df1b16788265161b5c112fb71",
     "diabetes.bands.low.label": "f793de205ead5ac302c4a1627829dea41f176b1068b993a32373fc869918374b",
     "diabetes.bands.low.interp": "3fa3fc7dbc8a7817c39c11fd04a9ceb779fd34b1a48c1515c24ae9016776c342",
@@ -81,6 +85,10 @@
     "diabetes.email.success": "b7843dbba8fb10b9944e5eb3365fb6f3eb833496f6982dd0a396abf67e1e1898",
     "diabetes.email.errorValidation": "aac7e6409e4b58a5ed2d1b460b5009430086d3125d22b89cb0d39d3f22f8dfb1",
     "diabetes.email.errorServer": "cf07e21b53d1212ea0b7b1e8080818aa9c4f352206916644fb4599b0c140dba4",
+    "diabetes.unavailable.title": "afa5be4bda9789c834b32e75c3077ce4d3134d6ee3e433b187206a35fe82a744",
+    "diabetes.unavailable.body": "11d0e266a0eed430288696cd2c8ec1f66e0f4bc345f830b478601e482e3fa54e",
+    "diabetes.unavailable.checking": "68ea019296a778f2198660b50694721f1ef2a8c3b79d48e16abaf0fb29290905",
+    "diabetes.unavailable.unknown": "7d9e28fe5a1a04e11dc2b446a3b6aeadf86dccbfa2940d701e97cd3a668b50d4",
     "diabetes.disclaimer": "35156be01c5bba11cf30d1c5f88a0f71c64d63f9fa3402addab8d1e9af265ec2"
   },
   "templates": {

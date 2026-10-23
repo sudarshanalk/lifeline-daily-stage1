@@ -12,6 +12,11 @@ if ($overlay !== '' && $path !== '/' && is_file($overlay . $path)) {
   $types = ['html' => 'text/html; charset=utf-8', 'js' => 'application/javascript', 'css' => 'text/css', 'json' => 'application/json', 'svg' => 'image/svg+xml', 'png' => 'image/png'];
   $ext = strtolower(pathinfo($f, PATHINFO_EXTENSION));
   header('Content-Type: ' . ($types[$ext] ?? 'application/octet-stream'));
+  if (in_array($ext, ['html', 'js', 'css'], true)) {
+    // deploy.sh substitutes the per-environment origin (DEC-34); the harness substitutes the served origin the same way
+    $origin = (isset($_SERVER['HTTPS']) ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'];
+    echo str_replace('__LLD_ORIGIN__', $origin, file_get_contents($f)); exit;
+  }
   readfile($f); exit;
 }
 $file = $_SERVER['DOCUMENT_ROOT'] . $path;

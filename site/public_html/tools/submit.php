@@ -40,6 +40,12 @@ if ((int)($_SERVER['CONTENT_LENGTH'] ?? 0) > $maxBody) {
   respond(413, ['status' => 'error', 'message' => 'Request body too large']);
 }
 
+// ---- withdrawal switch (FR1-15, DEC-10): a withdrawn or unreadable status.json closes the endpoint ------------
+if (!lld_tool_active('diabetes', $cfg)) {
+  lld_log('diabetes', 'withdrawn', $ip, $cfg);
+  respond(503, ['status' => 'withdrawn', 'message' => 'This tool is temporarily unavailable']);
+}
+
 // ---- origin ---------------------------------------------------------------
 $allowed = $cfg['allowed_origins'] ?? [];
 $origin  = $_SERVER['HTTP_ORIGIN'] ?? '';

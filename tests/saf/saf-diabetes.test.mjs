@@ -2,8 +2,9 @@
 // Replays fixtures through the deployed engine (jsdom) and requires the characterisation `expected` exactly.
 // Proves "unchanged since the 23 Oct 2026 baseline", never clinical correctness (docs/04 §9).
 import { beforeAll, describe, expect, test } from 'vitest';
-import { existsSync, readdirSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { join, resolve } from 'node:path';
+import { ROOT } from '../lib/paths.mjs';
 import { fixtures } from '../lib/fixtures.mjs';
 import { diabetesRunner } from '../lib/tool-page.mjs';
 import { startHtaccessServer } from '../lib/htaccess-server.mjs';
@@ -67,7 +68,24 @@ describe('SAF diabetes', () => {
       }
     } finally { await srv.close(); }
   }, 60000);
-  test.skip('SAF-WITHDRAW-01', () => {
-    // Withdrawal (TC-FR1-15-AS-01/02) needs the status.json reader in tools and endpoints — wave 4 (FR1-15)
-  });
+  test('SAF-WITHDRAW-01', async () => {
+    // Withdrawal (TC-FR1-15-AS-01/02, DEC-10): with diabetes withdrawn in tools/status.json the diabetes endpoint answers 503
+    // and sends nothing, while the protein endpoint still delivers; restored to active, the diabetes endpoint delivers again.
+    const status = JSON.parse(readFileSync(resolve(ROOT, 'site', 'public_html', 'tools', 'status.json'), 'utf8'));
+    const withdrawn = { ...status, tools: { ...status.tools, diabetes: { ...status.tools.diabetes, status: 'withdrawn', message: 'unavailable.diabetes', since: '2026-10-23T12:00:00Z' } } };
+    const srv = await startHtaccessServer({ statusJson: withdrawn });
+    try {
+      const outboxDir = join(srv.docroot, 'tools', 'api', 'outbox');
+      const outbox = () => existsSync(outboxDir) ? readdirSync(outboxDir).filter((f) => !f.startsWith('.')) : [];
+      const post = (path, body, ip) => fetch(srv.url + path, { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: 'https://lifelinedaily.com', 'X-Forwarded-For': ip }, body: JSON.stringify(body) });
+      const before = outbox().length;
+      const r = await post('/tools/submit.php', fixtures('FX-MAIL-02')[0].inputs, '10.5.0.1');
+      expect(r.status, 'withdrawn diabetes endpoint').toBe(503); expect((await r.json()).status).toBe('withdrawn'); expect(outbox().length - before).toBe(0);
+      const p = await post('/tools/submit-protein.php', fixtures('FX-MAIL-01')[0].inputs, '10.5.0.2');
+      expect(p.status, 'protein unaffected').toBe(200); expect(outbox().length - before).toBe(1);
+      writeFileSync(srv.statusPath, JSON.stringify(status));
+      const r2 = await post('/tools/submit.php', fixtures('FX-MAIL-02')[0].inputs, '10.5.0.3');
+      expect(r2.status, 'restored diabetes endpoint').toBe(200); expect(outbox().length - before).toBe(2);
+    } finally { await srv.close(); }
+  }, 60000);
 });
