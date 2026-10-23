@@ -11,12 +11,14 @@ Scope: automate deployment of **only** `site/` (the deployable overlay) to Hosti
 | `tools/*.html`, `tools/*.php`, `tools/api/*.php`, `tools/api/PHPMailer/`, `tools/api/.htaccess` | yes | hash-frozen tool files and endpoints |
 | `tools/api/config.example.php` | yes (as example only) | the real `config.php` lives on the server, created once from environment values; **never** overwritten or deleted by a deploy |
 | `tools/api/outbox/`, `tools/api/state/` | `.htaccess` only | contents are runtime state; excluded both ways |
-| `tools/status.json` | yes, with care | the withdrawal switch (DEC-10). Deploy copies it only if it changed in Git; an operator-set production value is preserved unless the release explicitly ships a new one (see "status.json rule") |
+| `tools/status.json` | **no** | the withdrawal switch (DEC-10) lives on the server; excluded from every deploy. Only `wp lld status set` writes it (validates version, writes, purges). The Git copy is the initial template, installed once by hand |
 | `wp-content/mu-plugins/lld-tools/` | yes | the plugin (built in later waves) |
 | `wp-content/mu-plugins/lld-tools-loader.php` | yes | mu-plugin loader (later) |
 | root `.htaccess` | managed block only | deploy rewrites the text between `# BEGIN lld` and `# END lld`, never the rest of the file |
 
-Excluded from every deploy: `api/config.php`, `api/outbox/*`, `api/state/*`, anything outside `site/`.
+Excluded from every deploy: `api/config.php`, `api/outbox/*`, `api/state/*`, `tools/status.json`, anything outside `site/`.
+
+**Origin substitution (DEC-34).** Before rsync, `deploy.sh` copies `site/` to a temp dir and replaces the placeholder `__LLD_ORIGIN__` in `tools/*.html` and `.htaccess.lld` with `DEPLOY_ORIGIN` from the environment file (apex on production, the staging hostname on staging). The Git copy stays environment-neutral; the hash-frozen engine objects contain no placeholder.
 
 ## Environments
 
@@ -36,7 +38,7 @@ Existing empty placeholders `STAGING_SFTP_HOST/USER/KEY` may be renamed to the `
 2. **Backup**: on the server, `tar` the current `tools/` and `wp-content/mu-plugins/lld-tools*` into `~/lld-backups/<timestamp>-<sha>.tgz` (keep last 10). The DB is not touched, so no DB backup is needed for an overlay deploy.
 3. **Sync**: `rsync -az --delete-after --exclude-from=deploy/rsync-exclude.txt site/public_html/ user@host:$DOCROOT/` over SSH with the deploy key. `--delete-after` is limited to the directories we own (`tools/`, `wp-content/mu-plugins/lld-tools/`) via `--filter` rules; it must never delete WordPress files.
 4. **Managed `.htaccess` block**: replace the `# BEGIN lld … # END lld` block in `$DOCROOT/.htaccess` with `site/public_html/.htaccess.lld` content (headers, CSP, cache-control, `status.json` allow rule). Create the block if absent; leave everything else untouched.
-5. **status.json rule**: if the server file exists and differs from Git, keep the server file and print a warning, unless the release record has `ships_status: true`.
+5. **status.json**: never touched by deploy. If absent on a fresh server, the deploy prints an instruction to install it once from Git by hand.
 6. **Cache purge**: `wp litespeed-purge all` via WP-CLI over SSH if WP-CLI is available on the host; otherwise call the LiteSpeed purge endpoint documented in the runbook. Without a purge the withdrawal switch can be invisible for up to 7 days (TTL 604800 s).
 7. **Smoke**: HTTP 200 on `/health-tools/`, both landing pages, both `/tools/*.html`; `/tools/api/config.php` → 403; `/tools/status.json` → 200 with `Cache-Control: no-store`; both tool hashes served equal the manifests; `POST /tools/submit.php` with an invalid body → 400 (no mail sent).
 8. **Record**: append `deploy/log/<env>.jsonl` with timestamp, sha/tag, hashes, smoke result; on production also update `releases/<tag>.json.deployed_at`.

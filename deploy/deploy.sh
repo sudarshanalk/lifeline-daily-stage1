@@ -4,7 +4,10 @@
 set -euo pipefail
 ENV_NAME="${1:?environment}"; DRY="${2:-}"
 cd "$(dirname "$0")/.."
-SRC="site/public_html/"
+# DEC-34: substitute the origin placeholder in a staging copy of the overlay
+STAGE_DIR="$(mktemp -d)"; cp -r site/public_html/. "$STAGE_DIR/"
+find "$STAGE_DIR" -type f \( -name "*.html" -o -name ".htaccess.lld" \) -exec sed -i "s#__LLD_ORIGIN__#${DEPLOY_ORIGIN:?DEPLOY_ORIGIN required}#g" {} +
+SRC="$STAGE_DIR/"
 SSH="ssh -p ${DEPLOY_PORT:-22} -i ${DEPLOY_KEY_FILE} -o StrictHostKeyChecking=accept-new ${DEPLOY_USER}@${DEPLOY_HOST}"
 STAMP="$(date -u +%Y%m%dT%H%M%SZ)-$(git rev-parse --short HEAD)"
 
@@ -33,7 +36,6 @@ $SSH "mkdir -p ~/lld-backups && cd '$DEPLOY_DOCROOT' && tar czf ~/lld-backups/$S
 echo "== [$ENV_NAME] rsync overlay"
 RSYNC_FLAGS=(-az --itemize-changes --exclude-from=deploy/rsync-exclude.txt --filter='P tools/api/config.php' --filter='P tools/api/outbox/**' --filter='P tools/api/state/**' --delete-after --filter='protect .htaccess' --filter='protect wp-*' --filter='protect index.php')
 [ "$DRY" = "--dry-run" ] && RSYNC_FLAGS+=(--dry-run)
-if [ "${SHIP_STATUS:-0}" != "1" ]; then RSYNC_FLAGS+=(--exclude=tools/status.json); echo "   status.json: server value preserved (SHIP_STATUS!=1)"; fi
 rsync "${RSYNC_FLAGS[@]}" -e "ssh -p ${DEPLOY_PORT:-22} -i ${DEPLOY_KEY_FILE} -o StrictHostKeyChecking=accept-new" "$SRC" "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_DOCROOT}/"
 
 echo "== [$ENV_NAME] managed .htaccess block"
@@ -56,4 +58,5 @@ echo "== [$ENV_NAME] smoke"
 bash deploy/smoke.sh "$DEPLOY_URL"
 
 mkdir -p deploy/log && printf '{"ts":"%s","env":"%s","sha":"%s","tag":"%s","backup":"%s"}\n' "$(date -u +%FT%TZ)" "$ENV_NAME" "$(git rev-parse HEAD)" "${RELEASE_TAG:-}" "$STAMP" >> "deploy/log/$ENV_NAME.jsonl"
+rm -rf "$STAGE_DIR"
 echo "== [$ENV_NAME] done"

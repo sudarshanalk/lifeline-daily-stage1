@@ -1,3 +1,4 @@
+tools/status.json
 tools/api/config.php
 tools/api/config.example.php.bak
 tools/api/outbox/*

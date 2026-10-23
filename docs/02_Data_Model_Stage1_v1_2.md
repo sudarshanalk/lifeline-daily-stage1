@@ -78,6 +78,8 @@ Cardinalities and invariants:
 | SCH-12 | `schemas/data-flow.schema.json` | `privacy/data-flow.json` | agent at FR1-01 | TC-NFR1-01 |
 | SCH-13 | `schemas/wp-meta.schema.json` | WordPress post meta key set and allowed values | plugin registers | TC-FR1-18 |
 | SCH-14 | `schemas/planned-categories.schema.json` | `content/planned-categories.json`: slugs removed in FR1-23 to be re-created when content exists | `wp lld tidy apply` | TC-FR1-23 |
+| SCH-15 | `schemas/gate-record.schema.json` | `approvals/hg-01.json`, `hg-02.json`, `hg-03.json`: gate id, decision, signer, date, ratified DEC ids, tag (HG-03) | humans at the gates | `clinical-gate`, `release-gate` |
+| SCH-16 | `schemas/copy-approval.schema.json` | `approvals/copy.json`: hash per copy source (`messages{}`, `templates{}`, `inline{}`, `pages{}`), reviewer, date | agent drafts, clinician signs | TC-UI1-11, TC-FR1-17 |
 
 ## 4. Frozen interface contracts (deployed; key names confirmed from the endpoint source on 23 Oct 2026)
 
@@ -109,7 +111,7 @@ Server selects template: `suppressed === true` → `protein_renal` (no numeric t
 | tool | `"diabetes-risk"` | technical | required |
 | firstName, email, consent, timestamp, company | as 4.1 | | |
 | riskPercent | number 1 dp ∣ null | health | **null when emergency**: client nulls it and server ignores any value (DEC-09) |
-| riskBand | `Low|Moderate|High|Very high` ∣ null | health | null when emergency (same two layers) |
+| riskBand | `Low|Moderate|High|Very high` ∣ null | health | null when emergency (same two layers). Mapping: engine key `low|moderate|high|veryHigh` → payload label `Low|Moderate|High|Very high` → email template key `low|moderate|high|veryhigh` |
 | bmi | number 1 dp | health | 10–80 |
 | whtr | number 2 dp ∣ null | health | |
 | idrsScore | integer 0–100 ∣ null | health | |
@@ -164,7 +166,7 @@ Shortcodes: `[lld_tools_hub compact=0|1]`, `[lld_tool slug=…]` (renders iframe
 ```
 repo/
   manifests/{protein,diabetes}.json          SCH-02
-  approvals/{protein,diabetes,copy,hg-01,hg-02,hg-03}.json   SCH-03 (+ gate records)
+  approvals/{protein,diabetes}.json SCH-03 · copy.json SCH-16 · hg-0{1,2,3}.json SCH-15
   fixtures/protein/*.json  fixtures/diabetes/*.json  fixtures/site/*.json  fixtures/mail/*.json   SCH-05
   fixtures/{required-phrases,forbidden-terms,sentinel-values}.json
   oracles/orc-01-qdiabetes-r/  orc-02-protein-ref/  orc-03-idrs/  orc-04-whtr/   → results.json SCH-06
@@ -184,7 +186,7 @@ repo/
   schemas/*.schema.json
 ```
 
-**Deployment rule.** Only `site/` is ever copied to a server, by `deploy/deploy.sh` (rsync over SSH) into the WordPress document root, excluding `api/config.php`, `api/outbox/`, `api/state/`. WordPress core, themes, plugins and uploads are never deployed from Git; they are managed in WordPress. Staging deploys on every merge to `staging`; production deploys only from an `rc-*` tag after HG-03 (release-gate check).
+**Deployment rule.** Only `site/` is ever copied to a server, by `deploy/deploy.sh` (rsync over SSH) into the WordPress document root, excluding `api/config.php`, `api/outbox/`, `api/state/` and `tools/status.json` (the server copy is the source of truth; `wp lld status set` is its only writer). `deploy.sh` substitutes `__LLD_ORIGIN__` in tool HTML and the managed `.htaccess` block from the environment file (DEC-34). WordPress core, themes, plugins and uploads are never deployed from Git; they are managed in WordPress. Staging deploys on every merge to `staging`; production deploys only from an `rc-*` tag after HG-03 (release-gate check).
 
 ## 7. Data-protection controls
 
@@ -205,7 +207,7 @@ repo/
 | Which pages/scripts under `/tools/`? | `protein-requirement-tool.html`, `diabetes-risk-tool.html`, `submit-protein.php`, `submit.php`, `api/{config,mailer,templates,templates-protein}.php` (directory listing 403) |
 | Does the diabetes code include QDiabetes/IDRS/WHR? | QDiabetes-2018 Model A, IDRS, waist-to-height ratio (not WHR) — DEC-01, DEC-06 |
 | Healthy-weight tool deployed? | No — DEC-26 |
-| Does `submit*.php` persist? | Unknown until source access; FR1-01 must answer; DEC-21 default assumes no |
+| Does `submit*.php` persist? | No database or log persistence (source read 23 Oct 2026). Rate-limit files hold `md5(ip)` only. Full emails persist only if production `transport` is `log` (DEC-46, pending verification) |
 | What does the email provider store? | FR1-01 to document from provider dashboard/config |
 
 ## 9. Stage 2+ (not designed here)

@@ -86,7 +86,7 @@ Common defaults: metric, sex Male, ageBand 47, 170 cm, 75 kg (BMI 26.0), ethnici
 | FX-DM-QD-69…70 | family one (mother) / both (mother+father) | `fhdm` is binary in QDiabetes, so both give identical % (DEC-33); they differ only in IDRS |
 | FX-DM-QD-71…74 | BMI 20.0, 30.0, 39.9, 40.0 (weights at 170 cm: 57.8, 86.7, 115.3, 115.6 kg) | BMI polynomial |
 | FX-DM-QD-CLAMP-01…04 | BMI 19.0 (54.9 kg) and 41.0 (118.5 kg), each sex | equals output at 20 / 40 |
-| FX-DM-BAND-01…12 | engineered by the oracle runner: profile A Male 47 Indian (all three thresholds, reachable range ≈ 2.1–44 %), profile B Female 57 WhiteNA (5.6 and 10 only; max ≈ 13.6 % because BMI clamps at 40), profile C Female 62 Bangladeshi (20 %). Search weight in 0.1 kg steps for the pair straddling each threshold; both sides stored with the ORC-01 value. If a threshold is unreachable for a profile the runner records it and substitutes a reachable profile | band edges (6 thresholds × 2 sides) |
+| FX-DM-BAND-01…12 | `oracle: clinical`, excluded from P-A0. Inputs are written by the ORC-01 runner: profile A Male 47 Indian (all three thresholds, reachable range ≈ 2.1–44 %), profile B Female 57 WhiteNA (5.6 and 10 only; max ≈ 13.6 % because BMI clamps at 40), profile C Female 62 Bangladeshi (20 %). Search weight in 0.1 kg steps for the pair straddling each threshold, choosing the pair whose R values are both more than 0.05 pp from the threshold so JS and R cannot legitimately disagree on the band; both sides stored with concrete inputs and the ORC-01 value. If a threshold is unreachable for a profile the runner records it and substitutes a reachable profile | band edges (6 thresholds × 2 sides) |
 | FX-DM-IDRS-01…06 | IDRS 20 (age 37, waist 85, vigorous, none), 30 (age 37, waist 85, moderate, none), 50 (age 52, waist 85, mild, none), 60 (age 52, waist 95, mild, none), 0 (age 27, waist 85, vigorous, none), 70 (age 52, waist 100, mild, none). Corrected 22 Oct 2026 (review F04): the earlier vectors scored 0/30/60/70 and could not detect MUT-08 | tiers low/moderate/moderate/high/low/high |
 | FX-DM-WHTR-01…04 | height 170, waist 83 (0.488), 85 (0.500), 101 (0.594), 102 (0.600) | WHtR cut-offs |
 | FX-DM-CONC-01 | ageBand 27, BMI 22, WhiteNA (low %) + waist 102 + activity none + family both (IDRS high) | concordance note |
@@ -104,7 +104,7 @@ Common defaults: metric, sex Male, ageBand 47, 170 cm, 75 kg (BMI 26.0), ethnici
 | ID | Content | Expected behaviour |
 |---|---|---|
 | FX-WP-URLS | `fixtures/site/url-sample.json`, 30 URLs (SRS §13) | regression sample |
-| FX-WP-POST-01 | published post, category `nutrition-for-healthy-living` | protein CTA |
+| FX-WP-POST-01 | published post, category `nutrition-for-healthy-living`, `lld_review_owner`, `lld_reviewed_date`, `lld_next_review_date` (future), `lld_review_status=approved` | protein CTA; approved Related-reading candidate |
 | FX-WP-POST-02 | published post, category `health-conditions`, tag `diabetes` | diabetes CTA (tag rule) |
 | FX-WP-POST-03 | published post, category `sleep-and-recovery` | no CTA |
 | FX-WP-POST-04 | `food-nutrition` post, `lld_tool_override=none` | no CTA |
@@ -114,6 +114,7 @@ Common defaults: metric, sex Male, ageBand 47, 170 cm, 75 kg (BMI 26.0), ethnici
 | FX-WP-POST-08 | published `healthy-eating-for-longevity`, `lld_review_status=pending` | excluded from Related reading |
 | FX-WP-POST-09 | published `fitness` post, tag `blood-sugar` | diabetes CTA (tag beats category) |
 | FX-WP-POST-10 | published `metabolic-health` post, no tags | diabetes CTA (category) |
+| FX-WP-POST-11 | published `health-conditions` post, tag `diabetes`, review meta complete, `lld_review_status=approved` | approved article for the diabetes unavailable state and Related reading |
 | FX-WP-USERS | contributor, editor, admin accounts | role tests |
 | FX-WP-TIDY | the six empty category slugs and their DEC-39…42 dispositions | FR1-23 |
 
@@ -138,7 +139,7 @@ Common defaults: metric, sex Male, ageBand 47, 170 cm, 75 kg (BMI 26.0), ethnici
 
 ### 1.5 Shared data files
 
-- `fixtures/required-phrases.json`: `notDiagnosis` ("not a diagnosis"), `urgentCare` ("same-day medical assessment" or approved equivalent), `methodology.engine` ("QDiabetes-2018 (Model A)"), `methodology.calibration` ("UK"), `methodology.townsend` ("deprivation score", the live wording, DEC-07), `methodology.type2` ("type 2"), `methodology.symptomDesign` ("symptom"), `protein.scope` ("18 and over").
+- `fixtures/required-phrases.json`: `notDiagnosis` ("not a diagnosis"), `urgentCare` ("same-day medical assessment" or approved equivalent), five `methodology.*` phrases: `engine` ("QDiabetes-2018 (Model A)"), `calibration` ("UK"), `townsend` ("deprivation score", the live wording, DEC-07), `methodology.type2` ("type 2"), `methodology.symptomDesign` ("symptom"), `protein.scope` ("18 and over").
 - `fixtures/forbidden-terms.json`: for underweight state: `deficit`, `lose weight`, `cut calories`, `burn`; globally: `diagnos(e|is) you`, `waist-hip`.
 - `fixtures/sentinel-values.json`: unique synthetic inputs used in privacy flows, e.g. firstName `Zq7Sentinel`, email `zq7sentinel@example.test`, weight 83.7, waist 97.3, so any leak is grep-able.
 
@@ -151,11 +152,11 @@ Common defaults: metric, sex Male, ageBand 47, 170 cm, 75 kg (BMI 26.0), ethnici
 | ORC-03 | Python, IDRS from Mohan et al. 2005 (age <35:0, 35–49:20, ≥50:30; waist M <90:0, 90–99:10, ≥100:20 / F <80:0, 80–89:10, ≥90:20; family none 0, one 10, both 20; tiers <30, 30–59, ≥60 per DEC-05) **plus the live 4-level activity mapping** vigorous 0 / moderate 10 / mild 20 / none 30, which is an adaptation of the published 3-level item and is ratified at HG-02 | FX-DM-IDRS-*, CONC | exact | Published points table; activity item is characterisation (DEC-05) |
 | ORC-04 | WHtR = waist/height; <0.5 healthy, <0.6 raised, else high (DEC-06) | FX-DM-WHTR-* | exact | Published cut-offs |
 
-Oracle results (SCH-06) are the only permitted source for `oracle: clinical` expected values. Disagreement handling follows DEC-08 precedence: ORC-01 disagreement on the deployed diabetes hash → staging withdrawal + DEC row; ORC-02/ORC-03 disagreement → live behaviour preserved, requirement `blocked`, DEC row for HG-02; oracle infrastructure failure → CI failure, no status change.
+Oracle results (SCH-06) are the only permitted source for `oracle: clinical` expected values. **Known deviations:** a fixture listed in the registry's `known_deviations` under a DEC row with a preserve-deployed default is compared to its characterisation value only and recorded in evidence as `known_deviation: DEC-nn`; the oracle tolerance applies to it once the row is ratified or overridden (today: FX-PR-CAP-01/02 → DEC-44). Disagreement handling otherwise follows DEC-08 precedence: ORC-01 disagreement on the deployed diabetes hash → staging withdrawal + DEC row; ORC-02/ORC-03 disagreement → live behaviour preserved, requirement `blocked`, DEC row for HG-02; oracle infrastructure failure → CI failure, no status change.
 
 ## 3. Mandatory mutations
 
-Each mutation is a patch in `tests/mutations/MUT-NN.patch`, applied by `make mutate`, and must make at least one named test fail. Evidence records which tests went red.
+Each mutation is a patch in `tests/mutations/MUT-NN.patch`, applied by `make mutate`, and must make at least one named test fail. Evidence records which tests went red. MUT-01…09 are proven at G-02, MUT-10…14 at G-04.
 
 | ID | Mutation | Must redden |
 |---|---|---|
@@ -184,11 +185,11 @@ Steps: run P-A0. Assertions:
 
 | ID | Assertion | Method |
 |---|---|---|
-| TC-FR1-01-AS-01 | `reports/as-is/inventory.json` validates SCH-02 set; 2 manifests; `version_hash` equals SHA-256 of served file fetched during the run | artefact + curl |
-| TC-FR1-01-AS-02 | 100 % of fixtures have `expected` with `oracle: characterisation` and `source_version` = manifest hash; INV fixtures have `expected.error: true` | artefact |
+| TC-FR1-01-AS-01 | `manifests/*.json` validate SCH-02 (2 manifests) and each `version_hash` equals the SHA-256 of the served file fetched during the run; `reports/as-is/inventory.json` has the keys `wordpress`, `theme`, `plugins[]`, `cache`, `server_headers`, `tools[]`, `persistence`, `unknowns[]` | artefact + curl |
+| TC-FR1-01-AS-02 | every fixture with `oracle: characterisation` has `expected` filled and `source_version` = manifest hash; INV fixtures have `expected.error: true`; `oracle: clinical` (BAND) and `oracle: none` fixtures are untouched; the manifest records the engine output key set actually observed | artefact |
 | TC-FR1-01-AS-03 | 24 baseline PNGs exist (6 pages × 4 widths), each > 10 KB | file |
 | TC-FR1-01-AS-04 | `crawl-before.json` has 30 entries, all status 200, canonical captured | crawl |
-| TC-FR1-01-AS-05 | discrepancy ledger: 0 entries with `status: unclassified`; each entry has `evidence` file:line | artefact |
+| TC-FR1-01-AS-05 | discrepancy ledger: every entry is `confirmed`, `corrected` or `unknown`; each `unknown` names the OI-n input that resolves it; each entry has `evidence` file:line | artefact |
 | TC-FR1-01-AS-06 | `privacy/data-flow.json` lists every key in Data Model §4.1/§4.2 | artefact |
 NEG-01: run against a tool file with a changed hash → runner stops for that tool and records a blocker. Human gate: HG-01. Evidence: EV-FR1-01-*.
 
@@ -197,8 +198,8 @@ Family: crawl, wpcli, artefact. Preconditions: `crawl-before.json`; staging afte
 
 | ID | Assertion | Method |
 |---|---|---|
-| TC-FR1-02-AS-01 | for all 30 URLs: status, final URL, canonical, title, meta description, robots, H1 identical; body word count within ±2 % | crawl diff |
-| TC-FR1-02-AS-02 | sitemap URL set after ⊇ before | crawl |
+| TC-FR1-02-AS-01 | for all 30 URLs except the FR1-23 set: status, final URL, canonical, title, meta description, robots, H1 identical; body word count within ±2 %. FR1-23 set: four deleted archives → 301 to their DEC targets; `the-report` → 200 with `noindex` | crawl diff |
+| TC-FR1-02-AS-02 | sitemap URL set after ⊇ before minus the FR1-23 set | crawl |
 | TC-FR1-02-AS-03 | `git diff --stat origin/baseline -- wp-content/themes/` empty | git |
 | TC-FR1-02-AS-04 | 20 media URLs from before-crawl return 200 | crawl |
 | TC-FR1-02-AS-05 | `wp role list --format=json` and `wp cap list` for 5 roles identical to baseline | wpcli |
@@ -256,6 +257,7 @@ Family: artefact, ci. Fixtures: `approvals/*.json`, manifests. Mutation: MUT-10.
 Human gate: HG-02 (`clinical_signoff.decision: approved`).
 
 ### TC-FR1-07 Protein engine preservation and verification
+Engine output keys confirmed by the baseline run (23 Oct 2026): `suppressed, reason, branch, targetG, lowG, highG, gPerKg, basisKg, basisNote, perMeal, sources, capped, older, dietMult, interpKey, bmi`; assertions use only these.
 Family: unit, e2e, oracle. Fixtures: FX-PR-NRM, AGE, BMI, CAP, UNIT, MEAL, INV. Mutation: MUT-07.
 
 | ID | Assertion | Method |
@@ -343,7 +345,7 @@ Family: e2e. Fixtures: FX-PR-NRM-01, FX-DM-QD-01.
 | ID | Assertion | Method |
 |---|---|---|
 | TC-FR1-13-AS-01 | fresh incognito context completes both flows to result | e2e |
-| TC-FR1-13-AS-02 | after result: `context.cookies()` for tool origin unchanged from before; `localStorage.length === 0 && sessionStorage.length === 0` | e2e |
+| TC-FR1-13-AS-02 | diff of cookies, localStorage and sessionStorage before and after the flow: no key added by the flow, and no stored value contains an entered input or result (third-party keys that pre-exist on the shared origin are ignored) | e2e |
 | TC-FR1-13-AS-03 | `page.reload()` → `#results` hidden; every input empty/unselected | e2e |
 | TC-FR1-13-AS-04 | `location.search + location.hash` contains none of the entered values | e2e |
 
@@ -367,9 +369,9 @@ Family: e2e, php, wpcli, ci. Fixtures: `status.json` variants; FX-PR-NRM-01; FX-
 
 | ID | Assertion | Method |
 |---|---|---|
-| TC-FR1-15-AS-01 | `wp lld status set diabetes withdrawn --message=unavailable.diabetes` → within 60 s: hub card `[data-status=withdrawn]` label "Temporarily unavailable"; landing page has no `iframe`; direct tool URL shows `[data-test=unavailable]` and no `form`; `submit.php` → 503 `{status:'withdrawn'}`; protein NRM-01 passes | e2e + php |
+| TC-FR1-15-AS-01 | `wp lld status set diabetes withdrawn --message=unavailable.diabetes` (validates, writes, purges the configured LiteSpeed targets) → within 60 s: hub card `[data-status=withdrawn]` label "Temporarily unavailable"; landing page has no `iframe`; direct tool URL shows `[data-test=unavailable]` and no `form`; `submit.php` → 503 `{status:'withdrawn'}`; protein NRM-01 passes | e2e + php |
 | TC-FR1-15-AS-02 | `status set diabetes active --version=<approved>` → all routes active; QD-01 passes | e2e |
-| TC-FR1-15-AS-03 | `status set diabetes active --version=deadbeef…` → command fails and `provenance-check` fails | wpcli + ci |
+| TC-FR1-15-AS-03 | `status set diabetes active --version=deadbeef…` → command exits non-zero and `status.json` is byte-identical to before | wpcli |
 | TC-FR1-15-AS-04 | unavailable state has links to `/health-tools/` and one `lld_review_status=approved` article, both 200 | e2e |
 | TC-FR1-15-AS-05 | `curl -I status.json` → `Cache-Control: no-store` | http |
 | TC-FR1-15-AS-06 | runbook `docs/runbook-withdrawal.md` contains the toggle command, `wp litespeed-purge` step, the 4-hour production SLA (DEC-08) and a dated drill record | artefact |
@@ -381,7 +383,7 @@ Family: e2e network, artefact. Fixtures: sentinel values; FX-PR-REN-01, FX-DM-EM
 |---|---|---|
 | TC-FR1-16-AS-01 | capture all requests to analytics host during 3 flows; every event name ∈ SCH-09 names; every prop key ∈ {tool, source}; no sentinel value or health key in URL, body or headers | e2e network |
 | TC-FR1-16-AS-02 | event counts per flow: `tool_landing_view` 1, `tool_start` 1, `tool_complete` 1 (or `tool_unavailable_view` 1 when withdrawn); `email_sent` 1 when mail sent; names exactly as SCH-09 | e2e |
-| TC-FR1-16-AS-03 | analytics host blocked → flows complete; console has no `error` level entries; with CookieYes Analytics category declined, behaviour matches the DEC-11 choice ratified at HG-03 (unconditional load, or no Plausible request) | e2e |
+| TC-FR1-16-AS-03 | analytics host blocked → flows complete; console has no `error` level entries; with the CookieYes Analytics category declined the DEC-11 default applies (Plausible still loads, cookieless); re-run only if DEC-11 is overridden at HG-03 | e2e |
 | TC-FR1-16-AS-04 | Plausible stub reports counts equal to AS-02 grouped by `utm_campaign` from the test URL | stub API |
 Human gate: HG-03 (DEC-11).
 
@@ -412,7 +414,7 @@ Family: artefact, e2e smoke, ops. Preconditions: all MUST accepted.
 
 | ID | Assertion | Method |
 |---|---|---|
-| TC-FR1-19-AS-01 | `releases/<tag>.json` validates SCH-10; for every MUST ID an `accepted` evidence id exists | artefact |
+| TC-FR1-19-AS-01 | `releases/<tag>.json` validates SCH-10; for every MUST ID an evidence bundle exists with all `results[].outcome = pass`, `reviewer.verdict = PASS`, and registry status ≥ `verified` | artefact |
 | TC-FR1-19-AS-02 | restore drill record dated ≤ 7 days before tag | artefact |
 | TC-FR1-19-AS-03 | smoke suite (hub, 2 landing, 2 tools happy, status.json, 2 mails to sink) green at +0 h, +1 h, +24 h | e2e |
 | TC-FR1-19-AS-04 | rollback drill: deploy previous tag to staging → smoke green; duration recorded < RTO | ops |
@@ -426,7 +428,7 @@ Family: wpcli, crawl, artefact. Preconditions: baseline crawl and `reports_live_
 | TC-FR1-23-AS-01 | after `wp lld tidy apply`: `wp term list category --fields=slug` lacks `womens-health`, `healthy-living`, `stress`, `uncategorised`; contains `the-report` | wpcli |
 | TC-FR1-23-AS-02 | `/category/wellness/womens-health/`, `/category/wellness/healthy-living/`, `/category/wellness/stress/` → 301 to `/category/wellness/`; `/category/uncategorised/` → 301 to `/`; `/category/the-report/` → 200 with `<meta name="robots" content="noindex">` or `X-Robots-Tag: noindex` | crawl |
 | TC-FR1-23-AS-03 | primary menu items (`wp menu item list`) contain no URL ending `/the-report/` | wpcli |
-| TC-FR1-23-AS-04 | for all 103 baseline posts, category slug set equals the baseline inventory | wpcli + artefact |
+| TC-FR1-23-AS-04 | for every post in the baseline inventory, the category slug set equals the inventory | wpcli + artefact |
 | TC-FR1-23-AS-05 | `wp option get default_category` equals the `wellness` term ID | wpcli |
 | TC-FR1-23-AS-06 | `content/planned-categories.json` validates (SCH-14) and lists `healthy-living` and `stress` with parent `wellness` | artefact |
 | TC-FR1-23-AS-07 | footer anchors on `/` equal the baseline footer anchor set | crawl |
@@ -446,7 +448,7 @@ Family: static, unit, e2e, http. Mutation: MUT-12.
 
 | ID | Assertion | Method |
 |---|---|---|
-| TC-FR1-21-AS-01 | landing HTML iframe `src` starts with `https://lifelinedaily.com/tools/`; no `data-litespeed-src` / `about:blank` on the iframe (lazy-load excluded, DEC-31) | crawl |
+| TC-FR1-21-AS-01 | landing HTML iframe `src` starts with `<configured origin>/tools/` (from the environment file; apex on production); no `data-litespeed-src` / `about:blank` on the iframe (lazy-load excluded, DEC-31) | crawl |
 | TC-FR1-21-AS-02 | both tools post `{type:'lld-tool-height', height}` to the configured origin, never `'*'` (static); parent listener unit test: message from `https://evil.example` ignored, message from configured origin applied (DEC-34) | static + unit |
 | TC-FR1-21-AS-03 | at 320/375/768/1440 after result: `iframe.clientHeight − contentDocument.scrollHeight| ≤ 20`; no inner scrollbar | e2e |
 | TC-FR1-21-AS-04 | `/tools/*.html`: no `noindex` header or meta; HTML `<link rel=canonical>` = landing URL (DEC-14); HSTS header present (DEC-35) | http |
@@ -498,7 +500,7 @@ Human gate: HG-02.
 ### TC-NFR1-04 Isolation of the two pipelines
 | ID | Assertion | Method |
 |---|---|---|
-| TC-NFR1-04-AS-01 | CI run for a commit touching `api/mailer.php` contains jobs `saf-protein` and `saf-diabetes` | ci |
+| TC-NFR1-04-AS-01 | CI run for a commit touching `api/mailer.php` contains the `saf` job with both `saf-protein` and `saf-diabetes` steps | ci |
 | TC-NFR1-04-AS-02 | both SAF suites green on that run | ci |
 | TC-NFR1-04-AS-03 | SAF-CROSS-01: FX-MAIL-01 and FX-MAIL-02 both delivered after the change | php |
 
@@ -543,7 +545,7 @@ Mutation: MUT-14.
 | ID | Assertion | Method |
 |---|---|---|
 | TC-NFR1-09-AS-01 | PR title regex check job present and enforced; body contains `evidence/` path | ci |
-| TC-NFR1-09-AS-02 | branch protection on `staging` requires all 15 jobs (API query) | ci |
+| TC-NFR1-09-AS-02 | every job marked PR in the Development Loop §1 job table ran on the last merged PR (branch protection is unavailable on GitHub Free; the convention is checked by inspecting the run) | ci |
 | TC-NFR1-09-AS-03 | test PR changing `fixtures/protein/nrm.json#expected` by a non-bot author fails `oracle-guard` | ci |
 | TC-NFR1-09-AS-04 | every evidence bundle has `commit` and `tool_hashes` | artefact |
 
@@ -584,7 +586,7 @@ Mutation: MUT-14.
 ### TC-NFR1-15 Embed security policy
 | ID | Assertion | Method |
 |---|---|---|
-| TC-NFR1-15-AS-01 | CSP headers per DEC-28 on landing and tool pages | http |
+| TC-NFR1-15-AS-01 | CSP headers per DEC-28 on landing and tool pages, with the environment's configured origins substituted | http |
 | TC-NFR1-15-AS-02 | TC-FR1-21-AS-05 | e2e |
 | TC-NFR1-15-AS-03 | with `Content-Security-Policy-Report-Only`, full E2E suite produces 0 reports | e2e |
 
@@ -680,7 +682,7 @@ Mutation: MUT-14. Human gate: HG-02.
 |---|---|---|
 | TC-UI1-11-AS-01 | `copy/inventory.json` lists every source (MESSAGES, templates, `data-copy` inline strings, landing and disclaimer pages); `make copy-extract` regenerates `copy/*.json`; every entry hash equals `approvals/*.copy_hashes` | ci |
 | TC-UI1-11-AS-02 | change one `MESSAGES` string in a sandbox → `copy-hash` job fails | ci |
-| TC-UI1-11-AS-03 | required phrases present and forbidden terms absent across `copy/*.json` and templates | static |
+| TC-UI1-11-AS-03 | required phrases present across `copy/*.json` and templates; `forbidden-terms.global` absent everywhere; `forbidden-terms.underweight` absent from the underweight banner and result copy only | static |
 Human gate: HG-02.
 
 ---
