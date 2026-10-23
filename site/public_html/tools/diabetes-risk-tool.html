@@ -235,7 +235,7 @@ footer.disc{color:var(--muted); font-size:.8rem; text-align:center; margin-top:2
           <button type="button" class="tap" data-val="Female">Female</button>
           <button type="button" class="tap" data-val="Male">Male</button>
         </div>
-        <div class="err" data-err="sex">Please choose one.</div>
+        <div class="err" data-err="sex" role="alert">Please choose one.</div>
       </div>
 
       <div class="field">
@@ -254,7 +254,7 @@ footer.disc{color:var(--muted); font-size:.8rem; text-align:center; margin-top:2
           <button type="button" class="tap" data-val="77">75–79</button>
           <button type="button" class="tap" data-val="82">80–84</button>
         </div>
-        <div class="err" data-err="ageBand">Please choose your age group.</div>
+        <div class="err" data-err="ageBand" role="alert">Please choose your age group.</div>
       </div>
     </div>
 
@@ -280,7 +280,7 @@ footer.disc{color:var(--muted); font-size:.8rem; text-align:center; margin-top:2
             <option value="ftin">ft + in</option><option value="in">inches</option>
           </select>
         </div>
-        <div class="err" data-err="ht">Enter a height between 1.40 m and 2.10 m.</div>
+        <div class="err" data-err="ht" role="alert">Enter a height between 1.40 m and 2.10 m.</div>
       </div>
 
       <div class="field">
@@ -291,11 +291,11 @@ footer.disc{color:var(--muted); font-size:.8rem; text-align:center; margin-top:2
             <option value="kg">kg</option><option value="lb">lb</option><option value="stlb">st + lb</option>
           </select>
         </div>
-        <div class="err" data-err="wt">Enter a weight between 40 kg and 180 kg.</div>
+        <div class="err" data-err="wt" role="alert">Enter a weight between 40 kg and 180 kg.</div>
       </div>
 
       <div class="field">
-        <label>Waist <span class="sub">— around the belly button. Recommended: powers two cross-checks.</span></label>
+        <label for="waist">Waist <span class="sub">— around the belly button. Recommended: powers two cross-checks.</span></label>
         <div class="measure">
           <div id="waistInputs"></div>
           <select class="unit-sel" id="waistUnit" aria-label="Waist unit">
@@ -319,7 +319,7 @@ footer.disc{color:var(--muted); font-size:.8rem; text-align:center; margin-top:2
       <div class="field">
         <label>Ethnicity <span class="sub">— required; selects coefficients calibrated to your group</span></label>
         <div class="taps" data-tap="ethn" role="group" aria-label="Ethnicity" id="ethnTaps"></div>
-        <div class="err" data-err="ethn">Please choose one.</div>
+        <div class="err" data-err="ethn" role="alert">Please choose one.</div>
       </div>
 
       <div class="field">
@@ -661,13 +661,14 @@ $('#ethnTaps').innerHTML = ETHN.map(function(e){
 }).join('');
 
 /* measurement inputs (unit-aware) */
+function fieldName(id){ return {ht:'Height',wt:'Weight',waist:'Waist'}[id]||id; }
 function lengthInputs(id,unit){
-  if(unit==='ftin') return '<div class="split"><input type="number" id="'+id+'_a" inputmode="numeric" placeholder="ft"><input type="number" id="'+id+'_b" inputmode="numeric" placeholder="in"></div>';
+  if(unit==='ftin') return '<div class="split"><input type="number" id="'+id+'_a" inputmode="numeric" placeholder="ft" aria-label="'+fieldName(id)+', feet"><input type="number" id="'+id+'_b" inputmode="numeric" placeholder="in" aria-label="'+fieldName(id)+', inches"></div>';
   var ph = unit==='m'?'e.g. 1.75':(unit==='in'?'e.g. 69':'e.g. 175');
   return '<input type="number" id="'+id+'" inputmode="decimal" placeholder="'+ph+'">';
 }
 function massInputs(id,unit){
-  if(unit==='stlb') return '<div class="split"><input type="number" id="'+id+'_a" inputmode="numeric" placeholder="st"><input type="number" id="'+id+'_b" inputmode="numeric" placeholder="lb"></div>';
+  if(unit==='stlb') return '<div class="split"><input type="number" id="'+id+'_a" inputmode="numeric" placeholder="st" aria-label="'+fieldName(id)+', stones"><input type="number" id="'+id+'_b" inputmode="numeric" placeholder="lb" aria-label="'+fieldName(id)+', pounds"></div>';
   return '<input type="number" id="'+id+'" inputmode="decimal" placeholder="'+(unit==='lb'?'e.g. 165':'e.g. 75')+'">';
 }
 function renderHt(){ $('#htInputs').innerHTML=lengthInputs('ht',$('#htUnit').value); bindMeasure(); }
