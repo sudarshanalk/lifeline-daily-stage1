@@ -55,6 +55,20 @@ for (const slug of ['protein', 'diabetes']) {
   write(statusPath, status);
 }
 
+// MUT-10 (docs/03 §3): one hex digit of approvals/protein.json version_hash altered — regenerated so it always applies
+{
+  const cur = readFileSync(resolve(ROOT, 'approvals', 'protein.json'), 'utf8');
+  const h = JSON.parse(cur).version_hash; const mutated = (h[0] === '0' ? '1' : '0') + h.slice(1);
+  const lines = cur.split('\n'); const idx = lines.findIndex((l) => l.includes(`"version_hash": "${h}"`));
+  const ctxB = lines.slice(Math.max(0, idx - 3), idx), ctxA = lines.slice(idx + 1, idx + 4);
+  const start = Math.max(0, idx - 3) + 1; const count = ctxB.length + 1 + ctxA.length;
+  const patch = ['diff --git a/approvals/protein.json b/approvals/protein.json', '--- a/approvals/protein.json', '+++ b/approvals/protein.json',
+    `@@ -${start},${count} +${start},${count} @@`, ...ctxB.map((l) => ' ' + l), '-' + lines[idx], '+' + lines[idx].replace(h, mutated), ...ctxA.map((l) => ' ' + l), ''].join('\n');
+  const pp = resolve(ROOT, 'tests', 'mutations', 'MUT-10.patch');
+  const curPatch = (() => { try { return readFileSync(pp, 'utf8'); } catch { return null; } })();
+  if (curPatch !== patch) { changed.push('tests/mutations/MUT-10.patch'); if (!check) writeFileSync(pp, patch); }
+}
+
 const copyRecord = (() => { try { return read('approvals/copy.json'); } catch { return { inline: {}, pages: {}, reviewer: 'pending (OI-8)', date: '2026-10-23', decision: 'pending' }; } })();
 copyRecord.messages = copy.messages;
 copyRecord.templates = copy.templates;

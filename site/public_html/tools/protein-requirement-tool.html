@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="canonical" href="__LLD_ORIGIN__/health-tools/protein/">
 <title>Daily Protein Requirement | Lifeline Daily</title>
 <style>
 :root{
@@ -94,6 +95,7 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
 </style>
 </head>
 <body>
+<noscript><p class="lld-noscript" data-test="noscript">This tool needs JavaScript. If it does not load here, <a href="__LLD_ORIGIN__/tools/protein-requirement-tool.html">open the tool directly</a> or enable JavaScript and reload.</p></noscript>
 <div class="wrap">
 
 <header class="lld">
@@ -910,7 +912,8 @@ $('restart').onclick = ()=>{
 /* --- iframe auto-resize (parent half lives on the WP page) --- */
 function postHeight(){
   const h = document.documentElement.scrollHeight;
-  if(window.parent !== window) window.parent.postMessage({ lldToolHeight: h, frame:'lld-tool-frame' }, '*');
+  /* FR1-21 / DEC-34: one message schema for both tools, posted only to the configured parent origin (never '*'). */
+  if(window.parent !== window){ try{ window.parent.postMessage({ type:'lld-tool-height', height:h }, '__LLD_ORIGIN__'); }catch(e){} }
 }
 window.addEventListener('load', postHeight);
 window.addEventListener('resize', postHeight);

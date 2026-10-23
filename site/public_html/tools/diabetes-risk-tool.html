@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="canonical" href="__LLD_ORIGIN__/health-tools/diabetes-risk-check/">
 <title>Diabetes Risk Assessment — Lifeline Daily</title>
 <style>
 :root{
@@ -204,6 +205,7 @@ footer.disc{color:var(--muted); font-size:.8rem; text-align:center; margin-top:2
 </style>
 </head>
 <body>
+<noscript><p class="lld-noscript" data-test="noscript">This tool needs JavaScript. If it does not load here, <a href="__LLD_ORIGIN__/tools/diabetes-risk-tool.html">open the tool directly</a> or enable JavaScript and reload.</p></noscript>
 <div class="wrap">
   <header class="hero">
     <span class="eyebrow">Lifeline Daily · Health Tools</span>
@@ -920,7 +922,8 @@ $('#emailBtn').addEventListener('click',function(){
 });
 
 /* iframe auto-resize */
-function postHeight(){ var h=Math.ceil(document.documentElement.getBoundingClientRect().height); try{ parent.postMessage({type:'lld-tool-height',height:h},'*'); }catch(e){} }
+/* FR1-21 / DEC-34: one message schema for both tools, posted only to the configured parent origin (never '*'). */
+function postHeight(){ var h=Math.ceil(document.documentElement.getBoundingClientRect().height); if(window.parent!==window){ try{ parent.postMessage({type:'lld-tool-height',height:h},'__LLD_ORIGIN__'); }catch(e){} } }
 window.addEventListener('load',postHeight);
 window.addEventListener('resize',postHeight);
 if(window.ResizeObserver){ new ResizeObserver(postHeight).observe(document.body); }
