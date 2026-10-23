@@ -26,7 +26,7 @@ describe('TC-FR1-07 protein engine preservation and verification', () => {
   test('TC-FR1-07-AS-01', () => {
     // engine output equals the characterisation expected values for every in-scope fixture
     const fxs = SCOPE.flatMap((p) => fixtures(p)).filter((f) => f.oracle === 'characterisation');
-    expect(fxs.length).toBeGreaterThanOrEqual(27);
+    expect(fxs.length).toBe(32);
     for (const f of fxs) {
       const got = run(f.inputs);
       for (const k of COMPARE_KEYS) expect(got[k], `${f.id} ${k}`).toEqual(f.expected[k]);
@@ -50,11 +50,11 @@ describe('TC-FR1-07 protein engine preservation and verification', () => {
         record.push({ fixture: f.id, oracle: 'characterisation', known_deviation: dec, orc02: { targetG: ref.targetG, gPerKg: ref.gPerKg }, js: { targetG: got.targetG, gPerKg: got.gPerKg } });
       } else {
         if (!within) disagreements.push({ fixture: f.id, js: got, orc02: ref });
-        record.push({ fixture: f.id, oracle: 'clinical', agree: within });
+        record.push({ fixture: f.id, oracle: 'clinical', agree: within, js: { targetG: got.targetG, lowG: got.lowG, highG: got.highG, perMeal: got.perMeal, gPerKg: got.gPerKg }, orc02: { targetG: ref.targetG, lowG: ref.lowG, highG: ref.highG, perMeal: ref.perMeal, gPerKg: ref.gPerKg } });
       }
     }
     mkdirSync(resolve(ROOT, 'evidence', 'FR1-07', 'artefacts'), { recursive: true });
-    writeFileSync(resolve(ROOT, 'evidence', 'FR1-07', 'artefacts', 'orc02-comparison.json'), JSON.stringify({ generated: new Date().toISOString(), tolerance: '±1 g; gPerKg exact 2 dp', record, disagreements }, null, 2) + '\n');
+    writeFileSync(resolve(ROOT, 'evidence', 'FR1-07', 'artefacts', 'orc02-comparison.json'), JSON.stringify({ tolerance: '±1 g; gPerKg exact 2 dp', record, disagreements }, null, 2) + '\n');
     expect(disagreements, 'ORC-02 disagreement outside known deviations → blocker + DEC row').toEqual([]);
     expect(record.filter((r) => r.known_deviation).map((r) => r.fixture).sort()).toEqual(['FX-PR-CAP-01', 'FX-PR-CAP-02']);
   });
@@ -110,7 +110,7 @@ describe('TC-FR1-07 protein engine preservation and verification', () => {
       return { ...row, cited, derivable, note: derivable ? null : 'figures not derivable from the cited primary source(s) — for HG-02 (DEC-03)' };
     });
     mkdirSync(resolve(ROOT, 'evidence', 'FR1-07', 'artefacts'), { recursive: true });
-    writeFileSync(resolve(ROOT, 'evidence', 'FR1-07', 'artefacts', 'band-table-check.json'), JSON.stringify({ generated: new Date().toISOString(), ceiling: primarySources.ceiling_g_per_kg, rows: report }, null, 2) + '\n');
+    writeFileSync(resolve(ROOT, 'evidence', 'FR1-07', 'artefacts', 'band-table-check.json'), JSON.stringify({ ceiling: primarySources.ceiling_g_per_kg, rows: report }, null, 2) + '\n');
     for (const r of report) expect(r.cited.length, `${r.key} cites a primary source`).toBeGreaterThan(0);
     for (const r of report) expect(r.hi, `${r.key} within the 2.0 ceiling`).toBeLessThanOrEqual(primarySources.ceiling_g_per_kg);
     const notDerivable = report.filter((r) => !r.derivable).map((r) => `${r.key} ${r.lo}-${r.hi} (${r.src})`);
