@@ -268,7 +268,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "hybrid",
-      "status": "ready",
+      "status": "accepted",
       "depends_on": [],
       "components": [
         "CMP-01",
@@ -502,7 +502,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "hybrid",
-      "status": "draft",
+      "status": "ready",
       "depends_on": [
         "FR1-01"
       ],
@@ -1184,7 +1184,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "ready",
       "depends_on": [
         "FR1-01"
       ],
@@ -1221,7 +1221,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "ready",
       "depends_on": [
         "FR1-01"
       ],
@@ -1269,7 +1269,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "auto",
-      "status": "draft",
+      "status": "ready",
       "depends_on": [
         "FR1-01"
       ],
@@ -1672,7 +1672,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "auto",
-      "status": "draft",
+      "status": "ready",
       "depends_on": [],
       "components": [
         "CMP-13"
@@ -1883,7 +1883,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "ready",
       "depends_on": [
         "FR1-21"
       ],
@@ -2370,7 +2370,8 @@
       "id": "DEC-01",
       "question": "Deployed diabetes engine identity",
       "selected": "Model A confirmed",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2379,6 +2380,7 @@
       "question": "QDiabetes oracle",
       "selected": "CRAN QDiabetes (ORC-01)",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2387,6 +2389,7 @@
       "question": "Protein oracle",
       "selected": "Sealed Python reference (ORC-02)",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2395,6 +2398,7 @@
       "question": "Band thresholds",
       "selected": "5.6/10/20",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2403,6 +2407,7 @@
       "question": "IDRS tiers",
       "selected": "<30 / 30-59 / >=60",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2411,6 +2416,7 @@
       "question": "Secondary indicator",
       "selected": "Waist-to-height ratio 0.5/0.6",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2419,6 +2425,7 @@
       "question": "Townsend",
       "selected": "Fixed 0, disclosed",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2426,7 +2433,8 @@
       "id": "DEC-08",
       "question": "Fidelity failure handling",
       "selected": "Staging automatic via wp lld status set; production by ACT-04",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2435,6 +2443,7 @@
       "question": "Email during emergency",
       "selected": "Allowed, emergency template without %",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2442,7 +2451,8 @@
       "id": "DEC-10",
       "question": "Feature switch",
       "selected": "status.json",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2451,6 +2461,7 @@
       "question": "Analytics",
       "selected": "Plausible cookieless",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-03",
       "decided_on": "2026-10-20"
     },
@@ -2459,6 +2470,7 @@
       "question": "Five policies",
       "selected": "Privacy, Terms, About, Contact, Medical Disclaimer",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2466,7 +2478,8 @@
       "id": "DEC-13",
       "question": "Article CTA rule",
       "selected": "Category/tag rule + override",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2474,7 +2487,8 @@
       "id": "DEC-14",
       "question": "Standalone indexing",
       "selected": "noindex,follow + canonical",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2482,7 +2496,8 @@
       "id": "DEC-15",
       "question": "Iframe host/messaging",
       "selected": "Apex host, pinned origin",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2490,7 +2505,8 @@
       "id": "DEC-16",
       "question": "Rate limit/honeypot",
       "selected": "5/IP/10min 429; honeypot silent 200",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2499,6 +2515,7 @@
       "question": "Perf measurement",
       "selected": "Lighthouse mobile, median of 5",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": null,
       "decided_on": "2026-10-20"
     },
@@ -2507,6 +2524,7 @@
       "question": "Browser matrix",
       "selected": "Last 2 versions + iOS15 + Android 9",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": null,
       "decided_on": "2026-10-20"
     },
@@ -2514,7 +2532,8 @@
       "id": "DEC-19",
       "question": "Backup objectives",
       "selected": "RPO 24h RTO 4h",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2523,6 +2542,7 @@
       "question": "Logging",
       "selected": "SCH-07 only, 30 days",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": null,
       "decided_on": "2026-10-20"
     },
@@ -2531,6 +2551,7 @@
       "question": "Lawful basis emails",
       "selected": "Consent incl. Art 9(2)(a); no persistence",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-03",
       "decided_on": "2026-10-20"
     },
@@ -2538,7 +2559,8 @@
       "id": "DEC-22",
       "question": "WP vehicle",
       "selected": "mu-plugin lld-tools",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2546,7 +2568,8 @@
       "id": "DEC-23",
       "question": "Homepage placement",
       "selected": "Tools row below header/hero",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2555,6 +2578,7 @@
       "question": "Status enum",
       "selected": "active|withdrawn|label_only",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": null,
       "decided_on": "2026-10-20"
     },
@@ -2563,6 +2587,7 @@
       "question": "Copy freeze",
       "selected": "MESSAGES/templates hashed in approvals",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2570,7 +2595,8 @@
       "id": "DEC-26",
       "question": "Healthy-weight tool",
       "selected": "Out of scope",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-20"
     },
@@ -2579,6 +2605,7 @@
       "question": "Test SMTP",
       "selected": "Mailpit",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": null,
       "decided_on": "2026-10-20"
     },
@@ -2587,6 +2614,7 @@
       "question": "CSP",
       "selected": "frame-src/frame-ancestors apex",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": null,
       "decided_on": "2026-10-20"
     },
@@ -2595,6 +2623,7 @@
       "question": "Diabetes age handling",
       "selected": "Band midpoints",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2603,6 +2632,7 @@
       "question": "One action definition",
       "selected": "Tap/click; menu open counts",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": null,
       "decided_on": "2026-10-20"
     },
@@ -2610,7 +2640,8 @@
       "id": "DEC-31",
       "question": "LiteSpeed Cache configuration",
       "selected": "Exclude /tools/*, no lazy-load on iframe, purge on status change",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-22"
     },
@@ -2619,6 +2650,7 @@
       "question": "Existing CookieYes banner",
       "selected": "Keep; Plausible cookieless",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-03",
       "decided_on": "2026-10-22"
     },
@@ -2627,6 +2659,7 @@
       "question": "ORC-01 package source and input mapping",
       "selected": "CRAN Archive 1.0-2 tarball; gdm; fhdm=any; unrounded compare",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-22"
     },
@@ -2634,7 +2667,8 @@
       "id": "DEC-34",
       "question": "Per-environment origins and message schema",
       "selected": "iframe_origin setting; {type:lld-tool-height,height}",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-22"
     },
@@ -2642,7 +2676,8 @@
       "id": "DEC-35",
       "question": "Hosting facts",
       "selected": "htaccess headers; forwarded IP; APCu store; HSTS",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-22"
     },
@@ -2651,6 +2686,7 @@
       "question": "Legal copy ownership",
       "selected": "Agent drafts; HG-02 clinical; HG-03 legal",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-03",
       "decided_on": "2026-10-22"
     },
@@ -2659,6 +2695,7 @@
       "question": "Urgent-care guidance non-UK",
       "selected": "999/111 then 1990, 112",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-22"
     },
@@ -2667,6 +2704,7 @@
       "question": "Register-registry sync",
       "selected": "Registry authoritative; Affects generated",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": null,
       "decided_on": "2026-10-22"
     },
@@ -2674,7 +2712,8 @@
       "id": "DEC-39",
       "question": "Category womens-health",
       "selected": "Delete; 301 to wellness",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-23"
     },
@@ -2682,7 +2721,8 @@
       "id": "DEC-40",
       "question": "Category the-report",
       "selected": "Hide: remove menu item, noindex, keep term",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-23"
     },
@@ -2690,7 +2730,8 @@
       "id": "DEC-41",
       "question": "Category uncategorised",
       "selected": "Set default to wellness, delete, 301 to /",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-23"
     },
@@ -2698,7 +2739,8 @@
       "id": "DEC-42",
       "question": "Categories healthy-living, stress",
       "selected": "Remove now; planned-categories.json",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-23"
     },
@@ -2706,7 +2748,8 @@
       "id": "DEC-43",
       "question": "Footer composition",
       "selected": "Unchanged; no disclaimer link",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-23"
     },
@@ -2715,6 +2758,7 @@
       "question": "Protein cap vs diet multiplier order",
       "selected": "Preserve deployed: cap lo/hi then midpoint",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2723,6 +2767,7 @@
       "question": "Protein headline point of band",
       "selected": "Midpoint of winning band",
       "status": "default",
+      "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2730,7 +2775,8 @@
       "id": "DEC-46",
       "question": "Production config.php values",
       "selected": "Assumed smtp, no bcc; verify via staging SSH",
-      "status": "default",
+      "status": "ratified",
+      "ratified_on": "2026-10-23",
       "ratify_at": "HG-01",
       "decided_on": "2026-10-23"
     }

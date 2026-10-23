@@ -2,7 +2,7 @@
 
 Every decision an agent would otherwise have to ask about is listed with a **selected default**. Revised 22 Oct 2026 after two independent reviews: DEC-01…28 amended where noted, DEC-31…38 added. 23 Oct 2026: DEC-12 amended (no footer link), DEC-39…43 added for the category tidy-up and footer. The loop proceeds on the default. To override, change the `Selected` cell and bump `decided_on`; the registry JSON mirrors this table and CI fails if they disagree (`SCH-01`). Decisions marked **HG** must be ratified by a human at the named gate but do not block work before that gate.
 
-Status values: `default` (selected by pack author, not yet ratified), `ratified` (human confirmed), `overridden`.
+Status values: `default` (selected by pack author, not yet ratified), `ratified` (human confirmed), `overridden`. **HG-01 was signed on 23 Oct 2026: every row with `ratify_at: HG-01` is `ratified` as written.**
 
 | ID | Question | Options considered | Selected default | Rationale | Ratify at | Affects |
 |---|---|---|---|---|---|---|
@@ -57,7 +57,7 @@ Status values: `default` (selected by pack author, not yet ratified), `ratified`
 
 | ID | When | Who | What is signed | Blocking for |
 |---|---|---|---|---|
-| HG-01 | After P-A0 baseline run and FR1-01 report | Product owner | AS-IS report; ratification of DEC-01, 08, 10, 13, 14, 15, 16, 19, 22, 23, 26, 31, 34, 35, 39, 40, 41, 42, 43, 46; go-ahead for build loops | All FR/UI loops except FR1-01 |
+| HG-01 ✔ signed 23 Oct 2026 (`approvals/hg-01.json`) | After P-A0 baseline run and FR1-01 report | Product owner | AS-IS report; ratification of DEC-01, 08, 10, 13, 14, 15, 16, 19, 22, 23, 26, 31, 34, 35, 39, 40, 41, 42, 43, 46; go-ahead for build loops | All FR/UI loops except FR1-01 |
 | HG-02 | When all clinical items are green on staging | Named clinical reviewer | Methodology approval records for both tools (SCH-03), copy-deck hashes (DEC-25), ORC-01/ORC-02 reports, band table vs primary sources (DEC-03), ratification of DEC-02…07, 09, 12, 25, 29, 33, 37, 44, 45 | G-03 |
 | HG-03 | Release candidate | Product owner + privacy reviewer | Release record (SCH-10), privacy checklist (NFR1-01), ratification of DEC-11, 21, 32, 36, deployment authorisation | G-06, production deploy |
 
