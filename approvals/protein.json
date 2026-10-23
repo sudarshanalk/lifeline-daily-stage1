@@ -1,0 +1,42 @@
+{
+  "approval_id": "APR-PROTEIN-2026-10-23",
+  "tool_slug": "protein",
+  "version_hash": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+  "engine_name": "Lifeline Daily Daily Protein Target engine (published-band lookup: collect applicable guideline bands, take the highest, apply diet multiplier, cap at 2.0 g/kg; renal and pregnancy/lactation early returns)",
+  "intended_use": "Educational screening aid that estimates a daily protein intake target (grams per day, g/kg and per-meal split) for healthy adults from published population guidelines. It is not a prescription, not a diagnosis and not individualised clinical nutrition advice.",
+  "eligibility": "Adults aged 18 to 99 with healthy kidney function. Visitors who report kidney disease receive no numeric target (renal suppression, KDOQI 2020 restriction). Pregnancy and breastfeeding use their own RDA branch. Liver disease and the 'recovery' goal are flagged as clinical and shown with a clinician-referral message. Not for children, dialysis patients or people under medical nutrition therapy.",
+  "sources": [
+    "Institute of Medicine (2005). Dietary Reference Intakes for Energy, Carbohydrate, Fiber, Fat, Fatty Acids, Cholesterol, Protein, and Amino Acids. RDA 0.8 g/kg; AMDR 10–35 % energy; pregnancy 1.1 g/kg; lactation 1.3 g/kg.",
+    "Jäger R et al. (2017). International Society of Sports Nutrition Position Stand: protein and exercise. J Int Soc Sports Nutr 14:20. 1.4–2.0 g/kg; 20–40 g per meal.",
+    "Thomas DT, Erdman KA, Burke LM (2016). Position of the Academy of Nutrition and Dietetics, Dietitians of Canada, and the American College of Sports Medicine: Nutrition and Athletic Performance. 1.2–2.0 g/kg.",
+    "Bauer J et al. (2013). PROT-AGE Study Group: Evidence-based recommendations for optimal dietary protein intake in older people. J Am Med Dir Assoc 14(8):542–559. ≥1.0–1.2 g/kg.",
+    "Deutz NEP et al. (2014). ESPEN Expert Group: Protein intake and exercise for optimal muscle function with aging. Clin Nutr 33(6):929–936. 1.0–1.2 g/kg healthy older; 1.2–1.5 g/kg illness/recovery.",
+    "KDOQI (2020). Clinical Practice Guideline for Nutrition in CKD: 2020 Update. Am J Kidney Dis 76(3 Suppl 1):S1–S107. Protein restriction in CKD — basis for the renal suppression rule.",
+    "WHO Expert Consultation (2004). Appropriate body-mass index for Asian populations. Lancet 363:157–163; NICE PH46 (2013). Asian BMI cut-offs 23/27.5 used for basis-weight adjustment.",
+    "Protein-Tool-Engine-Reference.docx §2–§5 (16 July 2026) — design note; §4 transcribed from the deployed engine (DEC-03 limitation)."
+  ],
+  "limitations": [
+    "Population guideline figures, not individual requirements; no account of renal function tests, protein quality, energy balance or medical conditions beyond the yes/no questions asked.",
+    "The plant-diet multipliers (1.1 vegetarian, 1.2 vegan) are an extrapolation from digestibility literature, not a guideline figure.",
+    "Order of the 2.0 g/kg cap and the diet multiplier differs between the deployed engine and the sealed reference (DEC-44, affects FX-PR-CAP-01/02 by ≤ 7 g/day); the headline target is the band midpoint (DEC-45). Both await HG-02.",
+    "ORC-02 detects transcription and logic errors only; it cannot detect a wrong guideline figure because §4 of the reference was transcribed from the running engine (DEC-03). TC-FR1-07-AS-08 checks each band against the primary-source table instead.",
+    "Underweight (BMI < 18.5) visitors get the standard computation with a warning; no energy or weight-gain advice is given.",
+    "Characterisation fixtures prove 'unchanged since 23 Oct 2026', never 'clinically correct'."
+  ],
+  "regulatory_statement": "Pending clinical review (HG-02). Working position: the tool provides general wellbeing information derived from published population guidelines and does not diagnose, treat or recommend treatment for any condition; it is therefore operated as an educational/screening information service and not placed on the market as a medical device. Every result screen and email carries the 'not a diagnosis' statement and a clinician-referral message. The clinical reviewer confirms or amends this position at HG-02.",
+  "licence": "Site content © Lifeline Daily. Guideline figures are facts from the cited publications; no third-party code is embedded in the engine.",
+  "copy_hashes": {
+    "messages.protein": "fd83e8cb2c5430d58675111e6d1dd93ca96d7b23511cef578292df7551b98526",
+    "templates.protein": "2ae45c23881374ebe1ecfaf7ae770b2e42e3152786fcc999dab4f2410502312e"
+  },
+  "oracle_report": "oracles/orc-02-protein-ref/results.json (ORC-02 sealed Python reference, 51/53 agree; deviations FX-PR-CAP-01/02 → DEC-44)",
+  "decisions_ratified": [],
+  "clinical_signoff": {
+    "name": "pending — named clinical reviewer to be appointed (OI-8)",
+    "date": "2026-10-23",
+    "decision": "pending",
+    "notes": "Record created in Wave 1 (FR1-06) with decision pending. Signed at HG-02 after Wave 6 together with approvals/copy.json and the band table vs primary sources (DEC-03)."
+  },
+  "review_date": "2026-10-23",
+  "next_review_date": "2027-10-23"
+}
