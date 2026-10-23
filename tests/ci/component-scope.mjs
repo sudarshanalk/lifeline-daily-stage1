@@ -14,11 +14,12 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ROOT } from '../lib/paths.mjs';
 
-const HARNESS = ['tests/**', 'evidence/**', 'Makefile', 'registry/Stage1_Requirements_Registry_v1_2.json'];
+const HARNESS = ['tests/**', 'evidence/**', 'Makefile', 'package-lock.json', 'registry/Stage1_Requirements_Registry_v1_2.json'];
 const PROVENANCE_SET = ['approvals/protein.json', 'approvals/diabetes.json', 'manifests/protein.json', 'manifests/diabetes.json', 'site/public_html/tools/status.json', 'tests/mutations/MUT-10.patch'];
 const TOOL_PAGES = ['site/public_html/tools/protein-requirement-tool.html', 'site/public_html/tools/diabetes-risk-tool.html'];
 
-export const globToRegex = (g) => new RegExp('^' + g.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*\//g, '(?:.*/)?').replace(/\*\*/g, '.*').replace(/\*/g, '[^/]*') + '$');
+/** Minimal glob → RegExp: `**` any depth (including none), `*` within one segment. Placeholders keep the two apart. */
+export const globToRegex = (g) => new RegExp('^' + g.replace(/[.+^${}()|[\]\\]/g, '\\$&').replace(/\*\*\//g, '\u0001').replace(/\*\*/g, '\u0002').replace(/\*/g, '[^/]*').replace(/\u0001/g, '(?:.*/)?').replace(/\u0002/g, '.*') + '$');
 const matches = (file, globs) => globs.some((g) => globToRegex(g).test(file));
 
 export function componentScope({ root = ROOT, req, files }) {

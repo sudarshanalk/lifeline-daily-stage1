@@ -262,6 +262,8 @@ jobs:
       - uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"   # the PR-comment API call fails with the default token permissions
+          GITLEAKS_ENABLE_SUMMARY: "true"
       - uses: actions/setup-node@v4
         with: { node-version: '24' }
       - uses: shivammathur/setup-php@v2
