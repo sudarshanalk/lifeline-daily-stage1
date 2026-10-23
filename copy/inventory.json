@@ -483,6 +483,11 @@
       "key": "templates.diabetes.emergency.body",
       "source": "site/public_html/tools/api/templates.php",
       "locator": "emergency.body"
+    },
+    {
+      "key": "inline.protein.consent",
+      "source": "site/public_html/tools/protein-requirement-tool.html",
+      "locator": "[data-copy=\"consent\"]"
     }
   ]
 }
