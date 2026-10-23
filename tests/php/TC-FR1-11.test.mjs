@@ -24,7 +24,7 @@ describe('TC-FR1-11 symptom escalation — server layer', () => {
     expect(r.status).toBe(f.expected.status); expect(r.mails).toBe(f.expected.mails);
     const body = bodyOf(r.mail);
     expect(r.mail, 'emergency template subject').toMatch(/SUBJECT: .*urgent care today/);
-    expect(body, 'no percentage in the emergency email').not.toMatch(/\d\s?%/);
+    expect(body, 'no percentage in the emergency email').not.toContain('%');
     expect(body, 'required urgent-care phrase').toContain(phrases.urgentCare);
     expect(body).not.toContain('{{');
   });
@@ -37,7 +37,7 @@ describe('TC-FR1-11 symptom escalation — server layer', () => {
     expect(r.status).toBe(200); expect(r.mails).toBe(1);
     const body = bodyOf(r.mail);
     expect(r.mail).toMatch(/SUBJECT: .*urgent care today/);
-    expect(body).not.toContain('42'); expect(body).not.toMatch(/\d\s?%/); expect(body).not.toMatch(/Very high/);
+    expect(body).not.toContain('42'); expect(body).not.toContain('%'); expect(body).not.toMatch(/Very high/);
     // and a symptomatic (non-emergency) payload gets the symptomatic template with the percentage present
     const s = fixtures('FX-MAIL-SYM-01')[0];
     const r2 = await sendAndRead(s.inputs);

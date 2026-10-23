@@ -8,6 +8,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startHtaccessServer } from '../lib/htaccess-server.mjs';
 import { fillDiabetesForm, submitDiabetes } from './helpers/diabetes-form.mjs';
+const sentinel = JSON.parse(readFileSync(resolve(fileURLToPath(new URL('.', import.meta.url)), '..', '..', 'fixtures', 'sentinel-values.json'), 'utf8'));
 
 const here = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const ROOT = resolve(here, '..', '..');
@@ -25,7 +26,8 @@ async function run(page, fx) {
 }
 
 test('TC-FR1-11-AS-01', async ({ page }) => {
-  for (const fx of EMG) {
+  for (const id of ['FX-DM-EMG-01', 'FX-DM-EMG-02']) {
+    const fx = byId(id);
     await run(page, fx);
     const banners = page.locator('[data-test=banners]');
     await expect(banners.locator('> :first-child')).toHaveClass(/\bemergency\b/);
@@ -71,7 +73,7 @@ test('TC-FR1-11-AS-06', async ({ page }) => {
   const posts = [];
   await page.route('**/submit.php', async (route) => { posts.push(route.request().postDataJSON()); await route.fulfill({ status: 200, contentType: 'application/json', body: '{"status":"ok"}' }); });
   await run(page, byId('FX-DM-EMG-01'));
-  await page.locator('#email').fill('zq7sentinel@example.test');
+  await page.locator('#email').fill(sentinel.email);
   await page.locator('#consent').check();
   await page.locator('#emailBtn').click();
   await expect.poll(() => posts.length).toBe(1);
