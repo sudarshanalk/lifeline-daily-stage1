@@ -17,7 +17,7 @@ describe('TC-FR1-15 safe withdrawal and rollback — endpoints, headers, runbook
     // the plugin's unavailable card renders approved copy for the status.json message key (DEC-72): its text must equal the
     // copy deck's unavailable.body in both tools, so a drift fails here even where the WordPress e2e cannot run (DEC-69)
     const plugin = readFileSync(resolve(ROOT, 'site', 'public_html', 'wp-content', 'mu-plugins', 'lld-tools', 'lld-tools.php'), 'utf8');
-    const pluginBody = plugin.match(/'unavailable\.body' => '((?:[^'\]|\.)*)'/)?.[1].replace(/\'/g, "'");
+    const pluginBody = plugin.match(/'unavailable\.body' => '((?:[^'\\]|\\.)*)'/)?.[1].replace(/\\'/g, "'");
     for (const deck of ['protein-messages.json', 'diabetes-messages.json']) expect(pluginBody, `plugin copy = copy/${deck} unavailable.body`).toBe(JSON.parse(readFileSync(resolve(ROOT, 'copy', deck), 'utf8'))['unavailable.body']);
     const srv = await startHtaccessServer({ statusJson: withdrawn });
     try {
