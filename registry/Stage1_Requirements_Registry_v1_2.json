@@ -1484,7 +1484,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-14"
       ],
@@ -1854,7 +1854,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-14"
       ],
@@ -2150,7 +2150,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-14"
       ],
