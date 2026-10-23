@@ -558,5 +558,10 @@
     "status": "pending"
   },
   "started_at": "2026-10-23T16:20:00Z",
-  "finished_at": "2026-10-23T16:27:06Z"
+  "finished_at": "2026-10-23T16:27:06Z",
+  "reviewer": {
+    "agent": "P-C",
+    "verdict": "PASS",
+    "report": "https://github.com/sudarshanalk/lifeline-daily-stage1/pull/21 (P-C review 20261023-1735; HG-02 note on the diabetes interpretation panel order)"
+  }
 }
