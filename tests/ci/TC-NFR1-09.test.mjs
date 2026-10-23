@@ -51,17 +51,25 @@ describe('TC-NFR1-09 reproducible AI development', () => {
     // with conclusion success on that head. Strict — no warning path. Jobs the table names but that commit did not yet
     // declare are reported (they could not have run) and are covered by the structural check above for the current tree.
     const gh = spawnSync('gh', ['auth', 'status'], { encoding: 'utf8' });
-    if (gh.status !== 0 && !process.env.GITHUB_TOKEN) return; // offline: the structural part above is the assertion
-    const prs = JSON.parse(execSync('gh pr list --state merged --base staging --limit 1 --json number,headRefOid', { cwd: ROOT, encoding: 'utf8' }));
-    if (!prs.length) return;
-    const head = prs[0].headRefOid;
+    if (gh.status !== 0 && !process.env.GITHUB_TOKEN && !process.env.GH_TOKEN) return; // offline: the structural part above is the assertion
+    // REST calls with an explicit repository: `gh pr list` needs a configured default repo, which an Actions checkout lacks
+    const repo = process.env.GITHUB_REPOSITORY || 'sudarshanalk/lifeline-daily-stage1';
+    const ghApi = (path, jq) => spawnSync('gh', ['api', path, ...(jq ? ['--jq', jq] : [])], { cwd: ROOT, encoding: 'utf8' });
+    const merged = ghApi(`repos/${repo}/pulls?state=closed&base=staging&sort=updated&direction=desc&per_page=20`, '[.[] | select(.merged_at != null)] | sort_by(.merged_at) | last | {number, head: .head.sha}');
+    expect(merged.status, merged.stderr).toBe(0);
+    const pr = JSON.parse(merged.stdout || 'null');
+    if (!pr) return;
+    const head = pr.head; const prs = [pr];
+    // make sure the merged PR's head commit is available locally (CI checkouts may be shallow / lack the branch)
+    if (spawnSync('git', ['cat-file', '-e', head], { cwd: ROOT }).status !== 0) spawnSync('git', ['fetch', '-q', 'origin', head], { cwd: ROOT });
     const declared = new Set();
     for (const f of ['ci.yml', 'ci-guards.yml']) {
       const text = spawnSync('git', ['show', `${head}:.github/workflows/${f}`], { cwd: ROOT, encoding: 'utf8' });
       if (text.status !== 0) continue; // workflow did not exist at that commit
       for (const m of (text.stdout.split(/\njobs:\n/)[1] || '').matchAll(/^  ([a-z][a-z0-9-]*):\s*$/gm)) declared.add(m[1]);
     }
-    const api = spawnSync('gh', ['api', `repos/{owner}/{repo}/commits/${head}/check-runs?per_page=100`, '--jq', '.check_runs[] | [.name, .conclusion] | @tsv'], { cwd: ROOT, encoding: 'utf8' });
+    expect(declared.size, `workflow files of ${head} readable`).toBeGreaterThan(0);
+    const api = ghApi(`repos/${repo}/commits/${head}/check-runs?per_page=100`, '.check_runs[] | [.name, .conclusion] | @tsv');
     expect(api.status, api.stderr).toBe(0);
     const byName = Object.fromEntries(api.stdout.split(/\r?\n/).filter(Boolean).map((l) => l.split('\t')));
     const mustHaveRun = required.filter((j) => declared.has(j));
