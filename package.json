@@ -27,6 +27,7 @@
   "homepage": "https://github.com/sudarshanalk/lifeline-daily-stage1#readme",
   "private": "true",
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
     "@playwright/test": "^1.56.1",
     "jsdom": "^27.1.0",
     "vitest": "^3.2.4"
