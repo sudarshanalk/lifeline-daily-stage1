@@ -209,7 +209,7 @@ test('TC-NFR1-05-AS-06', async ({ page }) => {
   const bad = [], sidebar = [];
   for (const [label, go] of states()) {
     await go(page);
-    const hs = await page.locator('h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible').evaluateAll((els) => els.map((e) => ({ l: Number(e.tagName[1]), side: !!e.closest('.td-ss-main-sidebar, .td-pb-span4'), t: e.textContent.trim().slice(0, 30) })));
+    const hs = await page.locator('h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible').evaluateAll((els) => els.map((e) => ({ l: Number(e.tagName[1]), side: !!e.closest('.td-main-sidebar, .td-ss-main-sidebar'), t: e.textContent.trim().slice(0, 30) })));
     const excluded = SIDEBAR_PAGES.has(label);
     const own = excluded ? hs.filter((h) => !h.side) : hs;
     for (let i = 1; i < own.length; i++) if (own[i].l > own[i - 1].l + 1) bad.push(`${label}: h${own[i - 1].l} → h${own[i].l} ("${own[i].t}")`);
