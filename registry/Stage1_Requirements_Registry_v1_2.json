@@ -3141,6 +3141,15 @@
       "ratified_on": null,
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-85",
+      "question": "Landing page section order",
+      "selected": "tool embed after What you will enter; Limitations, How it works, Privacy below the tool",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
     }
   ],
   "human_gates": [

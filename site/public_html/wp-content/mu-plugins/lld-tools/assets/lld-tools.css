@@ -17,6 +17,7 @@
 .lld-tool-card__status { display: block; font-size: 0.85rem; margin-bottom: 8px; }
 .lld-tool-card__cta { display: inline-block; margin-top: 8px; padding: 8px 14px; border-radius: 6px; background: var(--lld-1a6b3c); color: var(--lld-ffffff); text-decoration: none; }
 .lld-home-learn__list { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.lld-home-learn__img { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; margin: 0 0 8px; }
 .lld-home-learn__item h3 { margin: 0 0 4px; font-size: 1.05rem; }
 .lld-home-learn__item time { font-size: 0.85rem; color: var(--lld-555555); }
 /* DEC-23: the hero is desktop-only, so on phones the Tools row is the first content row after the header */
