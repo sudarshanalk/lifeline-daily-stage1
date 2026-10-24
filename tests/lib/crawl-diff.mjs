@@ -87,12 +87,12 @@ export function diffRow(before, after, { words = true, tolerance = 0.02, fields 
   return problems;
 }
 
-/** URLs listed by a Yoast-style sitemap index (and its child sitemaps), as an array. */
+/** URLs listed by a Yoast-style sitemap index (and its child sitemaps), as an array; throws if any sitemap does not answer 200. */
 export async function sitemapUrls(indexUrl, { toLocal = (u) => u, toCanonical = (u) => u } = {}) {
   const seen = new Set(); const urls = new Set(); const queue = [indexUrl];
   while (queue.length) {
     const u = queue.shift(); if (seen.has(u)) continue; seen.add(u);
-    const res = await fetch(toLocal(u)); if (!res.ok) continue;
+    const res = await fetch(toLocal(u)); if (!res.ok) throw new Error(`sitemap ${u} answered ${res.status}`);   // a failing child must not shrink the set silently
     const xml = await res.text();
     const isIndex = /<sitemapindex\b/i.test(xml);
     for (const m of xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/gi)) { const loc = toCanonical(m[1].replace(/&amp;/g, '&')); if (isIndex) queue.push(loc); else urls.add(loc); }
@@ -117,4 +117,31 @@ export function preservationProblems({ before, after, baselineRows, origin = 'ht
     problems.push(...diffRow(local, row, { words: !exempt.has(row.url), tolerance: 0.02 }).map((p) => `vs before-crawl: ${p}`));
   }
   return problems;
+}
+
+/** The FR1-23 part of TC-FR1-02-AS-01: each deleted archive answers one 301 to its DEC target; each hidden archive answers 200
+ *  with noindex (robots meta and X-Robots-Tag). `deleted`: {slug: [path, target]}, `hidden`: {slug: path}. */
+export async function tidyProblems({ toLocal, toCanonical, origin = 'https://lifelinedaily.com', deleted, hidden }) {
+  const problems = [];
+  for (const [slug, [path, target]] of Object.entries(deleted)) {
+    const r = await fetchChain(toLocal(origin + path));
+    if (r.status !== 301) problems.push(`${slug}: ${path} answered ${r.status}, not 301`);
+    else if (toCanonical(new URL(r.chain[0].location, toLocal(origin + path)).href) !== origin + target) problems.push(`${slug}: ${path} -> ${r.chain[0].location}, not ${target}`);
+    else if (r.chain.length !== 2 || r.finalStatus !== 200) problems.push(`${slug}: ${path} chain ${r.chain.map((c) => c.status).join(' -> ')}`);
+  }
+  for (const [slug, path] of Object.entries(hidden)) {
+    const r = await fetchChain(toLocal(origin + path));
+    const meta = [...r.html.matchAll(/<meta\b[^>]*name=["']robots["'][^>]*>/gi)].map((m) => ((m[0].match(/content=["']([^"']*)/i) || [])[1] || '').split(',').map((t) => t.trim().toLowerCase()));
+    const metaOk = meta.length > 0 && meta.every((t) => t.includes('noindex') && !t.includes('index'));
+    const headerOk = /(^|,\s*)noindex/i.test(r.headers['x-robots-tag'] || '');
+    if (r.status !== 200 || !metaOk || !headerOk) problems.push(`${slug}: ${path} answered ${r.status}, robots meta ${metaOk ? 'noindex' : 'missing/indexable'}, X-Robots-Tag ${headerOk ? 'noindex' : 'missing'}`);
+  }
+  return problems;
+}
+
+/** Up to `n` distinct media URLs taken round-robin across the rows (so they come from many pages, not the first one). */
+export function pickMedia(rows, n = 20) {
+  const out = []; const lists = rows.map((r) => [...(r.media || [])]);
+  for (let i = 0; out.length < n && lists.some((l) => l.length); i = (i + 1) % lists.length) { const u = lists[i].shift(); if (u && !out.includes(u)) out.push(u); }
+  return out;
 }
