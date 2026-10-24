@@ -1,0 +1,6 @@
+{
+  "_note": "Assertions whose passing result is not yet acceptance: the human gate or decision named here must sign first. tests/lib/evidence.mjs records a pass of any of these as `skipped` with the reason (a failure still records as `fail`), in every evidence bundle.",
+  "TC-UI1-01-AS-03": "comparison against unsigned candidate baselines passes; the signed baseline is an HG-02 item (DEC-77)",
+  "TC-UI1-09-AS-02": "comparison against unsigned candidate baselines; the signed baseline set is an HG-02 item (DEC-77)",
+  "TC-NFR1-05-AS-06": "outline enforced everywhere except the Newspaper theme sidebar on the hub and landing pages, whose h4 block titles skip a level after the page h2s; fix-or-accept is DEC-78 (proposed, HG-02)"
+}

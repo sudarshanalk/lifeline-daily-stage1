@@ -1554,7 +1554,7 @@
       "mutations": [
         "MUT-14"
       ],
-      "known_deviations": {"TC-NFR1-05-AS-06": "the Newspaper theme sidebar blocks on the hub and landing pages title their sections with h4 (\"Featured\", \"Latest\", \"Popular\") after the page h2s; the theme is frozen (CMP-01), so AS-06 is enforced on every heading outside .td_block_wrap and the theme-block skips are reported in the test annotations pending DEC-78"},
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-05/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
