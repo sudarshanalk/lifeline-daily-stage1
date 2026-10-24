@@ -26,9 +26,24 @@ const ymd = (d) => d.toISOString().slice(0, 10);
 const yesterday = ymd(new Date(Date.now() - 86400000));
 const ok = (r, what) => { if (r.status !== 0) throw new Error(`${what}: ${r.stdout}${r.stderr}`); return r.stdout.trim(); };
 
+// the landing pages carry Related reading only once `wp lld pages apply` has run; apply it for the run and restore the pages
+// (content and the lld_tool_slug marker) afterwards, as TC-FR1-04 does
+const PAGES = { 'health-tools': 6107, protein: 6102, 'diabetes-risk-check': 6066 };
+const pagesBefore = {};
+function applyPages(stack) {
+  for (const id of Object.values(PAGES)) pagesBefore[id] = { content: stack.wp('post', 'get', String(id), '--field=post_content').stdout, slug: stack.wp('post', 'meta', 'get', String(id), 'lld_tool_slug').stdout.trim() };
+  const r = stack.wp('lld', 'pages', 'apply'); if (r.status !== 0) throw new Error(r.stdout + r.stderr);
+}
+function restorePages(stack) {
+  for (const [id, b] of Object.entries(pagesBefore)) {
+    stack.wp('post', 'update', id, `--post_content=${b.content.replace(/\n$/, '')}`);
+    b.slug ? stack.wp('post', 'meta', 'update', id, 'lld_tool_slug', b.slug) : stack.wp('post', 'meta', 'delete', id, 'lld_tool_slug');
+  }
+}
 test.beforeAll(async () => {
   stack = await startWpStack();
   if (stack.external) return;
+  applyPages(stack);
   const catId = (slug) => stack.wp('term', 'list', 'category', `--slug=${slug}`, '--field=term_id').stdout.trim();
   const seed = (id, inputs) => {
     const pid = ok(stack.wp('post', 'create', '--post_type=post', `--post_status=${inputs.status}`, `--post_title=${id} (TC-FR1-18 seed)`, `--post_content=<p>Seeded by TC-FR1-18 (${id}); removed after the run.</p>`, `--post_category=${catId(inputs.category)}`, '--porcelain'), `seed ${id}`);
@@ -47,6 +62,7 @@ test.beforeAll(async () => {
 });
 test.afterAll(async () => {
   if (stack && !stack.external) {
+    restorePages(stack);
     for (const pid of Object.values(seeded.posts)) stack.wp('post', 'delete', pid, '--force');
     for (const uid of seeded.users) stack.wp('user', 'delete', uid, '--yes');
     for (const [id, before] of Object.entries(landingBefore)) for (const [k, v] of Object.entries(before)) v ? stack.wp('post', 'meta', 'update', id, k, v) : stack.wp('post', 'meta', 'delete', id, k);
@@ -60,7 +76,7 @@ test('TC-FR1-18-AS-01', async ({ page }) => {
     ok(stack.wp('post', 'meta', 'update', String(id), 'lld_review_owner', owner), 'owner');
     ok(stack.wp('post', 'meta', 'update', String(id), 'lld_reviewed_date', date), 'date');
     await page.goto(`${stack.url}/health-tools/${slug}/`);
-    const byline = page.locator('[data-test=review-byline]').last();
+    const byline = page.locator('[data-test=review-byline]:not([data-test=related-reading] *)');   // the page's own byline, not a Related-reading item
     await expect(byline, `${slug}: byline rendered from meta`).toBeVisible();
     await expect(byline).toHaveText(`Reviewed by ${owner} on 1 October 2026`);
     await expect(byline.locator('time')).toHaveAttribute('datetime', date);
@@ -78,10 +94,13 @@ test('TC-FR1-18-AS-02', async () => {
 });
 
 test('TC-FR1-18-AS-03', async () => {
-  const draft = ok(stack.wp('post', 'create', '--post_type=post', '--post_author=1', '--post_status=draft', '--post_title=TC-FR1-18 role draft (seed)', '--porcelain'), 'draft');
+  // the contributor's own draft: drafting is allowed, publishing is not
+  const contributorId = stack.wp('user', 'get', 'lld-test-contributor', '--field=ID').stdout.trim();
+  const draft = ok(stack.wp('post', 'create', '--post_type=post', `--post_author=${contributorId}`, '--post_status=draft', '--post_title=TC-FR1-18 role draft (seed)', '--porcelain', '--user=lld-test-contributor'), 'contributor drafts');
   seeded.posts.roleDraft = draft;
   const asContrib = stack.wp('post', 'update', draft, '--post_status=publish', '--user=lld-test-contributor');
   expect(asContrib.status, 'contributor cannot publish').not.toBe(0);
+  expect(asContrib.stdout + asContrib.stderr).toMatch(/not allowed to publish/);
   expect(stack.wp('post', 'get', draft, '--field=post_status').stdout.trim(), 'still a draft').toBe('draft');
   const asEditor = stack.wp('post', 'update', draft, '--post_status=publish', '--user=lld-test-editor');
   expect(asEditor.status, `editor publishes: ${asEditor.stderr}`).toBe(0);
@@ -120,13 +139,19 @@ test('TC-FR1-18-AS-05', async () => {
   } finally { rmSync(dir, { recursive: true, force: true }); }
   const doc = JSON.parse(out);
   expect(doc.meta.map((m) => m.key).sort(), 'registered keys = SCH-13 key set').toEqual([...schema.properties.meta.items.properties.key.enum].sort());
-  for (const m of doc.meta) expect(m.applies_to.length, `${m.key}: registered with a sanitiser`).toBeGreaterThan(0);
-  expect(doc.meta.find((m) => m.key === 'lld_tool_override').applies_to).toEqual(['post']);
-  expect(doc.meta.find((m) => m.key === 'lld_tool_slug').applies_to).toEqual(['page']);
+  // Data Model §5: key -> post types it applies to and its allowed values (meta list reports a type only when a sanitiser is registered)
+  const DM = { lld_review_owner: [['post', 'page']], lld_reviewed_date: [['post', 'page']], lld_next_review_date: [['post', 'page']],
+    lld_review_status: [['post', 'page'], ['approved', 'pending', 'superseded']], lld_tool_override: [['post'], ['protein', 'diabetes', 'none']], lld_tool_slug: [['page'], ['protein', 'diabetes']] };
+  for (const m of doc.meta) {
+    expect(m.applies_to, `${m.key}: registered with a sanitiser for the Data Model post types`).toEqual(DM[m.key][0]);
+    if (DM[m.key][1]) expect(m.enum, `${m.key}: allowed values`).toEqual(DM[m.key][1]);
+  }
   // the sanitisers run on write: an out-of-enum status and a malformed date are stored empty
   const pid = seeded.posts['FX-WP-POST-01'];
   stack.wp('post', 'meta', 'update', pid, 'lld_review_status', 'bogus');
   expect(stack.wp('post', 'meta', 'get', pid, 'lld_review_status').stdout.trim()).toBe('');
   stack.wp('post', 'meta', 'update', pid, 'lld_next_review_date', 'next year');
   expect(stack.wp('post', 'meta', 'get', pid, 'lld_next_review_date').stdout.trim()).toBe('');
+  stack.wp('post', 'meta', 'update', pid, 'lld_next_review_date', '2026-13-45');
+  expect(stack.wp('post', 'meta', 'get', pid, 'lld_next_review_date').stdout.trim(), 'impossible calendar date rejected').toBe('');
 });
