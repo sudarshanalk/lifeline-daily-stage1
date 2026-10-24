@@ -12,7 +12,8 @@ import { startWpStack, available } from '../lib/wp-stack.mjs';
 const here = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const ROOT = resolve(here, '..', '..');
 const cards = JSON.parse(readFileSync(resolve(ROOT, 'content', 'tool-cards.json'), 'utf8')).cards;
-const HEADINGS = ['Purpose', 'Who it is for', 'What you will enter', 'Limitations', 'How it works', 'Privacy', 'Try the tool', 'Related reading'];
+const TRY_HEADING = { diabetes: 'Check your Diabetes Risk', protein: 'Calculate My Protein Need' };   // DEC-85: per-page wording of the tool section
+const HEADINGS = ['Purpose', 'Who it is for', 'What you will enter', 'Try the tool', 'Limitations', 'How it works', 'Privacy', 'Related reading'];
 const ENGINE = { protein: /Daily Protein Target engine/i, diabetes: /QDiabetes-2018/ };
 let stack; const original = {};
 const PAGE_IDS = { 'health-tools': 6107, protein: 6102, 'diabetes-risk-check': 6066 };   // page slugs → ids in the snapshot database
@@ -61,7 +62,7 @@ test('TC-FR1-04-AS-04', async ({ page }) => {
   for (const c of cards) {
     await page.goto(stack.url + c.landing_url);
     const h2 = await page.locator('article h2, .td-post-content h2, main h2, [data-lld-section]').evaluateAll((els) => els.filter((e) => e.tagName === 'H2').map((e) => e.textContent.trim()));
-    expect(h2, `${c.tool_slug}: h2 sequence`).toEqual(HEADINGS);
+    expect(h2, `${c.tool_slug}: h2 sequence`).toEqual(HEADINGS.map((h) => (h === 'Try the tool' ? TRY_HEADING[c.tool_slug] : h)));
   }
 });
 

@@ -55,7 +55,7 @@ describe('TC-FR1-04 tools hub and landing pages — artefacts', () => {
   });
 
   test('TC-FR1-04-AS-04', () => {
-    expect(landing.headings).toEqual(['Purpose', 'Who it is for', 'What you will enter', 'Limitations', 'How it works', 'Privacy', 'Try the tool', 'Related reading']);
+    expect(landing.headings).toEqual(['Purpose', 'Who it is for', 'What you will enter', 'Try the tool', 'Limitations', 'How it works', 'Privacy', 'Related reading']);
     for (const [slug, p] of Object.entries(landing.pages)) {
       expect(Object.keys(p.sections), `${slug}: eight sections in order`).toEqual(landing.section_keys);
       expect(p.sections.try).toBe(`[lld_tool slug="${slug}"]`);

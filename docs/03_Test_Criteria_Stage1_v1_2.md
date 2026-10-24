@@ -227,7 +227,7 @@ Family: e2e, artefact. Fixtures: `status.json` default; `content/tool-cards.json
 | TC-FR1-04-AS-01 | `/health-tools/` has exactly 2 `[data-tool-card][data-status=active]` | e2e |
 | TC-FR1-04-AS-02 | each card CTA `href` → 200 and equals card `landing_url` | e2e |
 | TC-FR1-04-AS-03 | `[data-status=label_only] a` count = 0 | e2e |
-| TC-FR1-04-AS-04 | both landing pages: `h2` sequence = [Purpose, Who it is for, What you will enter, Limitations, How it works, Privacy, Try the tool, Related reading] | e2e |
+| TC-FR1-04-AS-04 | both landing pages: `h2` sequence = [Purpose, Who it is for, What you will enter, <tool heading>, Limitations, How it works, Privacy, Related reading], where the tool heading is "Check your Diabetes Risk" or "Calculate My Protein Need" (DEC-85) | e2e |
 | TC-FR1-04-AS-05 | How it works contains engine name and `deployed_version` prefix (8 hex) equal to manifest | e2e + artefact |
 | TC-FR1-04-AS-06 | rendered card fields equal `tool-cards.json` | e2e |
 NEG-01: add a third card with `status: active` to `status.json` (sandbox) → AS-01 fails.

@@ -306,7 +306,8 @@ function lld_tools_render_learn_row(array $atts = []): string {
   $out = '<section class="lld-home-row lld-home-learn" data-test="learn-row"><h2 class="lld-home-row__title">Learn</h2><div class="lld-home-learn__list">';
   $q = new WP_Query(['post_type' => 'post', 'post_status' => 'publish', 'posts_per_page' => $limit, 'orderby' => 'date', 'order' => 'DESC', 'ignore_sticky_posts' => true, 'no_found_rows' => true]);
   foreach ($q->posts as $p) {
-    $out .= '<article class="lld-home-learn__item" data-post-id="' . (int)$p->ID . '"><a href="' . esc_url(get_permalink($p)) . '"><h3>' . esc_html(get_the_title($p)) . '</h3></a>';
+    $img = function_exists('has_post_thumbnail') && has_post_thumbnail($p) ? get_the_post_thumbnail($p, 'medium_large', ['class' => 'lld-home-learn__img', 'loading' => 'lazy', 'alt' => '']) : '';
+    $out .= '<article class="lld-home-learn__item" data-post-id="' . (int)$p->ID . '"><a href="' . esc_url(get_permalink($p)) . '">' . $img . '<h3>' . esc_html(get_the_title($p)) . '</h3></a>';
     $out .= '<time datetime="' . esc_attr(get_the_date('c', $p)) . '">' . esc_html(get_the_date('', $p)) . '</time></article>';
   }
   return $out . '</div></section>';
@@ -401,7 +402,7 @@ function lld_tools_landing_content(string $slug): string {
   $page = $doc['pages'][$slug] ?? null; if (!$page) return '';
   $out = '';
   foreach ($doc['section_keys'] as $i => $key) {
-    $out .= "\n<h2 data-lld-section=\"" . esc_attr($key) . "\">" . esc_html($doc['headings'][$i]) . "</h2>\n" . $page['sections'][$key] . "\n";
+    $out .= "\n<h2 data-lld-section=\"" . esc_attr($key) . "\">" . esc_html($page['headings'][$key] ?? $doc['headings'][$i]) . "</h2>\n" . $page['sections'][$key] . "\n";
   }
   return trim($out);
 }
