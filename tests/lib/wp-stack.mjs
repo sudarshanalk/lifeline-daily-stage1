@@ -9,7 +9,7 @@
 //   LLD_WP_URL        when set, an already-running WordPress (staging, OI-1): the stack is not started and `wp` is unavailable
 // `available()` says whether the stack can run here; CI runners without the snapshot skip the dependent tests with that reason.
 import { spawn, spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdtempSync, rmSync, writeFileSync, readFileSync, unlinkSync, linkSync, renameSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, rmSync, writeFileSync, readFileSync, unlinkSync, linkSync, statSync, openSync, closeSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import http from 'node:http';
@@ -54,13 +54,28 @@ function assembleMu(overlay) {
  * corrupting each other's page content.
  *  - acquire: the holder record is written to a private temp file first, then hard-linked to the lock path — creation is
  *    atomic and the lock never exists without its content (EEXIST/EPERM = busy);
- *  - an unreadable lock is busy (never deleted on a failed read); a lock whose holder pid is gone is taken over by renaming it
- *    aside, which only one contender can do, and then retrying the link;
+ *  - an unreadable lock is busy (never deleted on a failed read); a stale lock (holder pid gone, or naming this process while
+ *    it holds nothing) is removed only under a short takeover lock (`<lock>.takeover`, created exclusively), after re-reading
+ *    it there — so a live lock is never moved or deleted, and two contenders can never both remove and re-create it;
  *  - re-entrant within one process by reference count; one exit handler; released on close and on every failed start;
  *  - the default wait (LLD_WP_LOCK_TIMEOUT_MS, 50 s) ends before the callers' hook timeouts so the DEC-73 message surfaces. */
 const LOCK = process.env.LLD_WP_LOCK_PATH || join(tmpdir(), 'lld-wp-stack.lock');   // path override for the lock's own race test
 const alive = (pid) => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
 let lockDepth = 0; let exitHooked = false;
+/** A lock record whose holder is gone, or that names this process while it holds no lock (a leftover of its own). */
+const isStale = (h) => (h.pid === process.pid ? lockDepth === 0 : !alive(h.pid));
+/** Remove a stale lock under the exclusive takeover lock, re-reading it there. Returns true when it was removed. */
+function removeStale() {
+  const take = `${LOCK}.takeover`;
+  try { const st = statSync(take); if (Date.now() - st.mtimeMs > 10000) unlinkSync(take); } catch {}   // a crashed taker (held for microseconds normally)
+  let fd; try { fd = openSync(take, 'wx'); } catch { return false; }
+  try {
+    let h = null; try { h = JSON.parse(readFileSync(LOCK, 'utf8')); } catch { return false; }   // unreadable or already gone: retry the link
+    if (!isStale(h)) return false;
+    unlinkSync(LOCK); return true;
+  } catch { return false; }
+  finally { try { closeSync(fd); } catch {} try { unlinkSync(take); } catch {} }
+}
 const dropLock = () => { try { const h = JSON.parse(readFileSync(LOCK, 'utf8')); if (h.pid === process.pid) unlinkSync(LOCK); } catch {} };
 async function acquireLock(timeoutMs = Number(process.env.LLD_WP_LOCK_TIMEOUT_MS || 50000)) {
   if (lockDepth > 0) { lockDepth++; return releaseOnce(); }
@@ -73,11 +88,7 @@ async function acquireLock(timeoutMs = Number(process.env.LLD_WP_LOCK_TIMEOUT_MS
       try { unlinkSync(tmp); } catch {}
       if (!['EEXIST', 'EPERM', 'EBUSY'].includes(e.code)) throw e;
       holder = null; try { holder = JSON.parse(readFileSync(LOCK, 'utf8')); } catch {}
-      if (holder && !alive(holder.pid)) {
-        // stale: rename it aside (atomic — at most one contender succeeds), then retry immediately
-        const aside = `${LOCK}.stale.${process.pid}.${Date.now()}`;
-        try { renameSync(LOCK, aside); const h = JSON.parse(readFileSync(aside, 'utf8')); if (h.pid === holder.pid) { unlinkSync(aside); continue; } renameSync(aside, LOCK); } catch {}
-      }
+      if (holder && isStale(holder)) { if (removeStale()) continue; }
       if (Date.now() - t0 > timeoutMs) throw new Error(`local WordPress stack busy: ${holder ? `locked by pid ${holder.pid} (${holder.cwd}) since ${holder.at}` : 'lock file being written'} — waited ${Math.round(timeoutMs / 1000)} s (DEC-73; raise LLD_WP_LOCK_TIMEOUT_MS to wait longer)`);
       await new Promise((r) => setTimeout(r, 500 + Math.floor(Math.random() * 500)));
     }
