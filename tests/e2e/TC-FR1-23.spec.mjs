@@ -113,7 +113,7 @@ test('TC-FR1-23-AS-02', async ({ request }) => {
   const rep = await request.get(`${stack.url}/category/the-report/`, { maxRedirects: 0 });
   expect(rep.status(), 'the-report archive 200').toBe(200);
   const body = await rep.text();
-  const metas = [...body.matchAll(/<meta[^>]*name=["']robots["'][^>]*>/gi)].map((m) => (m[0].match(/content=["']([^"']*)/i) || [])[1] || '');
+  const metas = [...body.matchAll(/<meta\b[^>]*name=["']robots["'][^>]*>/gi)].map((m) => (m[0].match(/content=["']([^"']*)/i) || [])[1] || '');
   expect(metas.length, 'the-report archive has a robots meta').toBeGreaterThan(0);
   for (const c of metas) {
     const tokens = c.split(',').map((t) => t.trim().toLowerCase());
