@@ -1,0 +1,7 @@
+{
+  "removed_at": "2026-10-24",
+  "categories": [
+    { "slug": "healthy-living", "name": "Healthy Living", "parent": "wellness", "recreate_when": "at least three reviewed articles exist (DEC-42)" },
+    { "slug": "stress", "name": "Stress", "parent": "wellness", "recreate_when": "at least three reviewed articles exist (DEC-42)" }
+  ]
+}

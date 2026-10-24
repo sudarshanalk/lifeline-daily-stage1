@@ -1,0 +1,4 @@
+{
+  "rules": { "color-no-hex": true },
+  "overrides": [{ "files": ["**/*.html"], "customSyntax": "postcss-html" }]
+}

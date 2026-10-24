@@ -30,6 +30,9 @@
     "@axe-core/playwright": "^4.10.2",
     "@playwright/test": "^1.56.1",
     "jsdom": "^27.1.0",
+    "lighthouse": "^12.8.2",
+    "postcss-html": "^1.8.1",
+    "stylelint": "^16.26.1",
     "vitest": "^3.2.4"
   }
 }

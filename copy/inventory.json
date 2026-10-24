@@ -20,6 +20,16 @@
   },
   "entries": [
     {
+      "key": "messages.protein.resultHeading",
+      "source": "site/public_html/tools/protein-requirement-tool.html",
+      "locator": "MESSAGES.resultHeading"
+    },
+    {
+      "key": "messages.protein.disclaimerLinks",
+      "source": "site/public_html/tools/protein-requirement-tool.html",
+      "locator": "MESSAGES.disclaimerLinks"
+    },
+    {
       "key": "messages.protein.scope",
       "source": "site/public_html/tools/protein-requirement-tool.html",
       "locator": "MESSAGES.scope"
@@ -475,6 +485,16 @@
       "locator": "MESSAGES.unavailable.unknown"
     },
     {
+      "key": "messages.diabetes.disclaimerLinks",
+      "source": "site/public_html/tools/diabetes-risk-tool.html",
+      "locator": "MESSAGES.disclaimerLinks"
+    },
+    {
+      "key": "messages.diabetes.urgentCare",
+      "source": "site/public_html/tools/diabetes-risk-tool.html",
+      "locator": "MESSAGES.urgentCare"
+    },
+    {
       "key": "messages.diabetes.disclaimer",
       "source": "site/public_html/tools/diabetes-risk-tool.html",
       "locator": "MESSAGES.disclaimer"
@@ -548,6 +568,16 @@
       "key": "inline.protein.consent",
       "source": "site/public_html/tools/protein-requirement-tool.html",
       "locator": "[data-copy=\"consent\"]"
+    },
+    {
+      "key": "inline.protein.policyFooter",
+      "source": "site/public_html/tools/protein-requirement-tool.html",
+      "locator": "[data-copy=\"policyFooter\"]"
+    },
+    {
+      "key": "inline.diabetes.policyFooter",
+      "source": "site/public_html/tools/diabetes-risk-tool.html",
+      "locator": "[data-copy=\"policyFooter\"]"
     }
   ]
 }

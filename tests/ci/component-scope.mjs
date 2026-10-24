@@ -14,12 +14,12 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ROOT } from '../lib/paths.mjs';
 
-const HARNESS = ['tests/**', 'evidence/**', 'Makefile', 'package-lock.json', 'registry/Stage1_Requirements_Registry_v1_2.json'];
+const HARNESS = ['tests/**', 'evidence/**', 'Makefile', 'package.json', 'package-lock.json', 'registry/Stage1_Requirements_Registry_v1_2.json'];   // package.json: DEC-65
 // approvals/copy.json and the copy deck (copy/*.json, UI1-11) carry the DEC-25 per-key copy hashes and texts: a MESSAGES/data-copy change on a tool page
 // cannot pass copy-hash without refreshing them in the same PR (DEC-56 proposal, mirrors the SRS FR1-06 version_hash rule)
 const PROVENANCE_SET = ['approvals/protein.json', 'approvals/diabetes.json', 'approvals/copy.json', 'copy/inventory.json', 'copy/protein-messages.json', 'copy/diabetes-messages.json', 'copy/templates.json', 'copy/inline.json', 'copy/pages.json', 'manifests/protein.json', 'manifests/diabetes.json', 'site/public_html/tools/status.json', 'tests/mutations/MUT-10.patch'];
 // artefacts a requirement produces by its TC page although they live under CMP-12 (DEC-68 proposal): SCH-04 tool cards are FR1-04's
-const EXTRA = { 'FR1-04': ['content/tool-cards.json'], 'UI1-02': ['content/tool-cards.json'], 'FR1-05': ['content/article-tool-links.json'] };   // SCH-04 / SCH-05b artefacts (DEC-68 proposal)
+const EXTRA = { 'FR1-04': ['content/tool-cards.json'], 'UI1-02': ['content/tool-cards.json'], 'FR1-05': ['content/article-tool-links.json'], 'FR1-23': ['content/planned-categories.json'], 'UI1-09': ['design/tokens.json', '.stylelintrc.json'] };   // SCH-04 / SCH-05b artefacts (DEC-68 proposal)
 const TOOL_PAGES = ['site/public_html/tools/protein-requirement-tool.html', 'site/public_html/tools/diabetes-risk-tool.html'];
 
 /** Minimal glob → RegExp: `**` any depth (including none), `*` within one segment. Placeholders keep the two apart. */

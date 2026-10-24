@@ -1,0 +1,17 @@
+{
+  "_note": "Category tidy-up applied by `wp lld tidy apply` (FR1-23, DEC-39…42, DEC-43). Deleted archives 301-redirect to their DEC targets through the plugin; the-report keeps its term, leaves the primary menu and is noindex. No post changes its categories: the run refuses while any post is still assigned to a category it would delete.",
+  "delete": [
+    { "slug": "womens-health", "path": "/category/wellness/womens-health/", "redirect": "/category/wellness/", "dec": "DEC-39" },
+    { "slug": "healthy-living", "path": "/category/wellness/healthy-living/", "redirect": "/category/wellness/", "dec": "DEC-42" },
+    { "slug": "stress", "path": "/category/wellness/stress/", "redirect": "/category/wellness/", "dec": "DEC-42" },
+    { "slug": "uncategorised", "path": "/category/uncategorised/", "redirect": "/", "dec": "DEC-41" }
+  ],
+  "hide_noindex": [{ "slug": "the-report", "dec": "DEC-40" }],
+  "keep": ["health_tools"],
+  "default_category": "wellness",
+  "primary_menu": "header_menu",
+  "planned": [
+    { "slug": "healthy-living", "name": "Healthy Living", "parent": "wellness", "recreate_when": "at least three reviewed articles exist (DEC-42)" },
+    { "slug": "stress", "name": "Stress", "parent": "wellness", "recreate_when": "at least three reviewed articles exist (DEC-42)" }
+  ]
+}
