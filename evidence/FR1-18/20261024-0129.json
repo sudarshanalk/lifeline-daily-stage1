@@ -973,5 +973,10 @@
   "green_run": "local-20261024-0129",
   "human_gate": null,
   "started_at": "2026-10-24T00:29:55Z",
-  "finished_at": "2026-10-24T00:42:52Z"
+  "finished_at": "2026-10-24T00:42:52Z",
+  "reviewer": {
+    "agent": "P-C",
+    "verdict": "PASS",
+    "report": "https://github.com/sudarshanalk/lifeline-daily-stage1/pull/41 (P-C review FAIL: publish guard reachable by core oembed_cache inserts, lld_tools_message widened → repaired c9c27ea → re-review PASS; accepted as-is: unavailable card article link (FR1-15 AS-04), byline regardless of status; check in_the_loop() on staging Composer templates)"
+  }
 }
