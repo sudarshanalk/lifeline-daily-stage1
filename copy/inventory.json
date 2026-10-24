@@ -20,6 +20,11 @@
   },
   "entries": [
     {
+      "key": "messages.protein.resultHeading",
+      "source": "site/public_html/tools/protein-requirement-tool.html",
+      "locator": "MESSAGES.resultHeading"
+    },
+    {
       "key": "messages.protein.scope",
       "source": "site/public_html/tools/protein-requirement-tool.html",
       "locator": "MESSAGES.scope"

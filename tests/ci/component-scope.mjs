@@ -14,7 +14,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ROOT } from '../lib/paths.mjs';
 
-const HARNESS = ['tests/**', 'evidence/**', 'Makefile', 'package-lock.json', 'registry/Stage1_Requirements_Registry_v1_2.json'];
+const HARNESS = ['tests/**', 'evidence/**', 'Makefile', 'package.json', 'package-lock.json', 'registry/Stage1_Requirements_Registry_v1_2.json'];   // package.json: DEC-65
 // approvals/copy.json and the copy deck (copy/*.json, UI1-11) carry the DEC-25 per-key copy hashes and texts: a MESSAGES/data-copy change on a tool page
 // cannot pass copy-hash without refreshing them in the same PR (DEC-56 proposal, mirrors the SRS FR1-06 version_hash rule)
 const PROVENANCE_SET = ['approvals/protein.json', 'approvals/diabetes.json', 'approvals/copy.json', 'copy/inventory.json', 'copy/protein-messages.json', 'copy/diabetes-messages.json', 'copy/templates.json', 'copy/inline.json', 'copy/pages.json', 'manifests/protein.json', 'manifests/diabetes.json', 'site/public_html/tools/status.json', 'tests/mutations/MUT-10.patch'];
