@@ -52,21 +52,27 @@ const LLD_TOOLS_MESSAGES = [
   'unavailable.body' => 'We have paused this tool while we check it. Nothing about your health is affected by the pause — please come back soon, or read on below.',
   'review.byline' => 'Reviewed by %1$s on %2$s',
 ];
-/** Approved plugin copy by key. status.json `message` keys (`unavailable.<slug>`) all resolve to the approved unavailable body. */
+/** The approved unavailable text for a status.json `message` key (DEC-72): every key resolves to the approved body, never free text. */
 function lld_tools_message(?string $key): string {
-  if ($key !== null && $key !== '' && strpos($key, 'unavailable.') !== 0 && isset(LLD_TOOLS_MESSAGES[$key])) return LLD_TOOLS_MESSAGES[$key];
   return LLD_TOOLS_MESSAGES['unavailable.body'];
 }
 
 /* ---------------------------------------------------------------- review metadata (FR1-18, SCH-13) ---------------- */
-function lld_tools_meta_doc(): array { return json_decode((string)file_get_contents(LLD_TOOLS_DIR . '/data/meta.json'), true) ?: ['meta' => []]; }
+function lld_tools_meta_doc(): array {
+  static $doc = null;
+  if ($doc === null) {
+    $doc = json_decode((string)file_get_contents(LLD_TOOLS_DIR . '/data/meta.json'), true);
+    if (!is_array($doc)) { trigger_error('lld-tools: data/meta.json is not valid JSON; SCH-13 meta not registered', E_USER_WARNING); $doc = ['meta' => []]; }
+  }
+  return $doc;
+}
 /** Sanitiser for one SCH-13 key: enum keys keep only allowed values, dates keep only YYYY-MM-DD, strings are plain text. */
 function lld_tools_sanitize_meta(string $key, $value): string {
   foreach (lld_tools_meta_doc()['meta'] as $m) {
     if ($m['key'] !== $key) continue;
     $v = trim(wp_strip_all_tags((string)$value));
     if (isset($m['enum'])) return in_array($v, $m['enum'], true) ? $v : '';
-    if (($m['type'] ?? '') === 'date') return preg_match('/^\d{4}-\d{2}-\d{2}$/', $v) ? $v : '';
+    if (($m['type'] ?? '') === 'date') return (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $v, $d) && checkdate((int)$d[2], (int)$d[3], (int)$d[1])) ? $v : '';
     return mb_substr($v, 0, 200);
   }
   return '';
@@ -96,15 +102,15 @@ if (function_exists('add_filter')) add_filter('the_content', function ($content)
   if (!function_exists('is_singular') || !is_singular(['post', 'page']) || !in_the_loop() || !is_main_query()) return $content;
   return $content . lld_tools_review_byline(get_post());
 }, 20);
-/** WP-CLI does not check capabilities, and nothing else stops a contributor publishing from the command line: refuse a
- *  transition to `publish` by a logged-in user who lacks the post type's publish capability (FR1-18: contributor drafts,
- *  editor publishes). System actions (user 0: cron, scheduled posts) are unaffected. */
-if (function_exists('add_filter')) add_filter('wp_insert_post_data', function ($data, $postarr) {
-  if (($data['post_status'] ?? '') !== 'publish' || get_current_user_id() === 0) return $data;
-  $before = !empty($postarr['ID']) ? get_post_status((int)$postarr['ID']) : '';
-  if ($before === 'publish') return $data;
-  $pto = get_post_type_object($data['post_type'] ?? 'post');
-  if ($pto && !current_user_can($pto->cap->publish_posts)) wp_die('Sorry, you are not allowed to publish this item (FR1-18: contributors draft, editors publish).', 'Forbidden', ['response' => 403]);
+/** WP-CLI does not check capabilities, so nothing stops `wp post update <id> --post_status=publish --user=<contributor>`.
+ *  Under WP-CLI only, refuse a transition of a post or page to `publish` by a logged-in user lacking the publish capability
+ *  (FR1-18: contributor drafts, editor publishes). wp-admin, REST and XML-RPC already enforce this themselves, and core's own
+ *  published inserts (oembed_cache, cron, scheduled posts) are never touched. */
+if (function_exists('add_filter') && defined('WP_CLI') && WP_CLI) add_filter('wp_insert_post_data', function ($data, $postarr) {
+  if (($data['post_status'] ?? '') !== 'publish' || !in_array($data['post_type'] ?? '', ['post', 'page'], true) || get_current_user_id() === 0) return $data;
+  if (!empty($postarr['ID']) && get_post_status((int)$postarr['ID']) === 'publish') return $data;
+  $pto = get_post_type_object($data['post_type']);
+  if ($pto && !current_user_can($pto->cap->publish_posts)) WP_CLI::error('Sorry, you are not allowed to publish this ' . $data['post_type'] . '. Contributors can save drafts; an editor publishes.');
   return $data;
 }, 10, 2);
 
@@ -382,7 +388,7 @@ if (defined('WP_CLI') && WP_CLI) {
   /** wp lld review-report [--format=json|table]: posts and pages whose next review date has passed or whose review status is
    *  not `approved` (FR1-18). Each row: id, type, status, title, owner, next_review_date, review_status, reasons. */
   WP_CLI::add_command('lld review-report', function (array $args, array $assoc) {
-    $today = gmdate('Y-m-d'); $rows = [];
+    $today = current_time('Y-m-d'); $rows = [];   // the site's own date (Europe/London), not UTC
     $q = new WP_Query(['post_type' => ['post', 'page'], 'post_status' => ['publish', 'draft', 'pending', 'future', 'private'], 'posts_per_page' => -1, 'no_found_rows' => true, 'orderby' => 'ID', 'order' => 'ASC']);
     foreach ($q->posts as $p) {
       $next = (string)get_post_meta($p->ID, 'lld_next_review_date', true); $st = (string)get_post_meta($p->ID, 'lld_review_status', true);
