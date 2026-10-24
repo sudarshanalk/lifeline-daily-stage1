@@ -45,7 +45,7 @@
       "lawful_basis": "consent (UK GDPR Art. 6(1)(a)), given with the e-mail consent checkbox (DEC-21)",
       "article9_condition": null,
       "retention": "received by the endpoint with the e-mail request, validated and discarded: not stored, not logged, not e-mailed",
-      "notes": "the endpoint refuses the request without it; it is not recorded anywhere, so the consent evidence DEC-21 asks for is the request itself (noted for HG-03)"
+      "notes": "the endpoint refuses the request without it; nothing records it: DEC-21 asks for the consent version and timestamp in the e-mail, which is a gap for HG-03"
     },
     {
       "tool": "protein",
@@ -359,7 +359,7 @@
       "lawful_basis": "consent (UK GDPR Art. 6(1)(a)), given with the e-mail consent checkbox (DEC-21)",
       "article9_condition": null,
       "retention": "received by the endpoint with the e-mail request, validated and discarded: not stored, not logged, not e-mailed",
-      "notes": "the endpoint refuses the request without it; it is not recorded anywhere, so the consent evidence DEC-21 asks for is the request itself (noted for HG-03)"
+      "notes": "the endpoint refuses the request without it; nothing records it: DEC-21 asks for the consent version and timestamp in the e-mail, which is a gap for HG-03"
     },
     {
       "tool": "diabetes",
