@@ -205,13 +205,18 @@ add_shortcode('lld_tool_version', 'lld_tools_render_version');
 function lld_tools_render_related(array $atts = []): string {
   $atts = shortcode_atts(['slug' => ''], $atts, 'lld_tool_related');
   $c = lld_tools_card($atts['slug']); if (!$c) return '';
-  // candidates: the card's related article (FR1-05 adds the link map); only published posts with review status `approved` (FR1-18)
-  $items = [];
-  foreach (array_unique(array_filter([(int)$c['related_post_id']])) as $id) {
+  // candidates: the card's related article, then posts whose link-map decision is this tool (FR1-05); only published posts with
+  // review status `approved` (FR1-18)
+  $items = []; $limit = (int)(lld_tools_links_doc()['related_limit'] ?? 3);
+  $candidates = [(int)$c['related_post_id']];
+  $q = new WP_Query(['post_type' => 'post', 'post_status' => 'publish', 'posts_per_page' => 50, 'orderby' => 'date', 'order' => 'DESC', 'no_found_rows' => true, 'ignore_sticky_posts' => true,
+    'meta_query' => [['key' => 'lld_review_status', 'value' => 'approved']]]);
+  foreach ($q->posts as $p) if (lld_tools_link_decision($p)['decision'] === $atts['slug']) $candidates[] = (int)$p->ID;
+  foreach (array_unique(array_filter($candidates)) as $id) {
     $post = get_post($id);
     if (!$post || $post->post_status !== 'publish' || !lld_tools_review_approved($post)) continue;
     $items[] = '<li data-post-id="' . (int)$post->ID . '"><a href="' . esc_url(get_permalink($post)) . '">' . esc_html(get_the_title($post)) . '</a>' . lld_tools_review_byline($post) . '</li>';
-    if (count($items) === 3) break;
+    if (count($items) >= $limit) break;
   }
   if (!$items) return '<p data-test="related-reading">More reading on this topic is coming soon.</p>';
   return '<ul class="lld-related" data-test="related-reading">' . implode('', $items) . '</ul>';
@@ -222,7 +227,9 @@ add_shortcode('lld_tool_related', 'lld_tools_render_related');
 function lld_tools_render_cta(array $atts = []): string {
   $atts = shortcode_atts(['slug' => '', 'post_id' => ''], $atts, 'lld_tool_cta');
   $c = lld_tools_card($atts['slug']); if (!$c) return '';
-  return '<p class="lld-tool-cta" data-test="tool-cta" data-tool="' . esc_attr($atts['slug']) . '"><a href="' . esc_url($c['landing_url']) . '">' . esc_html($c['cta_label']) . ': ' . esc_html($c['name']) . '</a></p>';
+  $href = $c['landing_url'];
+  if ((int)$atts['post_id'] > 0) $href .= '?' . http_build_query(array_merge(lld_tools_links_doc()['utm'] ?? ['utm_source' => 'article'], ['utm_content' => (int)$atts['post_id']]));
+  return '<p class="lld-tool-cta" data-test="tool-cta" data-tool="' . esc_attr($atts['slug']) . '"><a href="' . esc_url($href) . '">' . esc_html($c['cta_label']) . ': ' . esc_html($c['name']) . '</a></p>';
 }
 add_shortcode('lld_tool_cta', 'lld_tools_render_cta');
 
@@ -242,6 +249,32 @@ add_shortcode('lld_learn_row', 'lld_tools_render_learn_row');
 if (function_exists('add_action')) add_action('wp_enqueue_scripts', function () {
   wp_enqueue_style('lld-tools', plugins_url('assets/lld-tools.css', __FILE__), [], LLD_TOOLS_VERSION);
 });
+
+/* ---------------------------------------------------------------- article ↔ tool links (FR1-05, DEC-13) ------------ */
+function lld_tools_links_doc(): array { static $d = null; return $d ?? ($d = json_decode((string)file_get_contents(LLD_TOOLS_DIR . '/data/links.json'), true) ?: []); }
+/** DEC-13: override meta, else tag rule (diabetes), else category rule (diabetes, then protein), else none. */
+function lld_tools_link_decision($post): array {
+  $doc = lld_tools_links_doc();
+  $cats = wp_get_post_terms($post->ID, 'category', ['fields' => 'slugs']); $tags = wp_get_post_terms($post->ID, 'post_tag', ['fields' => 'slugs']);
+  $cats = is_wp_error($cats) ? [] : $cats; $tags = is_wp_error($tags) ? [] : $tags;
+  $override = (string)get_post_meta($post->ID, 'lld_tool_override', true);
+  if (in_array($override, ['protein', 'diabetes', 'none'], true)) $decision = [$override, 'override'];
+  elseif (array_intersect($tags, $doc['diabetes_tags'] ?? [])) $decision = ['diabetes', 'rule'];
+  elseif (array_intersect($cats, $doc['diabetes_categories'] ?? [])) $decision = ['diabetes', 'rule'];
+  elseif (array_intersect($cats, $doc['protein_categories'] ?? [])) $decision = ['protein', 'rule'];
+  else $decision = ['none', 'rule'];
+  $st = (string)get_post_meta($post->ID, 'lld_review_status', true);
+  return ['wp_post_id' => (int)$post->ID, 'decision' => $decision[0], 'source' => $decision[1], 'categories' => array_values($cats), 'tags' => array_values($tags), 'review_status' => $st === '' ? null : $st];
+}
+/** Automatic CTA on qualifying published posts: after the first </h2>, else at the end. The article text itself is untouched. */
+if (function_exists('add_filter')) add_filter('the_content', function ($content) {
+  if (empty(lld_tools_links_doc()['auto_cta']) || !function_exists('is_singular') || !is_singular('post') || !in_the_loop() || !is_main_query()) return $content;
+  $post = get_post(); if (!$post || $post->post_status !== 'publish') return $content;
+  $d = lld_tools_link_decision($post); if ($d['decision'] === 'none') return $content;
+  $cta = lld_tools_render_cta(['slug' => $d['decision'], 'post_id' => $post->ID]);
+  $i = stripos($content, '</h2>');
+  return $i === false ? $content . $cta : substr($content, 0, $i + 5) . $cta . substr($content, $i + 5);
+}, 15);
 
 /* ---------------------------------------------------------------- homepage (FR1-03, DEC-23): Composer template transform */
 function lld_tools_home_doc(): array { return json_decode((string)file_get_contents(LLD_TOOLS_DIR . '/data/home.json'), true) ?: []; }
@@ -393,6 +426,14 @@ if (defined('WP_CLI') && WP_CLI) {
       $rows[] = ['id' => $p->ID, 'type' => $p->post_type, 'status' => $p->post_status, 'title' => get_the_title($p), 'owner' => (string)get_post_meta($p->ID, 'lld_review_owner', true), 'next_review_date' => $next, 'review_status' => $st, 'reasons' => implode('; ', $reasons)];
     }
     WP_CLI\Utils\format_items($assoc['format'] ?? 'table', $rows, ['id', 'type', 'status', 'title', 'owner', 'next_review_date', 'review_status', 'reasons']);
+  });
+  /** wp lld links generate [--output=<file>]: the SCH-05b link map for every published post (FR1-05, DEC-13). */
+  WP_CLI::add_command('lld links generate', function (array $args, array $assoc) {
+    $q = new WP_Query(['post_type' => 'post', 'post_status' => 'publish', 'posts_per_page' => -1, 'orderby' => 'ID', 'order' => 'ASC', 'no_found_rows' => true]);
+    $doc = ['generated_at' => gmdate('Y-m-d\TH:i:s\Z'), 'rule_version' => (string)(lld_tools_links_doc()['rule_version'] ?? 'DEC-13'), 'links' => array_map('lld_tools_link_decision', $q->posts)];
+    $json = json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+    if (!empty($assoc['output'])) { file_put_contents($assoc['output'], $json); WP_CLI::success(count($doc['links']) . ' links written to ' . $assoc['output']); }
+    else WP_CLI::line(rtrim($json));
   });
   /** wp lld meta list: the registered SCH-13 meta keys as {meta:[{key, applies_to, type, enum?, sanitized}]} (TC-FR1-18-AS-05). */
   WP_CLI::add_command('lld meta list', function () {
