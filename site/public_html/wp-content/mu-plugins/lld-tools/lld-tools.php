@@ -240,6 +240,33 @@ function lld_tools_render_cta(array $atts = []): string {
 }
 add_shortcode('lld_tool_cta', 'lld_tools_render_cta');
 
+/* ---------------------------------------------------------------- legacy internal links (UI1-07 AS-01, DEC-84) ------ */
+/** data/redirects.json: 301s for internal links that answer 404 (applied only when WordPress would answer 404, so no live
+ *  URL is ever shadowed), and, with hide_gone_tags, tags whose archive the owner marked 410 in Yoast SEO Premium are not
+ *  listed under posts any more (the archive itself keeps answering 410 as the owner decided). */
+function lld_tools_redirects_doc(): array { static $d = null; return $d ?? ($d = json_decode((string)@file_get_contents(LLD_TOOLS_DIR . '/data/redirects.json'), true) ?: []); }
+function lld_tools_legacy_redirect(): void {
+  if (!function_exists('is_404') || !is_404()) return;
+  $path = trailingslashit((string)wp_parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH));
+  $to = lld_tools_redirects_doc()['redirects'][$path] ?? null;
+  if (is_string($to) && $to !== '' && $to[0] === '/') { wp_safe_redirect(home_url($to), 301, 'lld-tools'); exit; }
+}
+if (function_exists('add_action')) add_action('template_redirect', 'lld_tools_legacy_redirect', 1);
+/** Tag slugs whose archive the owner marked 410 (Gone) in Yoast SEO Premium's redirect list. */
+function lld_tools_gone_tags(): array {
+  static $g = null; if ($g !== null) return $g;
+  $g = [];
+  $r = function_exists('get_option') ? get_option('wpseo-premium-redirects-export-plain') : null;
+  if (is_array($r)) foreach ($r as $origin => $x) if ((int)($x['type'] ?? 0) === 410 && preg_match('~^/?tag/([^/]+)/?$~', (string)$origin, $m)) $g[] = $m[1];
+  return $g;
+}
+function lld_tools_hide_gone_tags($tags) {
+  if (!is_array($tags) || (function_exists('is_admin') && is_admin()) || empty(lld_tools_redirects_doc()['hide_gone_tags'])) return $tags;
+  $gone = lld_tools_gone_tags();
+  return $gone ? array_values(array_filter($tags, function ($t) use ($gone) { return !(is_object($t) && in_array($t->slug, $gone, true)); })) : $tags;
+}
+if (function_exists('add_filter')) add_filter('get_the_tags', 'lld_tools_hide_gone_tags');
+
 /* ---------------------------------------------------------------- [lld_learn_row limit=…] (FR1-03 "Learn" row) ---- */
 function lld_tools_render_learn_row(array $atts = []): string {
   $atts = shortcode_atts(['limit' => '6'], $atts, 'lld_learn_row');

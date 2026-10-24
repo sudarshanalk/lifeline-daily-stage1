@@ -1,6 +1,7 @@
 // TC-UI1-07 Navigation and educational links — crawl + e2e on the local WordPress stack (DEC-69; homepage rows, landing pages and
 // the disclaimer page applied and restored). AS-01 a same-origin crawl from / to depth 3: no status >= 400 and no redirect loop
-// (each redirect chain is followed hop by hop); AS-02 each landing page's breadcrumb reads Home › Health Tools › {tool} and every
+// (each redirect chain is followed hop by hop), and each legacy-link redirect (plugin data/redirects.json, DEC-84) is one 301
+// to a page that answers 200; AS-02 each landing page's breadcrumb reads Home › Health Tools › {tool} and every
 // crumb link answers 200; AS-03 every link in the unavailable states (the withdrawn landing-page card and the withdrawn tool page)
 // answers 200.
 import { test, expect } from '@playwright/test';
@@ -74,6 +75,17 @@ test('TC-UI1-07-AS-01', async ({ request }) => {
   expect(seen.size, 'crawl reached the site').toBeGreaterThan(50);
   expect(bad, 'no status >= 400').toEqual([]);
   expect(loops, 'no redirect loops').toEqual([]);
+  // the legacy-link map (data/redirects.json, DEC-84): each source answers one 301 to a target that answers 200
+  const map = JSON.parse(readFileSync(resolve(ROOT, 'site', 'public_html', 'wp-content', 'mu-plugins', 'lld-tools', 'data', 'redirects.json'), 'utf8')).redirects;
+  const wrong = [];
+  for (const [from, to] of Object.entries(map)) {
+    const r = await request.get(stack.url + from, { maxRedirects: 0, failOnStatusCode: false });
+    const loc = r.headers().location ? norm(r.headers().location, stack.url + from) : null;
+    if (r.status() !== 301 || loc !== stack.url + to) { wrong.push(`${from}: ${r.status()} -> ${loc}`); continue; }
+    const t = await request.get(stack.url + to, { maxRedirects: 0, failOnStatusCode: false });
+    if (t.status() !== 200) wrong.push(`${from} -> ${to}: target ${t.status()}`);
+  }
+  expect(wrong, 'legacy links: one 301 to a live page').toEqual([]);
 });
 
 test('TC-UI1-07-AS-02', async ({ page, request }) => {
