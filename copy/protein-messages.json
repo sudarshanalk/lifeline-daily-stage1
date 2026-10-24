@@ -1,6 +1,6 @@
 {
   "resultHeading": "Your result",
-  "disclaimerLinks": "This is not a diagnosis. Read our <a href=\"__LLD_ORIGIN__/medical-disclaimer/\">medical disclaimer</a> and our <a href=\"__LLD_ORIGIN__/privacy-policy/\">privacy policy</a>.",
+  "disclaimerLinks": "This is not a diagnosis. Read our <a href=\"__LLD_ORIGIN__/medical-disclaimer/\" target=\"_top\">medical disclaimer</a> and our <a href=\"__LLD_ORIGIN__/privacy-policy/\" target=\"_top\">privacy policy</a>.",
   "scope": "This tool estimates your daily protein target for general health, using published intake guidelines. It is an educational screening aid, not a prescription or a diagnosis. It is for adults aged 18 and over. If you have kidney or liver disease, your protein needs must be set by your clinical team — not by a calculator.",
   "renalStop.title": "We can't give you a protein target",
   "renalStop.body": "In kidney disease, protein guidance runs in the opposite direction to general advice — national kidney guidelines recommend a <strong>reduced</strong>, closely supervised protein intake, individually set against your kidney function. A general-population number could be actively harmful here, so this tool will not produce one for you. Please ask your kidney team or a renal dietitian for your personal target. That is the right answer for you, and it is not something a public calculator can safely replace.",

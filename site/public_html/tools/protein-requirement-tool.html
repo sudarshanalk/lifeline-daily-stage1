@@ -117,6 +117,7 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
 @media(prefers-reduced-motion:no-preference){.card{transition:none}}
 .lld-policy-footer{margin:24px auto 12px;padding:0 16px;text-align:center;font-size:13px;line-height:1.8;color:var(--muted)}
 .lld-policy-footer a{color:inherit;text-decoration:underline}
+.lld-disclaimer-links a,.lld-urgent a{color:var(--accent-dark);text-decoration:underline}
 </style>
 </head>
 <body>
@@ -328,8 +329,8 @@ const MESSAGES = {
   resultHeading: "Your result",
 
   disclaimerLinks:
-    "This is not a diagnosis. Read our <a href=\"__LLD_ORIGIN__/medical-disclaimer/\">medical disclaimer</a> " +
-    "and our <a href=\"__LLD_ORIGIN__/privacy-policy/\">privacy policy</a>.",
+    "This is not a diagnosis. Read our <a href=\"__LLD_ORIGIN__/medical-disclaimer/\" target=\"_top\">medical disclaimer</a> " +
+    "and our <a href=\"__LLD_ORIGIN__/privacy-policy/\" target=\"_top\">privacy policy</a>.",
 
   scope:
     "This tool estimates your daily protein target for general health, using published " +
@@ -984,6 +985,6 @@ window.addEventListener('resize', postHeight);
 new MutationObserver(postHeight).observe(document.body, {childList:true, subtree:true, attributes:true});
 setInterval(postHeight, 1000);
 </script>
-<nav class="lld-policy-footer" data-test="tool-footer" aria-label="Site policies" data-copy="policyFooter"><a href="__LLD_ORIGIN__/about-us/">About</a> · <a href="__LLD_ORIGIN__/contact-us/">Contact</a> · <a href="__LLD_ORIGIN__/privacy-policy/">Privacy Policy</a> · <a href="__LLD_ORIGIN__/terms-conditions/">Terms &amp; Conditions</a> · <a href="__LLD_ORIGIN__/medical-disclaimer/">Medical Disclaimer &amp; Urgent Care</a></nav>
+<nav class="lld-policy-footer" data-test="tool-footer" aria-label="Site policies" data-copy="policyFooter"><a href="__LLD_ORIGIN__/about-us/" target="_top">About</a> · <a href="__LLD_ORIGIN__/contact-us/" target="_top">Contact</a> · <a href="__LLD_ORIGIN__/privacy-policy/" target="_top">Privacy Policy</a> · <a href="__LLD_ORIGIN__/terms-conditions/" target="_top">Terms &amp; Conditions</a> · <a href="__LLD_ORIGIN__/medical-disclaimer/" target="_top">Medical Disclaimer &amp; Urgent Care</a></nav>
 </body>
 </html>

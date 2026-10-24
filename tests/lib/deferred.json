@@ -3,5 +3,6 @@
   "TC-UI1-01-AS-03": "comparison against unsigned candidate baselines passes; the signed baseline is an HG-02 item (DEC-77)",
   "TC-UI1-09-AS-02": "comparison against unsigned candidate baselines; the signed baseline set is an HG-02 item (DEC-77)",
   "TC-NFR1-05-AS-06": "outline enforced everywhere except the Newspaper theme sidebar on the hub and landing pages, whose h4 block titles skip a level after the page h2s; fix-or-accept is DEC-78 (proposed, HG-02)",
-  "TC-UI1-05-AS-03": "result-zone baselines re-recorded by the implementer in FR1-17 for the added disclaimer and urgent-care lines; unsigned candidates until HG-02 signs them (DEC-77)"
+  "TC-UI1-05-AS-03": "result-zone baselines re-recorded by the implementer in FR1-17 for the added disclaimer and urgent-care lines; unsigned candidates until HG-02 signs them (DEC-77)",
+  "TC-FR1-17-AS-04": "the rendered /medical-disclaimer/ content matches the candidate hash in approvals/copy.json pages['medical-disclaimer'] (the plugin's source text); the copy deck decision is pending until HG-02 approves the disclaimer copy (DEC-36)"
 }

@@ -82,6 +82,7 @@ test('TC-UI1-05-AS-03', async ({ page }, testInfo) => {
       await page.setViewportSize({ width, height: width === 375 ? 667 : 900 });
       await run(page, slug, fixture);
       await page.addStyleTag({ content: '.progress{visibility:hidden}' }); // the sticky form progress bar floats over the result at any scroll position
+      await page.mouse.move(0, 0);   // no hover state in the baseline (the pointer would otherwise rest on whatever the click left under it)
       await expect(page.locator('#results')).toHaveScreenshot(`${name}-${width}.png`, { maxDiffPixelRatio: 0.005, animations: 'disabled', caret: 'hide' });
     }
   }
