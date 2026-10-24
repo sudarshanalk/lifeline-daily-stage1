@@ -47,20 +47,23 @@ export async function buildStates(sample) {
     rmSync(bare, { recursive: true, force: true });
     if (err) throw err;
   };
-  let pre = await startWpStack({ overlay: bare });
+  // dump first, before any stack rewrites home/siteurl for its port, so the dump is exactly the database as found
+  dumpDir = mkdtempSync(join(tmpdir(), 'lld-stage1-')); dumpFile = join(dumpDir, 'database.sql');
+  const d = spawnSync(`${mariaBin()}/mariadb-dump.exe`, [...MYSQL_ARGS, `--result-file=${dumpFile}`, DB], { encoding: 'utf8' });
+  if (d.status !== 0) { rmSync(dumpDir, { recursive: true, force: true }); rmSync(bare, { recursive: true, force: true }); throw new Error('database dump failed: ' + d.stderr); }
+  let pre;
+  try { pre = await startWpStack({ overlay: bare }); } catch (e) { await restore().catch(() => {}); throw e; }
   try {
     // the before state must be the production snapshot: no Stage 1 database change applied yet
     const front = ok(pre.wp('option', 'get', 'page_on_front'), 'front');
     const pristine = pre.wp('post', 'meta', 'get', '6102', 'lld_tool_slug').stdout.trim() === '' && !/lld-home|lld_learn_row|lld_tools_hub/.test(pre.wp('post', 'get', front, '--field=post_content').stdout) && pre.wp('term', 'list', 'category', '--slug=stress', '--field=term_id').stdout.trim() !== '';
     if (!pristine) throw new Error('local database is not the pristine snapshot (Stage 1 changes already applied) — reset it before the preservation checks');
-    dumpDir = mkdtempSync(join(tmpdir(), 'lld-stage1-')); dumpFile = join(dumpDir, 'database.sql');
-    const d = spawnSync(`${mariaBin()}/mariadb-dump.exe`, [...MYSQL_ARGS, `--result-file=${dumpFile}`, DB], { encoding: 'utf8' });
-    if (d.status !== 0) throw new Error('database dump failed: ' + d.stderr);
     const m = mapper(pre);
     for (const u of sample) before.rows.push(await crawlRow(u, m));
     before.sitemap = await sitemapUrls(`${PROD}/sitemap_index.xml`, m);
     before.roles = roleState(pre);
-  } finally { await pre.close(); pre = null; }
+  } catch (e) { await pre.close(); pre = null; await restore().catch(() => {}); throw e; }
+  await pre.close(); pre = null;
   try {
     stack = await startWpStack();
     for (const cmd of [['pages', 'apply'], ['home', 'apply'], ['tidy', 'apply', '--include-drafts']]) ok(stack.wp('lld', ...cmd), `wp lld ${cmd.join(' ')}`);
