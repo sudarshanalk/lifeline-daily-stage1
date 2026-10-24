@@ -1,0 +1,10 @@
+{
+  "meta": [
+    { "key": "lld_review_owner", "applies_to": ["post", "page"], "type": "string" },
+    { "key": "lld_reviewed_date", "applies_to": ["post", "page"], "type": "date" },
+    { "key": "lld_next_review_date", "applies_to": ["post", "page"], "type": "date" },
+    { "key": "lld_review_status", "applies_to": ["post", "page"], "type": "enum", "enum": ["approved", "pending", "superseded"] },
+    { "key": "lld_tool_override", "applies_to": ["post"], "type": "enum", "enum": ["protein", "diabetes", "none"] },
+    { "key": "lld_tool_slug", "applies_to": ["page"], "type": "enum", "enum": ["protein", "diabetes"] }
+  ]
+}

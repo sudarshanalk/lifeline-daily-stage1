@@ -50,10 +50,69 @@ function lld_tools_status_label(string $status): string {
  * approved copy (mirrors MESSAGES.unavailable.body in both tools / copy deck `unavailable.body`), never free text from the file. */
 const LLD_TOOLS_MESSAGES = [
   'unavailable.body' => 'We have paused this tool while we check it. Nothing about your health is affected by the pause — please come back soon, or read on below.',
+  'review.byline' => 'Reviewed by %1$s on %2$s',
 ];
+/** The approved unavailable text for a status.json `message` key (DEC-72): every key resolves to the approved body, never free text. */
 function lld_tools_message(?string $key): string {
   return LLD_TOOLS_MESSAGES['unavailable.body'];
 }
+
+/* ---------------------------------------------------------------- review metadata (FR1-18, SCH-13) ---------------- */
+function lld_tools_meta_doc(): array {
+  static $doc = null;
+  if ($doc === null) {
+    $doc = json_decode((string)file_get_contents(LLD_TOOLS_DIR . '/data/meta.json'), true);
+    if (!is_array($doc)) { trigger_error('lld-tools: data/meta.json is not valid JSON; SCH-13 meta not registered', E_USER_WARNING); $doc = ['meta' => []]; }
+  }
+  return $doc;
+}
+/** Sanitiser for one SCH-13 key: enum keys keep only allowed values, dates keep only YYYY-MM-DD, strings are plain text. */
+function lld_tools_sanitize_meta(string $key, $value): string {
+  foreach (lld_tools_meta_doc()['meta'] as $m) {
+    if ($m['key'] !== $key) continue;
+    $v = trim(wp_strip_all_tags((string)$value));
+    if (isset($m['enum'])) return in_array($v, $m['enum'], true) ? $v : '';
+    if (($m['type'] ?? '') === 'date') return (preg_match('/^(\d{4})-(\d{2})-(\d{2})$/', $v, $d) && checkdate((int)$d[2], (int)$d[3], (int)$d[1])) ? $v : '';
+    return mb_substr($v, 0, 200);
+  }
+  return '';
+}
+function lld_tools_register_meta(): void {
+  foreach (lld_tools_meta_doc()['meta'] as $m) {
+    foreach ($m['applies_to'] as $type) {
+      register_post_meta($type, $m['key'], [
+        'type' => 'string', 'single' => true, 'show_in_rest' => true,
+        'sanitize_callback' => function ($value) use ($m) { return lld_tools_sanitize_meta($m['key'], $value); },
+        'auth_callback' => function () { return current_user_can('edit_others_posts'); },   // editors and above (FR1-18)
+      ]);
+    }
+  }
+}
+if (function_exists('add_action')) add_action('init', 'lld_tools_register_meta');
+function lld_tools_review_approved($post): bool { return $post && get_post_meta($post->ID, 'lld_review_status', true) === 'approved'; }
+/** "Reviewed by {owner} on {date}" for a post/page carrying both meta values, else ''. */
+function lld_tools_review_byline($post): string {
+  if (!$post) return '';
+  $owner = (string)get_post_meta($post->ID, 'lld_review_owner', true); $date = (string)get_post_meta($post->ID, 'lld_reviewed_date', true);
+  if ($owner === '' || !preg_match('/^\d{4}-\d{2}-\d{2}$/', $date)) return '';
+  $shown = function_exists('date_i18n') ? date_i18n('j F Y', strtotime($date . ' 12:00:00')) : $date;
+  return '<p class="lld-review-byline" data-test="review-byline">' . sprintf(esc_html(LLD_TOOLS_MESSAGES['review.byline']), esc_html($owner), '<time datetime="' . esc_attr($date) . '">' . esc_html($shown) . '</time>') . '</p>';
+}
+if (function_exists('add_filter')) add_filter('the_content', function ($content) {
+  if (!function_exists('is_singular') || !is_singular(['post', 'page']) || !in_the_loop() || !is_main_query()) return $content;
+  return $content . lld_tools_review_byline(get_post());
+}, 20);
+/** WP-CLI does not check capabilities, so nothing stops `wp post update <id> --post_status=publish --user=<contributor>`.
+ *  Under WP-CLI only, refuse a transition of a post or page to `publish` by a logged-in user lacking the publish capability
+ *  (FR1-18: contributor drafts, editor publishes). wp-admin, REST and XML-RPC already enforce this themselves, and core's own
+ *  published inserts (oembed_cache, cron, scheduled posts) are never touched. */
+if (function_exists('add_filter') && defined('WP_CLI') && WP_CLI) add_filter('wp_insert_post_data', function ($data, $postarr) {
+  if (($data['post_status'] ?? '') !== 'publish' || !in_array($data['post_type'] ?? '', ['post', 'page'], true) || get_current_user_id() === 0) return $data;
+  if (!empty($postarr['ID']) && get_post_status((int)$postarr['ID']) === 'publish') return $data;
+  $pto = get_post_type_object($data['post_type']);
+  if ($pto && !current_user_can($pto->cap->publish_posts)) WP_CLI::error('Sorry, you are not allowed to publish this ' . $data['post_type'] . '. Contributors can save drafts; an editor publishes.');
+  return $data;
+}, 10, 2);
 
 /* ---------------------------------------------------------------- cards (SCH-04) ---------------------------------- */
 function lld_tools_cards(): array {
@@ -152,9 +211,16 @@ add_shortcode('lld_tool_version', 'lld_tools_render_version');
 function lld_tools_render_related(array $atts = []): string {
   $atts = shortcode_atts(['slug' => ''], $atts, 'lld_tool_related');
   $c = lld_tools_card($atts['slug']); if (!$c) return '';
-  $post = get_post((int)$c['related_post_id']);
-  if (!$post || $post->post_status !== 'publish') return '<p data-test="related-reading">More reading on this topic is coming soon.</p>';
-  return '<p data-test="related-reading"><a href="' . esc_url(get_permalink($post)) . '">' . esc_html(get_the_title($post)) . '</a></p>';
+  // candidates: the card's related article (FR1-05 adds the link map); only published posts with review status `approved` (FR1-18)
+  $items = [];
+  foreach (array_unique(array_filter([(int)$c['related_post_id']])) as $id) {
+    $post = get_post($id);
+    if (!$post || $post->post_status !== 'publish' || !lld_tools_review_approved($post)) continue;
+    $items[] = '<li data-post-id="' . (int)$post->ID . '"><a href="' . esc_url(get_permalink($post)) . '">' . esc_html(get_the_title($post)) . '</a>' . lld_tools_review_byline($post) . '</li>';
+    if (count($items) === 3) break;
+  }
+  if (!$items) return '<p data-test="related-reading">More reading on this topic is coming soon.</p>';
+  return '<ul class="lld-related" data-test="related-reading">' . implode('', $items) . '</ul>';
 }
 add_shortcode('lld_tool_related', 'lld_tools_render_related');
 
@@ -252,6 +318,11 @@ if (defined('WP_CLI') && WP_CLI) {
         if (is_wp_error($r)) WP_CLI::error("$pageSlug: " . $r->get_error_message());
         WP_CLI::log("$pageSlug: updated (post " . $page->ID . ")");
       }
+      // landing pages carry lld_tool_slug (SCH-13: "marks landing pages")
+      foreach ($doc['pages'] as $slug => $p) {
+        $page = get_page_by_path($p['slug'], OBJECT, 'page');
+        if ($page && empty($assoc['dry-run']) && get_post_meta($page->ID, 'lld_tool_slug', true) !== $slug) update_post_meta($page->ID, 'lld_tool_slug', $slug);
+      }
       WP_CLI::success('pages applied');
     }
     /** wp lld home apply [--dry-run] | home revert: the homepage rows (FR1-03, DEC-23) on the static front page's Composer
@@ -314,5 +385,32 @@ if (defined('WP_CLI') && WP_CLI) {
       WP_CLI::success("status.json updated");
     }
   }
+  /** wp lld review-report [--format=json|table]: posts and pages whose next review date has passed or whose review status is
+   *  not `approved` (FR1-18). Each row: id, type, status, title, owner, next_review_date, review_status, reasons. */
+  WP_CLI::add_command('lld review-report', function (array $args, array $assoc) {
+    $today = current_time('Y-m-d'); $rows = [];   // the site's own date (Europe/London), not UTC
+    $q = new WP_Query(['post_type' => ['post', 'page'], 'post_status' => ['publish', 'draft', 'pending', 'future', 'private'], 'posts_per_page' => -1, 'no_found_rows' => true, 'orderby' => 'ID', 'order' => 'ASC']);
+    foreach ($q->posts as $p) {
+      $next = (string)get_post_meta($p->ID, 'lld_next_review_date', true); $st = (string)get_post_meta($p->ID, 'lld_review_status', true);
+      $reasons = [];
+      if ($next !== '' && $next < $today) $reasons[] = 'review overdue';
+      if ($st === '') $reasons[] = 'not reviewed'; elseif ($st !== 'approved') $reasons[] = 'status ' . $st;
+      if (!$reasons) continue;
+      $rows[] = ['id' => $p->ID, 'type' => $p->post_type, 'status' => $p->post_status, 'title' => get_the_title($p), 'owner' => (string)get_post_meta($p->ID, 'lld_review_owner', true), 'next_review_date' => $next, 'review_status' => $st, 'reasons' => implode('; ', $reasons)];
+    }
+    WP_CLI\Utils\format_items($assoc['format'] ?? 'table', $rows, ['id', 'type', 'status', 'title', 'owner', 'next_review_date', 'review_status', 'reasons']);
+  });
+  /** wp lld meta list: the registered SCH-13 meta keys as {meta:[{key, applies_to, type, enum?, sanitized}]} (TC-FR1-18-AS-05). */
+  WP_CLI::add_command('lld meta list', function () {
+    $out = ['meta' => []];
+    foreach (lld_tools_meta_doc()['meta'] as $m) {
+      $applies = [];
+      foreach (['post', 'page'] as $type) { $reg = get_registered_meta_keys('post', $type); if (isset($reg[$m['key']]) && !empty($reg[$m['key']]['sanitize_callback'])) $applies[] = $type; }
+      $row = ['key' => $m['key'], 'applies_to' => $applies, 'type' => $m['type']];
+      if (isset($m['enum'])) $row['enum'] = $m['enum'];
+      $out['meta'][] = $row;
+    }
+    WP_CLI::line(json_encode($out, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
+  });
   WP_CLI::add_command('lld', 'LLD_Tools_CLI');
 }
