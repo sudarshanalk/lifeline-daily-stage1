@@ -37,6 +37,9 @@ const ROLES = ['administrator', 'editor', 'author', 'contributor', 'subscriber']
 const CHANGED_BY_DESIGN = new Set(CHANGED_BY_DESIGN_PATHS.map((p) => PROD + p));   // DEC-82: identity checked, word count reported
 const TABLES = ['wp_terms', 'wp_term_taxonomy', 'wp_term_relationships', 'wp_termmeta', 'wp_options', 'wp_posts', 'wp_postmeta'];
 const DB = process.env.LLD_WP_DB_NAME || 'lifelinedaily_local';
+// the same database server the stack uses (tests/lib/wp-stack.mjs reads LLD_WP_DB_HOST the same way)
+const [DB_HOST, DB_PORT] = (process.env.LLD_WP_DB_HOST || '127.0.0.1:3399').split(':');
+const MYSQL_ARGS = ['-uroot', '-h', DB_HOST, '-P', DB_PORT || '3306'];
 const a = available();
 test.describe.configure({ mode: 'serial' });
 test.skip(!a.ok, a.reason);
@@ -58,7 +61,7 @@ test.beforeAll(async () => {
   const pristine = landing.stdout.trim() === '' && !/lld-home|lld_learn_row|lld_tools_hub/.test(stack.wp('post', 'get', front, '--field=post_content').stdout) && stack.wp('term', 'list', 'category', '--slug=stress', '--field=term_id').stdout.trim() !== '';
   if (!pristine) throw new Error('local database is not the pristine snapshot (Stage 1 changes already applied) — reset it before TC-FR1-02');
   dumpDir = mkdtempSync(join(tmpdir(), 'lld-fr102-')); dumpFile = join(dumpDir, 'tables.sql');
-  const d = spawnSync(`${mariaBin()}/mariadb-dump.exe`, ['-uroot', '-P', '3399', '-h', '127.0.0.1', `--result-file=${dumpFile}`, DB, ...TABLES], { encoding: 'utf8' });
+  const d = spawnSync(`${mariaBin()}/mariadb-dump.exe`, [...MYSQL_ARGS, `--result-file=${dumpFile}`, DB, ...TABLES], { encoding: 'utf8' });
   if (d.status !== 0) throw new Error('table dump failed: ' + d.stderr);
   // before
   for (const u of SAMPLE) crawl.before.push(await crawlRow(u, { toLocal, toCanonical }));
@@ -74,9 +77,9 @@ test.beforeAll(async () => {
 test.afterAll(async () => {
   let err = null;
   if (stack && !stack.external && dumpFile) {
-    const r = spawnSync(`${mariaBin()}/mariadb.exe`, ['-uroot', '-P', '3399', '-h', '127.0.0.1', DB], { input: readFileSync(dumpFile), maxBuffer: 1 << 30 });
+    const r = spawnSync(`${mariaBin()}/mariadb.exe`, [...MYSQL_ARGS, DB], { input: readFileSync(dumpFile), maxBuffer: 1 << 30 });
     stack.wp('cache', 'flush');
-    if (r.status === 0) rmSync(dumpDir, { recursive: true, force: true }); else err = new Error(`table restore failed (dump kept at ${dumpFile}): ${String(r.stderr).slice(0, 300)}`);
+    if (r.status === 0) rmSync(dumpDir, { recursive: true, force: true }); else err = new Error(`table restore failed (dump kept at ${dumpFile}; restore by hand: mariadb ${MYSQL_ARGS.join(' ')} ${DB} < "${dumpFile}"): ${String(r.stderr).slice(0, 300)}`);
   }
   await stack?.close();
   if (err) throw err;
