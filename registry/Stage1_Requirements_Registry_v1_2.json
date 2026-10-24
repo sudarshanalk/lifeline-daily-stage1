@@ -199,7 +199,8 @@
         "privacy/**",
         "releases/**",
         "incidents/**",
-        "reports/**"
+        "reports/**",
+        "perf/**"
       ],
       "in_scope_for_component_scope": true
     },
@@ -397,7 +398,9 @@
       ],
       "human_gate": null,
       "mutations": [],
-      "known_deviations": {"TC-FR1-03-AS-06": "local stack: same-origin links only (fragments stripped); external links are crawled on staging (OI-1)"},
+      "known_deviations": {
+        "TC-FR1-03-AS-06": "local stack: same-origin links only (fragments stripped); external links are crawled on staging (OI-1)"
+      },
       "evidence_dir": "evidence/FR1-03/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1071,7 +1074,10 @@
         "FR1-04"
       ],
       "components": [
-        "CMP-09"
+        "CMP-09",
+        "CMP-02",
+        "CMP-03",
+        "CMP-08"
       ],
       "must_not_touch": [],
       "use_cases": [
@@ -1412,7 +1418,8 @@
         "FR1-12"
       ],
       "components": [
-        "CMP-12"
+        "CMP-12",
+        "CMP-13"
       ],
       "must_not_touch": [],
       "use_cases": [],
@@ -1568,7 +1575,8 @@
       "components": [
         "CMP-08",
         "CMP-09",
-        "CMP-11"
+        "CMP-11",
+        "CMP-12"
       ],
       "must_not_touch": [],
       "use_cases": [],
@@ -1604,7 +1612,8 @@
       "components": [
         "CMP-01",
         "CMP-09",
-        "CMP-10"
+        "CMP-10",
+        "CMP-08"
       ],
       "must_not_touch": [],
       "use_cases": [],
@@ -1812,7 +1821,9 @@
       ],
       "human_gate": null,
       "mutations": [],
-      "known_deviations": {"TC-NFR1-12-AS-01": "CI installs chromium only, so CI runs the chromium and pixel5 projects; the full DEC-18 matrix (chromium, webkit, firefox, pixel5, iphone12) runs on the reference machine with LLD_FULL_MATRIX=1, which fails if a browser is missing"},
+      "known_deviations": {
+        "TC-NFR1-12-AS-01": "CI installs chromium only, so CI runs the chromium and pixel5 projects; the full DEC-18 matrix (chromium, webkit, firefox, pixel5, iphone12) runs on the reference machine with LLD_FULL_MATRIX=1, which fails if a browser is missing"
+      },
       "evidence_dir": "evidence/NFR1-12/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1983,7 +1994,9 @@
       ],
       "human_gate": null,
       "mutations": [],
-      "known_deviations": {"TC-UI1-01-AS-03": "candidate baselines recorded by the implementer on win32 (DEC-58), kept next to the spec (tests/e2e/TC-UI1-01.spec.mjs-snapshots/home-<w>-chromium-win32.png) rather than design/baselines/home-<w>.png; they are NOT signed — the signed baseline is an HG-02 item (proposed DEC-77), and DEC-69 means no Linux CI reference run exists; AS-03 stays deferred in the evidence until HG-02 signs the set"},
+      "known_deviations": {
+        "TC-UI1-01-AS-03": "candidate baselines recorded by the implementer on win32 (DEC-58), kept next to the spec (tests/e2e/TC-UI1-01.spec.mjs-snapshots/home-<w>-chromium-win32.png) rather than design/baselines/home-<w>.png; they are NOT signed — the signed baseline is an HG-02 item (proposed DEC-77), and DEC-69 means no Linux CI reference run exists; AS-03 stays deferred in the evidence until HG-02 signs the set"
+      },
       "evidence_dir": "evidence/UI1-01/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -3025,6 +3038,96 @@
       "id": "DEC-73",
       "question": "Local WordPress stack concurrency",
       "selected": "shared singleton with cross-process lock",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-74",
+      "question": "Homepage Tools/Learn rows",
+      "selected": "plugin-owned via wp lld home apply/revert; hero desktop-only",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-75",
+      "question": "Publishing role control under WP-CLI",
+      "selected": "plugin guard under WP-CLI only",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-76",
+      "question": "FR1-17 components",
+      "selected": "CMP-09 + CMP-02, CMP-03, CMP-08",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-77",
+      "question": "Implementer-produced visual baselines",
+      "selected": "candidates until HG-02 signature; assertion deferred",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-78",
+      "question": "Theme-owned heading skips",
+      "selected": "fix tagDiv template content after HG-02; deviation until then",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-79",
+      "question": "Posts in categories the tidy-up deletes",
+      "selected": "refuse while non-draft posts remain; drafts move to wellness only with --include-drafts",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-80",
+      "question": "Home of clinical-gate job",
+      "selected": "NFR1-02 components add CMP-13",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-81",
+      "question": "MedicalWebPage structured data",
+      "selected": "NFR1-07 components add CMP-08; Yoast filter",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-82",
+      "question": "FR1-02 word-count rule on rebuilt pages",
+      "selected": "exclude four rebuilt CMP-09 pages; deferred until ratified",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-83",
+      "question": "Scope of performance baseline",
+      "selected": "perf/** in CMP-12; NFR1-06 adds CMP-12",
       "status": "default",
       "ratified_on": null,
       "ratify_at": "HG-02",
