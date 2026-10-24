@@ -1,16 +1,19 @@
 {
-  "_note": "UI1-07 AS-01 (DEC-84 proposal, HG-02): legacy internal links that answer 404 on production and in the snapshot of 2026-10-23. Published articles link to slugs that no longer exist; each maps to the live article on the same topic (301, applied only when WordPress would answer 404). /healthy-weight/ is linked from the protein tool's approved copy (MESSAGES.crossLink) for a planned tool; it goes to the hub, which lists that tool as planned. hide_gone_tags: tag archives the site owner marked 410 (Gone) in Yoast SEO Premium are no longer listed under posts, so pages stop linking to archives the owner removed.",
+  "_note": "UI1-07 AS-01 (DEC-84 proposal, HG-02): legacy internal links that answer 404 on production and in the snapshot of 2026-10-23. Published articles link to slugs that no longer exist; each maps to the live article on the same topic (301, applied only when WordPress would answer 404). /healthy-weight/ is linked from the protein tool's approved copy (MESSAGES.crossLink) for a planned tool; it goes to the hub, which lists that tool as planned, with a temporary (302) redirect so browsers do not cache it once the tool launches; the link text \"healthy weight tool\" in that copy is for HG-02. hide_gone_tags: tag archives the site owner marked 410 (Gone) in Yoast SEO Premium are no longer listed under posts, so pages stop linking to archives the owner removed.",
   "redirects": {
     "/blood-sugar-control-foods/": "/foods-that-control-blood-sugar-naturally/",
     "/high-blood-pressure-causes-treatment/": "/high-blood-pressure-causes-symptoms-treatment/",
     "/beginners-guide-to-starting-a-yoga-practice-for-health-benefits/": "/yoga-for-beginners-how-to-start/",
     "/prevent-type-2-diabetes-strategies/": "/how-to-prevent-type-2-diabetes/",
-    "/improve-gut-health-microbiome/": "/how-to-improve-gut-health/",
+    "/improve-gut-health-microbiome/": "/gut-microbiome-how-it-impacts-your-health-tips-to-improve-gut-health/",
     "/healthy-fats-good-vs-bad-fats/": "/healthy-fats-vs-bad-fats-what-your-body-needs/",
     "/reduce-chronic-inflammation-naturally/": "/reduce-chronic-inflammation-causes-tips/",
     "/diabetes-complications-uncontrolled-blood-sugar/": "/diabetes-complications-explained/",
     "/why-heart-specialists-are-obsessed-with-this-ancient-mediterranean-secret/": "/mediterranean-diet-for-heart-health/",
-    "/healthy-weight/": "/health-tools/"
+    "/healthy-weight/": {
+      "to": "/health-tools/",
+      "status": 302
+    }
   },
   "hide_gone_tags": true
 }
