@@ -239,6 +239,8 @@ footer.disc{color:var(--muted); font-size:.8rem; text-align:center; margin-top:2
   *{animation:none!important; transition:none!important}
   header.hero .pulse path{stroke-dashoffset:0}
 }
+.lld-policy-footer{margin:24px auto 12px;padding:0 16px;text-align:center;font-size:13px;line-height:1.8;color:var(--muted)}
+.lld-policy-footer a{color:inherit;text-decoration:underline}
 </style>
 </head>
 <body>
@@ -614,6 +616,12 @@ var MESSAGES = {
     unknown: "We can't confirm this tool is available right now, so it has not been started. Please check your connection and try again."
   },
 
+  disclaimerLinks:
+    "This is not a diagnosis. Read our <a href=\"__LLD_ORIGIN__/medical-disclaimer/\">medical disclaimer</a> " +
+    "and our <a href=\"__LLD_ORIGIN__/privacy-policy/\">privacy policy</a>.",
+  urgentCare:
+    "If you feel very unwell, get a same-day medical assessment: call NHS 111, or 999 in an emergency. " +
+    "<a href=\"__LLD_ORIGIN__/medical-disclaimer/#urgent-care\">When to seek urgent care</a>.",
   disclaimer:
     "Lifeline Daily health tools are for general information and screening only. They do not " +
     "diagnose any condition and are not a substitute for professional medical advice. Always " +
@@ -948,7 +956,7 @@ function render(r){
   $('#emailHead').textContent=MESSAGES.email.heading;
   $('#emailIntro').textContent=MESSAGES.email.intro;
   $('#consentLabel').innerHTML=MESSAGES.email.consent;   /* UI1-06: consent copy carries the Privacy Policy link (DEC-21) */
-  $('#discZone').textContent=MESSAGES.disclaimer;
+  $('#discZone').innerHTML='<p>'+MESSAGES.disclaimer+'</p><p class="lld-disclaimer-links">'+MESSAGES.disclaimerLinks+'</p><p class="lld-urgent" data-test="urgent-care">'+MESSAGES.urgentCare+'</p>';   /* FR1-17 AS-02/AS-03 */
 }
 
 $('#emailBtn').addEventListener('click',function(){
@@ -1002,5 +1010,6 @@ if(window.ResizeObserver){ new ResizeObserver(postHeight).observe(document.body)
 updateProgress(); recompute();
 
 </script>
+<nav class="lld-policy-footer" data-test="tool-footer" aria-label="Site policies" data-copy="policyFooter"><a href="__LLD_ORIGIN__/about-us/">About</a> · <a href="__LLD_ORIGIN__/contact-us/">Contact</a> · <a href="__LLD_ORIGIN__/privacy-policy/">Privacy Policy</a> · <a href="__LLD_ORIGIN__/terms-conditions/">Terms &amp; Conditions</a> · <a href="__LLD_ORIGIN__/medical-disclaimer/">Medical Disclaimer &amp; Urgent Care</a></nav>
 </body>
 </html>

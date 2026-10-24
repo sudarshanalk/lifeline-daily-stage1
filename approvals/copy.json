@@ -1,6 +1,8 @@
 {
   "inline": {
-    "protein.consent": "61b8e62846e3bbf6afcbf4ff0d9805ee01422f0717ca7f2c77ba3d97739754c9"
+    "protein.consent": "61b8e62846e3bbf6afcbf4ff0d9805ee01422f0717ca7f2c77ba3d97739754c9",
+    "protein.policyFooter": "36e0b2787a9d4613c906486a1154836c382af7154f6783df3f382fcbf9984310",
+    "diabetes.policyFooter": "36e0b2787a9d4613c906486a1154836c382af7154f6783df3f382fcbf9984310"
   },
   "pages": {},
   "reviewer": "pending (OI-8)",
@@ -8,6 +10,7 @@
   "decision": "pending",
   "messages": {
     "protein.resultHeading": "42e4f17623cc6d610a54a5b913b4ebdd92fd7c2abb805b43d62af33e2df8d075",
+    "protein.disclaimerLinks": "db8aa81411bac2552a74d49a50c4621baccc78b298cfab8e0dc4cb3290687f1a",
     "protein.scope": "81280a8d8f62509b7fafdd1f087d6f7c444208b08c0631972b6073f3b888a6ae",
     "protein.renalStop.title": "6b76ab7eee4e4710ecfe6ad629b835aa10d7ee68a74a6e1dabaadde15520354f",
     "protein.renalStop.body": "305b51554e53e26bfdd3adeac843ed46680d0445619d7842d95d7b563e70e1d1",
@@ -94,6 +97,8 @@
     "diabetes.unavailable.body": "11d0e266a0eed430288696cd2c8ec1f66e0f4bc345f830b478601e482e3fa54e",
     "diabetes.unavailable.checking": "68ea019296a778f2198660b50694721f1ef2a8c3b79d48e16abaf0fb29290905",
     "diabetes.unavailable.unknown": "7d9e28fe5a1a04e11dc2b446a3b6aeadf86dccbfa2940d701e97cd3a668b50d4",
+    "diabetes.disclaimerLinks": "db8aa81411bac2552a74d49a50c4621baccc78b298cfab8e0dc4cb3290687f1a",
+    "diabetes.urgentCare": "42de5d5e842e2d80767414e3e01efe9eea457fa60a0e2260bb1263bac1fa86d0",
     "diabetes.disclaimer": "35156be01c5bba11cf30d1c5f88a0f71c64d63f9fa3402addab8d1e9af265ec2"
   },
   "templates": {

@@ -49,5 +49,7 @@
   "unavailable.body": "We have paused this tool while we check it. Nothing about your health is affected by the pause — please come back soon, or read on below.",
   "unavailable.checking": "Checking this tool is available…",
   "unavailable.unknown": "We can't confirm this tool is available right now, so it has not been started. Please check your connection and try again.",
+  "disclaimerLinks": "This is not a diagnosis. Read our <a href=\"__LLD_ORIGIN__/medical-disclaimer/\">medical disclaimer</a> and our <a href=\"__LLD_ORIGIN__/privacy-policy/\">privacy policy</a>.",
+  "urgentCare": "If you feel very unwell, get a same-day medical assessment: call NHS 111, or 999 in an emergency. <a href=\"__LLD_ORIGIN__/medical-disclaimer/#urgent-care\">When to seek urgent care</a>.",
   "disclaimer": "Lifeline Daily health tools are for general information and screening only. They do not diagnose any condition and are not a substitute for professional medical advice. Always speak to a qualified clinician about your health."
 }
