@@ -239,6 +239,20 @@ function lld_tools_render_cta(array $atts = []): string {
 }
 add_shortcode('lld_tool_cta', 'lld_tools_render_cta');
 
+/* ---------------------------------------------------------------- landing-page schema type (NFR1-07 AS-04, DEC-81) - */
+/** Yoast SEO builds the page's JSON-LD graph; on the two tool landing pages (pages marked lld_tool_slug) the WebPage node
+ *  also declares the schema.org type MedicalWebPage. Nothing else in the graph changes; other pages are untouched. */
+function lld_tools_schema_webpage($piece) {
+  if (!is_array($piece) || !function_exists('is_page') || !is_page()) return $piece;
+  $slug = (string)get_post_meta((int)get_queried_object_id(), 'lld_tool_slug', true);
+  if (!in_array($slug, ['protein', 'diabetes'], true)) return $piece;
+  $types = array_values(array_filter((array)($piece['@type'] ?? 'WebPage')));
+  if (!in_array('MedicalWebPage', $types, true)) $types[] = 'MedicalWebPage';
+  $piece['@type'] = $types;
+  return $piece;
+}
+if (function_exists('add_filter')) add_filter('wpseo_schema_webpage', 'lld_tools_schema_webpage');
+
 /* ---------------------------------------------------------------- [lld_learn_row limit=…] (FR1-03 "Learn" row) ---- */
 function lld_tools_render_learn_row(array $atts = []): string {
   $atts = shortcode_atts(['limit' => '6'], $atts, 'lld_learn_row');
