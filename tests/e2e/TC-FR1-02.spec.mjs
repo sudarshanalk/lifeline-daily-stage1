@@ -20,7 +20,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { startWpStack, available } from '../lib/wp-stack.mjs';
-import { crawlRow, diffRow, fetchChain, sitemapUrls, IDENTITY_FIELDS } from '../lib/crawl-diff.mjs';
+import { crawlRow, fetchChain, sitemapUrls, preservationProblems, CHANGED_BY_DESIGN_PATHS } from '../lib/crawl-diff.mjs';
 
 const here = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const ROOT = resolve(here, '..', '..');
@@ -34,10 +34,7 @@ const PROD = 'https://lifelinedaily.com';
 const DELETED = { 'womens-health': ['/category/wellness/womens-health/', '/category/wellness/'], 'healthy-living': ['/category/wellness/healthy-living/', '/category/wellness/'], stress: ['/category/wellness/stress/', '/category/wellness/'], uncategorised: ['/category/uncategorised/', '/'] };
 const HIDDEN = Object.fromEntries(TIDY.hide_noindex.map((s) => [s, `/category/${s}/`]));
 const ROLES = ['administrator', 'editor', 'author', 'contributor', 'subscriber'];
-// CMP-09 pages Stage 1 changes by design (home Tools/Learn rows FR1-03, hub FR1-04, landing pages FR1-04/FR1-17): every identity
-// field is still checked; their body word count cannot stay within ±2 % and is reported, not asserted (DEC-82 proposal; the
-// assertion is deferred in tests/lib/deferred.json until the decision is ratified)
-const CHANGED_BY_DESIGN = new Set([PROD + '/', PROD + '/health-tools/', PROD + '/health-tools/protein/', PROD + '/health-tools/diabetes-risk-check/']);
+const CHANGED_BY_DESIGN = new Set(CHANGED_BY_DESIGN_PATHS.map((p) => PROD + p));   // DEC-82: identity checked, word count reported
 const TABLES = ['wp_terms', 'wp_term_taxonomy', 'wp_term_relationships', 'wp_termmeta', 'wp_options', 'wp_posts', 'wp_postmeta'];
 const DB = process.env.LLD_WP_DB_NAME || 'lifelinedaily_local';
 const a = available();
@@ -87,15 +84,8 @@ test.afterAll(async () => {
 
 /** AS-01's rule over a set of after rows; returns the problems (empty = pass). */
 function as01Problems(after) {
-  const problems = [];
   expect(after.length, 'the 30-URL sample').toBe(30);
-  for (const row of after) {
-    const local = crawl.before.find((b) => b.url === row.url);
-    const prod = BEFORE.rows.find((b) => b.url === row.url);
-    if (prod) problems.push(...diffRow(prod, row, { words: false }).map((p) => `vs crawl-before.json: ${p}`));
-    problems.push(...diffRow(local, row, { words: !CHANGED_BY_DESIGN.has(row.url), tolerance: 0.02 }).map((p) => `vs before-crawl: ${p}`));
-  }
-  return problems;
+  return preservationProblems({ before: crawl.before, after, baselineRows: BEFORE.rows, origin: PROD });
 }
 
 test('TC-FR1-02-AS-01', async () => {

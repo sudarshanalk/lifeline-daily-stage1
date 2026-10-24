@@ -99,3 +99,22 @@ export async function sitemapUrls(indexUrl, { toLocal = (u) => u, toCanonical = 
   }
   return [...urls];
 }
+
+/** The four CMP-09 pages Stage 1 rebuilds by design (home Tools/Learn rows FR1-03, hub FR1-04, landing pages FR1-04/FR1-17):
+ *  every identity field is still compared; their word count is reported, not asserted (DEC-82, deferred until ratified). */
+export const CHANGED_BY_DESIGN_PATHS = ['/', '/health-tools/', '/health-tools/protein/', '/health-tools/diabetes-risk-check/'];
+
+/** TC-FR1-02-AS-01's rule over the 30-URL sample: identity fields equal the production crawl (`baselineRows`, where a row
+ *  exists) and the same-method before-crawl; word count within ±2 % of the before-crawl except the pages above. */
+export function preservationProblems({ before, after, baselineRows, origin = 'https://lifelinedaily.com' }) {
+  const exempt = new Set(CHANGED_BY_DESIGN_PATHS.map((p) => origin + p));
+  const problems = [];
+  for (const row of after) {
+    const local = before.find((b) => b.url === row.url);
+    const prod = baselineRows.find((b) => b.url === row.url);
+    if (prod) problems.push(...diffRow(prod, row, { words: false }).map((p) => `vs crawl-before.json: ${p}`));
+    if (!local) { problems.push(`${row.url}: no before-crawl row`); continue; }
+    problems.push(...diffRow(local, row, { words: !exempt.has(row.url), tolerance: 0.02 }).map((p) => `vs before-crawl: ${p}`));
+  }
+  return problems;
+}
