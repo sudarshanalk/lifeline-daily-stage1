@@ -84,6 +84,7 @@ test('TC-FR1-05-AS-01', async ({ page }) => {
 });
 
 test('TC-FR1-05-AS-02', async ({ page }) => {
+  test.setTimeout(300000);   // 11 article page loads through the single-threaded local PHP server; 60 s was too tight under load
   for (const [id, want] of Object.entries(EXPECTED)) {
     expect(decisionOf(seeded[id]), `${id}: link-map decision`).toBe(want);
     await page.goto(`${stack.url}/?p=${seeded[id]}`);
