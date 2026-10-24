@@ -3081,7 +3081,7 @@
     },
     {
       "id": "DEC-78",
-      "question": "Theme-owned heading skips",
+      "question": "Theme block titles (sidebar and footer template) that skip a heading level",
       "selected": "fix tagDiv template content after HG-02; deviation until then",
       "status": "default",
       "ratified_on": null,
