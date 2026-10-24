@@ -135,7 +135,8 @@ function lld_tools_render_hub(array $atts = []): string {
   foreach (lld_tools_cards() as $slug => $c) {
     $status = lld_tools_tool_status($slug);
     $out .= '<li class="lld-tool-card lld-tool-card--' . esc_attr($status) . '" data-tool-card data-tool="' . esc_attr($slug) . '" data-status="' . esc_attr($status) . '">';
-    $out .= '<h3 class="lld-tool-card__name" data-test="card-name">' . esc_html($c['name']) . '</h3>';
+    $h = $compact ? 'h3' : 'h2';   // NFR1-05 AS-06: on the hub the cards follow the page h1; on the homepage they sit under the h2 "Tools"
+    $out .= '<' . $h . ' class="lld-tool-card__name" data-test="card-name">' . esc_html($c['name']) . '</' . $h . '>';
     $out .= '<p class="lld-tool-card__purpose" data-test="card-purpose">' . esc_html($c['purpose']) . '</p>';
     $out .= '<span class="lld-tool-card__status" data-test="status-label">' . esc_html(lld_tools_status_label($status)) . '</span>';
     if (!$compact) {
@@ -154,7 +155,7 @@ function lld_tools_render_hub(array $atts = []): string {
   foreach (($compact ? [] : (lld_tools_status()['labels'] ?? [])) as $l) {
     if (($l['status'] ?? '') !== 'label_only') continue;
     $out .= '<li class="lld-tool-card lld-tool-card--label_only" data-tool-card data-tool="' . esc_attr($l['slug'] ?? '') . '" data-status="label_only">';
-    $out .= '<h3 class="lld-tool-card__name" data-test="card-name">' . esc_html($l['label'] ?? '') . '</h3>';
+    $out .= '<h2 class="lld-tool-card__name" data-test="card-name">' . esc_html($l['label'] ?? '') . '</h2>';   // planned chips appear on the hub only
     $out .= '<span class="lld-tool-card__status" data-test="status-label">' . esc_html(lld_tools_status_label('label_only')) . '</span></li>';
   }
   return $out . '</ul></section>' . ($compact ? '</section>' : '');
