@@ -25,7 +25,9 @@ const put = (title, status, artefact) => {
   const m = idRe.exec(title.trim()); if (!m) return;
   const outcome = status === 'passed' ? 'pass' : (status === 'skipped' || status === 'pending' || status === 'todo') ? 'skipped' : 'fail';
   const prev = results.get(m[1]);
-  if (!prev || prev.outcome === 'pass') results.set(m[1], { assertion: m[1], outcome, artefact });
+  // one assertion can report from several Playwright projects or families: a failure anywhere wins, then a pass, then a skip
+  const rank = { fail: 2, pass: 1, skipped: 0 };
+  if (!prev || rank[outcome] > rank[prev.outcome]) results.set(m[1], { assertion: m[1], outcome, artefact });
 };
 if (opt('--vitest')) {
   const v = JSON.parse(readFileSync(opt('--vitest'), 'utf8'));
