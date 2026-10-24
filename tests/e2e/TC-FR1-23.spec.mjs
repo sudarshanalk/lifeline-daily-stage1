@@ -80,16 +80,18 @@ test('NEG-02', async () => {
 
 test('TC-FR1-23-AS-01', async () => {
   // the snapshot has drafts in uncategorised/healthy-living: without --include-drafts the run refuses and names them; with it they move to the default category
+  const snapshot = () => ({ slugs: termSlugs(), def: ok(stack.wp('option', 'get', 'default_category'), 'd'), menu: ok(stack.wp('menu', 'item', 'list', 'header_menu', '--fields=db_id', '--format=csv'), 'm') });
+  const pristine = snapshot();
   const refused = stack.wp('lld', 'tidy', 'apply');
   expect(refused.status, 'drafts present: refused without --include-drafts').not.toBe(0);
   expect(refused.stdout + refused.stderr).toMatch(/drafts are assigned to categories that will be deleted/);
-  expect(termSlugs(), 'the refused run changed nothing').toEqual(expect.arrayContaining([...TIDY.delete_redirect_wellness, ...TIDY.delete_redirect_root]));
+  expect(snapshot(), 'the refused run changed nothing (terms, default category, primary menu)').toEqual(pristine);
   // the documented staging order: a dry run with the same flags lists the plan, drafts included, and writes the planned file
   const planned = join(dumpDir, 'planned.json');
   const dry = stack.wp('lld', 'tidy', 'apply', '--dry-run', '--include-drafts', `--planned-out=${planned}`); ok(dry, 'dry run');
   expect(dry.stdout, 'dry run lists the draft moves').toMatch(/would: drafts in \S+ move to the default category: \d+/);
   for (const s of [...TIDY.delete_redirect_wellness, ...TIDY.delete_redirect_root]) expect(dry.stdout, `dry run lists ${s}`).toMatch(new RegExp(`would: delete category ${s} `));
-  expect(termSlugs(), 'the dry run changed nothing').toEqual(expect.arrayContaining([...TIDY.delete_redirect_wellness, ...TIDY.delete_redirect_root]));
+  expect(snapshot(), 'the dry run changed nothing (terms, default category, primary menu)').toEqual(pristine);
   expect(JSON.parse(readFileSync(planned, 'utf8')).categories, '--planned-out writes the same list as content/planned-categories.json').toEqual(JSON.parse(readFileSync(resolve(ROOT, 'content', 'planned-categories.json'), 'utf8')).categories);
   const r = stack.wp('lld', 'tidy', 'apply', '--include-drafts'); ok(r, 'tidy apply'); applied = true;
   const slugs = termSlugs();
