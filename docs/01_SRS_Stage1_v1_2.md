@@ -230,7 +230,7 @@ Statement. Plausible events with the allow-list in SCH-09: `tool_landing_view`, 
 Acceptance. AS-01 during FX-PR-REN-01, FX-DM-EMG-01 and FX-DM-QD-01 flows, every outbound request to the analytics host is captured; union of all query strings and bodies contains none of the values in `fixtures/sentinel-values.json` (unique synthetic numbers and strings entered) and no key outside SCH-09. AS-02 each event fires exactly once per action. AS-03 with analytics host blocked, flows complete and no console error above warning. AS-04 Plausible API (or stub) reports counts equal to the test's actions.
 
 ### FR1-17 Policies, education and safe navigation — MUST, behaviour, hybrid
-depends_on: FR1-04 · components: CMP-09 · UC1-06 · TC-FR1-17 · DEC-12 · HG-02 (disclaimer copy)
+depends_on: FR1-04 · components: CMP-09, CMP-02, CMP-03, CMP-08 (DEC-76) · UC1-06 · TC-FR1-17 · DEC-12 · HG-02 (disclaimer copy)
 
 Statement. The five DEC-12 pages are reachable by keyboard from each landing page (all five) and from each tool result zone (disclaimer and privacy links in the result zone; the standalone `/tools/*.html` pages gain a minimal footer with all five links). The WordPress footer keeps its four existing links and is otherwise unchanged (DEC-43). The new `/medical-disclaimer/` page covers: screening not diagnosis, when to seek urgent care (UK 999 / NHS 111 first, then Sri Lanka 1990, India 112, "or your local emergency number", DEC-37), tool limitations, and contact. Copy is drafted by the agent and approved per DEC-36. Result zones of both tools state "not a diagnosis" and link to the disclaimer.
 

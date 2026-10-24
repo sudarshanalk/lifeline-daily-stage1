@@ -397,7 +397,9 @@
       ],
       "human_gate": null,
       "mutations": [],
-      "known_deviations": {"TC-FR1-03-AS-06": "local stack: same-origin links only (fragments stripped); external links are crawled on staging (OI-1)"},
+      "known_deviations": {
+        "TC-FR1-03-AS-06": "local stack: same-origin links only (fragments stripped); external links are crawled on staging (OI-1)"
+      },
       "evidence_dir": "evidence/FR1-03/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1071,7 +1073,10 @@
         "FR1-04"
       ],
       "components": [
-        "CMP-09"
+        "CMP-09",
+        "CMP-02",
+        "CMP-03",
+        "CMP-08"
       ],
       "must_not_touch": [],
       "use_cases": [
@@ -1549,7 +1554,7 @@
       "mutations": [
         "MUT-14"
       ],
-      "known_deviations": {"TC-NFR1-05-AS-06": "the Newspaper theme sidebar blocks on the hub and landing pages title their sections with h4 (\"Featured\", \"Latest\", \"Popular\") after the page h2s; the theme is frozen (CMP-01), so AS-06 is enforced on every heading outside .td_block_wrap and the theme-block skips are reported in the test annotations pending DEC-78"},
+      "known_deviations": {},
       "evidence_dir": "evidence/NFR1-05/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1812,7 +1817,9 @@
       ],
       "human_gate": null,
       "mutations": [],
-      "known_deviations": {"TC-NFR1-12-AS-01": "CI installs chromium only, so CI runs the chromium and pixel5 projects; the full DEC-18 matrix (chromium, webkit, firefox, pixel5, iphone12) runs on the reference machine with LLD_FULL_MATRIX=1, which fails if a browser is missing"},
+      "known_deviations": {
+        "TC-NFR1-12-AS-01": "CI installs chromium only, so CI runs the chromium and pixel5 projects; the full DEC-18 matrix (chromium, webkit, firefox, pixel5, iphone12) runs on the reference machine with LLD_FULL_MATRIX=1, which fails if a browser is missing"
+      },
       "evidence_dir": "evidence/NFR1-12/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1983,7 +1990,9 @@
       ],
       "human_gate": null,
       "mutations": [],
-      "known_deviations": {"TC-UI1-01-AS-03": "candidate baselines recorded by the implementer on win32 (DEC-58), kept next to the spec (tests/e2e/TC-UI1-01.spec.mjs-snapshots/home-<w>-chromium-win32.png) rather than design/baselines/home-<w>.png; they are NOT signed — the signed baseline is an HG-02 item (proposed DEC-77), and DEC-69 means no Linux CI reference run exists; AS-03 stays deferred in the evidence until HG-02 signs the set"},
+      "known_deviations": {
+        "TC-UI1-01-AS-03": "candidate baselines recorded by the implementer on win32 (DEC-58), kept next to the spec (tests/e2e/TC-UI1-01.spec.mjs-snapshots/home-<w>-chromium-win32.png) rather than design/baselines/home-<w>.png; they are NOT signed — the signed baseline is an HG-02 item (proposed DEC-77), and DEC-69 means no Linux CI reference run exists; AS-03 stays deferred in the evidence until HG-02 signs the set"
+      },
       "evidence_dir": "evidence/UI1-01/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -3025,6 +3034,42 @@
       "id": "DEC-73",
       "question": "Local WordPress stack concurrency",
       "selected": "shared singleton with cross-process lock",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-74",
+      "question": "Homepage Tools/Learn rows",
+      "selected": "plugin-owned via wp lld home apply/revert; hero desktop-only",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-75",
+      "question": "Publishing role control under WP-CLI",
+      "selected": "plugin guard under WP-CLI only",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-76",
+      "question": "FR1-17 components",
+      "selected": "CMP-09 + CMP-02, CMP-03, CMP-08",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-77",
+      "question": "Implementer-produced visual baselines",
+      "selected": "candidates until HG-02 signature; assertion deferred",
       "status": "default",
       "ratified_on": null,
       "ratify_at": "HG-02",
