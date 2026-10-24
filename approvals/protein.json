@@ -2,7 +2,7 @@
   "approval_id": "APR-PROTEIN-2026-10-23",
   "tool_slug": "protein",
   "version_hash": "6249b515fb8c3dc780d596088f21abfc114973a5cb42cc1744c503adfd85fc0b",
-  "engine_name": "Lifeline Daily Daily Protein Target engine (published-band lookup: collect applicable guideline bands, take the highest, apply diet multiplier, cap at 2.0 g/kg; renal and pregnancy/lactation early returns)",
+  "engine_name": "Lifeline Daily Protein Target engine (published-band lookup: collect applicable guideline bands, take the highest, apply diet multiplier, cap at 2.0 g/kg; renal and pregnancy/lactation early returns)",
   "intended_use": "Educational screening aid that estimates a daily protein intake target (grams per day, g/kg and per-meal split) for healthy adults from published population guidelines. It is not a prescription, not a diagnosis and not individualised clinical nutrition advice.",
   "eligibility": "Adults aged 18 to 99 with healthy kidney function. Visitors who report kidney disease receive no numeric target (renal suppression, KDOQI 2020 restriction). Pregnancy and breastfeeding use their own RDA branch. Liver disease and the 'recovery' goal are flagged as clinical and shown with a clinician-referral message. Not for children, dialysis patients or people under medical nutrition therapy.",
   "sources": [
