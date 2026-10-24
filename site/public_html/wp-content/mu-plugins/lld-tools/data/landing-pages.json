@@ -8,14 +8,14 @@
     "protein": {
       "slug": "health-tools/protein",
       "tool_file": "protein-requirement-tool.html",
-      "engine": "Lifeline Daily Daily Protein Target engine",
+      "engine": "Lifeline Daily Protein Target engine",
       "sections": {
         "purpose": "<p>The Daily Protein Target is an educational screening aid that estimates a daily protein intake target — grams per day, grams per kilogram and a per-meal split — for healthy adults from published population guidelines. It is not a prescription, not a diagnosis and not individualised clinical nutrition advice.</p>",
         "who": "<p>Adults aged 18 to 99 with healthy kidney function. If you report kidney disease the tool gives no numeric target, because national kidney guidelines recommend a reduced, supervised protein intake. Pregnancy and breastfeeding use their own recommended-allowance branch. Liver disease and the recovery goal are flagged as clinical and shown with a clinician-referral message. The tool is not for children, dialysis patients or people under medical nutrition therapy.</p>",
         "enter": "<ul><li>Age and sex</li><li>Height and weight (metric or imperial)</li><li>Ethnicity (sets the healthy-weight cut-offs)</li><li>General activity level and resistance training</li><li>Your goal and how you eat</li><li>Kidney and liver health questions</li></ul>",
         "try": "[lld_tool slug=\"protein\"]",
         "limitations": "<ul><li>Population guideline figures, not individual requirements: the tool does not account for kidney function tests, protein quality, energy balance or medical conditions beyond the yes/no questions it asks.</li><li>The plant-diet multipliers (1.1 vegetarian, 1.2 vegan) are an extrapolation from digestibility literature, not a guideline figure.</li><li>Targets are capped at 2.0 g/kg; higher intakes described in the literature apply to supervised, trained individuals only.</li></ul><p>Read the <a href=\"/medical-disclaimer/\">medical disclaimer and when to seek urgent care</a>.</p>",
-        "how": "<p>The tool collects the guideline bands that apply to you (Institute of Medicine RDA and AMDR, International Society of Sports Nutrition position stand, Academy of Nutrition and Dietetics, PROT-AGE for older adults, ESPEN for illness and recovery), takes the most demanding applicable band, applies a diet-quality multiplier and caps the result at 2.0 g/kg. Engine: Lifeline Daily Daily Protein Target engine (published-band lookup). Deployed version [lld_tool_version slug=\"protein\"].</p>",
+        "how": "<p>The tool collects the guideline bands that apply to you (Institute of Medicine RDA and AMDR, International Society of Sports Nutrition position stand, Academy of Nutrition and Dietetics, PROT-AGE for older adults, ESPEN for illness and recovery), takes the most demanding applicable band, applies a diet-quality multiplier and caps the result at 2.0 g/kg. Engine: Lifeline Daily Protein Target engine (published-band lookup). Deployed version [lld_tool_version slug=\"protein\"].</p>",
         "privacy": "<p>The calculation runs in your browser. Nothing you enter is stored on our servers. If you choose to email yourself the result, the e-mail is sent once and not kept; see our <a href=\"/privacy-policy/\">Privacy Policy</a>.</p>",
         "related": "[lld_tool_related slug=\"protein\"]"
       },
