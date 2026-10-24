@@ -1787,7 +1787,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "verified",
       "depends_on": [
         "FR1-03"
       ],
@@ -1812,7 +1812,7 @@
       ],
       "human_gate": null,
       "mutations": [],
-      "known_deviations": {},
+      "known_deviations": {"TC-NFR1-12-AS-01": "CI installs chromium only, so CI runs the chromium and pixel5 projects; the full DEC-18 matrix (chromium, webkit, firefox, pixel5, iphone12) runs on the reference machine with LLD_FULL_MATRIX=1, which fails if a browser is missing"},
       "evidence_dir": "evidence/NFR1-12/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -1958,7 +1958,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "verified",
       "depends_on": [
         "FR1-03"
       ],
@@ -1983,7 +1983,7 @@
       ],
       "human_gate": null,
       "mutations": [],
-      "known_deviations": {},
+      "known_deviations": {"TC-UI1-01-AS-03": "candidate baselines recorded by the implementer on win32 (DEC-58), kept next to the spec (tests/e2e/TC-UI1-01.spec.mjs-snapshots/home-<w>-chromium-win32.png) rather than design/baselines/home-<w>.png; they are NOT signed — the signed baseline is an HG-02 item (proposed DEC-77), and DEC-69 means no Linux CI reference run exists; AS-03 stays deferred in the evidence until HG-02 signs the set"},
       "evidence_dir": "evidence/UI1-01/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"

@@ -4,7 +4,7 @@
 .lld-tools-hub__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
 .lld-tool-card { border: 1px solid #ddd; border-radius: 8px; padding: 16px; background: #fff; min-width: 0; }
 .lld-tool-card__name { margin: 0 0 8px; font-size: 1.15rem; }
-.lld-tool-card__status { display: inline-block; font-size: 0.85rem; margin-bottom: 8px; }
+.lld-tool-card__status { display: block; font-size: 0.85rem; margin-bottom: 8px; }
 .lld-tool-card__cta { display: inline-block; margin-top: 8px; padding: 8px 14px; border-radius: 6px; background: #1a6b3c; color: #fff; text-decoration: none; }
 .lld-home-learn__list { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 .lld-home-learn__item h3 { margin: 0 0 4px; font-size: 1.05rem; }
