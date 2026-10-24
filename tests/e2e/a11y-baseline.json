@@ -1,8 +1,4 @@
 {
-  "note": "Pre-existing axe violations in the as-is tool pages (23 Oct 2026 baseline). The a11y gate fails only on violations NOT listed here, so regressions are caught from wave 1; NFR1-05 fixes these and empties the list.",
-  "accepted": {
-    "protein form": ["color-contrast"],
-    "protein result": ["color-contrast"],
-    "diabetes form": ["color-contrast"]
-  }
+  "note": "Accepted pre-existing axe violations. Emptied by NFR1-05 (the tool contrast defects are fixed); the a11y gate now fails on any violation.",
+  "accepted": {}
 }
