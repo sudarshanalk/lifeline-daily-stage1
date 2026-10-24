@@ -324,7 +324,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "accepted",
       "depends_on": [
         "FR1-01"
       ],
@@ -1022,7 +1022,7 @@
       "priority": "SHOULD",
       "type": "behaviour",
       "automation": "hybrid",
-      "status": "draft",
+      "status": "deferred",
       "depends_on": [
         "FR1-04",
         "FR1-05"
@@ -1069,7 +1069,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "hybrid",
-      "status": "draft",
+      "status": "verified",
       "depends_on": [
         "FR1-04"
       ],
@@ -1321,7 +1321,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "accepted",
       "depends_on": [
         "FR1-01"
       ],
@@ -1369,7 +1369,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "hybrid",
-      "status": "draft",
+      "status": "verified",
       "depends_on": [
         "FR1-01"
       ],
@@ -1410,7 +1410,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "hybrid",
-      "status": "draft",
+      "status": "verified",
       "depends_on": [
         "FR1-06",
         "FR1-07",
@@ -1526,7 +1526,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "accepted",
       "depends_on": [
         "FR1-03",
         "FR1-04"
@@ -1568,7 +1568,7 @@
       "priority": "SHOULD",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "deferred",
       "depends_on": [
         "FR1-03"
       ],
@@ -1604,7 +1604,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "accepted",
       "depends_on": [
         "FR1-02",
         "FR1-21"
@@ -1835,7 +1835,7 @@
       "priority": "SHOULD",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "deferred",
       "depends_on": [
         "FR1-19"
       ],
@@ -2045,7 +2045,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "accepted",
       "depends_on": [
         "FR1-03",
         "FR1-04",
@@ -2204,7 +2204,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "accepted",
       "depends_on": [
         "FR1-05",
         "FR1-17"
@@ -2280,7 +2280,7 @@
       "priority": "SHOULD",
       "type": "behaviour",
       "automation": "auto",
-      "status": "draft",
+      "status": "deferred",
       "depends_on": [
         "FR1-03",
         "FR1-04"
@@ -3128,6 +3128,15 @@
       "id": "DEC-83",
       "question": "Scope of performance baseline",
       "selected": "perf/** in CMP-12; NFR1-06 adds CMP-12",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-84",
+      "question": "Simple-mode finish of Waves 5-6",
+      "selected": "one integration PR; per-requirement review/mutation/evidence loop dropped; SHOULD items FR1-16, NFR1-06, UI1-09, NFR1-13 deferred to Stage 2",
       "status": "default",
       "ratified_on": null,
       "ratify_at": "HG-02",
