@@ -315,6 +315,26 @@ function lld_tools_home_revert(string $content): string {
   return preg_replace('/\[vc_row el_class=""/', '[vc_row', $content, 1);
 }
 
+/* ---------------------------------------------------------------- category tidy-up (FR1-23, DEC-39…43) ------------ */
+function lld_tools_tidy_doc(): array { static $d = null; return $d ?? ($d = json_decode((string)file_get_contents(LLD_TOOLS_DIR . '/data/tidy.json'), true) ?: []); }
+/** Deleted category archives answer 301 to their DEC targets (they 404 once the term is gone). */
+if (function_exists('add_action')) add_action('template_redirect', function () {
+  if (!is_404()) return;
+  $path = trailingslashit((string)parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH));
+  foreach ((lld_tools_tidy_doc()['delete'] ?? []) as $d) if ($path === $d['path']) { wp_redirect(home_url($d['redirect']), 301, 'lld-tools'); exit; }
+});
+/** Hidden archives (term meta lld_noindex = 1, set by tidy apply) are noindex: robots meta and X-Robots-Tag. */
+function lld_tools_is_noindex_archive(): bool {
+  if (!function_exists('is_category') || !is_category()) return false;
+  $t = get_queried_object();
+  return $t && !empty($t->term_id) && get_term_meta($t->term_id, 'lld_noindex', true) === '1';
+}
+if (function_exists('add_filter')) add_filter('wp_robots', function ($robots) { if (lld_tools_is_noindex_archive()) { $robots['noindex'] = true; $robots['follow'] = true; unset($robots['index']); } return $robots; }, 99);
+if (function_exists('add_action')) add_action('template_redirect', function () { if (lld_tools_is_noindex_archive() && !headers_sent()) header('X-Robots-Tag: noindex, follow', true); }, 1);
+/* Yoast SEO merges its own robots values into wp_robots at PHP_INT_MAX - 10 (its `index` would win over the core filter
+ * above): set the directive in Yoast's own array too, so the robots meta says noindex whichever plugin renders it. */
+if (function_exists('add_filter')) add_filter('wpseo_robots_array', function ($robots) { if (is_array($robots) && lld_tools_is_noindex_archive()) { $robots['index'] = 'noindex'; $robots['follow'] = 'follow'; } return $robots; }, 99);
+
 /* ---------------------------------------------------------------- landing pages (CMP-09 content, applied by WP-CLI) */
 function lld_tools_landing_content(string $slug): string {
   $doc = json_decode((string)file_get_contents(LLD_TOOLS_DIR . '/data/landing-pages.json'), true);
@@ -432,6 +452,60 @@ if (defined('WP_CLI') && WP_CLI) {
       $rows[] = ['id' => $p->ID, 'type' => $p->post_type, 'status' => $p->post_status, 'title' => get_the_title($p), 'owner' => (string)get_post_meta($p->ID, 'lld_review_owner', true), 'next_review_date' => $next, 'review_status' => $st, 'reasons' => implode('; ', $reasons)];
     }
     WP_CLI\Utils\format_items($assoc['format'] ?? 'table', $rows, ['id', 'type', 'status', 'title', 'owner', 'next_review_date', 'review_status', 'reasons']);
+  });
+  /** wp lld tidy apply [--dry-run] [--include-drafts] [--planned-out=<file>]: the FR1-23 editorial category changes, scripted and re-runnable.
+   *  Refuses (exit 1, nothing changed) while any object is still assigned to a category it would delete (no post silently
+   *  changes category). A second run changes nothing. */
+  WP_CLI::add_command('lld tidy', function (array $args, array $assoc) {
+    if (($args[0] ?? 'apply') !== 'apply') WP_CLI::error('usage: wp lld tidy apply [--dry-run] [--include-drafts] [--planned-out=<file>]');
+    $doc = lld_tools_tidy_doc(); $dry = !empty($assoc['dry-run']); $changes = [];
+    $wellness = get_term_by('slug', $doc['default_category'], 'category');
+    if (!$wellness) WP_CLI::error("default category '{$doc['default_category']}' not found");
+    // 1. pre-flight: no published / scheduled / private / pending post may still be assigned to a category that will be deleted
+    //    (FR1-23: no post changes its categories). Drafts are listed; they move to the default category only with
+    //    --include-drafts (WordPress reassigns a post left without a category), so the operator decides (DEC-79 proposal).
+    $blocked = []; $drafts = [];
+    foreach ($doc['delete'] as $d) {
+      $t = get_term_by('slug', $d['slug'], 'category'); if (!$t) continue;
+      foreach (array_map('intval', (array)get_objects_in_term($t->term_id, 'category')) as $oid) {
+        $st = get_post_status($oid); if ($st === false || $st === 'trash') continue;
+        if (in_array($st, ['draft', 'auto-draft'], true)) $drafts[$d['slug']][] = $oid; else $blocked[$d['slug']][] = $oid . ':' . $st;
+      }
+    }
+    $fmt = function ($m) { return implode('; ', array_map(function ($k, $v) { return $k . ' (' . implode(', ', $v) . ')'; }, array_keys($m), $m)); };
+    $refusals = [];
+    if ($blocked) $refusals[] = 'refusing to delete categories that still have posts: ' . $fmt($blocked) . ' — reassign them by hand first (FR1-23: no post changes its categories)';
+    if ($drafts && empty($assoc['include-drafts'])) $refusals[] = 'drafts are assigned to categories that will be deleted: ' . $fmt($drafts) . ' — re-run with --include-drafts to let them move to the default category, or reassign them first';
+    // a real run stops here; a dry run prints the whole plan (drafts included) and then exits with the real run's verdict
+    if ($refusals && !$dry) WP_CLI::error(implode("
+", $refusals));
+    foreach ($drafts as $slug => $ids) $changes[] = "drafts in $slug move to the default category" . (empty($assoc['include-drafts']) ? ' (only with --include-drafts)' : '') . ': ' . implode(', ', $ids);
+    // 2. default category first (WordPress refuses to delete the current default)
+    if ((int)get_option('default_category') !== (int)$wellness->term_id) { $changes[] = "default_category -> {$doc['default_category']} ({$wellness->term_id})"; if (!$dry) update_option('default_category', (int)$wellness->term_id); }
+    // 3. delete the empty categories
+    foreach ($doc['delete'] as $d) {
+      $t = get_term_by('slug', $d['slug'], 'category'); if (!$t) continue;
+      $changes[] = "delete category {$d['slug']} ({$t->term_id}) -> 301 {$d['path']} => {$d['redirect']} ({$d['dec']})";
+      if (!$dry) { $r = wp_delete_term($t->term_id, 'category'); if (is_wp_error($r) || $r === false) WP_CLI::error("could not delete {$d['slug']}: " . (is_wp_error($r) ? $r->get_error_message() : 'refused')); }
+    }
+    // 4. hidden archives: out of the primary menu, noindex, term kept
+    $menu = wp_get_nav_menu_object($doc['primary_menu']);
+    foreach ($doc['hide_noindex'] as $h) {
+      $t = get_term_by('slug', $h['slug'], 'category'); if (!$t) { WP_CLI::warning("category {$h['slug']} not found"); continue; }
+      if ($menu) foreach ((array)wp_get_nav_menu_items($menu->term_id) as $item) {
+        $hit = ($item->object === 'category' && (int)$item->object_id === (int)$t->term_id) || preg_match('#/' . preg_quote($h['slug'], '#') . '/?$#', (string)$item->url);
+        if ($hit) { $changes[] = "remove menu item {$item->ID} ({$item->title}) from {$doc['primary_menu']}"; if (!$dry) wp_delete_post($item->ID, true); }
+      }
+      if (get_term_meta($t->term_id, 'lld_noindex', true) !== '1') { $changes[] = "noindex category {$h['slug']} ({$h['dec']})"; if (!$dry) update_term_meta($t->term_id, 'lld_noindex', '1'); }
+    }
+    if (!empty($assoc['planned-out'])) {
+      file_put_contents($assoc['planned-out'], json_encode(['removed_at' => gmdate('Y-m-d'), 'categories' => $doc['planned']], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+      WP_CLI::log('planned categories written to ' . $assoc['planned-out']);
+    }
+    foreach ($changes as $c) WP_CLI::log(($dry ? 'would: ' : '') . $c);
+    if ($refusals) WP_CLI::error('dry run: the real run would refuse — ' . implode("
+", $refusals));
+    WP_CLI::success($changes ? count($changes) . ' change(s)' . ($dry ? ' (dry run)' : '') : 'nothing to change');
   });
   /** wp lld links generate [--output=<file>]: the SCH-05b link map for every published post (FR1-05, DEC-13). */
   WP_CLI::add_command('lld links generate', function (array $args, array $assoc) {

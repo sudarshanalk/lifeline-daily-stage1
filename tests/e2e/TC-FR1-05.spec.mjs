@@ -17,7 +17,9 @@ const fx = (id) => site.find((f) => f.id === id).inputs;
 const cards = Object.fromEntries(JSON.parse(readFileSync(resolve(ROOT, 'content', 'tool-cards.json'), 'utf8')).cards.map((c) => [c.tool_slug, c]));
 const EXPECTED = { 'FX-WP-POST-01': 'protein', 'FX-WP-POST-02': 'diabetes', 'FX-WP-POST-03': 'none', 'FX-WP-POST-04': 'none', 'FX-WP-POST-07': 'diabetes', 'FX-WP-POST-09': 'diabetes', 'FX-WP-POST-10': 'diabetes' };
 const a = available();
-test.describe.configure({ mode: 'serial' });
+// every test loads several WordPress pages through the single-threaded local PHP server (10–15 s each under load): the 60 s
+// default timed out and, in serial mode, skipped the rest of the file
+test.describe.configure({ mode: 'serial', timeout: 300000 });
 test.skip(!a.ok, a.reason);
 
 let stack; const seeded = {}; let linkMap;
