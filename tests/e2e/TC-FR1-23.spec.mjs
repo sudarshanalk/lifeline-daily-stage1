@@ -22,7 +22,8 @@ const FOOTER = JSON.parse(readFileSync(resolve(ROOT, 'reports', 'as-is', 'menu-f
 const DELETED = { 'womens-health': '/category/wellness/womens-health/', 'healthy-living': '/category/wellness/healthy-living/', stress: '/category/wellness/stress/', uncategorised: '/category/uncategorised/' };
 const TABLES = ['wp_terms', 'wp_term_taxonomy', 'wp_term_relationships', 'wp_termmeta', 'wp_options', 'wp_posts', 'wp_postmeta'];
 const a = available();
-test.describe.configure({ mode: 'serial' });
+// each test loads several WordPress pages through the single-threaded local PHP server (5–10 s each): 300 s, not the 60 s default
+test.describe.configure({ mode: 'serial', timeout: 300000 });
 test.skip(!a.ok, a.reason);
 
 const mariaBin = () => { const base = 'C:/Program Files'; const d = existsSync(base) ? readdirSync(base).find((n) => n.startsWith('MariaDB')) : null; return d ? `${base}/${d}/bin` : ''; };
