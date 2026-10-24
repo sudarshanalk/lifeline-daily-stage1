@@ -2280,7 +2280,7 @@
       "priority": "SHOULD",
       "type": "behaviour",
       "automation": "auto",
-      "status": "deferred",
+      "status": "accepted",
       "depends_on": [
         "FR1-03",
         "FR1-04"
@@ -3136,7 +3136,7 @@
     {
       "id": "DEC-84",
       "question": "Simple-mode finish of Waves 5-6",
-      "selected": "one integration PR; per-requirement review/mutation/evidence loop dropped; SHOULD items FR1-16, NFR1-06, UI1-09, NFR1-13 deferred to Stage 2",
+      "selected": "one integration PR; per-requirement review/mutation/evidence loop dropped; SHOULD items FR1-16, NFR1-06, NFR1-13 deferred to Stage 2",
       "status": "default",
       "ratified_on": null,
       "ratify_at": "HG-02",
