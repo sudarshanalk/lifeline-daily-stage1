@@ -201,20 +201,21 @@ test('TC-NFR1-05-AS-05', async ({}, testInfo) => {
 
 test('TC-NFR1-05-AS-06', async ({ page }) => {
   test.setTimeout(600000);
-  // The only exclusion: the Newspaper theme sidebar column on the hub and the two landing pages (frozen theme, CMP-01), whose
-  // block titles are h4 after the page's h2 sections. Every other heading on all 11 states — the homepage included — must never
-  // skip a level. The sidebar skips are listed per page in the annotations; the assertion stays deferred (tests/lib/deferred.json,
-  // DEC-78 proposed) until HG-02 decides fix-or-accept.
+  // The only exclusion: the Newspaper theme's own block titles on the hub and the two landing pages (frozen theme, CMP-01) —
+  // the sidebar column (.td-main-sidebar / .td-ss-main-sidebar) and the shared footer template (.td-footer-template-wrap, its
+  // "Featured" title) — which are h4 after the page's h2 sections. Every other heading on all 11 states — the homepage
+  // included, footer and all — must never skip a level. The theme skips are listed per page in the annotations; the assertion
+  // stays deferred (tests/lib/deferred.json, DEC-78) until HG-02 decides fix-or-accept.
   const SIDEBAR_PAGES = new Set(['wp /health-tools/', 'wp /health-tools/protein/', 'wp /health-tools/diabetes-risk-check/']);
   const bad = [], sidebar = [];
   for (const [label, go] of states()) {
     await go(page);
-    const hs = await page.locator('h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible').evaluateAll((els) => els.map((e) => ({ l: Number(e.tagName[1]), side: !!e.closest('.td-main-sidebar, .td-ss-main-sidebar'), t: e.textContent.trim().slice(0, 30) })));
+    const hs = await page.locator('h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible').evaluateAll((els) => els.map((e) => ({ l: Number(e.tagName[1]), side: !!e.closest('.td-main-sidebar, .td-ss-main-sidebar, .td-footer-template-wrap'), t: e.textContent.trim().slice(0, 30) })));
     const excluded = SIDEBAR_PAGES.has(label);
     const own = excluded ? hs.filter((h) => !h.side) : hs;
     for (let i = 1; i < own.length; i++) if (own[i].l > own[i - 1].l + 1) bad.push(`${label}: h${own[i - 1].l} → h${own[i].l} ("${own[i].t}")`);
-    if (excluded) for (let i = 1; i < hs.length; i++) if (hs[i].side && hs[i].l > hs[i - 1].l + 1) sidebar.push(`${label}: sidebar "${hs[i].t}" h${hs[i].l} after h${hs[i - 1].l}`);
+    if (excluded) for (let i = 1; i < hs.length; i++) if (hs[i].side && hs[i].l > hs[i - 1].l + 1) sidebar.push(`${label}: theme "${hs[i].t}" h${hs[i].l} after h${hs[i - 1].l}`);
   }
-  if (sidebar.length) test.info().annotations.push({ type: 'theme-sidebar-headings (DEC-78)', description: sidebar.join(' | ') });
-  expect(bad, 'heading levels never skip outside the theme sidebar on the hub and landing pages').toEqual([]);
+  if (sidebar.length) test.info().annotations.push({ type: 'theme-headings (DEC-78)', description: sidebar.join(' | ') });
+  expect(bad, 'heading levels never skip outside the theme sidebar and footer blocks on the hub and landing pages').toEqual([]);
 });
