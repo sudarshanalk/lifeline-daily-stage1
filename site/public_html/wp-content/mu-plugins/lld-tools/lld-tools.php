@@ -331,6 +331,9 @@ function lld_tools_is_noindex_archive(): bool {
 }
 if (function_exists('add_filter')) add_filter('wp_robots', function ($robots) { if (lld_tools_is_noindex_archive()) { $robots['noindex'] = true; $robots['follow'] = true; unset($robots['index']); } return $robots; }, 99);
 if (function_exists('add_action')) add_action('template_redirect', function () { if (lld_tools_is_noindex_archive() && !headers_sent()) header('X-Robots-Tag: noindex, follow', true); }, 1);
+/* Yoast SEO merges its own robots values into wp_robots at PHP_INT_MAX - 10 (its `index` would win over the core filter
+ * above): set the directive in Yoast's own array too, so the robots meta says noindex whichever plugin renders it. */
+if (function_exists('add_filter')) add_filter('wpseo_robots_array', function ($robots) { if (is_array($robots) && lld_tools_is_noindex_archive()) { $robots['index'] = 'noindex'; $robots['follow'] = 'follow'; } return $robots; }, 99);
 
 /* ---------------------------------------------------------------- landing pages (CMP-09 content, applied by WP-CLI) */
 function lld_tools_landing_content(string $slug): string {
@@ -470,9 +473,13 @@ if (defined('WP_CLI') && WP_CLI) {
       }
     }
     $fmt = function ($m) { return implode('; ', array_map(function ($k, $v) { return $k . ' (' . implode(', ', $v) . ')'; }, array_keys($m), $m)); };
-    if ($blocked) WP_CLI::error('refusing to delete categories that still have posts: ' . $fmt($blocked) . ' — reassign them by hand first (FR1-23: no post changes its categories)');
-    if ($drafts && empty($assoc['include-drafts'])) WP_CLI::error('drafts are assigned to categories that will be deleted: ' . $fmt($drafts) . ' — re-run with --include-drafts to let them move to the default category, or reassign them first');
-    foreach ($drafts as $slug => $ids) $changes[] = "drafts in $slug move to the default category: " . implode(', ', $ids);
+    $refusals = [];
+    if ($blocked) $refusals[] = 'refusing to delete categories that still have posts: ' . $fmt($blocked) . ' — reassign them by hand first (FR1-23: no post changes its categories)';
+    if ($drafts && empty($assoc['include-drafts'])) $refusals[] = 'drafts are assigned to categories that will be deleted: ' . $fmt($drafts) . ' — re-run with --include-drafts to let them move to the default category, or reassign them first';
+    // a real run stops here; a dry run prints the whole plan (drafts included) and then exits with the real run's verdict
+    if ($refusals && !$dry) WP_CLI::error(implode("
+", $refusals));
+    foreach ($drafts as $slug => $ids) $changes[] = "drafts in $slug move to the default category" . (empty($assoc['include-drafts']) ? ' (only with --include-drafts)' : '') . ': ' . implode(', ', $ids);
     // 2. default category first (WordPress refuses to delete the current default)
     if ((int)get_option('default_category') !== (int)$wellness->term_id) { $changes[] = "default_category -> {$doc['default_category']} ({$wellness->term_id})"; if (!$dry) update_option('default_category', (int)$wellness->term_id); }
     // 3. delete the empty categories
@@ -496,6 +503,8 @@ if (defined('WP_CLI') && WP_CLI) {
       WP_CLI::log('planned categories written to ' . $assoc['planned-out']);
     }
     foreach ($changes as $c) WP_CLI::log(($dry ? 'would: ' : '') . $c);
+    if ($refusals) WP_CLI::error('dry run: the real run would refuse — ' . implode("
+", $refusals));
     WP_CLI::success($changes ? count($changes) . ' change(s)' . ($dry ? ' (dry run)' : '') : 'nothing to change');
   });
   /** wp lld links generate [--output=<file>]: the SCH-05b link map for every published post (FR1-05, DEC-13). */

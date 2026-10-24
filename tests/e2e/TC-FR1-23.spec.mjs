@@ -27,6 +27,9 @@ test.skip(!a.ok, a.reason);
 
 const mariaBin = () => { const base = 'C:/Program Files'; const d = existsSync(base) ? readdirSync(base).find((n) => n.startsWith('MariaDB')) : null; return d ? `${base}/${d}/bin` : ''; };
 const DB = process.env.LLD_WP_DB_NAME || 'lifelinedaily_local';
+// the same database server the stack uses (tests/lib/wp-stack.mjs reads LLD_WP_DB_HOST the same way)
+const [DB_HOST, DB_PORT] = (process.env.LLD_WP_DB_HOST || '127.0.0.1:3399').split(':');
+const MYSQL_ARGS = ['-uroot', '-h', DB_HOST, '-P', DB_PORT || '3306'];
 let stack, dumpDir, dumpFile, applied;
 const ok = (r, what) => { if (r.status !== 0) throw new Error(`${what}: ${r.stdout}${r.stderr}`); return r.stdout.trim(); };
 const IMPORT_ORIGIN = 'http://localhost:8080';
@@ -35,17 +38,17 @@ test.beforeAll(async () => {
   stack = await startWpStack();
   if (stack.external) return;
   dumpDir = mkdtempSync(join(tmpdir(), 'lld-fr123-')); dumpFile = join(dumpDir, 'tables.sql');
-  const r = spawnSync(`${mariaBin()}/mariadb-dump.exe`, ['-uroot', '-P', '3399', '-h', '127.0.0.1', `--result-file=${dumpFile}`, DB, ...TABLES], { encoding: 'utf8' });
+  const r = spawnSync(`${mariaBin()}/mariadb-dump.exe`, [...MYSQL_ARGS, `--result-file=${dumpFile}`, DB, ...TABLES], { encoding: 'utf8' });
   if (r.status !== 0) throw new Error('table dump failed: ' + r.stderr);
 });
 test.afterAll(async () => {
   let err = null;
   if (stack && !stack.external && dumpFile) {
     // restore through stdin (no shell: the MariaDB path contains a space); keep the dump if the restore fails
-    const r = spawnSync(`${mariaBin()}/mariadb.exe`, ['-uroot', '-P', '3399', '-h', '127.0.0.1', DB], { input: readFileSync(dumpFile), maxBuffer: 1 << 30 });
+    const r = spawnSync(`${mariaBin()}/mariadb.exe`, [...MYSQL_ARGS, DB], { input: readFileSync(dumpFile), maxBuffer: 1 << 30 });
     stack.wp('cache', 'flush');
     if (r.status === 0) rmSync(dumpDir, { recursive: true, force: true });
-    else err = new Error(`table restore failed (dump kept at ${dumpFile}): ${String(r.stderr).slice(0, 300)}`);
+    else err = new Error(`table restore failed (dump kept at ${dumpFile}; restore by hand: mariadb ${MYSQL_ARGS.join(' ')} ${DB} < "${dumpFile}"): ${String(r.stderr).slice(0, 300)}`);
   }
   await stack?.close();
   if (err) throw err;
@@ -62,6 +65,13 @@ test('NEG-02', async () => {
     const r = stack.wp('lld', 'tidy', 'apply');
     expect(r.status, 'blocked run exits non-zero').not.toBe(0);
     expect(r.stdout + r.stderr).toMatch(/refusing to delete categories that still have posts: stress \(\d+:publish\)/);
+    // --include-drafts never lets a live post through, and a dry run reports the same refusal without changing anything
+    const withDrafts = stack.wp('lld', 'tidy', 'apply', '--include-drafts');
+    expect(withDrafts.status, '--include-drafts does not bypass a live post').not.toBe(0);
+    expect(withDrafts.stdout + withDrafts.stderr).toMatch(/refusing to delete categories that still have posts: stress/);
+    const dry = stack.wp('lld', 'tidy', 'apply', '--dry-run', '--include-drafts');
+    expect(dry.status, 'dry run exits with the real run verdict').not.toBe(0);
+    expect(dry.stdout + dry.stderr).toMatch(/would: delete category stress/);
     expect(termSlugs(), 'no category deleted').toEqual(before);
     expect(ok(stack.wp('option', 'get', 'default_category'), 'default'), 'default unchanged').toBe(defBefore);
     expect(ok(stack.wp('post', 'term', 'list', pid, 'category', '--field=slug'), 'seed cats'), 'the post was not moved').toBe('stress');
@@ -73,6 +83,14 @@ test('TC-FR1-23-AS-01', async () => {
   const refused = stack.wp('lld', 'tidy', 'apply');
   expect(refused.status, 'drafts present: refused without --include-drafts').not.toBe(0);
   expect(refused.stdout + refused.stderr).toMatch(/drafts are assigned to categories that will be deleted/);
+  expect(termSlugs(), 'the refused run changed nothing').toEqual(expect.arrayContaining([...TIDY.delete_redirect_wellness, ...TIDY.delete_redirect_root]));
+  // the documented staging order: a dry run with the same flags lists the plan, drafts included, and writes the planned file
+  const planned = join(dumpDir, 'planned.json');
+  const dry = stack.wp('lld', 'tidy', 'apply', '--dry-run', '--include-drafts', `--planned-out=${planned}`); ok(dry, 'dry run');
+  expect(dry.stdout, 'dry run lists the draft moves').toMatch(/would: drafts in \S+ move to the default category: \d+/);
+  for (const s of [...TIDY.delete_redirect_wellness, ...TIDY.delete_redirect_root]) expect(dry.stdout, `dry run lists ${s}`).toMatch(new RegExp(`would: delete category ${s} `));
+  expect(termSlugs(), 'the dry run changed nothing').toEqual(expect.arrayContaining([...TIDY.delete_redirect_wellness, ...TIDY.delete_redirect_root]));
+  expect(JSON.parse(readFileSync(planned, 'utf8')).categories, '--planned-out writes the same list as content/planned-categories.json').toEqual(JSON.parse(readFileSync(resolve(ROOT, 'content', 'planned-categories.json'), 'utf8')).categories);
   const r = stack.wp('lld', 'tidy', 'apply', '--include-drafts'); ok(r, 'tidy apply'); applied = true;
   const slugs = termSlugs();
   for (const s of [...TIDY.delete_redirect_wellness, ...TIDY.delete_redirect_root]) expect(slugs, `${s} deleted`).not.toContain(s);
@@ -93,9 +111,14 @@ test('TC-FR1-23-AS-02', async ({ request }) => {
   const rep = await request.get(`${stack.url}/category/the-report/`, { maxRedirects: 0 });
   expect(rep.status(), 'the-report archive 200').toBe(200);
   const body = await rep.text();
-  const meta = /<meta[^>]+name=["']robots["'][^>]+content=["'][^"']*noindex/i.test(body);
-  const header = /noindex/i.test(rep.headers()['x-robots-tag'] || '');
-  expect(meta || header, 'the-report archive noindex (robots meta or X-Robots-Tag)').toBe(true);
+  const metas = [...body.matchAll(/<meta[^>]*name=["']robots["'][^>]*>/gi)].map((m) => (m[0].match(/content=["']([^"']*)/i) || [])[1] || '');
+  expect(metas.length, 'the-report archive has a robots meta').toBeGreaterThan(0);
+  for (const c of metas) {
+    const tokens = c.split(',').map((t) => t.trim().toLowerCase());
+    expect(tokens, `robots meta "${c}" says noindex`).toContain('noindex');
+    expect(tokens, `robots meta "${c}" does not also say index`).not.toContain('index');
+  }
+  expect(rep.headers()['x-robots-tag'] || '', 'X-Robots-Tag noindex').toMatch(/(^|,\s*)noindex/i);
 });
 
 test('TC-FR1-23-AS-03', async () => {
@@ -127,8 +150,12 @@ test('TC-FR1-23-AS-07', async ({ page }) => {
   const norm = (u) => u.replace(/^https?:\/\/[^/]+/, '');
   expect(items.map((i) => [i.title, norm(i.url)]), 'footer menu = baseline').toEqual(FOOTER.map((i) => [i.title, norm(i.link)]));
   await page.goto(`${stack.url}/`, { waitUntil: 'load' });
-  const hrefs = await page.locator('a[href]').evaluateAll((as) => as.map((x) => x.getAttribute('href')));
-  for (const f of FOOTER) expect(hrefs.some((h) => h && norm(h) === norm(f.link)), `footer link ${f.title} rendered on /`).toBe(true);
+  // the rendered footer menu (wp_nav_menu of footer-menu: ul#menu-footer-menu, as on production) equals the baseline set exactly
+  const lists = await page.locator('ul[id^="menu-footer-menu"]').evaluateAll((uls) => uls.map((ul) => [...ul.querySelectorAll('a[href]')].map((a) => [a.textContent.trim(), a.getAttribute('href')])));
+  expect(lists.length, 'footer menu rendered on /').toBeGreaterThan(0);
+  const decode = (t) => t.replace(/&#0?38;|&amp;/g, '&');
+  const want = FOOTER.map((f) => [decode(f.title), norm(f.link)]).sort();
+  for (const l of lists) expect(l.map(([t, h]) => [t, norm(h)]).sort(), 'rendered footer anchors = baseline set').toEqual(want);
 });
 
 test('NEG-01', async () => {
