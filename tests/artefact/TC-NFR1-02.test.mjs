@@ -5,7 +5,8 @@
 // LLD_STRICT_GATES=1 (the release-tag `clinical-gate` run and the red-before-green run).
 // AS-01 approvals/{protein,diabetes}.json clinical_signoff.{name,date,decision} present, decision `approved` (+ copy deck);
 // AS-02 0 DEC rows with ratify_at HG-02 and status outside {ratified, overridden};
-// AS-03 a `clinical-gate` CI job exists on release tags and runs tests/ci/clinical-gate.mjs, which exits 0.
+// AS-03 a `clinical-gate` CI job exists on release tags (.github/workflows/release-gates.yml, DEC-80) and runs
+// tests/ci/clinical-gate.mjs, which exits 0.
 import { describe, expect, test } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -48,14 +49,15 @@ describe('TC-NFR1-02 clinical governance', () => {
   test('TC-NFR1-02-AS-03', (ctx) => {
     const run = spawnSync(process.execPath, [resolve(ROOT, 'tests', 'ci', 'clinical-gate.mjs')], { cwd: ROOT, encoding: 'utf8' });
     const jobs = workflows().map((w) => ({ ...w, block: jobBlock(w.src) })).filter((w) => w.block);
-    if (!strict) {
-      expect(run.status, `gate check refuses pending records\n${run.stderr}`).toBe(1);
-      return ctx.skip(`${PENDING}; the clinical-gate job runs on release tags only${jobs.length ? '' : ' and is not yet defined in .github/workflows (blocker, DEC-80 proposal)'}`);
-    }
-    expect(jobs.map((j) => j.f), 'a clinical-gate job is defined').toHaveLength(1);
-    const { src, block } = jobs[0];
+    // the job definition is checked on every run; only its green result waits for HG-02
+    expect(jobs.map((j) => j.f), 'exactly one clinical-gate job is defined').toHaveLength(1);
+    const { f, src, block } = jobs[0];
     expect(src, 'triggered by release tags').toMatch(/tags:\s*\[?['"]?rc-\*/);
     expect(block, 'runs the gate check').toMatch(/node tests\/ci\/clinical-gate\.mjs/);
+    if (!strict) {
+      expect(run.status, `gate check refuses pending records\n${run.stderr}`).toBe(1);
+      return ctx.skip(`${PENDING}; the clinical-gate job (${f}, rc-* tags) stays red until then`);
+    }
     expect(run.status, `clinical-gate exits 0\n${run.stderr}`).toBe(0);
   });
 });
