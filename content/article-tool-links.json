@@ -1,0 +1,1526 @@
+{
+    "generated_at": "2026-10-24T00:43:30Z",
+    "rule_version": "DEC-13 (verified 22 Oct 2026)",
+    "links": [
+        {
+            "wp_post_id": 556,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "fitness"
+            ],
+            "tags": [
+                "cardio",
+                "healthy-habits",
+                "workouts"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 601,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "fitness"
+            ],
+            "tags": [
+                "cardio",
+                "exercise",
+                "weight-control"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 607,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "fitness"
+            ],
+            "tags": [
+                "fitness",
+                "flexibility",
+                "mindfulness"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 611,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "fitness"
+            ],
+            "tags": [
+                "fitness",
+                "flexibility",
+                "yoga"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 629,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-diet-plans-for-longevity",
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-eating",
+                "keto-diet",
+                "weight-control"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 633,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-diet-plans-for-longevity",
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-eating",
+                "keto-diet",
+                "weight-control"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 706,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-diet-plans-for-longevity",
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-eating",
+                "paleo-diet",
+                "weight-control"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 730,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-diet-plans-for-longevity",
+                "food-nutrition"
+            ],
+            "tags": [
+                "atkins-diet",
+                "keto-diet",
+                "weight-control"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 741,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-diet-plans-for-longevity",
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-eating",
+                "mediterranean-diet",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 801,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "gut-health",
+                "healthy-habits",
+                "mindfulness"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 866,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "fitness"
+            ],
+            "tags": [
+                "cardio",
+                "fitness",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 980,
+            "decision": "diabetes",
+            "source": "rule",
+            "categories": [
+                "health-conditions",
+                "metabolic-health"
+            ],
+            "tags": [
+                "diabetes",
+                "insulin-resistance",
+                "metabolic-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1295,
+            "decision": "diabetes",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "nutrition-for-healthy-living"
+            ],
+            "tags": [
+                "blood-sugar",
+                "glycaemic-index",
+                "metabolic-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1310,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "sleep-and-recovery",
+                "wellness"
+            ],
+            "tags": [
+                "healthy-habits",
+                "sleep-hygiene",
+                "sleep-tips"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1313,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-eating",
+                "healthy-habits",
+                "high-cholesterol"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1322,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "healthy-eating-for-longevity",
+                "nutrition-for-healthy-living"
+            ],
+            "tags": [
+                "anti-inflammatory-foods",
+                "healthy-eating",
+                "supplement"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1344,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-diet-plans-for-longevity",
+                "food-nutrition"
+            ],
+            "tags": [
+                "keto-diet",
+                "ketogenic-foods",
+                "low-carb-foods"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1351,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-diet-plans-for-longevity",
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "keto-diet",
+                "metabolic-health",
+                "weight-control"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1369,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "fitness"
+            ],
+            "tags": [
+                "brain-power",
+                "fitness",
+                "mental-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1377,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "health-conditions"
+            ],
+            "tags": [
+                "high-cholesterol",
+                "metabolic-health",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1493,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "mental-health",
+                "wellness"
+            ],
+            "tags": [
+                "anxiety",
+                "depression",
+                "mental-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1514,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-diet-plans-for-longevity",
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-eating",
+                "nutrition",
+                "vegan-diet"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1763,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-eating",
+                "high-cholesterol",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1784,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "sleep-and-recovery",
+                "wellness"
+            ],
+            "tags": [
+                "brain-power",
+                "sleep",
+                "sleep-hygiene"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1824,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "health-conditions"
+            ],
+            "tags": [
+                "healthy-habits",
+                "high-cholesterol",
+                "metabolic-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1833,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "fitness"
+            ],
+            "tags": [
+                "core-exercises",
+                "fitness",
+                "workouts"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1869,
+            "decision": "diabetes",
+            "source": "rule",
+            "categories": [
+                "health-conditions"
+            ],
+            "tags": [
+                "diabetes",
+                "healthy-habits",
+                "metabolic-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1945,
+            "decision": "diabetes",
+            "source": "rule",
+            "categories": [
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "diabetes",
+                "healthy-eating",
+                "metabolic-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1961,
+            "decision": "diabetes",
+            "source": "rule",
+            "categories": [
+                "health-conditions"
+            ],
+            "tags": [
+                "diabetes",
+                "metabolic-health",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 1983,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "longevity",
+                "wellness"
+            ],
+            "tags": [
+                "anti-inflammatory-foods",
+                "inflammation",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 2034,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "gut-health",
+                "wellness"
+            ],
+            "tags": [
+                "gut-health",
+                "gut-microbiome",
+                "immunity"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 2245,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "fitness"
+            ],
+            "tags": [
+                "exercise",
+                "fitness",
+                "healthy-lifestyle"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 2286,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "nutrition-for-healthy-living"
+            ],
+            "tags": [
+                "healthy-eating",
+                "nutrients",
+                "protein"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 2288,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "nutrition-for-healthy-living"
+            ],
+            "tags": [
+                "healthy-diet",
+                "protein"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 2311,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "gut-health",
+                "wellness"
+            ],
+            "tags": [
+                "gut-microbiome",
+                "healthy-eating",
+                "probiotics"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 2958,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-habits",
+                "prevention",
+                "weight-control"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 3055,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "nutrition-for-healthy-living"
+            ],
+            "tags": [
+                "healthy-eating",
+                "nutrition",
+                "protein"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 3592,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "fitness"
+            ],
+            "tags": [
+                "cardio",
+                "hiit",
+                "workouts"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 3607,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "sleep-and-recovery",
+                "wellness"
+            ],
+            "tags": [
+                "sleep-hygiene",
+                "sleep-routine",
+                "weight-control"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 3609,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "fitness"
+            ],
+            "tags": [
+                "cardio",
+                "cardiovascular-health",
+                "heart-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 3769,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "sex-and-relationship",
+                "wellness"
+            ],
+            "tags": [
+                "intimacy",
+                "relationship",
+                "sexual-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 3772,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "sex-and-relationship",
+                "wellness"
+            ],
+            "tags": [
+                "intimacy",
+                "relationship",
+                "sexual-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 3777,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "longevity",
+                "wellness"
+            ],
+            "tags": [
+                "healthy-living",
+                "longevity",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 3846,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "health-conditions"
+            ],
+            "tags": [
+                "blood-pressure",
+                "health-conditions",
+                "heart-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 3851,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "anti-inflammatory-foods",
+                "healthy-eating",
+                "weight-control"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 3899,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-diet-plans-for-longevity",
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-eating",
+                "keto-diet",
+                "weight-control"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 3901,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "fitness"
+            ],
+            "tags": [
+                "fitness",
+                "hiit",
+                "workouts"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 4270,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "video"
+            ],
+            "tags": [
+                "depression",
+                "mindfulness"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 4273,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "video"
+            ],
+            "tags": [
+                "brain-power",
+                "exercise"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 4275,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "video"
+            ],
+            "tags": [
+                "intimacy",
+                "sexual-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 4278,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "video"
+            ],
+            "tags": [
+                "gut-health",
+                "gut-microbiome"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 4280,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "video"
+            ],
+            "tags": [
+                "high-blood-pressure",
+                "metabolic-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 4346,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-diet-plans-for-longevity",
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-eating",
+                "mediterranean-diet",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 4368,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "gut-health",
+                "health-conditions"
+            ],
+            "tags": [
+                "gut-health",
+                "gut-microbiome",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 4936,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "featured",
+                "health-conditions"
+            ],
+            "tags": [
+                "healthy-habits",
+                "metabolic-health",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 4954,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-diet-plans-for-longevity",
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-eating",
+                "keto-diet",
+                "metabolic-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 4992,
+            "decision": "diabetes",
+            "source": "rule",
+            "categories": [
+                "healthy-diet-plans-for-longevity",
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "diabetes",
+                "mediterranean-diet",
+                "metabolic-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 4994,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-diet-plans-for-longevity",
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-eating",
+                "metabolic-health",
+                "weight-control"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 4996,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-diet-plans-for-longevity",
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "high-cholesterol",
+                "metabolic-health",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5042,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-diet-plans-for-longevity",
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-eating",
+                "nutrition",
+                "vegan-diet"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5143,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "fitness",
+                "wellness"
+            ],
+            "tags": [
+                "fitness",
+                "healthy-living",
+                "longevity"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5145,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "health-conditions",
+                "trending"
+            ],
+            "tags": [
+                "cancers",
+                "health-conditions",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5147,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "health-conditions"
+            ],
+            "tags": [
+                "cancers",
+                "health-conditions",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5371,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "gut-health",
+                "health-conditions"
+            ],
+            "tags": [
+                "cancers",
+                "gut-health",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5439,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "featured",
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "fibres",
+                "gut-health",
+                "healthy-eating"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5610,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "health-conditions"
+            ],
+            "tags": [
+                "cancers",
+                "healthy-habits",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5613,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "featured",
+                "fitness"
+            ],
+            "tags": [
+                "fitness",
+                "flexibility",
+                "mobility",
+                "pilates"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5616,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "featured",
+                "fitness"
+            ],
+            "tags": [
+                "fitness",
+                "flexibility",
+                "mobility",
+                "pilates"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5619,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "fitness",
+                "trending"
+            ],
+            "tags": [
+                "fitness",
+                "flexibility",
+                "mobility",
+                "pilates"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5622,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "fitness"
+            ],
+            "tags": [
+                "fitness",
+                "flexibility",
+                "mobility",
+                "pilates"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5625,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "nutrition-for-healthy-living"
+            ],
+            "tags": [
+                "healthy-eating",
+                "inflammation",
+                "omega-3"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5629,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "healthy-eating-for-longevity",
+                "nutrition-for-healthy-living"
+            ],
+            "tags": [
+                "healthy-eating",
+                "nutrition",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5632,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-diet-plans-for-longevity",
+                "food-nutrition"
+            ],
+            "tags": [
+                "anti-inflammatory-foods",
+                "healthy-eating",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5635,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "featured",
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-eating",
+                "healthy-habits",
+                "longevity"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5654,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "fitness"
+            ],
+            "tags": [
+                "cardio",
+                "flexibility",
+                "pilates"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5659,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "featured",
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-eating",
+                "weight-control"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5663,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-eating",
+                "satiety",
+                "weight-control"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5666,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "healthy-eating-for-longevity",
+                "nutrition-for-healthy-living"
+            ],
+            "tags": [
+                "healthy-eating",
+                "inflammation",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5711,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "gut-health",
+                "wellness"
+            ],
+            "tags": [
+                "gut-health",
+                "gut-microbiome",
+                "immunity"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5727,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "healthy-eating",
+                "healthy-habits",
+                "metabolic-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5733,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "gut-health"
+            ],
+            "tags": [
+                "gut-microbiome",
+                "healthy-eating",
+                "healthy-habits"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5756,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "gut-health",
+                "wellness"
+            ],
+            "tags": [
+                "gut-health",
+                "gut-microbiome",
+                "healthy-foods"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5765,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "nutrition-for-healthy-living"
+            ],
+            "tags": [
+                "gut-health",
+                "gut-microbiome",
+                "healthy-eating"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5768,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "gut-health",
+                "wellness"
+            ],
+            "tags": [
+                "gut-health",
+                "gut-microbiome",
+                "inflammation"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5822,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "nutrition-for-healthy-living"
+            ],
+            "tags": [
+                "anti-inflammatory-foods",
+                "healthy-eating",
+                "nutrition"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5860,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-eating-for-longevity"
+            ],
+            "tags": [
+                "gut-microbiome",
+                "healthy-habits",
+                "metabolic-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5864,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "wellness"
+            ],
+            "tags": [
+                "healthy-habits",
+                "metabolic-health",
+                "sleep-hygiene"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5873,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "wellness"
+            ],
+            "tags": [
+                "healthy-habits",
+                "metabolic-health",
+                "sleep-hygiene"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5888,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "food-nutrition",
+                "gut-health"
+            ],
+            "tags": [
+                "fermented-foods",
+                "gut-microbiome",
+                "nutrition"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5892,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "mental-health",
+                "wellness"
+            ],
+            "tags": [
+                "mindfulness",
+                "stress"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5898,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "wellness"
+            ],
+            "tags": [
+                "metabolic-health",
+                "prevention",
+                "womens-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5919,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "wellness"
+            ],
+            "tags": [
+                "healthy-living",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5927,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "wellness"
+            ],
+            "tags": [
+                "healthy-living",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5931,
+            "decision": "diabetes",
+            "source": "rule",
+            "categories": [
+                "wellness"
+            ],
+            "tags": [
+                "diabetes",
+                "health-conditions",
+                "metabolic-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5941,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "healthy-eating-for-longevity",
+                "wellness"
+            ],
+            "tags": [
+                "healthy-eating",
+                "longevity",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5945,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "wellness"
+            ],
+            "tags": [
+                "cancers",
+                "mens-health",
+                "prevention"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5947,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "mental-health",
+                "wellness"
+            ],
+            "tags": [
+                "anxiety",
+                "mental-health",
+                "mindfulness"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5949,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "mental-health",
+                "nutrition-for-healthy-living"
+            ],
+            "tags": [
+                "gut-microbiome",
+                "mental-health",
+                "nutrition"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5952,
+            "decision": "protein",
+            "source": "rule",
+            "categories": [
+                "fitness",
+                "mental-health"
+            ],
+            "tags": [
+                "anxiety",
+                "exercise",
+                "mental-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5954,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "mental-health"
+            ],
+            "tags": [
+                "anxiety",
+                "mental-health",
+                "mindfulness"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5956,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "mental-health",
+                "wellness"
+            ],
+            "tags": [
+                "anxiety",
+                "depression",
+                "mental-health"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5958,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "mental-health",
+                "sleep-and-recovery"
+            ],
+            "tags": [
+                "anxiety",
+                "mental-health",
+                "sleep-hygiene"
+            ],
+            "review_status": null
+        },
+        {
+            "wp_post_id": 5966,
+            "decision": "none",
+            "source": "rule",
+            "categories": [
+                "wellness"
+            ],
+            "tags": [
+                "healthy-habits",
+                "healthy-living",
+                "prevention"
+            ],
+            "review_status": null
+        }
+    ]
+}
