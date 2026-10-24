@@ -23,6 +23,8 @@ const LOCAL_STACK = resolve(ROOT, 'tools', 'local', 'local-stack.ps1');
 export function available() {
   if (process.env.LLD_WP_URL) return { ok: true, reason: 'LLD_WP_URL' };
   if (!existsSync(SNAPSHOT) || !existsSync(join(SNAPSHOT, 'wp-config.php'))) return { ok: false, reason: `WordPress snapshot not present at ${SNAPSHOT} (local stack, OI-4) — set LLD_WP_URL for a staging origin (OI-1)` };
+  // the harness relies on the snapshot's wp-config to block outbound HTTP and cron (the router no longer defines them)
+  { const cfg = readFileSync(join(SNAPSHOT, 'wp-config.php'), 'utf8'); for (const c of ['WP_HTTP_BLOCK_EXTERNAL', 'DISABLE_WP_CRON']) if (!new RegExp(`define\\(\\s*['\"]${c}['\"]\\s*,\\s*true`).test(cfg)) return { ok: false, reason: `${SNAPSHOT}/wp-config.php does not define ${c} true — the local stack must not make outbound requests or run cron` }; }
   if (!existsSync(WP_CLI)) return { ok: false, reason: `wp-cli not present at ${WP_CLI}` };
   if (spawnSync('php', ['-v'], { encoding: 'utf8' }).status !== 0) return { ok: false, reason: 'php not on PATH' };
   return { ok: true, reason: 'local snapshot' };
