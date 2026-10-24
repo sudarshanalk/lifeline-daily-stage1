@@ -21,9 +21,8 @@ if ($overlay !== '' && $path !== '/' && is_file($overlay . $path)) {
 }
 $file = $_SERVER['DOCUMENT_ROOT'] . $path;
 if ($path !== '/' && is_file($file)) return false;
-// outbound HTTP and cron are already disabled by the local wp-config (WP_HTTP_BLOCK_EXTERNAL, DISABLE_WP_CRON); define them only if missing
-if (!defined('WP_HTTP_BLOCK_EXTERNAL')) define('WP_HTTP_BLOCK_EXTERNAL', true);
-if (!defined('DISABLE_WP_CRON')) define('DISABLE_WP_CRON', true);
+// outbound HTTP and cron are disabled by the local wp-config (WP_HTTP_BLOCK_EXTERNAL, DISABLE_WP_CRON). The router runs before
+// wp-config, so defining them here as well made wp-config emit "already defined" warnings at the top of every page.
 // LLD_MU_DIR (optional) is a harness-assembled mu-plugins dir: the repository's lld-tools plus a test-environment plugin that
 // deactivates the hosting vendor plugins (they require the Hostinger platform and fatal elsewhere)
 $ov = getenv('LLD_OVERLAY'); if ($ov && !defined('LLD_TOOLS_DOCROOT')) define('LLD_TOOLS_DOCROOT', rtrim($ov, '/'));   // the plugin reads tools/status.json and the tool files from the overlay
