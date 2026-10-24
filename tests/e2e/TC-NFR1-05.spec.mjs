@@ -201,16 +201,20 @@ test('TC-NFR1-05-AS-05', async ({}, testInfo) => {
 
 test('TC-NFR1-05-AS-06', async ({ page }) => {
   test.setTimeout(600000);
-  const bad = [], theme = [];
+  // The only exclusion: the Newspaper theme sidebar column on the hub and the two landing pages (frozen theme, CMP-01), whose
+  // block titles are h4 after the page's h2 sections. Every other heading on all 11 states — the homepage included — must never
+  // skip a level. The sidebar skips are listed per page in the annotations; the assertion stays deferred (tests/lib/deferred.json,
+  // DEC-78 proposed) until HG-02 decides fix-or-accept.
+  const SIDEBAR_PAGES = new Set(['wp /health-tools/', 'wp /health-tools/protein/', 'wp /health-tools/diabetes-risk-check/']);
+  const bad = [], sidebar = [];
   for (const [label, go] of states()) {
     await go(page);
-    // every visible heading; those inside the Newspaper theme's own sidebar/blocks (.td_block_wrap, frozen CMP-01) are reported
-    // separately — registry known deviation + DEC-78 blocker — while every other heading must never skip a level
-    const hs = await page.locator('h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible').evaluateAll((els) => els.map((e) => ({ l: Number(e.tagName[1]), theme: !!e.closest('.td_block_wrap') && !e.closest('.lld-tools-hub, .lld-home-row, [data-lld-section]'), t: e.textContent.trim().slice(0, 30) })));
-    const own = hs.filter((h) => !h.theme);
-    for (let i = 1; i < own.length; i++) if (own[i].l > own[i - 1].l + 1) { bad.push(`${label}: h${own[i - 1].l} → h${own[i].l} ("${own[i].t}")`); break; }
-    for (let i = 1; i < hs.length; i++) if (hs[i].theme && hs[i].l > hs[i - 1].l + 1) { theme.push(`${label}: theme block "${hs[i].t}" h${hs[i].l} after h${hs[i - 1].l}`); break; }
+    const hs = await page.locator('h1:visible, h2:visible, h3:visible, h4:visible, h5:visible, h6:visible').evaluateAll((els) => els.map((e) => ({ l: Number(e.tagName[1]), side: !!e.closest('.td-ss-main-sidebar, .td-pb-span4'), t: e.textContent.trim().slice(0, 30) })));
+    const excluded = SIDEBAR_PAGES.has(label);
+    const own = excluded ? hs.filter((h) => !h.side) : hs;
+    for (let i = 1; i < own.length; i++) if (own[i].l > own[i - 1].l + 1) bad.push(`${label}: h${own[i - 1].l} → h${own[i].l} ("${own[i].t}")`);
+    if (excluded) for (let i = 1; i < hs.length; i++) if (hs[i].side && hs[i].l > hs[i - 1].l + 1) sidebar.push(`${label}: sidebar "${hs[i].t}" h${hs[i].l} after h${hs[i - 1].l}`);
   }
-  if (theme.length) test.info().annotations.push({ type: 'theme-headings (DEC-78)', description: theme.join(' | ') });
-  expect(bad, 'heading levels never skip (plugin, tool and page content)').toEqual([]);
+  if (sidebar.length) test.info().annotations.push({ type: 'theme-sidebar-headings (DEC-78)', description: sidebar.join(' | ') });
+  expect(bad, 'heading levels never skip outside the theme sidebar on the hub and landing pages').toEqual([]);
 });

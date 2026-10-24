@@ -21,9 +21,12 @@ if (!entry) { console.error(`unknown requirement ${req}`); process.exit(2); }
 
 const results = new Map();
 const idRe = /^(TC-(FR1|NFR1|UI1)-\d{2}-(AS|NEG)-\d{2}|SAF-[A-Z]+-\d{2}|NEG-\d{2})/;
+// assertions that may pass but are not accepted until a human gate signs (tests/lib/deferred.json): a pass records as skipped
+const DEFERRED = (() => { try { const d = JSON.parse(readFileSync(new URL('./deferred.json', import.meta.url), 'utf8')); delete d._note; return d; } catch { return {}; } })();
 const put = (title, status, artefact) => {
   const m = idRe.exec(title.trim()); if (!m) return;
-  const outcome = status === 'passed' ? 'pass' : (status === 'skipped' || status === 'pending' || status === 'todo') ? 'skipped' : 'fail';
+  let outcome = status === 'passed' ? 'pass' : (status === 'skipped' || status === 'pending' || status === 'todo') ? 'skipped' : 'fail';
+  if (outcome === 'pass' && DEFERRED[m[1]]) { outcome = 'skipped'; artefact = `deferred: ${DEFERRED[m[1]]}`; }
   const prev = results.get(m[1]);
   // one assertion can report from several tests, families or Playwright projects: a failure anywhere wins, then a skip (a
   // deferred half stays visible, e.g. TC-FR1-22-AS-01's ORC-01 container), and only an all-pass assertion is a pass
