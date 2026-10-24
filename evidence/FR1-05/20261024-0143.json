@@ -1015,5 +1015,10 @@
   "green_run": "local-20261024-0143",
   "human_gate": null,
   "started_at": "2026-10-24T00:43:45Z",
-  "finished_at": "2026-10-24T01:09:14Z"
+  "finished_at": "2026-10-24T01:09:14Z",
+  "reviewer": {
+    "agent": "P-C",
+    "verdict": "PASS",
+    "report": "https://github.com/sudarshanalk/lifeline-daily-stage1/pull/42 (P-C review PASS, 7 minor: Related-reading query cost, metabolic-health tag and child categories for HG-01, excerpt/duplicate CTA edge cases, AS-03/AS-05/AS-06 narrower than literal TC, DEC-68 extension needs ratification; 103 committed decisions independently recomputed, 0 mismatches)"
+  }
 }
