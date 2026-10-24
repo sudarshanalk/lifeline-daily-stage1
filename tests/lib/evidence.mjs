@@ -25,8 +25,9 @@ const put = (title, status, artefact) => {
   const m = idRe.exec(title.trim()); if (!m) return;
   const outcome = status === 'passed' ? 'pass' : (status === 'skipped' || status === 'pending' || status === 'todo') ? 'skipped' : 'fail';
   const prev = results.get(m[1]);
-  // one assertion can report from several Playwright projects or families: a failure anywhere wins, then a pass, then a skip
-  const rank = { fail: 2, pass: 1, skipped: 0 };
+  // one assertion can report from several tests, families or Playwright projects: a failure anywhere wins, then a skip (a
+  // deferred half stays visible, e.g. TC-FR1-22-AS-01's ORC-01 container), and only an all-pass assertion is a pass
+  const rank = { fail: 2, skipped: 1, pass: 0 };
   if (!prev || rank[outcome] > rank[prev.outcome]) results.set(m[1], { assertion: m[1], outcome, artefact });
 };
 if (opt('--vitest')) {

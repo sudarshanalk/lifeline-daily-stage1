@@ -37,7 +37,6 @@ test('TC-NFR1-12-AS-01', async ({ page }, info) => {
 });
 
 test('TC-NFR1-12-AS-02', async ({ page }, info) => {
-  test.skip(info.project.name !== 'chromium', 'viewport check runs once, in the chromium project');
   const wp = available();
   test.skip(!wp.ok, wp.reason);
   test.setTimeout(600000);

@@ -1812,7 +1812,7 @@
       ],
       "human_gate": null,
       "mutations": [],
-      "known_deviations": {},
+      "known_deviations": {"TC-NFR1-12-AS-01": "CI installs chromium only, so CI runs the chromium and pixel5 projects; the full DEC-18 matrix (chromium, webkit, firefox, pixel5, iphone12) runs on the reference machine with LLD_FULL_MATRIX=1, which fails if a browser is missing"},
       "evidence_dir": "evidence/NFR1-12/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
