@@ -1020,5 +1020,10 @@
   "green_run": "local-20261024-0232",
   "human_gate": null,
   "started_at": "2026-10-24T01:32:45Z",
-  "finished_at": "2026-10-24T04:01:10Z"
+  "finished_at": "2026-10-24T04:01:10Z",
+  "reviewer": {
+    "agent": "P-C",
+    "verdict": "PASS",
+    "report": "https://github.com/sudarshanalk/lifeline-daily-stage1/pull/43 (P-C review FAIL: evidence precedence reported TC-FR1-22-AS-01 as pass, CI subset unrecorded → repaired fdc2ff6 → re-review PASS; minor: ci-guards.yml step name still mentions the 5-project matrix, outside NFR1-12 scope)"
+  }
 }
