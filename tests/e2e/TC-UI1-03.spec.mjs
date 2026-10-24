@@ -1,6 +1,6 @@
 // TC-UI1-03 Responsive layout — e2e at 320/375/768/1440. Six pages: home, hub, the two landing pages (local WordPress stack,
 // DEC-69; homepage rows via `wp lld home apply` and landing pages via `wp lld pages apply`, both restored afterwards) and the two
-// standalone tools (htaccess emulator). Form state = the page as loaded; result state = FX-PR-NRM-01 / FX-DM-QD-01 submitted
+// standalone tools (htaccess emulator). Form state = the page as loaded; result state = FX-PR-NRM-01 / FX-DM-WHTR-01 submitted
 // (on a landing page, inside the embedded tool). AS-01 `document.scrollingElement.scrollWidth <= innerWidth` everywhere, and
 // inside the embedded tool's own document; AS-02 the primary CTA (tool submit button; first card CTA on home and hub) is the
 // element at its own centre after scrollIntoView; AS-03 no `[data-test=metrics]` child is clipped (scrollWidth > clientWidth).
@@ -18,7 +18,8 @@ const ROOT = resolve(here, '..', '..');
 const fx = (dir, file, id) => JSON.parse(readFileSync(resolve(ROOT, 'fixtures', dir, file), 'utf8')).fixtures.find((f) => f.id === id);
 const TOOLS = {
   protein: { file: 'protein-requirement-tool.html', landing: '/health-tools/protein/', fixture: fx('protein', 'nrm.json', 'FX-PR-NRM-01'), fill: fillProteinForm, submit: submitProtein, form: '#form', cta: '#form button[type=submit]' },
-  diabetes: { file: 'diabetes-risk-tool.html', landing: '/health-tools/diabetes-risk-check/', fixture: fx('diabetes', 'qd.json', 'FX-DM-QD-01'), fill: fillDiabetesForm, submit: submitDiabetes, form: '#tool', cta: '#submitBtn' },
+  // FX-DM-WHTR-01 includes a waist, so the result renders the two-column WHtR/IDRS tiles (the metrics most at risk at 320 px)
+  diabetes: { file: 'diabetes-risk-tool.html', landing: '/health-tools/diabetes-risk-check/', fixture: fx('diabetes', 'whtr.json', 'FX-DM-WHTR-01'), fill: fillDiabetesForm, submit: submitDiabetes, form: '#tool', cta: '#submitBtn' },
 };
 const WIDTHS = [320, 375, 768, 1440];
 const PAGES = { 'health-tools': 6107, protein: 6102, 'diabetes-risk-check': 6066 };
@@ -40,14 +41,16 @@ test.afterAll(async () => {
   if (stack && !stack.external) {
     for (const [id, b] of Object.entries(before)) { stack.wp('post', 'update', id, `--post_content=${b.content.replace(/\n$/, '')}`); b.slug ? stack.wp('post', 'meta', 'update', id, 'lld_tool_slug', b.slug) : stack.wp('post', 'meta', 'delete', id, 'lld_tool_slug'); }
     const rv = stack.wp('lld', 'home', 'revert');
-    if (rv.status !== 0 || stack.wp('post', 'get', frontId, '--field=post_content').stdout.trim() !== originalHome.trim()) { stack.wp('post', 'update', frontId, `--post_content=${originalHome}`); throw new Error('home revert did not restore the front page exactly'); }
+    if (rv.status !== 0 || stack.wp('post', 'get', frontId, '--field=post_content').stdout.trim() !== originalHome.trim()) { stack.wp('post', 'update', frontId, `--post_content=${originalHome}`); await stack.close(); await srv?.close(); throw new Error('home revert did not restore the front page exactly'); }
   }
   await stack?.close(); await srv?.close();
 });
 test.beforeEach(async ({ page }) => { if (stack && !stack.external) await page.route(`${IMPORT_ORIGIN}/**`, (r) => r.continue({ url: r.request().url().replace(IMPORT_ORIGIN, stack.url) })); });
 const overflow = (scope) => scope.evaluate(() => ({ sw: document.scrollingElement.scrollWidth, iw: window.innerWidth }));
 const centreHit = (loc) => loc.evaluate((el) => { el.scrollIntoView({ block: 'center' }); const r = el.getBoundingClientRect(); const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return { ok: !!hit && (hit === el || el.contains(hit)), inView: r.top >= 0 && r.bottom <= window.innerHeight && r.left >= 0 && r.right <= window.innerWidth, hit: hit ? hit.tagName + '.' + hit.className : null }; });
-const clipped = (scope) => scope.locator('[data-test=metrics]').evaluate((m) => [...m.querySelectorAll('*')].filter((c) => c.scrollWidth > c.clientWidth + 1 && getComputedStyle(c).overflowX !== 'visible').map((c) => `${c.tagName}.${c.className}: ${c.scrollWidth}>${c.clientWidth}`));
+// literal TC check on the metrics container and every descendant: scrollWidth > clientWidth (1 px rounding tolerance); inline
+// boxes report 0/0 and cannot trip it
+const clipped = (scope) => scope.locator('[data-test=metrics]').evaluate((m) => [m, ...m.querySelectorAll('*')].filter((c) => c.scrollWidth > c.clientWidth + 1).map((c) => `${c.tagName}.${c.className}: ${c.scrollWidth}>${c.clientWidth}`));
 
 test('TC-UI1-03-AS-01', async ({ page }) => {
   test.setTimeout(900000);
@@ -95,11 +98,25 @@ test('TC-UI1-03-AS-02', async ({ page }) => {
       const sel = path === '/' ? '[data-test=tools-row] [data-test=cta]' : '[data-test=tools-hub] [data-tool-card][data-status=active] [data-test=cta]';
       const h = await centreHit(page.locator(sel).first()); if (!h.ok || !h.inView) bad.push(`${width} ${path} card CTA: hit ${h.hit}, in view ${h.inView}`);
     }
+    for (const [slug, t] of Object.entries(TOOLS)) {
+      await page.goto(stack.url + t.landing, { waitUntil: 'load' });
+      const frameEl = page.locator('iframe.lld-tool-frame'); const frame = page.frameLocator('iframe.lld-tool-frame');
+      await expect(frame.locator(t.form)).toBeVisible();
+      // bring the CTA to the middle of the parent viewport (frame offset + CTA offset), then hit-test both documents
+      const ctaBox = await frame.locator(t.cta).evaluate((el) => { const r = el.getBoundingClientRect(); return { y: r.top + window.scrollY + r.height / 2, x: r.left + r.width / 2 }; });
+      const frameTop = await frameEl.evaluate((f) => f.getBoundingClientRect().top + window.scrollY);
+      await page.evaluate((y) => window.scrollTo(0, Math.max(0, y - window.innerHeight / 2)), frameTop + ctaBox.y);
+      await page.waitForTimeout(300);
+      const parent = await frameEl.evaluate((f, c) => { const r = f.getBoundingClientRect(); const x = r.left + c.x, y = r.top + c.y; const hit = document.elementFromPoint(x, y); return { ok: hit === f, inView: y > 0 && y < window.innerHeight, hit: hit ? hit.tagName + '.' + hit.className : null }; }, ctaBox);
+      const inner = await frame.locator(t.cta).evaluate((el) => { const r = el.getBoundingClientRect(); const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return { ok: !!hit && (hit === el || el.contains(hit)), hit: hit ? hit.tagName + '.' + hit.className : null }; });
+      if (!parent.ok || !parent.inView || !inner.ok) bad.push(`${width} ${t.landing} embedded submit: parent hit ${parent.hit} (in view ${parent.inView}), frame hit ${inner.hit}`);
+    }
   }
   expect(bad, 'primary CTA fully in view and not covered after scrollIntoView').toEqual([]);
 });
 
 test('TC-UI1-03-AS-03', async ({ page }) => {
+  test.setTimeout(600000);
   const bad = [];
   for (const width of WIDTHS) {
     await page.setViewportSize({ width, height: 800 });
@@ -107,6 +124,14 @@ test('TC-UI1-03-AS-03', async ({ page }) => {
       await page.goto(`${srv.url}/tools/${t.file}`); await t.fill(page, t.fixture.inputs); await t.submit(page);
       await expect(page.locator('[data-test=metrics]')).toBeVisible();
       for (const c of await clipped(page)) bad.push(`${width} ${slug}: ${c}`);
+    }
+    if (!stack) continue;
+    for (const [slug, t] of Object.entries(TOOLS)) {
+      await page.goto(stack.url + t.landing, { waitUntil: 'load' });
+      await page.addStyleTag({ content: '[role=banner], [role=banner] *, .td-header-template-wrap, .td-header-template-wrap * { pointer-events: none !important; }' });
+      const frame = page.frameLocator('iframe.lld-tool-frame');
+      await t.fill(frame, t.fixture.inputs); await t.submit(frame); await expect(frame.locator('[data-test=metrics]')).toBeVisible();
+      for (const c of await clipped(frame)) bad.push(`${width} ${t.landing} (embedded): ${c}`);
     }
   }
   expect(bad, '[data-test=metrics] children are not clipped').toEqual([]);
