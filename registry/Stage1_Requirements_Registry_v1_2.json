@@ -3089,6 +3089,15 @@
       "decided_on": "2026-10-23"
     },
     {
+      "id": "DEC-79",
+      "question": "Posts in categories the tidy-up deletes",
+      "selected": "refuse while non-draft posts remain; drafts move to wellness only with --include-drafts",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
       "id": "DEC-80",
       "question": "Home of clinical-gate job",
       "selected": "NFR1-02 components add CMP-13",
