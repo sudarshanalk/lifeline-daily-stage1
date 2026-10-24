@@ -13,6 +13,8 @@ import { fileURLToPath } from 'node:url';
 import { ROOT } from '../lib/paths.mjs';
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
+/** A real calendar date in YYYY-MM-DD (2026-99-99 is refused). */
+const isDate = (v) => { const s = String(v); if (!ISO.test(s)) return false; const d = new Date(`${s}T00:00:00Z`); return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s; };
 const named = (n) => typeof n === 'string' && n.trim().length > 0 && !/^pending\b/i.test(n.trim());
 const read = (root, rel, problems) => { try { return JSON.parse(readFileSync(resolve(root, rel), 'utf8')); } catch (e) { problems.push(`${rel} unreadable (${e.message})`); return null; } };
 
@@ -25,13 +27,13 @@ export function signoffProblems(root = ROOT) {
     if (!s || typeof s !== 'object') { problems.push(`${slug}: clinical_signoff missing`); continue; }
     for (const k of ['name', 'date', 'decision']) if (!(k in s)) problems.push(`${slug}: clinical_signoff.${k} missing`);
     if ('name' in s && !named(s.name)) problems.push(`${slug}: clinical_signoff.name is not a named reviewer ('${s.name}')`);
-    if ('date' in s && !ISO.test(String(s.date))) problems.push(`${slug}: clinical_signoff.date '${s.date}' is not YYYY-MM-DD`);
+    if ('date' in s && !isDate(s.date)) problems.push(`${slug}: clinical_signoff.date '${s.date}' is not a YYYY-MM-DD calendar date`);
     if ('decision' in s && s.decision !== 'approved') problems.push(`${slug}: clinical_signoff.decision is '${s.decision}', not 'approved'`);
   }
   const c = read(root, 'approvals/copy.json', problems);
   if (c) {
     if (!named(c.reviewer)) problems.push(`copy: reviewer is not a named reviewer ('${c.reviewer}')`);
-    if (!ISO.test(String(c.date))) problems.push(`copy: date '${c.date}' is not YYYY-MM-DD`);
+    if (!isDate(c.date)) problems.push(`copy: date '${c.date}' is not a YYYY-MM-DD calendar date`);
     if (c.decision !== 'approved') problems.push(`copy: decision is '${c.decision}', not 'approved'`);
   }
   return problems;
@@ -45,11 +47,13 @@ export function ratificationProblems(root = ROOT) {
   return problems;
 }
 
-/** HG-02 has been held once every HG-02 artefact carries a decision other than `pending`. */
+/** The gate counts as held (the checks then apply strictly) as soon as ANY HG-02 artefact carries a decision other than
+ *  `pending`, or any of them is missing, unreadable or has no decision: only the untouched all-pending state of the three
+ *  records defers the assertions. */
 export function gateHeld(root = ROOT) {
   const p = [];
   const decisions = [read(root, 'approvals/protein.json', p)?.clinical_signoff?.decision, read(root, 'approvals/diabetes.json', p)?.clinical_signoff?.decision, read(root, 'approvals/copy.json', p)?.decision];
-  return p.length === 0 && decisions.every((d) => d && d !== 'pending');
+  return p.length > 0 || decisions.some((d) => d !== 'pending');
 }
 
 export function clinicalGate({ root = ROOT } = {}) {

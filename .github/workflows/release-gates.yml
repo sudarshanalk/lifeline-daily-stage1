@@ -1,7 +1,11 @@
 # Release-tag gates (docs/04 §1: `clinical-gate` and `release-gate` are tag checks, not PR checks).
 # clinical-gate (NFR1-02, DEC-80): HG-02 artefacts approved — approvals/{protein,diabetes}.json clinical_signoff named, dated,
 # `approved`; approvals/copy.json approved; no DEC row with ratify_at HG-02 left unratified. Red until HG-02 is held.
+# The production deploy (deploy-production.yml, validate job) runs the same check, so a red gate blocks the deploy.
+# workflow_dispatch is a rehearsal only: a green manual run on a branch is not a release check.
 name: release-gates
+permissions:
+  contents: read
 on:
   push:
     tags: ['rc-*']

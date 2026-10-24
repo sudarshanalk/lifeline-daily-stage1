@@ -1,7 +1,7 @@
 // TC-NFR1-02 Clinical governance (process, hybrid, human gate HG-02). The assertions read the records the clinical reviewer
-// signs; this repository never writes or simulates them. Before HG-02 is held (every HG-02 artefact still `pending`) each
-// assertion first checks that the gate check correctly refuses the current records, then is recorded as skipped with the
-// HG-02 reason (tests/lib/deferred.json). Once any HG-02 artefact carries a decision, the assertions run strictly; so does
+// signs; this repository never writes or simulates them. While all three HG-02 records are untouched (every decision still
+// `pending`), each assertion first checks that the gate check correctly refuses the current records, then is skipped with the
+// HG-02 reason. Once any HG-02 record carries a decision, or one is missing or unreadable, the assertions run strictly; so does
 // LLD_STRICT_GATES=1 (the release-tag `clinical-gate` run and the red-before-green run).
 // AS-01 approvals/{protein,diabetes}.json clinical_signoff.{name,date,decision} present, decision `approved` (+ copy deck);
 // AS-02 0 DEC rows with ratify_at HG-02 and status outside {ratified, overridden};
@@ -29,6 +29,8 @@ describe('TC-NFR1-02 clinical governance', () => {
         expect(problems, `${slug}: pending decision refused`).toContain(`${slug}: clinical_signoff.decision is 'pending', not 'approved'`);
         expect(problems.some((p) => p.startsWith(`${slug}: clinical_signoff.name is not a named reviewer`)), `${slug}: placeholder name refused`).toBe(true);
       }
+      expect(problems, 'copy deck: pending decision refused').toContain("copy: decision is 'pending', not 'approved'");
+      expect(problems.some((p) => p.startsWith('copy: reviewer is not a named reviewer')), 'copy deck: placeholder reviewer refused').toBe(true);
       return ctx.skip(PENDING);
     }
     expect(problems, 'clinical sign-off named, dated and approved').toEqual([]);
