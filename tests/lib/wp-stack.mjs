@@ -9,7 +9,7 @@
 //   LLD_WP_URL        when set, an already-running WordPress (staging, OI-1): the stack is not started and `wp` is unavailable
 // `available()` says whether the stack can run here; CI runners without the snapshot skip the dependent tests with that reason.
 import { spawn, spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdtempSync, rmSync, writeFileSync, readFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, rmSync, writeFileSync, readFileSync, unlinkSync, linkSync, statSync, openSync, closeSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import http from 'node:http';
@@ -49,9 +49,62 @@ function assembleMu(overlay) {
   return dir;
 }
 
+/* DEC-73: the local stack (snapshot docroot + one MariaDB database) is a shared singleton. Every startWpStack() holds an
+ * exclusive lock file for its lifetime so concurrent runs from other worktrees or reviewer sessions wait instead of
+ * corrupting each other's page content.
+ *  - acquire: the holder record is written to a private temp file first, then hard-linked to the lock path — creation is
+ *    atomic and the lock never exists without its content (EEXIST/EPERM = busy);
+ *  - an unreadable lock is busy (never deleted on a failed read); a stale lock (holder pid gone, or naming this process while
+ *    it holds nothing) is removed only under a short takeover lock (`<lock>.takeover`, created exclusively), after re-reading
+ *    it there — so a live lock is never moved or deleted, and two contenders can never both remove and re-create it;
+ *  - re-entrant within one process by reference count; one exit handler; released on close and on every failed start;
+ *  - the default wait (LLD_WP_LOCK_TIMEOUT_MS, 50 s) ends before the callers' hook timeouts so the DEC-73 message surfaces. */
+const LOCK = process.env.LLD_WP_LOCK_PATH || join(tmpdir(), 'lld-wp-stack.lock');   // path override for the lock's own race test
+const alive = (pid) => { try { process.kill(pid, 0); return true; } catch (e) { return e.code === 'EPERM'; } };
+let lockDepth = 0; let exitHooked = false;
+/** A lock record whose holder is gone, or that names this process while it holds no lock (a leftover of its own). */
+const isStale = (h) => (h.pid === process.pid ? lockDepth === 0 : !alive(h.pid));
+/** Remove a stale lock under the exclusive takeover lock, re-reading it there. Returns true when it was removed. */
+function removeStale() {
+  const take = `${LOCK}.takeover`;
+  try { const st = statSync(take); if (Date.now() - st.mtimeMs > 10000) unlinkSync(take); } catch {}   // a crashed taker (held for microseconds normally)
+  let fd; try { fd = openSync(take, 'wx'); } catch { return false; }
+  try {
+    let h = null; try { h = JSON.parse(readFileSync(LOCK, 'utf8')); } catch { return false; }   // unreadable or already gone: retry the link
+    if (!isStale(h)) return false;
+    unlinkSync(LOCK); return true;
+  } catch { return false; }
+  finally { try { closeSync(fd); } catch {} try { unlinkSync(take); } catch {} }
+}
+const dropLock = () => { try { const h = JSON.parse(readFileSync(LOCK, 'utf8')); if (h.pid === process.pid) unlinkSync(LOCK); } catch {} };
+async function acquireLock(timeoutMs = Number(process.env.LLD_WP_LOCK_TIMEOUT_MS || 50000)) {
+  if (lockDepth > 0) { lockDepth++; return releaseOnce(); }
+  const t0 = Date.now(); let holder = null;
+  for (;;) {
+    const tmp = `${LOCK}.${process.pid}.${Date.now()}.tmp`;
+    writeFileSync(tmp, JSON.stringify({ pid: process.pid, cwd: process.cwd(), at: new Date().toISOString() }));
+    try { linkSync(tmp, LOCK); unlinkSync(tmp); break; }
+    catch (e) {
+      try { unlinkSync(tmp); } catch {}
+      if (!['EEXIST', 'EPERM', 'EBUSY'].includes(e.code)) throw e;
+      holder = null; try { holder = JSON.parse(readFileSync(LOCK, 'utf8')); } catch {}
+      if (holder && isStale(holder)) { if (removeStale()) continue; }
+      if (Date.now() - t0 > timeoutMs) throw new Error(`local WordPress stack busy: ${holder ? `locked by pid ${holder.pid} (${holder.cwd}) since ${holder.at}` : 'lock file being written'} — waited ${Math.round(timeoutMs / 1000)} s (DEC-73; raise LLD_WP_LOCK_TIMEOUT_MS to wait longer)`);
+      await new Promise((r) => setTimeout(r, 500 + Math.floor(Math.random() * 500)));
+    }
+  }
+  lockDepth = 1;
+  if (!exitHooked) { exitHooked = true; process.once('exit', () => { if (lockDepth > 0) dropLock(); }); }
+  return releaseOnce();
+}
+export const _lockForTest = { acquire: (ms) => acquireLock(ms), path: LOCK };
+function releaseOnce() { let done = false; return () => { if (done) return; done = true; lockDepth = Math.max(0, lockDepth - 1); if (lockDepth === 0) dropLock(); }; }
+
 export async function startWpStack({ overlay = resolve(ROOT, 'site', 'public_html') } = {}) {
   if (process.env.LLD_WP_URL) return { url: process.env.LLD_WP_URL.replace(/\/$/, ''), external: true, wp: () => { throw new Error('wp-cli is not available against LLD_WP_URL'); }, close: async () => {} };
   const a = available(); if (!a.ok) throw new Error(a.reason);
+  const releaseLock = await acquireLock();
+  try {
   ensureDb();
   // the overlay is served from a temp copy: `wp lld status set` writes tools/status.json there, the endpoints get a generated
   // config.php (log transport, outbox in the copy), and the repository's site/ stays untouched
@@ -81,6 +134,7 @@ export async function startWpStack({ overlay = resolve(ROOT, 'site', 'public_htm
   if (!ready) { php.kill(); throw new Error('test WordPress did not answer: ' + log.slice(-5).join(' | ')); }
   return {
     url, external: false, wp, snapshot: SNAPSHOT, muDir: mu, overlayDir: overlay, statusPath: join(overlay, 'tools', 'status.json'), outboxDir: join(overlay, 'tools', 'api', 'outbox'), log: () => [...log],
-    close: async () => { try { if (original.home && original.home !== url) { wp('option', 'update', 'home', original.home); wp('option', 'update', 'siteurl', original.siteurl); } } catch {} php.kill(); rmSync(mu, { recursive: true, force: true }); rmSync(overlay, { recursive: true, force: true }); },
+    close: async () => { try { if (original.home && original.home !== url) { wp('option', 'update', 'home', original.home); wp('option', 'update', 'siteurl', original.siteurl); } } catch {} php.kill(); rmSync(mu, { recursive: true, force: true }); rmSync(overlay, { recursive: true, force: true }); releaseLock(); },
   };
+  } catch (e) { releaseLock(); throw e; }
 }
