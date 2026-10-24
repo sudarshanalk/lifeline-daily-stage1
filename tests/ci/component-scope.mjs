@@ -19,7 +19,7 @@ const HARNESS = ['tests/**', 'evidence/**', 'Makefile', 'package.json', 'package
 // cannot pass copy-hash without refreshing them in the same PR (DEC-56 proposal, mirrors the SRS FR1-06 version_hash rule)
 const PROVENANCE_SET = ['approvals/protein.json', 'approvals/diabetes.json', 'approvals/copy.json', 'copy/inventory.json', 'copy/protein-messages.json', 'copy/diabetes-messages.json', 'copy/templates.json', 'copy/inline.json', 'copy/pages.json', 'manifests/protein.json', 'manifests/diabetes.json', 'site/public_html/tools/status.json', 'tests/mutations/MUT-10.patch'];
 // artefacts a requirement produces by its TC page although they live under CMP-12 (DEC-68 proposal): SCH-04 tool cards are FR1-04's
-const EXTRA = { 'FR1-04': ['content/tool-cards.json'], 'UI1-02': ['content/tool-cards.json'], 'FR1-05': ['content/article-tool-links.json'] };   // SCH-04 / SCH-05b artefacts (DEC-68 proposal)
+const EXTRA = { 'FR1-04': ['content/tool-cards.json'], 'UI1-02': ['content/tool-cards.json'], 'FR1-05': ['content/article-tool-links.json'], 'UI1-09': ['design/tokens.json', '.stylelintrc.json'] };   // SCH-04 / SCH-05b artefacts (DEC-68 proposal)
 const TOOL_PAGES = ['site/public_html/tools/protein-requirement-tool.html', 'site/public_html/tools/diabetes-risk-tool.html'];
 
 /** Minimal glob → RegExp: `**` any depth (including none), `*` within one segment. Placeholders keep the two apart. */
