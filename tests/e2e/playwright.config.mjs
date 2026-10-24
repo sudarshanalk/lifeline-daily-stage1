@@ -14,7 +14,7 @@ const installed = (b) => { let ok = false; try { ok = existsSync(b.executablePat
 export default defineConfig({
   testDir: new URL('.', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'),
   testMatch: /.*\.spec\.mjs/,
-  timeout: 60000,
+  timeout: 180000,   // per test: the local WordPress stack serves pages through one single-threaded PHP server (5–15 s each); 60 s timed out multi-page tests
   retries: 0,
   workers: wpLocal ? 1 : undefined,
   reporter: process.env.LLD_PW_JSON ? [['list'], ['json', { outputFile: process.env.LLD_PW_JSON }]] : [['list']],
