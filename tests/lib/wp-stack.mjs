@@ -43,8 +43,8 @@ function ensureDb() {
 /** Assemble the harness mu-plugins dir: the repository's lld-tools (from `overlay`) plus the test-environment plugin. */
 function assembleMu(overlay) {
   const dir = mkdtempSync(join(tmpdir(), 'lld-mu-'));
-  cpSync(join(overlay, 'wp-content', 'mu-plugins', 'lld-tools'), join(dir, 'lld-tools'), { recursive: true });
-  cpSync(join(overlay, 'wp-content', 'mu-plugins', 'lld-tools-loader.php'), join(dir, 'lld-tools-loader.php'));
+  // the repository plugin, when the overlay has it (a bare overlay — the "before" state of TC-FR1-02 — runs without it)
+  for (const p of ['lld-tools', 'lld-tools-loader.php']) { const src = join(overlay, 'wp-content', 'mu-plugins', p); if (existsSync(src)) cpSync(src, join(dir, p), { recursive: true }); }
   writeFileSync(join(dir, 'zz-lld-test-env.php'), readFileSync(resolve(ROOT, 'tests', 'lib', 'wp-test-env.php')));
   return dir;
 }
