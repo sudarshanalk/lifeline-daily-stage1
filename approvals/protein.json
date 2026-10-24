@@ -1,7 +1,7 @@
 {
   "approval_id": "APR-PROTEIN-2026-10-23",
   "tool_slug": "protein",
-  "version_hash": "482ce1bc1b2a9c25ede1b717c128df682fae3cad5bb7b78469e4bf22b244c14c",
+  "version_hash": "29a02f6f95e77769c4dd1882739d840fb04c9d24197bbfe68314def735e1553b",
   "engine_name": "Lifeline Daily Daily Protein Target engine (published-band lookup: collect applicable guideline bands, take the highest, apply diet multiplier, cap at 2.0 g/kg; renal and pregnancy/lactation early returns)",
   "intended_use": "Educational screening aid that estimates a daily protein intake target (grams per day, g/kg and per-meal split) for healthy adults from published population guidelines. It is not a prescription, not a diagnosis and not individualised clinical nutrition advice.",
   "eligibility": "Adults aged 18 to 99 with healthy kidney function. Visitors who report kidney disease receive no numeric target (renal suppression, KDOQI 2020 restriction). Pregnancy and breastfeeding use their own RDA branch. Liver disease and the 'recovery' goal are flagged as clinical and shown with a clinician-referral message. Not for children, dialysis patients or people under medical nutrition therapy.",
@@ -26,7 +26,7 @@
   "regulatory_statement": "Pending clinical review (HG-02). Working position: the tool provides general wellbeing information derived from published population guidelines and does not diagnose, treat or recommend treatment for any condition; it is therefore operated as an educational/screening information service and not placed on the market as a medical device. Every result screen and email carries the 'not a diagnosis' statement and a clinician-referral message. The clinical reviewer confirms or amends this position at HG-02.",
   "licence": "Site content © Lifeline Daily. Guideline figures are facts from the cited publications; no third-party code is embedded in the engine.",
   "copy_hashes": {
-    "messages.protein": "0a44b969c83098e4316646ad1833e00978d5d0b2a6bacec140559c73d84be991",
+    "messages.protein": "c976aeaf858fa74fa4b16a2117b129a26b7289a328903d30f939541902ba3272",
     "templates.protein": "2ae45c23881374ebe1ecfaf7ae770b2e42e3152786fcc999dab4f2410502312e",
     "pregnancy": "174e2841db0f505bcf0fd03650ef974d76208d1e6e2c6ec6ca4492c21cd68a8c",
     "renalStop": "4a9ecae50fbb5ea3e26c59d630004164aa20be04389e7adf1c9a6b7cdb16eb79",
