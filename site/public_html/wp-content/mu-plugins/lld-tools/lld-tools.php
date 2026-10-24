@@ -362,6 +362,16 @@ if (defined('WP_CLI') && WP_CLI) {
       $targets = [[$doc['hub']['slug'], lld_tools_hub_content()]];
       foreach ($doc['pages'] as $slug => $p) $targets[] = [$p['slug'], lld_tools_landing_content($slug)];
       if (function_exists('kses_remove_filters')) kses_remove_filters();   // repository-owned content: save it verbatim
+      // FR1-17 (DEC-12): the Medical Disclaimer & Urgent Care page is plugin-owned; created when missing
+      if (!empty($doc['disclaimer'])) {
+        $dp = $doc['disclaimer'];
+        if (!get_page_by_path($dp['slug'], OBJECT, 'page') && empty($assoc['dry-run'])) {
+          $id = wp_insert_post(wp_slash(['post_type' => 'page', 'post_status' => 'publish', 'post_title' => $dp['title'], 'post_name' => $dp['slug'], 'post_content' => $dp['content']]), true);
+          if (is_wp_error($id)) WP_CLI::error('medical-disclaimer: ' . $id->get_error_message());
+          WP_CLI::log("{$dp['slug']}: created (post $id)");
+        }
+        $targets[] = [$dp['slug'], $dp['content']];
+      }
       foreach ($targets as [$pageSlug, $content]) {
         $page = get_page_by_path($pageSlug, OBJECT, 'page');
         if (!$page) { WP_CLI::warning("page '$pageSlug' not found — skipped"); continue; }
