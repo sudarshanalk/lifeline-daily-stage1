@@ -199,7 +199,8 @@
         "privacy/**",
         "releases/**",
         "incidents/**",
-        "reports/**"
+        "reports/**",
+        "perf/**"
       ],
       "in_scope_for_component_scope": true
     },
@@ -1417,7 +1418,8 @@
         "FR1-12"
       ],
       "components": [
-        "CMP-12"
+        "CMP-12",
+        "CMP-13"
       ],
       "must_not_touch": [],
       "use_cases": [],
@@ -1573,7 +1575,8 @@
       "components": [
         "CMP-08",
         "CMP-09",
-        "CMP-11"
+        "CMP-11",
+        "CMP-12"
       ],
       "must_not_touch": [],
       "use_cases": [],
@@ -1609,7 +1612,8 @@
       "components": [
         "CMP-01",
         "CMP-09",
-        "CMP-10"
+        "CMP-10",
+        "CMP-08"
       ],
       "must_not_touch": [],
       "use_cases": [],
@@ -3070,6 +3074,60 @@
       "id": "DEC-77",
       "question": "Implementer-produced visual baselines",
       "selected": "candidates until HG-02 signature; assertion deferred",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-78",
+      "question": "Theme-owned heading skips",
+      "selected": "fix tagDiv template content after HG-02; deviation until then",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-79",
+      "question": "Posts in categories the tidy-up deletes",
+      "selected": "refuse while non-draft posts remain; drafts move to wellness only with --include-drafts",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-80",
+      "question": "Home of clinical-gate job",
+      "selected": "NFR1-02 components add CMP-13",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-81",
+      "question": "MedicalWebPage structured data",
+      "selected": "NFR1-07 components add CMP-08; Yoast filter",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-82",
+      "question": "FR1-02 word-count rule on rebuilt pages",
+      "selected": "exclude four rebuilt CMP-09 pages; deferred until ratified",
+      "status": "default",
+      "ratified_on": null,
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-83",
+      "question": "Scope of performance baseline",
+      "selected": "perf/** in CMP-12; NFR1-06 adds CMP-12",
       "status": "default",
       "ratified_on": null,
       "ratify_at": "HG-02",
