@@ -1,88 +1,64 @@
-// TC-NFR1-07 SEO preservation — crawl + http on the local WordPress stack (DEC-69), after every Stage 1 database change the
-// plugin owns (`wp lld pages apply`, `wp lld home apply`, `wp lld tidy apply --include-drafts`); the affected tables are
-// dumped before and restored after. Fixtures: FX-WP-URLS (fixtures/site/url-sample.json).
-// AS-01 TC-FR1-02-AS-01 passes: the same rule (tests/lib/crawl-diff.mjs preservationProblems, DEC-82 pages reported)
-//       over a before/after crawl of the 30-URL sample.
+// TC-NFR1-07 SEO preservation — crawl + http on the local WordPress stack (DEC-69), on the same before/after states as
+// TC-FR1-02 (tests/lib/stage1-states.mjs: before = pristine snapshot without Stage 1 code, after = repository overlay with
+// pages, home and tidy applied; the whole database is dumped and restored). Fixtures: FX-WP-URLS (url-sample.json).
+// AS-01 TC-FR1-02-AS-01 passes: the same rule (crawl-diff preservationProblems with DEC-82's handling of the four rebuilt
+//       pages, plus the FR1-23 checks in tidyProblems); deferred with TC-FR1-02-AS-01 until DEC-82 is ratified.
 // AS-02 the page sitemap lists the hub, both landing pages and /medical-disclaimer/; no sitemap lists /tools/*.html.
-// AS-03 each /tools/*.html has a canonical link to its landing page and no noindex (meta or X-Robots-Tag); the landing
-//       pages carry no noindex. AS-04 each landing page has JSON-LD that parses and declares @type MedicalWebPage or
-//       WebApplication. AS-05 no URL of the sample (plus the FR1-23 redirects) answers through a redirect chain > 1 hop.
+// AS-03 each /tools/*.html has a canonical link to its landing page (full URL) and no noindex (meta or X-Robots-Tag); the
+//       landing pages carry no noindex. AS-04 each landing page's JSON-LD parses and validates structurally: every node has a
+//       known schema.org @type, every {"@id"} reference resolves inside the graph, and the page node is a MedicalWebPage with
+//       the landing page's url and a name (DEC-81). AS-05 no URL of the sample (plus the FR1-23 redirects) answers through a
+//       redirect chain > 1 hop.
 import { test, expect } from '@playwright/test';
-import { readFileSync, readdirSync, existsSync, mkdtempSync, rmSync } from 'node:fs';
-import { spawnSync } from 'node:child_process';
-import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { startWpStack, available } from '../lib/wp-stack.mjs';
-import { crawlRow, fetchChain, sitemapUrls, preservationProblems } from '../lib/crawl-diff.mjs';
+import { available } from '../lib/wp-stack.mjs';
+import { fetchChain, sitemapUrls, preservationProblems, tidyProblems } from '../lib/crawl-diff.mjs';
+import { buildStates, PROD } from '../lib/stage1-states.mjs';
 
 const here = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const ROOT = resolve(here, '..', '..');
 const SAMPLE = JSON.parse(readFileSync(resolve(ROOT, 'fixtures', 'site', 'url-sample.json'), 'utf8')).urls;   // FX-WP-URLS
 const BEFORE = JSON.parse(readFileSync(resolve(ROOT, 'reports', 'as-is', 'crawl-before.json'), 'utf8'));
 const CARDS = JSON.parse(readFileSync(resolve(ROOT, 'content', 'tool-cards.json'), 'utf8')).cards;
-const PROD = 'https://lifelinedaily.com';
-const TABLES = ['wp_terms', 'wp_term_taxonomy', 'wp_term_relationships', 'wp_termmeta', 'wp_options', 'wp_posts', 'wp_postmeta'];
-const DB = process.env.LLD_WP_DB_NAME || 'lifelinedaily_local';
-// the same database server the stack uses (tests/lib/wp-stack.mjs reads LLD_WP_DB_HOST the same way)
-const [DB_HOST, DB_PORT] = (process.env.LLD_WP_DB_HOST || '127.0.0.1:3399').split(':');
-const MYSQL_ARGS = ['-uroot', '-h', DB_HOST, '-P', DB_PORT || '3306'];
+const TIDY = JSON.parse(readFileSync(resolve(ROOT, 'fixtures', 'site', 'site.json'), 'utf8')).fixtures.find((f) => f.id === 'FX-WP-TIDY').inputs;
+const TOOL_FILE = { protein: 'protein-requirement-tool.html', diabetes: 'diabetes-risk-tool.html' };
+const DELETED = { 'womens-health': ['/category/wellness/womens-health/', '/category/wellness/'], 'healthy-living': ['/category/wellness/healthy-living/', '/category/wellness/'], stress: ['/category/wellness/stress/', '/category/wellness/'], uncategorised: ['/category/uncategorised/', '/'] };
+const HIDDEN = Object.fromEntries(TIDY.hide_noindex.map((s) => [s, `/category/${s}/`]));
+// schema.org types Yoast SEO emits on these pages, plus the two NFR1-07 names (https://schema.org/<Type> all exist)
+const KNOWN_TYPES = new Set(['WebPage', 'MedicalWebPage', 'WebApplication', 'WebSite', 'Organization', 'Person', 'ImageObject', 'BreadcrumbList', 'ListItem', 'SearchAction', 'EntryPoint', 'PropertyValueSpecification', 'ReadAction', 'CollectionPage', 'Article']);
 const a = available();
 test.describe.configure({ mode: 'serial' });
 test.skip(!a.ok, a.reason);
 
-const mariaBin = () => { const base = 'C:/Program Files'; const d = existsSync(base) ? readdirSync(base).find((n) => n.startsWith('MariaDB')) : null; return d ? `${base}/${d}/bin` : ''; };
-const ok = (r, what) => { if (r.status !== 0) throw new Error(`${what}: ${r.stdout}${r.stderr}`); return r.stdout.trim(); };
-let stack, dumpDir, dumpFile, toLocal, toCanonical; const crawl = { before: [], after: [] };
-
-test.beforeAll(async () => {
-  test.setTimeout(1800000);
-  stack = await startWpStack();
-  if (stack.external) return;
-  toLocal = (u) => u.replace(/^https?:\/\/(www\.)?lifelinedaily\.com/, stack.url).replace('http://localhost:8080', stack.url);
-  toCanonical = (u) => u.replace(stack.url, PROD).replace('http://localhost:8080', PROD);
-  if (stack.wp('post', 'meta', 'get', '6102', 'lld_tool_slug').stdout.trim() !== '') throw new Error('local database is not the pristine snapshot — reset it before TC-NFR1-07');
-  dumpDir = mkdtempSync(join(tmpdir(), 'lld-nfr107-')); dumpFile = join(dumpDir, 'tables.sql');
-  const d = spawnSync(`${mariaBin()}/mariadb-dump.exe`, [...MYSQL_ARGS, `--result-file=${dumpFile}`, DB, ...TABLES], { encoding: 'utf8' });
-  if (d.status !== 0) throw new Error('table dump failed: ' + d.stderr);
-  for (const u of SAMPLE) crawl.before.push(await crawlRow(u, { toLocal, toCanonical }));
-  for (const cmd of [['pages', 'apply'], ['home', 'apply'], ['tidy', 'apply', '--include-drafts']]) ok(stack.wp('lld', ...cmd), `wp lld ${cmd.join(' ')}`);
-  stack.wp('cache', 'flush');
-  for (const u of SAMPLE) crawl.after.push(await crawlRow(u, { toLocal, toCanonical }));
-});
-test.afterAll(async () => {
-  let err = null;
-  if (stack && !stack.external && dumpFile) {
-    const r = spawnSync(`${mariaBin()}/mariadb.exe`, [...MYSQL_ARGS, DB], { input: readFileSync(dumpFile), maxBuffer: 1 << 30 });
-    stack.wp('cache', 'flush');
-    if (r.status === 0) rmSync(dumpDir, { recursive: true, force: true }); else err = new Error(`table restore failed (dump kept at ${dumpFile}; restore by hand: mariadb ${MYSQL_ARGS.join(' ')} ${DB} < "${dumpFile}")`);
-  }
-  await stack?.close();
-  if (err) throw err;
-});
+let S;
+test.beforeAll(async () => { test.setTimeout(3600000); S = await buildStates(SAMPLE); });
+test.afterAll(async () => { await S?.restore(); });
+const noindex = (r) => /noindex/i.test(r.headers['x-robots-tag'] || '') || /<meta[^>]+name=["']robots["'][^>]*content=["'][^"']*noindex/i.test(r.html);
 
 test('TC-NFR1-07-AS-01', async () => {
-  expect(crawl.after.length, 'the 30-URL sample').toBe(30);
-  // the same rule as TC-FR1-02-AS-01 (tests/lib/crawl-diff.mjs), including its DEC-82 handling of the four rebuilt pages
-  expect(preservationProblems({ before: crawl.before, after: crawl.after, baselineRows: BEFORE.rows, origin: PROD }), 'TC-FR1-02-AS-01 rule holds').toEqual([]);
+  test.setTimeout(600000);
+  expect(S.after.rows.length, 'the 30-URL sample').toBe(30);
+  const problems = [...preservationProblems({ before: S.before.rows, after: S.after.rows, baselineRows: BEFORE.rows, origin: PROD }), ...await tidyProblems({ ...S.maps, origin: PROD, deleted: DELETED, hidden: HIDDEN })];
+  expect(problems, 'TC-FR1-02-AS-01 rule holds').toEqual([]);
 });
 
 test('TC-NFR1-07-AS-02', async () => {
-  const pages = await sitemapUrls(`${PROD}/page-sitemap.xml`, { toLocal, toCanonical });
-  const all = await sitemapUrls(`${PROD}/sitemap_index.xml`, { toLocal, toCanonical });
+  const pages = await sitemapUrls(`${PROD}/page-sitemap.xml`, S.maps);
+  const all = await sitemapUrls(`${PROD}/sitemap_index.xml`, S.maps);
   for (const p of ['/health-tools/', ...CARDS.map((c) => c.landing_url), '/medical-disclaimer/']) expect(pages, `page sitemap lists ${p}`).toContain(PROD + p);
   expect(all.filter((u) => /\/tools\/[^/]+\.html$/.test(u)), 'no sitemap lists /tools/*.html').toEqual([]);
 });
 
 test('TC-NFR1-07-AS-03', async () => {
-  const noindex = (r) => /noindex/i.test(r.headers['x-robots-tag'] || '') || /<meta[^>]+name=["']robots["'][^>]*content=["'][^"']*noindex/i.test(r.html);
   for (const c of CARDS) {
-    const tool = await fetchChain(`${stack.url}/tools/${c.tool_file || (c.tool_slug === 'protein' ? 'protein-requirement-tool.html' : 'diabetes-risk-tool.html')}`);
+    const tool = await fetchChain(`${S.stack.url}/tools/${TOOL_FILE[c.tool_slug]}`);
     expect(tool.status, `${c.tool_slug}: tool page 200`).toBe(200);
     const canon = tool.html.match(/<link[^>]+rel=["']canonical["'][^>]*href=["']([^"']+)/i)?.[1];
-    expect(canon && toCanonical(canon).replace(/^https?:\/\/[^/]+/, ''), `${c.tool_slug}: canonical → landing page`).toBe(c.landing_url);
+    expect(canon && S.maps.toCanonical(canon), `${c.tool_slug}: canonical → landing page`).toBe(PROD + c.landing_url);
     expect(noindex(tool), `${c.tool_slug}: tool page not noindex`).toBe(false);
-    const landing = await fetchChain(`${stack.url}${c.landing_url}`);
+    const landing = await fetchChain(`${S.stack.url}${c.landing_url}`);
     expect(landing.status).toBe(200);
     expect(noindex(landing), `${c.tool_slug}: landing page not noindex`).toBe(false);
   }
@@ -90,21 +66,29 @@ test('TC-NFR1-07-AS-03', async () => {
 
 test('TC-NFR1-07-AS-04', async () => {
   for (const c of CARDS) {
-    const r = await fetchChain(`${stack.url}${c.landing_url}`);
-    const types = [];
-    for (const m of r.html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
-      const doc = JSON.parse(m[1]);   // must parse
-      const nodes = [doc, ...(doc['@graph'] || [])].flat();
-      for (const n of nodes) types.push(...[].concat(n['@type'] || []));
+    const r = await fetchChain(`${S.stack.url}${c.landing_url}`);
+    const blocks = [...r.html.matchAll(/<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)].map((m) => JSON.parse(m[1]));   // must parse
+    expect(blocks.length, `${c.tool_slug}: JSON-LD present`).toBeGreaterThan(0);
+    const nodes = []; const walk = (v) => { if (Array.isArray(v)) v.forEach(walk); else if (v && typeof v === 'object') { if (v['@type']) nodes.push(v); Object.values(v).forEach(walk); } };
+    blocks.forEach(walk);
+    const ids = new Set(nodes.map((n) => n['@id']).filter(Boolean));
+    const refs = []; const collect = (v) => { if (Array.isArray(v)) v.forEach(collect); else if (v && typeof v === 'object') { if (Object.keys(v).length === 1 && v['@id']) refs.push(v['@id']); else Object.values(v).forEach(collect); } };
+    blocks.forEach(collect);
+    const problems = [];
+    for (const n of nodes) for (const t of [].concat(n['@type'])) if (!KNOWN_TYPES.has(t)) problems.push(`unknown @type ${t}`);
+    for (const id of refs) if (!ids.has(id)) problems.push(`unresolved @id ${id}`);
+    const page = nodes.find((n) => [].concat(n['@type']).includes('MedicalWebPage') || [].concat(n['@type']).includes('WebApplication'));
+    if (!page) problems.push(`no MedicalWebPage/WebApplication node (found ${[...new Set(nodes.flatMap((n) => [].concat(n['@type'])))].join(', ')})`);
+    else {
+      if (S.maps.toCanonical(String(page.url || '')) !== PROD + c.landing_url) problems.push(`page node url ${page.url}`);
+      if (!String(page.name || '').trim()) problems.push('page node has no name');
     }
-    expect(types.some((t) => ['MedicalWebPage', 'WebApplication'].includes(t)), `${c.tool_slug}: JSON-LD @type MedicalWebPage or WebApplication (found ${types.join(', ') || 'none'})`).toBe(true);
+    expect(problems, `${c.tool_slug}: JSON-LD validates`).toEqual([]);
   }
 });
 
 test('TC-NFR1-07-AS-05', async () => {
-  const long = crawl.after.filter((r) => r.hops > 1).map((r) => r.chain.join(' → '));
-  for (const p of ['/category/wellness/womens-health/', '/category/wellness/healthy-living/', '/category/wellness/stress/', '/category/uncategorised/']) {
-    const r = await fetchChain(toLocal(PROD + p)); if (r.chain.length - 1 > 1) long.push(r.chain.map((c) => `${c.status} ${c.url}`).join(' → '));
-  }
+  const long = S.after.rows.filter((r) => r.hops > 1).map((r) => r.chain.join(' → '));
+  for (const [path] of Object.values(DELETED)) { const r = await fetchChain(S.maps.toLocal(PROD + path)); if (r.chain.length - 1 > 1) long.push(r.chain.map((c) => `${c.status} ${c.url}`).join(' → ')); }
   expect(long, 'no redirect chain > 1 hop').toEqual([]);
 });
