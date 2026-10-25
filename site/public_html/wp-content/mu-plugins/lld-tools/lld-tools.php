@@ -396,6 +396,20 @@ function lld_tools_home_revert(string $content): string {
   return preg_replace('/\[vc_row el_class=""/', '[vc_row', $content, 1);
 }
 
+/* ---------------------------------------------------------------- one H1 per page (S2-L3, FR2-20) ------------------ */
+/** The theme prints the header logo as an H1 in every header copy (desktop, mobile, sticky) on some templates. Keep the
+ *  first as the page's H1 and turn the other logo H1s into divs (class lld-logo-h1, styled like the theme's logo H1). */
+function lld_tools_single_logo_h1(string $html): string {
+  $n = 0;
+  return (string)preg_replace_callback('#<h1>(<span class="tdb-logo-(?:svg|text|img)-wrap">.*?)</h1>#s', function ($m) use (&$n) {
+    return ++$n === 1 ? $m[0] : '<div class="lld-logo-h1">' . $m[1] . '</div>';
+  }, $html);
+}
+if (function_exists('add_action')) add_action('template_redirect', function () {
+  if (is_admin() || wp_doing_ajax() || is_feed() || (defined('REST_REQUEST') && REST_REQUEST)) return;
+  ob_start('lld_tools_single_logo_h1');
+}, 20);
+
 /* ---------------------------------------------------------------- category tidy-up (FR1-23, DEC-39…43) ------------ */
 function lld_tools_tidy_doc(): array { static $d = null; return $d ?? ($d = json_decode((string)file_get_contents(LLD_TOOLS_DIR . '/data/tidy.json'), true) ?: []); }
 /** Deleted category archives answer 301 to their DEC targets (they 404 once the term is gone). */
