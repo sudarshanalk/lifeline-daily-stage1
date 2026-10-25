@@ -6,5 +6,5 @@
   "image": "rocker/r-ver:4.4.1",
   "image_digest": null,
   "licence": "AGPL-3",
-  "status": "first run 25 Oct 2026 on a GitHub Actions Linux runner (run 40189500226); tarball pinned; image digest not yet recorded (rocker image built locally on the runner). Re-runs refuse on a tarball mismatch."
+  "status": "first run 25 Oct 2026 on a GitHub Actions Linux runner (runs 40189500226 and 40189863760); tarball pinned; image digest not yet recorded (rocker image built locally on the runner). Re-runs refuse on a tarball mismatch."
 }

@@ -3,14 +3,14 @@
   "implementation": "R QDiabetes::QDR2018A (CRAN Archive 1.0-2, AGPL-3; research-use disclaimer applies) in a pinned rocker/r-ver container",
   "versions": {
     "R": "4.4.1",
-    "QDiabetes": "1.0.2",
+    "QDiabetes": "1.0-2",
     "tarball_sha256": "2cacd8ffdc319250f0016019ecdf300e15a3b0911ff0948b23fec0afc65b3964",
     "image": "rocker/r-ver:4.4.1",
     "image_digest": null,
     "licence": "AGPL-3 + file LICENSE"
   },
-  "source_hash": "92ce7d0e230f5ed009437d84c40079d229434f53529736072de54ad2e3396d14",
-  "run_at": "2026-10-25T11:36:19Z",
+  "source_hash": "4aed3e15e89598725a8c9fc58ffd7aa41efb1dc64fd510f80c6d92d342716f81",
+  "run_at": "2026-10-25T11:41:39Z",
   "results": [
     {
       "fixture_id": "FX-DM-BAND-01",
@@ -661,6 +661,6 @@
     "Comparison: abs(js - r) <= 0.05 pp on unrounded values (DEC-02).",
     "BAND fixtures without a numeric weight are reported with pct null; search-weight.R fills them (TC-FR1-12-AS-01 inputs).",
     "source_hash is the sha256 of this script (openssl inside the container).",
-    "First run 25 Oct 2026 on a GitHub Actions ubuntu-latest runner (run 40189500226) because Docker is unavailable on the build machine (OI-4). Tarball sha256 recorded from that build log. fidelity-gate: 78 FX-DM-QD fixtures compared, maximum |js - r| = 0.000000 pp."
+    "Run 25 Oct 2026 on a GitHub Actions ubuntu-latest runner (run 40189863760) because Docker is unavailable on the build machine (OI-4); the tarball was verified against the pinned sha256. fidelity-gate: 78 FX-DM-QD fixtures compared, maximum |js - r| = 0.000000 pp."
   ]
 }
