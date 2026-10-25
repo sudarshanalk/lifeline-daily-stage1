@@ -37,3 +37,5 @@ body.home .td-post-category { display: inline-block; min-height: 24px; line-heig
 .lld-sources { margin: 32px 0 16px; font-size: 0.9rem; color: var(--lld-555555); }
 .lld-sources ol { padding-left: 1.25rem; }
 .lld-sources li { margin: 0 0 6px; overflow-wrap: anywhere; }
+.tdb_header_logo .lld-logo-h1 { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; margin: 0; line-height: 0; pointer-events: auto; }
+.lld-hub-link, .lld-read-next { margin: 24px 0 8px; font-weight: 600; }

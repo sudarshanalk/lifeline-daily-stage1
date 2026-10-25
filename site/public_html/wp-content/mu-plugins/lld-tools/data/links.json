@@ -1,10 +1,11 @@
 {
-  "_note": "DEC-13 article→tool rule (FR1-05), read by the lld-tools plugin. Tag rule wins over the category rule; per-post override meta lld_tool_override (protein|diabetes|none) wins over both. auto_cta renders [lld_tool_cta] after the first h2 (or at the end) of qualifying published posts; article text is not modified.",
+  "_note": "DEC-13 article→tool rule (FR1-05), read by the lld-tools plugin. Tag rule wins over the category rule; per-post override meta lld_tool_override (protein|diabetes|none) wins over both. auto_cta renders [lld_tool_cta] after the first h2 (or at the end) of qualifying published posts; article text is not modified. Category slugs cover the old tree and the S2-L2 tree (same meaning: blood sugar and metabolic health -> diabetes; food, weight and fitness -> protein). hub_link renders a link to the article's top-level category hub at the end of qualifying published posts (S2-L3, FR2-20).",
   "rule_version": "DEC-13 (verified 22 Oct 2026)",
   "diabetes_tags": ["diabetes", "type-2-diabetes", "diabetes-prevention", "diabetes-management", "diabetes-diet", "blood-sugar", "insulin-resistance", "glycaemic-index"],
-  "diabetes_categories": ["metabolic-health"],
-  "protein_categories": ["nutrition-for-healthy-living", "healthy-eating-for-longevity", "healthy-diet-plans-for-longevity", "food-nutrition", "fitness"],
+  "diabetes_categories": ["metabolic-health", "blood-sugar-metabolic-health", "diabetes-prevention"],
+  "protein_categories": ["nutrition-for-healthy-living", "healthy-eating-for-longevity", "healthy-diet-plans-for-longevity", "food-nutrition", "fitness", "weight-healthy-eating", "healthy-eating", "nutrition", "weight-management", "fitness-strength", "exercise", "strength", "movement"],
   "auto_cta": true,
   "utm": { "utm_source": "article" },
-  "related_limit": 3
+  "related_limit": 3,
+  "hub_link": true
 }
