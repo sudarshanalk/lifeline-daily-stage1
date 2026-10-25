@@ -119,6 +119,25 @@ class LLD_Members_Account {
 	}
 
 	/**
+	 * @param array<string,mixed> $fields Profile fields.
+	 */
+	private static function unrealistic_profile( $fields ) {
+		if ( isset( $fields['height_cm'] ) && '' !== $fields['height_cm'] && null !== $fields['height_cm'] ) {
+			$height = (float) $fields['height_cm'];
+			if ( $height < 120 || $height > 220 ) {
+				return true;
+			}
+		}
+		if ( isset( $fields['weight_kg'] ) && '' !== $fields['weight_kg'] && null !== $fields['weight_kg'] ) {
+			$weight = (float) $fields['weight_kg'];
+			if ( $weight < 30 || $weight > 250 ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Save a health record. Refused, and nothing is written, without health consent.
 	 *
 	 * @param int   $member_id Member number.
@@ -135,25 +154,99 @@ class LLD_Members_Account {
 		$now  = lld_members_now_mysql( $member_id );
 		$date = LLD_Members_Clock::now( $member_id )->format( 'Y-m-d' );
 		if ( 'goal' === $kind ) {
-			$ok = $wpdb->insert(
-				LLD_Members_Schema::table( 'goal_choice' ),
-				array(
-					'member_id'  => $member_id,
-					'goal_key'   => sanitize_text_field( (string) $fields['goal_key'] ),
-					'sort_order' => (int) $fields['sort_order'],
-					'chosen_on'  => $date,
-				),
-				array( '%d', '%s', '%d', '%s' )
-			);
+			$table    = LLD_Members_Schema::table( 'goal_choice' );
+			$key      = sanitize_title( (string) $fields['goal_key'] );
+			$existing = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE member_id = %d AND goal_key = %s", $member_id, $key ) );
+			if ( $existing ) {
+				$ok = $wpdb->update(
+					$table,
+					array(
+						'sort_order' => (int) $fields['sort_order'],
+						'chosen_on'  => $date,
+					),
+					array( 'id' => $existing ),
+					array( '%d', '%s' ),
+					array( '%d' )
+				);
+			} else {
+				$count = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE member_id = %d", $member_id ) );
+				if ( $count >= 3 ) {
+					return new WP_Error( 'lld_health', 'You can choose up to 3 goals' );
+				}
+				$ok = $wpdb->insert(
+					$table,
+					array(
+						'member_id'  => $member_id,
+						'goal_key'   => $key,
+						'sort_order' => (int) $fields['sort_order'],
+						'chosen_on'  => $date,
+					),
+					array( '%d', '%s', '%d', '%s' )
+				);
+			}
 		} elseif ( 'profile' === $kind ) {
-			$ok = $wpdb->replace(
-				LLD_Members_Schema::table( 'health_profile' ),
-				array(
-					'member_id' => $member_id,
-					'height_cm' => isset( $fields['height_cm'] ) ? (float) $fields['height_cm'] : null,
-					'updated_on' => $date,
-				)
+			if ( self::unrealistic_profile( $fields ) && empty( $fields['confirmed'] ) ) {
+				return new WP_Error( 'lld_check', 'Please check this value' );
+			}
+			$table   = LLD_Members_Schema::table( 'health_profile' );
+			$current = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d", $member_id ), ARRAY_A );
+			$blank   = array(
+				'member_id'           => $member_id,
+				'sex'                 => null,
+				'height_cm'           => null,
+				'weight_kg'           => null,
+				'waist_cm'            => null,
+				'activity_level'      => null,
+				'diet_type'           => null,
+				'ethnicity'           => null,
+				'conditions_answered' => 'not_answered',
+				'conditions'          => null,
+				'updated_on'          => $date,
+				'reminder_sent_on'    => null,
 			);
+			if ( is_array( $current ) ) {
+				$blank = array_merge( $blank, $current );
+			}
+			foreach ( array( 'sex', 'height_cm', 'weight_kg', 'waist_cm', 'activity_level', 'diet_type', 'ethnicity', 'conditions_answered', 'conditions' ) as $key ) {
+				if ( ! array_key_exists( $key, $fields ) ) {
+					continue;
+				}
+				$value = $fields[ $key ];
+				if ( 'conditions' === $key && is_array( $value ) ) {
+					$value = wp_json_encode( array_values( $value ) );
+				}
+				$blank[ $key ] = ( '' === $value || null === $value ) ? null : $value;
+			}
+			$blank['member_id']  = $member_id;
+			$blank['updated_on'] = $date;
+			$ok = $wpdb->replace( $table, $blank );
+		} elseif ( 'something_else' === $kind ) {
+			$text = trim( sanitize_textarea_field( (string) ( $fields['text'] ?? '' ) ) );
+			if ( '' === $text ) {
+				$ok = 1;
+			} else {
+				$theme = preg_replace( '/\S+@\S+/', '', $text );
+				$theme = preg_replace( '/\d{6,}/', '', (string) $theme );
+				$theme = sanitize_text_field( wp_trim_words( (string) $theme, 3, '' ) );
+				$table = LLD_Members_Schema::table( 'something_else' );
+				$wpdb->insert(
+					$table,
+					array(
+						'member_id'       => $member_id,
+						'written_at'      => $now,
+						'text_ciphertext' => LLD_Members_Crypto::encrypt( 'pending', 'something_else:0' ),
+						'theme'           => $theme,
+					)
+				);
+				$else_id = (int) $wpdb->insert_id;
+				$ok      = $wpdb->update(
+					$table,
+					array( 'text_ciphertext' => LLD_Members_Crypto::encrypt( $text, 'something_else:' . $else_id ) ),
+					array( 'id' => $else_id ),
+					array( '%s' ),
+					array( '%d' )
+				);
+			}
 		} elseif ( 'check_in' === $kind ) {
 			$ok = $wpdb->insert(
 				LLD_Members_Schema::table( 'check_in' ),
@@ -432,33 +525,7 @@ class LLD_Members_Account {
 	}
 
 	private static function goals() {
-		self::require_confirmed();
-		$member_id = LLD_Members_Access::current_member_id();
-		if ( ! self::has_consent( $member_id, 'terms' ) ) {
-			self::agreements();
-			return;
-		}
-		if ( ! self::has_consent( $member_id, 'health' ) ) {
-			$main = '<h1>Goals</h1>' . lld_health_consent_notice();
-			self::layout( 'Goals', $main, true );
-			return;
-		}
-		$error = '';
-		if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['lld_goal_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_goal_nonce'] ) ), 'lld_goal' ) ) {
-			$result = self::save_health( $member_id, array( 'kind' => 'goal', 'goal_key' => isset( $_POST['lld_goal'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_goal'] ) ) : '', 'sort_order' => 1 ) );
-			$error  = is_wp_error( $result ) ? $result->get_error_message() : '';
-			if ( ! is_wp_error( $result ) ) {
-				wp_safe_redirect( home_url( '/members/home/' ) );
-				exit;
-			}
-		}
-		$main  = '<h1>Choose up to 3 goals</h1>' . self::error_box( $error );
-		$main .= '<form method="post" class="lld-form">';
-		$main .= wp_nonce_field( 'lld_goal', 'lld_goal_nonce', true, false );
-		$main .= lld_field( array( 'id' => 'lld_goal', 'name' => 'lld_goal', 'label' => 'Goal' ) );
-		$main .= lld_button( array( 'label' => 'Continue' ) );
-		$main .= '</form>';
-		self::layout( 'Goals', $main, true );
+		LLD_Members_Personal::goals();
 	}
 
 	private static function profile() {
@@ -1071,6 +1138,10 @@ class LLD_Members_Account {
 	private static function member_row( $member_id ) {
 		global $wpdb;
 		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+	}
+
+	public static function require_confirmed_page() {
+		self::require_confirmed();
 	}
 
 	private static function require_confirmed() {

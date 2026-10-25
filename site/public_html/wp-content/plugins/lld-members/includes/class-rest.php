@@ -180,6 +180,33 @@ class LLD_Members_Rest {
 				'permission_callback' => array( __CLASS__, 'test_only' ),
 			)
 		);
+		register_rest_route(
+			'lld-members/v1',
+			'/test/fixture',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'test_fixture' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
+			'/test/reports',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'test_reports' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
+			'/test/search',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'test_search' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
+			)
+		);
 	}
 
 	/**
@@ -325,14 +352,26 @@ class LLD_Members_Rest {
 			$wpdb->insert( $table, $row );
 			$member_id = (int) $wpdb->insert_id;
 		}
+		$consents = array();
 		if ( ! empty( $params['health_consent'] ) ) {
+			$consents[] = 'health';
+		}
+		if ( ! empty( $params['consents'] ) && is_array( $params['consents'] ) ) {
+			foreach ( $params['consents'] as $type ) {
+				$type = sanitize_key( (string) $type );
+				if ( in_array( $type, array( 'terms', 'health', 'marketing' ), true ) ) {
+					$consents[] = $type;
+				}
+			}
+		}
+		foreach ( array_unique( $consents ) as $type ) {
 			$wpdb->insert(
 				LLD_Members_Schema::table( 'consent' ),
 				array(
 					'member_id'        => $member_id,
-					'consent_type'     => 'health',
+					'consent_type'     => $type,
 					'change_kind'      => 'given',
-					'document_version' => 'health-test',
+					'document_version' => $type . '-test',
 					'occurred_at'      => $now_time,
 				)
 			);
@@ -386,13 +425,18 @@ class LLD_Members_Rest {
 		}
 		if ( ! empty( $params['access_state'] ) ) {
 			$state = sanitize_text_field( (string) $params['access_state'] );
+			$plan  = isset( $params['plan'] ) ? sanitize_key( (string) $params['plan'] ) : '';
+			if ( ! in_array( $plan, array( 'free', 'monthly', 'yearly' ), true ) ) {
+				$plan = 0 === strcasecmp( $state, 'free' ) ? 'free' : 'yearly';
+			}
 			$wpdb->replace(
 				LLD_Members_Schema::table( 'subscription' ),
 				array(
 					'member_id'           => $member_id,
-					'plan'                => 0 === strcasecmp( $state, 'free' ) ? 'free' : 'yearly',
+					'plan'                => $plan,
 					'access_state'        => $state,
 					'stripe_state'        => 'active',
+					'started_on'          => isset( $params['started_on'] ) ? sanitize_text_field( (string) $params['started_on'] ) : $now_date,
 					'period_ends_on'      => isset( $params['period_ends_on'] ) ? sanitize_text_field( (string) $params['period_ends_on'] ) : null,
 					'stripe_subscription' => isset( $params['stripe_subscription'] ) ? sanitize_text_field( (string) $params['stripe_subscription'] ) : '',
 				)
@@ -559,6 +603,95 @@ class LLD_Members_Rest {
 
 	public static function test_content_audit() {
 		return new WP_REST_Response( LLD_Members_Content::audit(), 200 );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 */
+	public static function test_fixture( $request ) {
+		$params = $request->get_json_params();
+		$kind   = isset( $params['kind'] ) ? sanitize_key( (string) $params['kind'] ) : '';
+		$stamp  = isset( $params['stamp'] ) ? sanitize_title( (string) $params['stamp'] ) : '';
+		$result = LLD_Members_Fixtures::build( $kind, $stamp, is_array( $params ) ? $params : array() );
+		if ( is_wp_error( $result ) ) {
+			return new WP_REST_Response( array( 'message' => $result->get_error_message() ), 400 );
+		}
+		return new WP_REST_Response( $result, 200 );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 */
+	public static function test_reports( $request ) {
+		$params = $request->get_json_params();
+		LLD_Members_Personal::daily();
+		if ( ! empty( $params['notify'] ) ) {
+			LLD_Members_Personal::notify_live_goals();
+		}
+		return new WP_REST_Response( array( 'sent' => true ), 200 );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 */
+	public static function test_search( $request ) {
+		$params = $request->get_json_params();
+		$needle = isset( $params['q'] ) ? (string) $params['q'] : '';
+		if ( strlen( $needle ) < 8 ) {
+			return new WP_REST_Response( array( 'message' => 'The search text is too short.' ), 400 );
+		}
+		global $wpdb;
+		$hits    = array();
+		$tables  = $wpdb->get_col( 'SHOW TABLES' );
+		$paths   = array( ini_get( 'error_log' ), WP_CONTENT_DIR . '/debug.log' );
+		$offsets = array();
+		foreach ( $paths as $path ) {
+			$offsets[] = ( is_string( $path ) && '' !== $path && is_readable( $path ) ) ? (int) filesize( $path ) : 0;
+		}
+		$watched = array( $wpdb->posts, $wpdb->postmeta, $wpdb->options, $wpdb->usermeta );
+		foreach ( $tables as $table ) {
+			if ( ! is_string( $table ) || ! preg_match( '/^[A-Za-z0-9_]+$/', $table ) ) {
+				continue;
+			}
+			$personal = 0 === strpos( $table, $wpdb->prefix . 'lld_' );
+			if ( ! $personal && ! in_array( $table, $watched, true ) ) {
+				continue;
+			}
+			$columns = $wpdb->get_results( "SHOW COLUMNS FROM {$table}" );
+			if ( ! is_array( $columns ) ) {
+				continue;
+			}
+			foreach ( $columns as $column ) {
+				$name = isset( $column->Field ) ? (string) $column->Field : '';
+				$type = isset( $column->Type ) ? strtolower( (string) $column->Type ) : '';
+				if ( ! preg_match( '/^[A-Za-z0-9_]+$/', $name ) || ! preg_match( '/char|text|blob/', $type ) ) {
+					continue;
+				}
+				$wpdb->suppress_errors( true );
+				$found = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$table}` WHERE `{$name}` LIKE %s", '%' . $wpdb->esc_like( $needle ) . '%' ) );
+				$wpdb->suppress_errors( false );
+				if ( $found > 0 ) {
+					$hits[] = $table . '.' . $name;
+				}
+			}
+		}
+		$logged = false;
+		foreach ( $paths as $index => $path ) {
+			if ( ! is_string( $path ) || '' === $path || ! is_readable( $path ) ) {
+				continue;
+			}
+			$handle = fopen( $path, 'rb' );
+			if ( ! $handle ) {
+				continue;
+			}
+			fseek( $handle, (int) $offsets[ $index ] );
+			$chunk = stream_get_contents( $handle );
+			fclose( $handle );
+			if ( is_string( $chunk ) && false !== strpos( $chunk, $needle ) ) {
+				$logged = true;
+			}
+		}
+		return new WP_REST_Response( array( 'hits' => $hits, 'log' => $logged ), 200 );
 	}
 
 	private static function refused() {

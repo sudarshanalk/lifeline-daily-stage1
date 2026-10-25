@@ -913,6 +913,26 @@ class LLD_Members_Content {
 			);
 			return;
 		}
+		$member_id = LLD_Members_Access::current_member_id();
+		if ( class_exists( 'LLD_Members_Safety' ) && ! LLD_Members_Safety::allows( $member_id, $shown ) ) {
+			$note = implode( ' ', LLD_Members_Safety::notes( $member_id ) );
+			lld_members_layout(
+				array(
+					'title'     => 'Not suitable for you',
+					'main'      => lld_not_suitable( 'This is not suitable for you.', $note, home_url( '/members/home/' ), 'Back to today' ),
+					'signed_in' => true,
+				)
+			);
+			return;
+		}
+		if ( class_exists( 'LLD_Members_Personal' ) ) {
+			LLD_Members_Personal::remember_open( $member_id, 'c' . $item_id );
+		}
+		if ( isset( $_GET['download'] ) ) {
+			header( 'Content-Type: text/plain; charset=utf-8' );
+			echo (string) $shown['title'] . "\n" . (string) $shown['body'];
+			exit;
+		}
 		$main  = '<h1>' . esc_html( (string) $shown['title'] ) . '</h1>';
 		$main .= '<div class="lld-content">' . wp_kses_post( wpautop( (string) $shown['body'] ) ) . '</div>';
 		lld_members_layout(
@@ -935,10 +955,14 @@ class LLD_Members_Content {
 				'order'          => 'ASC',
 			)
 		);
-		$main  = '<h1>Library</h1><ul class="lld-library">';
+		$member_id = LLD_Members_Access::current_member_id();
+		$main      = '<h1>Library</h1><ul class="lld-library">';
 		foreach ( $posts as $post ) {
 			$shown = self::shown( $post->ID );
 			if ( ! $shown ) {
+				continue;
+			}
+			if ( class_exists( 'LLD_Members_Safety' ) && ! LLD_Members_Safety::allows( $member_id, $shown ) ) {
 				continue;
 			}
 			$main .= '<li><a href="' . esc_url( home_url( '/members/library/' . $post->ID . '/' ) ) . '">' . esc_html( (string) $shown['title'] ) . '</a></li>';
@@ -957,13 +981,100 @@ class LLD_Members_Content {
 	 * @param int $goal_id Goal id.
 	 */
 	private static function goal_line( $goal_id ) {
+		$ready = self::goal_ready( $goal_id );
+		return 'Shown to members: ' . ( $ready['ok'] ? 'yes' : 'no' ) . '. Reviewed articles: ' . $ready['articles'] . '. Approved activities: ' . $ready['activities'] . '.';
+	}
+
+	/**
+	 * @param int $goal_id Goal id.
+	 * @return array{ok:bool,articles:int,activities:int,kind:string}
+	 */
+	private static function goal_ready( $goal_id ) {
 		$fields     = get_post_meta( $goal_id, '_lld_fields', true );
 		$kind       = is_array( $fields ) ? (string) ( $fields['kind'] ?? '' ) : '';
 		$track      = is_array( $fields ) ? (int) ( $fields['track_id'] ?? 0 ) : 0;
 		$articles   = self::count_reviewed_articles( $goal_id );
 		$activities = self::count_approved_activities( $track );
-		$ok         = $articles >= 5 && ( 'track goal' !== $kind || $activities >= 7 );
-		return 'Shown to members: ' . ( $ok ? 'yes' : 'no' ) . '. Reviewed articles: ' . $articles . '. Approved activities: ' . $activities . '.';
+		return array(
+			'ok'         => $articles >= 5 && ( 'track goal' !== $kind || $activities >= 7 ),
+			'articles'   => $articles,
+			'activities' => $activities,
+			'kind'       => $kind,
+		);
+	}
+
+	/**
+	 * Goals a member is allowed to choose.
+	 *
+	 * @return array<int,array{id:int,title:string,key:string,kind:string}>
+	 */
+	public static function member_goals() {
+		$posts = get_posts(
+			array(
+				'post_type'      => 'lld_goal',
+				'post_status'    => array( 'publish', 'draft', 'private' ),
+				'post_parent'    => 0,
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+		$out = array();
+		foreach ( $posts as $post ) {
+			$ready = self::goal_ready( $post->ID );
+			if ( ! $ready['ok'] ) {
+				continue;
+			}
+			$out[] = array(
+				'id'    => (int) $post->ID,
+				'title' => $post->post_title,
+				'key'   => sanitize_title( $post->post_title ),
+				'kind'  => $ready['kind'],
+			);
+		}
+		return $out;
+	}
+
+	/**
+	 * Goal titles that are still short of the member threshold.
+	 *
+	 * @return string[]
+	 */
+	public static function goal_gaps() {
+		$posts = get_posts(
+			array(
+				'post_type'      => 'lld_goal',
+				'post_status'    => array( 'publish', 'draft', 'private' ),
+				'post_parent'    => 0,
+				'posts_per_page' => -1,
+				'orderby'        => 'title',
+				'order'          => 'ASC',
+			)
+		);
+		$out = array();
+		foreach ( $posts as $post ) {
+			if ( ! self::goal_ready( $post->ID )['ok'] ) {
+				$out[] = $post->post_title;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Store the current fields and mark that version approved.
+	 *
+	 * @param int $post_id Working copy.
+	 */
+	public static function approve_now( $post_id ) {
+		self::store_version( (int) $post_id );
+		$versions = self::versions( (int) $post_id );
+		if ( ! $versions ) {
+			return 0;
+		}
+		$last = $versions[ count( $versions ) - 1 ];
+		update_post_meta( $last->ID, '_lld_approved_on', gmdate( 'Y-m-d' ) );
+		update_post_meta( $last->ID, '_lld_approved_by', get_current_user_id() ? (int) get_current_user_id() : 1 );
+		return (int) $last->ID;
 	}
 
 	/**

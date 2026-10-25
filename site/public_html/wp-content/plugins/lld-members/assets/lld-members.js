@@ -99,6 +99,44 @@
     if (banner) banner.hidden = true;
   });
 
+  function limitGoals() {
+    var boxes = Array.prototype.slice.call(document.querySelectorAll("[data-lld-goal]"));
+    var chosen = boxes.filter(function (item) { return item.checked; }).length;
+    boxes.forEach(function (item) {
+      if (!item.checked) item.disabled = chosen >= 3;
+    });
+    var note = document.getElementById("lld-goal-limit");
+    if (note) note.hidden = chosen < 3;
+  }
+  document.querySelectorAll("[data-lld-goal]").forEach(function (box) {
+    box.addEventListener("change", limitGoals);
+  });
+  if (document.querySelector("[data-lld-goal]")) limitGoals();
+
+  var screenForm = document.querySelector("[data-lld-screen]");
+  if (screenForm) {
+    var screenButton = screenForm.querySelector("button");
+    function screenReady() {
+      var harm = screenForm.querySelector("input[name='lld_harm']:checked");
+      var panic = screenForm.querySelector("input[name='lld_panic']:checked");
+      var mood = screenForm.querySelector("input[name='lld_mood']:checked");
+      if (screenButton) screenButton.disabled = !(harm && panic && mood);
+    }
+    screenForm.addEventListener("change", screenReady);
+    screenReady();
+  }
+
+  var imperial = document.querySelector("[data-lld-imperial]");
+  var imperialFields = document.querySelector("[data-lld-imperial-fields]");
+  if (imperial && imperialFields) {
+    function paintImperial() {
+      if (imperial.checked) imperialFields.removeAttribute("hidden");
+      else imperialFields.setAttribute("hidden", "");
+    }
+    imperial.addEventListener("change", paintImperial);
+    paintImperial();
+  }
+
   var fail = document.querySelector(".lld-fail");
   if (fail) {
     if (!fail.hasAttribute("tabindex")) fail.setAttribute("tabindex", "-1");

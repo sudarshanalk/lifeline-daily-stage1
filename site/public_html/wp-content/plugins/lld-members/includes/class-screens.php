@@ -36,7 +36,7 @@ class LLD_Members_Screens {
 				LLD_Members_Account::screen( 'settings' );
 				break;
 			case 'home':
-				self::home();
+				LLD_Members_Personal::dashboard();
 				break;
 			case 'checkout':
 				self::checkout();
@@ -52,6 +52,20 @@ class LLD_Members_Screens {
 				break;
 			case 'library':
 				LLD_Members_Content::screen();
+				break;
+			case 'health':
+			case 'suggestions':
+			case 'tracks':
+			case 'screening':
+			case 'check-in':
+			case 'plan':
+			case 'meals':
+			case 'workout':
+			case 'challenge':
+			case 'badges':
+			case 'diary':
+			case 'read':
+				LLD_Members_Personal::screen( $screen );
 				break;
 			default:
 				if ( LLD_Members_Account::handles( $screen ) ) {

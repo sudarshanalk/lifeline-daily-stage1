@@ -111,6 +111,31 @@ class LLD_Members_Mail {
 	/**
 	 * @param int $member_id Member number.
 	 */
+	/**
+	 * @param string $email      Address.
+	 * @param string $first_name First name. Not included: the note is not about health.
+	 */
+	public static function send_profile_reminder( $email, $first_name ) {
+		unset( $first_name );
+		return wp_mail( $email, 'Complete your profile', "Complete your Lifeline Daily profile:\n\n" . home_url( '/members/health/' ) . "\n" );
+	}
+
+	/**
+	 * @param string $email Address.
+	 * @param string $title Goal title.
+	 */
+	public static function send_goal_live( $email, $title ) {
+		return wp_mail( $email, 'A goal you asked for is now available', "A goal you asked for is now available: {$title}\n\n" . home_url( '/members/goals/' ) . "\n" );
+	}
+
+	/**
+	 * @param string $subject Subject.
+	 * @param string $body    Note for the owner.
+	 */
+	public static function send_owner_note( $subject, $body ) {
+		return wp_mail( get_option( 'admin_email' ), $subject, $body );
+	}
+
 	public static function send_cancel_alert( $member_id ) {
 		return wp_mail( get_option( 'admin_email' ), 'Stripe cancellation failed', "Stripe did not accept cancellation for member {$member_id}. Please cancel it by hand within 1 working day.\n" );
 	}
