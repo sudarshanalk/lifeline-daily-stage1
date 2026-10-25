@@ -18,7 +18,10 @@ wp config set --path="$DIR" LLD_SMTP_PORT 1025 --raw --quiet
 ADMIN_PW=$(openssl rand -hex 16)   # throwaway admin, never printed
 wp core install --path="$DIR" --url="$URL" --title="LLD CI" --admin_user=ci-admin --admin_password="$ADMIN_PW" --admin_email=ci-admin@example.test --skip-email --quiet
 wp rewrite structure '/%postname%/' --path="$DIR" --quiet
-wp plugin install paid-memberships-pro --activate --path="$DIR" --quiet
+# Paid Memberships Pro from wordpress.org, fetched directly (wp plugin install answered "No plugins installed" on the runner)
+curl -fsSL --retry 3 -o "$DIR/../pmpro.zip" https://downloads.wordpress.org/plugin/paid-memberships-pro.latest-stable.zip
+unzip -q -o "$DIR/../pmpro.zip" -d "$DIR/wp-content/plugins"
+wp plugin activate paid-memberships-pro --path="$DIR" --quiet
 cp -R "$REPO/site/public_html/wp-content/plugins/lld-members" "$DIR/wp-content/plugins/lld-members"
 wp plugin activate lld-members --path="$DIR" --quiet
 wp lld-members db-update --path="$DIR"
