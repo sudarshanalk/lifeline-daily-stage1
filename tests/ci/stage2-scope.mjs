@@ -22,7 +22,7 @@ const TOOL_PAGES = ['site/public_html/tools/protein-requirement-tool.html', 'sit
 const C9_EXTRA = [...TOOL_PAGES, 'site/public_html/tools/lld-members-link.js', 'approvals/protein.json', 'approvals/diabetes.json', 'approvals/copy.json', 'copy/inventory.json', 'manifests/protein.json', 'manifests/diabetes.json', 'tests/mutations/MUT-10.patch'];
 const PROTECTED = ['site/public_html/tools/**', 'approvals/**', 'manifests/**', 'copy/**'];
 const LEAD = ['.github/**', 'deploy/**', 'docs/**', '.cursor/**', 'site/public_html/wp-content/mu-plugins/lld-tools/**', 'site/public_html/wp-content/mu-plugins/lld-tools-loader.php',
-  'tests/**', 'content/**', 'reports/**', 'registry/**', 'schemas/**', 'fixtures/**', 'design/**', 'Makefile', 'package.json', 'package-lock.json', 'README.md', 'CLAUDE.md', '.gitignore', '.gitattributes'];
+  'tests/**', 'tools/**', 'content/**', 'reports/**', 'registry/**', 'schemas/**', 'fixtures/**', 'design/**', 'Makefile', 'package.json', 'package-lock.json', 'README.md', 'CLAUDE.md', '.gitignore', '.gitattributes'];
 
 export function classify(title = '') {
   const m = title.match(TITLE_RE);
