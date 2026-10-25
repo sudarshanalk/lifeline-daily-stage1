@@ -82,7 +82,10 @@ describe('TC-NFR1-09 reproducible AI development', () => {
     const api = ghApi(`repos/${repo}/commits/${head}/check-runs?per_page=100`, '.check_runs[] | [.name, .conclusion] | @tsv');
     expect(api.status, api.stderr).toBe(0);
     const byName = Object.fromEntries(api.stdout.split(/\r?\n/).filter(Boolean).map((l) => l.split('\t')));
-    const mustHaveRun = required.filter((j) => declared.has(j));
+    // `unit` runs this very test, so it cannot certify itself: if a merged PR's `unit` ever fails here (for example because
+    // it was merged while its own checks were still running), every later `unit` would fail on it and no PR could merge
+    // green again. `unit` is therefore judged on the PR under test only; every other job of the last merged PR stays strict.
+    const mustHaveRun = required.filter((j) => declared.has(j) && j !== 'unit');
     const notDeclared = required.filter((j) => !declared.has(j));
     if (notDeclared.length) console.info(`last merged PR #${prs[0].number} (${head.slice(0, 7)}) did not yet declare: ${notDeclared.join(', ')}`);
     expect(mustHaveRun.length).toBeGreaterThan(0);
