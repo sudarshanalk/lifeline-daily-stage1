@@ -2,7 +2,7 @@
 
 **What information Stage 2 keeps, where it is kept, who can see it, and when it is deleted**
 
-**Approved by the owner on 25 October 2026, with decisions DM-1 to DM-16.** Prepared 25 October 2026 from the final Stage 2 Requirements, including the amendments made that day (decisions D36 to D47). Revised the same day after an independent review. Written in plain language, with a technical appendix (Appendix T) for the build. Requirement numbers such as FR2-09, and decision numbers such as D40, refer to the requirements document.
+**Approved by the owner on 25 October 2026, with decisions DM-1 to DM-16.** Amended by the owner the same day: the billing email is kept on orders for tax records (DM-10, P3), and the test clock record F9 is added for test and staging sites. Prepared 25 October 2026 from the final Stage 2 Requirements, including the amendments made that day (decisions D36 to D47). Revised the same day after an independent review. Written in plain language, with a technical appendix (Appendix T) for the build. Requirement numbers such as FR2-09, and decision numbers such as D40, refer to the requirements document.
 
 ---
 
@@ -545,7 +545,7 @@ Kept by the membership plugin. One record per payment, refund or failed attempt.
 | Discount applied | Code or referral reward, with the amount and currency | LAUNCH50, 400 USD |
 | Status | Pending, succeeded, failed or refunded | succeeded |
 | Stripe payment and invoice references | Links to Stripe | pi_…, in_… |
-| Billing name and country | For tax; no street address | Sam Lee, GB |
+| Billing name, email and country | For tax records; no street address (DM-10) | Sam Lee, sam@example.com, GB |
 
 **After account deletion,** only the tax fields are kept: name, email, amounts, currencies, tax, date, country and Stripe references. They are not linked to any health data.
 
@@ -625,6 +625,7 @@ One per guide requested or waitlist joined, so a contact can ask for several.
 | **F6. Weekly report** | Totals only (FR2-17) | No | 2 years |
 | **F7. Facebook group removals** | Member number, date Premium ended, date removed; removals more than 7 days late are flagged (FR2-35) | Minimal | 1 year, or until account deletion |
 | **F8. Error logs** | Technical errors, no personal or health data | No | 30 days |
+| **F9. Test clock (test and staging sites only)** | One "today" setting per test member, used by the automated tests (Test Criteria section 3). It is never created, read or switched on in production | Test members only | Removed with the test member or its erasure; never present in production |
 
 ## 10. Protections for personal and health data
 
@@ -689,7 +690,7 @@ The app signs in with the member's own account and receives an app key (A4). It 
 | DM-7 | Email list | Contacts and requests kept separately; deleted 30 days after unsubscribing or an unconfirmed sign-up |
 | DM-8 | Erasure list | Kept 60 days, with a daily copy emailed to the owner (D46) |
 | DM-9 | Support messages and admin log | 2 years; support messages deleted with the account; admin log lines anonymised |
-| DM-10 | Billing details | Name and country only |
+| DM-10 | Billing details | Name, billing email and country, kept for tax records; no street address (amended by the owner 25 October 2026) |
 | DM-11 | Age | Age in years plus date entered (D42) |
 | DM-12 | Member source | First tagged link saved on the account |
 | DM-13 | Money | Every amount stored with its own currency |
