@@ -102,6 +102,7 @@ CI check `component-scope` fails a pull request that touches other files. If you
   - Playwright journeys are `tests/stage2/e2e/**/*.spec.mjs`, configured in `tests/stage2/e2e/playwright.config.mjs`.
   - The Playwright configuration has projects for chromium and webkit. It takes its base URL from `LLD_WP_URL` and Mailpit from `MAILPIT_URL`.
   - CI job `stage2-e2e` builds a throwaway WordPress with Paid Memberships Pro (`tests/ci/stage2-wp.sh`) and runs them.
+- **Member addresses (robots.txt contract, FR2-21 AS-04):** every member page lives under `/members/` (Paid Memberships Pro's own pages keep their `/membership-…/` addresses), member data addresses under `/wp-json/lld-members/`, and member files under `/wp-content/uploads/lld-members/`. The lead's `lld-tools` robots.txt excludes exactly these (`data/search.json` `member_paths`); a new prefix needs a lead change first.
 - **Test passwords** come from the environment (`LLD_TEST_MEMBER_PASSWORD`, `LLD_ADMIN_PASSWORD`). Never write them in code.
 - **Stage 1 protections run on every pull request** and are never waived. They cover the calculator engine freeze, safety tests, copy hashes and oracle guard.
 
