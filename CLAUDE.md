@@ -1,5 +1,10 @@
 # Lifeline Daily — Stage 1 build repository
 
+## Stage 2 (from 25 Oct 2026)
+
+Stage 2 work does **not** use the Stage 1 loop below. Read `docs/stage2/04_Build_Method_Stage2.md` first: Cursor builds the `lld-members` plugin (packages S2-C1…C10, rules in `.cursor/rules/stage2.mdc`); Claude is the lead (Phase 0, review and merge of Cursor PRs, staging deploys, search and content packages S2-L1…L8). Stage 2 documents: `docs/stage2/01…04`. The Stage 1 hard rules on frozen calculator objects, fixtures and copy still apply to every change.
+
+
 You are working on Stage 1 of the Lifeline Daily revamp (SRS v1.2). Read these before any task, in this order:
 1. `docs/05_Decision_Register_v1_2.md` — apply defaults, never ask.
 2. `registry/Stage1_Requirements_Registry_v1_2.json` — the entry for your requirement is your scope.
