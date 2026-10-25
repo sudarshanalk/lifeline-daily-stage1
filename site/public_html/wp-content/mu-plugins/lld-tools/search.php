@@ -273,6 +273,9 @@ if (defined('WP_CLI') && WP_CLI) {
     $dry = !empty($assoc['dry-run']); $do = [];
     $y = get_option('wpseo');
     if (is_array($y)) foreach (['enable_llms_txt', 'enable_index_now'] as $k) if (!empty($y[$k])) { $do[] = "wpseo.$k -> false"; $y[$k] = false; }
+    // Tag and author archives are noindex (owner decision 25 Oct 2026, FR2-22: tag pages repeat categories; the site publishes under its brand)
+    $yt = get_option('wpseo_titles');
+    if (is_array($yt)) foreach (['noindex-tax-post_tag', 'noindex-author-wpseo'] as $k) if (empty($yt[$k])) { $do[] = "wpseo_titles.$k -> true"; $yt[$k] = true; }
     $h = get_option('hostinger_tools');
     if (is_array($h) && !empty($h['enable_llms_txt'])) { $do[] = 'hostinger_tools.enable_llms_txt -> false'; $h['enable_llms_txt'] = false; }
     $file = rtrim(ABSPATH, '/\\') . '/llms.txt';
@@ -282,6 +285,7 @@ if (defined('WP_CLI') && WP_CLI) {
     foreach ($do as $d) WP_CLI::log(($dry ? 'would: ' : '') . $d);
     if (!$dry) {
       if (is_array($y)) update_option('wpseo', $y);
+      if (is_array($yt)) update_option('wpseo_titles', $yt);
       if (is_array($h)) update_option('hostinger_tools', $h);
       if ($generated && !unlink($file)) WP_CLI::error("could not remove $file");
       lld_indexnow_key();

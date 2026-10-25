@@ -43,9 +43,9 @@ After those land, each article is resubmitted through URL Inspection and the rep
 
 Articles in this group: ways-to-reduce-belly-fat, benefits-of-regular-exercise, gut-bacteria-colon-cancer-risk-prevention, atkins-diet-how-it-works-guide, exercise-for-brain-health-benefits, foods-that-control-blood-sugar-naturally, health-benefits-of-eating-oats, fermented-foods-gut-health-benefits, pfas-hormonal-disruption, interval-training-for-beginners-guide, signs-keto-is-working, healthy-fats-vs-bad-fats-what-your-body-needs, understanding-depression-causes-symptoms-and-treatments, foods-to-reduce-belly-fat, natural-ways-to-lower-high-blood-pressure, foods-that-raise-cholesterol-what-to-eat-instead, benefits-of-sleep-what-happens-while-you-sleep, early-colon-cancer-symptoms-younger-adults, yoga-for-beginners-how-to-start, paleo-diet-what-to-eat-guide, 15-minute-no-equipment-hiit-workouts, core-exercises-for-beginners, types-of-keto-diets, health-benefits-of-cycling, colon-cancer-in-younger-adults-rising-rates, benefits-of-protein, mindful-eating-eat-less-feel-better, insulin-resistance-what-it-is-and-why-it-matters-2, mediterranean-diet-guide, best-keto-foods, types-of-dietary-fiber-why-type-matters-more-than-amount, lifestyle-changes-for-anxiety-that-actually-work, h-pylori-stomach-cancer-causes-prevention, omega-3-foods-heart-brain-joint-health, cardio-workouts, mediterranean-diet-for-heart-health, mediterranean-diet-and-diabetes, nordic-diet-heart-brain-health, keto-diet-for-beginners, benefits-of-keto-diet, foods-to-avoid-on-keto, mix-of-exercises-for-longevity, low-carb-diet-guide, sleep-and-hunger-hormones-why-bad-sleep-makes-you-hungrier-2, benefits-of-eating-fatty-fish, dash-diet-for-blood-pressure-guide, vegan-diet-types-benefits-guide, types-of-olive-oil-explained, how-to-sleep-better-naturally, how-to-improve-gut-health, basic-yoga-poses-for-beginners, cardio-for-beginners, how-to-start-cardio-for-beginners; plus the old tool address `https://www.lifelinedaily.com/tools/diabetes-risk-tool.html` (the tool page is meant to be embedded, not indexed: Reason).
 
-**Tag archives (65 across both groups).** 123 of the site's 190 tags are empty (S2-L1), and tag pages repeat the category pages. Proposal for the owner: set tag archives to noindex in Yoast (Settings, Categories and tags, Tags: "Show tags in search results" off) and stop linking empty tags. Until decided: Owner.
+**Tag archives (65 across both groups).** 123 of the site's 190 tags are empty (S2-L1), and tag pages repeat the category pages. **Owner decided 25 October 2026: noindex.** Set in Yoast on staging; `wp lld search setup` sets it on production at the Stage 1 release. Empty tags stop being linked with the demo clean-up (S2-L1).
 
-**Author archives (5).** The site publishes under the brand. Proposal for the owner: set author archives to noindex in Yoast. This is separate from the author address built from an account's email address, which is listed as an open owner item.
+**Author archives (5).** The site publishes under the brand. **Owner decided 25 October 2026: noindex.** Set in Yoast on staging; production at the Stage 1 release with `wp lld search setup`. This is separate from the author address built from an account's email address, which is listed as an open owner item.
 
 **Feeds (53).** Comment and tag feeds: Reason, the same as the noindex group.
 
@@ -57,7 +57,7 @@ Articles in this group: ways-to-reduce-belly-fat, benefits-of-regular-exercise, 
 | `/post-sitemap.xml` | 27 Jan 2024 | 18 Oct 2026 | Success | 103 |
 | `https://lifelinedaily.com/` | 13 May 2023 | 13 May 2023 | 1 error | 0 |
 
-The third entry is the homepage submitted as if it were a sitemap. **Owner:** remove it in Search Console (Sitemaps, the entry's menu, Remove sitemap). It is a console change, so it is not made without the owner's approval.
+The third entry was the homepage submitted as if it were a sitemap. **Fixed 25 October 2026:** removed in Search Console with the owner's approval; the list now shows only the two working sitemaps.
 
 ## Bing Webmaster Tools
 
@@ -88,7 +88,7 @@ The site's own IndexNow sender with a log is built (S2-L5) and switches on with 
 
 | | Fix | Reason | Owner |
 |---|---|---|---|
-| Google | 404 (2 real), canonical (1), 54 articles, 8 categories, video category, glycaemic article | noindex (45), wildcard 404s (7), redirects (6), admin-ajax (1), plugin folder (1), feeds (53), old tool page (1) | Tag archives (65), author archives (5), the homepage-as-sitemap entry |
+| Google | 404 (2 real), canonical (1), 54 articles, 8 categories, video category, glycaemic article, tag archives (65) and author archives (5) noindex, homepage-as-sitemap entry removed | noindex (45), wildcard 404s (7), redirects (6), admin-ajax (1), plugin folder (1), feeds (53), old tool page (1) | — |
 | Bing | Dead links (49), 403s now 404 (3), not yet crawled (4), other issues (7) | Redirecting (9), backlinks recommendation | Full dead-link download for the "after" pass |
 
 The "after" pass re-reads both consoles once the Stage 1 release and the approved article fates are live, and asks each console to validate the fixes (a console action, done with the owner's agreement).
