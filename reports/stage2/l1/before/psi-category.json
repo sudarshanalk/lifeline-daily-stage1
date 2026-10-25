@@ -1,0 +1,177 @@
+{
+ "note": "Condensed Lighthouse (performance) result captured from the pagespeed.web.dev UI because the public PSI API daily quota was exhausted (see psi-api-error). Full report: reportUrl.",
+ "requestedUrl": "https://lifelinedaily.com/category/food-nutrition/",
+ "finalUrl": "https://lifelinedaily.com/category/food-nutrition/",
+ "fetchTime": "2026-10-25T16:37:18.489Z",
+ "lighthouseVersion": "13.5.0",
+ "formFactor": "mobile",
+ "throttling": {
+  "rttMs": 150,
+  "throughputKbps": 1638.4,
+  "requestLatencyMs": 562.5,
+  "downloadThroughputKbps": 1474.5600000000002,
+  "uploadThroughputKbps": 675,
+  "cpuSlowdownMultiplier": 1.2
+ },
+ "emulatedUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Mobile Safari/537.36",
+ "performanceScore": 1,
+ "metrics": {
+  "FCP": {
+   "score": 0.97,
+   "displayValue": "1.4 s",
+   "numericValue": 1396
+  },
+  "LCP": {
+   "score": 1,
+   "displayValue": "1.4 s",
+   "numericValue": 1435.5
+  },
+  "TBT": {
+   "score": 1,
+   "displayValue": "10 ms",
+   "numericValue": 5
+  },
+  "CLS": {
+   "score": 1,
+   "displayValue": "0",
+   "numericValue": 0
+  },
+  "SpeedIndex": {
+   "score": 1,
+   "displayValue": "1.7 s",
+   "numericValue": 1729.846
+  },
+  "TTI": {
+   "score": 1,
+   "displayValue": "1.5 s",
+   "numericValue": 1478.15
+  }
+ },
+ "diagnostics": {
+  "numRequests": 9,
+  "numScripts": 0,
+  "numStylesheets": 1,
+  "numFonts": 2,
+  "mainDocumentTransferSize": 132820,
+  "totalByteWeight": 317442,
+  "numTasksOver50ms": 2
+ },
+ "resourceSummary": [
+  {
+   "type": "total",
+   "requests": 7,
+   "bytes": 317442
+  },
+  {
+   "type": "document",
+   "requests": 1,
+   "bytes": 132820
+  },
+  {
+   "type": "font",
+   "requests": 2,
+   "bytes": 100907
+  },
+  {
+   "type": "image",
+   "requests": 2,
+   "bytes": 77106
+  },
+  {
+   "type": "stylesheet",
+   "requests": 1,
+   "bytes": 6047
+  },
+  {
+   "type": "other",
+   "requests": 1,
+   "bytes": 562
+  },
+  {
+   "type": "media",
+   "requests": 0,
+   "bytes": 0
+  },
+  {
+   "type": "script",
+   "requests": 0,
+   "bytes": 0
+  },
+  {
+   "type": "third-party",
+   "requests": 0,
+   "bytes": 0
+  }
+ ],
+ "auditsNeedingAttention": {
+  "lcp-breakdown-insight": {
+   "title": "LCP breakdown",
+   "score": 1,
+   "metricSavings": {
+    "LCP": 0
+   },
+   "items": [
+    {
+     "duration": 249,
+     "label": "Time to first byte",
+     "subpart": "timeToFirstByte"
+    },
+    {
+     "duration": 544,
+     "label": "Element render delay",
+     "subpart": "elementRenderDelay"
+    },
+    {
+     "nodeLabel": "Maybe you’ve heard about keto or the ketogenic diet from a friend who lost weig…",
+     "selector": "div.td_module_flex > div.td-module-container > div.td-module-meta-info > div.td-excerpt"
+    }
+   ]
+  },
+  "network-dependency-tree-insight": {
+   "title": "Network dependency tree",
+   "score": 0,
+   "metricSavings": {
+    "LCP": 0
+   },
+   "items": []
+  }
+ },
+ "auditsPassed": [
+  "cache-insight",
+  "cls-culprits-insight",
+  "document-latency-insight",
+  "dom-size-insight",
+  "duplicated-javascript-insight",
+  "font-display-insight",
+  "forced-reflow-insight",
+  "image-delivery-insight",
+  "legacy-javascript-insight",
+  "render-blocking-insight",
+  "third-parties-insight",
+  "viewport-insight",
+  "unminified-css",
+  "unminified-javascript",
+  "unused-css-rules",
+  "unused-javascript",
+  "total-byte-weight",
+  "bootup-time",
+  "mainthread-work-breakdown",
+  "long-tasks",
+  "unsized-images",
+  "network-requests",
+  "network-rtt",
+  "network-server-latency",
+  "main-thread-tasks",
+  "diagnostics",
+  "metrics",
+  "screenshot-thumbnails",
+  "final-screenshot",
+  "script-treemap-data",
+  "resource-summary",
+  "redirects",
+  "server-response-time"
+ ],
+ "fieldData_ui": "No Data",
+ "reportUrl": "https://pagespeed.web.dev/analysis/https-lifelinedaily-com-category-food-nutrition/5rllzxiym3?form_factor=mobile",
+ "psi-api-error": "GET runPagespeed (keyless) on 2026-10-25 returned 429: Queries per day quota exceeded"
+}

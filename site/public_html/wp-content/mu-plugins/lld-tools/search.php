@@ -139,7 +139,7 @@ function lld_search_llms_build(): string {
   foreach ($q->posts as $p) {
     if (get_post_meta($p->ID, '_yoast_wpseo_meta-robots-noindex', true) === '1') continue;
     $cat = null;
-    if (class_exists('WPSEO_Primary_Term')) { $id = (new WPSEO_Primary_Term('category', $p->ID))->get_primary_term(); if ($id) $cat = get_term((int)$id, 'category'); }
+    if (class_exists('WPSEO_Primary_Term')) { $id = (new WPSEO_Primary_Term('category', $p->ID))->get_primary_term(); if ($id) $cat = get_term((int)$id, 'category'); if ($cat && !is_wp_error($cat) && get_term_meta($cat->term_id, 'lld_noindex', true) === '1') $cat = null; }
     if (!$cat || is_wp_error($cat)) {
       foreach ((array)get_the_category($p->ID) as $c) { if (get_term_meta($c->term_id, 'lld_noindex', true) === '1') continue; $cat = $c; break; }
     }
