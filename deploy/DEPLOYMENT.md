@@ -32,4 +32,8 @@ CI deploy-dry-run uses a disposable localhost SSH server, stub WordPress command
 
 Run locally with documented environment variables: bash deploy/deploy.sh staging --dry-run. Real runs omit --dry-run. Successful runs emit deploy/log/<environment>.jsonl as an Actions artifact. Release records in Git are immutable; workflow success and artifacts provide deployed-at evidence rather than rewriting signed Git release records.
 
-See runbooks/runbook-rollback.md. No automatic database migration is implemented by this phase.
+See runbooks/runbook-rollback.md.
+
+## Stage 2 membership plugin
+
+The managed overlay also includes `wp-content/plugins/lld-members/` (Stage 2 Build Method P0-3); no other plugin directory is ever written. Backups and rollback cover its files. After the headers step the deploy runs `wp lld-members db-update` when the plugin is active, and reports and skips it otherwise; the first activation is done by hand with `wp plugin activate lld-members`. Rollback restores the plugin files but not the database: the update command must only add or widen tables and columns, so the previous plugin version keeps working on the newer schema.

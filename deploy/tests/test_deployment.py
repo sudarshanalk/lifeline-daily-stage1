@@ -16,6 +16,28 @@ class Safety(unittest.TestCase):
         for name in ['tools/status.json','tools/api/config.php','tools/api/outbox/result.html','tools/api/state/rl.json','wp-config.php','wp-content/uploads/a.jpg']:
             self.assertFalse(r.owned(name),name)
         self.assertTrue(r.owned('tools/api/outbox/.htaccess'))
+    def test_members_plugin_is_managed_other_plugins_are_not(self):
+        self.assertTrue(r.owned('wp-content/plugins/lld-members/lld-members.php'))
+        self.assertTrue(r.owned('wp-content/plugins/lld-members/includes/schema.php'))
+        for name in ['wp-content/plugins/paid-memberships-pro/a.php','wp-content/plugins/lld-members-evil/a.php','wp-content/plugins/index.php']:
+            self.assertFalse(r.owned(name),name)
+    def test_members_plugin_backed_up_and_db_update_only_when_active(self):
+        with tempfile.TemporaryDirectory() as tmp, patch.object(Path,'home',return_value=Path(tmp)):
+            root=Path(tmp)/'domains/lifelinedaily.com/public_html/stg';plug=root/'wp-content/plugins/lld-members'
+            plug.mkdir(parents=True);(root/'wp-config.php').write_text('x');(plug/'lld-members.php').write_text('v1')
+            (root/'wp-content/plugins/other.php').write_text('not ours')
+            self.assertEqual([p.relative_to(root).as_posix() for p in r.files(root)],['wp-content/plugins/lld-members/lld-members.php'])
+            stamp='20261025T120000Z-123456789abc';r.run('staging',root,'backup',stamp)
+            calls=[]
+            def fake(cmd,**kw):
+                calls.append(cmd[2:]);return type('R',(),{'returncode':1 if 'is-active' in cmd and not active else 0})()
+            active=False
+            with patch.object(r.subprocess,'run',side_effect=fake):r.run('staging',root,'dbupdate',stamp)
+            self.assertEqual(calls,[['plugin','is-active','lld-members']])
+            calls.clear();active=True
+            with patch.object(r.subprocess,'run',side_effect=fake):r.run('staging',root,'dbupdate',stamp)
+            self.assertEqual(calls,[['plugin','is-active','lld-members'],['lld-members','db-update']])
+            r.run('staging',root,'unlock',stamp)
     def test_backup_restore_preserves_runtime_and_removes_new_overlay_file(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(Path,'home',return_value=Path(tmp)):
             root=Path(tmp)/'domains/lifelinedaily.com/public_html/stg';root.mkdir(parents=True)

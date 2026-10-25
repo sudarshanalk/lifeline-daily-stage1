@@ -17,11 +17,11 @@ def owned(name):
     if name in ('tools/status.json','tools/api/config.php'): return False
     if name.startswith(('tools/api/state/','tools/api/outbox/')):
         return name.endswith('/.htaccess') and name.count('/') == 3
-    return name.startswith(('tools/','wp-content/mu-plugins/lld-tools/')) or name == 'wp-content/mu-plugins/lld-tools-loader.php'
+    return name.startswith(('tools/','wp-content/mu-plugins/lld-tools/','wp-content/plugins/lld-members/')) or name == 'wp-content/mu-plugins/lld-tools-loader.php'
 
 def files(root):
     result=[]
-    for base in ['tools','wp-content/mu-plugins/lld-tools','wp-content/mu-plugins/lld-tools-loader.php']:
+    for base in ['tools','wp-content/mu-plugins/lld-tools','wp-content/mu-plugins/lld-tools-loader.php','wp-content/plugins/lld-members']:
         p=root/base
         if p.is_symlink(): raise ValueError('Symlink in managed tree')
         items = list(p.rglob('*')) if p.is_dir() else ([p] if p.exists() else [])
@@ -51,7 +51,7 @@ def run(env,root,op,stamp):
     archive=base/(stamp+'.tgz')
     if base.is_symlink() or base.parent.is_symlink(): raise ValueError('Symlinked backup storage')
     files(root)  # refuse symlinks even on dry run
-    for name in ['.htaccess','.htaccess.lld','wp-content','wp-content/mu-plugins']:
+    for name in ['.htaccess','.htaccess.lld','wp-content','wp-content/mu-plugins','wp-content/plugins']:
         if (root/name).is_symlink(): raise ValueError('Symlinked managed destination')
     if op=='unlock':
         if lock.is_file() and lock.read_text()==stamp: lock.unlink()
@@ -112,6 +112,13 @@ def run(env,root,op,stamp):
             if re.search(r'(?m)^# (BEGIN|END) lld\r?$',content):raise ValueError('Nested managed markers')
             ht=root/'.htaccess';cur=ht.read_text() if ht.exists() else ''
             atomic(ht,block(cur,BEGIN+'\n'+content.rstrip()+'\n'+END+'\n').encode());source.unlink()
+    elif op=='dbupdate':
+        # Stage 2 membership plugin (Build Method P0-3): run its idempotent database update once it is active.
+        # The plugin is activated by hand the first time, so an inactive or absent plugin is reported and skipped.
+        wp=['wp','--path='+str(root)]
+        if subprocess.run(wp+['plugin','is-active','lld-members'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode!=0:
+            print('lld-members not active; database update skipped');return
+        subprocess.run(wp+['lld-members','db-update'],check=True)
     elif op=='purge':
         subprocess.run(['wp','--path='+str(root),'litespeed-purge','all'],check=True)
     elif op=='finish':
