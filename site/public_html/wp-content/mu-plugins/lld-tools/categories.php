@@ -124,7 +124,7 @@ if (defined('WP_CLI') && WP_CLI) {
       $moved++;
       if (!$dry) { wp_set_post_categories($pid, $want); if ($t) update_post_meta($pid, '_yoast_wpseo_primary_category', (int)$t->term_id); }
     }
-    if ($assign) $note("$moved post(s) moved to their proposed category");
+    if ($assign && $moved) $note("$moved post(s) moved to their proposed category");
     // 5. default category (WordPress refuses to delete the current default)
     $def = $get((string)($doc['default_category'] ?? ''));
     if ($def && (int)get_option('default_category') !== (int)$def->term_id) { $note("default category -> {$def->slug}"); if (!$dry) update_option('default_category', (int)$def->term_id); }
