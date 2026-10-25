@@ -54,9 +54,9 @@ class LLD_Members_Plugin {
 
 	public static function rewrites() {
 		self::register_rewrites();
-		if ( '5' !== get_option( 'lld_members_rewrites' ) ) {
+		if ( '6' !== get_option( 'lld_members_rewrites' ) ) {
 			flush_rewrite_rules( false );
-			update_option( 'lld_members_rewrites', '5', true );
+			update_option( 'lld_members_rewrites', '6', true );
 		}
 	}
 
@@ -140,6 +140,8 @@ class LLD_Members_Plugin {
 		add_rewrite_rule( '^members/library/?$', 'index.php?lld_screen=library', 'top' );
 		add_rewrite_rule( '^members/library/([0-9]+)/?$', 'index.php?lld_screen=library&lld_item=$matches[1]', 'top' );
 		add_rewrite_rule( '^members/read/([0-9]+)/?$', 'index.php?lld_screen=read&lld_item=$matches[1]', 'top' );
+		add_rewrite_rule( '^members/track/?$', 'index.php?lld_screen=track', 'top' );
+		add_rewrite_rule( '^members/review/?$', 'index.php?lld_screen=review', 'top' );
 		add_rewrite_rule( '^members/(health|suggestions|tracks|screening|check-in|plan|meals|workout|challenge|badges|diary)/?$', 'index.php?lld_screen=$matches[1]', 'top' );
 	}
 }

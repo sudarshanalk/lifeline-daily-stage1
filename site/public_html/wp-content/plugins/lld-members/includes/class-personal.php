@@ -19,6 +19,22 @@ class LLD_Members_Personal {
 	}
 
 	/**
+	 * Member gate used by programme screens.
+	 */
+	public static function require_page() {
+		self::require_member();
+	}
+
+	/**
+	 * @param string $title  Page title.
+	 * @param string $main   Main HTML.
+	 * @param int    $status HTTP status.
+	 */
+	public static function render( $title, $main, $status = 200 ) {
+		self::layout( $title, $main, $status );
+	}
+
+	/**
 	 * @param string $screen Screen id.
 	 */
 	public static function screen( $screen ) {
@@ -119,7 +135,8 @@ class LLD_Members_Personal {
 		$main .= '<section data-lld-section="plan"><h2>This week\'s plan</h2>' . self::title_list( self::safe_titles( $member_id, array( 'lld_week', 'lld_activity' ) ), 3 ) . '</section>';
 		$main .= '<section data-lld-section="meals"><h2>Meals</h2><p>Today\'s meals</p>' . self::title_list( self::safe_titles( $member_id, array( 'lld_meal', 'lld_recipe' ) ), 3 ) . '</section>';
 		$main .= '<section data-lld-section="diary"><h2>Food diary</h2><p><a href="' . esc_url( home_url( '/members/diary/' ) ) . '">Open food diary</a></p></section>';
-		$main .= '<section data-lld-section="progress"><h2>Progress</h2><p>0 of 28 done</p></section>';
+		$done  = class_exists( 'LLD_Members_Programme' ) ? LLD_Members_Programme::done_count( $member_id ) : 0;
+		$main .= '<section data-lld-section="progress"><h2>Progress</h2><p>' . (int) $done . ' of 28 done</p></section>';
 		if ( 'free' === $state ) {
 			$main .= '<aside class="lld-premium-adds"><h2>what Premium adds</h2><p>Meal plans, the full tracks and extra tools.</p></aside>';
 		}
@@ -208,8 +225,16 @@ class LLD_Members_Personal {
 		self::require_member();
 		$member_id = LLD_Members_Access::current_member_id();
 		if ( ! LLD_Members_Account::has_consent( $member_id, 'health' ) ) {
-			self::layout( 'Check-in', '<h1>Check-in</h1>' . lld_health_consent_notice() );
+			$status = 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) ? 403 : 200;
+			self::layout( 'Check-in', '<h1>Check-in</h1>' . lld_health_consent_notice(), $status );
 			return;
+		}
+		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_measures_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_measures_nonce'] ) ), 'lld_measures' ) ) {
+			$measured = LLD_Members_Programme::save_check_in( $member_id );
+			if ( is_wp_error( $measured ) ) {
+				self::layout( 'Check-in', '<h1>Check-in</h1><p>' . esc_html( $measured->get_error_message() ) . '</p>', 403 );
+				return;
+			}
 		}
 		$profile = self::profile_row( $member_id );
 		$has     = $profile && null !== $profile->height_cm && '' !== (string) $profile->height_cm;
@@ -244,6 +269,7 @@ class LLD_Members_Personal {
 			$main .= lld_button( array( 'label' => 'Save' ) );
 			$main .= '</form>';
 		}
+		$main .= LLD_Members_Programme::check_in_html( $member_id );
 		self::layout( 'Check-in', $main );
 	}
 
@@ -308,7 +334,10 @@ class LLD_Members_Personal {
 				wp_safe_redirect( home_url( '/members/screening/?track=sleep-stress' ) );
 				exit;
 			}
-			if ( isset( self::track_list()[ $key ] ) && LLD_Members_Safety::track_allowed( $member_id, self::track_list()[ $key ] ) ) {
+			$known = self::track_list();
+			$title = isset( $known[ $key ] ) ? $known[ $key ] : $key;
+			$real  = isset( $known[ $key ] ) || ( class_exists( 'LLD_Members_Programme' ) && LLD_Members_Programme::track_id( $key ) > 0 );
+			if ( $real && LLD_Members_Safety::track_allowed( $member_id, $title ) ) {
 				self::enrol( $member_id, $key );
 				wp_safe_redirect( home_url( '/members/home/' ) );
 				exit;
@@ -342,7 +371,7 @@ class LLD_Members_Personal {
 	}
 
 	private static function plan() {
-		self::surface( 'This week\'s plan', array( 'lld_week', 'lld_activity' ) );
+		LLD_Members_Programme::plan_screen();
 	}
 
 	private static function meals() {
@@ -418,6 +447,9 @@ class LLD_Members_Personal {
 	public static function daily() {
 		self::reminders();
 		self::owner_reports();
+		if ( class_exists( 'LLD_Members_Programme' ) ) {
+			LLD_Members_Programme::dispatch_mail();
+		}
 	}
 
 	/**
@@ -1071,7 +1103,8 @@ class LLD_Members_Personal {
 		if ( '' === $key || ! isset( $names[ $key ] ) ) {
 			return '<p><a href="' . esc_url( home_url( '/members/tracks/' ) ) . '">Start a track</a></p>';
 		}
-		return '<p>' . esc_html( $names[ $key ] ) . '. Week 1, day 1.</p>';
+		$label = class_exists( 'LLD_Members_Programme' ) ? LLD_Members_Programme::position_label( $member_id ) : 'Week 1, day 1';
+		return '<p>' . esc_html( $names[ $key ] . '. ' . $label ) . '.</p>';
 	}
 
 	/**
@@ -1096,18 +1129,24 @@ class LLD_Members_Personal {
 		$existing = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE member_id = %d AND status = 'active' ORDER BY id DESC LIMIT 1", $member_id ) );
 		if ( $existing ) {
 			$wpdb->update( $table, array( 'track_key' => $key ), array( 'id' => $existing ), array( '%s' ), array( '%d' ) );
-			return;
+			$wpdb->delete( LLD_Members_Schema::table( 'weekly_plan' ), array( 'enrolment_id' => $existing ), array( '%d' ) );
+			$id = $existing;
+		} else {
+			$wpdb->insert(
+				$table,
+				array(
+					'member_id' => $member_id,
+					'track_key' => $key,
+					'attempt'   => 1,
+					'status'    => 'active',
+				),
+				array( '%d', '%s', '%d', '%s' )
+			);
+			$id = (int) $wpdb->insert_id;
 		}
-		$wpdb->insert(
-			$table,
-			array(
-				'member_id' => $member_id,
-				'track_key' => $key,
-				'attempt'   => 1,
-				'status'    => 'active',
-			),
-			array( '%d', '%s', '%d', '%s' )
-		);
+		if ( class_exists( 'LLD_Members_Programme' ) ) {
+			LLD_Members_Programme::ensure_period( $id, $member_id );
+		}
 	}
 
 	/**

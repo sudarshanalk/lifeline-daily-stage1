@@ -49,6 +49,15 @@ class LLD_Members_Fixtures {
 		if ( 'blocked' === $kind ) {
 			return self::blocked( $stamp );
 		}
+		if ( 'actions' === $kind ) {
+			return self::actions( $stamp, $args );
+		}
+		if ( 'days' === $kind ) {
+			return self::days( $stamp );
+		}
+		if ( 'draft' === $kind ) {
+			return self::draft( $stamp );
+		}
 		return new WP_Error( 'lld_fixture', 'Unknown fixture.' );
 	}
 
@@ -294,6 +303,120 @@ class LLD_Members_Fixtures {
 			wp_set_object_terms( $id, $tags, 'lld_tag' );
 		}
 		return $id;
+	}
+
+	/**
+	 * @param string              $stamp Stamp.
+	 * @param array<string,mixed> $args  Mode: full, thin or empty.
+	 * @return array<string,mixed>
+	 */
+	private static function actions( $stamp, $args ) {
+		$mode  = isset( $args['mode'] ) ? sanitize_key( (string) $args['mode'] ) : 'full';
+		$slug  = 'act-' . $stamp;
+		$track = self::track_post( 'Actions ' . $stamp, $slug );
+		$items = array();
+		if ( 'empty' === $mode ) {
+			for ( $i = 1; $i <= 3; $i++ ) {
+				$title   = 'Loss ' . $i . ' ' . $stamp;
+				$items[] = array(
+					'id'    => self::item( 'lld_activity', $title, 'weight-loss', self::action_fields( $track, 0, 'standard', true ) ),
+					'title' => $title,
+				);
+			}
+		} elseif ( 'thin' === $mode ) {
+			for ( $i = 1; $i <= 2; $i++ ) {
+				$title   = 'Thin ' . $i . ' ' . $stamp;
+				$items[] = array(
+					'id'    => self::item( 'lld_activity', $title, '', self::action_fields( $track, 0, 'standard', true ) ),
+					'title' => $title,
+				);
+			}
+		} else {
+			foreach ( array( 'easier' => 4, 'standard' => 4, 'stretch' => 2 ) as $difficulty => $count ) {
+				for ( $i = 1; $i <= $count; $i++ ) {
+					$title   = ucfirst( $difficulty ) . ' ' . $i . ' ' . $stamp;
+					$items[] = array(
+						'id'    => self::item( 'lld_activity', $title, '', self::action_fields( $track, 0, $difficulty, true ) ),
+						'title' => $title,
+					);
+				}
+			}
+		}
+		return array(
+			'track' => $slug,
+			'items' => $items,
+		);
+	}
+
+	/**
+	 * @param string $stamp Stamp.
+	 * @return array<string,mixed>
+	 */
+	private static function days( $stamp ) {
+		$slug  = 'day-' . $stamp;
+		$track = self::track_post( 'Days ' . $stamp, $slug );
+		$items = array();
+		for ( $day = 1; $day <= 8; $day++ ) {
+			$title   = 'Day ' . $day . ' ' . $stamp;
+			$items[] = array(
+				'id'    => self::item( 'lld_activity', $title, '', self::action_fields( $track, $day, 'standard', false ) ),
+				'title' => $title,
+				'body'  => $title . ' body',
+				'day'   => $day,
+			);
+		}
+		return array(
+			'track' => $slug,
+			'items' => $items,
+		);
+	}
+
+	/**
+	 * @param string $stamp Stamp.
+	 * @return array<string,mixed>
+	 */
+	private static function draft( $stamp ) {
+		$title = 'Unapproved ' . $stamp;
+		return array(
+			'id'    => self::post( 'lld_activity', $title, 'Hidden ' . $stamp, array() ),
+			'title' => $title,
+		);
+	}
+
+	/**
+	 * @param string $title Title.
+	 * @param string $slug  Track slug.
+	 */
+	private static function track_post( $title, $slug ) {
+		$id = wp_insert_post(
+			array(
+				'post_type'    => 'lld_track',
+				'post_status'  => 'publish',
+				'post_title'   => $title,
+				'post_name'    => $slug,
+				'post_content' => $title,
+			)
+		);
+		LLD_Members_Content::approve_now( (int) $id );
+		return (int) $id;
+	}
+
+	/**
+	 * @param int    $track      Track id.
+	 * @param int    $day        Programme day, or 0 for the library.
+	 * @param string $difficulty Easier, standard or stretch.
+	 * @param bool   $library    Included in the weekly plan.
+	 * @return array<string,mixed>
+	 */
+	private static function action_fields( $track, $day, $difficulty, $library ) {
+		return array(
+			'belongs'     => $library ? 'library' : 'track',
+			'track_id'    => $track,
+			'day_number'  => $day,
+			'week_number' => $day > 0 ? (int) ceil( $day / 7 ) : 1,
+			'difficulty'  => $difficulty,
+			'in_library'  => $library ? 1 : 0,
+		);
 	}
 
 	/**

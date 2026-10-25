@@ -342,6 +342,7 @@ class LLD_Members_Auth {
 			array( '%s' ),
 			array( '%d' )
 		);
+		$wpdb->query( $wpdb->prepare( 'UPDATE ' . LLD_Members_Schema::table( 'email_pref' ) . ' SET nudges_sent = 0, last_nudge_on = NULL WHERE member_id = %d', $member_id ) );
 		$token = bin2hex( random_bytes( 16 ) );
 		$until = LLD_Members_Clock::now( $member_id )->modify( $remember ? '+30 days' : '+12 hours' )->format( 'Y-m-d H:i:s' );
 		$wpdb->insert(

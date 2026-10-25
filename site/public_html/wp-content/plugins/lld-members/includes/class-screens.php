@@ -67,6 +67,10 @@ class LLD_Members_Screens {
 			case 'read':
 				LLD_Members_Personal::screen( $screen );
 				break;
+			case 'track':
+			case 'review':
+				LLD_Members_Programme::screen( $screen );
+				break;
 			default:
 				if ( LLD_Members_Account::handles( $screen ) ) {
 					LLD_Members_Account::screen( $screen );

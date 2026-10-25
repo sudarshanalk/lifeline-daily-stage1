@@ -823,9 +823,17 @@ class LLD_Members_Account {
 	}
 
 	private static function unsubscribe() {
+		$code   = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( $_GET['code'] ) ) : '';
+		$kind   = isset( $_GET['kind'] ) ? sanitize_key( wp_unslash( $_GET['kind'] ) ) : '';
+		$result = ( '' !== $code && class_exists( 'LLD_Members_Programme' ) ) ? LLD_Members_Programme::consume_unsub( $code, $kind ) : 'missing';
+		if ( 'already' === $result ) {
+			$main = '<h1>Already unsubscribed</h1><p>Already unsubscribed.</p>';
+			self::layout( 'Already unsubscribed', $main, is_user_logged_in() );
+			return;
+		}
 		$main = '<h1>Unsubscribed</h1><p>You won\'t get these emails any more.</p>';
 		$main .= '<p><a href="' . esc_url( home_url( '/members/settings/' ) ) . '">Email preferences</a></p>';
-		self::layout( 'Unsubscribed', $main, false );
+		self::layout( 'Unsubscribed', $main, is_user_logged_in() );
 	}
 
 	/**
@@ -1035,8 +1043,10 @@ class LLD_Members_Account {
 	 */
 	private static function save_preferences( $member_id ) {
 		global $wpdb;
+		$table    = LLD_Members_Schema::table( 'email_pref' );
+		$existing = $wpdb->get_row( $wpdb->prepare( "SELECT nudges_sent, last_nudge_on FROM {$table} WHERE member_id = %d", $member_id ) );
 		$wpdb->replace(
-			LLD_Members_Schema::table( 'email_pref' ),
+			$table,
 			array(
 				'member_id'      => $member_id,
 				'welcome'        => empty( $_POST['lld_welcome'] ) ? 0 : 1,
@@ -1045,6 +1055,8 @@ class LLD_Members_Account {
 				'weekly_review'  => empty( $_POST['lld_weekly'] ) ? 0 : 1,
 				'end_of_track'   => empty( $_POST['lld_end'] ) ? 0 : 1,
 				'nudges'         => empty( $_POST['lld_nudges'] ) ? 0 : 1,
+				'nudges_sent'    => $existing ? (int) $existing->nudges_sent : 0,
+				'last_nudge_on'  => $existing ? $existing->last_nudge_on : null,
 			)
 		);
 	}

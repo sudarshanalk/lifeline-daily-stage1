@@ -36,6 +36,7 @@ require_once LLD_MEMBERS_DIR . 'includes/class-account.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-content.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-safety.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-personal.php';
+require_once LLD_MEMBERS_DIR . 'includes/class-programme.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-fixtures.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-stripe.php';
 require_once LLD_MEMBERS_DIR . 'includes/components.php';

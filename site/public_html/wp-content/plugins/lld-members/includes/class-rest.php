@@ -200,6 +200,15 @@ class LLD_Members_Rest {
 		);
 		register_rest_route(
 			'lld-members/v1',
+			'/test/programme',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'LLD_Members_Programme', 'rest' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
 			'/test/search',
 			array(
 				'methods'             => 'POST',
