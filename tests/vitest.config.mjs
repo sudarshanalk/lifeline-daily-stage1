@@ -5,7 +5,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     root: new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'),
-    include: ['tests/{unit,ci,http,static,artefact,saf,php,stage2}/**/*.test.mjs'],
+    include: ['tests/{unit,ci,http,static,artefact,saf,php,stage2,lead}/**/*.test.mjs'],
     exclude: ['**/node_modules/**', 'tests/e2e/**', 'tests/stage2/e2e/**'],
     testTimeout: 120000,
     hookTimeout: 120000,

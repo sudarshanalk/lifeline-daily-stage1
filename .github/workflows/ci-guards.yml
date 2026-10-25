@@ -144,7 +144,7 @@ jobs:
       - name: unit, ci, http, static, artefact families (vitest)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # lets TC-NFR1-09-AS-02 inspect the last merged PR's check-runs in Actions
-        run: npx vitest run -c tests/vitest.config.mjs tests/unit tests/ci tests/http tests/static tests/artefact
+        run: npx vitest run -c tests/vitest.config.mjs tests/unit tests/ci tests/http tests/static tests/artefact tests/lead
 
   php-integration:
     if: "!startsWith(github.event.pull_request.title || '', 'SPEC: ')"   # SPEC PRs (DEC-55) carry no code or tests

@@ -600,3 +600,6 @@ if (defined('WP_CLI') && WP_CLI) {
   });
   WP_CLI::add_command('lld', 'LLD_Tools_CLI');
 }
+
+/* Stage 2 search and AI-assistant additions (S2-L4). */
+require_once __DIR__ . '/search.php';
