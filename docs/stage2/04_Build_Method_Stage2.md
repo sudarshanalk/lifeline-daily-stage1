@@ -1,8 +1,8 @@
-# Lifeline Daily — Stage 2 Build Method (draft for owner review)
+# Lifeline Daily — Stage 2 Build Method (approved by the owner)
 
 **Who builds what, in what order, how work is handed over, reviewed and deployed — kept simple**
 
-Prepared 25 October 2026. Follows the approved Stage 2 Requirements, Screen Design Specification, Data Model and Test Criteria. Written in plain language.
+**Approved by the owner on 25 October 2026.** Prepared 25 October 2026. Follows the approved Stage 2 Requirements, Screen Design Specification, Data Model and Test Criteria. Written in plain language.
 
 ---
 
