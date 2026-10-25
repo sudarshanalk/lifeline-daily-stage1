@@ -14,8 +14,10 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Photos {
 
-	const MAX_BYTES = 10485760;
-	const MAX_EDGE  = 1600;
+	const MAX_BYTES  = 10485760;
+	const MAX_EDGE   = 1600;
+	const MAX_SOURCE = 8000;
+	const MAX_PIXELS = 20000000;
 
 	/**
 	 * Store a profile or diary photo. JPG, PNG or HEIC, up to 10 MB.
@@ -37,10 +39,15 @@ class LLD_Members_Photos {
 		if ( ! in_array( $ext, array( 'jpg', 'jpeg', 'png', 'heic' ), true ) ) {
 			return new WP_Error( 'lld_photo', 'Use a JPG, PNG or HEIC photo.' );
 		}
+		$guard = self::guard_size( $tmp_path, $ext );
+		if ( is_wp_error( $guard ) ) {
+			return $guard;
+		}
 		$image = self::load( $tmp_path, $ext );
 		if ( is_wp_error( $image ) ) {
 			return $image;
 		}
+		$image = self::orient( $image, self::orientation( $tmp_path, $ext ) );
 		$image = self::fit( $image );
 		$dir   = self::member_dir( $member_id );
 		if ( ! is_dir( $dir ) && ! mkdir( $dir, 0700, true ) ) {
@@ -142,6 +149,79 @@ class LLD_Members_Photos {
 	 * @param string $ext  Extension.
 	 * @return resource|GdImage|WP_Error
 	 */
+	/**
+	 * Refuse a decompression bomb before the bitmap is decoded.
+	 *
+	 * @param string $path File path.
+	 * @param string $ext  Extension.
+	 * @return true|WP_Error
+	 */
+	private static function guard_size( $path, $ext ) {
+		$w = 0;
+		$h = 0;
+		if ( 'heic' === $ext && class_exists( 'Imagick' ) ) {
+			try {
+				$im = new Imagick();
+				$im->pingImage( $path );
+				$w = $im->getImageWidth();
+				$h = $im->getImageHeight();
+				$im->clear();
+			} catch ( Exception $e ) {
+				return new WP_Error( 'lld_photo', 'That HEIC photo could not be read.' );
+			}
+		} else {
+			$info = @getimagesize( $path );
+			if ( is_array( $info ) ) {
+				$w = (int) $info[0];
+				$h = (int) $info[1];
+			}
+		}
+		if ( $w < 1 || $h < 1 ) {
+			return 'heic' === $ext ? true : new WP_Error( 'lld_photo', 'That photo could not be read. Use a JPG, PNG or HEIC file.' );
+		}
+		if ( $w > self::MAX_SOURCE || $h > self::MAX_SOURCE || ( $w * $h ) > self::MAX_PIXELS ) {
+			return new WP_Error( 'lld_photo', 'That photo is too large to open.' );
+		}
+		return true;
+	}
+
+	/**
+	 * @param string $path File path.
+	 * @param string $ext  Extension.
+	 */
+	private static function orientation( $path, $ext ) {
+		if ( ( 'jpg' !== $ext && 'jpeg' !== $ext ) || ! function_exists( 'exif_read_data' ) ) {
+			return 1;
+		}
+		$exif = @exif_read_data( $path );
+		return ( is_array( $exif ) && isset( $exif['Orientation'] ) ) ? (int) $exif['Orientation'] : 1;
+	}
+
+	/**
+	 * Apply the EXIF orientation, then the caller re-encodes without location data.
+	 *
+	 * @param GdImage|resource $image       Image.
+	 * @param int              $orientation EXIF orientation, 1 to 8.
+	 * @return GdImage|resource
+	 */
+	private static function orient( $image, $orientation ) {
+		switch ( (int) $orientation ) {
+			case 2:
+				if ( function_exists( 'imageflip' ) ) {
+					imageflip( $image, IMG_FLIP_HORIZONTAL );
+				}
+				return $image;
+			case 3:
+				return imagerotate( $image, 180, 0 );
+			case 6:
+				return imagerotate( $image, -90, 0 );
+			case 8:
+				return imagerotate( $image, 90, 0 );
+			default:
+				return $image;
+		}
+	}
+
 	private static function load( $path, $ext ) {
 		if ( 'heic' === $ext ) {
 			if ( ! class_exists( 'Imagick' ) ) {
@@ -149,6 +229,9 @@ class LLD_Members_Photos {
 			}
 			try {
 				$im = new Imagick( $path );
+				if ( method_exists( $im, 'autoOrient' ) ) {
+					$im->autoOrient();
+				}
 				$im->setImageFormat( 'jpeg' );
 				$blob = $im->getImageBlob();
 				$im->clear();

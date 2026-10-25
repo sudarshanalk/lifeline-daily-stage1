@@ -19,11 +19,11 @@ class LLD_Members_Crypto {
 	 *
 	 * @param string $plain Text to protect.
 	 */
-	public static function encrypt( $plain ) {
+	public static function encrypt( $plain, $aad = '' ) {
 		$key = self::key();
 		$iv  = random_bytes( 12 );
 		$tag = '';
-		$raw = openssl_encrypt( (string) $plain, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag );
+		$raw = openssl_encrypt( (string) $plain, 'aes-256-gcm', $key, OPENSSL_RAW_DATA, $iv, $tag, (string) $aad );
 		if ( false === $raw || strlen( $tag ) !== 16 ) {
 			throw new RuntimeException( 'Encryption failed.' );
 		}
@@ -35,7 +35,7 @@ class LLD_Members_Crypto {
 	 *
 	 * @param string $token Stored ciphertext.
 	 */
-	public static function decrypt( $token ) {
+	public static function decrypt( $token, $aad = '' ) {
 		$bin = base64_decode( (string) $token, true );
 		if ( false === $bin || strlen( $bin ) < 28 ) {
 			throw new RuntimeException( 'Ciphertext is not valid.' );
@@ -43,7 +43,7 @@ class LLD_Members_Crypto {
 		$iv  = substr( $bin, 0, 12 );
 		$tag = substr( $bin, 12, 16 );
 		$raw = substr( $bin, 28 );
-		$out = openssl_decrypt( $raw, 'aes-256-gcm', self::key(), OPENSSL_RAW_DATA, $iv, $tag );
+		$out = openssl_decrypt( $raw, 'aes-256-gcm', self::key(), OPENSSL_RAW_DATA, $iv, $tag, (string) $aad );
 		if ( false === $out ) {
 			throw new RuntimeException( 'Decryption failed.' );
 		}
@@ -72,7 +72,16 @@ class LLD_Members_Crypto {
 			mkdir( $dir, 0700, true );
 		}
 		$key = random_bytes( 32 );
-		file_put_contents( $path, $key, LOCK_EX );
+		$handle = fopen( $path, 'x' );
+		if ( false === $handle ) {
+			$key = file_get_contents( $path );
+			if ( ! is_string( $key ) || strlen( $key ) < 32 ) {
+				throw new RuntimeException( 'The encryption key file could not be created.' );
+			}
+			return substr( $key, 0, 32 );
+		}
+		fwrite( $handle, $key );
+		fclose( $handle );
 		return $key;
 	}
 }

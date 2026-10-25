@@ -7,6 +7,8 @@ export async function createMember(request, fields) {
 }
 
 export async function signIn(page, email, password) {
+  await page.request.post('/wp-json/lld-members/v1/test/logout');
+  await page.context().clearCookies();
   await page.goto('/members/sign-in/');
   await page.locator('#lld_email').fill(email);
   await page.locator('#lld_password').fill(password);

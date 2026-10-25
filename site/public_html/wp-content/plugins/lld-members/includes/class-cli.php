@@ -26,6 +26,7 @@ class LLD_Members_CLI {
 			'erasure_email'   => 'erasure_email',
 			'erasure-reapply' => 'erasure_reapply',
 			'erasure_reapply' => 'erasure_reapply',
+			'clock'           => 'clock',
 		);
 		foreach ( $commands as $name => $method ) {
 			WP_CLI::add_command( 'lld-members ' . $name, array( __CLASS__, $method ) );
@@ -82,6 +83,44 @@ class LLD_Members_CLI {
 	/**
 	 * Email new erasure lines to the owner.
 	 */
+	/**
+	 * Freeze one member's test clock.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <member>
+	 * : Member number or email.
+	 *
+	 * <utc>
+	 * : UTC time, as YYYY-MM-DD HH:MM:SS.
+	 *
+	 * @param string[] $args Positional args.
+	 */
+	public function clock( $args ) {
+		if ( isset( $args[0] ) && 'set' === $args[0] ) {
+			array_shift( $args );
+		}
+		$who = isset( $args[0] ) ? (string) $args[0] : '';
+		$utc = isset( $args[1] ) ? (string) $args[1] : '';
+		if ( isset( $args[2] ) ) {
+			$utc .= ' ' . $args[2];
+		}
+		if ( '' === $who || '' === trim( $utc ) ) {
+			WP_CLI::error( 'Use: wp lld-members clock set <member> <utc>' );
+		}
+		global $wpdb;
+		if ( is_email( $who ) ) {
+			$member_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE email = %s', $who ) );
+		} else {
+			$member_id = (int) $who;
+		}
+		$result = LLD_Members_Clock::set( $member_id, trim( $utc ) );
+		if ( is_wp_error( $result ) ) {
+			WP_CLI::error( $result->get_error_message() );
+		}
+		WP_CLI::success( 'Clock set for member ' . $member_id );
+	}
+
 	public function erasure_email() {
 		$count = LLD_Members_Erasure::email_new_lines();
 		WP_CLI::success( 'Emailed ' . $count . ' erasure lines' );

@@ -43,6 +43,34 @@ class LLD_Members_Stripe {
 	/**
 	 * The sentence shown when a new checkout cannot reach Stripe.
 	 */
+	/**
+	 * Cancel the member's subscription. A non-production option forces the failure the owner is alerted about.
+	 *
+	 * @param int $member_id Member number.
+	 * @return true|WP_Error
+	 */
+	public static function cancel_member( $member_id ) {
+		if ( ! lld_members_is_production() && get_option( 'lld_members_stripe_cancel_fail' ) ) {
+			return new WP_Error( 'lld_stripe', 'cancel failed' );
+		}
+		global $wpdb;
+		$table = LLD_Members_Schema::table( 'subscription' );
+		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d", $member_id ) );
+		if ( $row ) {
+			$wpdb->update(
+				$table,
+				array(
+					'stripe_state'      => 'cancelled',
+					'access_state'      => 'cancelled',
+					'premium_ended_why' => 'deleted',
+				),
+				array( 'id' => (int) $row->id )
+			);
+		}
+		update_option( 'lld_members_last_cancel', array( 'member_id' => (int) $member_id, 'ok' => true ), false );
+		return true;
+	}
+
 	public static function try_again_message() {
 		return 'Please try again shortly.';
 	}

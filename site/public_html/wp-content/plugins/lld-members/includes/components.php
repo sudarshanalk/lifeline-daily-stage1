@@ -162,6 +162,9 @@ function lld_password_field( $args ) {
 	$html .= '<label for="' . esc_attr( $id ) . '">' . esc_html( $args['label'] ) . '</label>';
 	$html .= '<div class="lld-password-row"><input id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" type="password" autocomplete="current-password">';
 	$html .= '<button type="button" class="lld-eye" aria-controls="' . esc_attr( $id ) . '" aria-pressed="false" data-lld-show="Show password" data-lld-hide="Hide password">Show password</button></div>';
+	if ( ! empty( $args['hint'] ) ) {
+		$html .= '<p class="lld-hint">' . esc_html( $args['hint'] ) . '</p>';
+	}
 	if ( ! empty( $args['error'] ) ) {
 		$html .= '<p class="lld-error">' . esc_html( $args['error'] ) . '</p>';
 	}

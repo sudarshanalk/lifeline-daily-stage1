@@ -33,7 +33,7 @@ class LLD_Members_Screens {
 				self::two_step();
 				break;
 			case 'settings':
-				self::settings();
+				LLD_Members_Account::screen( 'settings' );
 				break;
 			case 'home':
 				self::home();
@@ -51,6 +51,10 @@ class LLD_Members_Screens {
 				self::foundations();
 				break;
 			default:
+				if ( LLD_Members_Account::handles( $screen ) ) {
+					LLD_Members_Account::screen( $screen );
+					break;
+				}
 				status_header( 404 );
 				return;
 		}
@@ -70,16 +74,21 @@ class LLD_Members_Screens {
 			$user     = LLD_Members_Auth::check_password( $email, $password );
 			if ( is_wp_error( $user ) ) {
 				$error = $user->get_error_message();
-			} elseif ( LLD_Members_Auth::needs_two_step( $user ) ) {
-				LLD_Members_Auth::issue_code( $user, $remember );
-				wp_safe_redirect( home_url( '/members/two-step/' ) );
-				exit;
 			} else {
 				global $wpdb;
 				$member_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE user_id = %d', $user->ID ) );
-				LLD_Members_Auth::start_session( $user->ID, $member_id, $remember );
-				wp_safe_redirect( self::destination() );
-				exit;
+				$confirmed = $member_id ? $wpdb->get_var( $wpdb->prepare( 'SELECT email_confirmed_at FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) ) : 'yes';
+				if ( $member_id && ! $confirmed ) {
+					$error = 'Confirm your email before you sign in.';
+				} elseif ( LLD_Members_Auth::needs_two_step( $user ) ) {
+					LLD_Members_Auth::issue_code( $user, $remember );
+					wp_safe_redirect( home_url( '/members/two-step/' ) );
+					exit;
+				} else {
+					LLD_Members_Auth::start_session( $user->ID, $member_id, $remember );
+					wp_safe_redirect( self::destination() );
+					exit;
+				}
 			}
 		}
 		$main  = '<h1>Sign in</h1>';
@@ -91,7 +100,8 @@ class LLD_Members_Screens {
 		if ( '' !== $error ) {
 			$main .= '<div class="lld-fail" role="alert" tabindex="-1"><p>' . esc_html( $error ) . '</p></div>';
 		}
-		$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email' ) );
+		$kept_email = ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['lld_email'] ) ) ? sanitize_email( wp_unslash( $_POST['lld_email'] ) ) : '';
+		$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email', 'value' => $kept_email ) );
 		$main .= lld_password_field( array( 'id' => 'lld_password', 'name' => 'lld_password', 'label' => 'Password' ) );
 		$main .= '<label class="lld-check"><input type="checkbox" name="lld_remember" value="1"> Remember me for 30 days</label>';
 		$main .= lld_button( array( 'label' => 'Sign in' ) );

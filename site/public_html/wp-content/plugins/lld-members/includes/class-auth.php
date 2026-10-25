@@ -343,13 +343,14 @@ class LLD_Members_Auth {
 			array( '%d' )
 		);
 		$token = bin2hex( random_bytes( 16 ) );
+		$until = LLD_Members_Clock::now( $member_id )->modify( $remember ? '+30 days' : '+12 hours' )->format( 'Y-m-d H:i:s' );
 		$wpdb->insert(
 			LLD_Members_Schema::table( 'session' ),
 			array(
 				'member_id'  => $member_id,
 				'token_hash' => hash( 'sha256', $token ),
 				'remember'   => $remember ? 1 : 0,
-				'expires_at' => gmdate( 'Y-m-d H:i:s', time() + ( $remember ? 30 : 2 ) * DAY_IN_SECONDS ),
+				'expires_at' => $until,
 			),
 			array( '%d', '%s', '%d', '%s' )
 		);
@@ -384,8 +385,11 @@ class LLD_Members_Auth {
 	 */
 	private static function is_locked( $email ) {
 		global $wpdb;
-		$until = $wpdb->get_var( $wpdb->prepare( 'SELECT lock_until FROM ' . LLD_Members_Schema::table( 'sign_in_lock' ) . ' WHERE email = %s', $email ) );
-		return is_string( $until ) && '' !== $until && $until > gmdate( 'Y-m-d H:i:s' );
+		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT fail_count, lock_until FROM ' . LLD_Members_Schema::table( 'sign_in_lock' ) . ' WHERE email = %s', $email ) );
+		if ( ! $row || (int) $row->fail_count < self::FAIL_LIMIT || ! is_string( $row->lock_until ) || '' === $row->lock_until ) {
+			return false;
+		}
+		return $row->lock_until > self::moment( $email )->format( 'Y-m-d H:i:s' );
 	}
 
 	/**
@@ -399,7 +403,8 @@ class LLD_Members_Auth {
 		$table = LLD_Members_Schema::table( 'sign_in_lock' );
 		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT fail_count FROM {$table} WHERE email = %s", $email ) );
 		$count = $row ? (int) $row->fail_count + 1 : 1;
-		$lock  = $count >= self::FAIL_LIMIT ? gmdate( 'Y-m-d H:i:s', time() + self::LOCK_MINUTES * 60 ) : null;
+		$when  = self::moment( $email );
+		$lock  = $count >= self::FAIL_LIMIT ? $when->modify( '+' . self::LOCK_MINUTES . ' minutes' )->format( 'Y-m-d H:i:s' ) : $when->modify( '+24 hours' )->format( 'Y-m-d H:i:s' );
 		$wpdb->replace(
 			$table,
 			array(
@@ -424,6 +429,17 @@ class LLD_Members_Auth {
 	 *
 	 * @param string $username Typed login.
 	 */
+	/**
+	 * Clock for this email, so a test member's pause follows the test clock.
+	 *
+	 * @param string $email Email.
+	 */
+	private static function moment( $email ) {
+		global $wpdb;
+		$id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE email = %s', $email ) );
+		return LLD_Members_Clock::now( $id );
+	}
+
 	private static function login_email( $username ) {
 		$username = trim( $username );
 		if ( '' === $username ) {

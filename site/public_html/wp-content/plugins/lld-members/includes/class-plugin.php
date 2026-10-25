@@ -16,6 +16,8 @@ class LLD_Members_Plugin {
 
 	public static function boot() {
 		add_action( 'init', array( __CLASS__, 'rewrites' ) );
+		add_action( 'init', array( 'LLD_Members_Account', 'expire_sessions' ), 20 );
+		add_action( 'profile_update', array( 'LLD_Members_Account', 'sync_email' ) );
 		add_filter( 'query_vars', array( __CLASS__, 'query_vars' ) );
 		add_action( 'template_redirect', array( 'LLD_Members_Screens', 'dispatch' ) );
 		add_action( 'rest_api_init', array( 'LLD_Members_Rest', 'register' ) );
@@ -31,6 +33,7 @@ class LLD_Members_Plugin {
 		add_action( 'wp_login_failed', array( 'LLD_Members_Auth', 'redirect_wp_login' ), 10, 2 );
 		add_filter( 'auth_cookie_expiration', array( 'LLD_Members_Auth', 'cookie_expiration' ), 10, 3 );
 		add_action( 'lld_members_daily', array( 'LLD_Members_Erasure', 'email_new_lines' ) );
+		add_action( 'lld_members_daily', array( 'LLD_Members_Privacy', 'sweep' ) );
 		if ( ! wp_next_scheduled( 'lld_members_daily' ) ) {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'lld_members_daily' );
 		}
@@ -49,9 +52,9 @@ class LLD_Members_Plugin {
 
 	public static function rewrites() {
 		self::register_rewrites();
-		if ( '2' !== get_option( 'lld_members_rewrites' ) ) {
+		if ( '3' !== get_option( 'lld_members_rewrites' ) ) {
 			flush_rewrite_rules( false );
-			update_option( 'lld_members_rewrites', '2', true );
+			update_option( 'lld_members_rewrites', '3', true );
 		}
 	}
 
@@ -113,6 +116,16 @@ class LLD_Members_Plugin {
 	}
 
 	public static function register_rewrites() {
+		add_rewrite_rule( '^members/join/?$', 'index.php?lld_screen=join', 'top' );
+		add_rewrite_rule( '^members/confirm/?$', 'index.php?lld_screen=confirm', 'top' );
+		add_rewrite_rule( '^members/reset/?$', 'index.php?lld_screen=reset', 'top' );
+		add_rewrite_rule( '^members/agreements/?$', 'index.php?lld_screen=agreements', 'top' );
+		add_rewrite_rule( '^members/goals/?$', 'index.php?lld_screen=goals', 'top' );
+		add_rewrite_rule( '^members/data/?$', 'index.php?lld_screen=data', 'top' );
+		add_rewrite_rule( '^members/withdraw/?$', 'index.php?lld_screen=withdraw', 'top' );
+		add_rewrite_rule( '^members/delete/?$', 'index.php?lld_screen=delete', 'top' );
+		add_rewrite_rule( '^members/email/?$', 'index.php?lld_screen=email', 'top' );
+		add_rewrite_rule( '^members/unsubscribe/?$', 'index.php?lld_screen=unsubscribe', 'top' );
 		add_rewrite_rule( '^members/sign-in/?$', 'index.php?lld_screen=sign-in', 'top' );
 		add_rewrite_rule( '^members/two-step/?$', 'index.php?lld_screen=two-step', 'top' );
 		add_rewrite_rule( '^members/settings/?$', 'index.php?lld_screen=settings', 'top' );
