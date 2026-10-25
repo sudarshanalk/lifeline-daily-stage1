@@ -20,7 +20,7 @@ class LLD_Members_Stripe {
 	 * @return true|WP_Error
 	 */
 	public static function reachable() {
-		if ( ! lld_members_is_production() && get_option( 'lld_members_stripe_unreachable' ) ) {
+		if ( self::outage_forced() ) {
 			return new WP_Error( 'lld_stripe', 'unreachable' );
 		}
 		$response = wp_remote_head(
@@ -45,5 +45,15 @@ class LLD_Members_Stripe {
 	 */
 	public static function try_again_message() {
 		return 'Please try again shortly.';
+	}
+
+	/**
+	 * The test option is ignored in production, even when it is set.
+	 */
+	public static function outage_forced() {
+		if ( lld_members_is_production() ) {
+			return false;
+		}
+		return (bool) get_option( 'lld_members_stripe_unreachable' );
 	}
 }

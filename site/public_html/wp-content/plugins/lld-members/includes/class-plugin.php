@@ -19,10 +19,15 @@ class LLD_Members_Plugin {
 		add_filter( 'query_vars', array( __CLASS__, 'query_vars' ) );
 		add_action( 'template_redirect', array( 'LLD_Members_Screens', 'dispatch' ) );
 		add_action( 'rest_api_init', array( 'LLD_Members_Rest', 'register' ) );
+		add_filter( 'rest_pre_dispatch', array( __CLASS__, 'rest_closed' ), 10, 3 );
+		add_filter( 'rest_namespace_index', array( __CLASS__, 'namespace_index' ), 10, 2 );
 		add_action( 'phpmailer_init', array( 'LLD_Members_Mail', 'configure' ) );
 		add_filter( 'wp_mail_from', array( 'LLD_Members_Mail', 'from_email' ) );
 		add_filter( 'wp_mail_from_name', array( 'LLD_Members_Mail', 'from_name' ) );
+		add_filter( 'authenticate', array( 'LLD_Members_Auth', 'block_when_closed' ), 1, 1 );
+		add_filter( 'authenticate', array( 'LLD_Members_Auth', 'enforce_lock' ), 30, 3 );
 		add_filter( 'authenticate', array( 'LLD_Members_Auth', 'require_code' ), 99, 3 );
+		add_filter( 'wp_is_application_passwords_available_for_user', array( 'LLD_Members_Auth', 'application_passwords' ), 10, 2 );
 		add_action( 'wp_login_failed', array( 'LLD_Members_Auth', 'redirect_wp_login' ), 10, 2 );
 		add_filter( 'auth_cookie_expiration', array( 'LLD_Members_Auth', 'cookie_expiration' ), 10, 3 );
 		add_action( 'lld_members_daily', array( 'LLD_Members_Erasure', 'email_new_lines' ) );
@@ -58,6 +63,53 @@ class LLD_Members_Plugin {
 		$vars[] = 'lld_screen';
 		$vars[] = 'lld_member';
 		return $vars;
+	}
+
+	/**
+	 * Member JSON stays closed while a restore is being checked.
+	 *
+	 * @param mixed           $result  Response so far.
+	 * @param WP_REST_Server  $server  Server.
+	 * @param WP_REST_Request $request Request.
+	 * @return mixed
+	 */
+	public static function rest_closed( $result, $server, $request ) {
+		unset( $server );
+		if ( ! get_option( 'lld_members_closed' ) || current_user_can( 'manage_options' ) ) {
+			return $result;
+		}
+		$route = $request->get_route();
+		if ( is_string( $route ) && 0 === strpos( $route, '/lld-members/' ) ) {
+			return new WP_Error( 'lld_closed', 'Lifeline Daily is closed', array( 'status' => 503 ) );
+		}
+		return $result;
+	}
+
+	/**
+	 * Add the live member rewrite rules to the namespace index so tests do not trust a hand-written list.
+	 *
+	 * @param WP_REST_Response $response Index.
+	 * @param WP_REST_Request  $request  Request.
+	 */
+	public static function namespace_index( $response, $request ) {
+		if ( '/lld-members/v1' !== $request->get_route() ) {
+			return $response;
+		}
+		global $wp_rewrite;
+		$rules = $wp_rewrite->wp_rewrite_rules();
+		$paths = array();
+		if ( is_array( $rules ) ) {
+			foreach ( array_keys( $rules ) as $pattern ) {
+				$pattern = (string) $pattern;
+				if ( 0 === strpos( $pattern, '^members/' ) || 0 === strpos( $pattern, 'members/' ) ) {
+					$paths[] = $pattern;
+				}
+			}
+		}
+		$data = $response->get_data();
+		$data['lld_member_rewrites'] = $paths;
+		$response->set_data( $data );
+		return $response;
 	}
 
 	public static function register_rewrites() {

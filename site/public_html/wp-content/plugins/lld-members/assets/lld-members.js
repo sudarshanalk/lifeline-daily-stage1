@@ -10,9 +10,9 @@
     button.addEventListener("click", function () {
       var input = document.getElementById(button.getAttribute("aria-controls"));
       if (!input) return;
-      var show = input.type === "password";
-      input.type = show ? "text" : "password";
-      button.textContent = show ? "Hide password" : "Show password";
+      var show = input.getAttribute("type") === "password";
+      input.setAttribute("type", show ? "text" : "password");
+      button.textContent = show ? button.getAttribute("data-lld-hide") : button.getAttribute("data-lld-show");
       button.setAttribute("aria-pressed", show ? "true" : "false");
     });
   });

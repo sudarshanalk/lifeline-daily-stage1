@@ -1,5 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { expect, test } from '@playwright/test';
+import { memberRoutes } from '../tools/member-routes.mjs';
 import { refuseOtherMember, SENTINEL } from '../tools/access-runner.mjs';
 import { probeSignedOut } from '../tools/signed-out-prober.mjs';
 import { createMember, mailCode, restNonce, signIn } from './helpers.mjs';
@@ -42,9 +43,9 @@ test('TC-NFR2-02-AS-01', async ({ page }) => {
   await signIn(page, tm03, password);
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
   const nonce = await restNonce(page);
-  const catalog = await page.request.get('/wp-json/lld-members/v1/routes', { headers: { 'X-WP-Nonce': nonce } });
-  expect(catalog.status()).toBe(200);
-  const { routes } = await catalog.json();
+  const indexRes = await page.request.get('/wp-json/lld-members/v1', { headers: { 'X-WP-Nonce': nonce } });
+  expect(indexRes.status()).toBe(200);
+  const routes = memberRoutes(await indexRes.json(), created.member_id);
   expect(routes.length).toBeGreaterThan(0);
   const failures = await refuseOtherMember(page.request, { routes, memberId: created.member_id, sentinel: SENTINEL, nonce });
   expect(failures).toEqual([]);
@@ -100,6 +101,27 @@ test('TC-NFR2-02-AS-03', async ({ page, context }) => {
   await page.locator('#lld_code').fill(memberCode);
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
+
+  await context.clearCookies();
+  await createMember(page.request, {
+    email: 'bare-admin@test.lifelinedaily.invalid',
+    password,
+    first_name: 'Bare',
+    role: 'owner_admin',
+    no_member: true,
+  });
+  await context.addCookies([{ name: 'wordpress_test_cookie', value: 'WP Cookie check', url: base }]);
+  await page.goto('/wp-login.php');
+  await page.locator('#user_login').fill('bare-admin');
+  await page.locator('#user_pass').fill(password);
+  await page.locator('#wp-submit').click();
+  await expect(page.getByRole('heading', { name: 'Enter your code' })).toBeVisible();
+  await expect(page).not.toHaveURL(/wp-admin/);
+});
+
+test('integrity rules reject a second active row', async ({ request }) => {
+  const res = await request.post('/wp-json/lld-members/v1/test/integrity');
+  expect(res.status(), await res.text()).toBe(200);
 });
 
 test('TC-NFR2-06-AS-03', async ({ page }) => {

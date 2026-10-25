@@ -48,11 +48,52 @@ function lld_members_private_dir() {
 }
 
 /**
- * A request from this machine. Used for test helpers, which never run in production.
+ * Test helpers exist only on ci and local, and only with the shared secret.
+ * Staging and production never register them. A proxy that presents 127.0.0.1 is not enough.
  */
-function lld_members_is_loopback() {
-	$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : '';
-	return '127.0.0.1' === $ip || '::1' === $ip;
+function lld_members_test_routes_open() {
+	return 'ci' === lld_members_env() || 'local' === lld_members_env();
+}
+
+/**
+ * Secret for test routes. The constant wins. CI without the constant uses a file in RUNNER_TEMP.
+ */
+function lld_members_test_secret() {
+	if ( defined( 'LLD_TEST_SECRET' ) && '' !== (string) LLD_TEST_SECRET ) {
+		return (string) LLD_TEST_SECRET;
+	}
+	$env = getenv( 'LLD_TEST_SECRET' );
+	if ( is_string( $env ) && '' !== $env ) {
+		return $env;
+	}
+	if ( 'ci' !== lld_members_env() ) {
+		return '';
+	}
+	$dir = getenv( 'RUNNER_TEMP' );
+	if ( ! is_string( $dir ) || '' === $dir ) {
+		return '';
+	}
+	$path = rtrim( $dir, '/\\' ) . '/lld-test-secret';
+	if ( ! is_readable( $path ) ) {
+		file_put_contents( $path, bin2hex( random_bytes( 16 ) ), LOCK_EX );
+	}
+	$read = file_get_contents( $path );
+	return is_string( $read ) ? trim( $read ) : '';
+}
+
+/**
+ * True when this request may call a test route.
+ */
+function lld_members_test_request_allowed() {
+	if ( ! lld_members_test_routes_open() ) {
+		return false;
+	}
+	$secret = lld_members_test_secret();
+	$given  = isset( $_SERVER['HTTP_X_LLD_TEST_SECRET'] ) ? (string) $_SERVER['HTTP_X_LLD_TEST_SECRET'] : '';
+	if ( '' === $secret || '' === $given ) {
+		return false;
+	}
+	return hash_equals( $secret, $given );
 }
 
 /**

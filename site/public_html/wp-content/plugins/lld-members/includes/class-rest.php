@@ -42,13 +42,16 @@ class LLD_Members_Rest {
 				'permission_callback' => '__return_true',
 			)
 		);
+		if ( ! lld_members_test_routes_open() ) {
+			return;
+		}
 		register_rest_route(
 			'lld-members/v1',
 			'/security/password-storage',
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( __CLASS__, 'passwords' ),
-				'permission_callback' => array( __CLASS__, 'loopback_only' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
 			)
 		);
 		register_rest_route(
@@ -57,7 +60,7 @@ class LLD_Members_Rest {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'test_member' ),
-				'permission_callback' => array( __CLASS__, 'loopback_only' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
 			)
 		);
 		register_rest_route(
@@ -66,7 +69,7 @@ class LLD_Members_Rest {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'test_stripe' ),
-				'permission_callback' => array( __CLASS__, 'loopback_only' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
 			)
 		);
 		register_rest_route(
@@ -75,7 +78,7 @@ class LLD_Members_Rest {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( __CLASS__, 'test_ciphertext' ),
-				'permission_callback' => array( __CLASS__, 'loopback_only' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
 			)
 		);
 		register_rest_route(
@@ -84,7 +87,16 @@ class LLD_Members_Rest {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'test_db_update' ),
-				'permission_callback' => array( __CLASS__, 'loopback_only' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
+			'/test/integrity',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'test_integrity' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
 			)
 		);
 	}
@@ -92,8 +104,8 @@ class LLD_Members_Rest {
 	/**
 	 * @return bool
 	 */
-	public static function loopback_only() {
-		return ! lld_members_is_production() && lld_members_is_loopback();
+	public static function test_only() {
+		return lld_members_test_request_allowed();
 	}
 
 	/**
@@ -195,6 +207,13 @@ class LLD_Members_Rest {
 			}
 		}
 		global $wpdb;
+		if ( ! empty( $params['no_member'] ) ) {
+			$existing_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE user_id = %d', $user_id ) );
+			if ( $existing_id ) {
+				$wpdb->delete( LLD_Members_Schema::table( 'member' ), array( 'id' => $existing_id ), array( '%d' ) );
+			}
+			return new WP_REST_Response( array( 'member_id' => 0, 'user_id' => (int) $user_id ), 200 );
+		}
 		$table     = LLD_Members_Schema::table( 'member' );
 		$existing  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE user_id = %d", $user_id ) );
 		$two_step  = ( 'owner_admin' === $role ) || ! empty( $params['two_step'] );
@@ -288,6 +307,12 @@ class LLD_Members_Rest {
 	public static function test_db_update() {
 		$result = LLD_Members_Schema::update();
 		return new WP_REST_Response( $result, 200 );
+	}
+
+	public static function test_integrity() {
+		$results = LLD_Members_Integrity::exercise();
+		$ok      = ! in_array( false, $results, true );
+		return new WP_REST_Response( array( 'ok' => $ok, 'rules' => $results ), $ok ? 200 : 500 );
 	}
 
 	private static function refused() {

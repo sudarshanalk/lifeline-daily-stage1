@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Schema {
 
-	const VERSION = 1;
+	const VERSION = 2;
 
 	/**
 	 * Full table name for a suffix such as "member".
@@ -36,6 +36,7 @@ class LLD_Members_Schema {
 	public static function update() {
 		$before = (int) get_option( 'lld_members_schema_version', 0 );
 		self::create_all();
+		self::upgrade();
 		update_option( 'lld_members_schema_version', self::VERSION, true );
 		return array(
 			'changed' => $before < self::VERSION,
@@ -191,6 +192,8 @@ class LLD_Members_Schema {
 			pending_token_hash CHAR(64) NULL,
 			remember TINYINT(1) NOT NULL DEFAULT 0,
 			attempts SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+			resend_count SMALLINT UNSIGNED NOT NULL DEFAULT 0,
+			user_id BIGINT UNSIGNED NOT NULL DEFAULT 0,
 			expires_at DATETIME NOT NULL,
 			used_at DATETIME NULL,
 			PRIMARY KEY (id),
@@ -279,8 +282,10 @@ class LLD_Members_Schema {
 			free_week_used TINYINT(1) NOT NULL DEFAULT 0,
 			last_open_day DATE NULL,
 			finished_on DATE NULL,
+			active_member BIGINT UNSIGNED AS (IF(status = \'active\', member_id, NULL)) STORED,
 			PRIMARY KEY (id),
-			KEY member_status (member_id, status)
+			KEY member_status (member_id, status),
+			UNIQUE KEY one_active (active_member)
 		' );
 		self::create( 'enrolment_period', '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -307,8 +312,10 @@ class LLD_Members_Schema {
 			started_on DATE NOT NULL,
 			current_week SMALLINT UNSIGNED NOT NULL DEFAULT 1,
 			active TINYINT(1) NOT NULL DEFAULT 1,
+			active_member BIGINT UNSIGNED AS (IF(active = 1, member_id, NULL)) STORED,
 			PRIMARY KEY (id),
-			KEY member_active (member_id, active)
+			KEY member_active (member_id, active),
+			UNIQUE KEY one_active_plan (active_member)
 		' );
 		self::create( 'workout_change', '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -350,7 +357,9 @@ class LLD_Members_Schema {
 			stress_level TINYINT UNSIGNED NULL,
 			tests_skipped VARCHAR(255) NULL,
 			PRIMARY KEY (id),
-			KEY member_id (member_id)
+			KEY member_id (member_id),
+			UNIQUE KEY one_week (enrolment_id, week_number),
+			UNIQUE KEY one_month (member_id, month_key)
 		' );
 		self::create( 'reflection', '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -480,7 +489,7 @@ class LLD_Members_Schema {
 			billing_email VARCHAR(190) NULL,
 			billing_country CHAR(2) NULL,
 			PRIMARY KEY (id),
-			UNIQUE KEY stripe_payment (stripe_payment),
+			UNIQUE KEY stripe_event (stripe_payment, kind),
 			KEY member_id (member_id)
 		' );
 		self::create( 'referral', '
@@ -493,7 +502,7 @@ class LLD_Members_Schema {
 			self_referral VARCHAR(16) NULL,
 			PRIMARY KEY (id),
 			KEY referrer_member_id (referrer_member_id),
-			KEY friend_member_id (friend_member_id)
+			UNIQUE KEY friend_member_id (friend_member_id)
 		' );
 		self::create( 'reward', '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -642,6 +651,143 @@ class LLD_Members_Schema {
 		$ok      = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- DDL, no user input.
 		if ( false === $ok ) {
 			throw new RuntimeException( 'Could not create ' . $table . ': ' . $wpdb->last_error );
+		}
+	}
+
+	/**
+	 * Add columns, keys and guards that CREATE TABLE IF NOT EXISTS cannot add later.
+	 * Never drops a column or narrows one.
+	 */
+	private static function upgrade() {
+		self::ensure_column( 'security_code', 'resend_count', 'SMALLINT UNSIGNED NOT NULL DEFAULT 0' );
+		self::ensure_column( 'security_code', 'user_id', 'BIGINT UNSIGNED NOT NULL DEFAULT 0' );
+		self::ensure_column( 'enrolment', 'active_member', "BIGINT UNSIGNED AS (IF(status = 'active', member_id, NULL)) STORED" );
+		self::ensure_unique( 'enrolment', 'one_active', 'active_member' );
+		self::ensure_column( 'workout', 'active_member', 'BIGINT UNSIGNED AS (IF(active = 1, member_id, NULL)) STORED' );
+		self::ensure_unique( 'workout', 'one_active_plan', 'active_member' );
+		self::ensure_unique( 'check_in', 'one_week', 'enrolment_id, week_number' );
+		self::ensure_unique( 'check_in', 'one_month', 'member_id, month_key' );
+		self::ensure_unique( 'referral', 'friend_member_id', 'friend_member_id' );
+		self::replace_stripe_unique();
+		self::ensure_check( 'goal_choice', 'goal_order_range', 'sort_order BETWEEN 1 AND 3' );
+		self::install_triggers();
+	}
+
+	/**
+	 * @param string $suffix     Table suffix.
+	 * @param string $column     Column name from this class.
+	 * @param string $definition Column definition from this class.
+	 */
+	private static function ensure_column( $suffix, $column, $definition ) {
+		global $wpdb;
+		$table = self::table( $suffix );
+		$names = $wpdb->get_col( "SHOW COLUMNS FROM {$table}", 0 ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
+		if ( in_array( $column, $names, true ) ) {
+			return;
+		}
+		$ok = $wpdb->query( "ALTER TABLE {$table} ADD COLUMN {$column} {$definition}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- DDL from this class.
+		if ( false === $ok ) {
+			throw new RuntimeException( 'Could not add ' . $column . ' on ' . $table . ': ' . $wpdb->last_error );
+		}
+	}
+
+	/**
+	 * @param string $suffix  Table suffix.
+	 * @param string $name    Index name from this class.
+	 * @param string $columns Column list from this class.
+	 */
+	private static function ensure_unique( $suffix, $name, $columns ) {
+		global $wpdb;
+		$table = self::table( $suffix );
+		$rows  = $wpdb->get_results( "SHOW INDEX FROM {$table} WHERE Key_name = '{$name}'" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( $rows && 0 === (int) $rows[0]->Non_unique ) {
+			return;
+		}
+		if ( $rows ) {
+			$dropped = $wpdb->query( "ALTER TABLE {$table} DROP INDEX {$name}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			if ( false === $dropped ) {
+				throw new RuntimeException( $wpdb->last_error );
+			}
+		}
+		$ok = $wpdb->query( "ALTER TABLE {$table} ADD UNIQUE KEY {$name} ({$columns})" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( false === $ok ) {
+			throw new RuntimeException( 'Could not add unique ' . $name . ' on ' . $table . ': ' . $wpdb->last_error );
+		}
+	}
+
+	/**
+	 * A payment, its refund and a failed attempt may share one Stripe id. Uniqueness is per kind.
+	 */
+	private static function replace_stripe_unique() {
+		global $wpdb;
+		$table = self::table( 'order' );
+		$rows  = $wpdb->get_results( "SHOW INDEX FROM {$table} WHERE Key_name = 'stripe_payment'" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( $rows ) {
+			$dropped = $wpdb->query( "ALTER TABLE {$table} DROP INDEX stripe_payment" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			if ( false === $dropped ) {
+				throw new RuntimeException( $wpdb->last_error );
+			}
+		}
+		self::ensure_unique( 'order', 'stripe_event', 'stripe_payment, kind' );
+	}
+
+	/**
+	 * @param string $suffix Table suffix.
+	 * @param string $name   Constraint name.
+	 * @param string $expr   Check expression from this class.
+	 */
+	private static function ensure_check( $suffix, $name, $expr ) {
+		global $wpdb;
+		$table = self::table( $suffix );
+		$found = $wpdb->get_var( $wpdb->prepare( 'SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = %s AND CONSTRAINT_NAME = %s', $table, $name ) );
+		if ( $found ) {
+			return;
+		}
+		$ok = $wpdb->query( "ALTER TABLE {$table} ADD CONSTRAINT {$name} CHECK ({$expr})" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( false === $ok ) {
+			throw new RuntimeException( 'Could not add check ' . $name . ': ' . $wpdb->last_error );
+		}
+	}
+
+	/**
+	 * Database guards for rules a unique key cannot express.
+	 */
+	private static function install_triggers() {
+		global $wpdb;
+		$consent = self::table( 'consent' );
+		$period  = self::table( 'enrolment_period' );
+		$enrol   = self::table( 'enrolment' );
+		$reward  = self::table( 'reward' );
+		$prefix  = $wpdb->prefix . 'lld_';
+		self::ensure_trigger(
+			$prefix . 'consent_no_update',
+			"CREATE TRIGGER {$prefix}consent_no_update BEFORE UPDATE ON {$consent} FOR EACH ROW BEGIN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Consent lines cannot be edited'; END"
+		);
+		$overlap = "IF EXISTS (SELECT 1 FROM {$period} p INNER JOIN {$enrol} e ON e.id = p.enrolment_id INNER JOIN {$enrol} n ON n.id = NEW.enrolment_id AND n.member_id = e.member_id WHERE p.id <> NEW.id AND NOT (IFNULL(NEW.last_on, '9999-12-31') < p.first_on OR IFNULL(p.last_on, '9999-12-31') < NEW.first_on)) THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'Active periods cannot overlap'; END IF;";
+		self::ensure_trigger(
+			$prefix . 'period_no_overlap_insert',
+			"CREATE TRIGGER {$prefix}period_no_overlap_insert BEFORE INSERT ON {$period} FOR EACH ROW BEGIN {$overlap} END"
+		);
+		self::ensure_trigger(
+			$prefix . 'period_no_overlap_update',
+			"CREATE TRIGGER {$prefix}period_no_overlap_update BEFORE UPDATE ON {$period} FOR EACH ROW BEGIN {$overlap} END"
+		);
+		self::ensure_trigger(
+			$prefix . 'reward_pair',
+			"CREATE TRIGGER {$prefix}reward_pair BEFORE INSERT ON {$reward} FOR EACH ROW BEGIN IF (SELECT COUNT(*) FROM {$reward} WHERE referral_id = NEW.referral_id) >= 2 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'A referral has exactly two rewards'; END IF; END"
+		);
+	}
+
+	/**
+	 * @param string $name Trigger name from this class.
+	 * @param string $sql  CREATE TRIGGER statement from this class.
+	 */
+	private static function ensure_trigger( $name, $sql ) {
+		global $wpdb;
+		$wpdb->query( "DROP TRIGGER IF EXISTS {$name}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$ok = $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- DDL from this class.
+		if ( false === $ok ) {
+			throw new RuntimeException( 'Could not create trigger ' . $name . ': ' . $wpdb->last_error );
 		}
 	}
 }

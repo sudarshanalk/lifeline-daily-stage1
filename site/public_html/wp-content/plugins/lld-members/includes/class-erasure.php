@@ -121,12 +121,92 @@ class LLD_Members_Erasure {
 			$lines[] = $row->member_number . ' ' . $row->what_erased . ' ' . $row->erased_at . ' ' . $row->email_hash;
 			$ids[]   = (int) $row->id;
 		}
-		wp_mail( get_option( 'admin_email' ), 'Erasure list', implode( "\n", $lines ) );
+		$sent = wp_mail( get_option( 'admin_email' ), 'Erasure list', implode( "\n", $lines ) );
+		if ( ! $sent ) {
+			return 0;
+		}
 		$now = gmdate( 'Y-m-d H:i:s' );
 		foreach ( $ids as $id ) {
 			$wpdb->update( $table, array( 'emailed_on' => $now ), array( 'id' => $id ), array( '%s' ), array( '%d' ) );
 		}
 		return count( $ids );
+	}
+
+	/**
+	 * Import erasure lines from the owner's emailed list, then the caller re-applies them.
+	 *
+	 * @param string $path Path to the mailbox copy.
+	 * @return int Number of new lines stored.
+	 */
+	public static function import_file( $path ) {
+		global $wpdb;
+		if ( ! is_readable( $path ) ) {
+			return 0;
+		}
+		$raw = file_get_contents( $path );
+		if ( ! is_string( $raw ) ) {
+			return 0;
+		}
+		$table = LLD_Members_Schema::table( 'erasure' );
+		$added = 0;
+		foreach ( preg_split( '/\r\n|\n|\r/', $raw ) as $line ) {
+			if ( ! preg_match( '/^(\d+)\s+(account|health)\s+(\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2})\s+([a-f0-9]+)\s*$/', trim( $line ), $match ) ) {
+				continue;
+			}
+			$exists = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT id FROM {$table} WHERE member_number = %d AND what_erased = %s AND erased_at = %s",
+					(int) $match[1],
+					$match[2],
+					$match[3]
+				)
+			);
+			if ( $exists ) {
+				continue;
+			}
+			$wpdb->insert(
+				$table,
+				array(
+					'member_number' => (int) $match[1],
+					'email_hash'    => $match[4],
+					'what_erased'   => $match[2],
+					'erased_at'     => $match[3],
+				),
+				array( '%d', '%s', '%s', '%s' )
+			);
+			++$added;
+		}
+		return $added;
+	}
+
+	/**
+	 * Confirm the stored erasure lines no longer have the data they removed.
+	 *
+	 * @return string[] Problems, empty when the restore is safe to reopen.
+	 */
+	public static function verify_stored() {
+		global $wpdb;
+		$table    = LLD_Members_Schema::table( 'erasure' );
+		$rows     = $wpdb->get_results( "SELECT member_number, what_erased FROM {$table} ORDER BY id ASC" );
+		$problems = array();
+		foreach ( $rows as $row ) {
+			$member_id = (int) $row->member_number;
+			if ( 'account' === $row->what_erased ) {
+				$left = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+				if ( $left ) {
+					$problems[] = 'Member ' . $member_id . ' is still present after account erasure.';
+				}
+			}
+			if ( 'health' === $row->what_erased || 'account' === $row->what_erased ) {
+				foreach ( LLD_Members_Schema::health_tables() as $suffix ) {
+					$count = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( $suffix ) . ' WHERE member_id = %d', $member_id ) );
+					if ( $count > 0 ) {
+						$problems[] = 'Member ' . $member_id . ' still has ' . $suffix . ' rows.';
+					}
+				}
+			}
+		}
+		return $problems;
 	}
 
 	/**

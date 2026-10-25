@@ -17,6 +17,12 @@ class LLD_Members_Auth {
 	const FAIL_LIMIT   = 5;
 	const LOCK_MINUTES = 15;
 	const CODE_MINUTES = 10;
+	const RESEND_LIMIT = 3;
+
+	/**
+	 * Hash checked when the email is unknown, so the answer takes the same time.
+	 */
+	const DUMMY_HASH = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
 
 	/**
 	 * The same sentence for a wrong password and an unknown email.
@@ -78,6 +84,9 @@ class LLD_Members_Auth {
 	 * @param WP_User $user User.
 	 */
 	public static function needs_two_step( $user ) {
+		if ( user_can( $user, 'manage_options' ) ) {
+			return true;
+		}
 		global $wpdb;
 		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT role, two_step FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE user_id = %d', $user->ID ) );
 		if ( ! $row ) {
@@ -87,6 +96,64 @@ class LLD_Members_Auth {
 			return true;
 		}
 		return '1' === (string) $row->two_step;
+	}
+
+	/**
+	 * Administrators cannot use application passwords. Those skip the email code.
+	 *
+	 * @param bool    $available Whether WordPress would allow an application password.
+	 * @param WP_User $user      User.
+	 */
+	public static function application_passwords( $available, $user ) {
+		if ( $user instanceof WP_User && user_can( $user, 'manage_options' ) ) {
+			return false;
+		}
+		return $available;
+	}
+
+	/**
+	 * Pause sign-in for every email after repeated failures, including wp-login.php and xmlrpc.php.
+	 *
+	 * @param WP_User|WP_Error|null $user     User so far.
+	 * @param string                $username Login.
+	 * @param string                $password Password.
+	 * @return WP_User|WP_Error|null
+	 */
+	public static function enforce_lock( $user, $username, $password ) {
+		$email = self::login_email( (string) $username );
+		if ( '' !== $email && self::is_locked( $email ) ) {
+			return new WP_Error( 'lld_locked', 'Sign-in is paused. Try again in 15 minutes.' );
+		}
+		if ( $user instanceof WP_User ) {
+			if ( '' !== $email ) {
+				self::clear_failures( $email );
+			}
+			return $user;
+		}
+		if ( '' === $email ) {
+			return $user;
+		}
+		if ( ! get_user_by( 'email', $email ) && ! get_user_by( 'login', (string) $username ) ) {
+			wp_check_password( (string) $password, self::DUMMY_HASH );
+		}
+		self::record_failure( $email );
+		return $user;
+	}
+
+	/**
+	 * Refuse member sign-in while a restore is being checked.
+	 *
+	 * @param WP_User|WP_Error|null $user User so far.
+	 * @return WP_User|WP_Error|null
+	 */
+	public static function block_when_closed( $user ) {
+		if ( ! get_option( 'lld_members_closed' ) ) {
+			return $user;
+		}
+		if ( $user instanceof WP_User && user_can( $user, 'manage_options' ) ) {
+			return $user;
+		}
+		return new WP_Error( 'lld_closed', 'Lifeline Daily is closed' );
 	}
 
 	/**
@@ -102,10 +169,13 @@ class LLD_Members_Auth {
 			return new WP_Error( 'lld_locked', 'Sign-in is paused. Try again in 15 minutes.' );
 		}
 		$user = get_user_by( 'email', $email );
-		if ( ! $user || ! wp_check_password( $password, $user->user_pass, $user->ID ) ) {
-			if ( $user ) {
-				self::record_failure( $email );
-			}
+		if ( ! $user ) {
+			wp_check_password( $password, self::DUMMY_HASH );
+			self::record_failure( $email );
+			return new WP_Error( 'lld_details', self::GENERIC );
+		}
+		if ( ! wp_check_password( $password, $user->user_pass, $user->ID ) ) {
+			self::record_failure( $email );
 			return new WP_Error( 'lld_details', self::GENERIC );
 		}
 		self::clear_failures( $email );
@@ -118,7 +188,7 @@ class LLD_Members_Auth {
 	 * @param WP_User $user     User.
 	 * @param bool    $remember Remember me through the code step.
 	 */
-	public static function issue_code( $user, $remember ) {
+	public static function issue_code( $user, $remember, $resend_count = 0 ) {
 		global $wpdb;
 		$member_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE user_id = %d', $user->ID ) );
 		$code      = str_pad( (string) random_int( 0, 999999 ), 6, '0', STR_PAD_LEFT );
@@ -128,14 +198,16 @@ class LLD_Members_Auth {
 			LLD_Members_Schema::table( 'security_code' ),
 			array(
 				'member_id'          => $member_id,
+				'user_id'            => (int) $user->ID,
 				'kind'               => 'two_step',
 				'code_hash'          => password_hash( $code, PASSWORD_DEFAULT ),
 				'pending_token_hash' => hash( 'sha256', $token ),
 				'remember'           => $remember ? 1 : 0,
 				'attempts'           => 0,
+				'resend_count'       => (int) $resend_count,
 				'expires_at'         => $expires,
 			),
-			array( '%d', '%s', '%s', '%s', '%d', '%d', '%s' )
+			array( '%d', '%d', '%s', '%s', '%s', '%d', '%d', '%d', '%s' )
 		);
 		$cookie = array(
 			'expires'  => time() + self::CODE_MINUTES * 60,
@@ -177,13 +249,22 @@ class LLD_Members_Auth {
 		if ( ! $row || $row->expires_at < $now ) {
 			return new WP_Error( 'lld_code', 'That code has expired. Sign in again to get a new one.' );
 		}
-		$wpdb->update( $table, array( 'used_at' => gmdate( 'Y-m-d H:i:s' ) ), array( 'id' => (int) $row->id ), array( '%s' ), array( '%d' ) );
-		$user_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT user_id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $row->member_id ) );
-		$user    = get_user_by( 'id', $user_id );
+		if ( (int) $row->resend_count >= self::RESEND_LIMIT ) {
+			return new WP_Error( 'lld_code', 'We can\'t send another code. Sign in again.' );
+		}
+		$marked = $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET used_at = %s WHERE id = %d AND used_at IS NULL", gmdate( 'Y-m-d H:i:s' ), (int) $row->id ) );
+		if ( 1 !== (int) $marked ) {
+			return new WP_Error( 'lld_code', 'That code has expired. Sign in again to get a new one.' );
+		}
+		$user = get_user_by( 'id', (int) $row->user_id );
+		if ( ! $user && (int) $row->member_id ) {
+			$user_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT user_id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $row->member_id ) );
+			$user    = get_user_by( 'id', $user_id );
+		}
 		if ( ! $user ) {
 			return new WP_Error( 'lld_code', 'That code has expired. Sign in again to get a new one.' );
 		}
-		self::issue_code( $user, (bool) $row->remember );
+		self::issue_code( $user, (bool) $row->remember, (int) $row->resend_count + 1 );
 		return true;
 	}
 
@@ -211,16 +292,31 @@ class LLD_Members_Auth {
 		if ( ! $row || $row->expires_at < $now ) {
 			return new WP_Error( 'lld_code', 'That code has expired. Sign in again to get a new one.' );
 		}
-		if ( (int) $row->attempts >= self::FAIL_LIMIT || ! password_verify( $code, $row->code_hash ) ) {
-			$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET attempts = attempts + 1 WHERE id = %d", $row->id ) );
+		$email = self::email_for_code( $row );
+		if ( '' !== $email && self::is_locked( $email ) ) {
+			return new WP_Error( 'lld_locked', 'Sign-in is paused. Try again in 15 minutes.' );
+		}
+		if ( ! password_verify( $code, $row->code_hash ) ) {
+			$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET attempts = attempts + 1 WHERE id = %d AND used_at IS NULL", $row->id ) );
+			if ( '' !== $email ) {
+				self::record_failure( $email );
+			}
 			return new WP_Error( 'lld_code', 'That code does not match. Try again.' );
 		}
-		$wpdb->update( $table, array( 'used_at' => gmdate( 'Y-m-d H:i:s' ) ), array( 'id' => (int) $row->id ), array( '%s' ), array( '%d' ) );
-		$member = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $row->member_id ) );
-		if ( ! $member ) {
+		$marked = $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET used_at = %s WHERE id = %d AND used_at IS NULL", gmdate( 'Y-m-d H:i:s' ), (int) $row->id ) );
+		if ( 1 !== (int) $marked ) {
 			return new WP_Error( 'lld_code', 'That code has expired. Sign in again to get a new one.' );
 		}
-		self::start_session( (int) $member->user_id, (int) $member->id, (bool) $row->remember );
+		$user_id   = (int) $row->user_id;
+		$member_id = (int) $row->member_id;
+		if ( ! $user_id && $member_id ) {
+			$member  = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+			$user_id = $member ? (int) $member->user_id : 0;
+		}
+		if ( ! $user_id ) {
+			return new WP_Error( 'lld_code', 'That code has expired. Sign in again to get a new one.' );
+		}
+		self::start_session( $user_id, $member_id, (bool) $row->remember );
 		setcookie( 'lld_2fa', '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true );
 		return true;
 	}
@@ -235,6 +331,9 @@ class LLD_Members_Auth {
 	public static function start_session( $user_id, $member_id, $remember ) {
 		wp_set_current_user( $user_id );
 		wp_set_auth_cookie( $user_id, $remember );
+		if ( ! $member_id ) {
+			return;
+		}
 		global $wpdb;
 		$wpdb->update(
 			LLD_Members_Schema::table( 'member' ),
@@ -293,6 +392,9 @@ class LLD_Members_Auth {
 	 * @param string $email Email.
 	 */
 	private static function record_failure( $email ) {
+		if ( '' === $email ) {
+			return;
+		}
 		global $wpdb;
 		$table = LLD_Members_Schema::table( 'sign_in_lock' );
 		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT fail_count FROM {$table} WHERE email = %s", $email ) );
@@ -315,5 +417,41 @@ class LLD_Members_Auth {
 	private static function clear_failures( $email ) {
 		global $wpdb;
 		$wpdb->delete( LLD_Members_Schema::table( 'sign_in_lock' ), array( 'email' => $email ), array( '%s' ) );
+	}
+
+	/**
+	 * Email address to count, whether or not an account exists.
+	 *
+	 * @param string $username Typed login.
+	 */
+	private static function login_email( $username ) {
+		$username = trim( $username );
+		if ( '' === $username ) {
+			return '';
+		}
+		if ( is_email( $username ) ) {
+			return sanitize_email( $username );
+		}
+		$user = get_user_by( 'login', $username );
+		if ( $user ) {
+			return (string) $user->user_email;
+		}
+		return sanitize_text_field( $username );
+	}
+
+	/**
+	 * @param object $row Security-code row.
+	 */
+	private static function email_for_code( $row ) {
+		$user = get_user_by( 'id', (int) $row->user_id );
+		if ( $user ) {
+			return (string) $user->user_email;
+		}
+		if ( ! (int) $row->member_id ) {
+			return '';
+		}
+		global $wpdb;
+		$email = $wpdb->get_var( $wpdb->prepare( 'SELECT email FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $row->member_id ) );
+		return is_string( $email ) ? $email : '';
 	}
 }

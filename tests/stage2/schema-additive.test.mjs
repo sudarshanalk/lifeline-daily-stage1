@@ -8,8 +8,9 @@ const schema = readFileSync(
   'utf8'
 );
 
-test('database update only adds tables', () => {
+test('database update adds tables and keys without narrowing columns', () => {
   expect(schema).toMatch(/CREATE TABLE IF NOT EXISTS/);
+  expect(schema).toMatch(/ALTER TABLE/);
   expect(schema).not.toMatch(/DROP\s+(TABLE|COLUMN)/i);
   expect(schema).not.toMatch(/\b(MODIFY|CHANGE)\s+/i);
 });

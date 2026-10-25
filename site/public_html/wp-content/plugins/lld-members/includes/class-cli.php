@@ -90,8 +90,32 @@ class LLD_Members_CLI {
 	/**
 	 * Re-apply every erasure line. Run this while maintenance is on, after a restore.
 	 */
-	public function erasure_reapply() {
-		$count = LLD_Members_Erasure::reapply_all();
-		WP_CLI::success( 'Re-applied ' . $count . ' erasure lines' );
+	/**
+	 * Re-apply erasures from the restored database, or from an emailed list, then verify.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--from=<file>]
+	 * : Mailbox copy of the erasure list. Lines dated after the backup are imported, then re-applied.
+	 *
+	 * @param string[] $args  Positional args.
+	 * @param array    $assoc Assoc args.
+	 */
+	public function erasure_reapply( $args, $assoc ) {
+		unset( $args );
+		$from = isset( $assoc['from'] ) ? (string) $assoc['from'] : '';
+		if ( '' !== $from ) {
+			$imported = LLD_Members_Erasure::import_file( $from );
+			WP_CLI::log( 'Imported ' . $imported . ' erasure lines' );
+		}
+		$count    = LLD_Members_Erasure::reapply_all();
+		$problems = LLD_Members_Erasure::verify_stored();
+		if ( $problems ) {
+			foreach ( $problems as $problem ) {
+				WP_CLI::warning( $problem );
+			}
+			WP_CLI::error( 'Erasure verify failed. Leave maintenance on.' );
+		}
+		WP_CLI::success( 'Re-applied ' . $count . ' erasure lines. Verify found no erased data.' );
 	}
 }

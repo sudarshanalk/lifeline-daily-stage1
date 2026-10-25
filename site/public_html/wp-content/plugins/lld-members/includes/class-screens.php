@@ -263,7 +263,7 @@ class LLD_Members_Screens {
 	 * Shared components and the standard states. Hidden on production.
 	 */
 	private static function foundations() {
-		if ( lld_members_is_production() ) {
+		if ( lld_members_is_production() || ! current_user_can( 'manage_options' ) ) {
 			status_header( 404 );
 			exit;
 		}

@@ -9,9 +9,12 @@ export async function probeSignedOut(api, urls) {
   for (const url of urls) {
     const res = await api.get(url, { maxRedirects: 0 });
     const body = await res.text();
-    const showsMember = /Your membership is|something_else|SENTINEL-/.test(body);
-    if (showsMember || (res.status() === 200 && /Your record/.test(body))) {
-      open.push({ url, status: res.status() });
+    const status = res.status();
+    const type = res.headers()['content-type'] || '';
+    const memberText = /Your membership is|something_else|SENTINEL-|Your record|access_state/.test(body);
+    const memberJson = type.includes('json') && /"(email|access_state|something_else)"/.test(body);
+    if (status >= 200 && status < 300 && (memberText || memberJson)) {
+      open.push({ url, status, body: body.slice(0, 180) });
     }
   }
   return open;
