@@ -15,7 +15,8 @@ wp config set --path="$DIR" LLD_ENV ci --quiet
 wp config set --path="$DIR" LLD_TEST_CLOCK true --raw --quiet
 wp config set --path="$DIR" LLD_SMTP_HOST 127.0.0.1 --quiet
 wp config set --path="$DIR" LLD_SMTP_PORT 1025 --raw --quiet
-wp core install --path="$DIR" --url="$URL" --title="LLD CI" --admin_user=ci-admin --admin_password="ci-$(date +%s)-only" --admin_email=ci-admin@example.test --skip-email --quiet
+ADMIN_PW=$(openssl rand -hex 16)   # throwaway admin, never printed
+wp core install --path="$DIR" --url="$URL" --title="LLD CI" --admin_user=ci-admin --admin_password="$ADMIN_PW" --admin_email=ci-admin@example.test --skip-email --quiet
 wp rewrite structure '/%postname%/' --path="$DIR" --quiet
 wp plugin install paid-memberships-pro --activate --path="$DIR" --quiet
 cp -R "$REPO/site/public_html/wp-content/plugins/lld-members" "$DIR/wp-content/plugins/lld-members"
