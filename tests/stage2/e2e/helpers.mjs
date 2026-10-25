@@ -31,29 +31,29 @@ async function openAdmin(page, path) {
 
 export async function publishItem(page, type, title, body, tags = '') {
   await openAdmin(page, `/wp-admin/post-new.php?post_type=${type}`);
-  await page.locator('#title').fill(title);
-  await page.locator('#content').fill(body);
-  if (tags) await page.locator('#lld_tags').fill(tags);
-  await page.locator('#publish').click();
+  await page.locator('#title').fill(title, { force: true });
+  await page.locator('#content').fill(body, { force: true });
+  if (tags) await page.locator('#lld_tags').fill(tags, { force: true });
+  await page.locator('#publish').click({ force: true });
   await page.waitForURL(/post=\d+/);
   return Number(new URL(page.url()).searchParams.get('post'));
 }
 
 export async function editBody(page, id, body) {
   await openAdmin(page, `/wp-admin/post.php?post=${id}&action=edit`);
-  await page.locator('#content').fill(body);
-  await page.locator('#publish').click();
+  await page.locator('#content').fill(body, { force: true });
+  await page.locator('#publish').click({ force: true });
   await page.locator('#message').waitFor();
 }
 
 export async function approveTitle(page, title) {
   await openAdmin(page, '/wp-admin/admin.php?page=lld-approvals');
   const qual = page.locator('#lld_qualifications');
-  if (await qual.count()) await qual.fill('Test clinical record for the automated check');
+  if (await qual.count()) await qual.fill('Test clinical record for the automated check', { force: true });
   const row = page.locator('tr', { hasText: title });
   const box = row.locator('input[type="checkbox"]');
-  if (await box.count()) await box.check();
-  await row.getByRole('button', { name: 'Approve' }).click();
+  if (await box.count()) await box.check({ force: true });
+  await row.getByRole('button', { name: 'Approve' }).click({ force: true });
 }
 
 export async function restNonce(page) {

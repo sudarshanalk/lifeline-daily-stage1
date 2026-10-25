@@ -4,10 +4,6 @@ import { approveTitle, asOwner, createMember, editBody, publishItem, signIn } fr
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
 
-test.beforeEach(async ({}, testInfo) => {
-  testInfo.setTimeout(180000);
-});
-
 function stamp() {
   return randomBytes(4).toString('hex');
 }
