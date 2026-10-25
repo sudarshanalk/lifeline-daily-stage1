@@ -19,7 +19,7 @@
     "Band labels and thresholds (5.6 / 10 / 20 %) are interpretation cut-points chosen by Lifeline Daily, classified on the unrounded percentage (DEC-04); the clinician ratifies labels and the rounding rule at HG-02.",
     "IDRS activity points use a 4-level adaptation (0/10/20/30) of the published 3-level item; ORC-03 encodes the live mapping and is therefore a characterisation check for that item (DEC-05).",
     "Self-reported height, weight and waist; no laboratory values (HbA1c, fasting glucose) — Model A only.",
-    "The independent R oracle (ORC-01, CRAN QDiabetes 1.0-2) has not yet been run on this machine (Docker/WSL 2 pending, OI-4); fidelity is currently evidenced by characterisation fixtures only, which prove 'unchanged', not 'correct'."
+    "The independent R oracle (ORC-01, CRAN QDiabetes 1.0-2) was run on 25 Oct 2026: all 78 QDiabetes fixtures agree with the deployed engine to within 0.000001 percentage points. Twelve FX-DM-BAND fixtures still await their search inputs (DEC-59)."
   ],
   "regulatory_statement": "Pending clinical review (HG-02). Working position: the tool reproduces a published, openly licensed risk algorithm for general health information and screening encouragement; it does not diagnose, treat or recommend treatment, and every result screen and email states that the output is not a diagnosis and names urgent-care routes (UK 999 / NHS 111, Sri Lanka 1990, India 112 — DEC-37). It is operated as an educational/screening information service and not placed on the market as a medical device. The clinical reviewer confirms or amends this position at HG-02.",
   "licence": "QDiabetes-2018 algorithm © ClinRisk Ltd, released under LGPL-3.0; the deployed JavaScript port is Lifeline Daily's own implementation of the published equations. IDRS and WHtR are published, unlicensed scoring rules. R oracle package QDiabetes 1.0-2 is AGPL-3 (research-use disclaimer recorded in ORC-01).",
@@ -29,7 +29,7 @@
     "emergency": "39ede8389073eaec0f7615d86a36242aebbe0f1dcdc0274b71257be0db7f5f1a",
     "symptomatic": "0e4e4a6221261edad261aa6970095975fb30858685dab94519a4b373cb6ee586"
   },
-  "oracle_report": "oracles/orc-01-qdiabetes-r/results.json (pending Docker, OI-4); oracles/orc-03-idrs/results.json; oracles/orc-04-whtr/results.json",
+  "oracle_report": "oracles/orc-01-qdiabetes-r/results.json (run 25 Oct 2026; 78/78 FX-DM-QD fixtures agree with the deployed engine, max difference 0.000000 pp); oracles/orc-03-idrs/results.json; oracles/orc-04-whtr/results.json",
   "decisions_ratified": [],
   "clinical_signoff": {
     "name": "pending — named clinical reviewer to be appointed (OI-8)",
