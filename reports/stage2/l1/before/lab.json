@@ -1,0 +1,592 @@
+{
+  "kind": "lab",
+  "label": "LAB results (simulated mid-range phone on 4G) - not real-visitor data",
+  "generated_at": "2026-10-25T16:33:51.024Z",
+  "tool": "tools/lead/lab-vitals.mjs (Playwright chromium 141.0.7390.37)",
+  "profile": {
+    "device": "mid-range phone emulation",
+    "viewport": "412x915",
+    "device_scale_factor": 2.625,
+    "user_agent": "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36",
+    "cpu_throttling": "4x",
+    "network": {
+      "down_mbps": 9,
+      "up_mbps": 1.5,
+      "latency_ms": 60
+    },
+    "cache": "cold (disabled) each run"
+  },
+  "method": {
+    "lcp": "PerformanceObserver largest-contentful-paint, read before first tap",
+    "cls": "PerformanceObserver layout-shift, largest session window, whole visit",
+    "inp": "Event Timing API (type event, durationThreshold 16); worst of the scripted taps (main menu toggle + one in-page button); <16 ms reported as 16"
+  },
+  "targets": {
+    "lcp_ms": 2500,
+    "cls": 0.1,
+    "inp_ms": 200
+  },
+  "runs_per_url": 3,
+  "results": [
+    {
+      "url": "https://lifelinedaily.com/",
+      "median": {
+        "lcp_ms": 2884,
+        "cls": 0,
+        "inp_ms": 280,
+        "ttfb_ms": 22,
+        "fcp_ms": 688
+      },
+      "pass": {
+        "lcp": false,
+        "cls": true,
+        "inp": false
+      },
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "cache_header": "hit",
+          "ttfb_ms": 816,
+          "fcp_ms": 1272,
+          "load_ms": 2830,
+          "lcp_ms": 3184,
+          "lcp_element": "SPAN.entry-thumb.td-thumb-css.td-animation-stack-type0-2",
+          "lcp_url": "https://lifelinedaily.com/wp-content/uploads/2026/05/LLD-Blog-images-3.0-4.png",
+          "taps": [
+            {
+              "label": "main-menu",
+              "selector": ".tdb-mobile-menu-button",
+              "navigated": false,
+              "latency_ms": 288,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 60,
+                "processing_ms": 30,
+                "presentation_ms": 199
+              }
+            },
+            {
+              "label": "in-page-button",
+              "selector": ".cky-btn-customize",
+              "navigated": false,
+              "latency_ms": 64,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 29,
+                "processing_ms": 7,
+                "presentation_ms": 28
+              }
+            }
+          ],
+          "cls": 0,
+          "inp_ms": 288
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "cache_header": "hit",
+          "ttfb_ms": 20,
+          "fcp_ms": 688,
+          "load_ms": 3903,
+          "lcp_ms": 2884,
+          "lcp_element": "P",
+          "lcp_url": null,
+          "taps": [
+            {
+              "label": "main-menu",
+              "selector": ".tdb-mobile-menu-button",
+              "navigated": false,
+              "latency_ms": 280,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "pointerdown",
+                "input_delay_ms": 42,
+                "processing_ms": 7,
+                "presentation_ms": 231
+              }
+            },
+            {
+              "label": "in-page-button",
+              "selector": ".cky-btn-customize",
+              "navigated": false,
+              "latency_ms": 56,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 19,
+                "processing_ms": 6,
+                "presentation_ms": 31
+              }
+            }
+          ],
+          "cls": 0,
+          "inp_ms": 280
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "cache_header": "hit",
+          "ttfb_ms": 22,
+          "fcp_ms": 552,
+          "load_ms": 2220,
+          "lcp_ms": 2500,
+          "lcp_element": "SPAN.entry-thumb.td-thumb-css.td-animation-stack-type0-2",
+          "lcp_url": "https://lifelinedaily.com/wp-content/uploads/2026/05/LLD-Blog-images-3.0-4.png",
+          "taps": [
+            {
+              "label": "main-menu",
+              "selector": ".tdb-mobile-menu-button",
+              "navigated": false,
+              "latency_ms": 176,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 32,
+                "processing_ms": 22,
+                "presentation_ms": 122
+              }
+            },
+            {
+              "label": "in-page-button",
+              "selector": ".cky-btn-customize",
+              "navigated": false,
+              "latency_ms": 56,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 26,
+                "processing_ms": 9,
+                "presentation_ms": 21
+              }
+            }
+          ],
+          "cls": 0,
+          "inp_ms": 176
+        }
+      ]
+    },
+    {
+      "url": "https://lifelinedaily.com/exercise-for-depression/",
+      "median": {
+        "lcp_ms": 2712,
+        "cls": 0.011,
+        "inp_ms": 232,
+        "ttfb_ms": 33,
+        "fcp_ms": 644
+      },
+      "pass": {
+        "lcp": false,
+        "cls": true,
+        "inp": false
+      },
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "cache_header": "hit",
+          "ttfb_ms": 590,
+          "fcp_ms": 1000,
+          "load_ms": 2526,
+          "lcp_ms": 2804,
+          "lcp_element": "IMG.entry-thumb.entered.td-animation-stack-type0-2",
+          "lcp_url": "https://lifelinedaily.com/wp-content/uploads/2026/04/LLD-Blog-images-3.0-15.png",
+          "taps": [
+            {
+              "label": "main-menu",
+              "selector": ".tdb-mobile-menu-button",
+              "navigated": false,
+              "latency_ms": 192,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 32,
+                "processing_ms": 25,
+                "presentation_ms": 135
+              }
+            },
+            {
+              "label": "in-page-button",
+              "selector": ".cky-btn-customize",
+              "navigated": false,
+              "latency_ms": 56,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 23,
+                "processing_ms": 6,
+                "presentation_ms": 27
+              }
+            }
+          ],
+          "cls": 0,
+          "inp_ms": 192
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "cache_header": "hit",
+          "ttfb_ms": 18,
+          "fcp_ms": 644,
+          "load_ms": 2430,
+          "lcp_ms": 2712,
+          "lcp_element": "IMG.entry-thumb.entered.td-animation-stack-type0-2",
+          "lcp_url": "https://lifelinedaily.com/wp-content/uploads/2026/04/LLD-Blog-images-3.0-15.png",
+          "taps": [
+            {
+              "label": "main-menu",
+              "selector": ".tdb-mobile-menu-button",
+              "navigated": false,
+              "latency_ms": 240,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 33,
+                "processing_ms": 24,
+                "presentation_ms": 183
+              }
+            },
+            {
+              "label": "in-page-button",
+              "selector": ".cky-btn-customize",
+              "navigated": false,
+              "latency_ms": 104,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 36,
+                "processing_ms": 16,
+                "presentation_ms": 52
+              }
+            }
+          ],
+          "cls": 0.011,
+          "inp_ms": 240
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "cache_header": "hit",
+          "ttfb_ms": 33,
+          "fcp_ms": 572,
+          "load_ms": 2493,
+          "lcp_ms": 2708,
+          "lcp_element": "IMG.entry-thumb.entered.td-animation-stack-type0-2",
+          "lcp_url": "https://lifelinedaily.com/wp-content/uploads/2026/04/LLD-Blog-images-3.0-15.png",
+          "taps": [
+            {
+              "label": "main-menu",
+              "selector": ".tdb-mobile-menu-button",
+              "navigated": false,
+              "latency_ms": 232,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 32,
+                "processing_ms": 28,
+                "presentation_ms": 172
+              }
+            },
+            {
+              "label": "in-page-button",
+              "selector": ".cky-btn-customize",
+              "navigated": false,
+              "latency_ms": 72,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 31,
+                "processing_ms": 7,
+                "presentation_ms": 34
+              }
+            }
+          ],
+          "cls": 0.028,
+          "inp_ms": 232
+        }
+      ]
+    },
+    {
+      "url": "https://lifelinedaily.com/category/food-nutrition/",
+      "median": {
+        "lcp_ms": 2524,
+        "cls": 0.013,
+        "inp_ms": 144,
+        "ttfb_ms": 40,
+        "fcp_ms": 584
+      },
+      "pass": {
+        "lcp": false,
+        "cls": true,
+        "inp": true
+      },
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "cache_header": "hit",
+          "ttfb_ms": 638,
+          "fcp_ms": 1096,
+          "load_ms": 3155,
+          "lcp_ms": 3508,
+          "lcp_element": "SPAN.entry-thumb.td-thumb-css.td-animation-stack-type0-2",
+          "lcp_url": "https://lifelinedaily.com/wp-content/uploads/2022/10/46.png",
+          "taps": [
+            {
+              "label": "main-menu",
+              "selector": ".tdb-mobile-menu-button",
+              "navigated": false,
+              "latency_ms": 320,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 59,
+                "processing_ms": 56,
+                "presentation_ms": 205
+              }
+            },
+            {
+              "label": "in-page-button",
+              "selector": ".cky-btn-customize",
+              "navigated": false,
+              "latency_ms": 96,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 36,
+                "processing_ms": 14,
+                "presentation_ms": 46
+              }
+            }
+          ],
+          "cls": 0.013,
+          "inp_ms": 320
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "cache_header": "hit",
+          "ttfb_ms": 40,
+          "fcp_ms": 584,
+          "load_ms": 2190,
+          "lcp_ms": 2524,
+          "lcp_element": "SPAN.entry-thumb.td-thumb-css.td-animation-stack-type0-2",
+          "lcp_url": "https://lifelinedaily.com/wp-content/uploads/2022/10/46.png",
+          "taps": [
+            {
+              "label": "main-menu",
+              "selector": ".tdb-mobile-menu-button",
+              "navigated": false,
+              "latency_ms": 144,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 28,
+                "processing_ms": 24,
+                "presentation_ms": 92
+              }
+            },
+            {
+              "label": "in-page-button",
+              "selector": ".cky-btn-customize",
+              "navigated": false,
+              "latency_ms": 48,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 18,
+                "processing_ms": 5,
+                "presentation_ms": 25
+              }
+            }
+          ],
+          "cls": 0,
+          "inp_ms": 144
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "cache_header": "hit",
+          "ttfb_ms": 23,
+          "fcp_ms": 524,
+          "load_ms": 2068,
+          "lcp_ms": 2428,
+          "lcp_element": "SPAN.entry-thumb.td-thumb-css.td-animation-stack-type0-2",
+          "lcp_url": "https://lifelinedaily.com/wp-content/uploads/2022/10/46.png",
+          "taps": [
+            {
+              "label": "main-menu",
+              "selector": ".tdb-mobile-menu-button",
+              "navigated": false,
+              "latency_ms": 136,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 30,
+                "processing_ms": 16,
+                "presentation_ms": 90
+              }
+            },
+            {
+              "label": "in-page-button",
+              "selector": ".cky-btn-customize",
+              "navigated": false,
+              "latency_ms": 72,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 22,
+                "processing_ms": 11,
+                "presentation_ms": 39
+              }
+            }
+          ],
+          "cls": 0.013,
+          "inp_ms": 136
+        }
+      ]
+    },
+    {
+      "url": "https://lifelinedaily.com/health-tools/protein/",
+      "median": {
+        "lcp_ms": 1640,
+        "cls": 0,
+        "inp_ms": 112,
+        "ttfb_ms": 21,
+        "fcp_ms": 588
+      },
+      "pass": {
+        "lcp": true,
+        "cls": true,
+        "inp": true
+      },
+      "runs": [
+        {
+          "ok": true,
+          "status": 200,
+          "cache_header": "hit",
+          "ttfb_ms": 426,
+          "fcp_ms": 860,
+          "load_ms": 2106,
+          "lcp_ms": 1640,
+          "lcp_element": "P",
+          "lcp_url": null,
+          "taps": [
+            {
+              "label": "main-menu",
+              "selector": ".tdb-mobile-menu-button",
+              "navigated": false,
+              "latency_ms": 112,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 31,
+                "processing_ms": 22,
+                "presentation_ms": 60
+              }
+            },
+            {
+              "label": "in-page-button",
+              "selector": ".cky-btn-customize",
+              "navigated": false,
+              "latency_ms": 56,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 26,
+                "processing_ms": 8,
+                "presentation_ms": 22
+              }
+            }
+          ],
+          "cls": 0,
+          "inp_ms": 112
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "cache_header": "hit",
+          "ttfb_ms": 19,
+          "fcp_ms": 584,
+          "load_ms": 1754,
+          "lcp_ms": 1408,
+          "lcp_element": "P",
+          "lcp_url": null,
+          "taps": [
+            {
+              "label": "main-menu",
+              "selector": ".tdb-mobile-menu-button",
+              "navigated": false,
+              "latency_ms": 96,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 27,
+                "processing_ms": 16,
+                "presentation_ms": 53
+              }
+            },
+            {
+              "label": "in-page-button",
+              "selector": ".cky-btn-customize",
+              "navigated": false,
+              "latency_ms": 56,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 26,
+                "processing_ms": 7,
+                "presentation_ms": 24
+              }
+            }
+          ],
+          "cls": 0,
+          "inp_ms": 96
+        },
+        {
+          "ok": true,
+          "status": 200,
+          "cache_header": "hit",
+          "ttfb_ms": 21,
+          "fcp_ms": 588,
+          "load_ms": 2649,
+          "lcp_ms": 1680,
+          "lcp_element": "P",
+          "lcp_url": null,
+          "taps": [
+            {
+              "label": "main-menu",
+              "selector": ".tdb-mobile-menu-button",
+              "navigated": false,
+              "latency_ms": 120,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 33,
+                "processing_ms": 23,
+                "presentation_ms": 64
+              }
+            },
+            {
+              "label": "in-page-button",
+              "selector": ".cky-btn-customize",
+              "navigated": false,
+              "latency_ms": 56,
+              "below_threshold": false,
+              "breakdown": {
+                "event": "click",
+                "input_delay_ms": 21,
+                "processing_ms": 10,
+                "presentation_ms": 26
+              }
+            }
+          ],
+          "cls": 0,
+          "inp_ms": 120
+        }
+      ]
+    }
+  ]
+}

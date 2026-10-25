@@ -1,0 +1,185 @@
+{
+ "note": "Condensed Lighthouse (performance) result captured from the pagespeed.web.dev UI because the public PSI API daily quota was exhausted (see psi-api-error). Full report: reportUrl.",
+ "requestedUrl": "https://lifelinedaily.com/",
+ "finalUrl": "https://lifelinedaily.com/",
+ "fetchTime": "2026-10-25T16:35:40.450Z",
+ "lighthouseVersion": "13.5.0",
+ "formFactor": "mobile",
+ "throttling": {
+  "rttMs": 150,
+  "throughputKbps": 1638.4,
+  "requestLatencyMs": 562.5,
+  "downloadThroughputKbps": 1474.5600000000002,
+  "uploadThroughputKbps": 675,
+  "cpuSlowdownMultiplier": 1.2
+ },
+ "emulatedUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Mobile Safari/537.36",
+ "performanceScore": 0.99,
+ "metrics": {
+  "FCP": {
+   "score": 0.92,
+   "displayValue": "1.7 s",
+   "numericValue": 1702
+  },
+  "LCP": {
+   "score": 0.99,
+   "displayValue": "1.7 s",
+   "numericValue": 1715
+  },
+  "TBT": {
+   "score": 1,
+   "displayValue": "0 ms",
+   "numericValue": 0
+  },
+  "CLS": {
+   "score": 1,
+   "displayValue": "0",
+   "numericValue": 0
+  },
+  "SpeedIndex": {
+   "score": 1,
+   "displayValue": "1.7 s",
+   "numericValue": 1724.947
+  },
+  "TTI": {
+   "score": 1,
+   "displayValue": "1.7 s",
+   "numericValue": 1716.3
+  }
+ },
+ "diagnostics": {
+  "numRequests": 7,
+  "numScripts": 0,
+  "numStylesheets": 1,
+  "numFonts": 1,
+  "mainDocumentTransferSize": 175457,
+  "totalByteWeight": 253298,
+  "numTasksOver50ms": 0
+ },
+ "resourceSummary": [
+  {
+   "type": "total",
+   "requests": 5,
+   "bytes": 253298
+  },
+  {
+   "type": "document",
+   "requests": 1,
+   "bytes": 175457
+  },
+  {
+   "type": "image",
+   "requests": 1,
+   "bytes": 49038
+  },
+  {
+   "type": "font",
+   "requests": 1,
+   "bytes": 23195
+  },
+  {
+   "type": "stylesheet",
+   "requests": 1,
+   "bytes": 5046
+  },
+  {
+   "type": "other",
+   "requests": 1,
+   "bytes": 562
+  },
+  {
+   "type": "media",
+   "requests": 0,
+   "bytes": 0
+  },
+  {
+   "type": "script",
+   "requests": 0,
+   "bytes": 0
+  },
+  {
+   "type": "third-party",
+   "requests": 0,
+   "bytes": 0
+  }
+ ],
+ "auditsNeedingAttention": {
+  "forced-reflow-insight": {
+   "title": "Forced reflow",
+   "score": 0,
+   "items": [
+    {
+     "reflowTime": 44,
+     "source": "[unattributed]"
+    }
+   ]
+  },
+  "lcp-breakdown-insight": {
+   "title": "LCP breakdown",
+   "score": 1,
+   "metricSavings": {
+    "LCP": 0
+   },
+   "items": [
+    {
+     "duration": 313,
+     "label": "Time to first byte",
+     "subpart": "timeToFirstByte"
+    },
+    {
+     "duration": 417,
+     "label": "Element render delay",
+     "subpart": "elementRenderDelay"
+    },
+    {
+     "nodeLabel": "Why Anxiety Keeps You Awake and Poor Sleep Makes It Worse",
+     "selector": "div.td_module_flex > div.td-module-container > div.td-module-meta-info > p.entry-title"
+    }
+   ]
+  },
+  "network-dependency-tree-insight": {
+   "title": "Network dependency tree",
+   "score": 0,
+   "metricSavings": {
+    "LCP": 0
+   },
+   "items": []
+  }
+ },
+ "auditsPassed": [
+  "cache-insight",
+  "cls-culprits-insight",
+  "document-latency-insight",
+  "dom-size-insight",
+  "duplicated-javascript-insight",
+  "font-display-insight",
+  "image-delivery-insight",
+  "legacy-javascript-insight",
+  "render-blocking-insight",
+  "third-parties-insight",
+  "viewport-insight",
+  "unminified-css",
+  "unminified-javascript",
+  "unused-css-rules",
+  "unused-javascript",
+  "total-byte-weight",
+  "bootup-time",
+  "mainthread-work-breakdown",
+  "unsized-images",
+  "network-requests",
+  "network-rtt",
+  "network-server-latency",
+  "main-thread-tasks",
+  "diagnostics",
+  "metrics",
+  "screenshot-thumbnails",
+  "final-screenshot",
+  "script-treemap-data",
+  "resource-summary",
+  "redirects",
+  "server-response-time"
+ ],
+ "fieldData_ui": "No Data",
+ "reportUrl": "https://pagespeed.web.dev/analysis/https-lifelinedaily-com/3ti1m6ndqv?form_factor=mobile",
+ "psi-api-error": "GET runPagespeed (keyless) on 2026-10-25 returned 429: Queries per day quota exceeded"
+}

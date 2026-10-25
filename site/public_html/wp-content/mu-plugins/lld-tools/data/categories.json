@@ -1,0 +1,427 @@
+{
+  "_note": "Category restructure (S2-L2, FR2-26), applied by `wp lld categories apply [--dry-run] [--assign-posts]`. tree is the agreed category list exactly (AS-01). terms: adopt = an existing term becomes a tree term (keeps its ID and posts); merge = its posts move into a tree term, then it is deleted; delete = removed (refused while it still has posts). redirects: old category addresses 301 to the new ones when WordPress would answer 404 (AS-02). posts: proposed category per post from the L2 inventory; applied only with --assign-posts. hidden: display categories kept, noindex, out of llms.txt (AS-06).",
+  "tree": [
+    {
+      "name": "Weight & Healthy Eating",
+      "slug": "weight-healthy-eating",
+      "children": [
+        {
+          "name": "Healthy Eating",
+          "slug": "healthy-eating"
+        },
+        {
+          "name": "Nutrition",
+          "slug": "nutrition"
+        },
+        {
+          "name": "Weight Management",
+          "slug": "weight-management"
+        }
+      ]
+    },
+    {
+      "name": "Blood Sugar & Metabolic Health",
+      "slug": "blood-sugar-metabolic-health",
+      "children": [
+        {
+          "name": "Diabetes Prevention",
+          "slug": "diabetes-prevention"
+        },
+        {
+          "name": "Metabolic Health",
+          "slug": "metabolic-health"
+        }
+      ]
+    },
+    {
+      "name": "Fitness & Strength",
+      "slug": "fitness-strength",
+      "children": [
+        {
+          "name": "Exercise",
+          "slug": "exercise"
+        },
+        {
+          "name": "Strength",
+          "slug": "strength"
+        },
+        {
+          "name": "Movement",
+          "slug": "movement"
+        }
+      ]
+    },
+    {
+      "name": "Sleep & Stress",
+      "slug": "sleep-stress",
+      "children": [
+        {
+          "name": "Sleep",
+          "slug": "sleep"
+        },
+        {
+          "name": "Stress",
+          "slug": "stress"
+        },
+        {
+          "name": "Mental Wellbeing",
+          "slug": "mental-wellbeing"
+        }
+      ]
+    },
+    {
+      "name": "Heart Health",
+      "slug": "heart-health",
+      "children": [
+        {
+          "name": "Blood Pressure",
+          "slug": "blood-pressure"
+        },
+        {
+          "name": "Cholesterol",
+          "slug": "cholesterol"
+        }
+      ]
+    },
+    {
+      "name": "Gut Health",
+      "slug": "gut-health",
+      "children": []
+    },
+    {
+      "name": "Healthy Ageing",
+      "slug": "healthy-ageing",
+      "children": [
+        {
+          "name": "Longevity",
+          "slug": "longevity"
+        }
+      ]
+    },
+    {
+      "name": "Sex & Relationships",
+      "slug": "sex-relationships",
+      "children": []
+    },
+    {
+      "name": "Health Conditions",
+      "slug": "health-conditions",
+      "children": [
+        {
+          "name": "Other conditions",
+          "slug": "other-conditions"
+        }
+      ]
+    }
+  ],
+  "default_category": "health-conditions",
+  "terms": [
+    {
+      "from": "food-nutrition",
+      "op": "adopt",
+      "as": "weight-healthy-eating"
+    },
+    {
+      "from": "healthy-eating-for-longevity",
+      "op": "adopt",
+      "as": "healthy-eating"
+    },
+    {
+      "from": "healthy-diet-plans-for-longevity",
+      "op": "merge",
+      "into": "healthy-eating"
+    },
+    {
+      "from": "nutrition-for-healthy-living",
+      "op": "adopt",
+      "as": "nutrition"
+    },
+    {
+      "from": "metabolic-health",
+      "op": "adopt",
+      "as": "metabolic-health"
+    },
+    {
+      "from": "fitness",
+      "op": "adopt",
+      "as": "fitness-strength"
+    },
+    {
+      "from": "sleep-and-recovery",
+      "op": "adopt",
+      "as": "sleep"
+    },
+    {
+      "from": "mental-health",
+      "op": "adopt",
+      "as": "mental-wellbeing"
+    },
+    {
+      "from": "gut-health",
+      "op": "adopt",
+      "as": "gut-health"
+    },
+    {
+      "from": "longevity",
+      "op": "adopt",
+      "as": "longevity"
+    },
+    {
+      "from": "sex-and-relationship",
+      "op": "adopt",
+      "as": "sex-relationships"
+    },
+    {
+      "from": "health-conditions",
+      "op": "adopt",
+      "as": "health-conditions"
+    },
+    {
+      "from": "wellness",
+      "op": "delete"
+    },
+    {
+      "from": "health_tools",
+      "op": "delete"
+    },
+    {
+      "from": "the-report",
+      "op": "delete"
+    }
+  ],
+  "redirects": {
+    "/category/fitness/": "/category/fitness-strength/",
+    "/category/food-nutrition/": "/category/weight-healthy-eating/",
+    "/category/food-nutrition/healthy-diet-plans-for-longevity/": "/category/weight-healthy-eating/healthy-eating/",
+    "/category/food-nutrition/healthy-eating-for-longevity/": "/category/weight-healthy-eating/healthy-eating/",
+    "/category/food-nutrition/nutrition-for-healthy-living/": "/category/weight-healthy-eating/nutrition/",
+    "/category/health_tools/": "/health-tools/",
+    "/category/healthy-diet-plans-for-longevity/": "/category/weight-healthy-eating/healthy-eating/",
+    "/category/healthy-eating-for-longevity/": "/category/weight-healthy-eating/healthy-eating/",
+    "/category/longevity/": "/category/healthy-ageing/longevity/",
+    "/category/mental-health/": "/category/sleep-stress/mental-wellbeing/",
+    "/category/metabolic-health/": "/category/blood-sugar-metabolic-health/metabolic-health/",
+    "/category/nutrition-for-healthy-living/": "/category/weight-healthy-eating/nutrition/",
+    "/category/sex-and-relationship/": "/category/sex-relationships/",
+    "/category/sleep-and-recovery/": "/category/sleep-stress/sleep/",
+    "/category/the-report/": "/category/sleep-stress/",
+    "/category/wellness/": "/category/sleep-stress/",
+    "/category/wellness/gut-health/": "/category/gut-health/",
+    "/category/wellness/longevity/": "/category/healthy-ageing/longevity/",
+    "/category/wellness/mental-health/": "/category/sleep-stress/mental-wellbeing/",
+    "/category/wellness/sex-and-relationship/": "/category/sex-relationships/",
+    "/category/wellness/sleep-and-recovery/": "/category/sleep-stress/sleep/"
+  },
+  "hidden": [
+    "featured",
+    "trending",
+    "video"
+  ],
+  "posts": {
+    "741": "healthy-eating",
+    "633": "healthy-eating",
+    "730": "healthy-eating",
+    "706": "healthy-eating",
+    "2288": "nutrition",
+    "611": "movement",
+    "629": "healthy-eating",
+    "866": "exercise",
+    "556": "exercise",
+    "601": "exercise",
+    "607": "movement",
+    "2245": "exercise",
+    "801": "healthy-eating",
+    "1824": "blood-pressure",
+    "980": "metabolic-health",
+    "1945": "diabetes-prevention",
+    "1784": "sleep",
+    "1983": "longevity",
+    "1322": "nutrition",
+    "1833": "strength",
+    "2034": "gut-health",
+    "1351": "healthy-eating",
+    "2958": "weight-management",
+    "1869": "diabetes-prevention",
+    "1344": "healthy-eating",
+    "1377": "cholesterol",
+    "1493": "mental-wellbeing",
+    "1369": "exercise",
+    "1310": "sleep",
+    "1313": "nutrition",
+    "1514": "healthy-eating",
+    "1961": "diabetes-prevention",
+    "1763": "cholesterol",
+    "2311": "gut-health",
+    "1295": "diabetes-prevention",
+    "3609": "exercise",
+    "2286": "nutrition",
+    "3772": "sex-relationships",
+    "3851": "weight-management",
+    "3055": "nutrition",
+    "3592": "exercise",
+    "3901": "exercise",
+    "4275": "sex-relationships",
+    "4278": "gut-health",
+    "4280": "blood-pressure",
+    "3777": "longevity",
+    "3769": "sex-relationships",
+    "3899": "healthy-eating",
+    "3607": "sleep",
+    "3846": "blood-pressure",
+    "4368": "gut-health",
+    "4270": "mental-wellbeing",
+    "5439": "weight-management",
+    "4936": "weight-management",
+    "4273": "exercise",
+    "5635": "healthy-eating",
+    "5143": "exercise",
+    "5145": "other-conditions",
+    "5625": "nutrition",
+    "5616": "movement",
+    "5147": "other-conditions",
+    "5666": "healthy-eating",
+    "5663": "weight-management",
+    "5613": "movement",
+    "4992": "diabetes-prevention",
+    "5371": "gut-health",
+    "5659": "weight-management",
+    "5622": "strength",
+    "5768": "gut-health",
+    "5727": "diabetes-prevention",
+    "5619": "movement",
+    "5860": "weight-management",
+    "4996": "blood-pressure",
+    "5711": "gut-health",
+    "5654": "strength",
+    "5042": "healthy-eating",
+    "4346": "cholesterol",
+    "5733": "gut-health",
+    "4994": "healthy-eating",
+    "5958": "sleep",
+    "5756": "gut-health",
+    "5629": "nutrition",
+    "5765": "nutrition",
+    "5610": "other-conditions",
+    "4954": "healthy-eating",
+    "5931": "longevity",
+    "5873": "stress",
+    "5956": "mental-wellbeing",
+    "5632": "healthy-eating",
+    "5888": "gut-health",
+    "5822": "nutrition",
+    "5952": "mental-wellbeing",
+    "5966": "longevity",
+    "5954": "mental-wellbeing",
+    "5927": "longevity",
+    "5949": "mental-wellbeing",
+    "5919": "longevity",
+    "5892": "mental-wellbeing",
+    "5864": "sleep",
+    "5941": "longevity",
+    "5945": "longevity",
+    "5947": "mental-wellbeing",
+    "5898": "longevity",
+    "737": "metabolic-health",
+    "1895": "sex-relationships",
+    "1373": "diabetes-prevention",
+    "1866": "mental-wellbeing",
+    "2681": "sleep",
+    "1942": "mental-wellbeing",
+    "1908": "nutrition",
+    "1499": "mental-wellbeing",
+    "1818": "other-conditions",
+    "2532": "sleep",
+    "1375": "diabetes-prevention",
+    "1434": "metabolic-health",
+    "1916": "mental-wellbeing",
+    "1821": "sex-relationships",
+    "1827": "nutrition",
+    "1892": "longevity",
+    "2282": "gut-health",
+    "3050": "stress",
+    "2284": "gut-health",
+    "1789": "sex-relationships",
+    "2234": "sex-relationships",
+    "2894": "healthy-eating",
+    "2315": "gut-health",
+    "1814": "cholesterol",
+    "3673": "healthy-eating",
+    "3059": "healthy-eating",
+    "3045": "stress",
+    "3053": "stress",
+    "3007": "movement",
+    "1809": "sex-relationships",
+    "2761": "weight-management",
+    "2319": "gut-health",
+    "3009": "sleep",
+    "1774": "exercise",
+    "3749": "sex-relationships",
+    "1935": "sex-relationships",
+    "2242": "sex-relationships",
+    "2317": "gut-health",
+    "2238": "sex-relationships",
+    "2236": "sex-relationships",
+    "3519": "stress",
+    "2313": "gut-health",
+    "3512": "healthy-eating",
+    "2240": "sex-relationships",
+    "3669": "healthy-eating",
+    "2232": "sex-relationships",
+    "2847": "longevity",
+    "3653": "healthy-eating",
+    "3496": "healthy-eating",
+    "2953": "healthy-eating",
+    "3611": "nutrition",
+    "3571": "weight-management",
+    "3517": "weight-management",
+    "3569": "weight-management",
+    "3842": "mental-wellbeing",
+    "3679": "other-conditions",
+    "2730": "sleep",
+    "3849": "weight-management",
+    "3677": "other-conditions",
+    "3817": "other-conditions",
+    "3551": "other-conditions",
+    "3675": "other-conditions",
+    "3821": "longevity",
+    "3515": "healthy-eating",
+    "3856": "mental-wellbeing",
+    "3594": "weight-management",
+    "3775": "longevity",
+    "3651": "other-conditions",
+    "3844": "mental-wellbeing",
+    "3781": "longevity",
+    "4348": "blood-pressure",
+    "3717": "other-conditions",
+    "3779": "longevity",
+    "4377": "mental-wellbeing",
+    "4350": "nutrition",
+    "4998": "healthy-eating",
+    "6128": "sleep",
+    "5962": "mental-wellbeing",
+    "6035": "longevity",
+    "6058": "healthy-eating",
+    "6052": "sex-relationships",
+    "6049": "stress",
+    "6047": "sleep",
+    "6043": "gut-health",
+    "6041": "strength",
+    "6039": "weight-management",
+    "6037": "metabolic-health",
+    "6033": "nutrition",
+    "6031": "gut-health",
+    "6029": "weight-management",
+    "6027": "longevity",
+    "6025": "sex-relationships",
+    "6023": "stress",
+    "6022": "sex-relationships",
+    "6020": "stress",
+    "6018": "gut-health",
+    "6015": "strength",
+    "6008": "weight-management",
+    "6006": "metabolic-health",
+    "5960": "gut-health",
+    "5943": "longevity",
+    "5432": "exercise"
+  }
+}
