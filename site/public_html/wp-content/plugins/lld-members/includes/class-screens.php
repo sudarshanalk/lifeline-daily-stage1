@@ -50,6 +50,9 @@ class LLD_Members_Screens {
 			case 'foundations':
 				self::foundations();
 				break;
+			case 'library':
+				LLD_Members_Content::screen();
+				break;
 			default:
 				if ( LLD_Members_Account::handles( $screen ) ) {
 					LLD_Members_Account::screen( $screen );

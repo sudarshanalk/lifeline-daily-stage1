@@ -15,6 +15,47 @@ export async function signIn(page, email, password) {
   await page.getByRole('button', { name: 'Sign in' }).click();
 }
 
+export async function asOwner(page) {
+  await page.request.post('/wp-json/lld-members/v1/test/logout');
+  await page.context().clearCookies();
+  const res = await page.request.post('/wp-json/lld-members/v1/test/owner');
+  if (!res.ok()) throw new Error(`owner sign-in ${res.status()} ${await res.text()}`);
+}
+
+async function openAdmin(page, path) {
+  await page.goto(path);
+  if (page.url().includes('pmpro-wizard')) {
+    await page.goto(path);
+  }
+}
+
+export async function publishItem(page, type, title, body, tags = '') {
+  await openAdmin(page, `/wp-admin/post-new.php?post_type=${type}`);
+  await page.locator('#title').fill(title);
+  await page.locator('#content').fill(body);
+  if (tags) await page.locator('#lld_tags').fill(tags);
+  await page.locator('#publish').click();
+  await page.waitForURL(/post=\d+/);
+  return Number(new URL(page.url()).searchParams.get('post'));
+}
+
+export async function editBody(page, id, body) {
+  await openAdmin(page, `/wp-admin/post.php?post=${id}&action=edit`);
+  await page.locator('#content').fill(body);
+  await page.locator('#publish').click();
+  await page.locator('#message').waitFor();
+}
+
+export async function approveTitle(page, title) {
+  await openAdmin(page, '/wp-admin/admin.php?page=lld-approvals');
+  const qual = page.locator('#lld_qualifications');
+  if (await qual.count()) await qual.fill('Test clinical record for the automated check');
+  const row = page.locator('tr', { hasText: title });
+  const box = row.locator('input[type="checkbox"]');
+  if (await box.count()) await box.check();
+  await row.getByRole('button', { name: 'Approve' }).click();
+}
+
 export async function restNonce(page) {
   return page.locator('meta[name="lld-rest-nonce"]').getAttribute('content');
 }

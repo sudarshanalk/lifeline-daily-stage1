@@ -33,6 +33,7 @@ require_once LLD_MEMBERS_DIR . 'includes/class-access.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-mail.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-auth.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-account.php';
+require_once LLD_MEMBERS_DIR . 'includes/class-content.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-stripe.php';
 require_once LLD_MEMBERS_DIR . 'includes/components.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-screens.php';

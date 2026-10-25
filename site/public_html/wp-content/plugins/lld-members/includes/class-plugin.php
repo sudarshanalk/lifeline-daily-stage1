@@ -16,6 +16,7 @@ class LLD_Members_Plugin {
 
 	public static function boot() {
 		add_action( 'init', array( __CLASS__, 'rewrites' ) );
+		LLD_Members_Content::boot();
 		add_action( 'init', array( 'LLD_Members_Account', 'expire_sessions' ), 20 );
 		add_action( 'profile_update', array( 'LLD_Members_Account', 'sync_email' ) );
 		add_filter( 'query_vars', array( __CLASS__, 'query_vars' ) );
@@ -52,9 +53,9 @@ class LLD_Members_Plugin {
 
 	public static function rewrites() {
 		self::register_rewrites();
-		if ( '3' !== get_option( 'lld_members_rewrites' ) ) {
+		if ( '4' !== get_option( 'lld_members_rewrites' ) ) {
 			flush_rewrite_rules( false );
-			update_option( 'lld_members_rewrites', '3', true );
+			update_option( 'lld_members_rewrites', '4', true );
 		}
 	}
 
@@ -65,6 +66,7 @@ class LLD_Members_Plugin {
 	public static function query_vars( $vars ) {
 		$vars[] = 'lld_screen';
 		$vars[] = 'lld_member';
+		$vars[] = 'lld_item';
 		return $vars;
 	}
 
@@ -134,5 +136,7 @@ class LLD_Members_Plugin {
 		add_rewrite_rule( '^members/foundations/?$', 'index.php?lld_screen=foundations', 'top' );
 		add_rewrite_rule( '^members/record/([0-9]+)/?$', 'index.php?lld_screen=record&lld_member=$matches[1]', 'top' );
 		add_rewrite_rule( '^members/photo/([0-9]+)/?$', 'index.php?lld_screen=photo&lld_member=$matches[1]', 'top' );
+		add_rewrite_rule( '^members/library/?$', 'index.php?lld_screen=library', 'top' );
+		add_rewrite_rule( '^members/library/([0-9]+)/?$', 'index.php?lld_screen=library&lld_item=$matches[1]', 'top' );
 	}
 }
