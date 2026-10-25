@@ -24,6 +24,7 @@ flags=("${RSYNC_FLAGS[@]}")
 rsync "${flags[@]}" -e "$RSYNC_SSH" "$STAGE_DIR/" "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_DOCROOT/"
 if [[ "$MODE" == '--dry-run' ]]; then echo 'Read-only rehearsal complete; no backup, write, purge or POST performed.'; exit 0; fi
 remote headers
+remote dbupdate
 remote purge
 DEPLOY_ORIGIN="$EXPECTED_URL" bash deploy/smoke.sh "$EXPECTED_URL"
 remote finish
