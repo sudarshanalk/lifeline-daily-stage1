@@ -1,0 +1,273 @@
+/* Lifeline Daily member screens. Colours are the accessible set from the screen specification. */
+
+:root {
+  --lld-green: #157a42;
+  --lld-green-press: #0f5c31;
+  --lld-highlight: #3fd07f;
+  --lld-bg: #f7f8f8;
+  --lld-card: #ffffff;
+  --lld-text: #161a17;
+  --lld-muted: #63706a;
+  --lld-border: #7d8a84;
+  --lld-line: #e4eae6;
+  --lld-caution: #94600c;
+  --lld-caution-bg: #fbf6ea;
+  --lld-danger: #b5302f;
+  --lld-danger-bg: #fdeeee;
+  --lld-info-bg: #e7f6ee;
+  --lld-header: #1c1c1c;
+  --lld-space: 8px;
+}
+
+* { box-sizing: border-box; }
+
+html { font-size: 100%; }
+
+body {
+  margin: 0;
+  background: var(--lld-bg);
+  color: var(--lld-text);
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+img, svg { max-width: 100%; }
+
+.lld-skip {
+  position: absolute;
+  left: 16px;
+  top: -40px;
+  background: #fff;
+  padding: 8px;
+}
+
+.lld-skip:focus { top: 8px; }
+
+.lld-header, .lld-footer {
+  background: var(--lld-header);
+  color: #fff;
+}
+
+.lld-header-inner, .lld-main, .lld-footer {
+  padding: 16px;
+}
+
+.lld-logo, .lld-header a, .lld-footer { color: #fff; }
+
+.lld-public-nav, .lld-desktop-nav, .lld-tabbar-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+}
+
+.lld-main {
+  max-width: 40rem;
+  margin: 0 auto;
+  padding-bottom: 96px;
+}
+
+h1 { font-size: 24px; line-height: 1.3; margin: 0 0 16px; }
+h2 { font-size: 18px; line-height: 1.3; margin: 24px 0 8px; }
+
+p { margin: 0 0 16px; }
+
+a { color: var(--lld-green); }
+.lld-main a { text-decoration: underline; }
+
+.lld-hint, .lld-kicker { color: var(--lld-muted); font-size: 14px; }
+
+.lld-button {
+  display: inline-block;
+  width: 100%;
+  margin: 8px 0;
+  padding: 12px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--lld-green);
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.lld-button:hover, .lld-button:active { background: var(--lld-green-press); }
+
+.lld-button-secondary {
+  background: #fff;
+  color: var(--lld-green);
+  box-shadow: inset 0 0 0 2px var(--lld-green);
+}
+
+.lld-button:disabled, .lld-button[aria-busy="true"] {
+  background: var(--lld-line);
+  color: var(--lld-muted);
+  cursor: not-allowed;
+}
+
+.lld-text-button {
+  background: none;
+  border: 0;
+  color: var(--lld-green);
+  font: inherit;
+  text-decoration: underline;
+  padding: 8px 0;
+  cursor: pointer;
+}
+
+.lld-field { margin: 0 0 16px; }
+.lld-field label, .lld-check { display: block; font-weight: 600; margin-bottom: 8px; }
+
+input[type="text"], input[type="email"], input[type="password"], input[type="number"] {
+  width: 100%;
+  padding: 12px;
+  border: 2px solid var(--lld-border);
+  border-radius: 12px;
+  font: inherit;
+  background: #fff;
+}
+
+.lld-password-row { display: flex; gap: 8px; align-items: center; }
+.lld-password-row input { flex: 1; }
+.lld-eye { flex: 0 0 auto; }
+
+.lld-error { color: var(--lld-danger); font-size: 14px; }
+
+.lld-card, .lld-lock, .lld-consent-note, .lld-unsuitable, .lld-empty, .lld-fail {
+  background: var(--lld-card);
+  border-radius: 18px;
+  padding: 16px;
+  margin: 0 0 16px;
+}
+
+.lld-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.lld-row .lld-button { width: auto; flex: 1 1 8rem; }
+
+.lld-progress-track {
+  height: 12px;
+  background: var(--lld-line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.lld-progress-track span {
+  display: block;
+  height: 100%;
+  background: var(--lld-highlight);
+}
+
+.lld-bars { display: flex; align-items: flex-end; gap: 8px; height: 120px; }
+.lld-bar { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+.lld-bar span { display: block; background: var(--lld-highlight); border-radius: 8px 8px 0 0; }
+.lld-bar b { font-weight: 400; font-size: 14px; color: var(--lld-muted); }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--lld-line); }
+
+.lld-badge {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  background: #fff;
+  border-radius: 999px;
+  padding: 8px 16px;
+}
+
+.lld-safety, .lld-unsuitable {
+  background: var(--lld-danger-bg);
+  color: var(--lld-text);
+  border-radius: 18px;
+  padding: 16px;
+  margin: 0 0 16px;
+}
+
+.lld-safety h2, .lld-unsuitable h2, .lld-caution { color: var(--lld-danger); }
+.lld-caution { color: var(--lld-caution); background: var(--lld-caution-bg); padding: 12px 16px; border-radius: 18px; }
+.lld-info { background: var(--lld-info-bg); padding: 12px 16px; border-radius: 18px; }
+
+.lld-lock-preview { opacity: 0.55; }
+.lld-price { font-weight: 700; }
+
+.lld-consent-note { background: var(--lld-info-bg); }
+
+.lld-loading span {
+  display: block;
+  height: 16px;
+  margin: 8px 0;
+  border-radius: 8px;
+  background: var(--lld-line);
+}
+
+.lld-banner {
+  background: var(--lld-header);
+  color: #fff;
+  padding: 12px 16px;
+  border-radius: 12px;
+}
+
+.lld-timer-count { font-size: 48px; line-height: 1; margin: 0 0 8px; }
+
+.lld-steps { display: flex; flex-wrap: wrap; gap: 8px; list-style: none; padding: 0; }
+.lld-steps li { padding: 8px 12px; background: #fff; border-radius: 999px; }
+.lld-steps .is-current { outline: 3px solid var(--lld-green); }
+
+.lld-option {
+  display: block;
+  background: #fff;
+  border: 2px solid var(--lld-border);
+  border-radius: 18px;
+  padding: 16px;
+  margin: 0 0 8px;
+}
+
+.lld-tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #fff;
+  border-top: 1px solid var(--lld-line);
+  padding: 8px 16px;
+}
+
+.lld-desktop-nav { display: none; }
+
+body.lld-keyboard .lld-tabbar { display: none; }
+
+dialog {
+  border: 0;
+  border-radius: 18px;
+  padding: 16px;
+  max-width: calc(100% - 32px);
+}
+
+dialog::backdrop { background: rgba(22, 26, 23, 0.4); }
+
+:focus-visible {
+  outline: 3px solid var(--lld-green);
+  outline-offset: 2px;
+}
+
+.lld-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+@media (min-width: 768px) {
+  .lld-tabbar { display: none; }
+  .lld-desktop-nav { display: flex; }
+  .lld-button { width: auto; }
+  .lld-main { padding-bottom: 32px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+}
