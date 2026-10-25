@@ -1,0 +1,26 @@
+name: orc-01-run
+# Temporary: first run of the ORC-01 QDiabetes oracle on a Linux runner (Docker unavailable on the build machine, OI-4).
+on:
+  push:
+    branches: [orc/01-first-run]
+permissions:
+  contents: read
+jobs:
+  orc01:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build oracle image (records tarball hash)
+        run: docker build --build-arg RECORD_PIN=1 --progress=plain -t lld-orc-01 oracles/orc-01-qdiabetes-r 2>&1 | tee build.log
+      - name: Image digest
+        run: docker inspect --format '{{index .RepoDigests 0}}' rocker/r-ver:4.4.1 | tee digest.txt
+      - name: Run oracle
+        run: docker run --rm -v "$PWD:/repo" lld-orc-01
+      - uses: actions/upload-artifact@v4
+        with:
+          name: orc-01
+          path: |
+            oracles/orc-01-qdiabetes-r/results.json
+            build.log
+            digest.txt
