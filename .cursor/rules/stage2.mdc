@@ -1,0 +1,29 @@
+---
+description: Lifeline Daily Stage 2 build rules for Cursor (always apply)
+alwaysApply: true
+---
+
+# Lifeline Daily — Stage 2 rules for Cursor
+
+You are the **builder** for Stage 2. Claude is the lead: it reviews and merges your pull requests and deploys to staging. The owner decides.
+
+## Read before any work
+1. `docs/stage2/04_Build_Method_Stage2.md` — your work packages (C1–C10), file ownership and rules.
+2. `docs/stage2/01_Requirements_Stage2.md` — what to build. **It wins over everything else.**
+3. `docs/stage2/01a_Screen_Design_Specification_Stage2.md` — every screen, state, colour and rule.
+4. `docs/stage2/02_Data_Model_Stage2.md` — every table and field, plus Appendix T (integrity, versions, timing, Stripe mapping, app permissions, restore).
+5. `docs/stage2/03_Test_Criteria_Stage2.md` — one test per check, how each is tested, test data.
+
+Ignore the Stage 1 agent loop in `CLAUDE.md` and `docs/04_AI_Development_Loop_v1_2.md` (no evidence bundles, mutation proofs or review agents in Stage 2).
+
+## Hard rules
+- One package per branch `s2/c<n>-<short-name>`; PR into `staging` titled `S2-Cn: <name>`; use the PR template in the build method §7.
+- Write only in: `site/public_html/wp-content/plugins/lld-members/`, `tests/stage2/`. Package C9 only: one small additive script plus its include in the two tool pages.
+- Never edit: anything else in `site/public_html/tools/` (calculation, wording, frozen blocks), `site/public_html/wp-content/mu-plugins/lld-tools/`, `deploy/`, `.github/workflows/`, `docs/`, `approvals/`, `manifests/`, `copy/`, `fixtures/` expected values.
+- Tests are named after checks, e.g. `TC-FR2-01-AS-03`, and are never weaker than the check's wording.
+- Data only as the Data Model defines it: metric units, UTC event times plus member-local dates, money with currency in smallest units, health data only with health consent, nothing health-related in emails, logs or analytics.
+- Safety matrix before access before matching — everywhere, including direct links, swaps and downloads. "Not suitable for you" never shows a preview or an upgrade button.
+- Payments only via Paid Memberships Pro + Stripe test mode; access follows Stripe's confirmed state, never a return URL.
+- PHP 8.1, WordPress coding standards, plain JS/CSS (no build step, no framework), Playwright + Vitest. No new dependency without asking.
+- No secrets, no real personal or health data. Test members TM-01…TM-21, contacts EC-01…EC-04, content CF-01…CF-10, sentinel values only.
+- Unsure? Do not guess. Ask under "Questions for the lead" in the PR and continue with the rest. Never change a requirement or weaken a test to make it pass.
