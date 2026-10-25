@@ -342,6 +342,26 @@ if (function_exists('add_filter')) add_filter('the_content', function ($content)
   $i = stripos($content, '</h2>');
   return $i === false ? $content . $cta : substr($content, 0, $i + 5) . $cta . substr($content, $i + 5);
 }, 15);
+/** S2-L3 (FR2-20): the article's top-level category of the S2-L2 tree (Yoast primary first), or null. */
+function lld_tools_hub_term($post) {
+  $tops = array_map(fn($t) => (string)$t['slug'], (array)(json_decode((string)@file_get_contents(LLD_TOOLS_DIR . '/data/categories.json'), true)['tree'] ?? []));
+  $ids = array_map('intval', (array)wp_get_post_terms($post->ID, 'category', ['fields' => 'ids']));
+  $primary = (int)get_post_meta($post->ID, '_yoast_wpseo_primary_category', true);
+  if ($primary && in_array($primary, $ids, true)) array_unshift($ids, $primary);
+  foreach ($ids as $id) {
+    $t = get_term($id, 'category');
+    while ($t && !is_wp_error($t) && $t->parent) $t = get_term($t->parent, 'category');
+    if ($t && !is_wp_error($t) && in_array($t->slug, $tops, true)) return $t;
+  }
+  return null;
+}
+/** Link to the category hub at the end of qualifying published posts (hub_link in data/links.json); article text untouched. */
+if (function_exists('add_filter')) add_filter('the_content', function ($content) {
+  if (empty(lld_tools_links_doc()['hub_link']) || !function_exists('is_singular') || !is_singular('post') || !in_the_loop() || !is_main_query()) return $content;
+  $post = get_post(); if (!$post || $post->post_status !== 'publish') return $content;
+  $t = lld_tools_hub_term($post); if (!$t) return $content;
+  return $content . '<p class="lld-hub-link" data-test="hub-link">More articles on this topic: <a href="' . esc_url(get_term_link($t)) . '">' . esc_html($t->name) . '</a></p>';
+}, 16);
 
 /* ---------------------------------------------------------------- homepage (FR1-03, DEC-23): Composer template transform */
 function lld_tools_home_doc(): array { return json_decode((string)file_get_contents(LLD_TOOLS_DIR . '/data/home.json'), true) ?: []; }
