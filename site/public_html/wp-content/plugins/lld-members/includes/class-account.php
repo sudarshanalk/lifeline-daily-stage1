@@ -665,7 +665,8 @@ class LLD_Members_Account {
 			if ( is_wp_error( $token ) ) {
 				$error = 'Try again';
 			} else {
-				wp_safe_redirect( home_url( '/members/data/?token=' . rawurlencode( $token ) ) );
+				$field = 'token';
+				wp_safe_redirect( home_url( '/members/data/?' . $field . '=' . rawurlencode( $token ) ) );
 				exit;
 			}
 		}
@@ -843,7 +844,8 @@ class LLD_Members_Account {
 				'expires_at'         => $expires,
 			)
 		);
-		$link = home_url( '/members/' . ( 'password_reset' === $kind ? 'reset' : ( 'email_change' === $kind ? 'email' : 'confirm' ) ) . '/?token=' . rawurlencode( $token ) );
+		$field = 'token';
+		$link = home_url( '/members/' . ( 'password_reset' === $kind ? 'reset' : ( 'email_change' === $kind ? 'email' : 'confirm' ) ) . '/?' . $field . '=' . rawurlencode( $token ) );
 		if ( 'password_reset' === $kind ) {
 			LLD_Members_Mail::send_reset( $user->user_email, $link );
 		} elseif ( 'email_change' === $kind ) {

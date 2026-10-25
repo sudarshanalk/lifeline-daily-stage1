@@ -7,7 +7,7 @@ import { expect, test } from '@playwright/test';
 import { createMember, signIn } from './helpers.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
-const longPassword = 'adult-pass';
+const memberPass = 'adult-pass';
 const columns = JSON.parse(readFileSync(new URL('../personal-columns.json', import.meta.url), 'utf8'));
 const MAILPIT = process.env.MAILPIT_URL || 'http://127.0.0.1:8025';
 
@@ -80,11 +80,11 @@ test('TC-FR2-01-AS-01', async ({ page }) => {
   await page.locator('#lld_first').fill('Tina');
   await page.locator('#lld_last').fill('One');
   await page.locator('#lld_email').fill(email);
-  await page.locator('#lld_password').fill(longPassword);
+  await page.locator('#lld_password').fill(memberPass);
   await page.locator('#lld_age').fill('30');
   await page.getByRole('button', { name: 'Create account' }).click();
   await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
-  await signIn(page, email, longPassword);
+  await signIn(page, email, memberPass);
   await expect(page.getByText('Confirm your email before you sign in.')).toBeVisible();
   const body = await mailBody(email, 'Confirm your Lifeline Daily email');
   await page.goto(linkFrom(body));
@@ -96,7 +96,7 @@ test('TC-FR2-01-AS-01', async ({ page }) => {
   await page.locator('#lld_first').fill('Tina');
   await page.locator('#lld_last').fill('One');
   await page.locator('#lld_email').fill(email);
-  await page.locator('#lld_password').fill(longPassword);
+  await page.locator('#lld_password').fill(memberPass);
   await page.locator('#lld_age').fill('30');
   await page.getByRole('button', { name: 'Create account' }).click();
   const fresh = await mailBody(email, 'expires in 24 hours');
@@ -116,7 +116,7 @@ test('TC-FR2-01-AS-02', async ({ page }) => {
   await page.locator('#lld_last').fill('One');
   await page.getByRole('button', { name: 'Create account' }).click();
   await expect(page.getByText('Use at least 10 characters.')).toBeVisible();
-  await page.locator('#lld_password').fill(longPassword);
+  await page.locator('#lld_password').fill(memberPass);
   await page.getByRole('button', { name: 'Create account' }).click();
   await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
   for (const target of ['/members/join/', '/members/sign-in/']) {
@@ -191,7 +191,7 @@ test('TC-FR2-01-AS-04', async ({ browser, page }) => {
   const body = await mailBody(email, 'Reset your Lifeline Daily password');
   const url = linkFrom(body);
   await page.goto(url);
-  await page.locator('#lld_password').fill(longPassword);
+  await page.locator('#lld_password').fill(memberPass);
   await page.getByRole('button', { name: 'Save password' }).click();
   await expect(page.getByText('Other devices have been signed out.')).toBeVisible();
   await page.goto(url);
@@ -220,7 +220,7 @@ test('TC-FR2-01-AS-05', async ({ page }) => {
   await page.locator('#lld_first').fill('Young');
   await page.locator('#lld_last').fill('One');
   await page.locator('#lld_email').fill(young);
-  await page.locator('#lld_password').fill(longPassword);
+  await page.locator('#lld_password').fill(memberPass);
   await page.locator('#lld_age').fill('17');
   await page.getByRole('button', { name: 'Create account' }).click();
   await expect(page.getByText('Membership is for adults.')).toBeVisible();
@@ -228,7 +228,7 @@ test('TC-FR2-01-AS-05', async ({ page }) => {
   const scan = await page.request.post('/wp-json/lld-members/v1/test/scan', { data: { email: young } });
   expect((await scan.json()).user_id).toBe(0);
   await page.locator('#lld_email').fill(adult);
-  await page.locator('#lld_password').fill(longPassword);
+  await page.locator('#lld_password').fill(memberPass);
   await page.locator('#lld_age').fill('18');
   await page.getByRole('button', { name: 'Create account' }).click();
   await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
