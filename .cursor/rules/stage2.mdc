@@ -8,6 +8,7 @@ alwaysApply: true
 You are the **builder** for Stage 2. Claude is the lead: it reviews and merges your pull requests and deploys to staging. The owner decides.
 
 ## Read before any work
+Start with `docs/stage2/Cursor_Instructions_Stage2.md`: the one-page brief, including the local environment (`tools/local/stage2-local.ps1`, http://localhost:8090). Then:
 1. `docs/stage2/04_Build_Method_Stage2.md` — your work packages (C1–C10), file ownership and rules.
 2. `docs/stage2/01_Requirements_Stage2.md` — what to build. **It wins over everything else.**
 3. `docs/stage2/01a_Screen_Design_Specification_Stage2.md` — every screen, state, colour and rule.

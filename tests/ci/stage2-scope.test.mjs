@@ -32,7 +32,7 @@ describe('stage2-scope', () => {
   });
 
   test('lead packages never touch Cursor files or the Stage 1 calculators', () => {
-    expect(stage2Scope({ title: 'S2-L0: Phase 0', files: ['deploy/remote.py', '.github/workflows/ci-guards.yml', 'tests/ci/x.mjs', '.cursor/rules/stage2.mdc'] }).ok).toBe(true);
+    expect(stage2Scope({ title: 'S2-L0: Phase 0', files: ['deploy/remote.py', '.github/workflows/ci-guards.yml', 'tests/ci/x.mjs', '.cursor/rules/stage2.mdc', 'tools/local/stage2-local.ps1'] }).ok).toBe(true);
     for (const f of [PLUGIN, 'tests/stage2/tools/leak.mjs', PAGE, 'approvals/diabetes.json', 'copy/inventory.json', 'snapshot/x']) {
       expect(stage2Scope({ title: 'S2-L3: SEO', files: [f] }).ok, f).toBe(false);
     }
