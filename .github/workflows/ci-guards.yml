@@ -198,7 +198,12 @@ jobs:
   stage2-e2e:
     if: "!startsWith(github.event.pull_request.title || '', 'SPEC: ')"   # SPEC PRs (DEC-55) carry no code or tests
     runs-on: ubuntu-latest
-    timeout-minutes: 30   # a hung browser once held this job for over two hours; normal runs take a few minutes
+    # one job per browser engine, run side by side: the full Stage 2 suite outgrew one 30-minute job for both engines
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    timeout-minutes: 40   # a hung browser once held this job for over two hours; a normal run per engine is well under this
     services:
       db:
         image: mariadb:11
@@ -245,14 +250,14 @@ jobs:
       - name: Throwaway WordPress with Paid Memberships Pro and lld-members
         if: steps.has.outputs.e2e == 'true'
         run: bash tests/ci/stage2-wp.sh "$RUNNER_TEMP/wp"
-      - name: Playwright Stage 2 journeys (chromium and webkit)
+      - name: Playwright Stage 2 journeys (${{ matrix.browser }})
         if: steps.has.outputs.e2e == 'true'
         run: |
-          npm ci && npx playwright install --with-deps chromium webkit
-          npx playwright test -c tests/stage2/e2e/playwright.config.mjs
+          npm ci && npx playwright install --with-deps ${{ matrix.browser }}
+          npx playwright test -c tests/stage2/e2e/playwright.config.mjs --project=${{ matrix.browser }}
       - uses: actions/upload-artifact@v4
         if: failure()
-        with: { name: stage2-playwright-traces, path: test-results/, if-no-files-found: ignore }
+        with: { name: 'stage2-playwright-traces-${{ matrix.browser }}', path: test-results/, if-no-files-found: ignore }
 
   saf:
     if: "!startsWith(github.event.pull_request.title || '', 'SPEC: ')"   # SPEC PRs (DEC-55) carry no code or tests
