@@ -122,7 +122,7 @@ async function keyboardSignIn(page, email) {
 
 async function mailLink(email, pattern) {
   for (let attempt = 0; attempt < 20; attempt += 1) {
-    const list = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
+    const list = await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}&limit=100`).then((res) => res.json());
     for (const message of list.messages || []) {
       if (!(message.To || []).some((item) => item.Address === email)) continue;
       const full = await fetch(`${MAILPIT}/api/v1/message/${message.ID}`).then((res) => res.json());
@@ -471,10 +471,19 @@ test('TC-UI2-04-AS-01', async ({ page, request }) => {
   await page.goto('/coming-soon/blood-sugar/');
   await page.locator('#lld_guide_email').fill(guest);
   await page.getByRole('button', { name: 'Join the waitlist' }).click();
-  const list = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
+  // Search by this test's own subject and address, polling until each message has arrived.
+  async function first(query, match) {
+    const deadline = Date.now() + 15000;
+    for (;;) {
+      const list = await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(query)}&limit=100`).then((res) => res.json());
+      const hit = (list.messages || []).find(match);
+      if (hit || Date.now() > deadline) return hit;
+      await new Promise((done) => setTimeout(done, 500));
+    }
+  }
   const found = [
-    (list.messages || []).find((item) => JSON.stringify(item).includes(subject)),
-    (list.messages || []).find((item) => JSON.stringify(item).includes(guest)),
+    await first(`subject:"${subject}"`, (item) => item.Subject === subject),
+    await first(`to:"${guest}"`, (item) => (item.To || []).some((to) => to.Address === guest)),
   ];
   for (const message of found) {
     expect(message).toBeTruthy();

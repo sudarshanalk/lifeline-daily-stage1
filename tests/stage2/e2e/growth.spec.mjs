@@ -58,9 +58,31 @@ async function growth(request, data) {
   return res.json();
 }
 
-async function messages() {
-  const list = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
+const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
+
+/**
+ * Mailpit search, so a lookup never depends on the newest page of messages or on their order.
+ * Queries name the test's own unique address or subject.
+ */
+async function search(query) {
+  const list = await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(query)}&limit=500`).then((res) => res.json());
   return list.messages || [];
+}
+
+/** Number of messages in the whole mailbox. */
+async function mailboxSize() {
+  const list = await fetch(`${MAILPIT}/api/v1/messages?limit=1`).then((res) => res.json());
+  return Number(list.total ?? list.messages_count ?? 0);
+}
+
+/** Poll a search until `ready` accepts what it found, or the deadline passes (then return what there is). */
+async function poll(query, ready, timeout = 15000) {
+  const deadline = Date.now() + timeout;
+  for (;;) {
+    const found = await search(query);
+    if ((await ready(found)) || Date.now() > deadline) return found;
+    await sleep(500);
+  }
 }
 
 async function bodyOf(message) {
@@ -69,15 +91,14 @@ async function bodyOf(message) {
   return `To: ${to}\n${full.Subject || ''}\n${full.Text || ''}`;
 }
 
-/** Newest message to this address with this subject, with its headers. */
+/** The message to this address with this subject, with its headers. */
 async function messageTo(email, subject) {
-  for (const message of await messages()) {
-    if (message.Subject !== subject || !(message.To || []).some((item) => item.Address === email)) continue;
-    const full = await fetch(`${MAILPIT}/api/v1/message/${message.ID}`).then((res) => res.json());
-    const headers = await fetch(`${MAILPIT}/api/v1/message/${message.ID}/headers`).then((res) => res.json());
-    return { text: full.Text || '', headers };
-  }
-  return null;
+  const exact = (found) => found.filter((message) => message.Subject === subject && (message.To || []).some((item) => item.Address === email));
+  const found = exact(await poll(`to:"${email}" subject:"${subject}"`, (list) => exact(list).length > 0));
+  if (!found.length) return null;
+  const full = await fetch(`${MAILPIT}/api/v1/message/${found[0].ID}`).then((res) => res.json());
+  const headers = await fetch(`${MAILPIT}/api/v1/message/${found[0].ID}/headers`).then((res) => res.json());
+  return { text: full.Text || '', headers };
 }
 
 async function askGuide(page, path, email) {
@@ -87,18 +108,23 @@ async function askGuide(page, path, email) {
   await expect(page.getByText('Check your email to confirm.')).toBeVisible();
 }
 
-async function mailTo(email) {
-  const found = [];
-  for (const message of await messages()) {
-    const body = await bodyOf(message);
-    if (body.includes(email)) found.push(body);
-  }
-  return found;
+/**
+ * Every message to this address (or, for a phrase, containing it), polled until `ready` accepts the bodies.
+ * By default it waits for at least one.
+ */
+async function mailTo(term, ready = (bodies) => bodies.length > 0) {
+  const query = term.includes('@') ? `to:"${term}"` : `"${term}"`;
+  let bodies = [];
+  await poll(query, async (found) => {
+    bodies = (await Promise.all(found.map(bodyOf))).filter((body) => body.includes(term));
+    return ready(bodies);
+  });
+  return bodies;
 }
 
 /** The newest Monday report in Mailpit, as plain text. */
 async function latestReport() {
-  const list = (await messages()).filter((message) => message.Subject === 'Weekly report');
+  const list = (await poll('subject:"Weekly report"', (found) => found.length > 0)).filter((message) => message.Subject === 'Weekly report');
   list.sort((a, b) => new Date(b.Created) - new Date(a.Created));
   expect(list.length).toBeGreaterThan(0);
   const full = await fetch(`${MAILPIT}/api/v1/message/${list[0].ID}`).then((res) => res.json());
@@ -290,9 +316,11 @@ test('TC-FR2-17-AS-01', async ({ page, request }) => {
   }
   expect(mail).not.toContain('Private words');
   // A second run in the same week does not send the report again.
-  const before = (await messages()).filter((message) => message.Subject === 'Weekly report').length;
+  const reports = async () => (await search('subject:"Weekly report"')).filter((message) => message.Subject === 'Weekly report').length;
+  const before = await reports();
   await growth(request, { action: 'monday' });
-  expect((await messages()).filter((message) => message.Subject === 'Weekly report').length).toBe(before);
+  await sleep(1000);
+  expect(await reports()).toBe(before);
 });
 
 test('TC-FR2-17-AS-02', async ({ request }) => {
@@ -449,7 +477,7 @@ test('TC-FR2-18-AS-01', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Link expired' })).toBeVisible();
   await page.goto(link);
   await expect(page.getByRole('heading', { name: 'Confirmed' })).toBeVisible();
-  const second = await mailTo(email);
+  const second = await mailTo(email, (bodies) => bodies.join('\n').includes('Your starter guide'));
   expect(second.join('\n')).toContain('Your starter guide');
   expect(second.join('\n')).toContain('/programmes/fitness/');
   // A confirmed contact who asks for another guide gets it straight away, with no second confirmation.
@@ -481,11 +509,12 @@ test('TC-FR2-18-AS-02', async ({ page, request }) => {
   expect((await kept.json()).exists).toBe(true);
   await page.getByRole('button', { name: 'Unsubscribe' }).click();
   await expect(page.getByRole('heading', { name: 'Unsubscribed' })).toBeVisible();
-  const before = (await messages()).length;
+  const before = await mailboxSize();
   await page.goto('/health-tools/protein/');
   await page.locator('#lld_guide_email').fill(email);
   await page.getByRole('button', { name: 'Send me the guide' }).click();
-  expect((await messages()).length).toBe(before);
+  await sleep(1000);
+  expect(await mailboxSize()).toBe(before);
   await page.goto(unsub);
   await expect(page.getByRole('heading', { name: 'Already unsubscribed' })).toBeVisible();
 
@@ -617,11 +646,14 @@ test('TC-FR2-28-AS-02', async ({ page, request }) => {
   await askGuide(page, '/health-tools/protein/', both);
   await askGuide(page, '/health-tools/diabetes-risk-check/', both);
   await growth(request, { action: 'launch' });
-  const launched = [];
-  for (const message of await messages()) {
-    const body = await bodyOf(message);
-    if (body.includes('Lifeline Daily is open')) launched.push(body);
-  }
+  const launchedTo = async () => (await Promise.all((await search('subject:"Lifeline Daily is open"')).map(bodyOf)));
+  let launched = [];
+  const deadline = Date.now() + 15000;
+  do {
+    launched = await launchedTo();
+    if (launched.some((body) => body.includes(confirmed)) && launched.some((body) => body.includes(both))) break;
+    await sleep(500);
+  } while (Date.now() < deadline);
   const text = launched.join('\n');
   expect(text).toContain('50% off the first month');
   expect(launched.filter((body) => body.includes(both))).toHaveLength(1);
