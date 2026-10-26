@@ -15,6 +15,11 @@ const jpeg = Buffer.from(
   '/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAALCAABAAEBAREA/8QAFAABAAAAAAAAAAAAAAAAAAAAA//EABQQAQAAAAAAAAAAAAAAAAAAAAD/2gAIAQEAAD8AfwD/2Q==',
   'base64'
 );
+// A real 64 by 48 HEIC (HEVC in a HEIF container), so the HEIC path is exercised, not a renamed JPEG.
+const heic = Buffer.from(
+  'AAAAGGZ0eXBoZWljAAAAAG1pZjFoZWljAAABJ21ldGEAAAAAAAAAIWhkbHIAAAAAAAAAAHBpY3QAAAAAAAAAAAAAAAAAAAAADnBpdG0AAAAAAAEAAAAeaWxvYwAAAABEAAABAAEAAAABAAABRwAAABgAAAAjaWluZgAAAAAAAQAAABVpbmZlAgAAAAABAABodmMxAAAAAKtpcHJwAAAAjmlwY28AAAByaHZjQwEECAAAAJ+oAAAAAB7wAPz9+PgAAA8DoAABABdAAQwB//8ECAAAAwCfqAAAAwAAHroCQKEAAQAnQgEBBAgAAAMAn6gAAAMAAB6gIIMWW6uTK8BaAgAAAwACAAADADIQogABAAZEAcFzwIkAAAAUaXNwZQAAAAAAAABAAAAAMAAAABVpcG1hAAAAAAAAAAEAAQKBAgAAACBtZGF0AAAAFCgBr3j3BAP/1t/9XH9xqRAg8AAe',
+  'base64'
+);
 const png = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
   'base64'
@@ -298,9 +303,11 @@ test('TC-FR2-02-AS-02', async ({ page }) => {
   expect(own.ok()).toBe(true);
   expect(jpegInfo(await own.body()).exif).toBe(false);
   await page.goto('/members/settings/');
-  await page.locator('#lld_photo').setInputFiles(sized('photo.heic', jpeg, 0));
+  await page.locator('#lld_photo').setInputFiles(sized('photo.heic', heic, 0));
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Saved')).toBeVisible();
+  const fromHeic = jpegInfo(await (await page.request.get(`/members/photo/${created.member_id}/`)).body());
+  expect(fromHeic).toEqual({ exif: false, width: 64, height: 48 });
 });
 
 test('TC-FR2-02-AS-03', async ({ page }) => {
@@ -321,7 +328,12 @@ test('TC-FR2-02-AS-03', async ({ page }) => {
   await page.context().clearCookies();
   await signIn(page, next, password);
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
-  await signIn(page, email, password);
+  // The old address no longer signs in. (signIn() waits to leave the page, so try it directly.)
+  await page.context().clearCookies();
+  await page.goto('/members/sign-in/');
+  await page.locator('#lld_email').fill(email);
+  await page.locator('#lld_password').fill(password);
+  await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page.getByText("Those details don't match our records.")).toBeVisible();
 });
 

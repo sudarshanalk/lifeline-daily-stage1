@@ -97,6 +97,10 @@ class LLD_Members_Plugin {
 			return $result;
 		}
 		$route = $request->get_route();
+		// The restore procedure's test helpers (ci and local only, with the test secret) still run.
+		if ( is_string( $route ) && 0 === strpos( $route, '/lld-members/v1/test/' ) && lld_members_test_request_allowed() ) {
+			return $result;
+		}
 		if ( is_string( $route ) && 0 === strpos( $route, '/lld-members/' ) ) {
 			return new WP_Error( 'lld_closed', 'Lifeline Daily is closed', array( 'status' => 503 ) );
 		}
