@@ -207,10 +207,17 @@ jobs:
       mailpit:
         image: axllent/mailpit:v1.20
         ports: ['1025:1025', '8025:8025']
+      # Stripe's official API mock: real Stripe API request shapes without keys or network access (C6 integration in CI).
+      # Real Stripe test mode, test clocks and CLI-replayed notices run on staging (Test Criteria section 3, L7).
+      stripe:
+        image: stripe/stripe-mock:v0.206.0
+        ports: ['12111:12111']
     env:
       LLD_WP_URL: http://127.0.0.1:8090
       MAILPIT_URL: http://127.0.0.1:8025
       LLD_TEST_CLOCK: '1'
+      LLD_STRIPE_API_BASE: http://127.0.0.1:12111
+      LLD_STRIPE_SECRET: sk_test_123
     steps:
       - uses: actions/checkout@v4
       - id: has

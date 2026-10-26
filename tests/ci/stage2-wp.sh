@@ -15,6 +15,9 @@ wp config set --path="$DIR" LLD_ENV ci --quiet
 wp config set --path="$DIR" LLD_TEST_CLOCK true --raw --quiet
 wp config set --path="$DIR" LLD_SMTP_HOST 127.0.0.1 --quiet
 wp config set --path="$DIR" LLD_SMTP_PORT 1025 --raw --quiet
+# Stripe: CI points the plugin at stripe-mock (LLD_STRIPE_API_BASE); keys come from the environment, never the repository
+if [ -n "${LLD_STRIPE_API_BASE:-}" ]; then wp config set --path="$DIR" LLD_STRIPE_API_BASE "$LLD_STRIPE_API_BASE" --quiet; fi
+if [ -n "${LLD_STRIPE_SECRET:-}" ]; then wp config set --path="$DIR" LLD_STRIPE_SECRET "$LLD_STRIPE_SECRET" --quiet; fi
 ADMIN_PW=$(openssl rand -hex 16)   # throwaway admin, never printed
 wp core install --path="$DIR" --url="$URL" --title="LLD CI" --admin_user=ci-admin --admin_password="$ADMIN_PW" --admin_email=ci-admin@example.test --skip-email --quiet
 wp rewrite structure '/%postname%/' --path="$DIR" --quiet
