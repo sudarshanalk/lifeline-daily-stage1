@@ -46,6 +46,7 @@ class LLD_Members_Plugin {
 		add_filter( 'auth_cookie_expiration', array( 'LLD_Members_Auth', 'cookie_expiration' ), 10, 3 );
 		add_action( 'lld_members_daily', array( 'LLD_Members_Erasure', 'email_new_lines' ) );
 		add_action( 'lld_members_daily', array( 'LLD_Members_Privacy', 'sweep' ) );
+		add_action( 'lld_members_sweep_downloads', array( 'LLD_Members_Privacy', 'sweep_downloads' ), 10, 0 );
 		if ( ! wp_next_scheduled( 'lld_members_daily' ) ) {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'lld_members_daily' );
 		}

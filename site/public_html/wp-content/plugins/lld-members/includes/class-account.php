@@ -1138,71 +1138,166 @@ class LLD_Members_Account {
 		if ( ! class_exists( 'ZipArchive' ) ) {
 			return new WP_Error( 'lld_zip', 'Try again' );
 		}
-		global $wpdb;
-		$dir = lld_members_private_dir() . '/downloads';
-		if ( ! is_dir( $dir ) ) {
-			mkdir( $dir, 0700, true );
+		$member_id = (int) $member_id;
+		$row       = self::member_row( $member_id );
+		if ( ! $row ) {
+			return new WP_Error( 'lld_zip', 'Try again' );
 		}
+		LLD_Members_Privacy::sweep_downloads();
+		$dir = LLD_Members_Privacy::download_dir();
+		if ( ! is_dir( $dir ) && ! mkdir( $dir, 0700, true ) ) {
+			return new WP_Error( 'lld_zip', 'Try again' );
+		}
+		// The member number in the name lets erasure remove a download nobody collected.
 		$token = bin2hex( random_bytes( 16 ) );
-		$path  = $dir . '/' . $token . '.zip';
+		$path  = $dir . '/m' . $member_id . '-' . $token . '.zip';
 		$zip   = new ZipArchive();
 		if ( true !== $zip->open( $path, ZipArchive::CREATE ) ) {
 			return new WP_Error( 'lld_zip', 'Try again' );
 		}
-		$data = array();
-		foreach ( LLD_Members_Schema::all_suffixes() as $suffix ) {
-			if ( in_array( $suffix, array( 'security_code', 'sign_in_lock', 'session', 'app_key', 'error_log' ), true ) ) {
-				continue;
-			}
-			$table   = LLD_Members_Schema::table( $suffix );
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM {$table}", 0 );
-			$column  = null;
-			foreach ( array( 'member_id', 'referrer_member_id', 'recipient_member_id', 'member_number' ) as $candidate ) {
-				if ( in_array( $candidate, $columns, true ) ) {
-					$column = $candidate;
-					break;
-				}
-			}
-			if ( ! $column ) {
-				continue;
-			}
-			$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE {$column} = %d", $member_id ), ARRAY_A );
-			if ( 'something_else' === $suffix && $rows ) {
-				foreach ( $rows as $index => $record ) {
-					try {
-						$rows[ $index ]['text'] = LLD_Members_Crypto::decrypt( (string) $record['text_ciphertext'], 'something_else:' . $record['id'] );
-					} catch ( RuntimeException $e ) {
-						$rows[ $index ]['text'] = '';
-					}
-					unset( $rows[ $index ]['text_ciphertext'] );
-				}
-			}
-			if ( 'diary_meal' === $suffix && $rows ) {
-				foreach ( $rows as $index => $record ) {
-					if ( ! empty( $record['description_ciphertext'] ) ) {
-						try {
-							$rows[ $index ]['description'] = LLD_Members_Crypto::decrypt( (string) $record['description_ciphertext'], 'diary_meal:' . $record['id'] );
-						} catch ( RuntimeException $e ) {
-							$rows[ $index ]['description'] = '';
-						}
-					}
-					unset( $rows[ $index ]['description_ciphertext'] );
-				}
-			}
-			$data[ $suffix ] = $rows ? $rows : array();
+		$tables = LLD_Members_Privacy::member_rows( $member_id, (string) $row->email, LLD_Members_Privacy::download_tables() );
+		foreach ( $tables as $suffix => $rows ) {
+			$tables[ $suffix ] = self::readable_rows( $suffix, $rows );
 		}
-		$zip->addFromString( 'summary.html', '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Your Lifeline Daily data</title></head><body><h1>Your data</h1><p>This file was made when you asked for it.</p></body></html>' );
-		$zip->addFromString( 'data.json', wp_json_encode( $data ) );
-		$row = self::member_row( $member_id );
-		if ( $row && $row->photo_path ) {
-			$file = LLD_Members_Photos::resolve( $row->photo_path );
-			if ( $file ) {
-				$zip->addFile( $file, 'photos/' . basename( $file ) );
-			}
+		$photos = array();
+		foreach ( LLD_Members_Photos::member_files( $member_id ) as $file ) {
+			$name = 'photos/' . basename( $file );
+			$zip->addFile( $file, $name );
+			$photos[] = $name;
 		}
-		$zip->close();
-		set_transient( 'lld_dl_' . $token, array( 'path' => $path, 'member_id' => $member_id ), 10 * MINUTE_IN_SECONDS );
+		$made = gmdate( 'Y-m-d H:i:s' );
+		$data = array(
+			'format'        => 'lifeline-daily-member-data',
+			'version'       => 1,
+			'made_at_utc'   => $made,
+			'member_number' => $member_id,
+			'photos'        => $photos,
+			'tables'        => $tables,
+		);
+		$zip->addFromString( 'summary.html', self::download_summary( $row, $tables, $photos, $made ) );
+		$zip->addFromString( 'data.json', (string) wp_json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) );
+		if ( ! $zip->close() ) {
+			if ( file_exists( $path ) ) {
+				unlink( $path );
+			}
+			return new WP_Error( 'lld_zip', 'Try again' );
+		}
+		set_transient( 'lld_dl_' . $token, array( 'path' => $path, 'member_id' => $member_id ), LLD_Members_Privacy::DOWNLOAD_MINUTES * MINUTE_IN_SECONDS );
+		wp_schedule_single_event( time() + LLD_Members_Privacy::DOWNLOAD_MINUTES * MINUTE_IN_SECONDS + 60, 'lld_members_sweep_downloads', array( $token ) );
 		return $token;
+	}
+
+	/**
+	 * Decrypt the encrypted text for the download, and leave out the ciphertext.
+	 *
+	 * @param string $suffix Table suffix.
+	 * @param array  $rows   Rows.
+	 * @return array
+	 */
+	private static function readable_rows( $suffix, $rows ) {
+		$encrypted = array(
+			'something_else' => array( 'text_ciphertext', 'text' ),
+			'diary_meal'     => array( 'description_ciphertext', 'description' ),
+		);
+		if ( ! isset( $encrypted[ $suffix ] ) ) {
+			return $rows;
+		}
+		list( $column, $plain ) = $encrypted[ $suffix ];
+		foreach ( $rows as $index => $record ) {
+			$text = '';
+			if ( isset( $record[ $column ] ) && is_string( $record[ $column ] ) && '' !== $record[ $column ] ) {
+				try {
+					$text = LLD_Members_Crypto::decrypt( $record[ $column ], $suffix . ':' . $record['id'] );
+				} catch ( RuntimeException $e ) {
+					$text = '';
+				}
+			}
+			unset( $rows[ $index ][ $column ] );
+			$rows[ $index ][ $plain ] = $text;
+		}
+		return $rows;
+	}
+
+	/**
+	 * The readable summary in the download: a short web page, section by section.
+	 *
+	 * @param object $row    Member row.
+	 * @param array  $tables Rows by table.
+	 * @param array  $photos Photo names in the ZIP.
+	 * @param string $made   When it was made, UTC.
+	 */
+	private static function download_summary( $row, $tables, $photos, $made ) {
+		$labels = array(
+			'member'            => 'Your account',
+			'email_pref'        => 'Email preferences',
+			'consent'           => 'Consent history',
+			'goal_choice'       => 'Goals',
+			'something_else'    => '"Something else" requests',
+			'health_profile'    => 'Health profile',
+			'calculator_result' => 'Saved calculator results',
+			'enrolment'         => 'Tracks',
+			'enrolment_period'  => 'Track periods',
+			'challenge'         => 'Monthly challenges',
+			'workout'           => 'Workout plans',
+			'workout_change'    => 'Workout level changes',
+			'result'            => 'Activities done',
+			'check_in'          => 'Check-ins',
+			'reflection'        => 'Reflections',
+			'weekly_plan'       => 'Weekly plans',
+			'weekly_review'     => 'Weekly reviews',
+			'diary_meal'        => 'Food diary meals',
+			'diary_day'         => 'Food diary days',
+			'meal_plan'         => 'Meal plans',
+			'suggestion'        => 'Suggestions',
+			'badge'             => 'Badges',
+			'subscription'      => 'Subscription',
+			'order'             => 'Payments and refunds',
+			'referral'          => 'Referrals',
+			'reward'            => 'Referral rewards',
+			'contact_request'   => 'Email-list requests',
+			'support'           => 'Support messages',
+			'survey'            => 'Surveys and testimonials',
+		);
+		$name  = trim( (string) $row->first_name . ' ' . (string) $row->last_name );
+		$html  = '<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Your Lifeline Daily data</title>';
+		$html .= '<style>body{font-family:system-ui,sans-serif;max-width:60rem;margin:1rem auto;padding:0 1rem;line-height:1.5}table{border-collapse:collapse;margin:0 0 1rem;font-size:.9rem}th,td{border:1px solid #999;padding:.25rem .5rem;text-align:left;vertical-align:top}</style></head><body>';
+		$html .= '<h1>Your data</h1>';
+		$html .= '<p>This is everything Lifeline Daily holds for ' . esc_html( '' !== $name ? $name : (string) $row->email ) . ', made on ' . esc_html( $made ) . ' UTC when you asked for it. ';
+		$html .= 'The same records are in data.json (format version 1), and your photos are in the photos folder. Passwords and security keys are never included.</p>';
+		$html .= '<h2>Photos</h2>';
+		if ( $photos ) {
+			$html .= '<ul>';
+			foreach ( $photos as $photo ) {
+				$html .= '<li>' . esc_html( $photo ) . '</li>';
+			}
+			$html .= '</ul>';
+		} else {
+			$html .= '<p>No photos.</p>';
+		}
+		foreach ( $tables as $suffix => $rows ) {
+			$label = isset( $labels[ $suffix ] ) ? $labels[ $suffix ] : $suffix;
+			$html .= '<h2>' . esc_html( $label ) . '</h2>';
+			if ( ! $rows ) {
+				$html .= '<p>Nothing recorded.</p>';
+				continue;
+			}
+			$html .= '<p>' . count( $rows ) . ' ' . ( 1 === count( $rows ) ? 'record' : 'records' ) . '.</p><table><thead><tr>';
+			$columns = array_keys( (array) reset( $rows ) );
+			foreach ( $columns as $column ) {
+				$html .= '<th scope="col">' . esc_html( ucfirst( str_replace( '_', ' ', (string) $column ) ) ) . '</th>';
+			}
+			$html .= '</tr></thead><tbody>';
+			foreach ( $rows as $record ) {
+				$html .= '<tr>';
+				foreach ( $columns as $column ) {
+					$value = isset( $record[ $column ] ) ? $record[ $column ] : '';
+					$html .= '<td>' . esc_html( is_scalar( $value ) ? (string) $value : (string) wp_json_encode( $value ) ) . '</td>';
+				}
+				$html .= '</tr>';
+			}
+			$html .= '</tbody></table>';
+		}
+		return $html . '</body></html>';
 	}
 
 	/**

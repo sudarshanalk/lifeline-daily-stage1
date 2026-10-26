@@ -455,14 +455,52 @@ test('TC-FR2-03-AS-06', async ({ browser, page }) => {
   await member.close();
 });
 
+// Data Model section 11: what the download holds (A1 to A3, C1 to C16, P2, P3, P5, E2, F3, F4).
+const DOWNLOAD_TABLES = [
+  'member', 'email_pref', 'consent',
+  'goal_choice', 'something_else', 'health_profile', 'calculator_result', 'enrolment', 'enrolment_period', 'challenge',
+  'workout', 'workout_change', 'result', 'check_in', 'reflection', 'weekly_plan', 'weekly_review', 'diary_meal',
+  'diary_day', 'meal_plan', 'suggestion', 'badge',
+  'subscription', 'order', 'referral', 'reward', 'contact_request', 'support', 'survey',
+];
+// Never in the download: A4 security records, unsubscribe codes, the test clock, operations records.
+const NEVER_DOWNLOADED = ['security_code', 'sign_in_lock', 'session', 'app_key', 'unsubscribe_code', 'test_clock', 'erasure', 'admin_log', 'fb_removal', 'contact', 'contact_consent', 'error_log', 'stripe_notice'];
+
 test('TC-FR2-04-AS-01', async ({ page }) => {
   const email = 'tm-04a@test.lifelinedaily.invalid';
+  const referrer = 'tm-04a-ref@test.lifelinedaily.invalid';
   await reset(page.request, email);
-  const created = await createMember(page.request, { email, password, first_name: 'Tee', role: 'member', health_consent: true, sentinel: SENTINEL });
+  await reset(page.request, referrer);
+  const created = await createMember(page.request, {
+    email,
+    password,
+    first_name: 'Tee',
+    role: 'member',
+    health_consent: true,
+    consents: ['marketing'],
+    sentinel: SENTINEL,
+    what_changed: 'Walking more',
+    quote: 'Kinder to myself',
+    referral: true,
+    access_state: 'Premium',
+    stripe_subscription: 'sub_test_c2a',
+  });
+  await createMember(page.request, { email: referrer, password, first_name: 'Ria', role: 'member', referral: true, friend_member_id: created.member_id });
   await signIn(page, email, password);
   await page.goto('/members/settings/');
   await page.locator('#lld_photo').setInputFiles(makeJpeg('export.jpg', 2048));
+  await page.locator('#lld_diary').setInputFiles(makeJpeg('export-diary.jpg', 2048));
+  await page.getByRole('checkbox', { name: 'Weekly review' }).check();
   await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Saved')).toBeVisible();
+  // Records the download must leave out exist too: a reset code, a session and a test clock.
+  await page.goto('/members/reset/');
+  await page.locator('#lld_email').fill(email);
+  await page.getByRole('button', { name: 'Send link' }).click();
+  await page.request.post('/wp-json/lld-members/v1/test/clock', { data: { email, utc: fromNow(0) } });
+  const db = await scanOf(page.request, { member_id: created.member_id, email });
+  for (const name of ['security_code', 'session', 'test_clock']) expect(db.records[name], name).toBeGreaterThan(0);
+
   await page.goto('/members/data/');
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('button', { name: 'Download all my data' }).click();
@@ -470,15 +508,38 @@ test('TC-FR2-04-AS-01', async ({ page }) => {
   const file = join(tmpdir(), 'lld-data.zip');
   await download.saveAs(file);
   const packed = unzip(readFileSync(file));
-  expect(packed['summary.html'].toString()).toContain('Your data');
   const data = JSON.parse(packed['data.json'].toString());
-  expect(JSON.stringify(data)).toContain(SENTINEL);
-  expect(JSON.stringify(data)).not.toContain('$wp$');
-  expect(JSON.stringify(packed)).not.toContain('data.key');
-  expect(Object.keys(packed).some((name) => name.startsWith('photos/'))).toBe(true);
+  expect(data.version).toBe(1);
+  expect(data.member_number).toBe(created.member_id);
+  // Table by table against the database, using the erasure checker's list.
+  expect(Object.keys(data.tables).sort()).toEqual(DOWNLOAD_TABLES.slice().sort());
+  for (const name of DOWNLOAD_TABLES) {
+    expect(data.tables[name].length, name).toBe(db.records[name]);
+  }
+  for (const name of NEVER_DOWNLOADED) expect(data.tables[name], name).toBeUndefined();
+  for (const [name, least] of Object.entries({ member: 1, email_pref: 1, consent: 2, something_else: 1, survey: 1, referral: 2, reward: 2, subscription: 1, diary_meal: 1 })) {
+    expect(data.tables[name].length, name).toBeGreaterThanOrEqual(least);
+  }
+  expect(data.tables.referral.some((row) => Number(row.friend_member_id) === created.member_id)).toBe(true);
+  // Encrypted text is readable, and no ciphertext, password, code or key is included.
+  expect(data.tables.something_else[0].text).toBe(SENTINEL);
+  expect(data.tables.survey[0].quote_text).toBe('Kinder to myself');
+  const everything = Object.values(packed).map((part) => part.toString('latin1')).join('\n');
+  for (const secret of ['text_ciphertext', 'description_ciphertext', '$wp$', '$P$', '$2y$', 'code_hash', 'token_hash', 'key_hash', 'user_pass', 'data.key']) {
+    expect(everything, secret).not.toContain(secret);
+  }
+  // The profile photo and the diary photo are included.
+  expect(Object.keys(packed)).toContain('photos/profile.jpg');
+  expect(Object.keys(packed).some((name) => name.startsWith('photos/diary-'))).toBe(true);
+  expect(data.photos.length).toBe(2);
+  // A readable summary of the same records.
+  const summary = packed['summary.html'].toString();
+  for (const part of ['Your data', 'Consent history', 'Food diary meals', 'Referral rewards', 'Tee', SENTINEL, 'photos/profile.jpg']) {
+    expect(summary, part).toContain(part);
+  }
   const stores = await page.request.get('/wp-json/lld-members/v1/test/stores');
   expect((await stores.json()).download_files).toBe(0);
-  expect(created.member_id).toBeGreaterThan(0);
+  await reset(page.request, referrer);
 });
 
 test('TC-FR2-04-AS-02', async ({ page }) => {
@@ -532,9 +593,15 @@ test('TC-FR2-04-AS-03', async ({ page }) => {
   await page.locator('#lld_diary').setInputFiles(makeJpeg('gone-diary.jpg', 2048));
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Saved')).toBeVisible();
+  // A data download that is never collected still holds the member's data.
+  await page.goto('/members/data/');
+  const dataNonce = await page.locator('input[name="lld_data_nonce"]').getAttribute('value');
+  const made = await page.request.post('/members/data/', { form: { lld_data_nonce: dataNonce }, maxRedirects: 0 });
+  expect(made.status()).toBe(302);
+  expect((await (await page.request.get('/wp-json/lld-members/v1/test/stores')).json()).download_files).toBeGreaterThan(0);
   // Before: the checker finds the records, photos and sentinel, so an empty answer later means something.
   const before = (await scanOf(page.request, { member_id: created.member_id, sentinel: mark, email })).problems.join(' ');
-  for (const part of ['member still has 1', 'referral still has 2', 'reward still has 2', 'survey still has', 'diary_meal still has', 'Photo files remain.', 'Sentinel remains']) {
+  for (const part of ['member still has 1', 'referral still has 2', 'reward still has 2', 'survey still has', 'diary_meal still has', 'Photo files remain.', 'A data download remains.', 'Sentinel remains']) {
     expect(before, part).toContain(part);
   }
 

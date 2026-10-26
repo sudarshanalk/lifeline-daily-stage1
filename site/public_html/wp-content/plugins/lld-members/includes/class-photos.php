@@ -114,6 +114,31 @@ class LLD_Members_Photos {
 	}
 
 	/**
+	 * Every stored photo of one member, profile and diary, for the data download.
+	 *
+	 * @param int $member_id Member number.
+	 * @return string[] Absolute paths.
+	 */
+	public static function member_files( $member_id ) {
+		$dir = self::member_dir( $member_id );
+		if ( ! is_dir( $dir ) ) {
+			return array();
+		}
+		$files = array();
+		foreach ( (array) scandir( $dir ) as $file ) {
+			if ( '.' === $file || '..' === $file ) {
+				continue;
+			}
+			$path = self::resolve( (int) $member_id . '/' . $file );
+			if ( $path ) {
+				$files[] = $path;
+			}
+		}
+		sort( $files );
+		return $files;
+	}
+
+	/**
 	 * @param string $relative Stored relative path.
 	 * @return string|false Absolute path inside the photo store.
 	 */
