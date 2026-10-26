@@ -23,11 +23,31 @@ export async function asOwner(page) {
   if (!res.ok()) throw new Error(`owner sign-in ${res.status()} ${await res.text()}`);
 }
 
-// wp-admin pages are used once the DOM is ready. Waiting for "load" hangs in WebKit, where admin background requests
-// (the compression test, the emoji loader) never settle against the CI server.
+// Owner steps in wp-admin: the edit and approval screens are plain HTML forms, so the tests fetch only the document.
+// In WebKit the admin page's scripts, styles and background requests (heartbeat, compression test, emoji loader)
+// open many parallel connections, and the single-process CI server (php -S) stalls on one of them, so the next
+// navigation never completes. Member pages are never touched: only requests made by a /wp-admin/ document are cut.
 export const ADMIN = { waitUntil: 'domcontentloaded' };
+const lean = new WeakSet();
+
+async function leanAdmin(page) {
+  if (lean.has(page)) return;
+  lean.add(page);
+  await page.route('**/*', (route) => {
+    const request = route.request();
+    let from = '';
+    try {
+      from = request.frame().url();
+    } catch {
+      from = '';
+    }
+    if (request.resourceType() !== 'document' && from.includes('/wp-admin/')) return route.abort();
+    return route.continue();
+  });
+}
 
 export async function openAdmin(page, path) {
+  await leanAdmin(page);
   await page.goto(path, ADMIN);
   if (page.url().includes('pmpro-wizard')) {
     await page.goto(path, ADMIN);
