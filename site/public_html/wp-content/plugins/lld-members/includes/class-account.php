@@ -608,6 +608,7 @@ class LLD_Members_Account {
 		$main .= '<p><a href="' . esc_url( home_url( '/members/delete/' ) ) . '">Delete account</a></p>';
 		$main .= lld_button( array( 'label' => 'Save' ) );
 		$main .= '</form>';
+		$main .= class_exists( 'LLD_Members_Quality' ) ? LLD_Members_Quality::app_keys_html( $member_id ) : '';
 		self::layout( 'Profile and settings', $main, true );
 	}
 

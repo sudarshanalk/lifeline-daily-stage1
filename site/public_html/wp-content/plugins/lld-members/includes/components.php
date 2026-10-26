@@ -37,6 +37,7 @@ function lld_members_layout( $args ) {
 	echo '<link rel="stylesheet" href="' . esc_url( $css ) . '?ver=' . esc_attr( LLD_MEMBERS_VERSION ) . '">';
 	echo '</head><body class="' . ( $in ? 'lld-signed-in' : 'lld-signed-out' ) . '">';
 	echo '<a class="lld-skip" href="#lld-main">Skip to content</a>';
+	echo class_exists( 'LLD_Members_Quality' ) ? LLD_Members_Quality::preview_banner() : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
 	echo lld_members_header( $in );
 	echo '<main id="lld-main" class="lld-main" tabindex="-1">';
 	echo '<div class="lld-banner" id="lld-offline" hidden>You\'re offline</div>';
