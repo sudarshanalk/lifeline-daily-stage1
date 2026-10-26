@@ -191,6 +191,11 @@ async function openQuotes(page) {
   if (page.url().includes('pmpro-wizard')) await page.goto('/wp-admin/admin.php?page=lld-quotes');
 }
 
+// A failing journey prints its error at once, so a run stopped by the job time limit still shows why.
+test.afterEach(async ({}, testInfo) => {
+  if (testInfo.status !== testInfo.expectedStatus) console.log(`FAILED ${testInfo.title}: ${(testInfo.error && testInfo.error.message) || testInfo.status}`.slice(0, 1500));
+});
+
 test.beforeEach(async ({ request }) => {
   await request.get('/coming-soon/fitness/');
 });

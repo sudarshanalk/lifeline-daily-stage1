@@ -42,6 +42,11 @@ async function proteinResult(page) {
   await expect(frame.getByRole('heading', { name: `${protein.expected.targetG} g` })).toBeVisible();
 }
 
+// A failing journey prints its error at once, so a run stopped by the job time limit still shows why.
+test.afterEach(async ({}, testInfo) => {
+  if (testInfo.status !== testInfo.expectedStatus) console.log(`FAILED ${testInfo.title}: ${(testInfo.error && testInfo.error.message) || testInfo.status}`.slice(0, 1500));
+});
+
 test('TC-FR2-23-AS-02', async ({ page, request }) => {
   await serveTools(page);
   await page.goto('/health-tools/protein/');
@@ -81,6 +86,7 @@ test('TC-FR2-23-AS-02', async ({ page, request }) => {
   await proteinResult(page);
   await expect(save).toBeVisible();
   const frame = page.frameLocator('.lld-tool-frame');
+  await frame.locator('#restart').click();
   await frame.locator('#kidney button[data-val="yes"]').click();
   await submitProtein(frame);
   await expect(frame.locator('[data-test="renal-stop"]')).toBeVisible();

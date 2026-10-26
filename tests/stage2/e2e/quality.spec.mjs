@@ -30,6 +30,11 @@ async function overflow(page) {
   });
 }
 
+// A failing journey prints its error at once, so a run stopped by the job time limit still shows why.
+test.afterEach(async ({}, testInfo) => {
+  if (testInfo.status !== testInfo.expectedStatus) console.log(`FAILED ${testInfo.title}: ${(testInfo.error && testInfo.error.message) || testInfo.status}`.slice(0, 1500));
+});
+
 test('TC-NFR2-03-AS-01', async ({ page, request }) => {
   const email = emailFor('fit');
   await createMember(request, { email, password, first_name: 'Pat', role: 'member', consents: ['terms', 'health'] });
