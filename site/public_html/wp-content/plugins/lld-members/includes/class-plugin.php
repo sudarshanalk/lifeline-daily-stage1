@@ -20,6 +20,7 @@ class LLD_Members_Plugin {
 		LLD_Members_Personal::boot();
 		LLD_Members_Billing::boot();
 		LLD_Members_Premium::boot();
+		LLD_Members_Growth::boot();
 		add_action( 'init', array( 'LLD_Members_Account', 'expire_sessions' ), 20 );
 		add_action( 'profile_update', array( 'LLD_Members_Account', 'sync_email' ) );
 		add_filter( 'query_vars', array( __CLASS__, 'query_vars' ) );
@@ -56,9 +57,9 @@ class LLD_Members_Plugin {
 
 	public static function rewrites() {
 		self::register_rewrites();
-		if ( '8' !== get_option( 'lld_members_rewrites' ) ) {
+		if ( '9' !== get_option( 'lld_members_rewrites' ) ) {
 			flush_rewrite_rules( false );
-			update_option( 'lld_members_rewrites', '8', true );
+			update_option( 'lld_members_rewrites', '9', true );
 		}
 	}
 
@@ -155,6 +156,12 @@ class LLD_Members_Plugin {
 		add_rewrite_rule( '^members/review/?$', 'index.php?lld_screen=review', 'top' );
 		add_rewrite_rule( '^members/(health|suggestions|tracks|screening|check-in|plan|meals|workout|challenge|badges|diary)/?$', 'index.php?lld_screen=$matches[1]', 'top' );
 		add_rewrite_rule( '^members/group/?$', 'index.php?lld_screen=group', 'top' );
+		add_rewrite_rule( '^members/help/?$', 'index.php?lld_screen=help', 'top' );
+		add_rewrite_rule( '^members/more/?$', 'index.php?lld_screen=more', 'top' );
+		add_rewrite_rule( '^coming-soon/(healthy-weight|blood-sugar|fitness|sleep-stress)/?$', 'index.php?lld_screen=waitlist&lld_track=$matches[1]', 'top' );
+		add_rewrite_rule( '^guide/confirm/?$', 'index.php?lld_screen=guide-confirm', 'top' );
+		add_rewrite_rule( '^guide/unsubscribe/?$', 'index.php?lld_screen=guide-unsub', 'top' );
+		add_rewrite_rule( '^testimonials/?$', 'index.php?lld_screen=quotes', 'top' );
 		add_rewrite_rule( '^members/diary-photo/([0-9]+)/?$', 'index.php?lld_screen=diary-photo&lld_member=$matches[1]', 'top' );
 	}
 }

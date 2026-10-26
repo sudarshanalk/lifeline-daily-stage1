@@ -94,6 +94,24 @@ class LLD_Members_Screens {
 			case 'diary-photo':
 				LLD_Members_Premium::diary_photo();
 				break;
+			case 'help':
+				LLD_Members_Growth::help();
+				break;
+			case 'more':
+				LLD_Members_Growth::more();
+				break;
+			case 'waitlist':
+				LLD_Members_Growth::waitlist_screen( (string) get_query_var( 'lld_track' ) );
+				break;
+			case 'guide-confirm':
+				LLD_Members_Growth::confirm_screen();
+				break;
+			case 'guide-unsub':
+				LLD_Members_Growth::unsubscribe_screen();
+				break;
+			case 'quotes':
+				LLD_Members_Growth::quotes_screen();
+				break;
 			case 'track':
 			case 'review':
 				LLD_Members_Programme::screen( $screen );

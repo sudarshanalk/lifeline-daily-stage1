@@ -143,7 +143,9 @@ class LLD_Members_Billing {
 		$main  .= '<h2>Weekly themes</h2><ol><li>Week 1: getting started</li><li>Week 2: a steady rhythm</li><li>Week 3: building on it</li><li>Week 4: keeping it going</li></ol>';
 		$main  .= '<h2>Sample activity</h2><p>' . esc_html( $page['activity'] ) . '</p>';
 		$main  .= '<h2>Sample meal</h2><p>' . esc_html( $page['meal'] ) . '</p>';
-		$main  .= '<h2>Testimonials</h2><p>Testimonials appear here once the owner approves them.</p>';
+		$main  .= '<h2>Testimonials</h2>';
+		$quotes = class_exists( 'LLD_Members_Growth' ) ? LLD_Members_Growth::testimonial_html() : '';
+		$main  .= '' !== $quotes ? $quotes : '<p>Testimonials appear here once the owner approves them.</p>';
 		$main  .= '<h2>Questions and answers</h2><p>Week 1 is free. Premium opens the rest.</p>';
 		$main  .= '<h2>Safety note</h2><p>' . esc_html( $page['safety'] ) . '</p>';
 		lld_members_layout(
@@ -177,6 +179,11 @@ class LLD_Members_Billing {
 		$main  = '<h1>' . esc_html( $title ) . '</h1>';
 		$main .= '<iframe class="lld-tool-frame" title="' . esc_attr( $title ) . '" src="' . esc_url( $src ) . '" style="width:100%;height:900px;border:0"></iframe>';
 		$main .= '<p data-lld-track-link><a href="' . esc_url( $href ) . '">' . esc_html( $label ) . '</a></p>';
+		if ( class_exists( 'LLD_Members_Growth' ) ) {
+			LLD_Members_Growth::queue( 'calculator_used', array( 'calculator' => 'diabetes' === $which ? 'diabetes' : 'protein' ) );
+			$guide = 'diabetes' === $which ? 'blood-sugar' : 'fitness';
+			$main .= LLD_Members_Growth::guide_form( $guide, 'guide' );
+		}
 		lld_members_layout(
 			array(
 				'title'       => $title,

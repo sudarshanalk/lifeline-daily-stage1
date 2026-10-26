@@ -48,6 +48,9 @@ function lld_members_layout( $args ) {
 	}
 	echo '<div class="lld-toasts" aria-live="polite"></div>';
 	echo '<script src="' . esc_url( $js ) . '?ver=' . esc_attr( LLD_MEMBERS_VERSION ) . '"></script>';
+	if ( class_exists( 'LLD_Members_Growth' ) ) {
+		echo LLD_Members_Growth::script();
+	}
 	echo '</body></html>';
 }
 

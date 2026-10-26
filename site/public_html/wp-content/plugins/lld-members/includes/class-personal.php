@@ -253,6 +253,9 @@ class LLD_Members_Personal {
 		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_month_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_month_nonce'] ) ), 'lld_month' ) ) {
 			LLD_Members_Premium::save_month( $member_id );
 		}
+		if ( class_exists( 'LLD_Members_Growth' ) ) {
+			LLD_Members_Growth::save_survey( $member_id );
+		}
 		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_measures_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_measures_nonce'] ) ), 'lld_measures' ) ) {
 			$measured = LLD_Members_Programme::save_check_in( $member_id );
 			if ( is_wp_error( $measured ) ) {
@@ -299,6 +302,9 @@ class LLD_Members_Personal {
 		$main .= LLD_Members_Programme::check_in_html( $member_id );
 		if ( class_exists( 'LLD_Members_Premium' ) ) {
 			$main .= LLD_Members_Premium::monthly_html( $member_id );
+		}
+		if ( class_exists( 'LLD_Members_Growth' ) ) {
+			$main .= LLD_Members_Growth::survey_html( $member_id );
 		}
 		self::layout( 'Check-in', $main );
 	}
