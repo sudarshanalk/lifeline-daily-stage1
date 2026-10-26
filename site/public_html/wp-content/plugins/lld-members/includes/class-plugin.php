@@ -18,6 +18,7 @@ class LLD_Members_Plugin {
 		add_action( 'init', array( __CLASS__, 'rewrites' ) );
 		LLD_Members_Content::boot();
 		LLD_Members_Personal::boot();
+		LLD_Members_Billing::boot();
 		add_action( 'init', array( 'LLD_Members_Account', 'expire_sessions' ), 20 );
 		add_action( 'profile_update', array( 'LLD_Members_Account', 'sync_email' ) );
 		add_filter( 'query_vars', array( __CLASS__, 'query_vars' ) );
@@ -54,9 +55,9 @@ class LLD_Members_Plugin {
 
 	public static function rewrites() {
 		self::register_rewrites();
-		if ( '6' !== get_option( 'lld_members_rewrites' ) ) {
+		if ( '7' !== get_option( 'lld_members_rewrites' ) ) {
 			flush_rewrite_rules( false );
-			update_option( 'lld_members_rewrites', '6', true );
+			update_option( 'lld_members_rewrites', '7', true );
 		}
 	}
 
@@ -68,6 +69,7 @@ class LLD_Members_Plugin {
 		$vars[] = 'lld_screen';
 		$vars[] = 'lld_member';
 		$vars[] = 'lld_item';
+		$vars[] = 'lld_track';
 		return $vars;
 	}
 
@@ -134,6 +136,14 @@ class LLD_Members_Plugin {
 		add_rewrite_rule( '^members/settings/?$', 'index.php?lld_screen=settings', 'top' );
 		add_rewrite_rule( '^members/home/?$', 'index.php?lld_screen=home', 'top' );
 		add_rewrite_rule( '^members/checkout/?$', 'index.php?lld_screen=checkout', 'top' );
+		add_rewrite_rule( '^members/subscription/?$', 'index.php?lld_screen=subscription', 'top' );
+		add_rewrite_rule( '^pricing/?$', 'index.php?lld_screen=pricing', 'top' );
+		add_rewrite_rule( '^programmes/(healthy-weight|blood-sugar|fitness|sleep-stress)/?$', 'index.php?lld_screen=sales&lld_track=$matches[1]', 'top' );
+		add_rewrite_rule( '^health-tools/protein/?$', 'index.php?lld_screen=landing&lld_track=protein', 'top' );
+		add_rewrite_rule( '^health-tools/diabetes-risk-check/?$', 'index.php?lld_screen=landing&lld_track=diabetes', 'top' );
+		add_rewrite_rule( '^safety/?$', 'index.php?lld_screen=safety', 'top' );
+		add_rewrite_rule( '^medical-disclaimer/?$', 'index.php?lld_screen=disclaimer', 'top' );
+		add_rewrite_rule( '^sitemap\\.xml$', 'index.php?lld_screen=sitemap', 'top' );
 		add_rewrite_rule( '^members/foundations/?$', 'index.php?lld_screen=foundations', 'top' );
 		add_rewrite_rule( '^members/record/([0-9]+)/?$', 'index.php?lld_screen=record&lld_member=$matches[1]', 'top' );
 		add_rewrite_rule( '^members/photo/([0-9]+)/?$', 'index.php?lld_screen=photo&lld_member=$matches[1]', 'top' );

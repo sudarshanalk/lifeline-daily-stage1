@@ -145,6 +145,13 @@ class LLD_Members_Personal {
 		if ( self::show_yearly( $member_id, $state ) ) {
 			$main .= '<p>Switch to yearly</p>';
 		}
+		if ( class_exists( 'LLD_Members_Billing' ) ) {
+			$active = LLD_Members_Programme::active( $member_id );
+			if ( $active && ! LLD_Members_Billing::paid_open( $member_id ) && LLD_Members_Programme::programme_day( $member_id, (int) $active->id ) > 7 ) {
+				$main .= '<p>Week 1 is complete. Premium opens the rest of this track.</p>';
+			}
+			$main .= LLD_Members_Billing::referral_paragraph( $member_id );
+		}
 		$main .= '</section></div>';
 		self::layout( 'Today', $main );
 	}
@@ -227,6 +234,10 @@ class LLD_Members_Personal {
 		if ( ! LLD_Members_Account::has_consent( $member_id, 'health' ) ) {
 			$status = 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) ? 403 : 200;
 			self::layout( 'Check-in', '<h1>Check-in</h1>' . lld_health_consent_notice(), $status );
+			return;
+		}
+		if ( class_exists( 'LLD_Members_Billing' ) && LLD_Members_Billing::ended( $member_id ) && ! LLD_Members_Billing::diary_writable( $member_id ) ) {
+			self::layout( 'Check-in', '<h1>Check-in</h1>' . lld_membership_lock( 'Check-ins after this week are part of Premium.' ) );
 			return;
 		}
 		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_measures_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_measures_nonce'] ) ), 'lld_measures' ) ) {
@@ -375,15 +386,15 @@ class LLD_Members_Personal {
 	}
 
 	private static function meals() {
-		self::surface( 'Meal plan', array( 'lld_meal', 'lld_recipe' ) );
+		self::premium_surface( 'Meal plan', 'Meal plans are part of Premium.', array( 'lld_meal', 'lld_recipe' ) );
 	}
 
 	private static function workout() {
-		self::surface( 'Workout', array( 'lld_workout' ) );
+		self::premium_surface( 'Workout', 'Workouts are part of Premium.', array( 'lld_workout' ) );
 	}
 
 	private static function challenge() {
-		self::surface( 'Challenge', array( 'lld_challenge' ) );
+		self::premium_surface( 'Challenge', 'Challenges are part of Premium.', array( 'lld_challenge' ) );
 	}
 
 	private static function badges() {
@@ -392,7 +403,24 @@ class LLD_Members_Personal {
 
 	private static function diary() {
 		self::require_member();
-		self::layout( 'Food diary', '<h1>Food diary</h1><p><a href="' . esc_url( home_url( '/members/home/' ) ) . '">Back to today</a></p>' );
+		$member_id = LLD_Members_Access::current_member_id();
+		$line      = ( class_exists( 'LLD_Members_Billing' ) && LLD_Members_Billing::diary_writable( $member_id ) ) ? 'You can add meals.' : 'This diary is read-only.';
+		self::layout( 'Food diary', '<h1>Food diary</h1><p>' . esc_html( $line ) . '</p><p><a href="' . esc_url( home_url( '/members/home/' ) ) . '">Back to today</a></p>' );
+	}
+
+	/**
+	 * @param string   $heading Heading.
+	 * @param string   $line    Lock sentence.
+	 * @param string[] $types   Content types when Premium is open.
+	 */
+	private static function premium_surface( $heading, $line, $types ) {
+		self::require_member();
+		$member_id = LLD_Members_Access::current_member_id();
+		if ( class_exists( 'LLD_Members_Billing' ) && ! LLD_Members_Billing::paid_open( $member_id ) ) {
+			self::layout( $heading, '<h1>' . esc_html( $heading ) . '</h1>' . lld_membership_lock( $line ) );
+			return;
+		}
+		self::surface( $heading, $types );
 	}
 
 	/**
@@ -431,7 +459,7 @@ class LLD_Members_Personal {
 			self::unsuitable( $member_id );
 			return;
 		}
-		if ( get_post_meta( $item_id, '_lld_premium', true ) && 'free' === LLD_Members_Access::access_state( $member_id ) ) {
+		if ( get_post_meta( $item_id, '_lld_premium', true ) && ! ( class_exists( 'LLD_Members_Billing' ) ? LLD_Members_Billing::paid_open( $member_id ) : 'free' !== LLD_Members_Access::access_state( $member_id ) ) ) {
 			self::layout( 'Premium', lld_membership_lock( 'Premium includes this article.' ) );
 			return;
 		}
@@ -447,6 +475,9 @@ class LLD_Members_Personal {
 	public static function daily() {
 		self::reminders();
 		self::owner_reports();
+		if ( class_exists( 'LLD_Members_Billing' ) ) {
+			LLD_Members_Billing::daily();
+		}
 		if ( class_exists( 'LLD_Members_Programme' ) ) {
 			LLD_Members_Programme::dispatch_mail();
 		}
@@ -861,7 +892,7 @@ class LLD_Members_Personal {
 			if ( ! array_intersect( $wanted, array_map( 'strval', $tags ) ) ) {
 				continue;
 			}
-			if ( get_post_meta( $post->ID, '_lld_premium', true ) && 'free' === LLD_Members_Access::access_state( $member_id ) ) {
+			if ( get_post_meta( $post->ID, '_lld_premium', true ) && ! ( class_exists( 'LLD_Members_Billing' ) ? LLD_Members_Billing::paid_open( $member_id ) : 'free' !== LLD_Members_Access::access_state( $member_id ) ) ) {
 				continue;
 			}
 			$out[] = array(
@@ -900,7 +931,7 @@ class LLD_Members_Personal {
 			if ( is_wp_error( $tags ) ) {
 				$tags = array();
 			}
-			if ( get_post_meta( $post->ID, '_lld_premium', true ) && 'free' === LLD_Members_Access::access_state( $member_id ) ) {
+			if ( get_post_meta( $post->ID, '_lld_premium', true ) && ! ( class_exists( 'LLD_Members_Billing' ) ? LLD_Members_Billing::paid_open( $member_id ) : 'free' !== LLD_Members_Access::access_state( $member_id ) ) ) {
 				continue;
 			}
 			$out[] = array(

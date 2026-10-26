@@ -74,6 +74,24 @@ class LLD_Members_Rest {
 		);
 		register_rest_route(
 			'lld-members/v1',
+			'/stripe/notice',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'LLD_Members_Billing', 'rest_notice' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
+			'/test/billing',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'LLD_Members_Billing', 'rest_test' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
 			'/test/stripe',
 			array(
 				'methods'             => 'POST',

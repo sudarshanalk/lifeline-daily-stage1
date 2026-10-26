@@ -152,12 +152,17 @@ class LLD_Members_Programme {
 	 * @param int $day       Programme day.
 	 */
 	public static function can_open_day( $member_id, $day ) {
-		$day   = (int) $day;
-		$state = strtolower( LLD_Members_Access::access_state( $member_id ) );
-		if ( 'free' === $state && $day > 7 ) {
+		$day = (int) $day;
+		if ( $day < 1 || $day > 28 ) {
 			return false;
 		}
-		return $day >= 1 && $day <= 28;
+		if ( class_exists( 'LLD_Members_Billing' ) && LLD_Members_Billing::paid_open( $member_id ) ) {
+			return true;
+		}
+		if ( class_exists( 'LLD_Members_Billing' ) && LLD_Members_Billing::ended( $member_id ) ) {
+			return LLD_Members_Billing::week_remains( $member_id, $day );
+		}
+		return $day <= 7;
 	}
 
 	/**
@@ -660,7 +665,8 @@ class LLD_Members_Programme {
 		LLD_Members_Personal::require_page();
 		$member_id = LLD_Members_Access::current_member_id();
 		$posted    = 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' );
-		if ( 'free' === strtolower( LLD_Members_Access::access_state( $member_id ) ) ) {
+		$open = class_exists( 'LLD_Members_Billing' ) ? LLD_Members_Billing::paid_open( $member_id ) : 'free' !== strtolower( LLD_Members_Access::access_state( $member_id ) );
+		if ( ! $open ) {
 			if ( $posted ) {
 				status_header( 403 );
 			}

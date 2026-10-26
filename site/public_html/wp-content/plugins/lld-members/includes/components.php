@@ -31,6 +31,9 @@ function lld_members_layout( $args ) {
 		echo '<meta name="lld-rest-nonce" content="' . esc_attr( wp_create_nonce( 'wp_rest' ) ) . '">';
 	}
 	echo '<title>' . esc_html( $title ) . '</title>';
+	if ( ! empty( $args['description'] ) ) {
+		echo '<meta name="description" content="' . esc_attr( (string) $args['description'] ) . '">';
+	}
 	echo '<link rel="stylesheet" href="' . esc_url( $css ) . '?ver=' . esc_attr( LLD_MEMBERS_VERSION ) . '">';
 	echo '</head><body class="' . ( $in ? 'lld-signed-in' : 'lld-signed-out' ) . '">';
 	echo '<a class="lld-skip" href="#lld-main">Skip to content</a>';

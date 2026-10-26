@@ -39,7 +39,28 @@ class LLD_Members_Screens {
 				LLD_Members_Personal::dashboard();
 				break;
 			case 'checkout':
-				self::checkout();
+				LLD_Members_Billing::checkout();
+				break;
+			case 'subscription':
+				LLD_Members_Billing::subscription();
+				break;
+			case 'pricing':
+				LLD_Members_Billing::pricing();
+				break;
+			case 'sales':
+				LLD_Members_Billing::sales( (string) get_query_var( 'lld_track' ) );
+				break;
+			case 'landing':
+				LLD_Members_Billing::landing( (string) get_query_var( 'lld_track' ) );
+				break;
+			case 'safety':
+				LLD_Members_Billing::public_note( 'safety' );
+				break;
+			case 'disclaimer':
+				LLD_Members_Billing::public_note( 'disclaimer' );
+				break;
+			case 'sitemap':
+				LLD_Members_Billing::sitemap();
 				break;
 			case 'record':
 				self::record();
@@ -226,25 +247,6 @@ class LLD_Members_Screens {
 		lld_members_layout(
 			array(
 				'title'     => 'Today',
-				'main'      => $main,
-				'signed_in' => true,
-			)
-		);
-	}
-
-	private static function checkout() {
-		self::require_member();
-		$reach = LLD_Members_Stripe::reachable();
-		$main  = '<h1>Checkout</h1>';
-		if ( is_wp_error( $reach ) ) {
-			$main .= '<div class="lld-fail" role="alert"><p>' . esc_html( LLD_Members_Stripe::try_again_message() ) . '</p></div>';
-		} else {
-			$main .= '<p>You will continue to Stripe. Card details are never entered on this site.</p>';
-			$main .= lld_button( array( 'label' => 'Continue to payment', 'type' => 'button' ) );
-		}
-		lld_members_layout(
-			array(
-				'title'     => 'Checkout',
 				'main'      => $main,
 				'signed_in' => true,
 			)
