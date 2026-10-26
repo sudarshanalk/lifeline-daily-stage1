@@ -18,7 +18,6 @@ export function billing(method, args = [], constants = {}) {
     `require ${path('class-billing.php')};`,
     '$args = json_decode( stream_get_contents( STDIN ), true );',
     `$method = new ReflectionMethod( 'LLD_Members_Billing', ${JSON.stringify(method)} );`,
-    '$method->setAccessible( true );',
     '$out = $method->invokeArgs( null, $args );',
     'echo json_encode( $out instanceof WP_Error ? array( "error" => $out->code ) : $out );',
   ].join(' ');
