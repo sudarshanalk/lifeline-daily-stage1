@@ -196,11 +196,17 @@ class LLD_Members_Premium {
 		$member_id = LLD_Members_Access::current_member_id();
 		$consent   = LLD_Members_Account::has_consent( $member_id, 'health' );
 		$today     = LLD_Members_Programme::local_today( $member_id );
-		$shown     = self::current_challenge( $member_id, $today );
-		if ( $consent && 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_join_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_join_nonce'] ) ), 'lld_join' ) && $shown ) {
-			self::join_challenge( $member_id, (int) $shown['parent_id'], $today );
+		// A joined challenge runs its 28 days by the version stored on joining, across the month boundary (Data Model C6).
+		$open  = $consent ? self::open_challenge( $member_id ) : null;
+		$shown = $open ? self::challenge_by_version( $member_id, (string) $open->challenge_version ) : null;
+		if ( ! $shown ) {
+			$open  = null;
+			$shown = self::current_challenge( $member_id, $today );
 		}
-		$row  = $shown ? self::challenge_row( $member_id, (int) $shown['parent_id'] ) : null;
+		if ( $consent && ! $open && 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_join_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_join_nonce'] ) ), 'lld_join' ) && $shown ) {
+			self::join_challenge( $member_id, $shown, $today );
+		}
+		$row  = $open ? $open : ( $shown && $consent ? self::challenge_row( $member_id, (int) $shown['parent_id'] ) : null );
 		$main = '<h1>Challenge</h1>';
 		if ( ! $consent ) {
 			$main .= '<p>progress isn\'t saved</p>';
@@ -1041,12 +1047,12 @@ class LLD_Members_Premium {
 	}
 
 	/**
-	 * @param int    $member_id    Member number.
-	 * @param int    $challenge_id Challenge id.
-	 * @param string $today        Local date.
+	 * @param int                 $member_id Member number.
+	 * @param array<string,mixed> $challenge Approved challenge snapshot.
+	 * @param string              $today     Local date.
 	 */
-	private static function join_challenge( $member_id, $challenge_id, $today ) {
-		if ( self::challenge_row( $member_id, $challenge_id ) ) {
+	private static function join_challenge( $member_id, $challenge, $today ) {
+		if ( self::challenge_row( $member_id, (int) $challenge['parent_id'] ) ) {
 			return;
 		}
 		global $wpdb;
@@ -1054,11 +1060,29 @@ class LLD_Members_Premium {
 			LLD_Members_Schema::table( 'challenge' ),
 			array(
 				'member_id'         => $member_id,
-				'challenge_version' => (string) $challenge_id,
+				'challenge_version' => self::version_key( $challenge ),
 				'joined_on'         => $today,
 			),
 			array( '%d', '%s', '%s' )
 		);
+	}
+
+	/**
+	 * Exact approved version of a content item, as stored on member records: "parent:vN".
+	 *
+	 * @param array<string,mixed> $snap Approved snapshot.
+	 */
+	private static function version_key( $snap ) {
+		return (int) ( $snap['parent_id'] ?? 0 ) . ':v' . (int) ( $snap['version'] ?? 0 );
+	}
+
+	/**
+	 * Parent id from a stored "parent:vN" key; older rows hold the parent id alone.
+	 *
+	 * @param string $stored Stored key.
+	 */
+	private static function version_parent( $stored ) {
+		return (int) strtok( (string) $stored, ':' );
 	}
 
 	/**
@@ -1067,7 +1091,34 @@ class LLD_Members_Premium {
 	 */
 	private static function challenge_row( $member_id, $challenge_id ) {
 		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'challenge' ) . ' WHERE member_id = %d AND challenge_version = %s ORDER BY id DESC LIMIT 1', $member_id, (string) $challenge_id ) );
+		$table = LLD_Members_Schema::table( 'challenge' );
+		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND ( challenge_version = %s OR challenge_version LIKE %s ) ORDER BY id DESC LIMIT 1", $member_id, (string) (int) $challenge_id, $wpdb->esc_like( (int) $challenge_id . ':' ) . '%' ) );
+	}
+
+	/**
+	 * The member's joined challenge that has not reached day 28 yet.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function open_challenge( $member_id ) {
+		global $wpdb;
+		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'challenge' ) . ' WHERE member_id = %d AND finished_on IS NULL ORDER BY id DESC LIMIT 1', $member_id ) );
+	}
+
+	/**
+	 * The challenge a stored row points at, if it is still approved and safe for this member.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $stored    Stored challenge version.
+	 * @return array<string,mixed>|null
+	 */
+	private static function challenge_by_version( $member_id, $stored ) {
+		$snap = LLD_Members_Content::shown( self::version_parent( $stored ) );
+		if ( ! is_array( $snap ) || 'lld_challenge' !== (string) ( $snap['type'] ?? 'lld_challenge' ) ) {
+			return null;
+		}
+		$snap['type'] = 'lld_challenge';
+		return LLD_Members_Safety::allows( $member_id, $snap ) ? $snap : null;
 	}
 
 	/**

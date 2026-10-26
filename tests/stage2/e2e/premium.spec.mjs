@@ -192,6 +192,23 @@ test('TC-FR2-33-AS-02', async ({ page, request }) => {
     await page.goto('/members/challenge/');
     await expect(page.getByText(made.badge)).toBeVisible();
   }
+
+  // joined mid-month: the challenge carries on into the next month and finishes on its own day 28
+  const mid = await paid(request, 'chal-mid');
+  await clock(request, mid.email, '2026-06-20 12:00:00');
+  await signIn(page, mid.email, password);
+  await page.goto('/members/challenge/');
+  await page.getByRole('button', { name: 'Join' }).click();
+  await clock(request, mid.email, '2026-07-05 12:00:00');
+  await page.goto('/members/challenge/');
+  await expect(page.getByRole('heading', { name: made.challenge })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Join' })).toHaveCount(0);
+  await expect(page.getByText(made.actions[15], { exact: true })).toBeVisible();
+  await expect(page.getByText(made.badge)).toHaveCount(0);
+  await clock(request, mid.email, '2026-07-17 12:00:00');
+  await page.goto('/members/challenge/');
+  await expect(page.getByRole('heading', { name: made.challenge })).toBeVisible();
+  await expect(page.getByText(made.badge)).toBeVisible();
 });
 
 test('TC-FR2-33-AS-03', async ({ page, request }) => {
