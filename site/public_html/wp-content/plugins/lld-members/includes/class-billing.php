@@ -163,6 +163,7 @@ class LLD_Members_Billing {
 	 * @param string $which protein or diabetes.
 	 */
 	public static function landing( $which ) {
+		$which = 'diabetes' === $which ? 'diabetes' : 'protein';
 		if ( 'diabetes' === $which ) {
 			$title = 'Diabetes Risk Check';
 			$src   = home_url( '/tools/diabetes-risk-tool.html' );
@@ -176,8 +177,23 @@ class LLD_Members_Billing {
 			$label = 'Fitness and Strength';
 			$desc  = 'Find a daily protein target, then look at the Fitness and Strength track.';
 		}
-		$main  = '<h1>' . esc_html( $title ) . '</h1>';
-		$main .= '<iframe class="lld-tool-frame" title="' . esc_attr( $title ) . '" src="' . esc_url( $src ) . '" style="width:100%;height:900px;border:0"></iframe>';
+		$member_id = class_exists( 'LLD_Members_Access' ) ? LLD_Members_Access::current_member_id() : 0;
+		$can_save  = $member_id > 0 && LLD_Members_Account::has_consent( $member_id, 'health' );
+		$saved     = $can_save && self::save_calculator_result( $member_id, $which );
+		$main      = '<h1>' . esc_html( $title ) . '</h1>';
+		$main     .= '<iframe class="lld-tool-frame" title="' . esc_attr( $title ) . '" src="' . esc_url( $src ) . '" style="width:100%;height:900px;border:0"></iframe>';
+		if ( $can_save ) {
+			$main .= $saved ? '<p>Saved</p>' : '';
+			$main .= '<form method="post" id="lld-save-result" data-calculator="' . esc_attr( $which ) . '" hidden>';
+			$main .= wp_nonce_field( 'lld_result', 'lld_result_nonce', true, false );
+			$main .= '<input type="hidden" name="lld_headline" value="">';
+			$main .= '<input type="hidden" name="lld_unit" value="">';
+			$main .= '<input type="hidden" name="lld_band" value="">';
+			$main .= '<input type="hidden" name="lld_version" value="">';
+			$main .= lld_button( array( 'label' => 'Save this result to my profile' ) );
+			$main .= '</form>';
+			$main .= '<script>(function(){var form=document.getElementById("lld-save-result");if(!form)return;window.addEventListener("message",function(event){if(event.origin!==location.origin)return;var data=event.data||{};if(data.type!=="lld-calculator-result"||data.calculator!==form.getAttribute("data-calculator"))return;form.querySelector("[name=lld_headline]").value=String(data.headline||"").slice(0,64);form.querySelector("[name=lld_unit]").value=String(data.unit||"").slice(0,64);form.querySelector("[name=lld_band]").value=String(data.band||"").slice(0,64);form.querySelector("[name=lld_version]").value=String(data.version||"").slice(0,64);form.hidden=false;});})();</script>';
+		}
 		$main .= '<p data-lld-track-link><a href="' . esc_url( $href ) . '">' . esc_html( $label ) . '</a></p>';
 		if ( class_exists( 'LLD_Members_Growth' ) ) {
 			LLD_Members_Growth::queue( 'calculator_used', array( 'calculator' => 'diabetes' === $which ? 'diabetes' : 'protein' ) );
@@ -189,8 +205,49 @@ class LLD_Members_Billing {
 				'title'       => $title,
 				'description' => $desc,
 				'main'        => $main,
+				'signed_in'   => $member_id > 0,
 			)
 		);
+	}
+
+	/**
+	 * Store the headline, unit and band from the landing page. Answers are not posted.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $which     protein or diabetes.
+	 */
+	private static function save_calculator_result( $member_id, $which ) {
+		if ( 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) || empty( $_POST['lld_result_nonce'] ) ) {
+			return false;
+		}
+		if ( ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_result_nonce'] ) ), 'lld_result' ) ) {
+			return false;
+		}
+		$headline = isset( $_POST['lld_headline'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_headline'] ) ) : '';
+		$unit     = isset( $_POST['lld_unit'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_unit'] ) ) : '';
+		$band     = isset( $_POST['lld_band'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_band'] ) ) : '';
+		$version  = isset( $_POST['lld_version'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_version'] ) ) : '';
+		$headline = substr( $headline, 0, 64 );
+		$unit     = substr( $unit, 0, 64 );
+		$band     = substr( $band, 0, 64 );
+		$version  = substr( $version, 0, 64 );
+		if ( '' === $headline || '' === $band || false !== strpos( $headline . $unit . $band, '@' ) ) {
+			return false;
+		}
+		global $wpdb;
+		$wpdb->insert(
+			LLD_Members_Schema::table( 'calculator_result' ),
+			array(
+				'member_id'           => $member_id,
+				'calculator'          => $which,
+				'saved_at'            => current_time( 'mysql', true ),
+				'headline'            => $headline,
+				'unit'                => '' !== $unit ? $unit : 'result',
+				'band'                => $band,
+				'calculator_version'  => '' !== $version ? $version : 'unversioned',
+			)
+		);
+		return true;
 	}
 
 	/**

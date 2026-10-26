@@ -254,6 +254,15 @@ class LLD_Members_Rest {
 		);
 		register_rest_route(
 			'lld-members/v1',
+			'/test/calculator',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'test_calculator' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
 			'/test/search',
 			array(
 				'methods'             => 'POST',
@@ -337,6 +346,26 @@ class LLD_Members_Rest {
 	public static function passwords() {
 		$report = LLD_Members_Auth::password_storage();
 		return new WP_REST_Response( $report, $report['all_hashed'] ? 200 : 500 );
+	}
+
+	/**
+	 * Latest saved calculator headline for a test member.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
+	public static function test_calculator( $request ) {
+		$params = $request->get_json_params();
+		$email  = isset( $params['email'] ) ? sanitize_email( (string) $params['email'] ) : '';
+		if ( ! is_email( $email ) ) {
+			return new WP_REST_Response( array( 'message' => 'Email is required.' ), 400 );
+		}
+		global $wpdb;
+		$member_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE email = %s', $email ) );
+		$row       = $wpdb->get_row( $wpdb->prepare( 'SELECT calculator, headline, unit, band, calculator_version FROM ' . LLD_Members_Schema::table( 'calculator_result' ) . ' WHERE member_id = %d ORDER BY id DESC LIMIT 1', $member_id ), ARRAY_A );
+		if ( ! $row ) {
+			return new WP_REST_Response( array( 'saved' => false ), 404 );
+		}
+		return new WP_REST_Response( $row, 200 );
 	}
 
 	/**
