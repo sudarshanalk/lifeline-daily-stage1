@@ -396,6 +396,7 @@ class LLD_Members_Account {
 			)
 		);
 		$member_id = (int) $wpdb->insert_id;
+		do_action( 'lld_members_event', 'registered', $member_id );
 		self::issue_link( get_user_by( 'id', $user_id ), $member_id, 'email_confirm', 24 );
 		return $email;
 	}
@@ -431,6 +432,7 @@ class LLD_Members_Account {
 		if ( isset( $_POST['lld_email'] ) ) {
 			$email = sanitize_email( wp_unslash( $_POST['lld_email'] ) );
 		}
+		$email = isset( $_GET['pending'] ) && ! isset( $_POST['lld_email'] ) ? LLD_Members_Mail::pending_email( sanitize_text_field( wp_unslash( $_GET['pending'] ) ) ) : $email;
 		$notice = '';
 		$error  = '';
 		if ( '' !== $token ) {
@@ -668,6 +670,7 @@ class LLD_Members_Account {
 		$main .= '<p><a href="' . esc_url( home_url( '/members/delete/' ) ) . '">Delete account</a></p>';
 		$main .= lld_button( array( 'label' => 'Save' ) );
 		$main .= '</form>';
+		$main .= class_exists( 'LLD_Members_Quality' ) ? LLD_Members_Quality::app_keys_html( $member_id ) : '';
 		self::layout( 'Profile and settings', $main, true );
 	}
 
@@ -947,17 +950,7 @@ class LLD_Members_Account {
 	}
 
 	private static function unsubscribe() {
-		$code   = isset( $_GET['code'] ) ? sanitize_text_field( wp_unslash( $_GET['code'] ) ) : '';
-		$kind   = isset( $_GET['kind'] ) ? sanitize_key( wp_unslash( $_GET['kind'] ) ) : '';
-		$result = ( '' !== $code && class_exists( 'LLD_Members_Programme' ) ) ? LLD_Members_Programme::consume_unsub( $code, $kind ) : 'missing';
-		if ( 'already' === $result ) {
-			$main = '<h1>Already unsubscribed</h1><p>Already unsubscribed.</p>';
-			self::layout( 'Already unsubscribed', $main, is_user_logged_in() );
-			return;
-		}
-		$main = '<h1>Unsubscribed</h1><p>You won\'t get these emails any more.</p>';
-		$main .= '<p><a href="' . esc_url( home_url( '/members/settings/' ) ) . '">Email preferences</a></p>';
-		self::layout( 'Unsubscribed', $main, is_user_logged_in() );
+		LLD_Members_Mail::unsubscribe_screen();
 	}
 
 	/**

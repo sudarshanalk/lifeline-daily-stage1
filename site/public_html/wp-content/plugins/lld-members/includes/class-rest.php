@@ -265,15 +265,6 @@ class LLD_Members_Rest {
 		);
 		register_rest_route(
 			'lld-members/v1',
-			'/analytics',
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( 'LLD_Members_Growth', 'rest_analytics' ),
-				'permission_callback' => '__return_true',
-			)
-		);
-		register_rest_route(
-			'lld-members/v1',
 			'/test/calculator',
 			array(
 				'methods'             => 'POST',
@@ -519,9 +510,6 @@ class LLD_Members_Rest {
 		} else {
 			$wpdb->insert( $table, $row );
 			$member_id = (int) $wpdb->insert_id;
-		}
-		if ( class_exists( 'LLD_Members_Growth' ) ) {
-			LLD_Members_Growth::attach_source( $member_id );
 		}
 		$consents = array();
 		if ( ! empty( $params['health_consent'] ) ) {

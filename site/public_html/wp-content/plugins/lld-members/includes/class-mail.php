@@ -15,7 +15,206 @@ if ( ! defined( 'ABSPATH' ) ) {
 class LLD_Members_Mail {
 
 	/**
-	 * Point WordPress mail at Mailpit when LLD_SMTP_HOST is set and this is not production.
+	 * Logo, 120 by 32 pixels, sent inside the email (cid:) so no remote image is loaded and Gmail still shows it.
+	 */
+	const LOGO_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAHgAAAAgCAIAAABW2ysfAAAAWElEQVR42u3ZoQ0AMAhFQTbpPqzC/poOAK5J1ZGnkGd/nEp9KBCABi3QoEGPVz8cUNCgQYMGDZopaNCgQYMGzRQ0aNCgQYMWaNCgQYM2zgo0aNACDVoL9AWaFMzyBkvdrAAAAABJRU5ErkJggg==';
+
+	/**
+	 * True while WordPress is sending an email that this plugin wrote. Other plugins' mail is left as it is.
+	 *
+	 * @var bool
+	 */
+	private static $own = false;
+
+	/**
+	 * Runs at the start of every wp_mail() call: note whether the caller is this plugin.
+	 *
+	 * @param array $args wp_mail arguments.
+	 * @return array
+	 */
+	public static function mark( $args ) {
+		self::$own = self::called_by_plugin();
+		if ( self::$own && is_array( $args ) ) {
+			$args = self::unsubscribe_headers( $args );
+		}
+		return $args;
+	}
+
+	/**
+	 * Every email of ours that carries an unsubscribe link also carries List-Unsubscribe and
+	 * List-Unsubscribe-Post, so mail apps offer one-click unsubscribe (RFC 8058, FR2-12).
+	 *
+	 * @param array $args wp_mail arguments.
+	 * @return array
+	 */
+	private static function unsubscribe_headers( $args ) {
+		$message = isset( $args['message'] ) ? (string) $args['message'] : '';
+		if ( ! preg_match( '#https?://[^\s<>"]+/(?:members|guide)/unsubscribe/[^\s<>"]*#', $message, $match ) ) {
+			return $args;
+		}
+		$headers = isset( $args['headers'] ) ? $args['headers'] : array();
+		if ( ! is_array( $headers ) ) {
+			$headers = '' === trim( (string) $headers ) ? array() : explode( "\n", str_replace( "\r\n", "\n", (string) $headers ) );
+		}
+		$headers[]       = 'List-Unsubscribe: <' . esc_url_raw( $match[0] ) . '>';
+		$headers[]       = 'List-Unsubscribe-Post: List-Unsubscribe=One-Click';
+		$args['headers'] = $headers;
+		return $args;
+	}
+
+	/**
+	 * A signed link token: a record number, when it was issued, and an HMAC. It never contains an email address.
+	 *
+	 * @param string $purpose What the link is for.
+	 * @param int    $id      Record number.
+	 * @param int    $issued  Unix time issued, or 0 for a link that does not expire.
+	 */
+	public static function token( $purpose, $id, $issued = 0 ) {
+		$id     = (int) $id;
+		$issued = (int) $issued;
+		return $id . '-' . $issued . '-' . self::token_sig( $purpose, $id, $issued );
+	}
+
+	/**
+	 * @param string $purpose What the link is for.
+	 * @param string $token   Token from the link.
+	 * @param int    $max_age Seconds the link stays valid, or 0.
+	 * @return int Record number, or 0 when the token is not valid.
+	 */
+	public static function read_token( $purpose, $token, $max_age = 0 ) {
+		if ( ! preg_match( '/^(\d{1,20})-(\d{1,12})-([a-f0-9]{32})$/', (string) $token, $match ) ) {
+			return 0;
+		}
+		if ( ! hash_equals( self::token_sig( $purpose, (int) $match[1], (int) $match[2] ), $match[3] ) ) {
+			return 0;
+		}
+		if ( $max_age > 0 && time() - (int) $match[2] > $max_age ) {
+			return 0;
+		}
+		return (int) $match[1];
+	}
+
+	/**
+	 * @param string $purpose Purpose.
+	 * @param int    $id      Record number.
+	 * @param int    $issued  Issue time.
+	 */
+	private static function token_sig( $purpose, $id, $issued ) {
+		return substr( hash_hmac( 'sha256', $purpose . '|' . $id . '|' . $issued, wp_salt( 'auth' ) ), 0, 32 );
+	}
+
+	/**
+	 * "Check your email" page after joining: a token instead of the address in the link (valid 24 hours).
+	 *
+	 * @param string $email New member's email.
+	 */
+	public static function pending_link( $email ) {
+		global $wpdb;
+		$member_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE email = %s', $email ) );
+		return home_url( '/members/confirm/?pending=' . rawurlencode( self::token( 'confirm-page', $member_id, time() ) ) );
+	}
+
+	/**
+	 * @param string $token Token from the link.
+	 */
+	public static function pending_email( $token ) {
+		$member_id = self::read_token( 'confirm-page', $token, DAY_IN_SECONDS );
+		if ( $member_id < 1 ) {
+			return '';
+		}
+		global $wpdb;
+		return (string) $wpdb->get_var( $wpdb->prepare( 'SELECT email FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+	}
+
+	/**
+	 * Programme email names, by email preference column.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function programme_kinds() {
+		return array(
+			'welcome'        => 'the welcome email',
+			'daily_reminder' => 'the daily reminder',
+			'weekly_review'  => 'the weekly review notice',
+			'end_of_track'   => 'the end-of-track email',
+			'nudges'         => 'the "pick up where you left off" emails',
+		);
+	}
+
+	/**
+	 * State of a programme-email unsubscribe code: valid, used, or invalid (unknown, wrong kind or past expires_at).
+	 *
+	 * @param string $code Code from the link.
+	 * @param string $kind Email preference column.
+	 * @return array{state:string,row:object|null}
+	 */
+	private static function code_state( $code, $kind ) {
+		if ( '' === $code || ! isset( self::programme_kinds()[ $kind ] ) ) {
+			return array( 'state' => 'invalid', 'row' => null );
+		}
+		global $wpdb;
+		$table = LLD_Members_Schema::table( 'unsubscribe_code' );
+		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE code_hash = %s AND purpose = %s ORDER BY id DESC LIMIT 1", hash( 'sha256', $code ), $kind ) );
+		if ( ! $row ) {
+			return array( 'state' => 'invalid', 'row' => null );
+		}
+		if ( $row->used_at ) {
+			return array( 'state' => 'used', 'row' => $row );
+		}
+		if ( (string) $row->expires_at < LLD_Members_Clock::now( (int) $row->member_id )->format( 'Y-m-d H:i:s' ) ) {
+			return array( 'state' => 'invalid', 'row' => $row );
+		}
+		return array( 'state' => 'valid', 'row' => $row );
+	}
+
+	/**
+	 * /members/unsubscribe/: GET shows what will stop and a button; POST unsubscribes, including a mail app's
+	 * one-click POST (List-Unsubscribe=One-Click). An unknown or expired code never says "Unsubscribed".
+	 */
+	public static function unsubscribe_screen() {
+		$code  = isset( $_REQUEST['code'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['code'] ) ) : '';
+		$kind  = isset( $_REQUEST['kind'] ) ? sanitize_key( wp_unslash( $_REQUEST['kind'] ) ) : '';
+		$found = self::code_state( $code, $kind );
+		$prefs = '<p><a href="' . esc_url( home_url( '/members/settings/' ) ) . '">Email preferences</a></p>';
+		$in    = is_user_logged_in();
+		if ( 'invalid' === $found['state'] ) {
+			lld_members_layout( array( 'title' => 'Link expired', 'main' => '<h1>Link expired</h1><p>This unsubscribe link is not valid any more. You can turn emails off in your email preferences.</p>' . $prefs, 'signed_in' => $in ) );
+			return;
+		}
+		if ( 'used' === $found['state'] ) {
+			lld_members_layout( array( 'title' => 'Already unsubscribed', 'main' => '<h1>Already unsubscribed</h1><p>Already unsubscribed.</p>' . $prefs, 'signed_in' => $in ) );
+			return;
+		}
+		$label = self::programme_kinds()[ $kind ];
+		if ( 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
+			$main  = '<h1>Stop these emails?</h1><p>You will no longer get ' . esc_html( $label ) . '.</p>';
+			$main .= '<form method="post" action="' . esc_url( add_query_arg( array( 'code' => $code, 'kind' => $kind ), home_url( '/members/unsubscribe/' ) ) ) . '">';
+			$main .= lld_button( array( 'label' => 'Unsubscribe' ) ) . '</form>' . $prefs;
+			lld_members_layout( array( 'title' => 'Unsubscribe', 'main' => $main, 'signed_in' => $in ) );
+			return;
+		}
+		global $wpdb;
+		$row  = $found['row'];
+		$used = $wpdb->query( $wpdb->prepare( 'UPDATE ' . LLD_Members_Schema::table( 'unsubscribe_code' ) . ' SET used_at = %s WHERE id = %d AND used_at IS NULL', gmdate( 'Y-m-d H:i:s' ), (int) $row->id ) );
+		if ( 1 === (int) $used ) {
+			$wpdb->update( LLD_Members_Schema::table( 'email_pref' ), array( $kind => 0 ), array( 'member_id' => (int) $row->member_id ), array( '%d' ), array( '%d' ) );
+		}
+		lld_members_layout( array( 'title' => 'Unsubscribed', 'main' => '<h1>Unsubscribed</h1><p>You won\'t get these emails any more.</p>' . $prefs, 'signed_in' => $in ) );
+	}
+
+	private static function called_by_plugin() {
+		$dir = wp_normalize_path( LLD_MEMBERS_DIR );
+		foreach ( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 16 ) as $frame ) { // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+			if ( isset( $frame['function'], $frame['file'] ) && 'wp_mail' === $frame['function'] && empty( $frame['class'] ) ) {
+				return 0 === strpos( wp_normalize_path( (string) $frame['file'] ), $dir );
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Point WordPress mail at Mailpit when LLD_SMTP_HOST is set and this is not production,
+	 * then give this plugin's own emails the UI2-04 layout. Mail from WordPress or other plugins is not changed.
 	 *
 	 * @param PHPMailer\PHPMailer\PHPMailer $phpmailer Mailer.
 	 */
@@ -28,18 +227,50 @@ class LLD_Members_Mail {
 			$phpmailer->SMTPAutoTLS = false;
 			$phpmailer->SMTPSecure  = '';
 		}
-		$body = (string) $phpmailer->Body;
-		if ( str_contains( $body, 'max-width:600px' ) ) {
+		$own       = self::$own;
+		self::$own = false;
+		if ( ! $own ) {
 			return;
 		}
-		$plain = trim( (string) $phpmailer->AltBody );
-		if ( '' === $plain || str_contains( $plain, '<' ) ) {
-			$plain = trim( wp_strip_all_tags( $body ) );
+		// This plugin writes plain text. Another plugin (Paid Memberships Pro) may set every email to text/html
+		// and add paragraph tags, so the text is recovered from the HTML in that case.
+		$plain = (string) $phpmailer->Body;
+		if ( 'text/plain' !== (string) $phpmailer->ContentType || str_contains( $plain, '<' ) ) {
+			$plain = html_entity_decode( wp_strip_all_tags( $plain ), ENT_QUOTES, 'UTF-8' );
 		}
+		$plain = trim( $plain );
 		$phpmailer->isHTML( true );
 		$phpmailer->AltBody = $plain;
-		$logo = '<img alt="Lifeline Daily" width="120" height="32" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%2232%22%3E%3Crect width=%22120%22 height=%2232%22 fill=%22%231f6b4a%22/%3E%3C/svg%3E">';
-		$phpmailer->Body    = '<div style="max-width:600px">' . $logo . '<pre style="white-space:pre-wrap">' . esc_html( $plain ) . '</pre></div>';
+		$phpmailer->Body    = self::layout( (string) $phpmailer->Subject, $plain );
+		$phpmailer->addStringEmbeddedImage( (string) base64_decode( self::LOGO_PNG ), 'lld-logo', 'lifeline-daily.png', 'base64', 'image/png' );
+	}
+
+	/**
+	 * At most 600 pixels wide, the logo, the text, one button for the main link, and no remote images or scripts.
+	 *
+	 * @param string $subject Subject, used as the button label.
+	 * @param string $plain   Plain-text body.
+	 */
+	public static function layout( $subject, $plain ) {
+		$button = '';
+		$parts  = array();
+		foreach ( preg_split( '/\r\n|\n/', $plain ) as $line ) {
+			if ( preg_match( '#^(.*?)(https?://\S+)\s*$#', $line, $match ) ) {
+				$url = esc_url( $match[2] );
+				if ( '' === $button && false === stripos( $match[1] . $match[2], 'unsubscribe' ) ) {
+					$button  = '<p style="margin:24px 0"><a href="' . $url . '" style="display:inline-block;background:#1f6b4a;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold">' . esc_html( '' !== $subject ? $subject : 'Open' ) . '</a></p>';
+					$parts[] = '' !== trim( $match[1] ) ? '<p style="margin:0 0 12px">' . esc_html( trim( $match[1] ) ) . '</p>' . $button : $button;
+					continue;
+				}
+				$parts[] = '<p style="margin:0 0 12px">' . esc_html( $match[1] ) . '<a href="' . $url . '" style="color:#1f6b4a">' . esc_html( $match[2] ) . '</a></p>';
+				continue;
+			}
+			$parts[] = '' === trim( $line ) ? '' : '<p style="margin:0 0 12px">' . esc_html( $line ) . '</p>';
+		}
+		$logo = '<img alt="Lifeline Daily" width="120" height="32" src="cid:lld-logo" style="display:block;border:0">';
+		return '<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f4f4f1">'
+			. '<div style="max-width:600px;margin:0 auto;padding:24px 16px;background:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;color:#1d1d1b">'
+			. $logo . '<div style="margin-top:20px">' . implode( '', $parts ) . '</div></div></body></html>';
 	}
 
 	/**

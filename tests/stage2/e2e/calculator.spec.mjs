@@ -42,6 +42,11 @@ async function proteinResult(page) {
   await expect(frame.getByRole('heading', { name: `${protein.expected.targetG} g` })).toBeVisible();
 }
 
+// A failing journey prints its error at once, so a run stopped by the job time limit still shows why.
+test.afterEach(async ({}, testInfo) => {
+  if (testInfo.status !== testInfo.expectedStatus) console.log(`FAILED ${testInfo.title}: ${(testInfo.error && testInfo.error.message) || testInfo.status}`.slice(0, 1500));
+});
+
 test('TC-FR2-23-AS-02', async ({ page, request }) => {
   await serveTools(page);
   await page.goto('/health-tools/protein/');
@@ -75,6 +80,35 @@ test('TC-FR2-23-AS-02', async ({ page, request }) => {
   expect(row.calculator_version).toHaveLength(64);
   expect(JSON.stringify(row)).not.toContain(withConsent);
   expect(JSON.stringify(row)).not.toContain('omnivore');
+
+  // A result the tool withdraws (kidney disease stops the number) can no longer be saved.
+  await page.goto('/health-tools/protein/');
+  await proteinResult(page);
+  await expect(save).toBeVisible();
+  const frame = page.frameLocator('.lld-tool-frame');
+  await frame.locator('#restart').click();
+  await frame.locator('#kidney button[data-val="yes"]').click();
+  await submitProtein(frame);
+  await expect(frame.locator('[data-test="renal-stop"]')).toBeVisible();
+  await expect(save).toBeHidden();
+  await expect(page.locator('#lld-save-result input[name="lld_headline"]')).toHaveValue('');
+  await expect(page.locator('#lld-save-result input[name="lld_band"]')).toHaveValue('');
+
+  // Pregnancy and breastfeeding show one minimum and no range: they can still be saved, the unit line standing as the band.
+  for (const stage of ['pregnant', 'breastfeeding']) {
+    const fixture = JSON.parse(readFileSync(resolve(root, 'fixtures/protein/prg.json'), 'utf8')).fixtures.find((item) => item.inputs.preg === stage);
+    await page.goto('/health-tools/protein/');
+    const tool = page.frameLocator('.lld-tool-frame');
+    await tool.locator('#age').waitFor();
+    await fillProteinForm(tool, fixture.inputs);
+    await submitProtein(tool);
+    await expect(tool.getByRole('heading', { name: `${fixture.expected.targetG} g` })).toBeVisible();
+    await save.click();
+    await expect(page.getByText('Saved', { exact: true })).toBeVisible();
+    const kept = await (await page.request.post('/wp-json/lld-members/v1/test/calculator', { data: { email: withConsent } })).json();
+    expect(kept.headline, stage).toBe(`${fixture.expected.targetG} g`);
+    expect(kept.band, stage).toBe('of protein per day (minimum)');
+  }
 });
 
 test('TC-FR2-23-AS-03', async ({ page }) => {

@@ -52,6 +52,13 @@ class LLD_Members_Access {
 		if ( 'visitor' === self::preview_state() ) {
 			return 0;
 		}
+		return self::own_member_id();
+	}
+
+	/**
+	 * Member number of the signed-in account itself, ignoring preview mode.
+	 */
+	public static function own_member_id() {
 		$user_id = get_current_user_id();
 		if ( ! $user_id ) {
 			return 0;
@@ -105,16 +112,19 @@ class LLD_Members_Access {
 
 	/**
 	 * Access state stored from Stripe's last confirmed state. This never calls Stripe.
+	 * Owner preview changes only the owner's own record, never another member's (NFR2-08).
 	 *
 	 * @param int $member_id Member number.
 	 */
 	public static function access_state( $member_id ) {
 		$preview = self::preview_state();
-		if ( 'free' === $preview ) {
-			return 'free';
-		}
-		if ( 'premium' === $preview ) {
-			return 'Premium';
+		if ( '' !== $preview && (int) $member_id === self::own_member_id() ) {
+			if ( 'free' === $preview ) {
+				return 'free';
+			}
+			if ( 'premium' === $preview ) {
+				return 'Premium';
+			}
 		}
 		global $wpdb;
 		$state = $wpdb->get_var( $wpdb->prepare( 'SELECT access_state FROM ' . LLD_Members_Schema::table( 'subscription' ) . ' WHERE member_id = %d', $member_id ) );
