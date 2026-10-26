@@ -23,10 +23,14 @@ export async function asOwner(page) {
   if (!res.ok()) throw new Error(`owner sign-in ${res.status()} ${await res.text()}`);
 }
 
-async function openAdmin(page, path) {
-  await page.goto(path);
+// wp-admin pages are used once the DOM is ready. Waiting for "load" hangs in WebKit, where admin background requests
+// (the compression test, the emoji loader) never settle against the CI server.
+export const ADMIN = { waitUntil: 'domcontentloaded' };
+
+export async function openAdmin(page, path) {
+  await page.goto(path, ADMIN);
   if (page.url().includes('pmpro-wizard')) {
-    await page.goto(path);
+    await page.goto(path, ADMIN);
   }
 }
 
@@ -36,7 +40,7 @@ export async function publishItem(page, type, title, body, tags = '') {
   await page.locator('#content').fill(body, { force: true });
   if (tags) await page.locator('#lld_tags').fill(tags, { force: true });
   await page.locator('#publish').click({ force: true });
-  await page.waitForURL(/post=\d+/);
+  await page.waitForURL(/post=\d+/, ADMIN);
   return Number(new URL(page.url()).searchParams.get('post'));
 }
 

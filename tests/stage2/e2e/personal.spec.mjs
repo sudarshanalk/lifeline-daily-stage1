@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { expect, test } from '@playwright/test';
-import { asOwner, createMember, publishItem, signIn } from './helpers.mjs';
+import { asOwner, createMember, openAdmin, publishItem, signIn } from './helpers.mjs';
 import { matrixRows, safetyTags } from '../tools/safety-matrix.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
@@ -500,7 +500,7 @@ test('TC-FR2-38-AS-06', async ({ page }) => {
   const loose = `free-text-${mark}`;
   const looseId = await publishItem(page, 'lld_lesson', `Loose tag ${mark}`, 'A short lesson.', loose);
   await expect(page.getByText(`Not saved: ${loose} is not in the tag list.`)).toBeVisible();
-  await page.goto(`/wp-admin/post.php?post=${looseId}&action=edit`);
+  await openAdmin(page, `/wp-admin/post.php?post=${looseId}&action=edit`);
   await expect(page.locator('#lld_tags')).toHaveValue('');
   const found = await page.request.post('/wp-json/lld-members/v1/test/search', { data: { q: 'breath-holding' } });
   expect((await found.json()).hits).toEqual([]);
