@@ -32,6 +32,19 @@ class LLD_Members_Premium {
 	const MEAL_SLOTS = array( 'breakfast', 'lunch', 'dinner', 'snack' );
 
 	/**
+	 * Shopping-list groups by type of food, in shop order, with the words that place an ingredient in each. A recipe
+	 * can name the group itself in a fourth column. Lead default; the owner may change the groups.
+	 */
+	const AISLES = array(
+		'Beans, pulses, fish, eggs and meat' => array( 'lentil', 'bean', 'chickpea', 'tofu', 'tempeh', 'egg', 'chicken', 'turkey', 'beef', 'pork', 'lamb', 'mince', 'fish', 'salmon', 'tuna', 'cod', 'haddock', 'mackerel', 'sardine', 'prawn', 'edamame', 'hummus', 'butter bean' ),
+		'Vegetables and fruit'               => array( 'spinach', 'kale', 'lettuce', 'salad', 'rocket', 'broccoli', 'cauliflower', 'cabbage', 'carrot', 'onion', 'shallot', 'garlic', 'leek', 'celery', 'tomato', 'pepper', 'courgette', 'aubergine', 'cucumber', 'mushroom', 'potato', 'squash', 'pumpkin', 'beetroot', 'pea', 'sweetcorn', 'corn', 'avocado', 'apple', 'pear', 'banana', 'berr', 'orange', 'lemon', 'lime', 'grape', 'mango', 'melon', 'kiwi', 'plum', 'peach', 'cherr', 'fruit', 'veg', 'eggplant', 'sweet potato' ),
+		'Bread, rice, pasta and grains'      => array( 'oat', 'porridge', 'bread', 'roll', 'pitta', 'wrap', 'tortilla', 'rice', 'pasta', 'spaghetti', 'noodle', 'couscous', 'quinoa', 'bulgur', 'barley', 'flour', 'cornflour', 'cereal', 'cracker' ),
+		'Dairy and alternatives'             => array( 'milk', 'yoghurt', 'yogurt', 'cheese', 'feta', 'cream', 'butter', 'kefir' ),
+		'Tins, jars and dry goods'           => array( 'broth', 'stock', 'tinned', 'canned', 'passata', 'puree', 'sauce', 'vinegar', 'nut', 'peanut', 'peanut butter', 'almond', 'walnut', 'seed', 'honey', 'jam', 'raisin', 'sultana', 'cocoa', 'stock cube' ),
+		'Oils, herbs and spices'             => array( 'oil', 'salt', 'black pepper', 'spice', 'cumin', 'paprika', 'chilli', 'turmeric', 'cinnamon', 'ginger', 'herb', 'basil', 'parsley', 'coriander', 'thyme', 'oregano', 'rosemary', 'mint', 'dill' ),
+	);
+
+	/**
 	 * Check-in measures (Data Model C9) and their labels, for the progress charts.
 	 */
 	const CHART_MEASURES = array(
@@ -151,11 +164,15 @@ class LLD_Members_Premium {
 			}
 			$main .= '</section>';
 		}
-		$main .= '<h2>Shopping list</h2><ul data-lld-shopping>';
-		foreach ( $plan['shopping'] as $line ) {
-			$main .= '<li>' . esc_html( $line ) . '</li>';
+		$main .= '<h2>Shopping list</h2><p class="lld-hint">Ticks are kept on this device only.</p><div data-lld-shopping data-lld-week="' . esc_attr( $plan['week']['starting'] ) . '">';
+		foreach ( $plan['aisles'] as $aisle => $lines ) {
+			$main .= '<section data-lld-aisle="' . esc_attr( $aisle ) . '"><h3>' . esc_html( $aisle ) . '</h3><ul class="lld-ticks">';
+			foreach ( $lines as $line ) {
+				$main .= '<li><label class="lld-check"><input type="checkbox" data-lld-tick="' . esc_attr( $line ) . '"> ' . esc_html( $line ) . '</label></li>';
+			}
+			$main .= '</ul></section>';
 		}
-		$main .= '</ul>';
+		$main .= '</div>';
 		$main .= '<p><button type="button" onclick="window.print()">Print</button> ';
 		$main .= '<a href="' . esc_url( home_url( '/members/meals/?pdf=1' ) ) . '">Download PDF</a></p>';
 		self::page( 'Meal plan', $main );
@@ -770,6 +787,7 @@ class LLD_Members_Premium {
 		$empty = array(
 			'days'     => array(),
 			'shopping' => array(),
+			'aisles'   => array(),
 			'week'     => $where,
 			'template' => null,
 			'plan_id'  => 0,
@@ -784,6 +802,7 @@ class LLD_Members_Premium {
 		$offer = self::decode_swaps( $template );
 		$days  = array();
 		$bag   = array();
+		$group = array();
 		foreach ( $meals as $day => $slots ) {
 			if ( ! is_array( $slots ) || (int) $day < 1 || (int) $day > 7 ) {
 				continue;
@@ -818,7 +837,8 @@ class LLD_Members_Premium {
 				$recipe['options']           = $options;
 				$days[ (int) $day ][ $slot ] = $recipe;
 				foreach ( $recipe['ingredients'] as $line ) {
-					$bag[ $line ] = $line;
+					$bag[ $line ]   = $line;
+					$group[ $line ] = $recipe['aisles'][ $line ] ?? 'Other';
 				}
 			}
 		}
@@ -826,11 +846,30 @@ class LLD_Members_Premium {
 		return array(
 			'days'     => $days,
 			'shopping' => array_values( $bag ),
+			'aisles'   => self::group_aisles( $group ),
 			'week'     => $where,
 			'template' => $template,
 			'plan_id'  => $given['plan_id'],
 			'swaps'    => $swaps,
 		);
+	}
+
+	/**
+	 * Shopping lines by group, in the shop's usual order, then "Other".
+	 *
+	 * @param array<string,string> $group Line => group.
+	 * @return array<string,string[]>
+	 */
+	private static function group_aisles( $group ) {
+		$out = array();
+		foreach ( array_merge( array_keys( self::AISLES ), array( 'Other' ) ) as $aisle ) {
+			foreach ( $group as $line => $name ) {
+				if ( $name === $aisle ) {
+					$out[ $aisle ][] = (string) $line;
+				}
+			}
+		}
+		return $out;
 	}
 
 	/**
@@ -1186,21 +1225,54 @@ class LLD_Members_Premium {
 		}
 		$fields = isset( $snap['fields'] ) && is_array( $snap['fields'] ) ? $snap['fields'] : array();
 		$lines  = array();
+		$aisles = array();
 		$raw    = (string) ( $fields['ingredients'] ?? '' );
 		foreach ( preg_split( '/\r\n|\r|\n/', $raw ) as $line ) {
 			$line = trim( (string) $line );
 			if ( '' === $line ) {
 				continue;
 			}
-			$parts   = array_map( 'trim', explode( '|', $line ) );
-			$lines[] = $parts[0] . ( isset( $parts[1] ) ? ', ' . $parts[1] . ( isset( $parts[2] ) ? ' ' . $parts[2] : '' ) : '' );
+			$parts           = array_map( 'trim', explode( '|', $line ) );
+			$text            = $parts[0] . ( isset( $parts[1] ) && '' !== $parts[1] ? ', ' . $parts[1] . ( isset( $parts[2] ) && '' !== $parts[2] ? ' ' . $parts[2] : '' ) : '' );
+			$lines[]         = $text;
+			$aisles[ $text ] = self::aisle_of( $parts[0], $parts[3] ?? '' );
 		}
 		return array(
 			'id'          => (int) $snap['parent_id'],
 			'version_key' => self::version_key( $snap ),
 			'title'       => (string) $snap['title'],
 			'ingredients' => $lines,
+			'aisles'      => $aisles,
 		);
+	}
+
+	/**
+	 * The shopping-list group for an ingredient (SCR-15 "grouped by type of food"). The recipe's own fourth
+	 * column ("name | amount | unit | group") wins when it names a group; otherwise the name decides.
+	 *
+	 * @param string $name  Ingredient name.
+	 * @param string $given Group written on the recipe, if any.
+	 */
+	private static function aisle_of( $name, $given = '' ) {
+		$given = trim( (string) $given );
+		foreach ( array_keys( self::AISLES ) as $aisle ) {
+			if ( '' !== $given && 0 === strcasecmp( $given, $aisle ) ) {
+				return $aisle;
+			}
+		}
+		// The longest word that starts a word in the name decides: "butter beans" is beans, "black pepper" a spice.
+		$name = ' ' . strtolower( (string) preg_replace( '/[^a-z ]+/i', ' ', (string) $name ) ) . ' ';
+		$best = 'Other';
+		$size = 0;
+		foreach ( self::AISLES as $aisle => $words ) {
+			foreach ( $words as $word ) {
+				if ( strlen( $word ) > $size && false !== strpos( $name, ' ' . $word ) ) {
+					$best = $aisle;
+					$size = strlen( $word );
+				}
+			}
+		}
+		return $best;
 	}
 
 	/**
@@ -1217,7 +1289,7 @@ class LLD_Members_Premium {
 	 */
 	private static function send_shopping_pdf( $member_id ) {
 		$view = self::meal_view( $member_id );
-		$pdf  = self::shopping_pdf( 'Shopping list', $view['shopping'] );
+		$pdf  = self::shopping_pdf( 'Shopping list', $view['aisles'] );
 		header( 'Content-Type: application/pdf' );
 		header( 'Content-Disposition: attachment; filename="shopping-list.pdf"' );
 		header( 'Content-Length: ' . strlen( $pdf ) );
@@ -1242,25 +1314,41 @@ class LLD_Members_Premium {
 		$width   = 612 - 2 * $left;
 		$top     = 740;
 		$bottom  = 56;
-		$rows    = array();
-		foreach ( $items ? $items : array( 'Nothing on the list this week.' ) as $item ) {
-			$text = self::win_ansi( (string) $item );
-			$first = true;
-			foreach ( self::pdf_wrap( "\x95 " . $text, $size, $width - 12 ) as $piece ) {
-				$rows[] = $first ? $piece : '  ' . $piece;
-				$first  = false;
+		$groups  = array();
+		foreach ( $items ? $items : array( 'Nothing on the list this week.' ) as $key => $item ) {
+			if ( is_array( $item ) ) {
+				$groups[ (string) $key ] = $item;
+			} else {
+				$groups[''][] = $item;
+			}
+		}
+		$rows = array();
+		foreach ( $groups as $heading => $lines ) {
+			if ( '' !== $heading ) {
+				$rows[] = array( 'F2', 12, self::win_ansi( $heading ) );
+			}
+			foreach ( $lines as $item ) {
+				$first = true;
+				foreach ( self::pdf_wrap( "\x95 " . self::win_ansi( (string) $item ), $size, $width - 12 ) as $piece ) {
+					$rows[] = array( 'F1', $size, $first ? $piece : '  ' . $piece );
+					$first  = false;
+				}
 			}
 		}
 		$pages = array();
 		$y     = $top - 30;
-		$body  = 'BT /F1 16 Tf ' . $left . ' ' . $top . ' Td (' . self::pdf_string( self::win_ansi( (string) $title ) ) . ") Tj ET\n";
-		foreach ( $rows as $row ) {
-			if ( $y < $bottom ) {
+		$body  = 'BT /F2 16 Tf ' . $left . ' ' . $top . ' Td (' . self::pdf_string( self::win_ansi( (string) $title ) ) . ") Tj ET\n";
+		foreach ( $rows as $index => $row ) {
+			// a heading never ends a page: it moves on with its first line
+			$needs = 'F2' === $row[0] ? $bottom + $leading : $bottom;
+			if ( $y < $needs ) {
 				$pages[] = $body;
 				$body    = '';
 				$y       = $top;
+			} elseif ( 'F2' === $row[0] && $index > 0 ) {
+				$y -= 6;
 			}
-			$body .= 'BT /F1 ' . $size . ' Tf ' . $left . ' ' . $y . ' Td (' . self::pdf_string( $row ) . ") Tj ET\n";
+			$body .= 'BT /' . $row[0] . ' ' . $row[1] . ' Tf ' . $left . ' ' . $y . ' Td (' . self::pdf_string( $row[2] ) . ") Tj ET\n";
 			$y    -= $leading;
 		}
 		$pages[] = $body;
@@ -1268,12 +1356,13 @@ class LLD_Members_Premium {
 		$objects    = array();
 		$objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
 		$objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+		$objects[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
 		$kids       = array();
 		foreach ( $pages as $index => $stream ) {
-			$page_id             = 4 + 2 * $index;
+			$page_id             = 5 + 2 * $index;
 			$content_id          = $page_id + 1;
 			$kids[]              = $page_id . ' 0 R';
-			$objects[ $page_id ] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ' . $content_id . ' 0 R >>';
+			$objects[ $page_id ] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' . $content_id . ' 0 R >>';
 			$objects[ $content_id ] = '<< /Length ' . strlen( $stream ) . " >>\nstream\n" . $stream . "\nendstream";
 		}
 		$objects[2] = '<< /Type /Pages /Kids [' . implode( ' ', $kids ) . '] /Count ' . count( $pages ) . ' >>';

@@ -193,6 +193,28 @@ test('TC-FR2-32-AS-03', async ({ page, request }) => {
   await page.goto('/members/meals/');
   await expect(page.getByRole('button', { name: 'Print' })).toBeVisible();
   await expect(page.locator('[data-lld-shopping]')).toContainText('red lentils');
+  // grouped by type of food, with tick boxes remembered on this device only
+  const beans = page.locator('[data-lld-aisle="Beans, pulses, fish, eggs and meat"]');
+  const veg = page.locator('[data-lld-aisle="Vegetables and fruit"]');
+  await expect(beans.getByRole('heading', { name: 'Beans, pulses, fish, eggs and meat' })).toBeVisible();
+  await expect(beans).toContainText('red lentils, 150 g');
+  await expect(veg).toContainText('spinach, 80 g');
+  await expect(veg).not.toContainText('red lentils');
+  const tick = page.getByRole('checkbox', { name: 'spinach, 80 g' });
+  await expect(tick).not.toBeChecked();
+  let posted = 0;
+  page.on('request', (req) => { if (req.method() === 'POST') posted += 1; });
+  await tick.check();
+  await page.reload();
+  await expect(page.getByRole('checkbox', { name: 'spinach, 80 g' })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: 'red lentils, 150 g' })).not.toBeChecked();
+  expect(posted, 'ticks are not sent to the server').toBe(0);
+  const elsewhere = await page.context().browser().newContext({ baseURL: test.info().project.use.baseURL, extraHTTPHeaders: test.info().project.use.extraHTTPHeaders });
+  const other = await elsewhere.newPage();
+  await signIn(other, member.email, password);
+  await other.goto('/members/meals/');
+  await expect(other.getByRole('checkbox', { name: 'spinach, 80 g' })).not.toBeChecked();
+  await elsewhere.close();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('link', { name: 'Download PDF' }).click();
   const download = await downloadPromise;
@@ -209,6 +231,12 @@ test('TC-FR2-32-AS-03', async ({ page, request }) => {
   const lines = [...body.matchAll(/\(((?:\\.|[^\\)])*)\) Tj/g)].map((m) => m[1]);
   expect(lines).toContain('\\225 red lentils, 150 g');
   expect(lines).toContain('\\225 spinach, 80 g');
+  // the PDF has the same groups, as headings before their lines
+  const at = (text) => lines.indexOf(text);
+  expect(at('Beans, pulses, fish, eggs and meat')).toBeGreaterThan(-1);
+  expect(at('Beans, pulses, fish, eggs and meat')).toBeLessThan(at('\\225 red lentils, 150 g'));
+  expect(at('\\225 red lentils, 150 g')).toBeLessThan(at('Vegetables and fruit'));
+  expect(at('Vegetables and fruit')).toBeLessThan(at('\\225 spinach, 80 g'));
 });
 
 test('TC-FR2-32-AS-04', async ({ page, request }) => {
