@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { expect, test } from '@playwright/test';
-import { asOwner, createMember, editBody, signIn } from './helpers.mjs';
+import { asOwner, createMember, signIn } from './helpers.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
 const MAILPIT = process.env.MAILPIT_URL || 'http://127.0.0.1:8025';
@@ -35,11 +35,33 @@ async function startSlug(page, slug) {
   expect([200, 302, 303]).toContain(res.status());
 }
 
-async function approveNewest(page, title) {
-  await page.goto('/wp-admin/admin.php?page=lld-approvals');
+// WebKit on the CI web server: WordPress's admin "compression test" request (admin-ajax.php?action=wp-compression-test)
+// never gets a response, so the editor page's load event never fires and the server stalls behind it. Chromium
+// passes the test once and WordPress stops asking. The browser answers that request itself, and the external
+// avatar is not fetched, so admin pages load the same way in both engines. The edit itself still goes through the
+// real editor and the real approvals screen.
+async function quietAdmin(page) {
+  await page.route(/\/wp-admin\/admin-ajax\.php\?action=wp-compression-test/, (route) => route.fulfill({ status: 200, contentType: 'text/plain', body: '0' }));
+  await page.route(/^https:\/\/secure\.gravatar\.com\//, (route) => route.fulfill({ status: 204, body: '' }));
+}
+
+async function openAdmin(page, path) {
+  await quietAdmin(page);
+  await page.goto(path, { waitUntil: 'domcontentloaded' });
   if (page.url().includes('pmpro-wizard')) {
-    await page.goto('/wp-admin/admin.php?page=lld-approvals');
+    await page.goto(path, { waitUntil: 'domcontentloaded' });
   }
+}
+
+async function editBody(page, id, body) {
+  await openAdmin(page, `/wp-admin/post.php?post=${id}&action=edit`);
+  await page.locator('#content').fill(body, { force: true });
+  await page.locator('#publish').click({ force: true });
+  await page.locator('#message').waitFor();
+}
+
+async function approveNewest(page, title) {
+  await openAdmin(page, '/wp-admin/admin.php?page=lld-approvals');
   const qual = page.locator('#lld_qualifications');
   if (await qual.count()) await qual.fill('Test clinical record for the automated check', { force: true });
   await page.locator('tr', { hasText: title }).first().getByRole('button', { name: 'Approve' }).click({ force: true });
