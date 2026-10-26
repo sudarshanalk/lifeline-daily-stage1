@@ -811,6 +811,27 @@ test('TC-FR2-04-AS-01', async ({ page }) => {
   const stores = await page.request.get('/wp-json/lld-members/v1/test/stores');
   expect((await stores.json()).download_files).toBe(0);
   await reset(page.request, referrer);
+
+  // Encrypted text is bound to its own record (S3): copied into another member's record, it is
+  // not shown by the journey read or the download.
+  const copyEmail = 'tm-04a-copy@test.lifelinedaily.invalid';
+  await reset(page.request, copyEmail);
+  const copy = await createMember(page.request, { email: copyEmail, password, first_name: 'Cy', role: 'member', health_consent: true, sentinel: 'Own words of Cy' });
+  await signIn(page, copyEmail, password);
+  const journey = async () => {
+    await page.goto('/members/settings/');
+    const restNonce = await page.locator('meta[name="lld-rest-nonce"]').getAttribute('content');
+    return page.request.get(`/wp-json/lld-members/v1/members/${copy.member_id}/journey`, { headers: { 'X-WP-Nonce': restNonce } });
+  };
+  const before = await journey();
+  expect(before.status()).toBe(200);
+  expect((await before.json()).something_else).toBe('Own words of Cy');
+  const copied = await page.request.post(`/wp-json/lld-members/v1/test/ciphertext?member_id=${created.member_id}&copy_to=${copy.member_id}`);
+  expect(copied.ok()).toBe(true);
+  const after = await journey();
+  expect(after.status()).toBe(500);
+  expect(await after.text()).not.toContain(SENTINEL);
+  await reset(page.request, copyEmail);
 });
 
 test('TC-FR2-04-AS-02', async ({ page }) => {

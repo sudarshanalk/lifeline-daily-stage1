@@ -105,7 +105,7 @@ class LLD_Members_Rest {
 			'lld-members/v1',
 			'/test/ciphertext',
 			array(
-				'methods'             => 'GET',
+				'methods'             => 'GET, POST',
 				'callback'            => array( __CLASS__, 'test_ciphertext' ),
 				'permission_callback' => array( __CLASS__, 'test_only' ),
 			)
@@ -401,10 +401,11 @@ class LLD_Members_Rest {
 		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT id, text_ciphertext FROM {$table} WHERE member_id = %d ORDER BY id DESC LIMIT 1", $member_id ) );
 		$text  = '';
 		if ( $row && is_string( $row->text_ciphertext ) && '' !== $row->text_ciphertext ) {
+			// Bound to its own row (S3): text copied into another row does not decrypt.
 			try {
 				$text = LLD_Members_Crypto::decrypt( $row->text_ciphertext, 'something_else:' . $row->id );
 			} catch ( RuntimeException $bound ) {
-				$text = LLD_Members_Crypto::decrypt( $row->text_ciphertext );
+				return new WP_REST_Response( array( 'message' => 'That text could not be read.' ), 500 );
 			}
 		}
 		return new WP_REST_Response( array( 'something_else' => $text ), 200 );
@@ -646,6 +647,14 @@ class LLD_Members_Rest {
 		$member_id = (int) $request->get_param( 'member_id' );
 		$table     = LLD_Members_Schema::table( 'something_else' );
 		$raw       = $wpdb->get_var( $wpdb->prepare( "SELECT text_ciphertext FROM {$table} WHERE member_id = %d ORDER BY id DESC LIMIT 1", $member_id ) );
+		// copy_to: put this ciphertext into another member's latest row, as a copied database would.
+		$copy_to = (int) $request->get_param( 'copy_to' );
+		if ( $copy_to > 0 && is_string( $raw ) ) {
+			$target = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE member_id = %d ORDER BY id DESC LIMIT 1", $copy_to ) );
+			if ( $target ) {
+				$wpdb->update( $table, array( 'text_ciphertext' => $raw ), array( 'id' => $target ), array( '%s' ), array( '%d' ) );
+			}
+		}
 		return new WP_REST_Response( array( 'ciphertext' => is_string( $raw ) ? $raw : '' ), 200 );
 	}
 
