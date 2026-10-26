@@ -639,6 +639,7 @@ class LLD_Members_Fixtures {
 		$oat    = self::item( 'lld_recipe', 'Oat ' . $stamp, '', array( 'ingredients' => 'oats | 40 | g', 'diet' => 'vegetarian', 'meal_type' => 'breakfast' ) );
 		$loss   = self::item( 'lld_recipe', 'Loss ' . $stamp, 'weight-loss', array( 'ingredients' => 'loss broth | 10 | g', 'diet' => 'vegetarian', 'meal_type' => 'dinner' ) );
 		$tofu   = self::item( 'lld_recipe', 'Tofu ' . $stamp, '', array( 'ingredients' => 'tofu | 100 | g', 'diet' => 'vegan', 'meal_type' => 'lunch' ) );
+		$bean   = self::item( 'lld_recipe', 'Bean stew ' . $stamp, '', array( 'ingredients' => 'butter beans | 200 | g', 'diet' => 'vegetarian', 'meal_type' => 'dinner' ) );
 		$days   = array();
 		for ( $day = 1; $day <= 7; $day++ ) {
 			$days[ (string) $day ] = array(
@@ -657,7 +658,7 @@ class LLD_Members_Fixtures {
 				'diet'        => 'vegetarian',
 				'week_number' => 1,
 				'meals'       => wp_json_encode( $days ),
-				'swaps'       => wp_json_encode( array( '1-breakfast' => array( $oat, $loss ) ) ),
+				'swaps'       => wp_json_encode( array( '1-breakfast' => array( $oat, $loss ), '3-dinner' => array( $bean ) ) ),
 			)
 		);
 		self::item(
@@ -669,6 +670,24 @@ class LLD_Members_Fixtures {
 				'diet'        => 'vegan',
 				'week_number' => 1,
 				'meals'       => wp_json_encode( array( '1' => array( 'breakfast' => $tofu, 'lunch' => $tofu, 'dinner' => $tofu, 'snack' => $tofu ) ) ),
+				'swaps'       => '{}',
+			)
+		);
+		$lean   = self::post( 'lld_track', 'Lean ' . $stamp, 'Track ' . $stamp, array() );
+		$broth  = self::item( 'lld_recipe', 'Broth ' . $stamp, '', array( 'ingredients' => 'clear broth | 200 | ml', 'diet' => 'vegetarian', 'meal_type' => 'lunch' ) );
+		$week   = array();
+		for ( $day = 1; $day <= 7; $day++ ) {
+			$week[ (string) $day ] = array( 'breakfast' => $broth, 'lunch' => $broth, 'dinner' => $broth, 'snack' => $broth );
+		}
+		self::item(
+			'lld_meal',
+			'Lean plan ' . $stamp,
+			'weight-loss',
+			array(
+				'track_id'    => $lean,
+				'diet'        => 'vegetarian',
+				'week_number' => 1,
+				'meals'       => wp_json_encode( $week ),
 				'swaps'       => '{}',
 			)
 		);
@@ -700,7 +719,31 @@ class LLD_Members_Fixtures {
 				'place'       => 'home',
 				'week_number' => 1,
 				'safety'      => 'Warm up for 5 minutes. Stop if you feel pain.',
-				'sessions'    => "Squat to chair | 10 | 30\nWall press | 10 | 20",
+				'sessions'    => "Session A\nSquat to chair | 10 | 30 | Sit down and stand up slowly.\nWall press | 10 | 20 | Push away from the wall.\n\nSession B\nMarch on the spot | 15 | 15 | Lift your knees gently.",
+			)
+		);
+		self::item(
+			'lld_workout',
+			'Beginner home week 2 ' . $stamp,
+			'',
+			array(
+				'level'       => 'beginner',
+				'place'       => 'home',
+				'week_number' => 2,
+				'safety'      => 'Warm up for 5 minutes. Stop if you feel pain.',
+				'sessions'    => "Session A\nSquat to chair | 20 | 30 | Sit down and stand up slowly.\nWall press | 20 | 20 | Push away from the wall.\n\nSession B\nMarch on the spot | 30 | 15 | Lift your knees gently.",
+			)
+		);
+		self::item(
+			'lld_workout',
+			'Intermediate home ' . $stamp,
+			'',
+			array(
+				'level'       => 'intermediate',
+				'place'       => 'home',
+				'week_number' => 1,
+				'safety'      => 'Warm up for 5 minutes. Stop if you feel pain.',
+				'sessions'    => "Session A\nStep-ups | 30 | 30 | Step up and down a low step.",
 			)
 		);
 		self::item( 'lld_qa', 'Live ' . $stamp, '', array( 'session_date' => '2026-11-04', 'session_time' => '19:00' ) );
@@ -710,8 +753,13 @@ class LLD_Members_Fixtures {
 			'track'     => get_post_field( 'post_name', $track ),
 			'lentil'    => 'Lentil ' . $stamp,
 			'oat'       => 'Oat ' . $stamp,
+			'oat_id'    => $oat,
+			'bean'      => 'Bean stew ' . $stamp,
+			'bean_id'   => $bean,
 			'loss'      => 'Loss ' . $stamp,
 			'tofu'      => 'Tofu ' . $stamp,
+			'lean'      => get_post_field( 'post_name', $lean ),
+			'broth'     => 'Broth ' . $stamp,
 			'meal'      => $meal,
 			'challenge' => 'Fibre ' . $stamp,
 			'hidden'    => 'Hidden challenge ' . $stamp,

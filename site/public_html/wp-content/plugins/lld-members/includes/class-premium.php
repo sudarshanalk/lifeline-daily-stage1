@@ -14,6 +14,34 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Premium {
 
+	/**
+	 * FR2-34: warming up, stopping if in pain and checking with a doctor. Draft wording for the owner's clinical review.
+	 */
+	const WORKOUT_ADVICE = 'Warm up before you start. Stop if you feel pain. Check with your doctor if you need to.';
+
+	/**
+	 * Requirements section 8.2, Type 2 diabetes row: shown before exercise.
+	 */
+	const DIABETES_EXERCISE = 'If you take insulin or medicine that can cause low blood sugar, check with your doctor.';
+
+	/**
+	 * Requirements section 8.2, high blood pressure row: high-intensity content carries this note.
+	 */
+	const INTENSE_EXERCISE = 'Check with your doctor first.';
+
+	const MEAL_SLOTS = array( 'breakfast', 'lunch', 'dinner', 'snack' );
+
+	const LEVELS = array(
+		'beginner'     => 1,
+		'intermediate' => 2,
+		'active'       => 3,
+	);
+
+	const NEXT_LEVEL = array(
+		'beginner'     => 'intermediate',
+		'intermediate' => 'active',
+	);
+
 	public static function boot() {
 		add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ), 11 );
 	}
@@ -41,8 +69,10 @@ class LLD_Members_Premium {
 		if ( $member_id < 1 || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $on ) ) {
 			return;
 		}
+		// One row per Premium end (F7). The same end is never added twice, even after its removal was recorded,
+		// because the daily check sees an ended subscription every day; a later end is a new row.
 		$table = LLD_Members_Schema::table( 'fb_removal' );
-		$known = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE member_number = %d LIMIT 1", $member_id ) );
+		$known = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE member_number = %d AND premium_ended_on = %s LIMIT 1", $member_id, $on ) );
 		if ( $known ) {
 			return;
 		}
@@ -73,24 +103,35 @@ class LLD_Members_Premium {
 			self::page( 'Meal plan', $main );
 			return;
 		}
+		$consent = LLD_Members_Account::has_consent( $member_id, 'health' );
+		foreach ( LLD_Members_Safety::notes( $member_id ) as $note ) {
+			$main .= '<p class="lld-hint">' . esc_html( $note ) . '</p>';
+		}
+		$nonce = $consent ? wp_create_nonce( 'lld_swap' ) : '';
 		foreach ( $plan['days'] as $day => $meals ) {
 			$main .= '<section data-lld-day="' . (int) $day . '"><h2>Day ' . (int) $day . '</h2>';
 			foreach ( $meals as $slot => $recipe ) {
+				$key   = (int) $day . '-' . $slot;
+				$main .= '<div class="lld-meal" data-lld-meal="' . esc_attr( $key ) . '">';
 				$main .= '<p>' . esc_html( ucfirst( (string) $slot ) ) . ': ' . esc_html( $recipe['title'] ) . '</p>';
+				if ( $consent && $recipe['options'] ) {
+					$field = 'lld_recipe_' . (int) $day . '_' . $slot;
+					$main .= '<form method="post" class="lld-form" data-lld-swap="' . esc_attr( $key ) . '">';
+					$main .= '<input type="hidden" name="lld_swap_nonce" value="' . esc_attr( $nonce ) . '">';
+					$main .= '<input type="hidden" name="lld_slot" value="' . esc_attr( $key ) . '">';
+					$main .= '<p><label for="' . esc_attr( $field ) . '">Swap Day ' . (int) $day . ' ' . esc_html( $slot ) . '</label> <select id="' . esc_attr( $field ) . '" name="lld_recipe">';
+					foreach ( $recipe['options'] as $option ) {
+						$main .= '<option value="' . (int) $option['id'] . '">' . esc_html( $option['title'] ) . '</option>';
+					}
+					$main .= '</select></p>';
+					$main .= lld_button( array( 'label' => 'Swap' ) );
+					$main .= '</form>';
+				} elseif ( $consent ) {
+					$main .= '<p class="lld-hint">No safe swap for this meal.</p>';
+				}
+				$main .= '</div>';
 			}
 			$main .= '</section>';
-		}
-		if ( $plan['swap_slot'] && $plan['swap_options'] && LLD_Members_Account::has_consent( $member_id, 'health' ) ) {
-			$main .= '<form method="post" class="lld-form">';
-			$main .= wp_nonce_field( 'lld_swap', 'lld_swap_nonce', true, false );
-			$main .= '<input type="hidden" name="lld_slot" value="' . esc_attr( $plan['swap_slot'] ) . '">';
-			$main .= '<p><label for="lld_recipe">Swap Day 1 breakfast</label> <select id="lld_recipe" name="lld_recipe">';
-			foreach ( $plan['swap_options'] as $option ) {
-				$main .= '<option value="' . (int) $option['id'] . '">' . esc_html( $option['title'] ) . '</option>';
-			}
-			$main .= '</select></p>';
-			$main .= lld_button( array( 'label' => 'Swap' ) );
-			$main .= '</form>';
 		}
 		$main .= '<h2>Shopping list</h2><ul data-lld-shopping>';
 		foreach ( $plan['shopping'] as $line ) {
@@ -105,32 +146,60 @@ class LLD_Members_Premium {
 	public static function workout() {
 		$member_id = LLD_Members_Access::current_member_id();
 		$consent   = LLD_Members_Account::has_consent( $member_id, 'health' );
-		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_done_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_done_nonce'] ) ), 'lld_done' ) ) {
-			if ( $consent ) {
-				self::store_result( $member_id, 'workout', isset( $_POST['lld_session'] ) ? (int) $_POST['lld_session'] : 1 );
+		$is_post   = 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' );
+		$saved     = $consent ? self::active_workout( $member_id ) : null;
+		$notice    = '';
+		$level     = '';
+		$place     = '';
+		if ( $consent && $is_post && isset( $_POST['lld_plan_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_plan_nonce'] ) ), 'lld_plan' ) ) {
+			$level = self::level_of( isset( $_POST['level'] ) ? wp_unslash( $_POST['level'] ) : '' );
+			$place = self::place_of( isset( $_POST['place'] ) ? wp_unslash( $_POST['place'] ) : '' );
+			if ( isset( $_POST['lld_plan_action'] ) && 'up' === sanitize_key( wp_unslash( $_POST['lld_plan_action'] ) ) ) {
+				$from  = $saved ? (string) $saved->level : $level;
+				$level = self::NEXT_LEVEL[ $from ] ?? $from;
+			}
+			self::save_workout( $member_id, $level, $place );
+			$saved  = self::active_workout( $member_id );
+			$notice = 'Your plan is now ' . $level . ', ' . $place . '.';
+		}
+		if ( '' === $level ) {
+			$level = isset( $_REQUEST['level'] ) ? self::level_of( wp_unslash( $_REQUEST['level'] ) ) : ( $saved ? self::level_of( $saved->level ) : 'beginner' );
+			$place = isset( $_REQUEST['place'] ) ? self::place_of( wp_unslash( $_REQUEST['place'] ) ) : ( $saved ? self::place_of( $saved->version_key ) : 'home' );
+		}
+		$weeks    = self::workout_weeks( $member_id, $level, $place );
+		$mine     = $saved && (string) $saved->level === $level && (string) $saved->version_key === $place;
+		$last     = $weeks ? max( array_keys( $weeks ) ) : 1;
+		$elapsed  = $mine ? self::elapsed_week( $member_id, $saved ) : 1;
+		$current  = $mine ? self::advance_week( $saved, $elapsed, $last ) : ( $weeks ? min( array_keys( $weeks ) ) : 1 );
+		$week     = isset( $_REQUEST['week'] ) ? (int) $_REQUEST['week'] : $current;
+		$week     = isset( $weeks[ $week ] ) ? $week : $current;
+		$plan     = $weeks[ $week ] ?? null;
+		$session  = isset( $_GET['session'] ) ? max( 1, (int) $_GET['session'] ) : 0;
+		if ( $is_post && $plan && isset( $_POST['lld_done_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_done_nonce'] ) ), 'lld_done' ) ) {
+			$index = isset( $_POST['lld_session'] ) ? (int) $_POST['lld_session'] : 0;
+			if ( $consent && isset( $plan['sessions'][ $index - 1 ] ) ) {
+				if ( ! $saved ) {
+					self::save_workout( $member_id, $level, $place );
+					$saved = self::active_workout( $member_id );
+					$mine  = (bool) $saved;
+				}
+				if ( $mine ) {
+					$notice = self::store_session( $member_id, (int) $saved->id, $plan, $week, $index ) ? 'Session saved.' : 'This session is already saved for week ' . $week . '.';
+				} else {
+					$notice = 'Choose this plan to save your progress on it.';
+				}
 			}
 		}
-		$level = isset( $_REQUEST['level'] ) ? sanitize_key( wp_unslash( $_REQUEST['level'] ) ) : 'beginner';
-		$place = isset( $_REQUEST['place'] ) ? sanitize_key( wp_unslash( $_REQUEST['place'] ) ) : 'home';
-		if ( ! in_array( $level, array( 'beginner', 'intermediate', 'active' ), true ) ) {
-			$level = 'beginner';
+		$main = '<h1>Workout</h1>';
+		if ( '' !== $notice ) {
+			$main .= '<p role="status">' . esc_html( $notice ) . '</p>';
 		}
-		if ( ! in_array( $place, array( 'home', 'equipment' ), true ) ) {
-			$place = 'home';
-		}
-		if ( $consent && 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_plan_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_plan_nonce'] ) ), 'lld_plan' ) ) {
-			self::save_workout( $member_id, $level, $place );
-		}
-		$week    = 1;
-		$plan    = self::workout_plan( $level, $place, $week );
-		$session = isset( $_GET['session'] ) ? max( 1, (int) $_GET['session'] ) : 0;
-		$main    = '<h1>Workout</h1>';
-		$main   .= LLD_Members_Safety::cautions_html( $member_id, array( 'type' => 'lld_workout' ) );
+		$main .= LLD_Members_Safety::cautions_html( $member_id, array( 'type' => 'lld_workout' ) );
 		if ( ! $consent ) {
 			$main .= '<p>progress isn\'t saved</p>';
 		}
 		$main .= '<form method="get" class="lld-form"><p><label for="lld_level">Level</label> <select id="lld_level" name="level">';
-		foreach ( array( 'beginner', 'intermediate', 'active' ) as $choice ) {
+		foreach ( array_keys( self::LEVELS ) as $choice ) {
 			$main .= '<option value="' . esc_attr( $choice ) . '"' . selected( $level, $choice, false ) . '>' . esc_html( $choice ) . '</option>';
 		}
 		$main .= '</select> <label for="lld_place">Version</label> <select id="lld_place" name="place">';
@@ -139,36 +208,63 @@ class LLD_Members_Premium {
 		}
 		$main .= '</select> <button class="lld-button" type="submit">Show this week</button></p></form>';
 		if ( $consent ) {
-			$main .= '<form method="post"><p>';
-			$main .= wp_nonce_field( 'lld_plan', 'lld_plan_nonce', true, false );
-			$main .= '<input type="hidden" name="level" value="' . esc_attr( $level ) . '"><input type="hidden" name="place" value="' . esc_attr( $place ) . '">';
-			$main .= '<button class="lld-button" type="submit">Move up a level</button></p></form>';
+			$hidden = wp_nonce_field( 'lld_plan', 'lld_plan_nonce', true, false ) . '<input type="hidden" name="level" value="' . esc_attr( $level ) . '"><input type="hidden" name="place" value="' . esc_attr( $place ) . '">';
+			if ( ! $mine ) {
+				$main .= '<form method="post"><p>' . $hidden . '<input type="hidden" name="lld_plan_action" value="choose"><button class="lld-button" type="submit">Choose this plan</button></p></form>';
+			}
+			if ( isset( self::NEXT_LEVEL[ $level ] ) ) {
+				if ( $mine && $elapsed > $last ) {
+					$main .= '<p>You have finished this level\'s weeks. Move up a level when you\'re ready.</p>';
+				}
+				$main .= '<form method="post"><p>' . str_replace( 'id="lld_plan_nonce"', 'id="lld_plan_nonce_up"', $hidden ) . '<input type="hidden" name="lld_plan_action" value="up"><button class="lld-button" type="submit">Move up a level</button></p></form>';
+			}
 		}
 		if ( ! $plan ) {
 			$main .= LLD_Members_Safety::empty_html( $member_id );
 			self::page( 'Workout', $main );
 			return;
 		}
+		$base  = '/members/workout/?level=' . rawurlencode( $level ) . '&place=' . rawurlencode( $place );
 		$main .= '<h2>Week ' . (int) $week . '</h2>';
+		if ( count( $weeks ) > 1 ) {
+			$main .= '<p>';
+			foreach ( array_keys( $weeks ) as $number ) {
+				$main .= ( $number === $week ? '<strong>Week ' . (int) $number . '</strong>' : '<a href="' . esc_url( home_url( $base . '&week=' . (int) $number ) ) . '">Week ' . (int) $number . '</a>' ) . ' ';
+			}
+			$main .= '</p>';
+		}
 		$index = 0;
 		foreach ( $plan['sessions'] as $row ) {
 			++$index;
-			$href  = home_url( '/members/workout/?level=' . rawurlencode( $level ) . '&place=' . rawurlencode( $place ) . '&session=' . $index );
+			$href  = home_url( $base . '&week=' . (int) $week . '&session=' . $index );
 			$main .= '<p><a href="' . esc_url( $href ) . '">' . esc_html( $row['name'] ) . '</a></p>';
 		}
 		if ( $session > 0 && isset( $plan['sessions'][ $session - 1 ] ) ) {
 			$row   = $plan['sessions'][ $session - 1 ];
-			$steps = (int) $row['seconds'] . '|' . (int) $row['rest'];
-			$main .= '<section id="lld-safety"><h2>Safety advice</h2><p>' . esc_html( $plan['safety'] ) . '</p>';
+			$steps = array();
+			foreach ( $row['exercises'] as $exercise ) {
+				$steps[] = (int) $exercise['seconds'] . '|' . (int) $exercise['rest'];
+			}
+			$first = $row['exercises'][0];
+			$main .= '<section id="lld-safety"><h2>Safety advice</h2>';
+			foreach ( $plan['safety'] as $line ) {
+				$main .= '<p>' . esc_html( $line ) . '</p>';
+			}
 			$main .= '<p><button type="button" class="lld-button" id="lld-ready">I\'m ready</button></p></section>';
-			$main .= '<section id="lld-session" hidden><h2 id="lld-exercise">' . esc_html( $row['name'] ) . '</h2>';
-			$main .= '<p id="lld-timer" data-steps="' . esc_attr( $steps ) . '">' . (int) $row['seconds'] . '</p>';
+			$main .= '<section id="lld-session" hidden><h2 id="lld-exercise">' . esc_html( $first['name'] ) . '</h2>';
+			$main .= '<p id="lld-how">' . esc_html( $first['how'] ) . '</p>';
+			$main .= '<p id="lld-timer" data-steps="' . esc_attr( implode( ';', $steps ) ) . '">' . (int) $first['seconds'] . '</p>';
 			$main .= '<p id="lld-phase">exercise</p>';
 			$main .= '<p><button type="button" class="lld-button" id="lld-start">Start</button> <button type="button" class="lld-button" id="lld-pause">Pause</button></p>';
+			$main .= '<ol id="lld-steps">';
+			foreach ( $row['exercises'] as $exercise ) {
+				$main .= '<li data-lld-step data-name="' . esc_attr( $exercise['name'] ) . '" data-how="' . esc_attr( $exercise['how'] ) . '">' . esc_html( $exercise['name'] ) . ': ' . (int) $exercise['seconds'] . ' seconds, then ' . (int) $exercise['rest'] . ' seconds rest.' . ( '' !== $exercise['how'] ? ' ' . esc_html( $exercise['how'] ) : '' ) . '</li>';
+			}
+			$main .= '</ol>';
 			$main .= '<form method="post">';
 			$main .= wp_nonce_field( 'lld_done', 'lld_done_nonce', true, false );
 			$main .= '<input type="hidden" name="lld_session" value="' . (int) $session . '">';
-			$main .= '<input type="hidden" name="level" value="' . esc_attr( $level ) . '"><input type="hidden" name="place" value="' . esc_attr( $place ) . '">';
+			$main .= '<input type="hidden" name="level" value="' . esc_attr( $level ) . '"><input type="hidden" name="place" value="' . esc_attr( $place ) . '"><input type="hidden" name="week" value="' . (int) $week . '">';
 			$main .= lld_button( array( 'label' => 'Done' ) );
 			$main .= '</form></section>';
 		}
@@ -179,11 +275,17 @@ class LLD_Members_Premium {
 		$member_id = LLD_Members_Access::current_member_id();
 		$consent   = LLD_Members_Account::has_consent( $member_id, 'health' );
 		$today     = LLD_Members_Programme::local_today( $member_id );
-		$shown     = self::current_challenge( $today );
-		if ( $consent && 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_join_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_join_nonce'] ) ), 'lld_join' ) && $shown ) {
-			self::join_challenge( $member_id, (int) $shown['parent_id'], $today );
+		// A joined challenge runs its 28 days by the version stored on joining, across the month boundary (Data Model C6).
+		$open  = $consent ? self::open_challenge( $member_id ) : null;
+		$shown = $open ? self::challenge_by_version( $member_id, (string) $open->challenge_version ) : null;
+		if ( ! $shown ) {
+			$open  = null;
+			$shown = self::current_challenge( $member_id, $today );
 		}
-		$row  = $shown ? self::challenge_row( $member_id, (int) $shown['parent_id'] ) : null;
+		if ( $consent && ! $open && 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_join_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_join_nonce'] ) ), 'lld_join' ) && $shown ) {
+			self::join_challenge( $member_id, $shown, $today );
+		}
+		$row  = $open ? $open : ( $shown && $consent ? self::challenge_row( $member_id, (int) $shown['parent_id'] ) : null );
 		$main = '<h1>Challenge</h1>';
 		if ( ! $consent ) {
 			$main .= '<p>progress isn\'t saved</p>';
@@ -200,7 +302,7 @@ class LLD_Members_Premium {
 			$main .= lld_button( array( 'label' => 'Join' ) );
 			$main .= '</form>';
 		}
-		$activities = self::challenge_activities( $shown );
+		$activities = self::challenge_activities( $member_id, $shown );
 		$day        = isset( $_GET['day'] ) ? (int) $_GET['day'] : 0;
 		if ( $row && $consent ) {
 			$start = new DateTimeImmutable( (string) $row->joined_on );
@@ -220,8 +322,9 @@ class LLD_Members_Premium {
 		for ( $i = 1; $i <= 28; $i++ ) {
 			$main .= '<p><a href="' . esc_url( home_url( '/members/challenge/?day=' . $i ) ) . '">Day ' . $i . '</a></p>';
 		}
-		if ( isset( $activities[ $day - 1 ] ) ) {
-			$main .= '<h2>Action for this day</h2><p>' . esc_html( $activities[ $day - 1 ] ) . '</p>';
+		if ( array_key_exists( $day - 1, $activities ) ) {
+			$action = $activities[ $day - 1 ];
+			$main  .= '<h2>Action for this day</h2><p>' . esc_html( null === $action ? LLD_Members_Safety::empty_line( $member_id ) : $action ) . '</p>';
 		}
 		if ( $row && $row->finished_on ) {
 			$badge = self::badge_title( $shown );
@@ -263,6 +366,10 @@ class LLD_Members_Premium {
 		if ( $writable && 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_diary_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_diary_nonce'] ) ), 'lld_diary' ) ) {
 			if ( ! empty( $_POST['lld_undo'] ) ) {
 				self::undo_meal( $member_id, (int) $_POST['lld_undo'] );
+			} elseif ( ! empty( $_POST['lld_remove_photo'] ) ) {
+				self::remove_photo( $member_id, (int) $_POST['lld_remove_photo'] );
+			} elseif ( ! empty( $_POST['lld_day_save'] ) ) {
+				self::save_day( $member_id );
 			} elseif ( self::hides_portion( $member_id ) && array_key_exists( 'lld_portion', $_POST ) ) {
 				self::page( 'Food diary', '<h1>Food diary</h1><p>The portion question is not shown.</p>', 403 );
 				return;
@@ -270,6 +377,8 @@ class LLD_Members_Premium {
 				$saved = self::save_meal( $member_id );
 				if ( is_wp_error( $saved ) ) {
 					$error = 'This file is too large or not a supported type';
+				} else {
+					self::save_day( $member_id );
 				}
 			}
 		}
@@ -278,7 +387,8 @@ class LLD_Members_Premium {
 			$main .= '<p>' . esc_html( $error ) . '</p>';
 		}
 		$main .= $writable ? '<p>You can add meals.</p>' : '<p>This diary is read-only.</p>';
-		$main .= self::diary_list( $member_id );
+		$main .= self::diary_list( $member_id, $writable );
+		$main .= self::day_html( $member_id, $writable );
 		$summary = self::summary_line( $member_id );
 		if ( '' !== $summary ) {
 			$main .= '<p data-lld-summary>' . esc_html( $summary ) . '</p>';
@@ -316,7 +426,8 @@ class LLD_Members_Premium {
 			exit;
 		}
 		$requested = (int) get_query_var( 'lld_member' );
-		if ( ! LLD_Members_Access::can_read( $requested ) ) {
+		// Diary photos open for their own member only: not for another member, and not for an administrator.
+		if ( $requested < 1 || LLD_Members_Access::current_member_id() !== $requested ) {
 			lld_members_layout(
 				array(
 					'title'     => 'This page isn\'t available',
@@ -487,12 +598,21 @@ class LLD_Members_Premium {
 		$email  = isset( $params['email'] ) ? sanitize_email( (string) $params['email'] ) : '';
 		global $wpdb;
 		$member_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE email = %s', $email ) );
+		if ( $member_id && isset( $params['note_ended'] ) ) {
+			self::note_ended( $member_id, sanitize_text_field( (string) $params['note_ended'] ) );
+		}
 		return new WP_REST_Response(
 			array(
 				'badges'    => self::badge_rows( $member_id ),
 				'challenge' => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'challenge' ) . ' WHERE member_id = %d', $member_id ) ),
 				'result'    => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'result' ) . ' WHERE member_id = %d', $member_id ) ),
 				'workout'   => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'workout' ) . ' WHERE member_id = %d', $member_id ) ),
+				'plan'      => $wpdb->get_row( $wpdb->prepare( 'SELECT level, version_key, started_on, current_week FROM ' . LLD_Members_Schema::table( 'workout' ) . ' WHERE member_id = %d AND active = 1', $member_id ), ARRAY_A ),
+				'changes'   => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'workout_change' ) . ' c JOIN ' . LLD_Members_Schema::table( 'workout' ) . ' w ON w.id = c.workout_id WHERE w.member_id = %d', $member_id ) ),
+				'results'   => $wpdb->get_results( $wpdb->prepare( 'SELECT item_version, context_type, programme_day FROM ' . LLD_Members_Schema::table( 'result' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
+				'removals'  => $wpdb->get_results( $wpdb->prepare( 'SELECT premium_ended_on, removed_on, late FROM ' . LLD_Members_Schema::table( 'fb_removal' ) . ' WHERE member_number = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
+				'days'      => $wpdb->get_results( $wpdb->prepare( 'SELECT local_date, water_glasses, hunger, energy FROM ' . LLD_Members_Schema::table( 'diary_day' ) . ' WHERE member_id = %d ORDER BY local_date ASC', $member_id ), ARRAY_A ),
+				'photos'    => $member_id > 0 ? array_map( 'basename', glob( lld_members_private_dir() . '/photos/' . $member_id . '/diary-*' ) ?: array() ) : array(),
 			),
 			200
 		);
@@ -505,7 +625,7 @@ class LLD_Members_Premium {
 		self::catch_ended();
 		self::flag_late();
 		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_removal_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_removal_nonce'] ) ), 'lld_removal' ) ) {
-			self::record_removal( isset( $_POST['lld_member'] ) ? (int) $_POST['lld_member'] : 0 );
+			self::record_removal( isset( $_POST['lld_removal'] ) ? (int) $_POST['lld_removal'] : 0 );
 			echo '<div class="notice notice-success"><p>Removal recorded.</p></div>';
 		}
 		echo '<div class="wrap"><h1>Group removals</h1>';
@@ -527,7 +647,7 @@ class LLD_Members_Premium {
 				}
 				echo '<form method="post">';
 				wp_nonce_field( 'lld_removal', 'lld_removal_nonce' );
-				echo '<input type="hidden" name="lld_member" value="' . (int) $row->member_number . '">';
+				echo '<input type="hidden" name="lld_removal" value="' . (int) $row->id . '">';
 				submit_button( 'Record removal', 'secondary', 'submit', false );
 				echo '</form>';
 			}
@@ -575,15 +695,15 @@ class LLD_Members_Premium {
 	}
 
 	/**
+	 * The member's week: each meal with its safe swap alternatives, and the shopping list.
+	 *
 	 * @param int $member_id Member number.
-	 * @return array{days:array<int,array<string,array<string,mixed>>>,shopping:string[],swap_slot:string,swap_options:array<int,array<string,mixed>>}
+	 * @return array{days:array<int,array<string,array<string,mixed>>>,shopping:string[]}
 	 */
 	private static function meal_view( $member_id ) {
-		$empty = array(
-			'days'         => array(),
-			'shopping'     => array(),
-			'swap_slot'    => '',
-			'swap_options' => array(),
+		$empty    = array(
+			'days'     => array(),
+			'shopping' => array(),
 		);
 		$template = self::matching_template( $member_id );
 		if ( ! $template ) {
@@ -594,44 +714,67 @@ class LLD_Members_Premium {
 		$offer = self::decode_swaps( $template );
 		$days  = array();
 		$bag   = array();
-		$slot_key = '';
-		$options  = array();
 		foreach ( $meals as $day => $slots ) {
-			if ( ! is_array( $slots ) ) {
+			if ( ! is_array( $slots ) || (int) $day < 1 || (int) $day > 7 ) {
 				continue;
 			}
 			foreach ( $slots as $name => $recipe_id ) {
-				$key    = (int) $day . '-' . sanitize_key( (string) $name );
-				$chosen = isset( $swaps[ $key ] ) ? (int) $swaps[ $key ] : (int) $recipe_id;
-				$recipe = self::safe_recipe( $member_id, $chosen );
-				if ( ! $recipe && (int) $chosen !== (int) $recipe_id ) {
-					$recipe = self::safe_recipe( $member_id, (int) $recipe_id );
+				$slot = sanitize_key( (string) $name );
+				if ( ! in_array( $slot, self::MEAL_SLOTS, true ) ) {
+					continue;
 				}
+				$key     = (int) $day . '-' . $slot;
+				$offered = self::offered_ids( $offer, $key, $slot );
+				$planned = self::safe_recipe( $member_id, (int) $recipe_id );
+				$chosen  = null;
+				if ( isset( $swaps[ $key ] ) && in_array( self::version_parent( (string) $swaps[ $key ] ), $offered, true ) ) {
+					$chosen = self::safe_recipe( $member_id, self::version_parent( (string) $swaps[ $key ] ) );
+				}
+				$recipe = $chosen ? $chosen : $planned;
 				if ( ! $recipe ) {
 					continue;
 				}
-				$days[ (int) $day ][ sanitize_key( (string) $name ) ] = $recipe;
+				$options = array();
+				$ids     = $planned ? array_merge( array( (int) $planned['id'] ), $offered ) : $offered;
+				foreach ( array_unique( $ids ) as $option_id ) {
+					if ( (int) $option_id === (int) $recipe['id'] ) {
+						continue;
+					}
+					$option = self::safe_recipe( $member_id, (int) $option_id );
+					if ( $option ) {
+						$options[] = $option;
+					}
+				}
+				$recipe['options']           = $options;
+				$days[ (int) $day ][ $slot ] = $recipe;
 				foreach ( $recipe['ingredients'] as $line ) {
 					$bag[ $line ] = $line;
 				}
 			}
 		}
-		if ( isset( $offer['1-breakfast'] ) && is_array( $offer['1-breakfast'] ) ) {
-			$slot_key = '1-breakfast';
-			foreach ( $offer['1-breakfast'] as $recipe_id ) {
-				$recipe = self::safe_recipe( $member_id, (int) $recipe_id );
-				if ( $recipe ) {
-					$options[] = $recipe;
-				}
-			}
-		}
 		ksort( $days );
 		return array(
-			'days'         => $days,
-			'shopping'     => array_values( $bag ),
-			'swap_slot'    => $slot_key,
-			'swap_options' => $options,
+			'days'     => $days,
+			'shopping' => array_values( $bag ),
 		);
+	}
+
+	/**
+	 * Recipe ids the template offers for one meal: "3-dinner" first, then the slot on every day ("dinner").
+	 *
+	 * @param array<string,mixed> $offer Template swap options.
+	 * @param string              $key   Day and slot, for example 3-dinner.
+	 * @param string              $slot  Slot.
+	 * @return int[]
+	 */
+	private static function offered_ids( $offer, $key, $slot ) {
+		$list = array();
+		if ( isset( $offer[ $key ] ) && is_array( $offer[ $key ] ) ) {
+			$list = $offer[ $key ];
+		} elseif ( isset( $offer[ $slot ] ) && is_array( $offer[ $slot ] ) ) {
+			$list = $offer[ $slot ];
+		}
+		return array_values( array_filter( array_map( 'intval', $list ) ) );
 	}
 
 	/**
@@ -649,6 +792,10 @@ class LLD_Members_Premium {
 		$best    = null;
 		$fallback = null;
 		foreach ( self::approved_of( 'lld_meal' ) as $meal ) {
+			$meal['type'] = 'lld_meal';
+			if ( ! LLD_Members_Safety::allows( $member_id, $meal ) ) {
+				continue;
+			}
 			$fields = isset( $meal['fields'] ) && is_array( $meal['fields'] ) ? $meal['fields'] : array();
 			if ( $track && (int) ( $fields['track_id'] ?? 0 ) !== (int) $track ) {
 				continue;
@@ -714,15 +861,33 @@ class LLD_Members_Premium {
 		}
 		$slot   = isset( $_POST['lld_slot'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_slot'] ) ) : '';
 		$recipe = isset( $_POST['lld_recipe'] ) ? (int) $_POST['lld_recipe'] : 0;
-		if ( '' === $slot || ! self::safe_recipe( $member_id, $recipe ) ) {
+		if ( ! preg_match( '/^([1-7])-(breakfast|lunch|dinner|snack)$/', $slot, $parts ) ) {
 			return;
 		}
 		$template = self::matching_template( $member_id );
 		if ( ! $template ) {
 			return;
 		}
-		$swaps          = self::saved_swaps( $member_id, $template );
-		$swaps[ $slot ] = $recipe;
+		// Only an alternative this meal offers right now; meal_view has applied the safety matrix to each one.
+		$view   = self::meal_view( $member_id );
+		$meal   = $view['days'][ (int) $parts[1] ][ $parts[2] ] ?? null;
+		$picked = null;
+		foreach ( $meal ? $meal['options'] : array() as $option ) {
+			if ( (int) $option['id'] === $recipe ) {
+				$picked = $option;
+			}
+		}
+		if ( ! $picked ) {
+			return;
+		}
+		$meals   = self::decode_meals( $template );
+		$planned = (int) ( $meals[ $parts[1] ][ $parts[2] ] ?? 0 );
+		$swaps   = self::saved_swaps( $member_id, $template );
+		if ( $recipe === $planned ) {
+			unset( $swaps[ $slot ] );
+		} else {
+			$swaps[ $slot ] = (string) $picked['version_key'];
+		}
 		global $wpdb;
 		$today = LLD_Members_Programme::local_today( $member_id );
 		$start = ( new DateTimeImmutable( $today ) )->modify( '-' . ( (int) ( new DateTimeImmutable( $today ) )->format( 'N' ) - 1 ) . ' days' )->format( 'Y-m-d' );
@@ -793,6 +958,7 @@ class LLD_Members_Premium {
 		}
 		return array(
 			'id'          => (int) $snap['parent_id'],
+			'version_key' => self::version_key( $snap ),
 			'title'       => (string) $snap['title'],
 			'ingredients' => $lines,
 		);
@@ -812,78 +978,409 @@ class LLD_Members_Premium {
 	 */
 	private static function send_shopping_pdf( $member_id ) {
 		$view = self::meal_view( $member_id );
-		$text = $view['shopping'] ? implode( '; ', $view['shopping'] ) : 'Shopping list';
-		$text = str_replace( array( '(', ')', '\\' ), ' ', $text );
-		$body = "BT /F1 12 Tf 72 720 Td (" . $text . ") Tj ET";
-		$pdf  = "%PDF-1.1\n";
-		$pdf .= "1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n";
-		$pdf .= "2 0 obj<< /Type /Pages /Count 1 /Kids [3 0 R] >>endobj\n";
-		$pdf .= "3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources<< /Font<< /F1 5 0 R >> >> >>endobj\n";
-		$pdf .= '4 0 obj<< /Length ' . strlen( $body ) . " >>stream\n" . $body . "\nendstream\nendobj\n";
-		$pdf .= "5 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj\n";
-		$start = strlen( $pdf );
-		$pdf  .= "xref\n0 6\n";
-		$pdf  .= "0000000000 65535 f \n";
-		for ( $i = 1; $i <= 5; $i++ ) {
-			$pdf .= sprintf( "%010d 00000 n \n", 9 );
-		}
-		$pdf .= "trailer<< /Size 6 /Root 1 0 R >>\nstartxref\n" . $start . "\n%%EOF";
+		$pdf  = self::shopping_pdf( 'Shopping list', $view['shopping'] );
 		header( 'Content-Type: application/pdf' );
 		header( 'Content-Disposition: attachment; filename="shopping-list.pdf"' );
+		header( 'Content-Length: ' . strlen( $pdf ) );
 		header( 'Cache-Control: no-store' );
-		echo $pdf;
+		echo $pdf; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- binary PDF.
 		exit;
 	}
 
 	/**
-	 * @param string $level Level.
-	 * @param string $place home or equipment.
-	 * @param int    $week  Week number.
-	 * @return array{safety:string,sessions:array<int,array<string,mixed>>}|null
+	 * A plain PDF 1.4 shopping list without a library: Helvetica in WinAnsi encoding, one line per item
+	 * (long items wrap onto indented lines), as many pages as needed, and a cross-reference table with
+	 * the real byte offset of every object.
+	 *
+	 * @param string   $title Heading on the first page.
+	 * @param string[] $items Shopping-list lines, UTF-8.
+	 * @return string PDF bytes.
 	 */
-	private static function workout_plan( $level, $place, $week ) {
-		foreach ( self::approved_of( 'lld_workout' ) as $plan ) {
-			$fields = isset( $plan['fields'] ) && is_array( $plan['fields'] ) ? $plan['fields'] : array();
-			if ( sanitize_key( (string) ( $fields['level'] ?? '' ) ) !== $level ) {
-				continue;
+	public static function shopping_pdf( $title, $items ) {
+		$size    = 11;
+		$leading = 16;
+		$left    = 56;
+		$width   = 612 - 2 * $left;
+		$top     = 740;
+		$bottom  = 56;
+		$rows    = array();
+		foreach ( $items ? $items : array( 'Nothing on the list this week.' ) as $item ) {
+			$text = self::win_ansi( (string) $item );
+			$first = true;
+			foreach ( self::pdf_wrap( "\x95 " . $text, $size, $width - 12 ) as $piece ) {
+				$rows[] = $first ? $piece : '  ' . $piece;
+				$first  = false;
 			}
-			if ( sanitize_key( (string) ( $fields['place'] ?? '' ) ) !== $place ) {
-				continue;
-			}
-			if ( (int) ( $fields['week_number'] ?? 1 ) !== (int) $week ) {
-				continue;
-			}
-			$sessions = array();
-			foreach ( preg_split( '/\r\n|\r|\n/', (string) ( $fields['sessions'] ?? '' ) ) as $line ) {
-				$parts = array_map( 'trim', explode( '|', (string) $line ) );
-				if ( '' === ( $parts[0] ?? '' ) ) {
-					continue;
-				}
-				$sessions[] = array(
-					'name'    => $parts[0],
-					'seconds' => isset( $parts[1] ) ? (int) $parts[1] : 30,
-					'rest'    => isset( $parts[2] ) ? (int) $parts[2] : 15,
-				);
-			}
-			return array(
-				'safety'   => (string) ( $fields['safety'] ?? 'Warm up. Stop if you feel pain.' ),
-				'sessions' => $sessions,
-			);
 		}
-		return null;
+		$pages = array();
+		$y     = $top - 30;
+		$body  = 'BT /F1 16 Tf ' . $left . ' ' . $top . ' Td (' . self::pdf_string( self::win_ansi( (string) $title ) ) . ") Tj ET\n";
+		foreach ( $rows as $row ) {
+			if ( $y < $bottom ) {
+				$pages[] = $body;
+				$body    = '';
+				$y       = $top;
+			}
+			$body .= 'BT /F1 ' . $size . ' Tf ' . $left . ' ' . $y . ' Td (' . self::pdf_string( $row ) . ") Tj ET\n";
+			$y    -= $leading;
+		}
+		$pages[] = $body;
+
+		$objects    = array();
+		$objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+		$objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+		$kids       = array();
+		foreach ( $pages as $index => $stream ) {
+			$page_id             = 4 + 2 * $index;
+			$content_id          = $page_id + 1;
+			$kids[]              = $page_id . ' 0 R';
+			$objects[ $page_id ] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ' . $content_id . ' 0 R >>';
+			$objects[ $content_id ] = '<< /Length ' . strlen( $stream ) . " >>\nstream\n" . $stream . "\nendstream";
+		}
+		$objects[2] = '<< /Type /Pages /Kids [' . implode( ' ', $kids ) . '] /Count ' . count( $pages ) . ' >>';
+		ksort( $objects );
+
+		$pdf     = "%PDF-1.4\n%\xE2\xE3\xCF\xD3\n";
+		$offsets = array();
+		foreach ( $objects as $id => $object ) {
+			$offsets[ $id ] = strlen( $pdf );
+			$pdf           .= $id . " 0 obj\n" . $object . "\nendobj\n";
+		}
+		$xref = strlen( $pdf );
+		$pdf .= "xref\n0 " . ( count( $objects ) + 1 ) . "\n0000000000 65535 f \n";
+		foreach ( $offsets as $offset ) {
+			$pdf .= sprintf( "%010d 00000 n \n", $offset );
+		}
+		$pdf .= 'trailer << /Size ' . ( count( $objects ) + 1 ) . " /Root 1 0 R >>\nstartxref\n" . $xref . "\n%%EOF\n";
+		return $pdf;
 	}
 
 	/**
+	 * UTF-8 to WinAnsi (Windows-1252) bytes; anything outside it becomes "?". Control characters become spaces.
+	 *
+	 * @param string $text UTF-8 text.
+	 */
+	private static function win_ansi( $text ) {
+		static $map = array(
+			0x20AC => 0x80, 0x201A => 0x82, 0x0192 => 0x83, 0x201E => 0x84, 0x2026 => 0x85, 0x2020 => 0x86, 0x2021 => 0x87,
+			0x02C6 => 0x88, 0x2030 => 0x89, 0x0160 => 0x8A, 0x2039 => 0x8B, 0x0152 => 0x8C, 0x017D => 0x8E, 0x2018 => 0x91,
+			0x2019 => 0x92, 0x201C => 0x93, 0x201D => 0x94, 0x2022 => 0x95, 0x2013 => 0x96, 0x2014 => 0x97, 0x02DC => 0x98,
+			0x2122 => 0x99, 0x0161 => 0x9A, 0x203A => 0x9B, 0x0153 => 0x9C, 0x017E => 0x9E, 0x0178 => 0x9F,
+		);
+		$chars = preg_split( '//u', (string) $text, -1, PREG_SPLIT_NO_EMPTY );
+		if ( false === $chars ) {
+			return (string) preg_replace( '/[^\x20-\x7E]/', '?', (string) $text );
+		}
+		$out = '';
+		foreach ( $chars as $char ) {
+			$bytes = array_values( unpack( 'C*', $char ) );
+			$count = count( $bytes );
+			if ( 1 === $count ) {
+				$code = $bytes[0];
+			} elseif ( 2 === $count ) {
+				$code = ( ( $bytes[0] & 0x1F ) << 6 ) | ( $bytes[1] & 0x3F );
+			} elseif ( 3 === $count ) {
+				$code = ( ( $bytes[0] & 0x0F ) << 12 ) | ( ( $bytes[1] & 0x3F ) << 6 ) | ( $bytes[2] & 0x3F );
+			} else {
+				$code = 0x10000;
+			}
+			if ( $code < 0x20 ) {
+				$out .= ' ';
+			} elseif ( $code < 0x7F ) {
+				$out .= chr( $code );
+			} elseif ( $code >= 0xA0 && $code <= 0xFF ) {
+				$out .= chr( $code );
+			} elseif ( isset( $map[ $code ] ) ) {
+				$out .= chr( $map[ $code ] );
+			} else {
+				$out .= '?';
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Word-wrap WinAnsi text to a width in points, using approximate Helvetica widths.
+	 *
+	 * @param string $text  WinAnsi bytes.
+	 * @param int    $size  Font size.
+	 * @param int    $width Width in points.
+	 * @return string[]
+	 */
+	private static function pdf_wrap( $text, $size, $width ) {
+		$measure = static function ( $piece ) use ( $size ) {
+			$units = 0.0;
+			foreach ( '' === $piece ? array() : str_split( $piece ) as $byte ) {
+				if ( false !== strpos( " ,.:;'!|ijlrtf()[]", $byte ) ) {
+					$units += 0.3;
+				} elseif ( false !== strpos( 'ABCDEFGHKMNOQRUVWXYmw@%&', $byte ) || ord( $byte ) >= 0x80 ) {
+					$units += 0.85;
+				} else {
+					$units += 0.56;
+				}
+			}
+			return $units * $size;
+		};
+		$lines = array();
+		$line  = '';
+		foreach ( explode( ' ', $text ) as $word ) {
+			while ( $measure( $word ) > $width ) {
+				$cut = strlen( $word );
+				while ( $cut > 1 && $measure( substr( $word, 0, $cut ) ) > $width ) {
+					--$cut;
+				}
+				if ( '' !== $line ) {
+					$lines[] = $line;
+					$line    = '';
+				}
+				$lines[] = substr( $word, 0, $cut );
+				$word    = (string) substr( $word, $cut );
+			}
+			$try = '' === $line ? $word : $line . ' ' . $word;
+			if ( '' !== $line && $measure( $try ) > $width ) {
+				$lines[] = $line;
+				$line    = $word;
+			} else {
+				$line = $try;
+			}
+		}
+		if ( '' !== $line || ! $lines ) {
+			$lines[] = $line;
+		}
+		return $lines;
+	}
+
+	/**
+	 * Escape WinAnsi bytes for a PDF literal string; bytes above ASCII are written as octal.
+	 *
+	 * @param string $text WinAnsi bytes.
+	 */
+	private static function pdf_string( $text ) {
+		$out = '';
+		foreach ( '' === (string) $text ? array() : str_split( (string) $text ) as $byte ) {
+			if ( '\\' === $byte || '(' === $byte || ')' === $byte ) {
+				$out .= '\\' . $byte;
+			} elseif ( ord( $byte ) >= 0x80 || ord( $byte ) < 0x20 ) {
+				$out .= sprintf( '\\%03o', ord( $byte ) );
+			} else {
+				$out .= $byte;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Approved workout weeks for one level and version that pass the safety matrix: week number => plan.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $level     Level.
+	 * @param string $place     home or equipment.
+	 * @return array<int,array{id:int,version_key:string,safety:string[],sessions:array<int,array<string,mixed>>}>
+	 */
+	private static function workout_weeks( $member_id, $level, $place ) {
+		$weeks = array();
+		foreach ( self::approved_of( 'lld_workout' ) as $plan ) {
+			$plan['type'] = 'lld_workout';
+			if ( ! LLD_Members_Safety::allows( $member_id, $plan ) ) {
+				continue;
+			}
+			$fields = isset( $plan['fields'] ) && is_array( $plan['fields'] ) ? $plan['fields'] : array();
+			if ( sanitize_key( (string) ( $fields['level'] ?? '' ) ) !== $level || sanitize_key( (string) ( $fields['place'] ?? '' ) ) !== $place ) {
+				continue;
+			}
+			$number = max( 1, (int) ( $fields['week_number'] ?? 1 ) );
+			if ( isset( $weeks[ $number ] ) ) {
+				continue;
+			}
+			$sessions = self::parse_sessions( (string) ( $fields['sessions'] ?? '' ) );
+			if ( ! $sessions ) {
+				continue;
+			}
+			$weeks[ $number ] = array(
+				'id'          => (int) $plan['parent_id'],
+				'version_key' => self::version_key( $plan ),
+				'safety'      => self::workout_advice( $member_id, $plan ),
+				'sessions'    => $sessions,
+			);
+		}
+		ksort( $weeks );
+		return $weeks;
+	}
+
+	/**
+	 * @param int    $member_id Member number.
+	 * @param string $level     Level.
+	 * @param string $place     home or equipment.
+	 * @param int    $week      Week number.
+	 * @return array{id:int,version_key:string,safety:string[],sessions:array<int,array<string,mixed>>}|null
+	 */
+	private static function workout_plan( $member_id, $level, $place, $week ) {
+		$weeks = self::workout_weeks( $member_id, $level, $place );
+		return $weeks[ (int) $week ] ?? null;
+	}
+
+	/**
+	 * Sessions from the owner's text. Sessions are blocks separated by a blank line; a line without "|" names the
+	 * session, and each "name | seconds | rest | instructions" line is one exercise. Text with no blank line and no
+	 * session names is the older form: each line is a session with one exercise.
+	 *
+	 * @param string $text Sessions field.
+	 * @return array<int,array{name:string,exercises:array<int,array{name:string,seconds:int,rest:int,how:string}>}>
+	 */
+	private static function parse_sessions( $text ) {
+		$text   = trim( str_replace( array( "\r\n", "\r" ), "\n", (string) $text ) );
+		$blocks = '' === $text ? array() : preg_split( '/\n[ \t]*\n/', $text );
+		$named  = (bool) preg_match( '/^[^|\n]+$/m', $text );
+		if ( 1 === count( $blocks ) && ! $named ) {
+			$blocks = explode( "\n", $text );
+		}
+		$sessions = array();
+		foreach ( $blocks as $block ) {
+			$name      = '';
+			$exercises = array();
+			foreach ( explode( "\n", (string) $block ) as $line ) {
+				$line = trim( $line );
+				if ( '' === $line ) {
+					continue;
+				}
+				if ( false === strpos( $line, '|' ) ) {
+					$name = '' === $name ? $line : $name;
+					continue;
+				}
+				$parts = array_map( 'trim', explode( '|', $line ) );
+				if ( '' === $parts[0] ) {
+					continue;
+				}
+				$exercises[] = array(
+					'name'    => $parts[0],
+					'seconds' => isset( $parts[1] ) && (int) $parts[1] > 0 ? (int) $parts[1] : 30,
+					'rest'    => isset( $parts[2] ) && '' !== $parts[2] ? max( 0, (int) $parts[2] ) : 15,
+					'how'     => isset( $parts[3] ) ? implode( ' | ', array_slice( $parts, 3 ) ) : '',
+				);
+			}
+			if ( ! $exercises ) {
+				continue;
+			}
+			$sessions[] = array(
+				'name'      => '' !== $name ? $name : $exercises[0]['name'],
+				'exercises' => $exercises,
+			);
+		}
+		return $sessions;
+	}
+
+	/**
+	 * Safety advice shown before every workout (FR2-34, requirements section 8.2).
+	 *
+	 * @param int                 $member_id Member number.
+	 * @param array<string,mixed> $plan      Approved workout snapshot.
+	 * @return string[]
+	 */
+	private static function workout_advice( $member_id, $plan ) {
+		$fields = isset( $plan['fields'] ) && is_array( $plan['fields'] ) ? $plan['fields'] : array();
+		$tags   = array();
+		foreach ( ( isset( $plan['tags'] ) && is_array( $plan['tags'] ) ) ? $plan['tags'] : array() as $tag ) {
+			$tags[] = sanitize_title( (string) $tag );
+		}
+		$lines = array();
+		$own   = trim( (string) ( $fields['safety'] ?? '' ) );
+		if ( '' !== $own ) {
+			$lines[] = $own;
+		}
+		$lines[]    = self::WORKOUT_ADVICE;
+		$situations = LLD_Members_Safety::situations( $member_id );
+		if ( in_array( 'diabetes', $situations, true ) ) {
+			$lines[] = self::DIABETES_EXERCISE;
+		}
+		if ( in_array( 'blood-pressure', $situations, true ) && in_array( 'high-intensity', $tags, true ) ) {
+			$lines[] = self::INTENSE_EXERCISE;
+		}
+		foreach ( LLD_Members_Safety::notes( $member_id ) as $note ) {
+			$lines[] = (string) $note;
+		}
+		return array_values( array_unique( $lines ) );
+	}
+
+	/**
+	 * @param mixed $value Posted or stored level.
+	 */
+	private static function level_of( $value ) {
+		$value = sanitize_key( (string) $value );
+		return isset( self::LEVELS[ $value ] ) ? $value : 'beginner';
+	}
+
+	/**
+	 * @param mixed $value Posted or stored version.
+	 */
+	private static function place_of( $value ) {
+		$value = sanitize_key( (string) $value );
+		return in_array( $value, array( 'home', 'equipment' ), true ) ? $value : 'home';
+	}
+
+	/**
+	 * @param int $member_id Member number.
+	 */
+	private static function active_workout( $member_id ) {
+		global $wpdb;
+		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'workout' ) . ' WHERE member_id = %d AND active = 1 ORDER BY id DESC LIMIT 1', $member_id ) );
+	}
+
+	/**
+	 * Week of the plan by the calendar: week 1 for the first 7 days from the start, and so on.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param object $saved     Active workout row.
+	 */
+	private static function elapsed_week( $member_id, $saved ) {
+		$start = (string) $saved->started_on;
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $start ) ) {
+			return 1;
+		}
+		$today = LLD_Members_Programme::local_today( $member_id );
+		if ( $today <= $start ) {
+			return 1;
+		}
+		$days = (int) ( new DateTimeImmutable( $start ) )->diff( new DateTimeImmutable( $today ) )->days;
+		return intdiv( $days, 7 ) + 1;
+	}
+
+	/**
+	 * Current week moves on after 7 days (Data Model C7), never back, and not past the last approved week.
+	 *
+	 * @param object $saved   Active workout row.
+	 * @param int    $elapsed Week by the calendar.
+	 * @param int    $last    Last approved week for this plan.
+	 */
+	private static function advance_week( $saved, $elapsed, $last ) {
+		$stored = max( 1, (int) $saved->current_week );
+		$week   = min( max( $stored, (int) $elapsed ), max( 1, (int) $last ) );
+		if ( $week !== $stored ) {
+			global $wpdb;
+			$wpdb->update( LLD_Members_Schema::table( 'workout' ), array( 'current_week' => $week ), array( 'id' => (int) $saved->id ), array( '%d' ), array( '%d' ) );
+		}
+		return $week;
+	}
+
+	/**
+	 * Save the member's chosen plan. A new level starts again at week 1 and is recorded as a change; a new version
+	 * of the same level keeps the week.
+	 *
 	 * @param int    $member_id Member number.
 	 * @param string $level     Level.
 	 * @param string $place     Version.
 	 */
 	private static function save_workout( $member_id, $level, $place ) {
 		global $wpdb;
-		$table = LLD_Members_Schema::table( 'workout' );
-		$today = LLD_Members_Programme::local_today( $member_id );
-		$current = $wpdb->get_row( $wpdb->prepare( "SELECT id, level FROM {$table} WHERE member_id = %d AND active = 1 LIMIT 1", $member_id ) );
-		if ( $current && (string) $current->level !== $level ) {
+		$table   = LLD_Members_Schema::table( 'workout' );
+		$today   = LLD_Members_Programme::local_today( $member_id );
+		$current = self::active_workout( $member_id );
+		if ( $current && (string) $current->level === $level ) {
+			if ( (string) $current->version_key !== $place ) {
+				$wpdb->update( $table, array( 'version_key' => $place ), array( 'id' => (int) $current->id ), array( '%s' ), array( '%d' ) );
+			}
+			return;
+		}
+		if ( $current ) {
 			$wpdb->update( $table, array( 'active' => 0 ), array( 'id' => (int) $current->id ), array( '%d' ), array( '%d' ) );
 			$wpdb->insert(
 				LLD_Members_Schema::table( 'workout_change' ),
@@ -895,53 +1392,67 @@ class LLD_Members_Premium {
 				array( '%d', '%s', '%s' )
 			);
 		}
-		if ( ! $current || (string) $current->level !== $level ) {
-			$wpdb->insert(
-				$table,
-				array(
-					'member_id'   => $member_id,
-					'level'       => $level,
-					'version_key' => $place,
-					'started_on'  => $today,
-					'current_week'=> 1,
-					'active'      => 1,
-				),
-				array( '%d', '%s', '%s', '%s', '%d', '%d' )
-			);
-		}
+		$wpdb->insert(
+			$table,
+			array(
+				'member_id'    => $member_id,
+				'level'        => $level,
+				'version_key'  => $place,
+				'started_on'   => $today,
+				'current_week' => 1,
+				'active'       => 1,
+			),
+			array( '%d', '%s', '%s', '%s', '%d', '%d' )
+		);
 	}
 
 	/**
-	 * @param int    $member_id Member number.
-	 * @param string $context   workout or challenge.
-	 * @param int    $day       Session or day.
+	 * One result per occurrence (Data Model C8): this session version, in this week of this workout plan.
+	 *
+	 * @param int                 $member_id  Member number.
+	 * @param int                 $workout_id Active workout row.
+	 * @param array<string,mixed> $plan       The week's plan.
+	 * @param int                 $week       Week number.
+	 * @param int                 $index      Session number in the week.
+	 * @return bool False when this occurrence is already saved.
 	 */
-	private static function store_result( $member_id, $context, $day ) {
+	private static function store_session( $member_id, $workout_id, $plan, $week, $index ) {
 		global $wpdb;
-		$wpdb->insert(
-			LLD_Members_Schema::table( 'result' ),
+		$table = LLD_Members_Schema::table( 'result' );
+		$item  = (string) $plan['version_key'] . ':s' . (int) $index;
+		$found = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE member_id = %d AND item_version = %s AND context_type = 'workout' AND context_id = %d AND programme_day = %d", $member_id, $item, $workout_id, $week ) );
+		if ( $found ) {
+			return false;
+		}
+		$ok = $wpdb->insert(
+			$table,
 			array(
-				'member_id'    => $member_id,
-				'item_version' => $context . '-' . $day,
-				'context_type' => $context,
-				'context_id'   => 0,
-				'programme_day'=> $day,
-				'local_date'   => LLD_Members_Programme::local_today( $member_id ),
-				'result'       => 'done',
-				'recorded_at'  => lld_members_now_mysql( $member_id ),
+				'member_id'     => $member_id,
+				'item_version'  => $item,
+				'context_type'  => 'workout',
+				'context_id'    => $workout_id,
+				'programme_day' => (int) $week,
+				'local_date'    => LLD_Members_Programme::local_today( $member_id ),
+				'result'        => 'done',
+				'recorded_at'   => lld_members_now_mysql( $member_id ),
 			),
 			array( '%d', '%s', '%s', '%d', '%d', '%s', '%s', '%s' )
 		);
+		return false !== $ok;
 	}
 
 	/**
 	 * @param string $today Local date.
 	 * @return array<string,mixed>|null
 	 */
-	private static function current_challenge( $today ) {
+	private static function current_challenge( $member_id, $today ) {
 		$month = substr( $today, 0, 7 );
 		$found = null;
 		foreach ( self::approved_of( 'lld_challenge' ) as $challenge ) {
+			$challenge['type'] = 'lld_challenge';
+			if ( ! LLD_Members_Safety::allows( $member_id, $challenge ) ) {
+				continue;
+			}
 			$fields = isset( $challenge['fields'] ) && is_array( $challenge['fields'] ) ? $challenge['fields'] : array();
 			if ( (string) ( $fields['month'] ?? '' ) !== $month ) {
 				continue;
@@ -954,29 +1465,37 @@ class LLD_Members_Premium {
 	}
 
 	/**
+	 * Daily actions by position. An action the safety matrix excludes stays in its day as null, so later days keep their place.
+	 *
+	 * @param int                 $member_id Member number.
 	 * @param array<string,mixed> $challenge Challenge snapshot.
-	 * @return string[]
+	 * @return array<int,string|null>
 	 */
-	private static function challenge_activities( $challenge ) {
+	private static function challenge_activities( $member_id, $challenge ) {
 		$fields = isset( $challenge['fields'] ) && is_array( $challenge['fields'] ) ? $challenge['fields'] : array();
-		$ids    = preg_split( '/\s*,\s*/', (string) ( $fields['activity_ids'] ?? '' ) );
+		$ids    = preg_split( '/\s*,\s*/', trim( (string) ( $fields['activity_ids'] ?? '' ) ) );
 		$titles = array();
 		foreach ( $ids as $id ) {
-			$snap = LLD_Members_Content::shown( (int) $id );
-			if ( is_array( $snap ) ) {
-				$titles[] = (string) $snap['title'];
+			if ( (int) $id < 1 ) {
+				continue;
 			}
+			$snap = LLD_Members_Content::shown( (int) $id );
+			if ( ! is_array( $snap ) ) {
+				continue;
+			}
+			$snap['type'] = 'lld_activity';
+			$titles[]     = LLD_Members_Safety::allows( $member_id, $snap ) ? (string) $snap['title'] : null;
 		}
 		return $titles;
 	}
 
 	/**
-	 * @param int    $member_id    Member number.
-	 * @param int    $challenge_id Challenge id.
-	 * @param string $today        Local date.
+	 * @param int                 $member_id Member number.
+	 * @param array<string,mixed> $challenge Approved challenge snapshot.
+	 * @param string              $today     Local date.
 	 */
-	private static function join_challenge( $member_id, $challenge_id, $today ) {
-		if ( self::challenge_row( $member_id, $challenge_id ) ) {
+	private static function join_challenge( $member_id, $challenge, $today ) {
+		if ( self::challenge_row( $member_id, (int) $challenge['parent_id'] ) ) {
 			return;
 		}
 		global $wpdb;
@@ -984,11 +1503,29 @@ class LLD_Members_Premium {
 			LLD_Members_Schema::table( 'challenge' ),
 			array(
 				'member_id'         => $member_id,
-				'challenge_version' => (string) $challenge_id,
+				'challenge_version' => self::version_key( $challenge ),
 				'joined_on'         => $today,
 			),
 			array( '%d', '%s', '%s' )
 		);
+	}
+
+	/**
+	 * Exact approved version of a content item, as stored on member records: "parent:vN".
+	 *
+	 * @param array<string,mixed> $snap Approved snapshot.
+	 */
+	private static function version_key( $snap ) {
+		return (int) ( $snap['parent_id'] ?? 0 ) . ':v' . (int) ( $snap['version'] ?? 0 );
+	}
+
+	/**
+	 * Parent id from a stored "parent:vN" key; older rows hold the parent id alone.
+	 *
+	 * @param string $stored Stored key.
+	 */
+	private static function version_parent( $stored ) {
+		return (int) strtok( (string) $stored, ':' );
 	}
 
 	/**
@@ -997,7 +1534,34 @@ class LLD_Members_Premium {
 	 */
 	private static function challenge_row( $member_id, $challenge_id ) {
 		global $wpdb;
-		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'challenge' ) . ' WHERE member_id = %d AND challenge_version = %s ORDER BY id DESC LIMIT 1', $member_id, (string) $challenge_id ) );
+		$table = LLD_Members_Schema::table( 'challenge' );
+		return $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE member_id = %d AND ( challenge_version = %s OR challenge_version LIKE %s ) ORDER BY id DESC LIMIT 1", $member_id, (string) (int) $challenge_id, $wpdb->esc_like( (int) $challenge_id . ':' ) . '%' ) );
+	}
+
+	/**
+	 * The member's joined challenge that has not reached day 28 yet.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function open_challenge( $member_id ) {
+		global $wpdb;
+		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'challenge' ) . ' WHERE member_id = %d AND finished_on IS NULL ORDER BY id DESC LIMIT 1', $member_id ) );
+	}
+
+	/**
+	 * The challenge a stored row points at, if it is still approved and safe for this member.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $stored    Stored challenge version.
+	 * @return array<string,mixed>|null
+	 */
+	private static function challenge_by_version( $member_id, $stored ) {
+		$snap = LLD_Members_Content::shown( self::version_parent( $stored ) );
+		if ( ! is_array( $snap ) || 'lld_challenge' !== (string) ( $snap['type'] ?? 'lld_challenge' ) ) {
+			return null;
+		}
+		$snap['type'] = 'lld_challenge';
+		return LLD_Members_Safety::allows( $member_id, $snap ) ? $snap : null;
 	}
 
 	/**
@@ -1244,7 +1808,8 @@ class LLD_Members_Premium {
 		if ( ! in_array( $meal, array( 'breakfast', 'lunch', 'dinner', 'snack' ), true ) ) {
 			$meal = 'breakfast';
 		}
-		$planned = ! empty( $_POST['lld_planned'] );
+		// "I ate the planned meal" is Premium only (FR2-37); a free member's post is taken as a description.
+		$planned = ! empty( $_POST['lld_planned'] ) && LLD_Members_Billing::paid_open( $member_id );
 		$photo   = '';
 		if ( isset( $_FILES['lld_photo'] ) && is_array( $_FILES['lld_photo'] ) ) {
 			$upload_error = isset( $_FILES['lld_photo']['error'] ) ? (int) $_FILES['lld_photo']['error'] : UPLOAD_ERR_NO_FILE;
@@ -1285,11 +1850,15 @@ class LLD_Members_Premium {
 		if ( '' !== $photo ) {
 			$data['photo_path'] = $photo;
 		}
+		$old = $id ? (string) $wpdb->get_var( $wpdb->prepare( "SELECT photo_path FROM {$table} WHERE id = %d AND member_id = %d", $id, $member_id ) ) : '';
 		if ( $id ) {
 			$wpdb->update( $table, $data, array( 'id' => $id ) );
 		} else {
 			$wpdb->insert( $table, $data );
 			$id = (int) $wpdb->insert_id;
+		}
+		if ( '' !== $photo && '' !== $old && $old !== $photo ) {
+			self::delete_photo_file( $member_id, $old );
 		}
 		$cipher = '' !== $text ? LLD_Members_Crypto::encrypt( $text, 'diary_meal:' . $id ) : '';
 		$wpdb->query(
@@ -1315,35 +1884,137 @@ class LLD_Members_Premium {
 		if ( $active ) {
 			$day = LLD_Members_Programme::position_parts( LLD_Members_Programme::programme_day( $member_id, (int) $active->id ) )['day'];
 		}
-		if ( isset( $view['days'][ $day ][ $meal ]['id'] ) ) {
-			return (string) $view['days'][ $day ][ $meal ]['id'];
+		if ( isset( $view['days'][ $day ][ $meal ]['version_key'] ) ) {
+			return (string) $view['days'][ $day ][ $meal ]['version_key'];
 		}
 		return '';
 	}
 
 	/**
+	 * Remove a meal entry, and its photo file with it (requirements section 8.1).
+	 *
 	 * @param int $member_id Member number.
 	 * @param int $meal_id   Meal row.
 	 */
 	private static function undo_meal( $member_id, $meal_id ) {
 		global $wpdb;
-		$wpdb->delete(
-			LLD_Members_Schema::table( 'diary_meal' ),
+		$table = LLD_Members_Schema::table( 'diary_meal' );
+		$photo = (string) $wpdb->get_var( $wpdb->prepare( "SELECT photo_path FROM {$table} WHERE id = %d AND member_id = %d", $meal_id, $member_id ) );
+		$gone  = $wpdb->delete(
+			$table,
 			array(
 				'id'        => $meal_id,
 				'member_id' => $member_id,
 			),
 			array( '%d', '%d' )
 		);
+		if ( $gone && '' !== $photo ) {
+			self::delete_photo_file( $member_id, $photo );
+		}
 	}
 
 	/**
+	 * Remove the photo from one meal entry and delete its file.
+	 *
+	 * @param int $member_id Member number.
+	 * @param int $meal_id   Meal row.
+	 */
+	private static function remove_photo( $member_id, $meal_id ) {
+		global $wpdb;
+		$table = LLD_Members_Schema::table( 'diary_meal' );
+		$photo = (string) $wpdb->get_var( $wpdb->prepare( "SELECT photo_path FROM {$table} WHERE id = %d AND member_id = %d", $meal_id, $member_id ) );
+		if ( '' === $photo ) {
+			return;
+		}
+		$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET photo_path = NULL WHERE id = %d AND member_id = %d", $meal_id, $member_id ) );
+		self::delete_photo_file( $member_id, $photo );
+	}
+
+	/**
+	 * Delete one stored diary photo of this member from the protected store.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $relative  Path as stored on the meal row.
+	 */
+	private static function delete_photo_file( $member_id, $relative ) {
+		$relative = (string) $relative;
+		if ( 0 !== strpos( $relative, (int) $member_id . '/diary-' ) ) {
+			return;
+		}
+		$file = LLD_Members_Photos::resolve( $relative );
+		if ( $file ) {
+			wp_delete_file( $file );
+		}
+	}
+
+	/**
+	 * Today's water, hunger and energy (Data Model C13 daily entries). Only the values given are changed.
+	 *
 	 * @param int $member_id Member number.
 	 */
-	private static function diary_list( $member_id ) {
+	private static function save_day( $member_id ) {
+		$limits = array(
+			'water_glasses' => array( 'lld_water', 0, 40 ),
+			'hunger'        => array( 'lld_hunger', 1, 5 ),
+			'energy'        => array( 'lld_energy', 1, 5 ),
+		);
+		$values = array();
+		foreach ( $limits as $column => $limit ) {
+			$value = self::posted_int( $limit[0] );
+			if ( null !== $value && $value >= $limit[1] && $value <= $limit[2] ) {
+				$values[ $column ] = $value;
+			}
+		}
+		if ( ! $values ) {
+			return;
+		}
 		global $wpdb;
-		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'diary_meal' ) . ' WHERE member_id = %d ORDER BY local_date ASC, id ASC', $member_id ) );
-		$html = '';
+		$table   = LLD_Members_Schema::table( 'diary_day' );
+		$columns = implode( ', ', array_keys( $values ) );
+		$holders = implode( ', ', array_fill( 0, count( $values ), '%d' ) );
+		$updates = implode( ', ', array_map( static function ( $column ) { return $column . ' = VALUES(' . $column . ')'; }, array_keys( $values ) ) );
+		$args    = array_merge( array( $member_id, LLD_Members_Programme::local_today( $member_id ) ), array_values( $values ) );
+		$wpdb->query( $wpdb->prepare( "INSERT INTO {$table} (member_id, local_date, {$columns}) VALUES (%d, %s, {$holders}) ON DUPLICATE KEY UPDATE {$updates}", $args ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- columns from the list above.
+	}
+
+	/**
+	 * Today's water, hunger and energy, with a form while the diary is open.
+	 *
+	 * @param int  $member_id Member number.
+	 * @param bool $writable  Diary open.
+	 */
+	private static function day_html( $member_id, $writable ) {
+		global $wpdb;
+		$today = LLD_Members_Programme::local_today( $member_id );
+		$row   = $wpdb->get_row( $wpdb->prepare( 'SELECT water_glasses, hunger, energy FROM ' . LLD_Members_Schema::table( 'diary_day' ) . ' WHERE member_id = %d AND local_date = %s', $member_id, $today ) );
+		$water = $row && null !== $row->water_glasses ? (string) (int) $row->water_glasses : '';
+		$hunger = $row && null !== $row->hunger ? (string) (int) $row->hunger : '';
+		$energy = $row && null !== $row->energy ? (string) (int) $row->energy : '';
+		$html  = '<h2>Today</h2>';
+		$html .= '<p data-lld-day-extras>Water: ' . esc_html( '' === $water ? 'not logged' : $water . ' glasses' ) . '. Hunger: ' . esc_html( '' === $hunger ? 'not logged' : $hunger . ' of 5' ) . '. Energy: ' . esc_html( '' === $energy ? 'not logged' : $energy . ' of 5' ) . '.</p>';
+		if ( ! $writable ) {
+			return $html;
+		}
+		$html .= '<form method="post" class="lld-form">';
+		$html .= wp_nonce_field( 'lld_diary', 'lld_diary_nonce', true, false );
+		$html .= '<input type="hidden" name="lld_day_save" value="1">';
+		$html .= '<p><label for="lld_water">Glasses of water</label><input id="lld_water" name="lld_water" type="number" min="0" max="40" step="1" inputmode="numeric" value="' . esc_attr( $water ) . '"></p>';
+		$html .= '<p><label for="lld_hunger">Hunger from 1 to 5</label><input id="lld_hunger" name="lld_hunger" type="number" min="1" max="5" step="1" inputmode="numeric" value="' . esc_attr( $hunger ) . '"></p>';
+		$html .= '<p><label for="lld_energy">Energy from 1 to 5</label><input id="lld_energy" name="lld_energy" type="number" min="1" max="5" step="1" inputmode="numeric" value="' . esc_attr( $energy ) . '"></p>';
+		$html .= lld_button( array( 'label' => 'Save today' ) );
+		$html .= '</form>';
+		return $html;
+	}
+
+	/**
+	 * @param int  $member_id Member number.
+	 * @param bool $writable  Diary open.
+	 */
+	private static function diary_list( $member_id, $writable = false ) {
+		global $wpdb;
+		$rows  = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'diary_meal' ) . ' WHERE member_id = %d ORDER BY local_date ASC, id ASC', $member_id ) );
+		$html  = '';
+		$nonce = $writable ? wp_create_nonce( 'lld_diary' ) : '';
 		foreach ( $rows as $row ) {
 			$text = '';
 			if ( is_string( $row->description_ciphertext ) && '' !== $row->description_ciphertext ) {
@@ -1354,14 +2025,22 @@ class LLD_Members_Premium {
 				}
 			}
 			$state = ( 'planned' === (string) $row->entry_type || '' !== $text ) ? 'Logged' : 'Add';
-			$html .= '<p>' . esc_html( ucfirst( (string) $row->meal ) ) . ': ' . esc_html( $state );
+			$html .= '<div class="lld-diary-entry" data-lld-entry="' . (int) $row->id . '"><p>' . esc_html( ucfirst( (string) $row->meal ) ) . ': ' . esc_html( $state );
 			if ( '' !== $text ) {
 				$html .= ' ' . esc_html( $text );
 			}
-			if ( is_string( $row->photo_path ) && '' !== $row->photo_path ) {
+			$photo = is_string( $row->photo_path ) && '' !== $row->photo_path;
+			if ( $photo ) {
 				$html .= ' <a href="' . esc_url( '/members/diary-photo/' . $member_id . '/?meal=' . (int) $row->id ) . '">Photo</a>';
 			}
 			$html .= '</p>';
+			if ( $writable ) {
+				$html .= '<form method="post" class="lld-inline"><input type="hidden" name="lld_diary_nonce" value="' . esc_attr( $nonce ) . '"><input type="hidden" name="lld_undo" value="' . (int) $row->id . '"><button class="lld-button lld-button-secondary" type="submit">Undo</button></form>';
+				if ( $photo ) {
+					$html .= '<form method="post" class="lld-inline"><input type="hidden" name="lld_diary_nonce" value="' . esc_attr( $nonce ) . '"><input type="hidden" name="lld_remove_photo" value="' . (int) $row->id . '"><button class="lld-button lld-button-secondary" type="submit">Remove photo</button></form>';
+				}
+			}
+			$html .= '</div>';
 		}
 		return $html;
 	}
@@ -1385,9 +2064,6 @@ class LLD_Members_Premium {
 		if ( ! $hide ) {
 			$html .= '<p><label for="lld_portion">Portion</label> <select id="lld_portion" name="lld_portion"><option value=""> </option><option>small</option><option>normal</option><option>large</option></select></p>';
 		}
-		$html .= '<p><label for="lld_water">Glasses of water</label><input id="lld_water" name="lld_water" inputmode="numeric"></p>';
-		$html .= '<p><label for="lld_hunger">Hunger from 1 to 5</label><input id="lld_hunger" name="lld_hunger" inputmode="numeric"></p>';
-		$html .= '<p><label for="lld_energy">Energy from 1 to 5</label><input id="lld_energy" name="lld_energy" inputmode="numeric"></p>';
 		$html .= lld_button( array( 'label' => 'Save meal' ) );
 		$html .= '</form>';
 		return $html;
@@ -1492,22 +2168,20 @@ class LLD_Members_Premium {
 	}
 
 	/**
-	 * @param int $member_id Member number.
+	 * Record the removal for one Premium end that is still outstanding.
+	 *
+	 * @param int $removal_id Removal row.
 	 */
-	private static function record_removal( $member_id ) {
-		if ( $member_id < 1 ) {
+	private static function record_removal( $removal_id ) {
+		if ( $removal_id < 1 ) {
 			return;
 		}
 		global $wpdb;
-		$wpdb->update(
-			LLD_Members_Schema::table( 'fb_removal' ),
-			array(
-				'removed_on' => LLD_Members_Programme::local_today( $member_id ),
-				'late'       => 0,
-			),
-			array( 'member_number' => $member_id ),
-			array( '%s', '%d' ),
-			array( '%d' )
-		);
+		$table  = LLD_Members_Schema::table( 'fb_removal' );
+		$member = (int) $wpdb->get_var( $wpdb->prepare( "SELECT member_number FROM {$table} WHERE id = %d AND removed_on IS NULL", $removal_id ) );
+		if ( $member < 1 ) {
+			return;
+		}
+		$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET removed_on = %s, late = 0 WHERE id = %d AND removed_on IS NULL", LLD_Members_Programme::local_today( $member ), $removal_id ) );
 	}
 }

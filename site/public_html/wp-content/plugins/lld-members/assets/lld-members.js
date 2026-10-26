@@ -150,6 +150,15 @@
       timer.setAttribute("data-rest", parts[1] || "0");
       timer.setAttribute("data-mode", "exercise");
       phase.textContent = "exercise";
+      var items = session.querySelectorAll("[data-lld-step]");
+      var name = document.getElementById("lld-exercise");
+      var how = document.getElementById("lld-how");
+      for (var i = 0; i < items.length; i += 1) {
+        if (i === step) items[i].setAttribute("aria-current", "step");
+        else items[i].removeAttribute("aria-current");
+      }
+      if (items[step] && name) name.textContent = items[step].getAttribute("data-name");
+      if (items[step] && how) how.textContent = items[step].getAttribute("data-how");
     }
     showStep();
     ready.addEventListener("click", function () {
