@@ -21,6 +21,10 @@ class LLD_Members_Billing {
 	 */
 	public static function boot() {
 		add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ) );
+		add_action( 'lld_members_notice_retry', array( __CLASS__, 'retry_notices' ) );
+		if ( ! wp_next_scheduled( 'lld_members_notice_retry' ) ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'lld_members_notice_retry' );
+		}
 	}
 
 	public static function admin_menu() {
@@ -39,6 +43,15 @@ class LLD_Members_Billing {
 			return self::in_period( $member_id );
 		}
 		return true;
+	}
+
+	/**
+	 * Premium now, including cancelled in its paid period and the failed-payment grace period.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function has_premium( $member_id ) {
+		return (int) $member_id > 0 && self::paid_open( (int) $member_id );
 	}
 
 	/**
@@ -98,6 +111,7 @@ class LLD_Members_Billing {
 		self::close_elapsed();
 		self::renewal_reminders();
 		self::mismatch_mail();
+		self::purge_notices();
 	}
 
 	/**
@@ -297,6 +311,11 @@ class LLD_Members_Billing {
 		$member_id = LLD_Members_Access::current_member_id();
 		$reach     = LLD_Members_Stripe::reachable();
 		$main      = '<h1>Checkout</h1>';
+		if ( self::live_keys_refused() ) {
+			$main .= '<div class="lld-fail" role="alert"><p>Payments are switched off on this site.</p></div>';
+			LLD_Members_Personal::render( 'Checkout', $main );
+			return;
+		}
 		if ( is_wp_error( $reach ) ) {
 			$main .= '<div class="lld-fail" role="alert"><p>' . esc_html( LLD_Members_Stripe::try_again_message() ) . '</p></div>';
 			LLD_Members_Personal::render( 'Checkout', $main );
@@ -311,6 +330,13 @@ class LLD_Members_Billing {
 		if ( 'back' === $result ) {
 			$main .= '<p>We\'re confirming your payment. This usually takes less than a minute. Please don\'t pay again.</p>';
 			$main .= lld_button( array( 'label' => 'Check again', 'href' => home_url( '/members/subscription/' ) ) );
+			LLD_Members_Personal::render( 'Checkout', $main );
+			return;
+		}
+		if ( self::has_premium( $member_id ) ) {
+			// A second checkout would start a second subscription while the first keeps charging.
+			$main .= '<p>You already have Premium. No payment was taken.</p>';
+			$main .= lld_button( array( 'label' => 'My subscription', 'href' => home_url( '/members/subscription/' ) ) );
 			LLD_Members_Personal::render( 'Checkout', $main );
 			return;
 		}
@@ -467,22 +493,158 @@ class LLD_Members_Billing {
 		global $wpdb;
 		$table = LLD_Members_Schema::table( 'stripe_notice' );
 		$ref   = sanitize_text_field( (string) $event['id'] );
-		$seen  = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE notice_ref = %s", $ref ) );
-		if ( $seen ) {
-			return new WP_REST_Response( array( 'replay' => true ), 200 );
-		}
-		$wpdb->insert(
+		// The unique notice_ref decides who processes a notice: only the request that wrote the row goes on.
+		$quiet   = $wpdb->suppress_errors( true );
+		$written = $wpdb->insert(
 			$table,
 			array(
-				'notice_ref'        => $ref,
-				'notice_type'       => sanitize_text_field( (string) $event['type'] ),
-				'received_at'       => lld_members_now_mysql(),
-				'processing_state'  => 'processed',
-				'attempts'          => 1,
+				'notice_ref'       => $ref,
+				'notice_type'      => sanitize_text_field( (string) $event['type'] ),
+				'received_at'      => gmdate( 'Y-m-d H:i:s' ),
+				'processing_state' => 'received',
+				'attempts'         => 0,
+				'payload'          => $raw,
+			),
+			array( '%s', '%s', '%s', '%s', '%d', '%s' )
+		);
+		$wpdb->suppress_errors( $quiet );
+		if ( 1 !== $written ) {
+			$seen = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE notice_ref = %s", $ref ) );
+			if ( $seen ) {
+				return new WP_REST_Response( array( 'replay' => true ), 200 );
+			}
+			// Not recorded: Stripe sends it again after a non-2xx answer, so nothing is lost.
+			return new WP_REST_Response( array( 'message' => 'not recorded' ), 500 );
+		}
+		$state = self::process_notice( (int) $wpdb->insert_id, $event );
+		return new WP_REST_Response(
+			array(
+				'ok'    => true,
+				'state' => $state,
+			),
+			200
+		);
+	}
+
+	/**
+	 * Hours to wait after each failed attempt: retries at 1, 3, 7, 15 and 24 hours (T4: 5 times over 24 hours).
+	 */
+	const NOTICE_RETRY_HOURS = array( 1, 2, 4, 8, 9 );
+
+	/**
+	 * True while a notice is applied: a failed write then throws and the notice is retried.
+	 *
+	 * @var bool
+	 */
+	private static $in_notice = false;
+
+	/**
+	 * Apply one recorded notice inside a transaction, then mark it processed, retrying or failed.
+	 *
+	 * @param int                 $id    Notice row.
+	 * @param array<string,mixed> $event Notice.
+	 * @return string processed, retrying or failed.
+	 */
+	private static function process_notice( $id, $event ) {
+		global $wpdb;
+		$table = LLD_Members_Schema::table( 'stripe_notice' );
+		$error = '';
+		$wpdb->query( 'START TRANSACTION' );
+		self::$in_notice = true;
+		try {
+			$forced = lld_members_test_routes_open() ? (string) get_option( 'lld_notice_fail' ) : '';
+			if ( '' !== $forced && $forced === (string) $event['id'] ) {
+				throw new RuntimeException( 'Processing stopped for a test.' );
+			}
+			self::apply_event( $event );
+			$wpdb->query( 'COMMIT' );
+		} catch ( Throwable $e ) {
+			$wpdb->query( 'ROLLBACK' );
+			$error = '' !== $e->getMessage() ? $e->getMessage() : get_class( $e );
+		}
+		self::$in_notice = false;
+		$attempts = 1 + (int) $wpdb->get_var( $wpdb->prepare( "SELECT attempts FROM {$table} WHERE id = %d", $id ) );
+		if ( '' === $error ) {
+			$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'processed', attempts = %d, last_error = NULL, next_attempt_at = NULL, payload = NULL WHERE id = %d", $attempts, $id ) );
+			return 'processed';
+		}
+		$error = substr( sanitize_text_field( $error ), 0, 250 );
+		$retry = $attempts - 1;
+		if ( $retry >= count( self::NOTICE_RETRY_HOURS ) ) {
+			$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'failed', attempts = %d, last_error = %s, next_attempt_at = NULL WHERE id = %d", $attempts, $error, $id ) );
+			wp_mail(
+				(string) get_option( 'admin_email' ),
+				'A Stripe notice could not be processed',
+				'Stripe notice ' . sanitize_text_field( (string) $event['id'] ) . ' (' . sanitize_text_field( (string) $event['type'] ) . ') failed ' . $attempts . " times over 24 hours. Please check it in Stripe.\n"
+			);
+			return 'failed';
+		}
+		$next = gmdate( 'Y-m-d H:i:s', time() + self::NOTICE_RETRY_HOURS[ $retry ] * HOUR_IN_SECONDS );
+		$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'retrying', attempts = %d, last_error = %s, next_attempt_at = %s WHERE id = %d", $attempts, $error, $next, $id ) );
+		return 'retrying';
+	}
+
+	/**
+	 * Hourly: run notices that are due again, and any left "received" by a request that stopped part way.
+	 *
+	 * @param string $now UTC time to judge "due" from; the real time when empty.
+	 * @return int Notices attempted.
+	 */
+	public static function retry_notices( $now = '' ) {
+		global $wpdb;
+		$table = LLD_Members_Schema::table( 'stripe_notice' );
+		$now   = '' !== $now ? $now : gmdate( 'Y-m-d H:i:s' );
+		$stuck = gmdate( 'Y-m-d H:i:s', strtotime( $now . ' UTC' ) - 15 * MINUTE_IN_SECONDS );
+		$rows  = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, processing_state, next_attempt_at, payload FROM {$table} WHERE processing_state IN ('received', 'retrying') AND ( ( next_attempt_at IS NOT NULL AND next_attempt_at <= %s ) OR ( next_attempt_at IS NULL AND received_at <= %s ) ) ORDER BY id ASC LIMIT 50",
+				$now,
+				$stuck
 			)
 		);
-		self::apply_event( $event );
-		return new WP_REST_Response( array( 'ok' => true ), 200 );
+		$count = 0;
+		foreach ( $rows as $row ) {
+			// Claim the row so a second runner leaves it alone.
+			$hold    = gmdate( 'Y-m-d H:i:s', strtotime( $now . ' UTC' ) + 15 * MINUTE_IN_SECONDS );
+			$claimed = null === $row->next_attempt_at
+				? $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'received', next_attempt_at = %s WHERE id = %d AND processing_state = %s AND next_attempt_at IS NULL", $hold, (int) $row->id, (string) $row->processing_state ) )
+				: $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'received', next_attempt_at = %s WHERE id = %d AND processing_state = %s AND next_attempt_at = %s", $hold, (int) $row->id, (string) $row->processing_state, (string) $row->next_attempt_at ) );
+			if ( 1 !== $claimed ) {
+				continue;
+			}
+			$event = is_string( $row->payload ) ? json_decode( $row->payload, true ) : null;
+			if ( ! is_array( $event ) || empty( $event['id'] ) || empty( $event['type'] ) ) {
+				$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'failed', last_error = %s, next_attempt_at = NULL WHERE id = %d", 'The stored notice could not be read.', (int) $row->id ) );
+				continue;
+			}
+			self::process_notice( (int) $row->id, $event );
+			++$count;
+		}
+		return $count;
+	}
+
+	/**
+	 * P6: notice records are kept for 90 days.
+	 */
+	private static function purge_notices() {
+		global $wpdb;
+		$table = LLD_Members_Schema::table( 'stripe_notice' );
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE received_at < %s", gmdate( 'Y-m-d H:i:s', time() - 90 * DAY_IN_SECONDS ) ) );
+	}
+
+	/**
+	 * Throw when a write in the notice path fails, so the transaction rolls back and the notice is retried.
+	 *
+	 * @param int|false $result wpdb result.
+	 * @param string    $what   What was being written.
+	 * @return int
+	 */
+	private static function written( $result, $what ) {
+		if ( false === $result && self::$in_notice ) {
+			global $wpdb;
+			throw new RuntimeException( 'Could not write ' . $what . ': ' . (string) $wpdb->last_error );
+		}
+		return (int) $result;
 	}
 
 	/**
@@ -496,6 +658,7 @@ class LLD_Members_Billing {
 			delete_option( 'lld_codes' );
 			delete_option( 'lld_launch_on' );
 			delete_option( 'lld_reward_stop' );
+			delete_option( 'lld_notice_fail' );
 			delete_option( 'lld_members_stripe_unreachable' );
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
 		}
@@ -504,17 +667,46 @@ class LLD_Members_Billing {
 			return new WP_REST_Response( array( 'expires_on' => self::launch_expires() ), 200 );
 		}
 		if ( 'prices' === $action ) {
-			self::save_prices(
+			$saved = self::save_prices(
 				isset( $params['monthly'] ) ? (int) $params['monthly'] : self::prices()['monthly'],
 				isset( $params['yearly'] ) ? (int) $params['yearly'] : self::prices()['yearly'],
 				isset( $params['code'] ) ? (string) $params['code'] : '',
-				isset( $params['percent'] ) ? (int) $params['percent'] : 0
+				isset( $params['percent'] ) ? (int) $params['percent'] : 0,
+				! empty( $params['confirm'] )
 			);
+			if ( is_wp_error( $saved ) ) {
+				return new WP_REST_Response( array( 'message' => $saved->get_error_message() ), 400 );
+			}
 			return new WP_REST_Response( self::prices(), 200 );
+		}
+		if ( 'admin_log' === $action ) {
+			global $wpdb;
+			$rows = $wpdb->get_results( 'SELECT action, member_number, member_name, member_email, detail, money_related FROM ' . LLD_Members_Schema::table( 'admin_log' ) . " WHERE action IN ('price_change', 'code_created', 'refund', 'reward_withdrawn') ORDER BY id DESC LIMIT 50", ARRAY_A );
+			return new WP_REST_Response( array( 'lines' => $rows ), 200 );
 		}
 		if ( 'stop_reward' === $action ) {
 			update_option( 'lld_reward_stop', '1', false );
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
+		}
+		$notice_ref = isset( $params['ref'] ) ? sanitize_text_field( (string) $params['ref'] ) : '';
+		if ( 'fail_notice' === $action ) {
+			if ( '' === $notice_ref ) {
+				delete_option( 'lld_notice_fail' );
+			} else {
+				update_option( 'lld_notice_fail', $notice_ref, false );
+			}
+			return new WP_REST_Response( array( 'ok' => true ), 200 );
+		}
+		if ( 'notice' === $action || 'retry_notice' === $action ) {
+			global $wpdb;
+			$table = LLD_Members_Schema::table( 'stripe_notice' );
+			if ( 'retry_notice' === $action ) {
+				// Make this one notice due now; other notices keep their own times.
+				$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET next_attempt_at = %s WHERE notice_ref = %s AND processing_state IN ('received', 'retrying')", gmdate( 'Y-m-d H:i:s', time() - 60 ), $notice_ref ) );
+				self::retry_notices();
+			}
+			$row = $wpdb->get_row( $wpdb->prepare( "SELECT notice_ref, notice_type, processing_state, attempts, last_error, next_attempt_at, payload IS NOT NULL AS has_payload FROM {$table} WHERE notice_ref = %s", $notice_ref ), ARRAY_A );
+			return new WP_REST_Response( array( 'notice' => $row ), 200 );
 		}
 		$email = isset( $params['email'] ) ? sanitize_email( (string) $params['email'] ) : '';
 		$member_id = self::member_by_email( $email );
@@ -528,6 +720,9 @@ class LLD_Members_Billing {
 			}
 			if ( ! in_array( $country, array( 'GB', 'DE', 'US' ), true ) ) {
 				$country = 'US';
+			}
+			if ( self::has_premium( $member_id ) ) {
+				return new WP_REST_Response( array( 'message' => 'You already have Premium.' ), 409 );
 			}
 			$quote   = self::quote( $member_id, $plan, $country, $code );
 			$session = 'cs_test_' . bin2hex( random_bytes( 8 ) );
@@ -553,23 +748,41 @@ class LLD_Members_Billing {
 			$yearly  = isset( $_POST['lld_yearly'] ) ? (int) round( (float) wp_unslash( $_POST['lld_yearly'] ) * 100 ) : self::prices()['yearly'];
 			$code    = isset( $_POST['lld_new_code'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_new_code'] ) ) : '';
 			$percent = isset( $_POST['lld_percent'] ) ? (int) wp_unslash( $_POST['lld_percent'] ) : 0;
-			self::save_prices( $monthly, $yearly, $code, $percent );
-			echo '<div class="notice notice-success"><p>Saved</p></div>';
+			$confirm = ! empty( $_POST['lld_confirm_free'] );
+			$saved   = self::save_prices( $monthly, $yearly, $code, $percent, $confirm );
+			if ( is_wp_error( $saved ) ) {
+				echo '<div class="notice notice-error"><p>' . esc_html( $saved->get_error_message() ) . '</p></div>';
+			} else {
+				echo '<div class="notice notice-success"><p>Saved</p></div>';
+			}
 		}
+		$ask = 0;
 		if ( isset( $_POST['lld_refund_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_refund_nonce'] ) ), 'lld_refund' ) ) {
-			$order_id = isset( $_POST['lld_order'] ) ? (int) $_POST['lld_order'] : 0;
-			$result   = self::refund_order( $order_id );
-			echo '<div class="notice"><p>' . esc_html( is_wp_error( $result ) ? $result->get_error_message() : 'Refunded' ) . '</p></div>';
+			$order_id  = isset( $_POST['lld_order'] ) ? absint( wp_unslash( $_POST['lld_order'] ) ) : 0;
+			$confirmed = isset( $_POST['lld_refund_confirm'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_refund_confirm'] ) ), 'lld_refund_confirm_' . $order_id );
+			if ( $confirmed ) {
+				$result = self::refund_order( $order_id );
+				echo '<div class="notice"><p>' . esc_html( is_wp_error( $result ) ? $result->get_error_message() : 'Refunded' ) . '</p></div>';
+			} else {
+				$ask = $order_id;
+			}
 		}
 		$prices = self::prices();
 		echo '<div class="wrap"><h1>Payments</h1>';
+		if ( self::live_keys_refused() ) {
+			echo '<div class="notice notice-error"><p>A live Stripe key is set outside production. Checkout is switched off until it is replaced with a test key.</p></div>';
+		}
 		echo '<form method="post">';
 		wp_nonce_field( 'lld_pay', 'lld_pay_nonce' );
 		echo '<p><label>Monthly price US$ <input name="lld_monthly" value="' . esc_attr( number_format( $prices['monthly'] / 100, 2, '.', '' ) ) . '"></label></p>';
 		echo '<p><label>Yearly price US$ <input name="lld_yearly" value="' . esc_attr( number_format( $prices['yearly'] / 100, 2, '.', '' ) ) . '"></label></p>';
 		echo '<p><label>New code <input name="lld_new_code"></label> <label>Percent off the first month <input name="lld_percent" value="50"></label></p>';
+		echo '<p><label><input type="checkbox" name="lld_confirm_free" value="1"> I confirm a price of 0 or a 100 % code</label></p>';
 		echo '<p><button class="button button-primary">Save prices</button></p></form>';
 		echo '<h2>Refund the first payment</h2>';
+		if ( $ask > 0 ) {
+			self::refund_confirm( $ask );
+		}
 		self::admin_refunds();
 		echo '</div>';
 	}
@@ -610,29 +823,155 @@ class LLD_Members_Billing {
 		$type   = (string) $event['type'];
 		$object = isset( $event['data']['object'] ) && is_array( $event['data']['object'] ) ? $event['data']['object'] : array();
 		if ( 'customer.subscription.deleted' === $type ) {
-			$sub_id = isset( $object['id'] ) ? (string) $object['id'] : '';
-			$row    = self::by_stripe_subscription( $sub_id );
-			if ( ! $row ) {
-				self::hold_cancel( $sub_id );
-				return;
-			}
-			self::cancel_at_period_end( (int) $row->member_id );
+			self::apply_subscription_deleted( $object );
+			return;
+		}
+		if ( 'customer.subscription.updated' === $type ) {
+			self::apply_subscription_updated( $object );
 			return;
 		}
 		if ( 'invoice.payment_failed' === $type ) {
-			$row = self::by_stripe_subscription( isset( $object['subscription'] ) ? (string) $object['subscription'] : '' );
+			$sub_id = isset( $object['subscription'] ) ? (string) $object['subscription'] : '';
+			$row    = self::by_stripe_subscription( $sub_id );
 			if ( $row ) {
-				self::mark_retry( (int) $row->member_id );
+				$invoice = isset( $object['id'] ) && '' !== (string) $object['id'] ? (string) $object['id'] : 'sub:' . $sub_id;
+				self::mark_retry( (int) $row->member_id, sanitize_text_field( $invoice ) );
 			}
 			return;
 		}
 		if ( 'invoice.paid' === $type ) {
+			// The first invoice is already recorded from checkout.session.completed; a second order and receipt would double it.
+			if ( isset( $object['billing_reason'] ) && 'subscription_create' === (string) $object['billing_reason'] ) {
+				return;
+			}
 			self::apply_renewal( $object );
+			return;
+		}
+		if ( 'charge.refunded' === $type ) {
+			self::apply_charge_refunded( $object );
 			return;
 		}
 		if ( 'checkout.session.completed' === $type ) {
 			self::apply_checkout( $object );
 		}
+	}
+
+	/**
+	 * T4: a subscription that has ended means Premium ended, unless the first payment was refunded.
+	 *
+	 * @param array<string,mixed> $object Subscription object.
+	 */
+	private static function apply_subscription_deleted( $object ) {
+		$sub_id = isset( $object['id'] ) ? (string) $object['id'] : '';
+		$row    = self::by_stripe_subscription( $sub_id );
+		if ( ! $row ) {
+			// The cancellation arrived before its payment notice; checkout applies it when the payment arrives.
+			self::hold_cancel( $sub_id );
+			return;
+		}
+		$member_id = (int) $row->member_id;
+		if ( in_array( strtolower( (string) $row->access_state ), array( 'premium ended', 'refunded' ), true ) ) {
+			return;
+		}
+		$reason = isset( $object['cancellation_details']['reason'] ) ? (string) $object['cancellation_details']['reason'] : '';
+		self::clear_retry( $member_id );
+		self::end_premium( $member_id, 'payment_failed' === $reason ? 'failed' : 'expired', LLD_Members_Programme::local_today( $member_id ) );
+	}
+
+	/**
+	 * T4 mapping from the subscription in the notice. Fetching the current state from Stripe is still to come.
+	 *
+	 * @param array<string,mixed> $object Subscription object.
+	 */
+	private static function apply_subscription_updated( $object ) {
+		$row = self::by_stripe_subscription( isset( $object['id'] ) ? (string) $object['id'] : '' );
+		if ( ! $row ) {
+			return;
+		}
+		$member_id = (int) $row->member_id;
+		$access    = strtolower( (string) $row->access_state );
+		if ( in_array( $access, array( 'premium ended', 'refunded' ), true ) ) {
+			// Ended access comes back only through a new checkout.
+			return;
+		}
+		$status = isset( $object['status'] ) ? (string) $object['status'] : '';
+		$fields = array();
+		$ends   = self::period_end_of( $member_id, $object );
+		if ( '' !== $ends ) {
+			$fields['period_ends_on'] = $ends;
+		}
+		if ( in_array( $status, array( 'active', 'trialing' ), true ) ) {
+			$cancelling = ! empty( $object['cancel_at_period_end'] ) || ! empty( $object['cancel_at'] );
+			$fields['access_state'] = $cancelling ? 'cancelled' : 'Premium';
+			$fields['stripe_state'] = $cancelling ? 'cancel_at_period_end' : 'active';
+			if ( ! $cancelling ) {
+				self::clear_retry( $member_id );
+			}
+		} elseif ( 'past_due' === $status ) {
+			// Grace period: access is unchanged while Stripe retries (the window starts at the failed invoice).
+			$fields['stripe_state'] = 'past_due';
+		} elseif ( in_array( $status, array( 'unpaid', 'canceled', 'incomplete_expired' ), true ) ) {
+			self::clear_retry( $member_id );
+			self::end_premium( $member_id, 'canceled' === $status ? 'expired' : 'failed', LLD_Members_Programme::local_today( $member_id ) );
+			return;
+		}
+		if ( $fields ) {
+			self::save_sub( $member_id, $fields );
+		}
+	}
+
+	/**
+	 * A charge refunded in full at Stripe. The admin refund already recorded it when it started here.
+	 *
+	 * @param array<string,mixed> $object Charge object.
+	 */
+	private static function apply_charge_refunded( $object ) {
+		if ( empty( $object['refunded'] ) ) {
+			// A partial refund changes no access.
+			return;
+		}
+		$payment = isset( $object['payment_intent'] ) ? (string) $object['payment_intent'] : '';
+		if ( '' === $payment ) {
+			return;
+		}
+		global $wpdb;
+		$order = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'order' ) . " WHERE stripe_payment = %s AND kind IN ('payment', 'renewal') ORDER BY id DESC LIMIT 1", $payment ) );
+		if ( ! $order || 'refunded' === (string) $order->status ) {
+			return;
+		}
+		$refund = '';
+		if ( isset( $object['refunds']['data'][0]['id'] ) ) {
+			$refund = (string) $object['refunds']['data'][0]['id'];
+		} elseif ( isset( $object['id'] ) ) {
+			$refund = 're_' . (string) $object['id'];
+		}
+		self::record_refund( $order, sanitize_text_field( $refund ), 'Stripe' );
+	}
+
+	/**
+	 * Current period end as the member's local date, from the subscription or its first item.
+	 *
+	 * @param int                 $member_id Member number.
+	 * @param array<string,mixed> $object    Subscription object.
+	 */
+	private static function period_end_of( $member_id, $object ) {
+		$stamp = 0;
+		if ( isset( $object['current_period_end'] ) && is_numeric( $object['current_period_end'] ) ) {
+			$stamp = (int) $object['current_period_end'];
+		} elseif ( isset( $object['items']['data'][0]['current_period_end'] ) && is_numeric( $object['items']['data'][0]['current_period_end'] ) ) {
+			$stamp = (int) $object['items']['data'][0]['current_period_end'];
+		}
+		if ( $stamp < 1 ) {
+			return '';
+		}
+		global $wpdb;
+		$zone = $wpdb->get_var( $wpdb->prepare( 'SELECT timezone FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+		try {
+			$tz = new DateTimeZone( is_string( $zone ) && '' !== $zone ? $zone : 'UTC' );
+		} catch ( Exception $e ) {
+			$tz = new DateTimeZone( 'UTC' );
+		}
+		return ( new DateTimeImmutable( '@' . $stamp ) )->setTimezone( $tz )->format( 'Y-m-d' );
 	}
 
 	/**
@@ -658,6 +997,13 @@ class LLD_Members_Billing {
 		$payment  = isset( $object['payment_intent'] ) ? sanitize_text_field( (string) $object['payment_intent'] ) : $session;
 		$fingerprint = isset( $object['fingerprint'] ) ? sanitize_text_field( (string) $object['fingerprint'] ) : '';
 		$email    = isset( $object['email'] ) ? sanitize_email( (string) $object['email'] ) : self::email_of( $member_id );
+		$current  = self::subscription_row( $member_id );
+		if ( self::has_premium( $member_id ) && $current && '' !== (string) $current->stripe_subscription && (string) $current->stripe_subscription !== $stripe ) {
+			// Paid twice: keep the first subscription, record the payment so the owner can refund it, and flag it.
+			self::insert_order( $member_id, 'payment', $quote, $payment, $email, $fingerprint );
+			self::flag_mismatch( $member_id, $today );
+			return;
+		}
 		self::insert_order( $member_id, 'payment', $quote, $payment, $email, $fingerprint );
 		self::save_sub(
 			$member_id,
@@ -677,10 +1023,11 @@ class LLD_Members_Billing {
 		);
 		self::remember_card( $member_id, $fingerprint );
 		self::note_referral( $member_id, isset( $stored['ref'] ) ? (string) $stored['ref'] : '', $email, $fingerprint );
-		if ( self::cancel_was_held( $stripe ) ) {
-			self::cancel_at_period_end( $member_id );
-		}
 		self::mail_member( $member_id, 'Your receipt', 'Your receipt. Amount ' . self::money( (int) $quote['charged'], (string) $quote['currency'] ) . ', tax included. Date ' . $today . '.' );
+		if ( self::cancel_was_held( $stripe ) ) {
+			// The subscription ended before its payment notice arrived: T4 maps that to Premium ended.
+			self::end_premium( $member_id, 'expired', $today );
+		}
 	}
 
 	/**
@@ -732,15 +1079,46 @@ class LLD_Members_Billing {
 	}
 
 	/**
-	 * @param int $member_id Member number.
+	 * Retry windows keyed on the failed invoice. Older entries keyed on the member are read as one window each.
+	 *
+	 * @return array<string,array{member_id:int,from:string}>
 	 */
-	private static function mark_retry( $member_id ) {
-		$retries = get_option( 'lld_retries' );
-		if ( ! is_array( $retries ) ) {
-			$retries = array();
+	private static function retries() {
+		$stored = get_option( 'lld_retries' );
+		$out    = array();
+		if ( ! is_array( $stored ) ) {
+			return $out;
 		}
-		$retries[ (string) $member_id ] = LLD_Members_Programme::local_today( $member_id );
-		update_option( 'lld_retries', $retries, false );
+		foreach ( $stored as $key => $value ) {
+			if ( is_array( $value ) && isset( $value['member_id'], $value['from'] ) ) {
+				$out[ (string) $key ] = array(
+					'member_id' => (int) $value['member_id'],
+					'from'      => (string) $value['from'],
+				);
+			} elseif ( is_string( $value ) && is_numeric( $key ) ) {
+				$out[ 'member:' . (int) $key ] = array(
+					'member_id' => (int) $key,
+					'from'      => $value,
+				);
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * @param int    $member_id Member number.
+	 * @param string $invoice   Stripe invoice the failure belongs to.
+	 */
+	private static function mark_retry( $member_id, $invoice ) {
+		$retries = self::retries();
+		// The 7-day window belongs to the invoice and starts at its first failure. Later retries of it never move it.
+		if ( ! isset( $retries[ $invoice ] ) ) {
+			$retries[ $invoice ] = array(
+				'member_id' => (int) $member_id,
+				'from'      => LLD_Members_Programme::local_today( $member_id ),
+			);
+			update_option( 'lld_retries', $retries, false );
+		}
 		self::save_sub( $member_id, array( 'stripe_state' => 'past_due' ) );
 		self::mail_member( $member_id, 'Please update your card', 'Please update your card. Your Premium access continues while we retry for 7 days.' );
 	}
@@ -816,7 +1194,29 @@ class LLD_Members_Billing {
 		if ( $today > $limit ) {
 			return new WP_Error( 'lld_refund', 'Refunds of the first payment are available for 14 days.' );
 		}
-		$ref = 're_test_' . $order_id;
+		if ( 'refunded' === (string) $order->status ) {
+			return new WP_Error( 'lld_refund', 'This payment is already refunded.' );
+		}
+		self::record_refund( $order, 're_test_' . $order_id, 'owner' );
+		return true;
+	}
+
+	/**
+	 * Record a refund of a payment or renewal once. Only a refunded first payment changes access (T4).
+	 *
+	 * @param object $order Order row that was refunded.
+	 * @param string $ref   Stripe refund reference.
+	 * @param string $by    Who started it: owner or Stripe.
+	 */
+	private static function record_refund( $order, $ref, $by ) {
+		global $wpdb;
+		$table     = LLD_Members_Schema::table( 'order' );
+		$member_id = (int) $order->member_id;
+		$order_id  = (int) $order->id;
+		$marked    = self::written( $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET status = 'refunded' WHERE id = %d AND status <> 'refunded'", $order_id ) ), 'an order' );
+		if ( 1 !== $marked ) {
+			return;
+		}
 		self::insert_order(
 			$member_id,
 			'refund',
@@ -832,25 +1232,30 @@ class LLD_Members_Billing {
 			(string) $order->billing_email,
 			''
 		);
-		$wpdb->update( $table, array( 'status' => 'refunded' ), array( 'id' => $order_id ) );
-		self::end_premium( $member_id, 'refund', $today );
-		self::withdraw_rewards_for_order( $order_id );
-		return true;
+		self::admin_log( 'refund', $member_id, 'Order ' . $order_id . ' (' . (string) $order->kind . ') refunded in full: ' . self::money( (int) $order->charged_amount, (string) $order->charged_currency ) . ', started by ' . $by . ', reference ' . $ref . '.' );
+		if ( 'payment' === (string) $order->kind ) {
+			self::end_premium( $member_id, 'refund', LLD_Members_Programme::local_today( $member_id ) );
+			self::withdraw_rewards_for_order( $order_id );
+		}
 	}
 
 	private static function retry_window() {
-		$retries = get_option( 'lld_retries' );
-		if ( ! is_array( $retries ) ) {
+		$retries = self::retries();
+		if ( ! $retries ) {
 			return;
 		}
-		foreach ( $retries as $member_id => $from ) {
-			$member_id = (int) $member_id;
+		foreach ( $retries as $invoice => $window ) {
+			$member_id = (int) $window['member_id'];
 			$today     = LLD_Members_Programme::local_today( $member_id );
-			$due       = ( new DateTimeImmutable( (string) $from ) )->modify( '+7 days' )->format( 'Y-m-d' );
-			if ( $today >= $due ) {
-				self::end_premium( $member_id, 'failed', $today );
-				unset( $retries[ (string) $member_id ] );
+			$due       = ( new DateTimeImmutable( (string) $window['from'] ) )->modify( '+7 days' )->format( 'Y-m-d' );
+			if ( $today < $due ) {
+				continue;
 			}
+			$sub = self::subscription_row( $member_id );
+			if ( $sub && ! in_array( strtolower( (string) $sub->access_state ), array( 'premium ended', 'refunded' ), true ) ) {
+				self::end_premium( $member_id, 'failed', $today );
+			}
+			unset( $retries[ $invoice ] );
 		}
 		update_option( 'lld_retries', $retries, false );
 	}
@@ -975,7 +1380,17 @@ class LLD_Members_Billing {
 			return;
 		}
 		$wpdb->update( LLD_Members_Schema::table( 'referral' ), array( 'status' => 'refunded' ), array( 'id' => (int) $referral->id ) );
-		$wpdb->query( $wpdb->prepare( 'UPDATE ' . LLD_Members_Schema::table( 'reward' ) . " SET status = 'withdrawn', withdrawn_on = %s, withdrawn_why = %s WHERE referral_id = %d AND status = 'pending'", lld_members_now_mysql(), 'refund', (int) $referral->id ) );
+		if ( 'waiting' === (string) $referral->status ) {
+			self::admin_log( 'reward_withdrawn', (int) $referral->referrer_member_id, 'Referral ' . (int) $referral->id . ' earns no reward: the friend\'s first payment, order ' . (int) $order_id . ', was refunded.' );
+		}
+		$table   = LLD_Members_Schema::table( 'reward' );
+		$pending = $wpdb->get_results( $wpdb->prepare( "SELECT id, recipient_member_id, form FROM {$table} WHERE referral_id = %d AND status = 'pending'", (int) $referral->id ) );
+		foreach ( $pending as $reward ) {
+			$done = $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET status = 'withdrawn', withdrawn_on = %s, withdrawn_why = %s WHERE id = %d AND status = 'pending'", lld_members_now_mysql(), 'refund', (int) $reward->id ) );
+			if ( 1 === $done ) {
+				self::admin_log( 'reward_withdrawn', (int) $reward->recipient_member_id, 'Reward ' . (int) $reward->id . ' (' . (string) $reward->form . ') withdrawn: the friend\'s payment, order ' . (int) $order_id . ', was refunded.' );
+			}
+		}
 	}
 
 	/**
@@ -1091,21 +1506,78 @@ class LLD_Members_Billing {
 	 * @param int    $monthly Monthly cents.
 	 * @param int    $yearly  Yearly cents.
 	 * @param string $code    Optional new code.
-	 * @param int    $percent Percent off the first month.
+	 * @param int    $percent   Percent off the first month.
+	 * @param bool   $confirmed The owner ticked the confirm box for a price of 0 or a 100 % code.
+	 * @return true|WP_Error
 	 */
-	private static function save_prices( $monthly, $yearly, $code, $percent ) {
-		update_option( 'lld_prices', array( 'monthly' => max( 0, $monthly ), 'yearly' => max( 0, $yearly ) ), false );
-		$code = strtoupper( trim( $code ) );
-		if ( '' === $code || $percent < 1 ) {
-			return;
+	private static function save_prices( $monthly, $yearly, $code, $percent, $confirmed = false ) {
+		$monthly = max( 0, (int) $monthly );
+		$yearly  = max( 0, (int) $yearly );
+		$code    = strtoupper( trim( $code ) );
+		$percent = min( 100, (int) $percent );
+		$new     = '' !== $code && $percent >= 1;
+		$free    = 0 === $monthly || 0 === $yearly || ( $new && 100 === $percent );
+		if ( $free && ! $confirmed ) {
+			return new WP_Error( 'lld_free', 'A price of 0 or a 100 % code needs the confirm box ticked. Nothing was saved.' );
+		}
+		$before = self::prices();
+		update_option( 'lld_prices', array( 'monthly' => $monthly, 'yearly' => $yearly ), false );
+		$changes = array();
+		foreach ( array( 'monthly' => $monthly, 'yearly' => $yearly ) as $plan => $cents ) {
+			if ( (int) $before[ $plan ] !== $cents ) {
+				$changes[] = ucfirst( $plan ) . ' ' . self::money( (int) $before[ $plan ], 'usd' ) . ' to ' . self::money( $cents, 'usd' );
+			}
+		}
+		if ( $changes ) {
+			self::admin_log( 'price_change', 0, implode( '; ', $changes ) . ( $confirmed && ( 0 === $monthly || 0 === $yearly ) ? ' (price of 0 confirmed)' : '' ) );
+		}
+		if ( ! $new ) {
+			return true;
 		}
 		$codes   = self::codes();
+		$expires = self::launch_expires();
 		$codes[] = array(
 			'code'       => $code,
-			'percent'    => min( 100, $percent ),
-			'expires_on' => self::launch_expires(),
+			'percent'    => $percent,
+			'expires_on' => $expires,
 		);
 		update_option( 'lld_codes', $codes, false );
+		self::admin_log( 'code_created', 0, $code . ', ' . $percent . ' % off the first month, until ' . $expires . ( 100 === $percent ? ' (100 % confirmed)' : '' ) );
+		return true;
+	}
+
+	/**
+	 * F2 admin log line for a money action. Erasure later removes the name and email and keeps the member number.
+	 *
+	 * @param string $action    price_change, code_created, refund or reward_withdrawn.
+	 * @param int    $member_id Member named in the action, or 0.
+	 * @param string $detail    What happened, with no health details.
+	 */
+	private static function admin_log( $action, $member_id, $detail ) {
+		global $wpdb;
+		$name  = null;
+		$email = null;
+		if ( $member_id > 0 ) {
+			$member = $wpdb->get_row( $wpdb->prepare( 'SELECT first_name, last_name, email FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+			if ( $member ) {
+				$name  = trim( (string) $member->first_name . ' ' . (string) $member->last_name );
+				$email = (string) $member->email;
+			}
+		}
+		$user  = function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0;
+		$by    = $user > 0 ? ' By user ' . $user . '.' : '';
+		$wpdb->insert(
+			LLD_Members_Schema::table( 'admin_log' ),
+			array(
+				'action'        => $action,
+				'member_number' => $member_id > 0 ? $member_id : null,
+				'member_name'   => '' !== (string) $name ? $name : null,
+				'member_email'  => $email,
+				'detail'        => $detail . $by,
+				'money_related' => 1,
+				'created_at'    => gmdate( 'Y-m-d H:i:s' ),
+			)
+		);
 	}
 
 	/**
@@ -1314,7 +1786,7 @@ class LLD_Members_Billing {
 	private static function insert_order( $member_id, $kind, $quote, $payment, $email, $fingerprint ) {
 		unset( $fingerprint );
 		global $wpdb;
-		$wpdb->insert(
+		$result = $wpdb->insert(
 			LLD_Members_Schema::table( 'order' ),
 			array(
 				'member_id'          => $member_id,
@@ -1333,6 +1805,7 @@ class LLD_Members_Billing {
 				'billing_country'    => isset( $quote['country'] ) ? (string) $quote['country'] : null,
 			)
 		);
+		self::written( $result, 'an order' );
 		return (int) $wpdb->insert_id;
 	}
 
@@ -1365,6 +1838,27 @@ class LLD_Members_Billing {
 			$html .= '<p>' . esc_html( $label ) . '</p>';
 		}
 		return $html;
+	}
+
+	/**
+	 * Second step before a refund: the owner sees the order, amount and member, then confirms.
+	 *
+	 * @param int $order_id Order.
+	 */
+	private static function refund_confirm( $order_id ) {
+		$order = self::order_row( $order_id );
+		if ( ! $order || 'payment' !== (string) $order->kind || 'paid' !== (string) $order->status ) {
+			echo '<div class="notice notice-error"><p>Only a paid first payment can be refunded.</p></div>';
+			return;
+		}
+		echo '<div class="notice notice-warning" data-lld-refund-confirm="' . (int) $order_id . '"><form method="post"><p>';
+		wp_nonce_field( 'lld_refund', 'lld_refund_nonce' );
+		wp_nonce_field( 'lld_refund_confirm_' . (int) $order_id, 'lld_refund_confirm' );
+		echo 'Refund order ' . (int) $order_id . ' in full: ' . esc_html( self::money( (int) $order->charged_amount, (string) $order->charged_currency ) ) . ' to member ' . (int) $order->member_id . ' (' . esc_html( (string) $order->billing_email ) . ')? Premium ends and the rest of the current track week stays open. This cannot be undone.';
+		echo ' <input type="hidden" name="lld_order" value="' . (int) $order_id . '">';
+		echo ' <button class="button button-primary">Confirm refund</button>';
+		echo ' <a class="button" href="' . esc_url( admin_url( 'admin.php?page=lld-payments' ) ) . '">Keep the payment</a>';
+		echo '</p></form></div>';
 	}
 
 	private static function admin_refunds() {
@@ -1403,17 +1897,17 @@ class LLD_Members_Billing {
 				}
 			}
 			if ( $fields ) {
-				$wpdb->update( $table, $fields, array( 'id' => $id ) );
+				self::written( $wpdb->update( $table, $fields, array( 'id' => $id ) ), 'a subscription' );
 			}
 			foreach ( $nulls as $column ) {
-				$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET `{$column}` = NULL WHERE id = %d", $id ) );
+				self::written( $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET `{$column}` = NULL WHERE id = %d", $id ) ), 'a subscription' );
 			}
 			return;
 		}
 		$fields['member_id']    = $member_id;
 		$fields['plan']         = isset( $fields['plan'] ) ? $fields['plan'] : 'free';
 		$fields['access_state'] = isset( $fields['access_state'] ) ? $fields['access_state'] : 'free';
-		$wpdb->insert( $table, $fields );
+		self::written( $wpdb->insert( $table, $fields ), 'a subscription' );
 	}
 
 	/**
@@ -1594,12 +2088,16 @@ class LLD_Members_Billing {
 	 * @param int $member_id Member number.
 	 */
 	private static function clear_retry( $member_id ) {
-		$retries = get_option( 'lld_retries' );
-		if ( ! is_array( $retries ) ) {
-			return;
+		$retries = self::retries();
+		$kept    = array();
+		foreach ( $retries as $invoice => $window ) {
+			if ( (int) $window['member_id'] !== (int) $member_id ) {
+				$kept[ $invoice ] = $window;
+			}
 		}
-		unset( $retries[ (string) $member_id ] );
-		update_option( 'lld_retries', $retries, false );
+		if ( count( $kept ) !== count( $retries ) ) {
+			update_option( 'lld_retries', $kept, false );
+		}
 	}
 
 	/**
@@ -1621,14 +2119,61 @@ class LLD_Members_Billing {
 		return abs( time() - (int) $match[1] ) < 300;
 	}
 
+	/**
+	 * LLD_STRIPE_WEBHOOK is required on staging and production. Only ci and local may sign
+	 * test notices with the shared test secret; staging never falls back to it.
+	 */
 	private static function webhook_secret() {
 		if ( defined( 'LLD_STRIPE_WEBHOOK' ) && '' !== (string) LLD_STRIPE_WEBHOOK ) {
 			return (string) LLD_STRIPE_WEBHOOK;
 		}
-		if ( lld_members_is_production() ) {
+		if ( ! in_array( lld_members_env(), array( 'ci', 'local' ), true ) ) {
 			return '';
 		}
 		return lld_members_test_secret();
+	}
+
+	/**
+	 * A Stripe key from wp-config.php. A live key is refused unless LLD_ENV is exactly production.
+	 *
+	 * @param string $kind secret or publishable.
+	 * @return string|WP_Error The key, an empty string when it is not set, or an error for a refused live key.
+	 */
+	public static function stripe_key( $kind ) {
+		$name = 'publishable' === $kind ? 'LLD_STRIPE_PUBLISHABLE' : 'LLD_STRIPE_SECRET';
+		$key  = defined( $name ) ? (string) constant( $name ) : '';
+		if ( self::live_key_refused( $key ) ) {
+			return new WP_Error( 'lld_stripe_live', 'A live Stripe key is set outside production.' );
+		}
+		return $key;
+	}
+
+	/**
+	 * True when any configured Stripe key is a live key outside production. Checkout stays closed then.
+	 */
+	public static function live_keys_refused() {
+		foreach ( array( 'LLD_STRIPE_SECRET', 'LLD_STRIPE_PUBLISHABLE' ) as $name ) {
+			if ( defined( $name ) && self::live_key_refused( (string) constant( $name ) ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * @param string $key Stripe key.
+	 */
+	private static function live_key_refused( $key ) {
+		$production = defined( 'LLD_ENV' ) && 'production' === (string) LLD_ENV;
+		if ( $production ) {
+			return false;
+		}
+		foreach ( array( 'sk_live_', 'pk_live_', 'rk_live_' ) as $prefix ) {
+			if ( 0 === strpos( $key, $prefix ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

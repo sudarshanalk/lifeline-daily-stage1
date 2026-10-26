@@ -47,6 +47,17 @@ async function notify(request, event) {
   });
 }
 
+// Test Criteria 4.4: forged notices are made by changing the signature of a real one.
+async function notifySigned(request, event, { at = Math.floor(Date.now() / 1000), tamper = false } = {}) {
+  const body = JSON.stringify(event);
+  let v1 = createHmac('sha256', testSecret()).update(`${at}.${body}`).digest('hex');
+  if (tamper) v1 = `${v1.slice(0, -1)}${v1.endsWith('0') ? '1' : '0'}`;
+  return request.post('/wp-json/lld-members/v1/stripe/notice', {
+    headers: { 'Stripe-Signature': `t=${at},v1=${v1}`, 'Content-Type': 'application/json' },
+    data: body,
+  });
+}
+
 async function showPrice(page, { plan = 'monthly', country = 'US', code = '', ref = '' } = {}) {
   await page.goto(`/members/checkout/?plan=${plan}&lld_ref=${encodeURIComponent(ref)}`);
   await page.locator('#lld_country').selectOption(country);
@@ -148,6 +159,19 @@ async function refCode(page, email) {
   return new URL(href).searchParams.get('ref');
 }
 
+async function confirmRefund(page, orderId) {
+  await page.locator('form', { hasText: `Order ${orderId}` }).getByRole('button', { name: 'Refund' }).click();
+  await expect(page.locator(`[data-lld-refund-confirm="${orderId}"]`)).toBeVisible();
+  await page.getByRole('button', { name: 'Confirm refund' }).click();
+  await expect(page.locator('.notice', { hasText: 'Refunded' })).toBeVisible();
+}
+
+async function moneyLog(request) {
+  const res = await request.post('/wp-json/lld-members/v1/test/billing', { data: { action: 'admin_log' } });
+  expect(res.ok(), await res.text()).toBeTruthy();
+  return (await res.json()).lines;
+}
+
 async function startTrack(page, slug) {
   await page.goto('/members/tracks/');
   const nonce = await page.locator('input[name="lld_track_nonce"]').first().inputValue();
@@ -211,8 +235,10 @@ test('TC-FR2-13-AS-03', async ({ page, request }) => {
   const snap = await readMember(request, email);
   expect(Number(snap.orders[1].charged_amount)).toBe(799);
   expect(snap.orders[1].discount_code).toBeFalsy();
-  await clock(request, email, '2026-07-02 12:00:00');
-  await signIn(page, email, password);
+  const lateEmail = emailFor('launch-late');
+  await createMember(request, { email: lateEmail, password, first_name: 'Late', role: 'member' });
+  await clock(request, lateEmail, '2026-07-02 12:00:00');
+  await signIn(page, lateEmail, password);
   const late = await showPrice(page, { plan: 'monthly', country: 'US', code: 'LAUNCH' });
   expect(late.charge).toBe(799);
   await expect(page.getByText('This code has ended.')).toBeVisible();
@@ -229,10 +255,34 @@ test('TC-FR2-13-AS-04', async ({ page, request }) => {
   await page.locator('input[name="lld_percent"]').fill('50');
   await page.getByRole('button', { name: 'Save prices' }).click();
   await expect(page.getByText('Saved')).toBeVisible();
+  const lines = await moneyLog(request);
+  expect(lines.some((row) => row.action === 'price_change' && row.detail.includes('Monthly US$7.99 to US$8.99'))).toBeTruthy();
+  expect(lines.some((row) => row.action === 'code_created' && row.detail.startsWith('HALF, 50 %'))).toBeTruthy();
+
+  await page.locator('input[name="lld_monthly"]').fill('0');
+  await page.getByRole('button', { name: 'Save prices' }).click();
+  await expect(page.getByText('needs the confirm box ticked')).toBeVisible();
+  await expect(page.locator('input[name="lld_monthly"]')).toHaveValue('8.99');
+  await page.locator('input[name="lld_new_code"]').fill('FREE');
+  await page.locator('input[name="lld_percent"]').fill('100');
+  await page.getByRole('button', { name: 'Save prices' }).click();
+  await expect(page.getByText('needs the confirm box ticked')).toBeVisible();
+  expect((await moneyLog(request)).some((row) => row.detail.startsWith('FREE,'))).toBeFalsy();
+  const refused = await request.post('/wp-json/lld-members/v1/test/billing', { data: { action: 'prices', monthly: 0, yearly: 5999 } });
+  expect(refused.status()).toBe(400);
+  await page.locator('input[name="lld_new_code"]').fill('FREE');
+  await page.locator('input[name="lld_percent"]').fill('100');
+  await page.locator('input[name="lld_confirm_free"]').check();
+  await page.getByRole('button', { name: 'Save prices' }).click();
+  await expect(page.getByText('Saved')).toBeVisible();
+  expect((await moneyLog(request)).some((row) => row.action === 'code_created' && row.detail.includes('(100 % confirmed)'))).toBeTruthy();
+
   const quoted = await pay(page, email, { plan: 'monthly', country: 'US', code: 'HALF' });
   expect(quoted.charge).toBe(450);
   expect(quoted.text).toContain('US$4.50');
-  await signIn(page, email, password);
+  const fullEmail = emailFor('owner-price-full');
+  await createMember(request, { email: fullEmail, password, first_name: 'Full', role: 'member' });
+  await signIn(page, fullEmail, password);
   const full = await showPrice(page, { plan: 'monthly', country: 'US' });
   expect(full.text).toContain('US$8.99');
 });
@@ -356,9 +406,22 @@ test('TC-FR2-14-AS-06', async ({ page, request }) => {
   await page.goto('/wp-admin/admin.php?page=lld-payments');
   if (page.url().includes('pmpro-wizard')) await page.goto('/wp-admin/admin.php?page=lld-payments');
   await page.locator('form', { hasText: `Order ${orderId}` }).getByRole('button', { name: 'Refund' }).click();
+  const ask = page.locator(`[data-lld-refund-confirm="${orderId}"]`);
+  await expect(ask).toBeVisible();
+  await expect(ask).toContainText('US$59.99');
+  await expect(ask).toContainText(email);
+  const waiting = await readMember(request, email);
+  expect(waiting.subscription.access_state).toBe('Premium');
+  expect(waiting.orders.some((order) => order.kind === 'refund')).toBeFalsy();
+  await page.getByRole('button', { name: 'Confirm refund' }).click();
   await expect(page.locator('.notice', { hasText: 'Refunded' })).toBeVisible();
   const after = await readMember(request, email);
   expect(after.subscription.access_state).toBe('Refunded');
+  const line = (await moneyLog(request)).find((row) => row.action === 'refund' && row.detail.includes(`Order ${orderId} `));
+  expect(line).toBeTruthy();
+  expect(Number(line.member_number)).toBe(Number(after.subscription.member_id));
+  expect(line.member_email).toBe(email);
+  expect(Number(line.money_related)).toBe(1);
   expect(after.orders.some((order) => order.kind === 'refund')).toBeTruthy();
 });
 
@@ -372,6 +435,18 @@ test('TC-FR2-14-AS-07', async ({ page, request }) => {
   expect(forged.status()).toBe(400);
   expect((await readMember(request, email)).subscription).toBeFalsy();
   await signIn(page, email, password);
+  const real = await showPrice(page, { plan: 'monthly', country: 'US' });
+  const genuine = {
+    id: `evt_tampered_${stamp()}`,
+    type: 'checkout.session.completed',
+    data: { object: { id: real.session, amount_total: real.charge, subscription: `sub_${stamp()}`, payment_intent: `pi_${stamp()}`, email } },
+  };
+  const tampered = await notifySigned(request, genuine, { tamper: true });
+  expect(tampered.status()).toBe(400);
+  const stale = await notifySigned(request, genuine, { at: Math.floor(Date.now() / 1000) - 600 });
+  expect(stale.status()).toBe(400);
+  expect((await readMember(request, email)).subscription).toBeFalsy();
+  expect((await noticeRow(request, genuine.id))).toBeFalsy();
   const quoted = await showPrice(page, { plan: 'monthly', country: 'US' });
   const payment = `pi_${stamp()}`;
   const subscription = `sub_${stamp()}`;
@@ -401,7 +476,7 @@ test('TC-FR2-14-AS-07', async ({ page, request }) => {
   });
   expect(completed.ok()).toBeTruthy();
   const finalState = await readMember(request, held);
-  expect(finalState.subscription.access_state).toBe('cancelled');
+  expect(finalState.subscription.access_state).toBe('Premium ended');
   expect(finalState.subscription.period_ends_on > '2026-10-01').toBeTruthy();
 
   const mismatch = emailFor('mismatch');
@@ -421,6 +496,228 @@ test('TC-FR2-14-AS-07', async ({ page, request }) => {
   const mail = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
   const flagged = (mail.messages || []).filter((message) => JSON.stringify(message).includes('A payment does not match a member'));
   expect(flagged.length).toBeGreaterThan(0);
+});
+
+async function billingAction(request, data) {
+  const res = await request.post('/wp-json/lld-members/v1/test/billing', { data });
+  expect(res.ok(), await res.text()).toBeTruthy();
+  return res.json();
+}
+
+async function noticeRow(request, ref, action = 'notice') {
+  return (await billingAction(request, { action, ref })).notice;
+}
+
+const utcMs = (mysql) => Date.parse(`${mysql.replace(' ', 'T')}Z`);
+
+test('TC-FR2-14-AS-07 a notice that fails is kept, retried and applied once', async ({ request }) => {
+  const email = emailFor('kept');
+  await createMember(request, { email, password, first_name: 'Kept', role: 'member' });
+  await clock(request, email, '2026-10-01 12:00:00');
+  const quoted = await billingAction(request, { action: 'session', email, plan: 'monthly', country: 'US' });
+  const payment = `pi_${stamp()}`;
+  const event = {
+    id: `evt_${payment}`,
+    type: 'checkout.session.completed',
+    data: { object: { id: quoted.session, amount_total: Number(quoted.charged), subscription: `sub_${stamp()}`, payment_intent: payment, email } },
+  };
+  await billingAction(request, { action: 'fail_notice', ref: event.id });
+  const first = await notify(request, event);
+  expect(first.ok()).toBeTruthy();
+  expect((await first.json()).state).toBe('retrying');
+  let row = await noticeRow(request, event.id);
+  expect(row.processing_state).toBe('retrying');
+  expect(Number(row.attempts)).toBe(1);
+  expect(Number(row.has_payload)).toBe(1);
+  const gap = utcMs(row.next_attempt_at) - Date.now();
+  expect(gap).toBeGreaterThan(55 * 60000);
+  expect(gap).toBeLessThan(65 * 60000);
+  const before = await readMember(request, email);
+  expect(before.subscription).toBeFalsy();
+  expect(before.orders).toHaveLength(0);
+
+  const repeated = await notify(request, event);
+  expect((await repeated.json()).replay).toBe(true);
+  expect((await readMember(request, email)).orders).toHaveLength(0);
+
+  await billingAction(request, { action: 'fail_notice', ref: '' });
+  row = await noticeRow(request, event.id, 'retry_notice');
+  expect(row.processing_state).toBe('processed');
+  expect(Number(row.attempts)).toBe(2);
+  expect(Number(row.has_payload)).toBe(0);
+  const after = await readMember(request, email);
+  expect(after.subscription.access_state).toBe('Premium');
+  expect(after.orders).toHaveLength(1);
+
+  row = await noticeRow(request, event.id, 'retry_notice');
+  expect(row.processing_state).toBe('processed');
+  expect(Number(row.attempts)).toBe(2);
+  expect((await readMember(request, email)).orders).toHaveLength(1);
+});
+
+test('TC-FR2-14-AS-07 a notice that keeps failing is retried 5 times over 24 hours, then flagged to the owner', async ({ request }) => {
+  const event = { id: `evt_stuck_${stamp()}`, type: 'invoice.paid', data: { object: { id: `in_${stamp()}`, subscription: `sub_${stamp()}`, amount_paid: 799 } } };
+  await billingAction(request, { action: 'fail_notice', ref: event.id });
+  expect((await notify(request, event)).ok()).toBeTruthy();
+  const hours = [1, 2, 4, 8, 9];
+  let row = await noticeRow(request, event.id);
+  for (let retry = 0; retry < 5; retry += 1) {
+    expect(row.processing_state).toBe('retrying');
+    expect(Number(row.attempts)).toBe(retry + 1);
+    const gap = (utcMs(row.next_attempt_at) - Date.now()) / 3600000;
+    expect(Math.abs(gap - hours[retry])).toBeLessThan(0.1);
+    row = await noticeRow(request, event.id, 'retry_notice');
+  }
+  expect(hours.reduce((a, b) => a + b, 0)).toBe(24);
+  expect(row.processing_state).toBe('failed');
+  expect(Number(row.attempts)).toBe(6);
+  expect(row.last_error).toBeTruthy();
+  row = await noticeRow(request, event.id, 'retry_notice');
+  expect(Number(row.attempts)).toBe(6);
+  const mail = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
+  const flagged = (mail.messages || []).filter((message) => JSON.stringify(message).includes('A Stripe notice could not be processed'));
+  expect(flagged.length).toBeGreaterThan(0);
+  await billingAction(request, { action: 'fail_notice', ref: '' });
+});
+
+test('TC-FR2-14-AS-04 the 7-day window starts at the first failure of the invoice', async ({ request }) => {
+  const email = emailFor('window');
+  const subscription = `sub_window_${stamp()}`;
+  await createMember(request, {
+    email, password, first_name: 'Window', role: 'member', access_state: 'Premium', plan: 'monthly', stripe_subscription: subscription, period_ends_on: '2026-12-01',
+  });
+  const invoice = `in_${stamp()}`;
+  const fail = () => notify(request, { id: `evt_fail_${stamp()}`, type: 'invoice.payment_failed', data: { object: { id: invoice, subscription } } });
+  await clock(request, email, '2026-06-01 12:00:00');
+  expect((await fail()).ok()).toBeTruthy();
+  await clock(request, email, '2026-06-05 12:00:00');
+  expect((await fail()).ok()).toBeTruthy();
+  await clock(request, email, '2026-06-07 12:00:00');
+  await reports(request);
+  expect((await readMember(request, email)).subscription.access_state).toBe('Premium');
+  await clock(request, email, '2026-06-08 12:00:00');
+  await reports(request);
+  expect((await readMember(request, email)).subscription.access_state).toBe('Premium ended');
+});
+
+test('TC-FR2-14-AS-07 a subscription ended at Stripe ends Premium', async ({ request }) => {
+  const email = emailFor('ended');
+  const subscription = `sub_ended_${stamp()}`;
+  await createMember(request, {
+    email, password, first_name: 'Ended', role: 'member', access_state: 'Premium', plan: 'monthly', stripe_subscription: subscription, period_ends_on: '2026-07-01',
+  });
+  await clock(request, email, '2026-07-01 12:00:00');
+  const ended = await notify(request, { id: `evt_del_${stamp()}`, type: 'customer.subscription.deleted', data: { object: { id: subscription, status: 'canceled' } } });
+  expect(ended.ok()).toBeTruthy();
+  const snap = await readMember(request, email);
+  expect(snap.subscription.access_state).toBe('Premium ended');
+  expect(snap.subscription.premium_ended_why).toBe('expired');
+});
+
+test('TC-FR2-14-AS-03 the first invoice of a subscription adds no second order or receipt', async ({ page, request }) => {
+  const email = emailFor('first-invoice');
+  await createMember(request, { email, password, first_name: 'First', role: 'member' });
+  await clock(request, email, '2026-08-01 12:00:00');
+  const paid = await payApi(request, email, { plan: 'monthly', country: 'US' });
+  const res = await notify(request, {
+    id: `evt_${stamp()}`,
+    type: 'invoice.paid',
+    data: { object: { id: `in_${stamp()}`, subscription: paid.subscription, amount_paid: paid.charge, payment_intent: paid.payment, billing_reason: 'subscription_create' } },
+  });
+  expect(res.ok(), await res.text()).toBeTruthy();
+  const snap = await readMember(request, email);
+  expect(snap.orders).toHaveLength(1);
+  expect(snap.orders[0].kind).toBe('payment');
+  const messages = await fetch(`${MAILPIT}/api/v1/messages`).then((r) => r.json());
+  const receipts = (messages.messages || []).filter((message) => JSON.stringify(message).includes(email) && JSON.stringify(message).includes('Your receipt'));
+  expect(receipts).toHaveLength(1);
+  await renew(request, paid.subscription, 799);
+  expect((await readMember(request, email)).orders).toHaveLength(2);
+});
+
+test('TC-FR2-14-AS-05 a subscription update from Stripe sets cancel at period end, resume and the period end', async ({ request }) => {
+  const email = emailFor('updated');
+  const subscription = `sub_upd_${stamp()}`;
+  await createMember(request, {
+    email, password, first_name: 'Updated', role: 'member', access_state: 'Premium', plan: 'monthly', stripe_subscription: subscription, period_ends_on: '2026-09-01',
+  });
+  await clock(request, email, '2026-08-15 12:00:00');
+  const periodEnd = Math.floor(Date.parse('2026-09-15T12:00:00Z') / 1000);
+  const update = (object) => notify(request, { id: `evt_upd_${stamp()}`, type: 'customer.subscription.updated', data: { object: { id: subscription, ...object } } });
+  expect((await update({ status: 'active', cancel_at_period_end: true, current_period_end: periodEnd })).ok()).toBeTruthy();
+  let snap = await readMember(request, email);
+  expect(snap.subscription.access_state).toBe('cancelled');
+  expect(snap.subscription.stripe_state).toBe('cancel_at_period_end');
+  expect(snap.subscription.period_ends_on).toBe('2026-09-15');
+  expect((await update({ status: 'active', cancel_at_period_end: false })).ok()).toBeTruthy();
+  snap = await readMember(request, email);
+  expect(snap.subscription.access_state).toBe('Premium');
+  expect(snap.subscription.stripe_state).toBe('active');
+  expect((await update({ status: 'past_due', cancel_at_period_end: false })).ok()).toBeTruthy();
+  snap = await readMember(request, email);
+  expect(snap.subscription.access_state).toBe('Premium');
+  expect(snap.subscription.stripe_state).toBe('past_due');
+  expect((await update({ status: 'unpaid', cancel_at_period_end: false })).ok()).toBeTruthy();
+  snap = await readMember(request, email);
+  expect(snap.subscription.access_state).toBe('Premium ended');
+  expect((await update({ status: 'active', cancel_at_period_end: false })).ok()).toBeTruthy();
+  expect((await readMember(request, email)).subscription.access_state).toBe('Premium ended');
+});
+
+test('TC-FR2-14-AS-06 a refund made at Stripe is recorded once and ends Premium', async ({ request }) => {
+  const email = emailFor('stripe-refund');
+  await createMember(request, { email, password, first_name: 'Charge', role: 'member' });
+  await clock(request, email, '2026-10-20 12:00:00');
+  const paid = await payApi(request, email, { plan: 'yearly', country: 'US' });
+  const partial = await notify(request, {
+    id: `evt_part_${stamp()}`, type: 'charge.refunded', data: { object: { id: `ch_${stamp()}`, payment_intent: paid.payment, refunded: false, amount_refunded: 100 } },
+  });
+  expect(partial.ok()).toBeTruthy();
+  expect((await readMember(request, email)).subscription.access_state).toBe('Premium');
+  const charge = { id: `ch_${stamp()}`, payment_intent: paid.payment, refunded: true, amount_refunded: paid.charge, refunds: { data: [{ id: `re_${stamp()}` }] } };
+  expect((await notify(request, { id: `evt_ref_${stamp()}`, type: 'charge.refunded', data: { object: charge } })).ok()).toBeTruthy();
+  expect((await notify(request, { id: `evt_ref_${stamp()}`, type: 'charge.refunded', data: { object: charge } })).ok()).toBeTruthy();
+  const snap = await readMember(request, email);
+  expect(snap.subscription.access_state).toBe('Refunded');
+  expect(snap.orders.filter((order) => order.kind === 'refund')).toHaveLength(1);
+  expect(snap.orders.find((order) => order.kind === 'payment').status).toBe('refunded');
+});
+
+test('TC-FR2-14-AS-01 a member who already has Premium cannot start a second checkout', async ({ page, request }) => {
+  const email = emailFor('twice-pay');
+  await createMember(request, { email, password, first_name: 'Twice', role: 'member' });
+  await clock(request, email, '2026-10-01 12:00:00');
+  const paid = await pay(page, email, { plan: 'monthly', country: 'US' });
+  await page.goto('/members/checkout/?plan=yearly');
+  await expect(page.getByText('You already have Premium.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Show the price' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Continue to payment' })).toHaveCount(0);
+  const api = await request.post('/wp-json/lld-members/v1/test/billing', { data: { action: 'session', email, plan: 'yearly', country: 'US' } });
+  expect(api.status()).toBe(409);
+
+  const cancelled = emailFor('twice-cancelled');
+  await createMember(request, { email: cancelled, password, first_name: 'Still', role: 'member', access_state: 'cancelled', plan: 'monthly', period_ends_on: '2026-12-01' });
+  await clock(request, cancelled, '2026-10-01 12:00:00');
+  await signIn(page, cancelled, password);
+  await page.goto('/members/checkout/');
+  await expect(page.getByText('You already have Premium.')).toBeVisible();
+
+  // A second payment that still reaches us keeps the first subscription and is flagged to the owner.
+  const free = emailFor('twice-late');
+  await createMember(request, { email: free, password, first_name: 'Late', role: 'member' });
+  await clock(request, free, '2026-10-01 12:00:00');
+  const quote = await billingAction(request, { action: 'session', email: free, plan: 'monthly', country: 'US' });
+  const first = await payApi(request, free, { plan: 'monthly', country: 'US' });
+  const res = await notify(request, {
+    id: `evt_${stamp()}`,
+    type: 'checkout.session.completed',
+    data: { object: { id: quote.session, amount_total: Number(quote.charged), subscription: `sub_${stamp()}`, payment_intent: `pi_${stamp()}`, email: free } },
+  });
+  expect(res.ok()).toBeTruthy();
+  const snap = await readMember(request, free);
+  expect(snap.subscription.stripe_subscription).toBe(first.subscription);
+  expect(snap.orders).toHaveLength(2);
+  expect(paid.subscription).toBeTruthy();
 });
 
 test('TC-FR2-14-AS-08', async ({ page, request }) => {
@@ -526,7 +823,7 @@ test('TC-FR2-15-AS-05', async ({ page, request }) => {
       await asOwner(page);
       await page.goto('/wp-admin/admin.php?page=lld-payments');
       if (page.url().includes('pmpro-wizard')) await page.goto('/wp-admin/admin.php?page=lld-payments');
-      await page.locator('form', { hasText: `Order ${orderId}` }).getByRole('button', { name: 'Refund' }).click();
+      await confirmRefund(page, orderId);
     } else {
       await pay(page, email, { plan: 'monthly', country: 'US' });
       const snap = await readMember(request, email);
@@ -736,10 +1033,12 @@ test('TC-FR2-29-AS-02', async ({ page, request }) => {
   await asOwner(page);
   await page.goto('/wp-admin/admin.php?page=lld-payments');
   if (page.url().includes('pmpro-wizard')) await page.goto('/wp-admin/admin.php?page=lld-payments');
-  await page.locator('form', { hasText: `Order ${orderId}` }).getByRole('button', { name: 'Refund' }).click();
+  await confirmRefund(page, orderId);
   await clock(request, back, '2026-04-20 12:00:00');
   await reports(request);
   const giverSnap = await readMember(request, giver);
+  const giverId = Number(giverSnap.subscription.member_id);
+  expect((await moneyLog(request)).some((row) => row.action === 'reward_withdrawn' && Number(row.member_number) === giverId)).toBeTruthy();
   expect(giverSnap.referrals.some((row) => row.status === 'refunded')).toBeTruthy();
   expect(giverSnap.rewards).toHaveLength(0);
 });
