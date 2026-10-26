@@ -31,6 +31,21 @@ class LLD_Members_Premium {
 
 	const MEAL_SLOTS = array( 'breakfast', 'lunch', 'dinner', 'snack' );
 
+	/**
+	 * Check-in measures (Data Model C9) and their labels, for the progress charts.
+	 */
+	const CHART_MEASURES = array(
+		'weight_kg'         => 'Weight in kilograms',
+		'waist_cm'          => 'Waist in centimetres',
+		'activity_minutes'  => 'Minutes of activity this week',
+		'chair_stands'      => 'Chair stands in 30 seconds',
+		'push_ups'          => 'Push-ups',
+		'strength_sessions' => 'Strength sessions',
+		'sleep_hours'       => 'Average sleep hours',
+		'sleep_quality'     => 'Sleep quality from 1 to 5',
+		'stress_level'      => 'Stress level from 1 to 5',
+	);
+
 	const LEVELS = array(
 		'beginner'     => 1,
 		'intermediate' => 2,
@@ -337,12 +352,25 @@ class LLD_Members_Premium {
 		self::page( 'Challenge', $main );
 	}
 
+	/**
+	 * SCR-21 Progress and badges. FR2-36 is Premium: a free member gets the membership lock. When Premium has
+	 * ended, the history stays readable with "Download my data" (requirements 8.3), and nothing new is awarded.
+	 */
 	public static function badges() {
 		$member_id = LLD_Members_Access::current_member_id();
-		if ( LLD_Members_Account::has_consent( $member_id, 'health' ) ) {
+		$paid      = LLD_Members_Billing::paid_open( $member_id );
+		if ( ! $paid && ! LLD_Members_Billing::ended( $member_id ) ) {
+			self::page( 'Progress and badges', '<h1>Progress and badges</h1>' . lld_membership_lock( 'Progress charts and badges are part of Premium.' ) );
+			return;
+		}
+		if ( $paid && LLD_Members_Account::has_consent( $member_id, 'health' ) ) {
 			self::award( $member_id );
 		}
 		$main = '<h1>Progress and badges</h1>';
+		if ( ! $paid ) {
+			$main .= '<p>Your history is still here to read. <a href="' . esc_url( home_url( '/members/data/' ) ) . '">Download my data</a></p>';
+		}
+		$main .= self::totals_html( $member_id );
 		$main .= self::chart_html( $member_id );
 		$main .= '<h2>Badges</h2>';
 		$any  = false;
@@ -1902,19 +1930,117 @@ class LLD_Members_Premium {
 	}
 
 	/**
+	 * Activity totals (SCR-21): track activities, challenge days and workout sessions done.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function totals_html( $member_id ) {
+		global $wpdb;
+		$counts = array(
+			'enrolment' => 0,
+			'challenge' => 0,
+			'workout'   => 0,
+		);
+		$rows   = $wpdb->get_results( $wpdb->prepare( 'SELECT context_type, COUNT(*) AS n FROM ' . LLD_Members_Schema::table( 'result' ) . " WHERE member_id = %d AND result = 'done' GROUP BY context_type", $member_id ) );
+		foreach ( (array) $rows as $row ) {
+			if ( isset( $counts[ (string) $row->context_type ] ) ) {
+				$counts[ (string) $row->context_type ] = (int) $row->n;
+			}
+		}
+		return '<h2>Activity</h2><p data-lld-totals>Track activities done: ' . $counts['enrolment'] . '. Challenge days done: ' . $counts['challenge'] . '. Workout sessions done: ' . $counts['workout'] . '.</p>';
+	}
+
+	/**
+	 * Check-in charts across all months since joining (FR2-36, SCR-21).
+	 *
 	 * @param int $member_id Member number.
 	 */
 	private static function chart_html( $member_id ) {
 		global $wpdb;
-		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT month_key, weight_kg FROM ' . LLD_Members_Schema::table( 'check_in' ) . ' WHERE member_id = %d AND month_key IS NOT NULL AND month_key <> "" ORDER BY month_key ASC', $member_id ) );
-		$html = '<table data-lld-chart><caption>Check-ins since joining</caption><thead><tr><th>Month</th><th>Weight</th></tr></thead><tbody>';
-		if ( ! $rows ) {
-			$html .= '<tr><td colspan="2">No history yet</td></tr>';
-		}
+		$rows   = $wpdb->get_results( $wpdb->prepare( 'SELECT local_date, ' . implode( ', ', array_keys( self::CHART_MEASURES ) ) . ' FROM ' . LLD_Members_Schema::table( 'check_in' ) . ' WHERE member_id = %d ORDER BY local_date ASC, id ASC', $member_id ), ARRAY_A );
+		$joined = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT joined_on FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+		return self::progress_chart( is_array( $rows ) ? $rows : array(), $joined, LLD_Members_Programme::local_today( $member_id ) );
+	}
+
+	/**
+	 * Every month from joining (or the first check-in, if earlier) to this month (or the last check-in, if later),
+	 * with a check-in or not. Each measure the member has recorded gets a bar chart, and "Show as table" gives the
+	 * same numbers: the last value recorded in each month.
+	 *
+	 * @param array<int,array<string,mixed>> $rows   Check-ins, oldest first, with local_date and measure columns.
+	 * @param string                         $joined Join date.
+	 * @param string                         $today  Local date.
+	 */
+	private static function progress_chart( $rows, $joined, $today ) {
+		$months = array();
+		$values = array();
+		$seen   = array();
 		foreach ( $rows as $row ) {
-			$html .= '<tr><td>' . esc_html( (string) $row->month_key ) . '</td><td>' . esc_html( (string) $row->weight_kg ) . '</td></tr>';
+			$month = substr( (string) ( $row['local_date'] ?? '' ), 0, 7 );
+			if ( ! preg_match( '/^\d{4}-\d{2}$/', $month ) ) {
+				continue;
+			}
+			$seen[ $month ] = true;
+			foreach ( array_keys( self::CHART_MEASURES ) as $column ) {
+				if ( isset( $row[ $column ] ) && '' !== (string) $row[ $column ] && is_numeric( $row[ $column ] ) ) {
+					$values[ $column ][ $month ] = 0 + $row[ $column ];
+				}
+			}
 		}
-		$html .= '</tbody></table>';
+		$ends = array_keys( $seen );
+		foreach ( array( (string) $joined, (string) $today ) as $date ) {
+			if ( preg_match( '/^\d{4}-\d{2}/', $date ) ) {
+				$ends[] = substr( $date, 0, 7 );
+			}
+		}
+		$html = '<section data-lld-chart><h2>Check-ins since joining</h2>';
+		if ( ! $seen ) {
+			$html .= '<p>No history yet</p>';
+		}
+		if ( $ends ) {
+			sort( $ends );
+			$cursor = new DateTimeImmutable( $ends[0] . '-01' );
+			$stop   = $ends[ count( $ends ) - 1 ];
+			for ( $i = 0; $i < 600 && $cursor->format( 'Y-m' ) <= $stop; $i++ ) {
+				$months[] = $cursor->format( 'Y-m' );
+				$cursor   = $cursor->modify( '+1 month' );
+			}
+		}
+		foreach ( self::CHART_MEASURES as $column => $label ) {
+			if ( empty( $values[ $column ] ) ) {
+				continue;
+			}
+			$top   = max( $values[ $column ] );
+			$top   = $top > 0 ? $top : 1;
+			$width = max( 1, count( $months ) ) * 24;
+			$bars  = '';
+			$said  = array();
+			foreach ( $months as $index => $month ) {
+				if ( ! isset( $values[ $column ][ $month ] ) ) {
+					continue;
+				}
+				$value  = $values[ $column ][ $month ];
+				$height = (int) round( 100 * $value / $top );
+				$bars  .= '<rect x="' . ( $index * 24 + 4 ) . '" y="' . ( 110 - $height ) . '" width="16" height="' . $height . '" fill="#157a42"><title>' . esc_html( $month . ': ' . $value ) . '</title></rect>';
+				$said[] = $month . ' ' . $value;
+			}
+			$html .= '<figure data-lld-measure="' . esc_attr( $column ) . '"><figcaption>' . esc_html( $label ) . '</figcaption>';
+			$html .= '<svg viewBox="0 0 ' . $width . ' 112" width="100%" height="112" role="img" aria-label="' . esc_attr( $label . ' by month: ' . implode( ', ', $said ) ) . '">' . $bars . '</svg></figure>';
+		}
+		$shown = array_keys( array_filter( $values ) );
+		$html .= '<details data-lld-chart-table><summary>Show as table</summary><table><caption>Check-ins by month</caption><thead><tr><th scope="col">Month</th><th scope="col">Check-in</th>';
+		foreach ( $shown as $column ) {
+			$html .= '<th scope="col">' . esc_html( self::CHART_MEASURES[ $column ] ) . '</th>';
+		}
+		$html .= '</tr></thead><tbody>';
+		foreach ( $months as $month ) {
+			$html .= '<tr data-lld-month="' . esc_attr( $month ) . '"><th scope="row">' . esc_html( $month ) . '</th><td>' . ( isset( $seen[ $month ] ) ? 'Yes' : 'No check-in' ) . '</td>';
+			foreach ( $shown as $column ) {
+				$html .= '<td>' . esc_html( isset( $values[ $column ][ $month ] ) ? (string) $values[ $column ][ $month ] : '—' ) . '</td>';
+			}
+			$html .= '</tr>';
+		}
+		$html .= '</tbody></table></details></section>';
 		return $html;
 	}
 

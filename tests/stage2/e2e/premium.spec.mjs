@@ -548,6 +548,37 @@ test('TC-FR2-36-AS-02', async ({ page, request }) => {
   for (const month of ['2026-05', '2026-06', '2026-07', '2026-08']) {
     await expect(chart).toContainText(month);
   }
+
+  // a month with no check-in is still in the chart, and measures other than weight are charted
+  await clock(request, member.email, '2026-10-15 12:00:00');
+  await page.goto('/members/check-in/');
+  await page.getByRole('checkbox', { name: 'Chair stands in 30 seconds' }).check();
+  await page.locator('#lld_chair').fill('14');
+  await page.getByRole('button', { name: 'Save monthly check-in' }).click();
+  await page.goto('/members/badges/');
+  await expect(chart.locator('[data-lld-month="2026-09"]')).toContainText('No check-in');
+  await expect(chart.locator('[data-lld-month="2026-10"]')).toContainText('14');
+  await expect(chart.locator('figure[data-lld-measure="chair_stands"]')).toHaveCount(1);
+  await expect(chart.locator('figure[data-lld-measure="chair_stands"] svg rect')).toHaveCount(1);
+  for (const month of ['2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10']) {
+    await expect(chart.locator(`[data-lld-month="${month}"]`)).toHaveCount(1);
+  }
+  await expect(page.locator('[data-lld-totals]')).toBeVisible();
+
+  // FR2-36 is Premium: a free member gets the lock; after Premium ends the history stays readable
+  const freeEmail = emailFor('chart-free');
+  await createMember(request, { email: freeEmail, password, first_name: 'Sam', role: 'member', consents: ['terms', 'health'], access_state: 'free' });
+  await signIn(page, freeEmail, password);
+  await page.goto('/members/badges/');
+  await expect(page.getByText('Part of Premium', { exact: true })).toBeVisible();
+  await expect(page.locator('[data-lld-chart]')).toHaveCount(0);
+  await createMember(request, {
+    email: member.email, password, first_name: 'Pat', role: 'member', consents: ['terms', 'health'], access_state: 'Premium ended', premium_ended_on: '2026-10-20',
+  });
+  await signIn(page, member.email, password);
+  await page.goto('/members/badges/');
+  await expect(page.getByRole('link', { name: 'Download my data' })).toBeVisible();
+  await expect(chart.locator('[data-lld-month="2026-10"]')).toContainText('14');
 });
 
 test('TC-FR2-36-AS-03', async ({ page, request }) => {
