@@ -410,24 +410,54 @@ test('TC-FR2-35-AS-03', async ({ page, request }) => {
   await createMember(request, {
     email, password, first_name: 'End', role: 'member', consents: ['terms'], access_state: 'Premium ended', premium_ended_on: '2020-01-01',
   });
+  const lists = async () => {
+    const list = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
+    let hits = 0;
+    for (const message of list.messages || []) {
+      const subject = String(message.Subject || '');
+      if (!subject.includes('People to remove from the group')) continue;
+      const full = await fetch(`${MAILPIT}/api/v1/message/${message.ID}`).then((res) => res.json());
+      const body = `${full.Subject || ''}\n${full.Text || ''}`;
+      if (body.includes(email)) hits += 1;
+    }
+    return hits;
+  };
+  const removals = async () => (await (await request.post('/wp-json/lld-members/v1/test/premium', { data: { email } })).json()).removals;
   await request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
-  const list = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
-  let hit = false;
-  for (const message of list.messages || []) {
-    const subject = String(message.Subject || '');
-    if (!subject.includes('People to remove from the group')) continue;
-    const full = await fetch(`${MAILPIT}/api/v1/message/${message.ID}`).then((res) => res.json());
-    const body = `${full.Subject || ''}\n${full.Text || ''}`;
-    if (body.includes(email)) hit = true;
-  }
-  expect(hit, 'weekly removal list').toBeTruthy();
+  expect(await lists(), 'weekly removal list').toBe(1);
   await asOwner(page);
-  await page.goto('/wp-admin/admin.php?page=lld-group');
-  if (page.url().includes('pmpro-wizard')) await page.goto('/wp-admin/admin.php?page=lld-group');
+  const open = async () => {
+    await page.goto('/wp-admin/admin.php?page=lld-group');
+    if (page.url().includes('pmpro-wizard')) await page.goto('/wp-admin/admin.php?page=lld-group');
+  };
+  await open();
   const row = page.locator('li', { hasText: email });
   await expect(row).toContainText('overdue');
   await row.getByRole('button', { name: 'Record removal' }).click();
   await expect(page.locator('li', { hasText: email })).toContainText(/Removed on \d{4}-\d{2}-\d{2}/);
+
+  // the daily check still sees the same ended subscription: the recorded end is not added again
+  await request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
+  expect(await removals()).toHaveLength(1);
+
+  // a second Premium end is tracked for removal on its own row, on the next list, and recorded separately
+  await request.post('/wp-json/lld-members/v1/test/premium', { data: { email, note_ended: '2021-03-01' } });
+  await request.post('/wp-json/lld-members/v1/test/premium', { data: { email, note_ended: '2021-03-01' } });
+  const both = await removals();
+  expect(both.map((r) => r.premium_ended_on)).toEqual(['2020-01-01', '2021-03-01']);
+  expect(both[0].removed_on).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  expect(both[1].removed_on).toBeNull();
+  await request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
+  expect(await lists(), 'the second end is on the next list').toBe(2);
+  await asOwner(page);
+  await open();
+  const again = page.locator('li', { hasText: email }).filter({ hasText: 'ended 2021-03-01' });
+  await expect(again).toContainText('overdue');
+  await again.getByRole('button', { name: 'Record removal' }).click();
+  await expect(page.locator('li', { hasText: email }).filter({ hasText: 'ended 2021-03-01' })).toContainText(/Removed on \d{4}-\d{2}-\d{2}/);
+  const done = await removals();
+  expect(done.every((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.removed_on))).toBe(true);
+  expect(done[0].removed_on).toBe(both[0].removed_on);
 });
 
 test('TC-FR2-36-AS-01', async ({ page, request }) => {

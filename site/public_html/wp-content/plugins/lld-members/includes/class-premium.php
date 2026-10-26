@@ -69,8 +69,10 @@ class LLD_Members_Premium {
 		if ( $member_id < 1 || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $on ) ) {
 			return;
 		}
+		// One row per Premium end (F7). The same end is never added twice, even after its removal was recorded,
+		// because the daily check sees an ended subscription every day; a later end is a new row.
 		$table = LLD_Members_Schema::table( 'fb_removal' );
-		$known = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE member_number = %d LIMIT 1", $member_id ) );
+		$known = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE member_number = %d AND premium_ended_on = %s LIMIT 1", $member_id, $on ) );
 		if ( $known ) {
 			return;
 		}
@@ -595,6 +597,9 @@ class LLD_Members_Premium {
 		$email  = isset( $params['email'] ) ? sanitize_email( (string) $params['email'] ) : '';
 		global $wpdb;
 		$member_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE email = %s', $email ) );
+		if ( $member_id && isset( $params['note_ended'] ) ) {
+			self::note_ended( $member_id, sanitize_text_field( (string) $params['note_ended'] ) );
+		}
 		return new WP_REST_Response(
 			array(
 				'badges'    => self::badge_rows( $member_id ),
@@ -604,6 +609,7 @@ class LLD_Members_Premium {
 				'plan'      => $wpdb->get_row( $wpdb->prepare( 'SELECT level, version_key, started_on, current_week FROM ' . LLD_Members_Schema::table( 'workout' ) . ' WHERE member_id = %d AND active = 1', $member_id ), ARRAY_A ),
 				'changes'   => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'workout_change' ) . ' c JOIN ' . LLD_Members_Schema::table( 'workout' ) . ' w ON w.id = c.workout_id WHERE w.member_id = %d', $member_id ) ),
 				'results'   => $wpdb->get_results( $wpdb->prepare( 'SELECT item_version, context_type, programme_day FROM ' . LLD_Members_Schema::table( 'result' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
+				'removals'  => $wpdb->get_results( $wpdb->prepare( 'SELECT premium_ended_on, removed_on, late FROM ' . LLD_Members_Schema::table( 'fb_removal' ) . ' WHERE member_number = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
 				'days'      => $wpdb->get_results( $wpdb->prepare( 'SELECT local_date, water_glasses, hunger, energy FROM ' . LLD_Members_Schema::table( 'diary_day' ) . ' WHERE member_id = %d ORDER BY local_date ASC', $member_id ), ARRAY_A ),
 				'photos'    => $member_id > 0 ? array_map( 'basename', glob( lld_members_private_dir() . '/photos/' . $member_id . '/diary-*' ) ?: array() ) : array(),
 			),
@@ -618,7 +624,7 @@ class LLD_Members_Premium {
 		self::catch_ended();
 		self::flag_late();
 		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_removal_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_removal_nonce'] ) ), 'lld_removal' ) ) {
-			self::record_removal( isset( $_POST['lld_member'] ) ? (int) $_POST['lld_member'] : 0 );
+			self::record_removal( isset( $_POST['lld_removal'] ) ? (int) $_POST['lld_removal'] : 0 );
 			echo '<div class="notice notice-success"><p>Removal recorded.</p></div>';
 		}
 		echo '<div class="wrap"><h1>Group removals</h1>';
@@ -640,7 +646,7 @@ class LLD_Members_Premium {
 				}
 				echo '<form method="post">';
 				wp_nonce_field( 'lld_removal', 'lld_removal_nonce' );
-				echo '<input type="hidden" name="lld_member" value="' . (int) $row->member_number . '">';
+				echo '<input type="hidden" name="lld_removal" value="' . (int) $row->id . '">';
 				submit_button( 'Record removal', 'secondary', 'submit', false );
 				echo '</form>';
 			}
@@ -2160,22 +2166,20 @@ class LLD_Members_Premium {
 	}
 
 	/**
-	 * @param int $member_id Member number.
+	 * Record the removal for one Premium end that is still outstanding.
+	 *
+	 * @param int $removal_id Removal row.
 	 */
-	private static function record_removal( $member_id ) {
-		if ( $member_id < 1 ) {
+	private static function record_removal( $removal_id ) {
+		if ( $removal_id < 1 ) {
 			return;
 		}
 		global $wpdb;
-		$wpdb->update(
-			LLD_Members_Schema::table( 'fb_removal' ),
-			array(
-				'removed_on' => LLD_Members_Programme::local_today( $member_id ),
-				'late'       => 0,
-			),
-			array( 'member_number' => $member_id ),
-			array( '%s', '%d' ),
-			array( '%d' )
-		);
+		$table  = LLD_Members_Schema::table( 'fb_removal' );
+		$member = (int) $wpdb->get_var( $wpdb->prepare( "SELECT member_number FROM {$table} WHERE id = %d AND removed_on IS NULL", $removal_id ) );
+		if ( $member < 1 ) {
+			return;
+		}
+		$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET removed_on = %s, late = 0 WHERE id = %d AND removed_on IS NULL", LLD_Members_Programme::local_today( $member ), $removal_id ) );
 	}
 }
