@@ -75,6 +75,18 @@ test('TC-FR2-23-AS-02', async ({ page, request }) => {
   expect(row.calculator_version).toHaveLength(64);
   expect(JSON.stringify(row)).not.toContain(withConsent);
   expect(JSON.stringify(row)).not.toContain('omnivore');
+
+  // A result the tool withdraws (kidney disease stops the number) can no longer be saved.
+  await page.goto('/health-tools/protein/');
+  await proteinResult(page);
+  await expect(save).toBeVisible();
+  const frame = page.frameLocator('.lld-tool-frame');
+  await frame.locator('#kidney button[data-val="yes"]').click();
+  await submitProtein(frame);
+  await expect(frame.locator('[data-test="renal-stop"]')).toBeVisible();
+  await expect(save).toBeHidden();
+  await expect(page.locator('#lld-save-result input[name="lld_headline"]')).toHaveValue('');
+  await expect(page.locator('#lld-save-result input[name="lld_band"]')).toHaveValue('');
 });
 
 test('TC-FR2-23-AS-03', async ({ page }) => {

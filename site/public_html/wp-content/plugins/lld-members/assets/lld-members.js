@@ -198,6 +198,21 @@
     }
   }
 
+  // FR2-23: when the calculator withdraws its result, the save form is emptied and hidden so the old number cannot be saved.
+  var saveForm = document.getElementById("lld-save-result");
+  if (saveForm) {
+    window.addEventListener("message", function (event) {
+      if (event.origin !== window.location.origin) return;
+      var data = event.data || {};
+      if (data.type !== "lld-calculator-cleared" || data.calculator !== saveForm.getAttribute("data-calculator")) return;
+      ["lld_headline", "lld_unit", "lld_band", "lld_version"].forEach(function (name) {
+        var field = saveForm.querySelector("[name=" + name + "]");
+        if (field) field.value = "";
+      });
+      saveForm.hidden = true;
+    });
+  }
+
   var fail = document.querySelector(".lld-fail");
   if (fail) {
     if (!fail.hasAttribute("tabindex")) fail.setAttribute("tabindex", "-1");

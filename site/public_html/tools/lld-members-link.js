@@ -36,23 +36,33 @@
     };
   }
 
+  function post(message) {
+    try { window.parent.postMessage(message, origin()); } catch (e) {}
+  }
+
   function send() {
     var found = result();
     var parentOrigin = origin();
-    if (!ready || !found || !parentOrigin || window.parent === window) return;
+    if (!ready || !parentOrigin || window.parent === window) return;
+    if (!found) {
+      // The tool has withdrawn its number (for example kidney disease or the emergency box): the landing page must not keep it.
+      if (last !== '') {
+        last = '';
+        post({ type: 'lld-calculator-cleared', calculator: slug });
+      }
+      return;
+    }
     var key = found.headline + '|' + found.unit + '|' + found.band + '|' + version;
     if (key === last) return;
     last = key;
-    try {
-      window.parent.postMessage({
-        type: 'lld-calculator-result',
-        calculator: slug,
-        headline: found.headline,
-        unit: found.unit,
-        band: found.band,
-        version: version
-      }, parentOrigin);
-    } catch (e) {}
+    post({
+      type: 'lld-calculator-result',
+      calculator: slug,
+      headline: found.headline,
+      unit: found.unit,
+      band: found.band,
+      version: version
+    });
   }
 
   fetch('./status.json', { cache: 'no-store' }).then(function (res) {
