@@ -315,8 +315,7 @@ class LLD_Members_Content {
 		}
 		$best = null;
 		foreach ( self::versions( $parent_id ) as $version ) {
-			$on = get_post_meta( $version->ID, '_lld_approved_on', true );
-			if ( is_string( $on ) && '' !== $on ) {
+			if ( '' === self::record_problem( $version ) ) {
 				$best = $version;
 			}
 		}
@@ -324,6 +323,33 @@ class LLD_Members_Content {
 			return null;
 		}
 		return self::read_version( $best );
+	}
+
+	/**
+	 * Why a version's approval record cannot be trusted, or an empty string when it can.
+	 * An unapproved version returns "not approved".
+	 *
+	 * @param WP_Post $version Version row.
+	 */
+	private static function record_problem( $version ) {
+		$on = (string) get_post_meta( $version->ID, '_lld_approved_on', true );
+		if ( '' === $on ) {
+			return 'not approved';
+		}
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $on ) ) {
+			return 'the approval date is not a date';
+		}
+		if ( (int) get_post_meta( $version->ID, '_lld_approved_by', true ) < 1 ) {
+			return 'the approval does not name who approved it';
+		}
+		if ( '' === (string) get_post_meta( $version->ID, '_lld_fingerprint', true ) ) {
+			return 'the version has no fingerprint';
+		}
+		$stored = (string) get_post_meta( $version->ID, '_lld_stored_hash', true );
+		if ( '' !== $stored && ! hash_equals( $stored, hash( 'sha256', (string) $version->post_content ) ) ) {
+			return 'the approved text was changed after approval';
+		}
+		return '';
 	}
 
 	/**
@@ -342,17 +368,7 @@ class LLD_Members_Content {
 			)
 		);
 		foreach ( $posts as $post ) {
-			$live = self::shown( $post->ID );
-			if ( $live ) {
-				if ( '' === (string) $live['approved_on'] || '' === (string) $live['fingerprint'] ) {
-					$problems[] = $post->ID . ' is shown without an approval record';
-				}
-				$shown[] = array(
-					'id'          => (int) $post->ID,
-					'fingerprint' => (string) $live['fingerprint'],
-					'approved_on' => (string) $live['approved_on'],
-				);
-			}
+			$approved = null;
 			foreach ( self::versions( $post->ID ) as $version ) {
 				$on = (string) get_post_meta( $version->ID, '_lld_approved_on', true );
 				if ( '' === $on ) {
@@ -360,7 +376,25 @@ class LLD_Members_Content {
 						'id'          => (int) $post->ID,
 						'fingerprint' => (string) get_post_meta( $version->ID, '_lld_fingerprint', true ),
 					);
+					continue;
 				}
+				$approved = $version;
+			}
+			if ( $approved ) {
+				$problem = self::record_problem( $approved );
+				if ( '' !== $problem ) {
+					$problems[] = $post->ID . ': version ' . (int) get_post_meta( $approved->ID, '_lld_version', true ) . ' is marked approved, but ' . $problem . '. Members are not shown it.';
+				}
+			}
+			$live = self::shown( $post->ID );
+			if ( $live ) {
+				$shown[] = array(
+					'id'          => (int) $post->ID,
+					'version'     => (int) $live['version'],
+					'fingerprint' => (string) $live['fingerprint'],
+					'approved_on' => (string) $live['approved_on'],
+					'approved_by' => (int) $live['approved_by'],
+				);
 			}
 		}
 		return array(
@@ -424,8 +458,7 @@ class LLD_Members_Content {
 			echo '<br>Version ' . (int) ( $snap['version'] ?? 0 );
 			echo '<br>AI-drafted: ' . ( ! empty( $snap['ai'] ) ? 'yes' : 'no' );
 			echo '<br><code>' . esc_html( (string) ( $snap['fingerprint'] ?? '' ) ) . '</code></td>';
-			echo '<td><p class="lld-was">' . esc_html( $old ? (string) $old['body'] : 'Nothing approved yet' ) . '</p>';
-			echo '<p class="lld-now">' . esc_html( (string) ( $snap['body'] ?? '' ) ) . '</p></td>';
+			echo '<td>' . self::changes_html( $old, $snap ) . '</td>';
 			echo '<td>';
 			if ( $flags ) {
 				echo '<ul class="lld-wording-flags">';
@@ -450,22 +483,40 @@ class LLD_Members_Content {
 			return;
 		}
 		if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['lld_matrix_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_matrix_nonce'] ) ), 'lld_matrix' ) ) {
-			self::save_matrix();
-			self::remember( 'Safety matrix saved. Approve the new version before members are affected.' );
+			$result = self::save_matrix();
+			if ( $result['refused'] ) {
+				self::remember( 'Not saved: ' . implode( ' ', $result['refused'] ) . ' Tick "Confirm removal" on that row to save it.' );
+			} elseif ( $result['saved'] ) {
+				self::remember( 'Safety matrix saved. Approve the new version before members are affected.' );
+			} else {
+				self::remember( 'Nothing changed.' );
+			}
 		}
 		echo '<div class="wrap"><h1>Safety matrix</h1>';
 		self::echo_notice();
 		echo '<p>Changes go through the approvals queue. Members are not affected until you approve them.</p>';
+		echo '<p>Each row starts from the launch rules in requirements section 8.2. Removing a launch protection needs "Confirm removal" on that row, and the removal is shown again when you approve it.</p>';
 		echo '<form method="post">';
 		wp_nonce_field( 'lld_matrix', 'lld_matrix_nonce' );
-		echo '<table class="widefat"><thead><tr><th>Situation</th><th>Remove content tagged</th><th>Hide weight-loss badges</th><th>Tracks not offered</th><th>Note shown</th></tr></thead><tbody>';
+		echo '<table class="widefat lld-matrix"><thead><tr><th>Situation</th><th>Remove content tagged</th><th>Hide weight-loss badges</th><th>Tracks not offered</th><th>Note shown</th><th>Helpline link</th><th>Before exercise</th><th>On high-intensity content</th><th>Confirm removal</th></tr></thead><tbody>';
+		$launch = LLD_Members_Safety::launch_rules();
 		foreach ( self::situations() as $key => $label ) {
-			$row = self::matrix_row( $key );
-			echo '<tr><td>' . esc_html( $label ) . '</td>';
-			echo '<td><input name="remove[' . esc_attr( $key ) . ']" value="' . esc_attr( (string) ( $row['remove_tags'] ?? '' ) ) . '"></td>';
-			echo '<td><input type="checkbox" name="hide[' . esc_attr( $key ) . ']" value="1" ' . checked( 1, (int) ( $row['hide_badges'] ?? 0 ), false ) . '></td>';
-			echo '<td><input name="tracks[' . esc_attr( $key ) . ']" value="' . esc_attr( (string) ( $row['tracks'] ?? '' ) ) . '"></td>';
-			echo '<td><textarea name="note[' . esc_attr( $key ) . ']" rows="2">' . esc_textarea( (string) ( $row['note'] ?? '' ) ) . '</textarea></td></tr>';
+			$row  = self::matrix_row( $key );
+			$rule = $row['rule'];
+			$base = $launch[ $key ];
+			echo '<tr data-lld-situation="' . esc_attr( $key ) . '"><td>' . esc_html( $label );
+			if ( $row['waiting'] ) {
+				echo '<br><em>A change is waiting for approval.</em>';
+			}
+			echo '<br><small>Launch: ' . esc_html( self::describe_rule( $base ) ) . '</small></td>';
+			echo '<td><input name="remove[' . esc_attr( $key ) . ']" value="' . esc_attr( implode( ', ', $rule['tags'] ) ) . '"></td>';
+			echo '<td><input type="checkbox" name="hide[' . esc_attr( $key ) . ']" value="1" ' . checked( true, (bool) $rule['badges'], false ) . '></td>';
+			echo '<td><input name="tracks[' . esc_attr( $key ) . ']" value="' . esc_attr( implode( ', ', $rule['tracks'] ) ) . '"></td>';
+			echo '<td><textarea name="note[' . esc_attr( $key ) . ']" rows="2">' . esc_textarea( $rule['note'] ) . '</textarea></td>';
+			echo '<td><input type="url" name="help[' . esc_attr( $key ) . ']" value="' . esc_attr( $rule['help_link'] ) . '"></td>';
+			echo '<td><textarea name="exercise[' . esc_attr( $key ) . ']" rows="2">' . esc_textarea( $rule['exercise_note'] ) . '</textarea></td>';
+			echo '<td><textarea name="intense[' . esc_attr( $key ) . ']" rows="2">' . esc_textarea( $rule['intense_note'] ) . '</textarea></td>';
+			echo '<td><label><input type="checkbox" name="confirm[' . esc_attr( $key ) . ']" value="1"> Confirm removal</label></td></tr>';
 		}
 		echo '</tbody></table><p><button class="button button-primary">Save matrix</button></p></form></div>';
 	}
@@ -621,6 +672,7 @@ class LLD_Members_Content {
 			return;
 		}
 		update_post_meta( $version_id, '_lld_fingerprint', $fp );
+		update_post_meta( $version_id, '_lld_stored_hash', hash( 'sha256', (string) get_post_field( 'post_content', $version_id, 'raw' ) ) );
 		update_post_meta( $version_id, '_lld_version', $n );
 		update_post_meta( $version_id, '_lld_ai', $ai );
 	}
@@ -861,6 +913,74 @@ class LLD_Members_Content {
 	}
 
 	/**
+	 * What changed between the approved version and the one waiting: text, tags, fields and linked items.
+	 *
+	 * @param array<string,mixed>|null $old  Approved snapshot, or null.
+	 * @param array<string,mixed>      $snap Waiting snapshot.
+	 */
+	private static function changes_html( $old, $snap ) {
+		$type  = (string) ( $snap['type'] ?? '' );
+		$html  = '<p class="lld-was">' . esc_html( $old ? (string) $old['body'] : 'Nothing approved yet' ) . '</p>';
+		$html .= '<p class="lld-now">' . esc_html( (string) ( $snap['body'] ?? '' ) ) . '</p>';
+		$lines = array();
+		$was   = is_array( $old ) ? $old : array( 'title' => '', 'tags' => array(), 'fields' => array(), 'links' => array() );
+		if ( (string) ( $was['title'] ?? '' ) !== (string) ( $snap['title'] ?? '' ) ) {
+			$lines[] = 'Title: "' . (string) ( $was['title'] ?? '' ) . '" to "' . (string) ( $snap['title'] ?? '' ) . '"';
+		}
+		$old_tags = isset( $was['tags'] ) && is_array( $was['tags'] ) ? array_map( 'strval', $was['tags'] ) : array();
+		$new_tags = isset( $snap['tags'] ) && is_array( $snap['tags'] ) ? array_map( 'strval', $snap['tags'] ) : array();
+		$added    = array_diff( $new_tags, $old_tags );
+		$removed  = array_diff( $old_tags, $new_tags );
+		if ( $added ) {
+			$lines[] = 'Tags added: ' . implode( ', ', $added );
+		}
+		if ( $removed ) {
+			$lines[] = 'Tags removed: ' . implode( ', ', $removed );
+		}
+		$old_fields = isset( $was['fields'] ) && is_array( $was['fields'] ) ? $was['fields'] : array();
+		$new_fields = isset( $snap['fields'] ) && is_array( $snap['fields'] ) ? $snap['fields'] : array();
+		$labels     = array();
+		foreach ( self::definitions( $type ) as $field ) {
+			$labels[ $field[0] ] = $field[1];
+		}
+		foreach ( array_unique( array_merge( array_keys( $old_fields ), array_keys( $new_fields ) ) ) as $key ) {
+			$before = self::field_text( $old_fields[ $key ] ?? '' );
+			$after  = self::field_text( $new_fields[ $key ] ?? '' );
+			if ( $before !== $after ) {
+				$lines[] = ( $labels[ $key ] ?? (string) $key ) . ': "' . $before . '" to "' . $after . '"';
+			}
+		}
+		if ( wp_json_encode( $was['links'] ?? array() ) !== wp_json_encode( $snap['links'] ?? array() ) && is_array( $old ) ) {
+			$lines[] = 'A linked recipe or activity has changed.';
+		}
+		if ( 'lld_matrix' === $type ) {
+			$key   = (string) ( $new_fields['situation'] ?? '' );
+			$drops = LLD_Members_Safety::dropped( $key, LLD_Members_Safety::from_fields( $new_fields, (string) ( $snap['body'] ?? '' ) ) );
+			if ( $drops ) {
+				$html .= '<p class="lld-matrix-drops"><strong>Removes launch protections: ' . esc_html( implode( ', ', $drops ) ) . '</strong></p>';
+			}
+		}
+		if ( $lines ) {
+			$html .= '<ul class="lld-changes">';
+			foreach ( $lines as $line ) {
+				$html .= '<li>' . esc_html( $line ) . '</li>';
+			}
+			$html .= '</ul>';
+		}
+		return $html;
+	}
+
+	/**
+	 * @param mixed $value Field value.
+	 */
+	private static function field_text( $value ) {
+		if ( is_array( $value ) ) {
+			return (string) wp_json_encode( $value );
+		}
+		return (string) $value;
+	}
+
+	/**
 	 * @param string[] $tags    Tag slugs.
 	 * @param string[] $needles Wanted slugs.
 	 */
@@ -886,8 +1006,18 @@ class LLD_Members_Content {
 				'order'          => 'DESC',
 			)
 		);
-		$out = array();
+		$out    = array();
+		$latest = array();
 		foreach ( $rows as $row ) {
+			$parent = (int) $row->post_parent;
+			if ( ! isset( $latest[ $parent ] ) ) {
+				$shown             = self::shown( $parent );
+				$latest[ $parent ] = $shown ? (int) $shown['version_id'] : 0;
+			}
+			// A version older than the one members see has been superseded; it is not offered for approval.
+			if ( (int) $row->ID < $latest[ $parent ] ) {
+				continue;
+			}
 			$on   = (string) get_post_meta( $row->ID, '_lld_approved_on', true );
 			$back = (string) get_post_meta( $row->ID, '_lld_sent_back', true );
 			if ( '' === $on && '' === $back ) {
@@ -915,25 +1045,28 @@ class LLD_Members_Content {
 		}
 		$member_id = LLD_Members_Access::current_member_id();
 		if ( class_exists( 'LLD_Members_Safety' ) && ! LLD_Members_Safety::allows( $member_id, $shown ) ) {
-			$note = implode( ' ', LLD_Members_Safety::notes( $member_id ) );
 			lld_members_layout(
 				array(
 					'title'     => 'Not suitable for you',
-					'main'      => lld_not_suitable( 'This is not suitable for you.', $note, home_url( '/members/home/' ), 'Back to today' ),
+					'main'      => LLD_Members_Safety::not_suitable( $member_id, 'This is not suitable for you.', home_url( '/members/home/' ), 'Back to today' ),
 					'signed_in' => true,
 				)
 			);
 			return;
 		}
+		$cautions = class_exists( 'LLD_Members_Safety' ) ? LLD_Members_Safety::cautions( $member_id, $shown ) : array();
 		if ( class_exists( 'LLD_Members_Personal' ) ) {
 			LLD_Members_Personal::remember_open( $member_id, 'c' . $item_id );
 		}
 		if ( isset( $_GET['download'] ) ) {
 			header( 'Content-Type: text/plain; charset=utf-8' );
-			echo (string) $shown['title'] . "\n" . (string) $shown['body'];
+			echo (string) $shown['title'] . "\n" . ( $cautions ? implode( "\n", $cautions ) . "\n" : '' ) . (string) $shown['body'];
 			exit;
 		}
-		$main  = '<h1>' . esc_html( (string) $shown['title'] ) . '</h1>';
+		$main = '<h1>' . esc_html( (string) $shown['title'] ) . '</h1>';
+		foreach ( $cautions as $caution ) {
+			$main .= lld_caution( $caution );
+		}
 		$main .= '<div class="lld-content">' . wp_kses_post( wpautop( (string) $shown['body'] ) ) . '</div>';
 		lld_members_layout(
 			array(
@@ -981,34 +1114,41 @@ class LLD_Members_Content {
 	 * @param int $goal_id Goal id.
 	 */
 	private static function goal_line( $goal_id ) {
-		$ready = self::goal_ready( $goal_id );
+		$snap = self::shown( $goal_id );
+		if ( ! $snap ) {
+			$ready = self::goal_ready( self::canonical( $goal_id ) );
+			return 'Shown to members: no, it is waiting for approval. Reviewed articles: ' . $ready['articles'] . '. Approved activities: ' . $ready['activities'] . '.';
+		}
+		$ready = self::goal_ready( $snap );
 		return 'Shown to members: ' . ( $ready['ok'] ? 'yes' : 'no' ) . '. Reviewed articles: ' . $ready['articles'] . '. Approved activities: ' . $ready['activities'] . '.';
 	}
 
 	/**
-	 * @param int $goal_id Goal id.
-	 * @return array{ok:bool,articles:int,activities:int,kind:string}
+	 * @param array<string,mixed> $snap Goal snapshot (approved version, or the working copy for the owner's line).
+	 * @return array{ok:bool,articles:int,activities:int,kind:string,track_id:int}
 	 */
-	private static function goal_ready( $goal_id ) {
-		$fields     = get_post_meta( $goal_id, '_lld_fields', true );
-		$kind       = is_array( $fields ) ? (string) ( $fields['kind'] ?? '' ) : '';
-		$track      = is_array( $fields ) ? (int) ( $fields['track_id'] ?? 0 ) : 0;
-		$articles   = self::count_reviewed_articles( $goal_id );
+	private static function goal_ready( $snap ) {
+		$fields     = isset( $snap['fields'] ) && is_array( $snap['fields'] ) ? $snap['fields'] : array();
+		$tags       = isset( $snap['tags'] ) && is_array( $snap['tags'] ) ? array_map( 'strval', $snap['tags'] ) : array();
+		$kind       = (string) ( $fields['kind'] ?? '' );
+		$track      = (int) ( $fields['track_id'] ?? 0 );
+		$articles   = self::count_reviewed_articles( $tags );
 		$activities = self::count_approved_activities( $track );
 		return array(
 			'ok'         => $articles >= 5 && ( 'track goal' !== $kind || $activities >= 7 ),
 			'articles'   => $articles,
 			'activities' => $activities,
 			'kind'       => $kind,
+			'track_id'   => $track,
 		);
 	}
 
 	/**
-	 * Goals a member is allowed to choose.
+	 * Approved goal snapshots, in title order.
 	 *
-	 * @return array<int,array{id:int,title:string,key:string,kind:string}>
+	 * @return array<int,array<string,mixed>>
 	 */
-	public static function member_goals() {
+	public static function approved_goals() {
 		$posts = get_posts(
 			array(
 				'post_type'      => 'lld_goal',
@@ -1021,14 +1161,52 @@ class LLD_Members_Content {
 		);
 		$out = array();
 		foreach ( $posts as $post ) {
-			$ready = self::goal_ready( $post->ID );
+			$snap = self::shown( $post->ID );
+			if ( is_array( $snap ) && '' !== trim( (string) ( $snap['title'] ?? '' ) ) ) {
+				$out[] = $snap;
+			}
+		}
+		usort(
+			$out,
+			static function ( $a, $b ) {
+				return strcasecmp( (string) $a['title'], (string) $b['title'] );
+			}
+		);
+		return $out;
+	}
+
+	/**
+	 * Goals a member is allowed to choose: approved, with enough content, and not a track the safety matrix
+	 * keeps from this member.
+	 *
+	 * @param int $member_id Member number, or 0 for every member.
+	 * @return array<int,array{id:int,title:string,key:string,kind:string}>
+	 */
+	public static function member_goals( $member_id = 0 ) {
+		$member_id = (int) $member_id;
+		$out       = array();
+		foreach ( self::approved_goals() as $snap ) {
+			$ready = self::goal_ready( $snap );
 			if ( ! $ready['ok'] ) {
 				continue;
 			}
+			$title = (string) $snap['title'];
+			if ( $member_id > 0 && class_exists( 'LLD_Members_Safety' ) ) {
+				if ( ! LLD_Members_Safety::track_allowed( $member_id, $title ) ) {
+					continue;
+				}
+				if ( $ready['track_id'] > 0 ) {
+					$track = self::shown( $ready['track_id'] );
+					$name  = is_array( $track ) ? (string) $track['title'] : (string) get_the_title( $ready['track_id'] );
+					if ( '' !== $name && ! LLD_Members_Safety::track_allowed( $member_id, $name ) ) {
+						continue;
+					}
+				}
+			}
 			$out[] = array(
-				'id'    => (int) $post->ID,
-				'title' => $post->post_title,
-				'key'   => sanitize_title( $post->post_title ),
+				'id'    => (int) $snap['parent_id'],
+				'title' => $title,
+				'key'   => sanitize_title( $title ),
 				'kind'  => $ready['kind'],
 			);
 		}
@@ -1036,25 +1214,15 @@ class LLD_Members_Content {
 	}
 
 	/**
-	 * Goal titles that are still short of the member threshold.
+	 * Approved goal titles that are still short of the member threshold.
 	 *
 	 * @return string[]
 	 */
 	public static function goal_gaps() {
-		$posts = get_posts(
-			array(
-				'post_type'      => 'lld_goal',
-				'post_status'    => array( 'publish', 'draft', 'private' ),
-				'post_parent'    => 0,
-				'posts_per_page' => -1,
-				'orderby'        => 'title',
-				'order'          => 'ASC',
-			)
-		);
 		$out = array();
-		foreach ( $posts as $post ) {
-			if ( ! self::goal_ready( $post->ID )['ok'] ) {
-				$out[] = $post->post_title;
+		foreach ( self::approved_goals() as $snap ) {
+			if ( ! self::goal_ready( $snap )['ok'] ) {
+				$out[] = (string) $snap['title'];
 			}
 		}
 		return $out;
@@ -1078,11 +1246,11 @@ class LLD_Members_Content {
 	}
 
 	/**
-	 * @param int $goal_id Goal id.
+	 * @param string[] $slugs Goal tag slugs from the approved goal.
 	 */
-	private static function count_reviewed_articles( $goal_id ) {
-		$tags = wp_get_object_terms( $goal_id, 'lld_tag', array( 'fields' => 'ids' ) );
-		if ( is_wp_error( $tags ) || ! $tags ) {
+	private static function count_reviewed_articles( $slugs ) {
+		$slugs = array_values( array_filter( array_map( 'sanitize_title', (array) $slugs ) ) );
+		if ( ! $slugs ) {
 			return 0;
 		}
 		$posts = get_posts(
@@ -1094,8 +1262,8 @@ class LLD_Members_Content {
 				'tax_query'      => array(
 					array(
 						'taxonomy' => 'lld_tag',
-						'field'    => 'term_id',
-						'terms'    => $tags,
+						'field'    => 'slug',
+						'terms'    => $slugs,
 					),
 				),
 				'meta_query'     => array(
@@ -1306,6 +1474,10 @@ class LLD_Members_Content {
 				array( 'remove_tags', 'Remove content tagged', 'text' ),
 				array( 'hide_badges', 'Hide weight-loss badges', 'check' ),
 				array( 'tracks', 'Tracks not offered', 'text' ),
+				array( 'help_link', 'Helpline link', 'text' ),
+				array( 'exercise_note', 'Before exercise', 'textarea' ),
+				array( 'intense_note', 'On high-intensity content', 'textarea' ),
+				array( 'confirmed_drops', 'Launch protections the owner confirmed removing', 'text' ),
 			),
 			'lld_qa'        => array(
 				array( 'session_date', 'Date', 'text' ),
@@ -1334,10 +1506,40 @@ class LLD_Members_Content {
 	}
 
 	/**
+	 * The row as the owner last saved it, prefilled from the launch rules.
+	 *
 	 * @param string $key Situation key.
-	 * @return array<string,mixed>
+	 * @return array{rule:array<string,mixed>,waiting:bool,id:int}
 	 */
 	private static function matrix_row( $key ) {
+		$found = self::matrix_post( $key );
+		if ( ! $found ) {
+			return array(
+				'rule'    => LLD_Members_Safety::launch_rules()[ $key ],
+				'waiting' => false,
+				'id'      => 0,
+			);
+		}
+		$fields = get_post_meta( $found->ID, '_lld_fields', true );
+		if ( ! is_array( $fields ) ) {
+			$fields = array();
+		}
+		$waiting = false;
+		foreach ( self::versions( $found->ID ) as $version ) {
+			$waiting = '' === (string) get_post_meta( $version->ID, '_lld_approved_on', true ) && '' === (string) get_post_meta( $version->ID, '_lld_sent_back', true );
+		}
+		return array(
+			'rule'    => LLD_Members_Safety::effective( $key, $fields, (string) $found->post_content ),
+			'waiting' => $waiting,
+			'id'      => (int) $found->ID,
+		);
+	}
+
+	/**
+	 * @param string $key Situation key.
+	 * @return WP_Post|null
+	 */
+	private static function matrix_post( $key ) {
 		$found = get_posts(
 			array(
 				'post_type'      => 'lld_matrix',
@@ -1348,53 +1550,57 @@ class LLD_Members_Content {
 				'meta_value'     => $key,
 			)
 		);
-		if ( ! $found ) {
-			return array();
-		}
-		$fields = get_post_meta( $found[0]->ID, '_lld_fields', true );
-		if ( ! is_array( $fields ) ) {
-			$fields = array();
-		}
-		$fields['note'] = $found[0]->post_content;
-		return $fields;
+		return $found ? $found[0] : null;
 	}
 
+	/**
+	 * Save changed rows. A row that removes a launch protection is refused unless its removal is confirmed.
+	 *
+	 * @return array{saved:int,refused:string[]}
+	 */
 	private static function save_matrix() {
-		$notes   = isset( $_POST['note'] ) && is_array( $_POST['note'] ) ? wp_unslash( $_POST['note'] ) : array();
-		$remove  = isset( $_POST['remove'] ) && is_array( $_POST['remove'] ) ? wp_unslash( $_POST['remove'] ) : array();
-		$tracks  = isset( $_POST['tracks'] ) && is_array( $_POST['tracks'] ) ? wp_unslash( $_POST['tracks'] ) : array();
-		$hide    = isset( $_POST['hide'] ) && is_array( $_POST['hide'] ) ? wp_unslash( $_POST['hide'] ) : array();
+		$posted = array();
+		foreach ( array( 'note', 'remove', 'tracks', 'hide', 'help', 'exercise', 'intense', 'confirm' ) as $name ) {
+			$posted[ $name ] = isset( $_POST[ $name ] ) && is_array( $_POST[ $name ] ) ? wp_unslash( $_POST[ $name ] ) : array();
+		}
+		$saved   = 0;
+		$refused = array();
 		foreach ( self::situations() as $key => $label ) {
-			$note  = sanitize_textarea_field( isset( $notes[ $key ] ) ? (string) $notes[ $key ] : '' );
-			$tags  = sanitize_text_field( isset( $remove[ $key ] ) ? (string) $remove[ $key ] : '' );
-			$away  = sanitize_text_field( isset( $tracks[ $key ] ) ? (string) $tracks[ $key ] : '' );
-			$badges = empty( $hide[ $key ] ) ? 0 : 1;
-			if ( '' === $note && '' === $tags && '' === $away && ! $badges ) {
+			$row = array(
+				'tags'          => LLD_Members_Safety::split_tags( sanitize_text_field( (string) ( $posted['remove'][ $key ] ?? '' ) ) ),
+				'badges'        => ! empty( $posted['hide'][ $key ] ),
+				'tracks'        => LLD_Members_Safety::split_labels( sanitize_text_field( (string) ( $posted['tracks'][ $key ] ?? '' ) ) ),
+				'note'          => trim( sanitize_textarea_field( (string) ( $posted['note'][ $key ] ?? '' ) ) ),
+				'help_link'     => esc_url_raw( trim( (string) ( $posted['help'][ $key ] ?? '' ) ), array( 'https' ) ),
+				'exercise_note' => trim( sanitize_textarea_field( (string) ( $posted['exercise'][ $key ] ?? '' ) ) ),
+				'intense_note'  => trim( sanitize_textarea_field( (string) ( $posted['intense'][ $key ] ?? '' ) ) ),
+			);
+			if ( self::same_rule( $row, self::matrix_row( $key )['rule'] ) ) {
 				continue;
 			}
-			$fields = array(
-				'situation'   => $key,
-				'remove_tags' => $tags,
-				'hide_badges' => $badges,
-				'tracks'      => $away,
+			$drops = LLD_Members_Safety::dropped( $key, $row );
+			if ( $drops && empty( $posted['confirm'][ $key ] ) ) {
+				$refused[] = $label . ' would remove launch protections (' . implode( ', ', $drops ) . ').';
+				continue;
+			}
+			$fields            = array(
+				'situation'       => $key,
+				'remove_tags'     => implode( ', ', $row['tags'] ),
+				'hide_badges'     => $row['badges'] ? 1 : 0,
+				'tracks'          => implode( ', ', $row['tracks'] ),
+				'help_link'       => $row['help_link'],
+				'exercise_note'   => $row['exercise_note'],
+				'intense_note'    => $row['intense_note'],
+				'confirmed_drops' => implode( ', ', $drops ),
 			);
-			$found = get_posts(
-				array(
-					'post_type'      => 'lld_matrix',
-					'post_status'    => array( 'publish', 'draft', 'private' ),
-					'post_parent'    => 0,
-					'posts_per_page' => 1,
-					'meta_key'       => '_lld_situation',
-					'meta_value'     => $key,
-				)
-			);
+			$found             = self::matrix_post( $key );
 			self::$next_fields = $fields;
 			if ( $found ) {
 				wp_update_post(
 					array(
-						'ID'           => $found[0]->ID,
+						'ID'           => $found->ID,
 						'post_title'   => $label,
-						'post_content' => $note,
+						'post_content' => $row['note'],
 					)
 				);
 			} else {
@@ -1403,12 +1609,56 @@ class LLD_Members_Content {
 						'post_type'    => 'lld_matrix',
 						'post_status'  => 'publish',
 						'post_title'   => $label,
-						'post_content' => $note,
+						'post_content' => $row['note'],
 					)
 				);
 			}
 			self::$next_fields = null;
+			++$saved;
 		}
+		return array(
+			'saved'   => $saved,
+			'refused' => $refused,
+		);
+	}
+
+	/**
+	 * @param array<string,mixed> $a Rule.
+	 * @param array<string,mixed> $b Rule.
+	 */
+	private static function same_rule( $a, $b ) {
+		$norm = static function ( $rule ) {
+			$tags   = array_map( 'strval', (array) $rule['tags'] );
+			$tracks = array_map( 'strtolower', array_map( 'strval', (array) $rule['tracks'] ) );
+			sort( $tags );
+			sort( $tracks );
+			$out = array( $tags, (bool) $rule['badges'], $tracks );
+			foreach ( LLD_Members_Safety::text_fields() as $field ) {
+				$out[] = trim( (string) ( $rule[ $field ] ?? '' ) );
+			}
+			return $out;
+		};
+		return $norm( $a ) === $norm( $b );
+	}
+
+	/**
+	 * @param array<string,mixed> $rule Rule.
+	 */
+	private static function describe_rule( $rule ) {
+		$parts   = array();
+		$parts[] = $rule['tags'] ? 'remove ' . implode( ', ', $rule['tags'] ) : 'remove nothing';
+		if ( $rule['badges'] ) {
+			$parts[] = 'hide weight-loss badges';
+		}
+		if ( $rule['tracks'] ) {
+			$parts[] = 'not offered: ' . implode( ', ', $rule['tracks'] );
+		}
+		foreach ( LLD_Members_Safety::text_fields() as $field ) {
+			if ( '' !== (string) $rule[ $field ] ) {
+				$parts[] = str_replace( '_', ' ', $field ) . ': "' . $rule[ $field ] . '"';
+			}
+		}
+		return implode( '; ', $parts );
 	}
 
 	/**

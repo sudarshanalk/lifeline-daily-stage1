@@ -308,13 +308,15 @@ function lld_health_consent_notice() {
  * @param string $note      Matrix note.
  * @param string $alt_href  Safe alternative.
  * @param string $alt_label Link text that stands alone.
+ * @param string $note_html Optional matrix notes as escaped HTML (helpline links).
  */
-function lld_not_suitable( $reason, $note, $alt_href, $alt_label ) {
+function lld_not_suitable( $reason, $note, $alt_href, $alt_label, $note_html = '' ) {
 	$html  = '<article class="lld-unsuitable"><h2>Not suitable for you</h2>';
 	$html .= '<p>' . esc_html( $reason ) . '</p>';
 	if ( '' !== $note ) {
 		$html .= '<p>' . esc_html( $note ) . '</p>';
 	}
+	$html .= $note_html;
 	$html .= '<p><a href="' . esc_url( $alt_href ) . '">' . esc_html( $alt_label ) . '</a></p></article>';
 	return $html;
 }

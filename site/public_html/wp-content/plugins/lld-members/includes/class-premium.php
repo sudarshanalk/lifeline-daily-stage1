@@ -125,6 +125,7 @@ class LLD_Members_Premium {
 		$plan    = self::workout_plan( $level, $place, $week );
 		$session = isset( $_GET['session'] ) ? max( 1, (int) $_GET['session'] ) : 0;
 		$main    = '<h1>Workout</h1>';
+		$main   .= LLD_Members_Safety::cautions_html( $member_id, array( 'type' => 'lld_workout' ) );
 		if ( ! $consent ) {
 			$main .= '<p>progress isn\'t saved</p>';
 		}
@@ -144,7 +145,7 @@ class LLD_Members_Premium {
 			$main .= '<button class="lld-button" type="submit">Move up a level</button></p></form>';
 		}
 		if ( ! $plan ) {
-			$main .= '<p>' . esc_html( LLD_Members_Safety::empty_line( $member_id ) ) . '</p>';
+			$main .= LLD_Members_Safety::empty_html( $member_id );
 			self::page( 'Workout', $main );
 			return;
 		}
@@ -188,7 +189,7 @@ class LLD_Members_Premium {
 			$main .= '<p>progress isn\'t saved</p>';
 		}
 		if ( ! $shown ) {
-			$main .= '<p>' . esc_html( LLD_Members_Safety::empty_line( $member_id ) ) . '</p>';
+			$main .= LLD_Members_Safety::empty_html( $member_id );
 			self::page( 'Challenge', $main );
 			return;
 		}

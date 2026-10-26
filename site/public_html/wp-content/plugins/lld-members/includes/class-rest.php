@@ -191,6 +191,15 @@ class LLD_Members_Rest {
 		);
 		register_rest_route(
 			'lld-members/v1',
+			'/test/screen-state',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'test_screen_state' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
 			'/test/content-audit',
 			array(
 				'methods'             => 'GET',
@@ -752,6 +761,22 @@ class LLD_Members_Rest {
 		wp_set_current_user( $users[0]->ID );
 		wp_set_auth_cookie( $users[0]->ID, true );
 		return new WP_REST_Response( array( 'user' => (int) $users[0]->ID ), 200 );
+	}
+
+	/**
+	 * What the site keeps about one member's Sleep and Stress screening (TC-FR2-38-AS-04).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
+	public static function test_screen_state( $request ) {
+		$params = $request->get_json_params();
+		$email  = isset( $params['email'] ) ? sanitize_email( (string) $params['email'] ) : '';
+		global $wpdb;
+		$member_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE email = %s', $email ) );
+		if ( $member_id < 1 ) {
+			return new WP_REST_Response( array( 'message' => 'No such member.' ), 404 );
+		}
+		return new WP_REST_Response( LLD_Members_Personal::screening_state( $member_id ), 200 );
 	}
 
 	public static function test_content_audit() {

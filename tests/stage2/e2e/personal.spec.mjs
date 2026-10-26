@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import { expect, test } from '@playwright/test';
 import { asOwner, createMember, publishItem, signIn } from './helpers.mjs';
-import { matrixRows } from '../tools/safety-matrix.mjs';
+import { matrixRows, safetyTags } from '../tools/safety-matrix.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
 const MAILPIT = process.env.MAILPIT_URL || 'http://127.0.0.1:8025';
@@ -31,6 +31,23 @@ async function saveHealth(page, memberId, data) {
     headers: { 'X-WP-Nonce': await nonce(page) },
   });
   expect(res.status(), JSON.stringify(data)).toBe(200);
+}
+
+async function startSlug(page, slug) {
+  await page.goto('/members/tracks/');
+  const value = await page.locator('input[name="lld_track_nonce"]').first().inputValue();
+  const res = await page.request.post('/members/tracks/', { form: { lld_track_nonce: value, lld_track: slug }, maxRedirects: 0 });
+  expect([200, 302, 303]).toContain(res.status());
+}
+
+async function html(page, path) {
+  const res = await page.request.get(path);
+  return res.text();
+}
+
+function field(text, name) {
+  const found = text.match(new RegExp(`name="${name}" value="([^"]+)"`));
+  return found ? found[1] : '';
 }
 
 async function chooseGoal(page, title) {
@@ -195,40 +212,103 @@ test('TC-FR2-25-AS-04', async ({ page }) => {
 });
 
 test('TC-FR2-25-AS-05', async ({ page }) => {
-  test.setTimeout(300000);
+  test.setTimeout(900000);
   const mark = stamp();
   const email = emailFor('matrix');
   const made = await fixture(page.request, 'safety', mark);
-  const created = await createMember(page.request, { email, password, first_name: 'Sam', consents: ['terms', 'health'] });
+  const created = await createMember(page.request, { email, password, first_name: 'Sam', consents: ['terms', 'health'], access_state: 'Premium' });
+  // 100 days after joining, so the 90-day rule earns the fixture's weight-loss badge where the matrix allows it.
+  const later = new Date(`${created.joined_on}T12:00:00Z`);
+  later.setUTCDate(later.getUTCDate() + 100);
+  await page.request.post('/wp-json/lld-members/v1/test/clock', { data: { email, utc: later.toISOString().slice(0, 19).replace('T', ' ') } });
   await signIn(page, email, password);
-  const surfaces = ['/members/home/', '/members/plan/', '/members/meals/', '/members/workout/', '/members/challenge/', '/members/badges/', '/members/suggestions/', '/members/library/'];
+  await chooseGoal(page, made.goal);
+  await startSlug(page, made.track);
+  const surfaces = ['/members/home/', '/members/suggestions/', '/members/plan/', '/members/meals/', '/members/meals/?pdf=1', '/members/workout/', '/members/challenge/', '/members/badges/', '/members/library/', '/members/data/', '/members/tracks/', '/members/goals/'];
+  const token = (tag) => `${tag} ${mark}`;
+  const hwGoal = 'value="healthy-weight"> Healthy Weight</label>';
   for (const row of matrixRows) {
     if (row.profile) {
       await saveHealth(page, created.member_id, { kind: 'profile', confirmed: true, ...row.profile, conditions: JSON.stringify(row.profile.conditions || '') });
     }
+    const hidden = new Set(row.hidden);
+    const shown = safetyTags.filter((tag) => !hidden.has(tag));
+
+    // Seen, listed or chosen: no excluded item on any member surface, download or option list.
+    for (const path of surfaces) {
+      const text = await html(page, path);
+      for (const tag of row.hidden) expect(text, `${row.name} ${path}`).not.toContain(token(tag));
+    }
+
+    // Opened: direct links, article links and downloads of every excluded tag show "not suitable", with the row's note.
     for (const tag of row.hidden) {
-      const token = `${tag} ${mark}`;
-      const id = made.tags[tag].lld_activity.id;
-      for (const path of surfaces) {
-        await page.goto(path);
-        await expect(page.locator('main')).not.toContainText(token);
+      const items = made.tags[tag];
+      for (const path of [
+        `/members/library/${items.lld_activity.id}/`,
+        `/members/library/${items.lld_workout.id}/`,
+        `/members/library/${items.lld_meal.id}/`,
+        `/members/library/${items.lld_challenge.id}/`,
+        `/members/library/${items.lld_week.id}/`,
+        `/members/library/${items.lld_recipe.id}/?download=1`,
+        `/members/read/${items.post.id}/`,
+      ]) {
+        const text = await html(page, path);
+        expect(text, `${row.name} ${path}`).toContain('Not suitable for you');
+        expect(text, `${row.name} ${path}`).not.toContain(token(tag));
+        expect(text, `${row.name} ${path}`).not.toMatch(/>\s*Upgrade\s*</);
+        if (row.note) expect(text, `${row.name} ${path}`).toContain(row.note);
+        if (row.helpline) expect(text, `${row.name} ${path}`).toContain(`href="${row.helpline}"`);
       }
-      for (const path of [`/members/library/${id}/`, `/members/library/${id}/?swap=1`, `/members/library/${id}/?download=1`]) {
-        await page.goto(path);
-        await expect(page.getByRole('heading', { name: 'Not suitable for you' })).toBeVisible();
-        await expect(page.locator('main')).not.toContainText(token);
-        await expect(page.getByRole('link', { name: 'Upgrade' })).toHaveCount(0);
-      }
+      // Chosen through the real meal swap: posting an excluded recipe is refused.
+      const meals = await html(page, '/members/meals/');
+      const swap = field(meals, 'lld_swap_nonce');
+      expect(swap, `${row.name} meal swap form`).not.toBe('');
+      await page.request.post('/members/meals/', { form: { lld_swap_nonce: swap, lld_slot: '1-breakfast', lld_recipe: String(items.lld_recipe.id) } });
+      expect(await html(page, '/members/meals/'), `${row.name} swap ${tag}`).not.toContain(token(tag));
     }
-    if (row.visible) {
-      await page.goto('/members/library/');
-      await expect(page.locator('main')).toContainText(`${row.visible} ${mark}`);
+
+    // Chosen through the real plan swap: the new plan holds nothing excluded either.
+    const plan = await html(page, '/members/plan/');
+    const planNonce = field(plan, 'lld_plan_nonce');
+    if (planNonce) await page.request.post('/members/plan/', { form: { lld_plan_nonce: planNonce, lld_swap: '1' } });
+    const swapped = await html(page, '/members/plan/');
+    for (const tag of row.hidden) expect(swapped, `${row.name} plan swap`).not.toContain(token(tag));
+
+    // Nothing more is hidden than the row says.
+    const library = await html(page, '/members/library/');
+    for (const tag of shown) expect(library, `${row.name} keeps ${tag}`).toContain(`lld_activity ${token(tag)}`);
+    if (shown.length) expect(await html(page, `/members/read/${made.tags[shown[0]].post.id}/`)).toContain(made.tags[shown[0]].post.title);
+
+    if (row.name === 'none') {
+      // Assign excluded content while it is allowed, so later rows prove it is removed once a condition is saved.
+      const meals = await html(page, '/members/meals/');
+      await page.request.post('/members/meals/', { form: { lld_swap_nonce: field(meals, 'lld_swap_nonce'), lld_slot: '1-breakfast', lld_recipe: String(made.tags['weight-loss'].lld_recipe.id) } });
+      expect(await html(page, '/members/meals/')).toContain(token('weight-loss'));
+      expect(await html(page, '/members/badges/')).toContain(made.badge.title);
+      expect(await html(page, '/members/goals/')).toContain(hwGoal);
     }
+
+    // Weight-loss badges, the Healthy Weight track and the goal that leads to it.
+    const badges = await html(page, '/members/badges/');
+    if (row.badges) expect(badges, `${row.name} badge`).not.toContain(made.badge.title);
+    const tracks = await html(page, '/members/tracks/');
+    const goals = await html(page, '/members/goals/');
     if (row.track) {
-      await page.goto('/members/tracks/');
-      await expect(page.getByText('Healthy Weight is not suitable for you.')).toBeVisible();
-      await expect(page.getByRole('link', { name: 'Upgrade' })).toHaveCount(0);
+      expect(tracks).toContain('Healthy Weight is not suitable for you.');
+      expect(tracks).not.toContain('Start Healthy Weight');
+      expect(tracks).not.toMatch(/>\s*Upgrade\s*</);
+      expect(tracks).toContain(row.note);
+      if (row.helpline) expect(tracks).toContain(`href="${row.helpline}"`);
+      expect(goals, `${row.name} goal picker`).not.toContain(hwGoal);
     }
+
+    // Caution notes the row adds to content it still shows.
+    const intense = await html(page, `/members/library/${made.tags['high-intensity'].lld_activity.id}/`);
+    if (row.exercise) {
+      expect(intense).toContain(row.exercise);
+      expect(await html(page, '/members/workout/')).toContain(row.exercise);
+    }
+    if (row.intense) expect(intense).toContain(row.intense);
   }
 });
 
@@ -245,25 +325,52 @@ test('TC-FR2-25-AS-06', async ({ page }) => {
   expect(await countTo(email, 'Complete your profile')).toBe(before + 1);
 });
 
-test('TC-FR2-38-AS-01', async ({ page }) => {
+test('TC-FR2-38-AS-01', async ({ browser, page }) => {
   const email = emailFor('harm');
   await createMember(page.request, { email, password, first_name: 'Sam', consents: ['terms', 'health'] });
+  const emergency = async (target) => {
+    await expect(target.getByText('If you are in danger now, call your local emergency number')).toBeVisible();
+    for (const number of ['999', '911', '112', '000']) await expect(target.getByText(number, { exact: false })).toBeVisible();
+    await expect(target.getByRole('link', { name: 'Find support in your country' })).toHaveAttribute('href', 'https://findahelpline.com');
+    await expect(target.getByRole('button', { name: 'Continue' })).toHaveCount(0);
+    await expect(target.getByRole('link', { name: /Start/ })).toHaveCount(0);
+  };
+  const noOffer = async (target) => {
+    await target.goto('/members/tracks/');
+    await expect(target.getByRole('link', { name: 'Start Sleep and Stress' })).toHaveCount(0);
+    await expect(target.getByRole('button', { name: 'Start Sleep and Stress' })).toHaveCount(0);
+    await target.goto('/members/screening/?track=sleep-stress');
+    await emergency(target);
+    await expect(target.getByText('Are you currently having thoughts of harming yourself?')).toHaveCount(0);
+    await target.goto('/members/home/');
+    await expect(target.getByText('Sleep and Stress. Week 1')).toHaveCount(0);
+  };
+
+  // Yes to self-harm alone, with the other questions left blank: the emergency message, not "answer all three".
   await signIn(page, email, password);
   await page.goto('/members/screening/?track=sleep-stress');
   await page.locator('input[name="lld_harm"][value="yes"]').check();
-  await page.locator('input[name="lld_panic"][value="yes"]').check();
-  await page.locator('input[name="lld_mood"][value="yes"]').check();
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText('If you are in danger now, call your local emergency number')).toBeVisible();
-  await expect(page.getByText('999')).toBeVisible();
-  await expect(page.getByText('911')).toBeVisible();
-  await expect(page.getByText('112')).toBeVisible();
-  await expect(page.getByText('000')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'Find support in your country' })).toHaveAttribute('href', 'https://findahelpline.com');
-  await expect(page.getByRole('button', { name: 'Continue' })).toHaveCount(0);
-  await expect(page.getByRole('link', { name: /Start/ })).toHaveCount(0);
-  await page.goto('/members/home/');
-  await expect(page.getByText('Week 1, day 1')).toHaveCount(0);
+  await emergency(page);
+  await expect(page.getByText('Answer all three questions before continuing.')).toHaveCount(0);
+  await noOffer(page);
+  // Posting the start straight away is refused in this session.
+  const value = await page.request.get('/members/screening/?track=sleep-stress');
+  expect(await value.text()).not.toContain('name="lld_screen_nonce"');
+
+  // Yes to all three, in a new session: the same response overrides the others.
+  const other = await browser.newContext();
+  const second = await other.newPage();
+  await signIn(second, email, password);
+  await second.goto('/members/screening/?track=sleep-stress');
+  await second.locator('input[name="lld_harm"][value="yes"]').check();
+  await second.locator('input[name="lld_panic"][value="yes"]').check();
+  await second.locator('input[name="lld_mood"][value="yes"]').check();
+  await second.getByRole('button', { name: 'Continue' }).click();
+  await emergency(second);
+  await expect(second.getByText('Panic attacks can have a physical cause')).toHaveCount(0);
+  await noOffer(second);
+  await other.close();
 });
 
 test('TC-FR2-38-AS-02', async ({ page }) => {
@@ -297,17 +404,44 @@ test('TC-FR2-38-AS-03', async ({ page }) => {
 test('TC-FR2-38-AS-04', async ({ page }) => {
   const email = emailFor('store');
   await createMember(page.request, { email, password, first_name: 'Sam', consents: ['terms', 'health'] });
-  await signIn(page, email, password);
-  await page.goto('/members/screening/?track=sleep-stress');
-  await page.locator('input[name="lld_harm"][value="yes"]').check();
-  await page.locator('input[name="lld_panic"][value="no"]').check();
-  await page.locator('input[name="lld_mood"][value="no"]').check();
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('link', { name: 'Find support in your country' })).toHaveAttribute('href', 'https://findahelpline.com');
-  const found = await page.request.post('/wp-json/lld-members/v1/test/search', { data: { q: 'harming yourself' } });
-  const body = await found.json();
-  expect(body.hits).toEqual([]);
-  expect(body.log).toBeFalsy();
+  const state = async () => {
+    const res = await page.request.post('/wp-json/lld-members/v1/test/screen-state', { data: { email } });
+    expect(res.ok(), await res.text()).toBeTruthy();
+    return res.json();
+  };
+  let before = null;
+  const answer = async (harm, panic, mood) => {
+    await signIn(page, email, password);
+    await page.goto('/members/screening/?track=sleep-stress');
+    before = await state();
+    await page.locator(`input[name="lld_harm"][value="${harm}"]`).check();
+    await page.locator(`input[name="lld_panic"][value="${panic}"]`).check();
+    await page.locator(`input[name="lld_mood"][value="${mood}"]`).check();
+    await page.getByRole('button', { name: 'Continue' }).click();
+    await expect(page.getByRole('heading', { name: 'Before you start' })).toBeVisible();
+    return state();
+  };
+  // What is kept is the same whatever was answered: only a session mark that names no answer.
+  const allowed = (marks) => {
+    for (const [key, value] of Object.entries(marks)) {
+      if (key === 'lld_pass') expect(typeof value).toBe('number');
+      else if (key === 'lld_hold') expect(value).toBe('sleep-stress');
+      else throw new Error(`unexpected session mark ${key}`);
+    }
+  };
+  for (const [harm, panic, mood] of [['no', 'yes', 'no'], ['no', 'no', 'yes'], ['no', 'yes', 'yes'], ['yes', 'no', 'no'], ['yes', 'yes', 'yes']]) {
+    const after = await answer(harm, panic, mood);
+    expect(after.rows, `${harm}/${panic}/${mood} rows`).toEqual(before.rows);
+    expect(after.options, `${harm}/${panic}/${mood} options`).toEqual(before.options);
+    expect(after.usermeta, `${harm}/${panic}/${mood} user meta`).toEqual(before.usermeta);
+    for (const marks of after.sessions) allowed(marks);
+  }
+  for (const needle of ['lld_harm', 'lld_panic', 'lld_mood', 'harming yourself']) {
+    const found = await page.request.post('/wp-json/lld-members/v1/test/search', { data: { q: needle } });
+    const body = await found.json();
+    expect(body.hits, needle).toEqual([]);
+    expect(body.log, needle).toBeFalsy();
+  }
 });
 
 test('TC-FR2-38-AS-05', async ({ browser, page }) => {
@@ -409,7 +543,8 @@ test('TC-FR2-06-AS-04', async ({ page }) => {
   await saveHealth(page, created.member_id, { kind: 'profile', confirmed: true, conditions_answered: 'declared', conditions: JSON.stringify(['pregnancy']) });
   await page.goto('/members/suggestions/');
   await expect(page.getByText(made.title)).toHaveCount(0);
-  await expect(page.getByText('Nothing suitable is available right now.')).toBeVisible();
+  // The empty state is the pregnancy row's message from requirements section 8.2.
+  await expect(page.getByText('Talk to your midwife or doctor about weight and exercise during pregnancy')).toBeVisible();
   await page.goto('/members/home/');
   await expect(page.getByText(made.title)).toHaveCount(0);
 });
@@ -466,7 +601,8 @@ test('TC-FR2-06-AS-07', async ({ page }) => {
   await fixture(page.request, 'live', mark, { title });
   const beforeYes = await countTo(asked, 'A goal you asked for is now available');
   const beforeNo = await countTo(quiet, 'A goal you asked for is now available');
-  await page.request.post('/wp-json/lld-members/v1/test/reports', { data: { notify: true } });
+  // The daily job sends it: no separate notify call.
+  await page.request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
   await expect.poll(async () => countTo(asked, 'A goal you asked for is now available')).toBe(beforeYes + 1);
   expect(await countTo(quiet, 'A goal you asked for is now available')).toBe(beforeNo);
 });

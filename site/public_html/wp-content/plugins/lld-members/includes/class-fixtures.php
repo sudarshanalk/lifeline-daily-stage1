@@ -61,6 +61,12 @@ class LLD_Members_Fixtures {
 		if ( 'draft' === $kind ) {
 			return self::draft( $stamp );
 		}
+		if ( 'unapproved' === $kind ) {
+			return self::unapproved( $stamp );
+		}
+		if ( 'tampered' === $kind ) {
+			return self::tampered( $stamp );
+		}
 		return new WP_Error( 'lld_fixture', 'Unknown fixture.' );
 	}
 
@@ -148,23 +154,202 @@ class LLD_Members_Fixtures {
 	 */
 	private static function safety( $stamp ) {
 		$tags  = array( 'weight-loss', 'fasting', 'high-intensity', 'high-protein', 'high-salt', 'high-saturated-fat', 'pregnancy-unsafe-food', 'alcohol', 'calorie-mention', 'portion-question' );
-		$types = array( 'lld_activity', 'lld_meal', 'lld_workout', 'lld_challenge', 'lld_badge', 'lld_week' );
+		$types = array( 'lld_activity', 'lld_recipe', 'lld_meal', 'lld_workout', 'lld_challenge', 'lld_badge', 'lld_week' );
+		$goal  = 'Safety ' . $stamp;
+		$slug  = sanitize_title( $goal );
+		self::goal( $goal, 'free goal', $slug, 0 );
+		self::articles( $slug, 5, $goal );
+		$track = self::track_post( 'Safety track ' . $stamp, 'safety-track-' . $stamp );
 		$out   = array();
 		foreach ( $tags as $tag ) {
+			self::ensure_tag( $tag, 'safety' );
 			$out[ $tag ] = array();
 			foreach ( $types as $type ) {
-				$title = $type . ' ' . $tag . ' ' . $stamp;
+				$title  = $type . ' ' . $tag . ' ' . $stamp;
 				$fields = array();
 				if ( 'lld_badge' === $type && 'weight-loss' === $tag ) {
 					$fields['weight_loss'] = 1;
 				}
+				if ( 'lld_activity' === $type ) {
+					$fields = self::action_fields( $track, 0, 'standard', true );
+				}
+				if ( 'lld_recipe' === $type ) {
+					$fields = array( 'ingredients' => $tag . ' ' . $stamp . ' | 10 | g', 'meal_type' => 'breakfast' );
+				}
 				$out[ $tag ][ $type ] = array(
-					'id'    => self::item( $type, $title, $tag, $fields ),
+					'id'    => self::tagged( $type, $title, array( $tag, $slug ), $fields ),
 					'title' => $title,
 				);
 			}
+			$article = 'post ' . $tag . ' ' . $stamp;
+			$id      = self::post( 'post', $article, 'Reviewed article ' . $article, array( $tag, $slug ) );
+			update_post_meta( $id, 'lld_review_status', 'approved' );
+			$out[ $tag ]['post'] = array(
+				'id'    => $id,
+				'title' => $article,
+			);
 		}
-		return array( 'stamp' => $stamp, 'tags' => $out );
+		for ( $i = 1; $i <= 5; $i++ ) {
+			self::tagged( 'lld_activity', 'Safe action ' . $i . ' ' . $stamp, array( $slug ), self::action_fields( $track, 0, 'standard', true ) );
+		}
+		$safe    = self::tagged( 'lld_recipe', 'Safe porridge ' . $stamp, array(), array( 'ingredients' => 'oats | 40 | g', 'meal_type' => 'breakfast' ) );
+		$options = array( $safe );
+		foreach ( $tags as $tag ) {
+			$options[] = $out[ $tag ]['lld_recipe']['id'];
+		}
+		self::tagged(
+			'lld_meal',
+			'Safety plan ' . $stamp,
+			array(),
+			array(
+				'track_id'    => $track,
+				'week_number' => 1,
+				'meals'       => wp_json_encode( array( '1' => array( 'breakfast' => $safe ) ) ),
+				'swaps'       => wp_json_encode( array( '1-breakfast' => $options ) ),
+			)
+		);
+		$badge = 'Weight badge ' . $stamp;
+		$badge_id = self::tagged( 'lld_badge', $badge, array(), array( 'rule' => 'active-90', 'weight_loss' => 1, 'picture' => 'scale' ) );
+		$weight = 'Healthy Weight';
+		$weight_slug = 'hw-goal-' . $stamp;
+		self::goal( $weight, 'free goal', $weight_slug, 0 );
+		self::articles( $weight_slug, 5, 'Weight goal ' . $stamp );
+		return array(
+			'stamp' => $stamp,
+			'goal'  => $goal,
+			'track' => get_post_field( 'post_name', $track ),
+			'safe'  => 'Safe porridge ' . $stamp,
+			'badge' => array(
+				'id'    => $badge_id,
+				'title' => $badge,
+			),
+			'tags'  => $out,
+		);
+	}
+
+	/**
+	 * An approved item with several tags.
+	 *
+	 * @param string              $type   Post type.
+	 * @param string              $title  Title.
+	 * @param string[]            $tags   Tag slugs.
+	 * @param array<string,mixed> $fields Fields.
+	 */
+	private static function tagged( $type, $title, $tags, $fields ) {
+		$id = self::post( $type, $title, $title . ' body', $tags, $fields );
+		LLD_Members_Content::approve_now( $id );
+		return $id;
+	}
+
+	/**
+	 * Content with no approval record, on every member surface, plus an approved goal whose rename waits.
+	 *
+	 * @param string $stamp Stamp.
+	 * @return array<string,mixed>
+	 */
+	private static function unapproved( $stamp ) {
+		$hidden = 'hidden-' . $stamp;
+		$goal   = 'Approved goal ' . $stamp;
+		$slug   = sanitize_title( $goal );
+		$goal_id = self::goal( $goal, 'free goal', $slug, 0 );
+		self::articles( $slug, 5, $goal );
+		wp_update_post(
+			array(
+				'ID'         => $goal_id,
+				'post_title' => 'Renamed goal ' . $hidden,
+			)
+		);
+		$waiting = 'Unapproved goal ' . $hidden;
+		$waiting_slug = sanitize_title( 'waiting-' . $stamp );
+		self::ensure_tag( $waiting_slug, 'goal' );
+		self::post( 'lld_goal', $waiting, $waiting, array( $waiting_slug ), array( 'kind' => 'free goal' ) );
+		self::articles( $waiting_slug, 5, 'Waiting ' . $stamp );
+		$track  = self::track_post( 'Unapproved track ' . $stamp, 'unapproved-track-' . $stamp );
+		$recipe = self::post( 'lld_recipe', 'Unapproved lld_recipe ' . $hidden, 'Unapproved body ' . $hidden, array( $slug ), array( 'ingredients' => $hidden . ' | 10 | g', 'meal_type' => 'breakfast' ) );
+		$ids    = array( 'lld_recipe' => $recipe );
+		$fields = array(
+			'lld_activity'  => self::action_fields( $track, 0, 'standard', true ),
+			'lld_lesson'    => array( 'track_id' => $track, 'week_number' => 1 ),
+			'lld_meal'      => array(
+				'track_id'    => $track,
+				'week_number' => 1,
+				'meals'       => wp_json_encode( array( '1' => array( 'breakfast' => $recipe ) ) ),
+				'swaps'       => wp_json_encode( array( '1-breakfast' => array( $recipe ) ) ),
+			),
+			'lld_workout'   => array( 'level' => 'beginner', 'place' => 'home', 'week_number' => 1, 'sessions' => $hidden . ' | 10 | 30' ),
+			'lld_challenge' => array( 'month' => gmdate( 'Y-m' ) ),
+			'lld_badge'     => array( 'rule' => 'active-90', 'picture' => 'badge' ),
+			'lld_week'      => array( 'track_id' => $track, 'week_number' => 1 ),
+		);
+		foreach ( $fields as $type => $meta ) {
+			$ids[ $type ] = self::post( $type, 'Unapproved ' . $type . ' ' . $hidden, 'Unapproved body ' . $hidden, array( $slug ), $meta );
+		}
+		$safe = self::tagged( 'lld_recipe', 'Approved breakfast ' . $stamp, array(), array( 'ingredients' => 'oats | 40 | g', 'meal_type' => 'breakfast' ) );
+		self::tagged(
+			'lld_meal',
+			'Approved plan ' . $stamp,
+			array(),
+			array(
+				'track_id'    => $track,
+				'week_number' => 1,
+				'meals'       => wp_json_encode( array( '1' => array( 'breakfast' => $recipe, 'lunch' => $safe ) ) ),
+				'swaps'       => wp_json_encode( array( '1-breakfast' => array( $safe, $recipe ) ) ),
+			)
+		);
+		for ( $i = 1; $i <= 5; $i++ ) {
+			self::tagged( 'lld_activity', 'Approved action ' . $i . ' ' . $stamp, array( $slug ), self::action_fields( $track, 0, 'standard', true ) );
+		}
+		$article = self::post( 'post', 'Unreviewed article ' . $hidden, 'Not reviewed ' . $hidden, array( $slug ) );
+		return array(
+			'hidden'  => $hidden,
+			'goal'    => $goal,
+			'waiting' => $waiting,
+			'track'   => get_post_field( 'post_name', $track ),
+			'ids'     => $ids,
+			'article' => $article,
+		);
+	}
+
+	/**
+	 * Approval records that cannot be trusted: approved text changed in the database, and an approval
+	 * with nobody named. Members must not see either, and the audit must report both.
+	 *
+	 * @param string $stamp Stamp.
+	 * @return array<string,mixed>
+	 */
+	private static function tampered( $stamp ) {
+		global $wpdb;
+		$changed = 'Tampered ' . $stamp;
+		$a       = self::tagged( 'lld_activity', $changed, array(), array() );
+		$version = self::last_version( $a );
+		$text    = (string) get_post_field( 'post_content', $version, 'raw' );
+		$wpdb->update( $wpdb->posts, array( 'post_content' => str_replace( $changed . ' body', 'Changed after approval ' . $stamp, $text ) ), array( 'ID' => $version ), array( '%s' ), array( '%d' ) );
+		clean_post_cache( $version );
+		$unsigned = 'Unsigned ' . $stamp;
+		$b        = self::tagged( 'lld_activity', $unsigned, array(), array() );
+		delete_post_meta( self::last_version( $b ), '_lld_approved_by' );
+		return array(
+			'changed'  => array( 'id' => $a, 'title' => $changed, 'text' => 'Changed after approval ' . $stamp ),
+			'unsigned' => array( 'id' => $b, 'title' => $unsigned ),
+		);
+	}
+
+	/**
+	 * @param int $post_id Working copy.
+	 */
+	private static function last_version( $post_id ) {
+		$rows = get_posts(
+			array(
+				'post_type'      => get_post_type( $post_id ),
+				'post_status'    => 'lld_version',
+				'post_parent'    => $post_id,
+				'posts_per_page' => 1,
+				'orderby'        => 'ID',
+				'order'          => 'DESC',
+				'fields'         => 'ids',
+			)
+		);
+		return $rows ? (int) $rows[0] : 0;
 	}
 
 	/**
@@ -244,7 +429,9 @@ class LLD_Members_Fixtures {
 		if ( $track_id > 0 ) {
 			$fields['track_id'] = $track_id;
 		}
-		return self::post( 'lld_goal', $title, $title, array( $slug ), $fields );
+		$id = self::post( 'lld_goal', $title, $title, array( $slug ), $fields );
+		LLD_Members_Content::approve_now( $id );
+		return $id;
 	}
 
 	/**
