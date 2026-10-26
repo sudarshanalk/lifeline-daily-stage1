@@ -13,7 +13,8 @@ import { fileURLToPath } from 'node:url';
 import { ROOT } from '../lib/paths.mjs';
 import { globToRegex, changedFiles } from './component-scope.mjs';
 
-export const TITLE_RE = /^S2-(C(?:[1-9]|10)|L[0-8]): \S/;
+// S2-Cn, a range of Cursor packages S2-Cn-Cm (one integration PR for stacked packages), or S2-Ln
+export const TITLE_RE = /^S2-(C(?:[1-9]|10)(?:-C(?:[1-9]|10))?|L[0-8]): \S/;
 const matches = (file, globs) => globs.some((g) => globToRegex(g).test(file));
 
 const CURSOR = ['site/public_html/wp-content/plugins/lld-members/**', 'tests/stage2/**'];
@@ -27,7 +28,10 @@ const LEAD = ['.github/**', 'deploy/**', 'docs/**', '.cursor/**', 'site/public_h
 export function classify(title = '') {
   const m = title.match(TITLE_RE);
   if (!m) return null;
-  return { kind: m[1][0], n: Number(m[1].slice(1)), id: `S2-${m[1]}` };
+  const [a, b] = m[1].split('-');
+  const n = Number(a.slice(1)), to = b ? Number(b.slice(1)) : n;
+  if (to < n) return null;
+  return { kind: a[0], n, to, id: `S2-${m[1]}` };
 }
 
 export function stage2Scope({ title, files }) {
@@ -36,7 +40,7 @@ export function stage2Scope({ title, files }) {
   const problems = [];
   for (const f of files) {
     if (c.kind === 'C') {
-      if (matches(f, CURSOR) || (c.n === 9 && C9_EXTRA.includes(f))) continue;
+      if (matches(f, CURSOR) || (c.n <= 9 && 9 <= c.to && C9_EXTRA.includes(f))) continue;
       problems.push(`${f} is outside Cursor's files for ${c.id} (Build Method §4)`);
     } else {
       if (matches(f, CURSOR)) { problems.push(`${f} belongs to Cursor (Build Method §4); ask in the pull request instead`); continue; }

@@ -52,7 +52,9 @@ export function packageStatus(pkgs, prs, deploys) {
   const lastDeploy = deploys.filter((d) => d.conclusion === 'success').map((d) => d.createdAt).sort().pop() || '';
   const res = {};
   for (const p of pkgs) {
-    const mine = prs.filter((x) => new RegExp(`^S2-${p.id}:`).test(x.title));
+    // a PR counts for a package when its title names it, or names a range of Cursor packages that includes it (S2-C2-C10:)
+    const n = Number(p.id.slice(1));
+    const mine = prs.filter((x) => new RegExp(`^S2-${p.id}:`).test(x.title) || (p.id[0] === 'C' && (() => { const m = x.title.match(/^S2-C(\d+)-C(\d+):/); return m && +m[1] <= n && n <= +m[2]; })()));
     let status = 'Not started', detail = '', link = '';
     const open = mine.filter((x) => x.state === 'OPEN');
     const merged = mine.filter((x) => x.mergedAt).sort((a, b) => a.mergedAt.localeCompare(b.mergedAt));

@@ -33,7 +33,7 @@ describe('TC-NFR1-09 reproducible AI development', () => {
     // the convention holds on the PR under test when GitHub gives us a title (CI), otherwise on the last merged PR titles
     const title = process.env.PR_TITLE;
     // Stage 2 package PRs (S2-Cn / S2-Ln, Stage 2 Build Method §2) are the Stage 2 class
-    if (title) expect(title).toMatch(/^((FR1|NFR1|UI1)-\d{2}|S2-(C([1-9]|10)|L[0-8])): /);
+    if (title) expect(title).toMatch(/^((FR1|NFR1|UI1)-\d{2}|S2-(C([1-9]|10)(-C([1-9]|10))?|L[0-8])): /);
     // every requirement PR merged since HG-01 (#2 onward; #1 was the repository skeleton) came from a req/<ID> branch
     const merged = execSync('git log --merges --format=%s -n 20 origin/staging', { cwd: ROOT, encoding: 'utf8' }).split('\n').filter((l) => /^Merge pull request #(?!1\b)\d+ from sudarshanalk\/req\//.test(l));
     expect(merged.length).toBeGreaterThan(0);
