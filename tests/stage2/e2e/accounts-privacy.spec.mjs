@@ -405,10 +405,51 @@ test('TC-FR2-03-AS-05', async ({ page }) => {
   await page.getByRole('checkbox', { name: 'Send me marketing emails' }).check();
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.goto('/members/settings/');
+  const history = page.locator('.lld-consent-history li');
   await expect(page.locator('.lld-consent-history')).toContainText('terms given terms-2026-11');
   await expect(page.locator('.lld-consent-history')).toContainText('privacy given privacy-2026-11');
   await expect(page.locator('.lld-consent-history')).toContainText('health given');
   await expect(page.locator('.lld-consent-history')).toContainText('marketing given');
+  const today = new Date().toISOString().slice(0, 10);
+  const health = page.getByRole('checkbox', { name: 'Store my health information' });
+  const marketing = page.getByRole('checkbox', { name: 'Marketing emails' });
+  await expect(health).toBeChecked();
+  await expect(marketing).toBeChecked();
+  await expect(page.locator('#lld_consent_marketing_date')).toHaveText(`On since ${today}`);
+
+  // Each later change, made with its switch on the profile page, adds one dated line.
+  const change = async (expected) => {
+    const lines = await history.count();
+    await page.getByRole('button', { name: 'Save' }).click();
+    await page.goto('/members/settings/');
+    await expect(history).toHaveCount(lines + 1);
+    await expect(history.last()).toContainText(expected);
+    await expect(history.last()).toContainText(today);
+  };
+  await marketing.uncheck();
+  await change('marketing withdrawn');
+  await expect(marketing).not.toBeChecked();
+  await expect(page.locator('#lld_consent_marketing_date')).toHaveText(`Off since ${today}`);
+  await marketing.check();
+  await change('marketing given');
+  await expect(marketing).toBeChecked();
+
+  // Switching health information off shows the warning first, and only Confirm withdraws it.
+  const before = await history.count();
+  await health.uncheck();
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByRole('heading', { name: 'Withdraw health consent' })).toBeVisible();
+  await expect(page.getByText('This deletes your goals, track progress, health profile, check-ins, food diary and diary photos')).toBeVisible();
+  await page.getByRole('button', { name: 'Confirm' }).click();
+  await expect(page.getByRole('heading', { name: 'Health information deleted' })).toBeVisible();
+  await page.goto('/members/settings/');
+  await expect(history).toHaveCount(before + 1);
+  await expect(history.last()).toContainText('health withdrawn');
+  await expect(health).not.toBeChecked();
+  await health.check();
+  await change('health given');
+  await expect(health).toBeChecked();
+  await expect(page.locator('#lld_consent_health_date')).toHaveText(`On since ${today}`);
 });
 
 test('TC-FR2-03-AS-06', async ({ browser, page }) => {

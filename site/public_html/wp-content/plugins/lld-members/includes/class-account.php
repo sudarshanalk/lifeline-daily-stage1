@@ -587,6 +587,11 @@ class LLD_Members_Account {
 		$error     = '';
 		if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['lld_settings_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_settings_nonce'] ) ), 'lld_settings' ) ) {
 			$result = self::save_profile( $row );
+			if ( 'withdraw' === $result ) {
+				// Switching health consent off first shows what will be deleted (SCR-36).
+				wp_safe_redirect( home_url( '/members/withdraw/' ) );
+				exit;
+			}
 			if ( is_wp_error( $result ) ) {
 				$error = $result->get_error_message();
 			} else {
@@ -643,7 +648,7 @@ class LLD_Members_Account {
 		} else {
 			$main .= lld_health_consent_notice();
 		}
-		$main .= '<p>Health consent: ' . ( self::has_consent( $member_id, 'health' ) ? 'on' : 'off' ) . '. <a href="' . esc_url( home_url( '/members/withdraw/' ) ) . '">Withdraw health consent</a></p>';
+		$main .= self::consent_fields( $member_id );
 		$history = $wpdb->get_results( $wpdb->prepare( 'SELECT consent_type, change_kind, document_version, occurred_at FROM ' . LLD_Members_Schema::table( 'consent' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ) );
 		$main   .= '<ul class="lld-consent-history">';
 		foreach ( $history as $line ) {
@@ -658,8 +663,57 @@ class LLD_Members_Account {
 	}
 
 	/**
+	 * SCR-30 consents: each with its date. Health information and marketing emails are switches
+	 * that can be changed at any time (FR2-03). Terms and privacy are needed for the account.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function consent_fields( $member_id ) {
+		$html  = '<fieldset class="lld-card"><legend>Consents</legend>';
+		$html .= '<input type="hidden" name="lld_consents_shown" value="1">';
+		$fixed = array(
+			'terms'   => 'Terms of use',
+			'privacy' => 'Privacy policy',
+			'sale'    => 'Terms of sale',
+		);
+		foreach ( $fixed as $type => $label ) {
+			$line = self::latest_consent( $member_id, $type );
+			if ( ! $line && 'sale' === $type ) {
+				continue;
+			}
+			$state = $line && 'given' === $line->change_kind ? 'Accepted' . ( '' !== (string) $line->document_version ? ' (' . $line->document_version . ')' : '' ) . ' on ' . substr( (string) $line->occurred_at, 0, 10 ) : 'Not accepted';
+			$html .= '<p>' . esc_html( $label . ': ' . $state ) . '</p>';
+		}
+		$html  .= '<p class="lld-hint">These are needed for your account. To end them, delete your account.</p>';
+		$switch = array(
+			'health'    => 'Store my health information',
+			'marketing' => 'Marketing emails',
+		);
+		foreach ( $switch as $type => $label ) {
+			$line  = self::latest_consent( $member_id, $type );
+			$on    = $line && 'given' === $line->change_kind;
+			$id    = 'lld_consent_' . $type;
+			$since = $line ? ( $on ? 'On' : 'Off' ) . ' since ' . substr( (string) $line->occurred_at, 0, 10 ) : 'Off';
+			$html .= '<label class="lld-check"><input type="checkbox" id="' . esc_attr( $id ) . '" name="' . esc_attr( $id ) . '" value="1" aria-describedby="' . esc_attr( $id . '_date' ) . '"' . ( $on ? ' checked' : '' ) . '> ' . esc_html( $label ) . '</label>';
+			$html .= '<p class="lld-hint" id="' . esc_attr( $id . '_date' ) . '">' . esc_html( $since ) . '</p>';
+		}
+		$html .= '<p class="lld-hint">Switching health information off first shows what will be deleted. <a href="' . esc_url( home_url( '/members/withdraw/' ) ) . '">Withdraw health consent</a></p>';
+		return $html . '</fieldset>';
+	}
+
+	/**
+	 * @param int    $member_id Member number.
+	 * @param string $type      Consent type.
+	 * @return object|null Latest consent line of this type.
+	 */
+	private static function latest_consent( $member_id, $type ) {
+		global $wpdb;
+		return $wpdb->get_row( $wpdb->prepare( 'SELECT change_kind, document_version, occurred_at FROM ' . LLD_Members_Schema::table( 'consent' ) . ' WHERE member_id = %d AND consent_type = %s ORDER BY id DESC LIMIT 1', $member_id, $type ) );
+	}
+
+	/**
 	 * @param object $row Member row.
-	 * @return true|WP_Error
+	 * @return true|WP_Error|string "withdraw" when health consent was switched off and the warning comes next.
 	 */
 	private static function save_profile( $row ) {
 		$age = isset( $_POST['lld_age'] ) ? (int) $_POST['lld_age'] : (int) $row->age;
@@ -762,6 +816,19 @@ class LLD_Members_Account {
 						'recorded_at' => lld_members_now_mysql( $member_id ),
 					)
 				);
+			}
+		}
+		if ( ! empty( $_POST['lld_consents_shown'] ) ) {
+			$marketing = ! empty( $_POST['lld_consent_marketing'] );
+			if ( $marketing !== self::has_consent( $member_id, 'marketing' ) ) {
+				self::add_consent( $member_id, 'marketing', $marketing ? 'given' : 'withdrawn', '' );
+			}
+			$health = ! empty( $_POST['lld_consent_health'] );
+			$had    = self::has_consent( $member_id, 'health' );
+			if ( $health && ! $had ) {
+				self::add_consent( $member_id, 'health', 'given', '' );
+			} elseif ( ! $health && $had ) {
+				return 'withdraw';
 			}
 		}
 		return true;
