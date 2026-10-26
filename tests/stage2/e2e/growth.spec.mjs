@@ -153,7 +153,7 @@ async function readMember(request, email) {
 
 /** Checkout through Stripe: the quote the checkout page stores, then Stripe's checkout.session.completed notice. */
 async function checkout(request, email, plan, subscription) {
-  const ready = await request.post('/wp-json/lld-members/v1/test/billing', { data: { action: 'session', email, plan, country: 'US' } });
+  const ready = await request.post('/wp-json/lld-members/v1/test/billing', { data: { action: 'session', sale_terms: true, email, plan, country: 'US' } });
   expect(ready.ok(), await ready.text()).toBeTruthy();
   const quoted = await ready.json();
   const payment = `pi_${stamp()}`;
