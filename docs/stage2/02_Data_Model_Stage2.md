@@ -77,6 +77,7 @@ Uses WordPress's own user account, plus a Lifeline Daily member settings record.
 | Age | In years, as the member entered it; 18 or over (FR2-01) | 47 |
 | Age entered on | The date the age was entered or last corrected. Age moves forward one year on each anniversary of this date | 2026-11-02 |
 | Time zone | For reminders and programme days. A change applies from the member's next calendar day (T3) | Europe/London |
+| Time zone before a change | While a new time zone waits for the next local date (T3 rule 2): the zone still in force and the local date of the change | Europe/London, 2026-11-02 |
 | Units | Metric or imperial, for display only | imperial |
 | Role | Member, or owner admin | member |
 | Arrived from | The first tagged link the person arrived by, saved at registration (FR2-17) | facebook-post-1029 |
@@ -112,6 +113,7 @@ One line is added for every consent change. The current consent is the latest li
 | Welcome, daily reminder (with time), weekly-review-ready, end-of-track, nudges | Each on or off; the reminder time is in the member's time zone | reminder on, 07:30 |
 | Nudges sent since last sign-in | 0, 1 or 2; nudges stop at 2 (FR2-12) | 1 |
 | Last nudge sent on | Date | 2026-11-25 |
+| Programme emails sent | For each scheduled programme email (welcome, daily reminder, weekly-review-ready, end-of-track), the kind and the local date it was sent, recorded before sending so it goes only once. No email content and no health details. Records naming an enrolment are deleted with that enrolment | daily reminder, 2026-11-25 |
 | Unsubscribe codes | Single-use codes behind each unsubscribe link, stored scrambled | — |
 
 - **Consent:** Account, with each optional email chosen by the member.
@@ -362,10 +364,12 @@ One record each time a member starts or repeats a track.
 | Enrolment number | Permanent internal number | 5521 |
 | Member, track, attempt | Attempt 1 for the first time, 2 for a repeat, and so on | 10482, Healthy Weight, 1 |
 | Active periods | Each period the track was active, as first and last local dates. A switch to another track closes the period; resuming opens a new one | 2026-11-02 to 2026-11-15; 2026-12-01 onwards |
-| Status | Active, set aside, finished, or stopped (Premium ended) | active |
+| Status | Active, set aside, finished, or stopped (Premium ended, or not suitable) | active |
 | Free week used | Yes once day 1 has opened for this track. Lost when health data is erased, which resets the free week (D45) | yes |
 | Last open day | Set when Premium ends: the last local date of the current track week (requirements section 8.3) | 2026-12-06 |
 | Finished on | The local date day 28 was reached | — |
+| Why stopped | Set when the status is stopped: Premium ended (T3 rule 6), or not suitable because a saved health profile now excludes the track (requirements section 8.2) | not suitable |
+| Stop notice shown | Whether the member has been told, once on their next visit, that the track stopped as not suitable, with the safety matrix row's note | yes |
 
 The programme day is worked out from the active periods (T3).
 
@@ -779,7 +783,7 @@ Every record has a permanent internal number that is never reused. Links between
 ### T3. Programme timing
 
 1. **Local dates.** A member's programme day is a calendar date in their own time zone. Event times are stored in UTC. The local date is worked out at the time of the event and stored with it.
-2. **Time-zone changes** apply from the member's next local date. Days already recorded are not changed.
+2. **Time-zone changes** apply from the member's next local date. Days already recorded are not changed. The zone before the change and the local date of the change are kept until the new zone takes effect (A1).
 3. **Programme day** = the number of local dates covered by the enrolment's active periods, counting the first date as day 1. Missed activities do not change it.
 4. **Track week** = programme days 1 to 7 are week 1, days 8 to 14 week 2, and so on.
 5. **Switching** closes the current active period on the last day of the current week. **Resuming** opens a new period starting the next day. The day count continues from where it stopped.
