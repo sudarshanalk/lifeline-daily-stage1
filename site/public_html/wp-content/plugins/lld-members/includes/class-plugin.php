@@ -19,6 +19,7 @@ class LLD_Members_Plugin {
 		LLD_Members_Content::boot();
 		LLD_Members_Personal::boot();
 		LLD_Members_Billing::boot();
+		LLD_Members_Premium::boot();
 		add_action( 'init', array( 'LLD_Members_Account', 'expire_sessions' ), 20 );
 		add_action( 'profile_update', array( 'LLD_Members_Account', 'sync_email' ) );
 		add_filter( 'query_vars', array( __CLASS__, 'query_vars' ) );
@@ -55,9 +56,9 @@ class LLD_Members_Plugin {
 
 	public static function rewrites() {
 		self::register_rewrites();
-		if ( '7' !== get_option( 'lld_members_rewrites' ) ) {
+		if ( '8' !== get_option( 'lld_members_rewrites' ) ) {
 			flush_rewrite_rules( false );
-			update_option( 'lld_members_rewrites', '7', true );
+			update_option( 'lld_members_rewrites', '8', true );
 		}
 	}
 
@@ -153,5 +154,7 @@ class LLD_Members_Plugin {
 		add_rewrite_rule( '^members/track/?$', 'index.php?lld_screen=track', 'top' );
 		add_rewrite_rule( '^members/review/?$', 'index.php?lld_screen=review', 'top' );
 		add_rewrite_rule( '^members/(health|suggestions|tracks|screening|check-in|plan|meals|workout|challenge|badges|diary)/?$', 'index.php?lld_screen=$matches[1]', 'top' );
+		add_rewrite_rule( '^members/group/?$', 'index.php?lld_screen=group', 'top' );
+		add_rewrite_rule( '^members/diary-photo/([0-9]+)/?$', 'index.php?lld_screen=diary-photo&lld_member=$matches[1]', 'top' );
 	}
 }

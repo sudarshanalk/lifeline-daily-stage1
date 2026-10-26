@@ -137,6 +137,70 @@
     paintImperial();
   }
 
+  var ready = document.getElementById("lld-ready");
+  var session = document.getElementById("lld-session");
+  var timer = document.getElementById("lld-timer");
+  var phase = document.getElementById("lld-phase");
+  if (ready && session && timer && phase) {
+    var handle = null;
+    var queue = (timer.getAttribute("data-steps") || "").split(";").filter(Boolean);
+    var step = 0;
+    function showStep() {
+      var parts = (queue[step] || "0|0").split("|");
+      timer.textContent = parts[0];
+      timer.setAttribute("data-left", parts[0]);
+      timer.setAttribute("data-rest", parts[1] || "0");
+      timer.setAttribute("data-mode", "exercise");
+      phase.textContent = "exercise";
+    }
+    showStep();
+    ready.addEventListener("click", function () {
+      var advice = document.getElementById("lld-safety");
+      if (advice) advice.hidden = true;
+      session.hidden = false;
+    });
+    var start = document.getElementById("lld-start");
+    var pause = document.getElementById("lld-pause");
+    function tick() {
+      var left = Number(timer.getAttribute("data-left")) - 1;
+      var mode = timer.getAttribute("data-mode");
+      if (left > 0) {
+        timer.setAttribute("data-left", String(left));
+        timer.textContent = String(left);
+        return;
+      }
+      if (mode === "exercise") {
+        var rest = timer.getAttribute("data-rest") || "0";
+        timer.setAttribute("data-mode", "rest");
+        timer.setAttribute("data-left", rest);
+        timer.textContent = rest;
+        phase.textContent = "rest";
+        return;
+      }
+      step += 1;
+      if (step < queue.length) {
+        showStep();
+        return;
+      }
+      if (handle) clearInterval(handle);
+      handle = null;
+      timer.textContent = "0";
+      phase.textContent = "done";
+    }
+    if (start) {
+      start.addEventListener("click", function () {
+        if (handle) return;
+        handle = setInterval(tick, 1000);
+      });
+    }
+    if (pause) {
+      pause.addEventListener("click", function () {
+        if (handle) clearInterval(handle);
+        handle = null;
+      });
+    }
+  }
+
   var fail = document.querySelector(".lld-fail");
   if (fail) {
     if (!fail.hasAttribute("tabindex")) fail.setAttribute("tabindex", "-1");

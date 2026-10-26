@@ -86,7 +86,7 @@ class LLD_Members_Billing {
 		if ( ! $row ) {
 			return false;
 		}
-		return LLD_Members_Programme::programme_day( $member_id, (int) $row->id ) <= 7;
+		return LLD_Members_Programme::open_period_days( $member_id, (int) $row->id ) <= 7;
 	}
 
 	/**
@@ -696,6 +696,9 @@ class LLD_Members_Billing {
 			)
 		);
 		self::close_week( $member_id, $as_of );
+		if ( class_exists( 'LLD_Members_Premium' ) ) {
+			LLD_Members_Premium::note_ended( $member_id, $as_of );
+		}
 		if ( 'failed' === $why ) {
 			self::mail_member( $member_id, 'Premium has ended', 'Premium has ended after a failed payment. The rest of your current track week stays open.' );
 		}

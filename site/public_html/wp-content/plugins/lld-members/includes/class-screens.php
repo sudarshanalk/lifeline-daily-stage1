@@ -88,6 +88,12 @@ class LLD_Members_Screens {
 			case 'read':
 				LLD_Members_Personal::screen( $screen );
 				break;
+			case 'group':
+				LLD_Members_Premium::group();
+				break;
+			case 'diary-photo':
+				LLD_Members_Premium::diary_photo();
+				break;
 			case 'track':
 			case 'review':
 				LLD_Members_Programme::screen( $screen );

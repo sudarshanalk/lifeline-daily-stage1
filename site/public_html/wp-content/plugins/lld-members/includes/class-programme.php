@@ -100,6 +100,27 @@ class LLD_Members_Programme {
 	}
 
 	/**
+	 * Days in the period that is still open. A new track starts this count again.
+	 *
+	 * @param int $member_id    Member number.
+	 * @param int $enrolment_id Enrolment.
+	 */
+	public static function open_period_days( $member_id, $enrolment_id ) {
+		global $wpdb;
+		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT first_on FROM ' . LLD_Members_Schema::table( 'enrolment_period' ) . ' WHERE enrolment_id = %d AND last_on IS NULL ORDER BY id DESC LIMIT 1', $enrolment_id ) );
+		if ( ! $row || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $row->first_on ) ) {
+			return self::programme_day( $member_id, $enrolment_id );
+		}
+		$today = self::local_today( $member_id );
+		$from  = new DateTimeImmutable( (string) $row->first_on );
+		$to    = new DateTimeImmutable( $today );
+		if ( $today < (string) $row->first_on ) {
+			return 1;
+		}
+		return (int) $from->diff( $to )->days + 1;
+	}
+
+	/**
 	 * @param int $member_id    Member number.
 	 * @param int $enrolment_id Enrolment.
 	 */
@@ -918,6 +939,9 @@ class LLD_Members_Programme {
 			$wpdb->update( $table, $data, array( 'id' => $id ) );
 		} else {
 			$wpdb->insert( $table, $data );
+		}
+		if ( class_exists( 'LLD_Members_Premium' ) ) {
+			LLD_Members_Premium::award( $member_id );
 		}
 		return true;
 	}

@@ -227,6 +227,15 @@ class LLD_Members_Rest {
 		);
 		register_rest_route(
 			'lld-members/v1',
+			'/test/premium',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'LLD_Members_Premium', 'rest_test' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
 			'/test/search',
 			array(
 				'methods'             => 'POST',
@@ -465,6 +474,7 @@ class LLD_Members_Rest {
 					'stripe_state'        => 'active',
 					'started_on'          => isset( $params['started_on'] ) ? sanitize_text_field( (string) $params['started_on'] ) : $now_date,
 					'period_ends_on'      => isset( $params['period_ends_on'] ) ? sanitize_text_field( (string) $params['period_ends_on'] ) : null,
+					'premium_ended_on'    => isset( $params['premium_ended_on'] ) ? sanitize_text_field( (string) $params['premium_ended_on'] ) : null,
 					'stripe_subscription' => isset( $params['stripe_subscription'] ) ? sanitize_text_field( (string) $params['stripe_subscription'] ) : '',
 				)
 			);

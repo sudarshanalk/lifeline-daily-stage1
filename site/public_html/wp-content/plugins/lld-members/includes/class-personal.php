@@ -134,7 +134,14 @@ class LLD_Members_Personal {
 		$main .= '<section data-lld-section="today"><h2>Activity</h2><p>Today\'s activity</p>' . self::today_line( $member_id ) . '</section>';
 		$main .= '<section data-lld-section="plan"><h2>This week\'s plan</h2>' . self::title_list( self::safe_titles( $member_id, array( 'lld_week', 'lld_activity' ) ), 3 ) . '</section>';
 		$main .= '<section data-lld-section="meals"><h2>Meals</h2><p>Today\'s meals</p>' . self::title_list( self::safe_titles( $member_id, array( 'lld_meal', 'lld_recipe' ) ), 3 ) . '</section>';
-		$main .= '<section data-lld-section="diary"><h2>Food diary</h2><p><a href="' . esc_url( home_url( '/members/diary/' ) ) . '">Open food diary</a></p></section>';
+		$main .= '<section data-lld-section="diary"><h2>Food diary</h2><p><a href="' . esc_url( home_url( '/members/diary/' ) ) . '">Open food diary</a></p>';
+		if ( class_exists( 'LLD_Members_Premium' ) ) {
+			$summary = LLD_Members_Premium::summary_line( $member_id );
+			if ( '' !== $summary ) {
+				$main .= '<p data-lld-summary>' . esc_html( $summary ) . '</p>';
+			}
+		}
+		$main .= '</section>';
 		$done  = class_exists( 'LLD_Members_Programme' ) ? LLD_Members_Programme::done_count( $member_id ) : 0;
 		$main .= '<section data-lld-section="progress"><h2>Progress</h2><p>' . (int) $done . ' of 28 done</p></section>';
 		if ( 'free' === $state ) {
@@ -151,6 +158,9 @@ class LLD_Members_Personal {
 				$main .= '<p>Week 1 is complete. Premium opens the rest of this track.</p>';
 			}
 			$main .= LLD_Members_Billing::referral_paragraph( $member_id );
+		}
+		if ( class_exists( 'LLD_Members_Premium' ) ) {
+			$main .= LLD_Members_Premium::qa_paragraph( $member_id );
 		}
 		$main .= '</section></div>';
 		self::layout( 'Today', $main );
@@ -240,6 +250,9 @@ class LLD_Members_Personal {
 			self::layout( 'Check-in', '<h1>Check-in</h1>' . lld_membership_lock( 'Check-ins after this week are part of Premium.' ) );
 			return;
 		}
+		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_month_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_month_nonce'] ) ), 'lld_month' ) ) {
+			LLD_Members_Premium::save_month( $member_id );
+		}
 		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_measures_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_measures_nonce'] ) ), 'lld_measures' ) ) {
 			$measured = LLD_Members_Programme::save_check_in( $member_id );
 			if ( is_wp_error( $measured ) ) {
@@ -270,6 +283,9 @@ class LLD_Members_Personal {
 			}
 		}
 		$main = '<h1>Check-in</h1>' . self::fail( $error ) . ( $saved ? lld_state_saved() : '' );
+		if ( class_exists( 'LLD_Members_Premium' ) ) {
+			LLD_Members_Premium::maybe_finish( $member_id );
+		}
 		if ( $has ) {
 			$main .= '<p>Height is saved.</p>';
 		} else {
@@ -281,6 +297,9 @@ class LLD_Members_Personal {
 			$main .= '</form>';
 		}
 		$main .= LLD_Members_Programme::check_in_html( $member_id );
+		if ( class_exists( 'LLD_Members_Premium' ) ) {
+			$main .= LLD_Members_Premium::monthly_html( $member_id );
+		}
 		self::layout( 'Check-in', $main );
 	}
 
@@ -386,26 +405,43 @@ class LLD_Members_Personal {
 	}
 
 	private static function meals() {
-		self::premium_surface( 'Meal plan', 'Meal plans are part of Premium.', array( 'lld_meal', 'lld_recipe' ) );
+		self::require_member();
+		$member_id = LLD_Members_Access::current_member_id();
+		if ( class_exists( 'LLD_Members_Billing' ) && ! LLD_Members_Billing::paid_open( $member_id ) ) {
+			self::layout( 'Meal plan', '<h1>Meal plan</h1>' . lld_membership_lock( 'Meal plans are part of Premium.' ) );
+			return;
+		}
+		LLD_Members_Premium::meals();
 	}
 
 	private static function workout() {
-		self::premium_surface( 'Workout', 'Workouts are part of Premium.', array( 'lld_workout' ) );
+		self::require_member();
+		$member_id = LLD_Members_Access::current_member_id();
+		if ( class_exists( 'LLD_Members_Billing' ) && ! LLD_Members_Billing::paid_open( $member_id ) ) {
+			self::layout( 'Workout', '<h1>Workout</h1>' . lld_membership_lock( 'Workouts are part of Premium.' ) );
+			return;
+		}
+		LLD_Members_Premium::workout();
 	}
 
 	private static function challenge() {
-		self::premium_surface( 'Challenge', 'Challenges are part of Premium.', array( 'lld_challenge' ) );
+		self::require_member();
+		$member_id = LLD_Members_Access::current_member_id();
+		if ( class_exists( 'LLD_Members_Billing' ) && ! LLD_Members_Billing::paid_open( $member_id ) ) {
+			self::layout( 'Challenge', '<h1>Challenge</h1>' . lld_membership_lock( 'Challenges are part of Premium.' ) );
+			return;
+		}
+		LLD_Members_Premium::challenge();
 	}
 
 	private static function badges() {
-		self::surface( 'Badges', array( 'lld_badge' ) );
+		self::require_member();
+		LLD_Members_Premium::badges();
 	}
 
 	private static function diary() {
 		self::require_member();
-		$member_id = LLD_Members_Access::current_member_id();
-		$line      = ( class_exists( 'LLD_Members_Billing' ) && LLD_Members_Billing::diary_writable( $member_id ) ) ? 'You can add meals.' : 'This diary is read-only.';
-		self::layout( 'Food diary', '<h1>Food diary</h1><p>' . esc_html( $line ) . '</p><p><a href="' . esc_url( home_url( '/members/home/' ) ) . '">Back to today</a></p>' );
+		LLD_Members_Premium::diary();
 	}
 
 	/**
@@ -477,6 +513,9 @@ class LLD_Members_Personal {
 		self::owner_reports();
 		if ( class_exists( 'LLD_Members_Billing' ) ) {
 			LLD_Members_Billing::daily();
+		}
+		if ( class_exists( 'LLD_Members_Premium' ) ) {
+			LLD_Members_Premium::daily();
 		}
 		if ( class_exists( 'LLD_Members_Programme' ) ) {
 			LLD_Members_Programme::dispatch_mail();
@@ -1159,8 +1198,12 @@ class LLD_Members_Personal {
 		$table    = LLD_Members_Schema::table( 'enrolment' );
 		$existing = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE member_id = %d AND status = 'active' ORDER BY id DESC LIMIT 1", $member_id ) );
 		if ( $existing ) {
+			$current = (string) $wpdb->get_var( $wpdb->prepare( "SELECT track_key FROM {$table} WHERE id = %d", $existing ) );
 			$wpdb->update( $table, array( 'track_key' => $key ), array( 'id' => $existing ), array( '%s' ), array( '%d' ) );
 			$wpdb->delete( LLD_Members_Schema::table( 'weekly_plan' ), array( 'enrolment_id' => $existing ), array( '%d' ) );
+			if ( $current !== $key ) {
+				self::roll_period( $existing, $member_id );
+			}
 			$id = $existing;
 		} else {
 			$wpdb->insert(
@@ -1177,6 +1220,26 @@ class LLD_Members_Personal {
 		}
 		if ( class_exists( 'LLD_Members_Programme' ) ) {
 			LLD_Members_Programme::ensure_period( $id, $member_id );
+		}
+	}
+
+	/**
+	 * A different track starts a new period. Earlier days stay in the closed period.
+	 *
+	 * @param int $enrolment_id Enrolment.
+	 * @param int $member_id    Member number.
+	 */
+	private static function roll_period( $enrolment_id, $member_id ) {
+		if ( ! class_exists( 'LLD_Members_Programme' ) ) {
+			return;
+		}
+		global $wpdb;
+		$today = LLD_Members_Programme::local_today( $member_id );
+		$table = LLD_Members_Schema::table( 'enrolment_period' );
+		$open  = $wpdb->get_row( $wpdb->prepare( "SELECT id, first_on FROM {$table} WHERE enrolment_id = %d AND last_on IS NULL LIMIT 1", $enrolment_id ) );
+		if ( $open && (string) $open->first_on < $today ) {
+			$yesterday = ( new DateTimeImmutable( $today ) )->modify( '-1 day' )->format( 'Y-m-d' );
+			$wpdb->update( $table, array( 'last_on' => $yesterday ), array( 'id' => (int) $open->id ), array( '%s' ), array( '%d' ) );
 		}
 	}
 

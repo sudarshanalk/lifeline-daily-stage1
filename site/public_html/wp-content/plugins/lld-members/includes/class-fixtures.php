@@ -55,6 +55,9 @@ class LLD_Members_Fixtures {
 		if ( 'days' === $kind ) {
 			return self::days( $stamp );
 		}
+		if ( 'premium' === $kind ) {
+			return self::premium( $stamp );
+		}
 		if ( 'draft' === $kind ) {
 			return self::draft( $stamp );
 		}
@@ -435,5 +438,103 @@ class LLD_Members_Fixtures {
 		if ( $id && '' === (string) get_term_meta( $id, 'lld_kind', true ) ) {
 			update_term_meta( $id, 'lld_kind', $kind );
 		}
+	}
+
+	/**
+	 * Approved meals, a challenge, a workout and badges for one stamp.
+	 *
+	 * @param string $stamp Stamp.
+	 * @return array<string,mixed>
+	 */
+	private static function premium( $stamp ) {
+		$track = self::post( 'lld_track', 'Fit ' . $stamp, 'Track ' . $stamp, array() );
+		$lentil = self::item( 'lld_recipe', 'Lentil ' . $stamp, '', array( 'ingredients' => "red lentils | 150 | g\nspinach | 80 | g", 'diet' => 'vegetarian', 'meal_type' => 'lunch' ) );
+		$oat    = self::item( 'lld_recipe', 'Oat ' . $stamp, '', array( 'ingredients' => 'oats | 40 | g', 'diet' => 'vegetarian', 'meal_type' => 'breakfast' ) );
+		$loss   = self::item( 'lld_recipe', 'Loss ' . $stamp, 'weight-loss', array( 'ingredients' => 'loss broth | 10 | g', 'diet' => 'vegetarian', 'meal_type' => 'dinner' ) );
+		$tofu   = self::item( 'lld_recipe', 'Tofu ' . $stamp, '', array( 'ingredients' => 'tofu | 100 | g', 'diet' => 'vegan', 'meal_type' => 'lunch' ) );
+		$days   = array();
+		for ( $day = 1; $day <= 7; $day++ ) {
+			$days[ (string) $day ] = array(
+				'breakfast' => $lentil,
+				'lunch'     => $lentil,
+				'dinner'    => $lentil,
+				'snack'     => $lentil,
+			);
+		}
+		$meal = self::item(
+			'lld_meal',
+			'Plan ' . $stamp,
+			'',
+			array(
+				'track_id'    => $track,
+				'diet'        => 'vegetarian',
+				'week_number' => 1,
+				'meals'       => wp_json_encode( $days ),
+				'swaps'       => wp_json_encode( array( '1-breakfast' => array( $oat, $loss ) ) ),
+			)
+		);
+		self::item(
+			'lld_meal',
+			'Vegan plan ' . $stamp,
+			'',
+			array(
+				'track_id'    => $track,
+				'diet'        => 'vegan',
+				'week_number' => 1,
+				'meals'       => wp_json_encode( array( '1' => array( 'breakfast' => $tofu, 'lunch' => $tofu, 'dinner' => $tofu, 'snack' => $tofu ) ) ),
+				'swaps'       => '{}',
+			)
+		);
+		$activities = array();
+		$titles     = array();
+		for ( $day = 1; $day <= 28; $day++ ) {
+			$title        = 'Act ' . $day . ' ' . $stamp;
+			$activities[] = self::item( 'lld_activity', $title, '', array( 'belongs' => 'challenge', 'day_number' => $day ) );
+			$titles[]     = $title;
+		}
+		$badge = self::item( 'lld_badge', 'Fibre finisher ' . $stamp, '', array( 'rule' => 'challenge-finished', 'picture' => 'badge' ) );
+		$challenge = self::item(
+			'lld_challenge',
+			'Fibre ' . $stamp,
+			'',
+			array(
+				'month'        => '2026-06',
+				'badge_id'     => $badge,
+				'activity_ids' => implode( ',', $activities ),
+			)
+		);
+		self::post( 'lld_challenge', 'Hidden challenge ' . $stamp, 'Not approved ' . $stamp, array(), array( 'month' => '2026-06' ) );
+		self::item(
+			'lld_workout',
+			'Beginner home ' . $stamp,
+			'',
+			array(
+				'level'       => 'beginner',
+				'place'       => 'home',
+				'week_number' => 1,
+				'safety'      => 'Warm up for 5 minutes. Stop if you feel pain.',
+				'sessions'    => "Squat to chair | 10 | 30\nWall press | 10 | 20",
+			)
+		);
+		self::item( 'lld_qa', 'Live ' . $stamp, '', array( 'session_date' => '2026-11-04', 'session_time' => '19:00' ) );
+		self::item( 'lld_badge', '5 kg down ' . $stamp, 'weight-loss', array( 'rule' => 'weight-down-5', 'weight_loss' => 1, 'picture' => 'scale' ) );
+		self::item( 'lld_badge', '90 days active ' . $stamp, '', array( 'rule' => 'active-90', 'picture' => 'calendar' ) );
+		return array(
+			'track'     => get_post_field( 'post_name', $track ),
+			'lentil'    => 'Lentil ' . $stamp,
+			'oat'       => 'Oat ' . $stamp,
+			'loss'      => 'Loss ' . $stamp,
+			'tofu'      => 'Tofu ' . $stamp,
+			'meal'      => $meal,
+			'challenge' => 'Fibre ' . $stamp,
+			'hidden'    => 'Hidden challenge ' . $stamp,
+			'badge'     => 'Fibre finisher ' . $stamp,
+			'weight'    => '5 kg down ' . $stamp,
+			'active'    => '90 days active ' . $stamp,
+			'actions'   => $titles,
+			'safety'    => 'Warm up for 5 minutes. Stop if you feel pain.',
+			'exercise'  => 'Squat to chair',
+			'qa'        => '2026-11-04',
+		);
 	}
 }

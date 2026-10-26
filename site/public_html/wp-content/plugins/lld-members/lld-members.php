@@ -40,6 +40,7 @@ require_once LLD_MEMBERS_DIR . 'includes/class-programme.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-fixtures.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-stripe.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-billing.php';
+require_once LLD_MEMBERS_DIR . 'includes/class-premium.php';
 require_once LLD_MEMBERS_DIR . 'includes/components.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-screens.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-rest.php';

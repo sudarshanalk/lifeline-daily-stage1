@@ -1108,6 +1108,18 @@ class LLD_Members_Account {
 					unset( $rows[ $index ]['text_ciphertext'] );
 				}
 			}
+			if ( 'diary_meal' === $suffix && $rows ) {
+				foreach ( $rows as $index => $record ) {
+					if ( ! empty( $record['description_ciphertext'] ) ) {
+						try {
+							$rows[ $index ]['description'] = LLD_Members_Crypto::decrypt( (string) $record['description_ciphertext'], 'diary_meal:' . $record['id'] );
+						} catch ( RuntimeException $e ) {
+							$rows[ $index ]['description'] = '';
+						}
+					}
+					unset( $rows[ $index ]['description_ciphertext'] );
+				}
+			}
 			$data[ $suffix ] = $rows ? $rows : array();
 		}
 		$zip->addFromString( 'summary.html', '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Your Lifeline Daily data</title></head><body><h1>Your data</h1><p>This file was made when you asked for it.</p></body></html>' );
