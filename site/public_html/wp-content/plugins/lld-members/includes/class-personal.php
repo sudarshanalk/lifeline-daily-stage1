@@ -1227,6 +1227,9 @@ class LLD_Members_Personal {
 		if ( class_exists( 'LLD_Members_Programme' ) ) {
 			LLD_Members_Programme::ensure_period( $id, $member_id );
 		}
+		if ( ! $existing || $current !== $key ) {
+			do_action( 'lld_members_event', 'track_started', $member_id, array( 'track' => $key ) );
+		}
 	}
 
 	/**

@@ -386,6 +386,7 @@ class LLD_Members_Account {
 			)
 		);
 		$member_id = (int) $wpdb->insert_id;
+		do_action( 'lld_members_event', 'registered', $member_id );
 		self::issue_link( get_user_by( 'id', $user_id ), $member_id, 'email_confirm', 24 );
 		return $email;
 	}

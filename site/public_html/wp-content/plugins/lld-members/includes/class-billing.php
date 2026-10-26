@@ -198,7 +198,6 @@ class LLD_Members_Billing {
 		}
 		$main .= '<p data-lld-track-link><a href="' . esc_url( $href ) . '">' . esc_html( $label ) . '</a></p>';
 		if ( class_exists( 'LLD_Members_Growth' ) ) {
-			LLD_Members_Growth::queue( 'calculator_used', array( 'calculator' => 'diabetes' === $which ? 'diabetes' : 'protein' ) );
 			$guide = 'diabetes' === $which ? 'blood-sugar' : 'fitness';
 			$main .= LLD_Members_Growth::guide_form( $guide, 'guide' );
 		}
@@ -616,6 +615,7 @@ class LLD_Members_Billing {
 				self::hold_cancel( $sub_id );
 				return;
 			}
+			do_action( 'lld_members_event', 'cancelled', (int) $row->member_id, array( 'reason' => (string) ( $object['cancellation_details']['feedback'] ?? '' ) ) );
 			self::cancel_at_period_end( (int) $row->member_id );
 			return;
 		}
@@ -675,9 +675,11 @@ class LLD_Members_Billing {
 				'premium_ended_why'   => null,
 			)
 		);
+		do_action( 'lld_members_event', 'upgraded', $member_id, array( 'plan' => (string) $quote['plan'] ) );
 		self::remember_card( $member_id, $fingerprint );
 		self::note_referral( $member_id, isset( $stored['ref'] ) ? (string) $stored['ref'] : '', $email, $fingerprint );
 		if ( self::cancel_was_held( $stripe ) ) {
+			do_action( 'lld_members_event', 'cancelled', $member_id, array() );
 			self::cancel_at_period_end( $member_id );
 		}
 		self::mail_member( $member_id, 'Your receipt', 'Your receipt. Amount ' . self::money( (int) $quote['charged'], (string) $quote['currency'] ) . ', tax included. Date ' . $today . '.' );
@@ -727,6 +729,7 @@ class LLD_Members_Billing {
 				'pending_yearly_on' => null,
 			)
 		);
+		do_action( 'lld_members_event', 'renewed', $member_id, array( 'switched' => 'yearly' === $plan && 'yearly' !== (string) $row->plan ) );
 		self::clear_retry( $member_id );
 		self::mail_member( $member_id, 'Your receipt', 'Your receipt. Amount ' . self::money( $amount, $next['currency'] ) . ', tax included. Date ' . $today . '.' );
 	}
