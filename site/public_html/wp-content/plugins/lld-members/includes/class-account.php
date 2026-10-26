@@ -323,9 +323,8 @@ class LLD_Members_Account {
 			if ( is_wp_error( $result ) ) {
 				$error = $result->get_error_message();
 			} else {
-				$sent = bin2hex( random_bytes( 12 ) );
-				set_transient( 'lld_sent_' . $sent, $result, DAY_IN_SECONDS );
-				wp_safe_redirect( home_url( '/members/confirm/?sent=' . $sent ) );
+				// Signed confirm-page token (C10): no email in the address.
+				wp_safe_redirect( LLD_Members_Mail::pending_link( $result ) );
 				exit;
 			}
 		}
@@ -423,12 +422,7 @@ class LLD_Members_Account {
 
 	private static function confirm() {
 		$token = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
-		$sent  = isset( $_GET['sent'] ) ? sanitize_key( wp_unslash( $_GET['sent'] ) ) : '';
 		$email = '';
-		if ( '' !== $sent ) {
-			$stored = get_transient( 'lld_sent_' . $sent );
-			$email  = is_string( $stored ) ? $stored : '';
-		}
 		if ( isset( $_POST['lld_email'] ) ) {
 			$email = sanitize_email( wp_unslash( $_POST['lld_email'] ) );
 		}
