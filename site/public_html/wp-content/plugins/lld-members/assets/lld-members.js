@@ -117,7 +117,8 @@
       var harm = screenForm.querySelector("input[name='lld_harm']:checked");
       var panic = screenForm.querySelector("input[name='lld_panic']:checked");
       var mood = screenForm.querySelector("input[name='lld_mood']:checked");
-      if (screenButton) screenButton.disabled = !(harm && panic && mood);
+      // Yes to self-harm overrides every other answer (FR2-38), so it never waits for the other two.
+      if (screenButton) screenButton.disabled = !((harm && harm.value === "yes") || (harm && panic && mood));
     }
     screenForm.addEventListener("change", screenReady);
     screenReady();
