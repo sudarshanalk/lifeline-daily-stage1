@@ -35,13 +35,17 @@ async function startSlug(page, slug) {
   expect([200, 302, 303]).toContain(res.status());
 }
 
-// WebKit on the CI web server: WordPress's admin "compression test" request (admin-ajax.php?action=wp-compression-test)
-// never gets a response, so the editor page's load event never fires and the server stalls behind it. Chromium
-// passes the test once and WordPress stops asking. The browser answers that request itself, and the external
-// avatar is not fetched, so admin pages load the same way in both engines. The edit itself still goes through the
-// real editor and the real approvals screen.
+// WebKit on the CI web server: once the classic editor page has loaded, the first background request its scripts
+// make to WordPress (seen as admin-ajax.php?action=wp-compression-test, and as /wp-json/wp/v2/users/me once
+// compression was settled) never gets an answer, and nothing on the page can be read or filled after that; Chromium
+// is not affected. The editor does not need those background answers to save a post, so on admin pages the browser
+// answers background (XHR and fetch) calls to admin-ajax.php and the core REST routes itself, and the external
+// avatar is not fetched. The edit and the approval still go through the real editor form and approvals screen.
 async function quietAdmin(page) {
-  await page.route(/\/wp-admin\/admin-ajax\.php\?action=wp-compression-test/, (route) => route.fulfill({ status: 200, contentType: 'text/plain', body: '0' }));
+  await page.route(/\/(wp-admin\/admin-ajax\.php|wp-json\/wp\/v2\/)/, (route) => {
+    if (['xhr', 'fetch'].includes(route.request().resourceType())) return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+    return route.continue();
+  });
   await page.route(/^https:\/\/secure\.gravatar\.com\//, (route) => route.fulfill({ status: 204, body: '' }));
 }
 
