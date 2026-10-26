@@ -30,34 +30,121 @@ async function overflow(page) {
   });
 }
 
+// Every journey page (Test Criteria NFR2-03-AS-01, NFR2-04-AS-01): open pages, then every member screen.
+const OPEN_PAGES = [
+  '/members/sign-in/', '/members/join/', '/members/reset/', '/members/confirm/', '/pricing/',
+  '/programmes/healthy-weight/', '/programmes/blood-sugar/', '/programmes/fitness/', '/programmes/sleep-stress/',
+  '/coming-soon/fitness/', '/health-tools/protein/', '/health-tools/diabetes-risk-check/', '/testimonials/',
+  '/safety/', '/medical-disclaimer/', '/members/help/',
+];
+const MEMBER_PAGES = [
+  '/members/home/', '/members/track/', '/members/plan/', '/members/meals/', '/members/workout/', '/members/challenge/',
+  '/members/badges/', '/members/diary/', '/members/check-in/', '/members/review/', '/members/suggestions/',
+  '/members/tracks/', '/members/goals/', '/members/health/', '/members/screening/?track=sleep-stress',
+  '/members/settings/', '/members/subscription/', '/members/checkout/?plan=yearly', '/members/library/',
+  '/members/foundations/', '/members/group/', '/members/more/', '/members/help/', '/members/data/',
+  '/members/withdraw/', '/members/delete/',
+];
+
+/** A Premium member with health consent on Healthy Weight, so member screens show their full content. */
+async function fullMember(page, request, label) {
+  const email = emailFor(label);
+  await createMember(request, { email, password, first_name: 'Pat', role: 'member', consents: ['terms', 'health'], access_state: 'Premium', plan: 'yearly' });
+  await signIn(page, email, password);
+  await page.goto('/members/tracks/');
+  const nonce = await page.locator('input[name="lld_track_nonce"]').first().inputValue();
+  await page.request.post('/members/tracks/', { form: { lld_track_nonce: nonce, lld_track: 'healthy-weight' }, maxRedirects: 0 });
+  return email;
+}
+
+/** Where focus is now, and whether it is visibly marked and on screen. */
+async function focusState(page) {
+  return page.evaluate(() => {
+    const el = document.activeElement || document.body;
+    const box = el.getBoundingClientRect();
+    const style = getComputedStyle(el);
+    return {
+      id: el.id,
+      name: el.getAttribute('name') || '',
+      tag: el.tagName,
+      text: (el.innerText || el.value || '').trim(),
+      ring: style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0,
+      top: box.top,
+      bottom: box.bottom,
+      height: window.innerHeight,
+    };
+  });
+}
+
+function seenWell(focus) {
+  expect(focus.ring, `${focus.tag}#${focus.id} has a visible focus ring`).toBeTruthy();
+  expect(focus.top, `${focus.tag}#${focus.id} is on screen`).toBeGreaterThanOrEqual(-1);
+  expect(focus.bottom, `${focus.tag}#${focus.id} is on screen`).toBeLessThanOrEqual(focus.height + 1);
+}
+
+/** Press Tab until the matching item has focus, checking that every focused item is visible. */
+async function tabTo(page, match, label, max = 40) {
+  for (let step = 0; step < max; step += 1) {
+    await page.keyboard.press('Tab');
+    const focus = await focusState(page);
+    if (focus.tag === 'BODY' || focus.tag === 'IFRAME') continue;
+    seenWell(focus);
+    if (match(focus)) return focus;
+  }
+  throw new Error(`Tab never reached ${label}`);
+}
+
+/**
+ * Open a link from the keyboard. WebKit leaves links out of the Tab order unless the user turns on "Press Tab to
+ * highlight each item" (Option+Tab in Safari), which Playwright cannot switch on; there the link is focused
+ * directly, its focus ring checked, and Enter opens it. The site itself does not change links to suit a browser.
+ */
+async function followLink(page, browserName, name) {
+  if (browserName === 'webkit') {
+    await page.getByRole('link', { name, exact: true }).first().focus();
+    seenWell(await focusState(page));
+  } else {
+    await tabTo(page, (focus) => focus.tag === 'A' && focus.text === name, name);
+  }
+  await page.keyboard.press('Enter');
+}
+
+async function mailLink(email, pattern) {
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const list = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
+    for (const message of list.messages || []) {
+      if (!(message.To || []).some((item) => item.Address === email)) continue;
+      const full = await fetch(`${MAILPIT}/api/v1/message/${message.ID}`).then((res) => res.json());
+      const found = (full.Text || '').match(pattern);
+      if (found) return found[0];
+    }
+    await new Promise((done) => setTimeout(done, 500));
+  }
+  throw new Error(`No link for ${email}`);
+}
+
 // A failing journey prints its error at once, so a run stopped by the job time limit still shows why.
 test.afterEach(async ({}, testInfo) => {
   if (testInfo.status !== testInfo.expectedStatus) console.log(`FAILED ${testInfo.title}: ${(testInfo.error && testInfo.error.message) || testInfo.status}`.slice(0, 1500));
 });
 
 test('TC-NFR2-03-AS-01', async ({ page, request }) => {
-  const email = emailFor('fit');
-  await createMember(request, { email, password, first_name: 'Pat', role: 'member', consents: ['terms', 'health'] });
-  const pages = ['/members/sign-in/', '/members/join/', '/pricing/', '/programmes/healthy-weight/', '/members/help/'];
+  const problems = [];
+  async function check(path, width) {
+    await page.goto(path);
+    const fit = await overflow(page);
+    if (fit.extra > 1 || fit.wide.length) problems.push(`${path} at ${width}: ${fit.extra}px extra, ${fit.wide.join(' ')}`);
+  }
   for (const width of [360, 768, 1280]) {
     await page.setViewportSize({ width, height: 800 });
-    for (const path of pages) {
-      await page.goto(path);
-      const fit = await overflow(page);
-      expect(fit.extra, `${path} at ${width}`).toBeLessThanOrEqual(1);
-      expect(fit.wide, `${path} at ${width}`).toEqual([]);
-    }
+    for (const path of OPEN_PAGES) await check(path, width);
   }
-  await signIn(page, email, password);
+  await fullMember(page, request, 'fit');
   for (const width of [360, 768, 1280]) {
     await page.setViewportSize({ width, height: 800 });
-    for (const path of ['/members/home/', '/members/diary/']) {
-      await page.goto(path);
-      const fit = await overflow(page);
-      expect(fit.extra, `${path} at ${width}`).toBeLessThanOrEqual(1);
-      expect(fit.wide, `${path} at ${width}`).toEqual([]);
-    }
+    for (const path of MEMBER_PAGES) await check(path, width);
   }
+  expect(problems).toEqual([]);
 });
 
 test('TC-NFR2-03-AS-02', async ({ page, request }) => {
@@ -76,80 +163,71 @@ test('TC-NFR2-03-AS-02', async ({ page, request }) => {
 });
 
 test('TC-NFR2-04-AS-01', async ({ page, request }) => {
-  const email = emailFor('axe');
-  await createMember(request, { email, password, first_name: 'Pat', role: 'member', consents: ['terms', 'health'] });
-  const open = ['/members/sign-in/', '/members/join/', '/pricing/', '/members/help/'];
-  for (const path of open) {
+  const problems = [];
+  async function scan(path) {
     await page.goto(path);
-    const results = await new AxeBuilder({ page }).analyze();
-    const bad = results.violations.filter((item) => item.impact === 'serious' || item.impact === 'critical');
-    expect(bad.map((item) => item.id), path).toEqual([]);
+    // The two calculators inside the frames are Stage 1 pages with their own accessibility checks.
+    const results = await new AxeBuilder({ page }).exclude('.lld-tool-frame').analyze();
+    for (const item of results.violations.filter((found) => found.impact === 'serious' || found.impact === 'critical')) {
+      problems.push(`${path}: ${item.id} (${item.nodes.length})`);
+    }
   }
-  await signIn(page, email, password);
-  for (const path of ['/members/home/', '/members/diary/']) {
-    await page.goto(path);
-    const results = await new AxeBuilder({ page }).analyze();
-    const bad = results.violations.filter((item) => item.impact === 'serious' || item.impact === 'critical');
-    expect(bad.map((item) => item.id), path).toEqual([]);
-  }
+  for (const path of OPEN_PAGES) await scan(path);
+  await fullMember(page, request, 'axe');
+  for (const path of MEMBER_PAGES) await scan(path);
+  expect(problems).toEqual([]);
 });
 
-test('TC-NFR2-04-AS-02', async ({ page, request }) => {
+test('TC-NFR2-04-AS-02', async ({ page, browserName }) => {
+  // TM-01: register with the keyboard only, then reach the dashboard and the food diary.
   const email = emailFor('keys');
-  await createMember(request, { email, password, first_name: 'Pat', role: 'member', consents: ['terms', 'health'] });
   await page.goto('/members/join/');
-  let reached = false;
-  for (let step = 0; step < 12; step += 1) {
-    await page.keyboard.press('Tab');
-    const focused = await page.evaluate(() => {
-      const el = document.activeElement;
-      const box = el.getBoundingClientRect();
-      const style = getComputedStyle(el);
-      return {
-        id: el.id,
-        outline: style.outlineStyle,
-        top: box.top,
-        bottom: box.bottom,
-        height: window.innerHeight,
-      };
-    });
-    expect(focused.outline).not.toBe('none');
-    expect(focused.top).toBeGreaterThanOrEqual(-1);
-    expect(focused.bottom).toBeLessThanOrEqual(focused.height + 1);
-    if (focused.id === 'lld_first') reached = true;
+  for (const [id, value] of [['lld_first', 'Kim'], ['lld_last', 'Keys'], ['lld_email', email], ['lld_password', password], ['lld_age', '41']]) {
+    await tabTo(page, (focus) => focus.id === id, id);
+    await page.keyboard.type(value);
   }
-  expect(reached).toBeTruthy();
-  await page.goto('/members/sign-in/');
-  for (let step = 0; step < 12 && await page.evaluate(() => document.activeElement.id) !== 'lld_email'; step += 1) {
-    await page.keyboard.press('Tab');
+  await tabTo(page, (focus) => focus.tag === 'BUTTON' && focus.text === 'Create account', 'Create account');
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+  // The confirmation link arrives by email; opening it is the one step outside the site.
+  await page.goto(await mailLink(email, /https?:\/\/\S*\/members\/confirm\/\S+/));
+  await expect(page.getByRole('heading', { name: 'Email confirmed' })).toBeVisible();
+  await followLink(page, browserName, 'Continue');
+  await expect(page).toHaveURL(/\/members\/agreements\//);
+  for (const name of ['lld_terms', 'lld_health']) {
+    await tabTo(page, (focus) => focus.name === name, name);
+    await page.keyboard.press('Space');
   }
-  await page.keyboard.type(email);
-  await page.keyboard.press('Tab');
-  await page.keyboard.type(password);
-  for (let step = 0; step < 6; step += 1) {
-    await page.keyboard.press('Tab');
-    const label = await page.evaluate(() => (document.activeElement.innerText || '').trim());
-    if (label === 'Sign in') {
-      await page.keyboard.press('Enter');
-      break;
-    }
-  }
+  await tabTo(page, (focus) => focus.tag === 'BUTTON' && focus.text === 'Continue', 'Continue');
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/members\/goals\//);
+  await tabTo(page, (focus) => focus.tag === 'BUTTON' && focus.text === 'Skip for now', 'Skip for now');
+  await page.keyboard.press('Enter');
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
-  for (let step = 0; step < 20; step += 1) {
-    await page.keyboard.press('Tab');
-    const name = await page.evaluate(() => document.activeElement.textContent || '');
-    if (name.includes('Open food diary')) {
-      await page.keyboard.press('Enter');
-      break;
-    }
-  }
+  // Focus goes to the new screen's main heading (Screen Design section 4).
+  expect((await focusState(page)).tag).toBe('H1');
+  await followLink(page, browserName, 'Open food diary');
   await expect(page.getByRole('heading', { name: 'Food diary' })).toBeVisible();
+
+  // Signing in again is keyboard-only too.
+  await page.request.post('/wp-json/lld-members/v1/test/logout');
+  await page.context().clearCookies();
+  await page.goto('/members/sign-in/');
+  await tabTo(page, (focus) => focus.id === 'lld_email', 'lld_email');
+  await page.keyboard.type(email);
+  await tabTo(page, (focus) => focus.id === 'lld_password', 'lld_password');
+  await page.keyboard.type(password);
+  await tabTo(page, (focus) => focus.tag === 'BUTTON' && focus.text === 'Sign in', 'Sign in');
+  await page.keyboard.press('Enter');
+  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
 });
 
-test('TC-NFR2-05-AS-01', async ({ page, request, browserName }) => {
-  const email = emailFor('speed');
-  await createMember(request, { email, password, first_name: 'Pat', role: 'member', consents: ['terms', 'health'] });
-  await signIn(page, email, password);
+/**
+ * 1.6 Mbps down, 750 kbps up, 150 ms latency (a slow 4G phone). Chromium uses the DevTools network emulation.
+ * WebKit has no network emulation in Playwright, so every response is held back by the latency plus the time its
+ * body takes at 1.6 Mbps; uploads are small page posts and are not slowed.
+ */
+async function slowNetwork(page, browserName) {
   if (browserName === 'chromium') {
     const client = await page.context().newCDPSession(page);
     await client.send('Network.enable');
@@ -159,7 +237,22 @@ test('TC-NFR2-05-AS-01', async ({ page, request, browserName }) => {
       uploadThroughput: (750 * 1024) / 8,
       latency: 150,
     });
+    return;
   }
+  await page.route('**/*', async (route) => {
+    const response = await route.fetch();
+    const body = await response.body();
+    const wait = 150 + (body.length * 8 * 1000) / (1.6 * 1024 * 1024);
+    await new Promise((done) => setTimeout(done, wait));
+    await route.fulfill({ response, body });
+  });
+}
+
+test('TC-NFR2-05-AS-01', async ({ page, request, browserName }) => {
+  const email = emailFor('speed');
+  await createMember(request, { email, password, first_name: 'Pat', role: 'member', consents: ['terms', 'health'] });
+  await signIn(page, email, password);
+  await slowNetwork(page, browserName);
   const samples = [];
   for (let run = 0; run < 5; run += 1) {
     const started = Date.now();
