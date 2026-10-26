@@ -164,6 +164,15 @@ class LLD_Members_Rest {
 		);
 		register_rest_route(
 			'lld-members/v1',
+			'/test/erasure',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'test_erasure' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
 			'/test/stores',
 			array(
 				'methods'             => 'GET',
@@ -549,16 +558,20 @@ class LLD_Members_Rest {
 				array( '%d' )
 			);
 		}
-		if ( ! empty( $params['what_changed'] ) ) {
-			$wpdb->insert(
-				LLD_Members_Schema::table( 'survey' ),
-				array(
-					'member_id'    => $member_id,
-					'week_number'  => 4,
-					'what_changed' => (string) $params['what_changed'],
-				),
-				array( '%d', '%d', '%s' )
+		if ( ! empty( $params['what_changed'] ) || ! empty( $params['quote'] ) ) {
+			$survey = array(
+				'member_id'    => $member_id,
+				'week_number'  => 4,
+				'what_changed' => ! empty( $params['what_changed'] ) ? (string) $params['what_changed'] : null,
 			);
+			if ( ! empty( $params['quote'] ) ) {
+				$survey['quote_text']   = (string) $params['quote'];
+				$survey['permission']   = 1;
+				$survey['approved_on']  = $now_date;
+				$survey['display_name'] = $first;
+				$survey['country']      = 'GB';
+			}
+			$wpdb->insert( LLD_Members_Schema::table( 'survey' ), $survey );
 		}
 		if ( ! empty( $params['referral'] ) ) {
 			$friend = isset( $params['friend_member_id'] ) ? (int) $params['friend_member_id'] : ( 800000 + $member_id );
@@ -707,13 +720,58 @@ class LLD_Members_Rest {
 		$member_id = isset( $params['member_id'] ) ? (int) $params['member_id'] : 0;
 		$sentinel  = isset( $params['sentinel'] ) ? (string) $params['sentinel'] : '';
 		$scope     = isset( $params['scope'] ) ? (string) $params['scope'] : 'account';
-		$problems  = LLD_Members_Privacy::scan( $member_id, $sentinel, $scope );
 		$email     = isset( $params['email'] ) ? sanitize_email( (string) $params['email'] ) : '';
+		$problems  = LLD_Members_Privacy::scan( $member_id, $sentinel, $scope, $email );
 		$user      = $email ? get_user_by( 'email', $email ) : false;
+		$rows      = $member_id ? LLD_Members_Privacy::member_rows( $member_id, $email ) : array();
 		return new WP_REST_Response(
 			array(
-				'problems' => $problems,
-				'user_id'  => $user ? (int) $user->ID : 0,
+				'problems'    => $problems,
+				'user_id'     => $user ? (int) $user->ID : 0,
+				'records'     => array_map( 'count', $rows ),
+				'diary_meals' => isset( $rows['diary_meal'] ) ? array_map( 'intval', wp_list_pluck( $rows['diary_meal'], 'id' ) ) : array(),
+			),
+			200
+		);
+	}
+
+	/**
+	 * Restore procedure (T6) for the restore checks: close or reopen the site, or import an emailed
+	 * erasure list, re-apply the lines dated after "since", verify, and reopen when nothing returned.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
+	public static function test_erasure( $request ) {
+		$params = $request->get_json_params();
+		$action = isset( $params['action'] ) ? sanitize_key( (string) $params['action'] ) : '';
+		if ( 'close' === $action ) {
+			update_option( 'lld_members_closed', '1', false );
+			return new WP_REST_Response( array( 'closed' => true ), 200 );
+		}
+		if ( 'open' === $action ) {
+			delete_option( 'lld_members_closed' );
+			return new WP_REST_Response( array( 'closed' => false ), 200 );
+		}
+		if ( 'reapply' !== $action ) {
+			return new WP_REST_Response( array( 'message' => 'Unknown action.' ), 400 );
+		}
+		$since = isset( $params['since'] ) ? sanitize_text_field( (string) $params['since'] ) : '';
+		$list  = isset( $params['list'] ) ? (string) $params['list'] : '';
+		$path  = trailingslashit( get_temp_dir() ) . 'lld-erasure-' . wp_generate_password( 12, false, false ) . '.txt';
+		file_put_contents( $path, $list );
+		$imported = LLD_Members_Erasure::import_file( $path );
+		unlink( $path );
+		$count    = LLD_Members_Erasure::reapply_all( '' !== $since ? $since : LLD_Members_Erasure::restore_floor() );
+		$problems = LLD_Members_Erasure::verify_stored( $since );
+		if ( ! $problems ) {
+			delete_option( 'lld_members_closed' );
+		}
+		return new WP_REST_Response(
+			array(
+				'imported'  => $imported,
+				'reapplied' => $count,
+				'problems'  => $problems,
+				'closed'    => (bool) get_option( 'lld_members_closed' ),
 			),
 			200
 		);

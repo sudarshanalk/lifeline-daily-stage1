@@ -137,18 +137,24 @@ class LLD_Members_CLI {
 	 * [--from=<file>]
 	 * : Mailbox copy of the erasure list. Lines dated after the backup are imported, then re-applied.
 	 *
+	 * [--since=<utc>]
+	 * : When the backup was taken, as YYYY-MM-DD HH:MM:SS UTC. Without it, the latest line in the
+	 * restored database marks the backup (T6). Earlier lines were applied before the backup.
+	 *
 	 * @param string[] $args  Positional args.
 	 * @param array    $assoc Assoc args.
 	 */
 	public function erasure_reapply( $args, $assoc ) {
 		unset( $args );
-		$from = isset( $assoc['from'] ) ? (string) $assoc['from'] : '';
+		$from  = isset( $assoc['from'] ) ? (string) $assoc['from'] : '';
+		$since = isset( $assoc['since'] ) ? (string) $assoc['since'] : LLD_Members_Erasure::restore_floor();
+		WP_CLI::log( 'Re-applying erasure lines dated after ' . $since . ' UTC' );
 		if ( '' !== $from ) {
 			$imported = LLD_Members_Erasure::import_file( $from );
 			WP_CLI::log( 'Imported ' . $imported . ' erasure lines' );
 		}
-		$count    = LLD_Members_Erasure::reapply_all();
-		$problems = LLD_Members_Erasure::verify_stored();
+		$count    = LLD_Members_Erasure::reapply_all( $since );
+		$problems = LLD_Members_Erasure::verify_stored( $since );
 		if ( $problems ) {
 			foreach ( $problems as $problem ) {
 				WP_CLI::warning( $problem );

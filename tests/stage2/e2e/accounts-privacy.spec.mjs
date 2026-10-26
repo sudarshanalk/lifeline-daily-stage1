@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { inflateRawSync } from 'node:zlib';
 import { expect, test } from '@playwright/test';
-import { createMember, signIn } from './helpers.mjs';
+import { asOwner, createMember, signIn } from './helpers.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
 const columns = JSON.parse(readFileSync(new URL('../personal-columns.json', import.meta.url), 'utf8'));
@@ -71,6 +71,62 @@ function linkFrom(body) {
   const found = body.match(/https?:\/\/\S+/);
   if (!found) throw new Error(body.slice(0, 160));
   return found[0].replace(/[).,>]+$/, '');
+}
+
+const MINUTE = 60 * 1000;
+const HOUR = 60 * MINUTE;
+
+// UTC "Y-m-d H:i:s" a given number of milliseconds from now, for the test clock and restore floors.
+function fromNow(ms) {
+  return new Date(Date.now() + ms).toISOString().slice(0, 19).replace('T', ' ');
+}
+
+async function scanOf(request, data) {
+  const res = await request.post('/wp-json/lld-members/v1/test/scan', { data });
+  expect(res.ok(), await res.text()).toBe(true);
+  return res.json();
+}
+
+// Restore procedure (Data Model T6): close, re-apply the emailed erasure list, verify, reopen.
+async function erasure(request, data) {
+  const res = await request.post('/wp-json/lld-members/v1/test/erasure', { data });
+  expect(res.ok(), await res.text()).toBe(true);
+  return res.json();
+}
+
+// The newest message to one address whose subject or text includes the given words.
+async function mailTo(address, text) {
+  let last = '';
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const list = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
+    const messages = (list.messages || []).filter((message) => JSON.stringify(message.To || []).toLowerCase().includes(address.toLowerCase()));
+    messages.sort((a, b) => new Date(b.Created || 0) - new Date(a.Created || 0));
+    for (const message of messages) {
+      const id = message.ID || message.Id || message.id;
+      const full = await fetch(`${MAILPIT}/api/v1/message/${id}`).then((res) => res.json());
+      last = `${full.Subject || ''}\n${full.Text || ''}`;
+      if (last.includes(text)) return last;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error(`No mail to ${address} with ${text}. Last: ${last.slice(0, 160)}`);
+}
+
+// The erasure-list email holding one member's line, with its recipients.
+async function erasureMail(memberId, what) {
+  const line = `\n${memberId} ${what} `;
+  for (let attempt = 0; attempt < 20; attempt += 1) {
+    const list = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
+    for (const message of list.messages || []) {
+      if (!String(message.Subject || '').includes('Erasure list')) continue;
+      const id = message.ID || message.Id || message.id;
+      const full = await fetch(`${MAILPIT}/api/v1/message/${id}`).then((res) => res.json());
+      const body = `${full.Subject || ''}\n${full.Text || ''}`;
+      if (body.includes(line)) return { body, to: JSON.stringify(full.To || []) };
+    }
+    await new Promise((resolve) => setTimeout(resolve, 500));
+  }
+  throw new Error(`No erasure list with ${line.trim()}`);
 }
 
 function unzip(buffer) {
@@ -293,18 +349,33 @@ test('TC-FR2-03-AS-04', async ({ page }) => {
     sentinel: SENTINEL,
     access_state: 'Premium',
     what_changed: SENTINEL,
+    quote: SENTINEL,
   });
   await signIn(page, email, password);
   await page.goto('/members/settings/');
   await page.locator('#lld_diary').setInputFiles(makeJpeg('diary.jpg', 2048));
   await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Saved')).toBeVisible();
+  // Before: the diary photo, answers, testimonial and consent are all there, so the check can fail.
+  const before = await scanOf(page.request, { member_id: created.member_id, scope: 'health' });
+  const found = before.problems.join(' ');
+  for (const part of ['diary_meal', 'something_else', 'A diary photo remains.', 'A what-changed answer remains.', 'A testimonial remains.', 'Health consent is still on.']) {
+    expect(found, part).toContain(part);
+  }
+  expect(before.diary_meals.length).toBe(1);
+  expect(before.records.subscription).toBe(1);
+  const photo = `/members/diary-photo/${created.member_id}/?meal=${before.diary_meals[0]}`;
+  expect((await page.request.get(photo)).status()).toBe(200);
+
   await page.goto('/members/withdraw/');
+  await expect(page.getByText('This deletes your goals, track progress, health profile, check-ins, food diary and diary photos, saved results and "what changed" survey answers.')).toBeVisible();
   await expect(page.getByText('Your subscription continues. To stop paying, cancel it separately.')).toBeVisible();
   await page.getByRole('button', { name: 'Confirm' }).click();
   await expect(page.getByRole('heading', { name: 'Health information deleted' })).toBeVisible();
-  const scan = await page.request.post('/wp-json/lld-members/v1/test/scan', { data: { member_id: created.member_id, sentinel: SENTINEL, scope: 'health' } });
-  const body = await scan.json();
+  const body = await scanOf(page.request, { member_id: created.member_id, sentinel: SENTINEL, scope: 'health' });
   expect(body.problems, JSON.stringify(body)).toEqual([]);
+  expect((await page.request.get(photo)).status()).toBe(404);
+  expect(body.records.subscription).toBe(1);
   await page.goto('/members/settings/');
   await expect(page.getByText('Membership: Premium')).toBeVisible();
 });
@@ -332,6 +403,50 @@ test('TC-FR2-03-AS-05', async ({ page }) => {
   await expect(page.locator('.lld-consent-history')).toContainText('privacy given privacy-2026-11');
   await expect(page.locator('.lld-consent-history')).toContainText('health given');
   await expect(page.locator('.lld-consent-history')).toContainText('marketing given');
+});
+
+test('TC-FR2-03-AS-06', async ({ browser, page }) => {
+  // The staging backup restore itself is run before launch (NFR2-06 AS-01). Here the restore is
+  // simulated: the pre-withdrawal "given" consent line and health data are put back, then the
+  // T6 procedure re-applies the erasure list taken from the owner's email in Mailpit.
+  const email = 'tm-04r@test.lifelinedaily.invalid';
+  const mark = `SENTINEL-RESTORE-${randomBytes(3).toString('hex')}`;
+  const health = { email, password, first_name: 'Rhea', role: 'member', health_consent: true, sentinel: mark, what_changed: mark, quote: mark };
+  await reset(page.request, email);
+  const since = fromNow(-5000);
+  const created = await createMember(page.request, health);
+  await signIn(page, email, password);
+  await page.goto('/members/withdraw/');
+  await page.getByRole('button', { name: 'Confirm' }).click();
+  await expect(page.getByRole('heading', { name: 'Health information deleted' })).toBeVisible();
+  await page.request.post('/wp-json/lld-members/v1/test/retain');
+  const { body: list } = await erasureMail(created.member_id, 'health');
+
+  await createMember(page.request, health);
+  const restored = (await scanOf(page.request, { member_id: created.member_id, scope: 'health' })).problems.join(' ');
+  expect(restored).toContain('Health consent is still on.');
+  expect(restored).toContain('something_else');
+
+  const member = await browser.newContext();
+  const memberPage = await member.newPage();
+  await signIn(memberPage, email, password);
+  await asOwner(page);
+  try {
+    await erasure(page.request, { action: 'close' });
+    await memberPage.goto('/members/home/');
+    await expect(memberPage.getByRole('heading', { name: 'Lifeline Daily is closed' })).toBeVisible();
+    const done = await erasure(page.request, { action: 'reapply', list, since });
+    expect(done.problems, JSON.stringify(done)).toEqual([]);
+    expect(done.reapplied).toBeGreaterThanOrEqual(1);
+    expect(done.closed).toBe(false);
+  } finally {
+    await erasure(page.request, { action: 'open' });
+  }
+  const after = await scanOf(page.request, { member_id: created.member_id, scope: 'health', sentinel: mark });
+  expect(after.problems, JSON.stringify(after)).toEqual([]);
+  await memberPage.goto('/members/settings/');
+  await expect(memberPage.locator('.lld-consent-history li').last()).toContainText('health withdrawn');
+  await member.close();
 });
 
 test('TC-FR2-04-AS-01', async ({ page }) => {
@@ -388,25 +503,52 @@ test('TC-FR2-04-AS-02', async ({ page }) => {
 
 test('TC-FR2-04-AS-03', async ({ page }) => {
   const email = 'tm-04c@test.lifelinedaily.invalid';
+  const referrer = 'tm-04c-ref@test.lifelinedaily.invalid';
+  const mark = `SENTINEL-GONE-${randomBytes(3).toString('hex')}`;
   await reset(page.request, email);
+  await reset(page.request, referrer);
+  // The member refers a friend, and was referred by another member: four rewards, two of them theirs.
   const created = await createMember(page.request, {
     email,
     password,
     first_name: 'Tee',
     role: 'member',
     health_consent: true,
-    sentinel: SENTINEL,
+    sentinel: mark,
+    what_changed: mark,
     referral: true,
   });
+  const other = await createMember(page.request, { email: referrer, password, first_name: 'Ria', role: 'member', referral: true, friend_member_id: created.member_id });
+  const friend = 800000 + created.member_id;
   await signIn(page, email, password);
+  await page.goto('/members/settings/');
+  await page.locator('#lld_photo').setInputFiles(makeJpeg('gone-profile.jpg', 2048));
+  await page.locator('#lld_diary').setInputFiles(makeJpeg('gone-diary.jpg', 2048));
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Saved')).toBeVisible();
+  // Before: the checker finds the records, photos and sentinel, so an empty answer later means something.
+  const before = (await scanOf(page.request, { member_id: created.member_id, sentinel: mark, email })).problems.join(' ');
+  for (const part of ['member still has 1', 'referral still has 2', 'reward still has 2', 'survey still has', 'diary_meal still has', 'Photo files remain.', 'Sentinel remains']) {
+    expect(before, part).toContain(part);
+  }
+
   await page.goto('/members/delete/');
   await page.locator('#lld_password').fill(password);
   await page.getByRole('button', { name: 'Delete my account' }).click();
-  await page.request.post('/wp-json/lld-members/v1/test/clock', { data: { member_id: created.member_id, utc: '2027-10-26 00:00:00' } });
-  const scan = await page.request.post('/wp-json/lld-members/v1/test/scan', { data: { member_id: created.member_id, sentinel: SENTINEL, email } });
-  const body = await scan.json();
+  await expect(page.getByText('Your account is closed.')).toBeVisible();
+  await page.request.post('/wp-json/lld-members/v1/test/clock', { data: { member_id: created.member_id, utc: fromNow(24 * HOUR) } });
+  const body = await scanOf(page.request, { member_id: created.member_id, sentinel: mark, email });
   expect(body.problems, JSON.stringify(body)).toEqual([]);
   expect(body.user_id).toBe(0);
+  const search = await page.request.post('/wp-json/lld-members/v1/test/search', { data: { q: mark } });
+  expect(await search.json()).toEqual({ hits: [], log: false });
+  // The other people keep their own reward and their referral, without this member's number.
+  for (const id of [other.member_id, friend]) {
+    const kept = await scanOf(page.request, { member_id: id });
+    expect(kept.records.reward, String(id)).toBe(1);
+    expect(kept.records.referral, String(id)).toBe(1);
+  }
+  await reset(page.request, referrer);
 });
 
 test('TC-FR2-04-AS-04', async ({ page }) => {
@@ -427,6 +569,45 @@ test('TC-FR2-04-AS-04', async ({ page }) => {
   } finally {
     await page.request.post('/wp-json/lld-members/v1/test/stripe', { data: { cancel_fail: false } });
   }
+});
+
+test('TC-FR2-04-AS-05', async ({ browser, page }) => {
+  // As TC-FR2-03-AS-06, the restore is simulated: the deleted account is put back with the same
+  // email (under a new member number, so the scrambled-email match is what finds it).
+  const email = 'tm-04s@test.lifelinedaily.invalid';
+  await reset(page.request, email);
+  const since = fromNow(-5000);
+  const created = await createMember(page.request, { email, password, first_name: 'Sol', role: 'member' });
+  await signIn(page, email, password);
+  await page.goto('/members/delete/');
+  await page.locator('#lld_password').fill(password);
+  await page.getByRole('button', { name: 'Delete my account' }).click();
+  await expect(page.getByText('Your account is closed.')).toBeVisible();
+  await page.request.post('/wp-json/lld-members/v1/test/retain');
+  const { body: list } = await erasureMail(created.member_id, 'account');
+
+  const back = await createMember(page.request, { email, password, first_name: 'Sol', role: 'member' });
+  expect((await scanOf(page.request, { email })).user_id).toBeGreaterThan(0);
+  const member = await browser.newContext();
+  const memberPage = await member.newPage();
+  await signIn(memberPage, email, password);
+  await asOwner(page);
+  try {
+    await erasure(page.request, { action: 'close' });
+    await memberPage.goto('/members/home/');
+    await expect(memberPage.getByRole('heading', { name: 'Lifeline Daily is closed' })).toBeVisible();
+    const done = await erasure(page.request, { action: 'reapply', list, since });
+    expect(done.problems, JSON.stringify(done)).toEqual([]);
+    expect(done.closed).toBe(false);
+  } finally {
+    await erasure(page.request, { action: 'open' });
+  }
+  const gone = await scanOf(page.request, { member_id: back.member_id, email });
+  expect(gone.problems, JSON.stringify(gone)).toEqual([]);
+  expect(gone.user_id).toBe(0);
+  await memberPage.goto('/members/home/');
+  await expect(memberPage.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+  await member.close();
 });
 
 test('TC-FR2-04-AS-06', async ({ page }) => {
