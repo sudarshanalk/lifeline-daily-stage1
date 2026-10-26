@@ -198,6 +198,7 @@ jobs:
   stage2-e2e:
     if: "!startsWith(github.event.pull_request.title || '', 'SPEC: ')"   # SPEC PRs (DEC-55) carry no code or tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30   # a hung browser once held this job for over two hours; normal runs take a few minutes
     services:
       db:
         image: mariadb:11
@@ -207,10 +208,17 @@ jobs:
       mailpit:
         image: axllent/mailpit:v1.20
         ports: ['1025:1025', '8025:8025']
+      # Stripe's official API mock: real Stripe API request shapes without keys or network access (C6 integration in CI).
+      # Real Stripe test mode, test clocks and CLI-replayed notices run on staging (Test Criteria section 3, L7).
+      stripe:
+        image: stripe/stripe-mock:v0.206.0
+        ports: ['12111:12111']
     env:
       LLD_WP_URL: http://127.0.0.1:8090
       MAILPIT_URL: http://127.0.0.1:8025
       LLD_TEST_CLOCK: '1'
+      LLD_STRIPE_API_BASE: http://127.0.0.1:12111
+      LLD_STRIPE_SECRET: sk_test_123
     steps:
       - uses: actions/checkout@v4
       - id: has
@@ -219,9 +227,21 @@ jobs:
       - uses: actions/setup-node@v4
         if: steps.has.outputs.e2e == 'true'
         with: { node-version: '24' }
+      # Photos (FR2-02, FR2-37): staging and production have Imagick with HEIC, EXIF and large uploads; CI matches them
+      - name: Image libraries with HEIC support
+        if: steps.has.outputs.e2e == 'true'
+        run: sudo apt-get update -q && sudo apt-get install -y -q libmagickwand-dev libheif-dev libmagickcore-6.q16-7-extra
       - uses: shivammathur/setup-php@v2
         if: steps.has.outputs.e2e == 'true'
-        with: { php-version: '8.1', extensions: mysqli, tools: wp-cli }
+        with:
+          php-version: '8.1'
+          extensions: mysqli, gd, zip, exif, imagick
+          ini-values: upload_max_filesize=32M, post_max_size=32M, memory_limit=512M
+          tools: wp-cli
+      - name: Image support check (HEIC must be listed)
+        if: steps.has.outputs.e2e == 'true'
+        run: |
+          php -r 'echo "imagick ", extension_loaded("imagick") ? "yes" : "no", ", exif ", extension_loaded("exif") ? "yes" : "no", ", HEIC formats: ", class_exists("Imagick") ? implode(",", Imagick::queryFormats("HEI*")) : "-", ", upload ", ini_get("upload_max_filesize"), PHP_EOL;'
       - name: Throwaway WordPress with Paid Memberships Pro and lld-members
         if: steps.has.outputs.e2e == 'true'
         run: bash tests/ci/stage2-wp.sh "$RUNNER_TEMP/wp"

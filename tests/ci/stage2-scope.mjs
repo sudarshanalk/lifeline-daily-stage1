@@ -19,7 +19,7 @@ const matches = (file, globs) => globs.some((g) => globToRegex(g).test(file));
 const CURSOR = ['site/public_html/wp-content/plugins/lld-members/**', 'tests/stage2/**'];
 const TOOL_PAGES = ['site/public_html/tools/protein-requirement-tool.html', 'site/public_html/tools/diabetes-risk-tool.html'];
 // C9 (FR2-23): one additive script plus its include; a tool-page change must refresh hashes in the same PR (FR1-06 rule)
-const C9_EXTRA = [...TOOL_PAGES, 'site/public_html/tools/lld-members-link.js', 'approvals/protein.json', 'approvals/diabetes.json', 'approvals/copy.json', 'copy/inventory.json', 'manifests/protein.json', 'manifests/diabetes.json', 'tests/mutations/MUT-10.patch'];
+const C9_EXTRA = [...TOOL_PAGES, 'site/public_html/tools/lld-members-link.js', 'site/public_html/tools/status.json', 'approvals/protein.json', 'approvals/diabetes.json', 'approvals/copy.json', 'copy/inventory.json', 'manifests/protein.json', 'manifests/diabetes.json', 'tests/mutations/MUT-10.patch'];
 const PROTECTED = ['site/public_html/tools/**', 'approvals/**', 'manifests/**', 'copy/**'];
 const LEAD = ['.github/**', 'deploy/**', 'docs/**', '.cursor/**', 'site/public_html/wp-content/mu-plugins/lld-tools/**', 'site/public_html/wp-content/mu-plugins/lld-tools-loader.php',
   'tests/**', 'tools/**', 'content/**', 'reports/**', 'registry/**', 'schemas/**', 'fixtures/**', 'design/**', 'Makefile', 'package.json', 'package-lock.json', 'README.md', 'CLAUDE.md', '.gitignore', '.gitattributes'];
