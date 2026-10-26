@@ -260,8 +260,9 @@ test('TC-NFR2-09-AS-01', async ({ page, request }) => {
   for (const [label, sent] of [['app header', headers], ['basic', basic]]) {
     const read = await request.get('/wp-json/wp/v2/users/me', { headers: sent });
     expect([401, 403], label).toContain(read.status());
+    // Without a signed-in user WordPress answers 401, 403 or 404 (no user "me"); never a change.
     const change = await request.post('/wp-json/wp/v2/users/me', { headers: sent, data: { email: emailFor('taken'), password: `${password}-from-app` } });
-    expect([401, 403], label).toContain(change.status());
+    expect([401, 403, 404], label).toContain(change.status());
     const keys = await request.post(`/wp-json/wp/v2/users/${mine.user_id}/application-passwords`, { headers: sent, data: { name: 'more' } });
     expect([401, 403], label).toContain(keys.status());
   }

@@ -64,10 +64,16 @@ class LLD_Members_Mail {
 		}
 		$own       = self::$own;
 		self::$own = false;
-		if ( ! $own || 'text/plain' !== (string) $phpmailer->ContentType ) {
+		if ( ! $own ) {
 			return;
 		}
-		$plain = trim( (string) $phpmailer->Body );
+		// This plugin writes plain text. Another plugin (Paid Memberships Pro) may set every email to text/html
+		// and add paragraph tags, so the text is recovered from the HTML in that case.
+		$plain = (string) $phpmailer->Body;
+		if ( 'text/plain' !== (string) $phpmailer->ContentType || str_contains( $plain, '<' ) ) {
+			$plain = html_entity_decode( wp_strip_all_tags( $plain ), ENT_QUOTES, 'UTF-8' );
+		}
+		$plain = trim( $plain );
 		$phpmailer->isHTML( true );
 		$phpmailer->AltBody = $plain;
 		$phpmailer->Body    = self::layout( (string) $phpmailer->Subject, $plain );

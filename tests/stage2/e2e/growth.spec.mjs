@@ -83,7 +83,8 @@ async function latestReport() {
   list.sort((a, b) => new Date(b.Created) - new Date(a.Created));
   expect(list.length).toBeGreaterThan(0);
   const full = await fetch(`${MAILPIT}/api/v1/message/${list[0].ID}`).then((res) => res.json());
-  return full.Text || '';
+  // Mail text lines end in CRLF.
+  return (full.Text || '').replace(/\r\n/g, '\n');
 }
 
 /** A signed Stripe notice, as Stripe sends it to the webhook. */
