@@ -84,10 +84,14 @@ class LLD_Members_Personal {
 				}
 			}
 			$chosen = array_values( array_unique( $chosen ) );
+			$allowed = array();
+			foreach ( LLD_Members_Content::member_goals( $member_id ) as $goal ) {
+				$allowed[] = $goal['key'];
+			}
 			if ( count( $chosen ) > 3 ) {
 				$error = 'You can choose up to 3 goals';
 			} else {
-				self::replace_goals( $member_id, $chosen );
+				self::replace_goals( $member_id, array_values( array_intersect( $chosen, $allowed ) ) );
 				$text = isset( $_POST['lld_else'] ) ? trim( (string) wp_unslash( $_POST['lld_else'] ) ) : '';
 				if ( '' !== $text ) {
 					LLD_Members_Account::save_health( $member_id, array( 'kind' => 'something_else', 'text' => $text ) );
@@ -104,7 +108,7 @@ class LLD_Members_Personal {
 		$main .= '<form method="post" class="lld-form">';
 		$main .= wp_nonce_field( 'lld_goal', 'lld_goal_nonce', true, false );
 		$main .= '<fieldset><legend>Goals</legend>';
-		foreach ( LLD_Members_Content::member_goals() as $goal ) {
+		foreach ( LLD_Members_Content::member_goals( $member_id ) as $goal ) {
 			$main .= '<label class="lld-check"><input type="checkbox" data-lld-goal name="lld_goals[]" value="' . esc_attr( $goal['key'] ) . '"> ' . esc_html( $goal['title'] ) . '</label>';
 		}
 		$main .= '<p id="lld-goal-limit" hidden>You can choose up to 3</p></fieldset>';
@@ -173,69 +177,234 @@ class LLD_Members_Personal {
 			self::layout( 'Health profile', '<h1>Health profile</h1>' . lld_health_consent_notice() );
 			return;
 		}
-		$row     = self::member_row( $member_id );
-		$profile = self::profile_row( $member_id );
-		$error   = '';
-		$saved   = false;
-		$posted  = 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_health_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_health_nonce'] ) ), 'lld_health' );
+		$row      = self::member_row( $member_id );
+		$profile  = self::profile_row( $member_id );
+		$error    = '';
+		$saved    = false;
+		$warnings = array();
+		$posted   = 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_health_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_health_nonce'] ) ), 'lld_health' );
 		if ( $posted ) {
 			$fields = self::profile_from_post();
 			if ( ! empty( $fields['reject'] ) ) {
 				$error = (string) $fields['reject'];
 			} else {
-				$result = LLD_Members_Account::save_health( $member_id, $fields );
-				if ( is_wp_error( $result ) ) {
-					$error = $result->get_error_message();
-				} else {
-					$saved = true;
-					if ( ! empty( $_POST['lld_imperial'] ) ) {
-						global $wpdb;
-						$wpdb->update(
-							LLD_Members_Schema::table( 'member' ),
-							array( 'units' => 'imperial' ),
-							array( 'id' => $member_id ),
-							array( '%s' ),
-							array( '%d' )
-						);
+				$warnings = empty( $_POST['lld_hide_ok'] ) ? self::hiding_warnings( $profile, $fields ) : array();
+				if ( ! $warnings ) {
+					$result = LLD_Members_Account::save_health( $member_id, $fields );
+					if ( is_wp_error( $result ) ) {
+						$error = $result->get_error_message();
+					} else {
+						$saved = true;
+						if ( ! empty( $_POST['lld_imperial'] ) ) {
+							global $wpdb;
+							$wpdb->update(
+								LLD_Members_Schema::table( 'member' ),
+								array( 'units' => 'imperial' ),
+								array( 'id' => $member_id ),
+								array( '%s' ),
+								array( '%d' )
+							);
+						}
+						$profile = self::profile_row( $member_id );
+						$row     = self::member_row( $member_id );
 					}
-					$profile = self::profile_row( $member_id );
-					$row     = self::member_row( $member_id );
 				}
 			}
 		}
+		$keep     = $posted && ! $saved;
 		$imperial = $posted ? ! empty( $_POST['lld_imperial'] ) : ( $row && 'imperial' === $row->units );
 		$main     = '<h1>Health profile</h1>' . self::fail( $error ) . ( $saved ? lld_state_saved() : '' );
 		$main    .= self::stored_lines( $profile );
+		$main    .= self::calculator_lines( $member_id );
 		$main    .= '<form method="post" class="lld-form">';
 		$main    .= wp_nonce_field( 'lld_health', 'lld_health_nonce', true, false );
-		$main    .= '<p><label for="lld_sex">Sex</label><select id="lld_sex" name="lld_sex">';
-		$sex      = $posted && isset( $_POST['lld_sex'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_sex'] ) ) : ( $profile ? (string) $profile->sex : '' );
-		$main    .= '<option value="">Leave blank</option>';
-		foreach ( array( 'female', 'male', 'other' ) as $option ) {
-			$main .= '<option value="' . esc_attr( $option ) . '"' . selected( $sex, $option, false ) . '>' . esc_html( $option ) . '</option>';
+		if ( $warnings ) {
+			foreach ( $warnings as $warning ) {
+				$main .= lld_caution( $warning );
+			}
+			$main .= '<input type="hidden" name="lld_hide_ok" value="1">';
 		}
-		$main .= '</select></p>';
+		$main .= self::choice_field( 'lld_sex', 'Sex', self::sex_choices(), $posted ? self::posted_text( 'lld_sex' ) : ( $profile ? (string) $profile->sex : '' ) );
 		$main .= '<label class="lld-check"><input type="checkbox" name="lld_imperial" value="1" data-lld-imperial' . ( $imperial ? ' checked' : '' ) . '> Use imperial units</label>';
 		$main .= '<div data-lld-imperial-fields' . ( $imperial ? '' : ' hidden' ) . '>';
-		$main .= self::number_field( 'lld_feet', 'Height, feet', 'lld_feet' );
-		$main .= self::number_field( 'lld_inches', 'Height, inches', 'lld_inches' );
-		$main .= self::number_field( 'lld_pounds', 'Weight, pounds', 'lld_pounds' );
-		$main .= self::number_field( 'lld_waist_in', 'Waist, inches', 'lld_waist_in' );
+		$main .= self::number_field( 'lld_feet', 'Height, feet', 'lld_feet', $keep );
+		$main .= self::number_field( 'lld_inches', 'Height, inches', 'lld_inches', $keep );
+		$main .= self::number_field( 'lld_pounds', 'Weight, pounds', 'lld_pounds', $keep );
+		$main .= self::number_field( 'lld_waist_in', 'Waist, inches', 'lld_waist_in', $keep );
 		$main .= '</div>';
-		$main .= self::number_field( 'lld_height', 'Height in centimetres', 'lld_height' );
-		$main .= self::number_field( 'lld_weight', 'Weight in kilograms', 'lld_weight' );
-		$main .= self::number_field( 'lld_waist', 'Waist in centimetres', 'lld_waist' );
+		$main .= self::number_field( 'lld_height', 'Height in centimetres', 'lld_height', $keep );
+		$main .= self::number_field( 'lld_weight', 'Weight in kilograms', 'lld_weight', $keep );
+		$main .= self::number_field( 'lld_waist', 'Waist in centimetres', 'lld_waist', $keep );
+		$main .= self::choice_field( 'lld_activity', 'Activity level', self::activity_choices(), $posted ? self::posted_text( 'lld_activity' ) : ( $profile ? (string) $profile->activity_level : '' ) );
+		$main .= self::choice_field( 'lld_diet', 'Diet type', self::diet_choices(), $posted ? self::posted_text( 'lld_diet' ) : ( $profile ? (string) $profile->diet_type : '' ) );
+		$main .= self::choice_field( 'lld_ethnicity', 'Ethnicity', self::ethnicity_choices(), $posted ? self::posted_text( 'lld_ethnicity' ) : ( $profile ? (string) $profile->ethnicity : '' ) );
 		$main .= '<fieldset><legend>Conditions</legend>';
-		$selected = self::selected_conditions( $profile, $posted );
+		$selected = self::selected_conditions( $profile, $keep );
 		$main    .= '<label class="lld-check"><input type="checkbox" name="lld_condition[]" value="none"' . ( in_array( 'none', $selected, true ) ? ' checked' : '' ) . '> None of these</label>';
+		$main    .= '<label class="lld-check"><input type="checkbox" name="lld_condition[]" value="prefer-not"' . ( in_array( 'prefer-not', $selected, true ) ? ' checked' : '' ) . '> Prefer not to answer</label>';
 		foreach ( self::condition_choices() as $key => $label ) {
 			$main .= '<label class="lld-check"><input type="checkbox" name="lld_condition[]" value="' . esc_attr( $key ) . '"' . ( in_array( $key, $selected, true ) ? ' checked' : '' ) . '> ' . esc_html( $label ) . '</label>';
 		}
 		$main .= '</fieldset>';
-		$main .= '<label class="lld-check"><input type="checkbox" name="lld_confirm" id="lld_confirm" value="1"> I\'ve checked this value</label>';
+		$main .= '<label class="lld-check"><input type="checkbox" name="lld_confirm" id="lld_confirm" value="1"' . ( $keep && ! empty( $_POST['lld_confirm'] ) ? ' checked' : '' ) . '> I\'ve checked this value</label>';
 		$main .= lld_button( array( 'label' => 'Save' ) );
 		$main .= '</form>';
 		self::layout( 'Health profile', $main );
+	}
+
+	/**
+	 * Warnings for conditions this save adds that hide content (SCR-13). Empty when nothing new is hidden.
+	 *
+	 * @param object|null         $profile Stored profile.
+	 * @param array<string,mixed> $fields  Fields about to be saved.
+	 * @return string[]
+	 */
+	private static function hiding_warnings( $profile, $fields ) {
+		if ( ! isset( $fields['conditions_answered'] ) || 'declared' !== $fields['conditions_answered'] ) {
+			return array();
+		}
+		$new = json_decode( (string) $fields['conditions'], true );
+		$old = array();
+		if ( $profile && 'declared' === (string) $profile->conditions_answered ) {
+			$old = json_decode( (string) $profile->conditions, true );
+		}
+		$new    = is_array( $new ) ? $new : array();
+		$old    = is_array( $old ) ? $old : array();
+		$labels = self::condition_choices();
+		$map    = array(
+			'type-2-diabetes'     => 'diabetes',
+			'high-blood-pressure' => 'blood-pressure',
+			'high-cholesterol'    => 'cholesterol',
+		);
+		$out = array();
+		foreach ( array_diff( $new, $old ) as $key ) {
+			$key  = (string) $key;
+			$rule = LLD_Members_Safety::rule( isset( $map[ $key ] ) ? $map[ $key ] : $key );
+			if ( 'pregnancy' === $key ) {
+				$out[] = "Because you are pregnant, the Healthy Weight track and weight-loss content won't be shown";
+				continue;
+			}
+			$parts = array();
+			foreach ( $rule['tracks'] as $track ) {
+				$parts[] = 'the ' . $track . ' track';
+			}
+			if ( $rule['tags'] ) {
+				$parts[] = 'content tagged ' . implode( ', ', $rule['tags'] );
+			}
+			if ( $rule['badges'] ) {
+				$parts[] = 'weight-loss badges';
+			}
+			if ( $parts && isset( $labels[ $key ] ) ) {
+				$out[] = 'Because you chose ' . strtolower( $labels[ $key ] ) . ', ' . implode( ' and ', $parts ) . " won't be shown";
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * The latest saved result from each calculator, as the calculator showed it (C4).
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function calculator_lines( $member_id ) {
+		global $wpdb;
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT calculator, headline, unit, band FROM ' . LLD_Members_Schema::table( 'calculator_result' ) . ' WHERE member_id = %d ORDER BY id DESC', $member_id ) );
+		if ( ! $rows ) {
+			return '';
+		}
+		$names = array(
+			'protein'  => 'Daily Protein Target',
+			'diabetes' => 'Diabetes Risk Check',
+		);
+		$seen  = array();
+		$html  = '<h2>Calculator results</h2>';
+		foreach ( $rows as $result ) {
+			$which = (string) $result->calculator;
+			if ( isset( $seen[ $which ] ) ) {
+				continue;
+			}
+			$seen[ $which ] = true;
+			$unit           = 'result' === (string) $result->unit ? '' : ' ' . (string) $result->unit;
+			$name           = isset( $names[ $which ] ) ? $names[ $which ] : ucfirst( $which );
+			$html          .= '<p data-lld-calculator="' . esc_attr( $which ) . '">' . esc_html( $name . ': ' . (string) $result->headline . $unit . ', ' . (string) $result->band ) . '</p>';
+		}
+		return $html;
+	}
+
+	/**
+	 * @param string               $id       Field id and name.
+	 * @param string               $label    Label.
+	 * @param array<string,string> $choices  Value to label.
+	 * @param string               $selected Selected value.
+	 */
+	private static function choice_field( $id, $label, $choices, $selected ) {
+		$html  = '<p><label for="' . esc_attr( $id ) . '">' . esc_html( $label ) . '</label><select id="' . esc_attr( $id ) . '" name="' . esc_attr( $id ) . '">';
+		$html .= '<option value="">Leave blank</option>';
+		foreach ( $choices as $value => $text ) {
+			$html .= '<option value="' . esc_attr( $value ) . '"' . selected( $selected, $value, false ) . '>' . esc_html( $text ) . '</option>';
+		}
+		return $html . '</select></p>';
+	}
+
+	/**
+	 * @param string $name Field name.
+	 */
+	private static function posted_text( $name ) {
+		return isset( $_POST[ $name ] ) ? sanitize_text_field( wp_unslash( $_POST[ $name ] ) ) : '';
+	}
+
+	/**
+	 * @return array<string,string>
+	 */
+	private static function sex_choices() {
+		return array(
+			'female'            => 'Female',
+			'male'              => 'Male',
+			'prefer-not-to-say' => 'Prefer not to say',
+		);
+	}
+
+	/**
+	 * @return array<string,string>
+	 */
+	private static function activity_choices() {
+		return array(
+			'low'         => 'Low',
+			'some'        => 'Some',
+			'active'      => 'Active',
+			'very-active' => 'Very active',
+		);
+	}
+
+	/**
+	 * @return array<string,string>
+	 */
+	private static function diet_choices() {
+		return array(
+			'everything' => 'Everything',
+			'vegetarian' => 'Vegetarian',
+			'vegan'      => 'Vegan',
+			'other'      => 'Other',
+		);
+	}
+
+	/**
+	 * The same list as the diabetes calculator (C3).
+	 *
+	 * @return array<string,string>
+	 */
+	private static function ethnicity_choices() {
+		return array(
+			'WhiteNA'        => 'White / not stated',
+			'Indian'         => 'Indian',
+			'Pakistani'      => 'Pakistani',
+			'Bangladeshi'    => 'Bangladeshi',
+			'OtherAsian'     => 'Other Asian',
+			'BlackCaribbean' => 'Black Caribbean',
+			'BlackAfrican'   => 'Black African',
+			'Chinese'        => 'Chinese',
+			'Other'          => 'Other / mixed',
+		);
 	}
 
 	private static function check_in() {
@@ -312,14 +481,14 @@ class LLD_Members_Personal {
 	private static function screening() {
 		self::require_member();
 		$member_id = LLD_Members_Access::current_member_id();
-		$track     = isset( $_GET['track'] ) ? sanitize_title( wp_unslash( $_GET['track'] ) ) : 'sleep-stress';
-		if ( 'sleep-stress' !== $track ) {
-			$track = 'sleep-stress';
+		if ( self::track_held( $member_id ) ) {
+			self::layout( 'Before you start', self::emergency_html() );
+			return;
 		}
 		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_screen_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_screen_nonce'] ) ), 'lld_screen' ) ) {
 			if ( ! empty( $_POST['lld_start'] ) ) {
-				if ( '1' === (string) get_transient( self::screen_key( $member_id ) ) ) {
-					delete_transient( self::screen_key( $member_id ) );
+				if ( self::screen_passed( $member_id ) ) {
+					self::session_mark( $member_id, 'lld_pass', null );
 					self::enrol( $member_id, 'sleep-stress' );
 					wp_safe_redirect( home_url( '/members/home/' ) );
 					exit;
@@ -328,20 +497,18 @@ class LLD_Members_Personal {
 				$harm  = isset( $_POST['lld_harm'] ) ? sanitize_key( wp_unslash( $_POST['lld_harm'] ) ) : '';
 				$panic = isset( $_POST['lld_panic'] ) ? sanitize_key( wp_unslash( $_POST['lld_panic'] ) ) : '';
 				$mood  = isset( $_POST['lld_mood'] ) ? sanitize_key( wp_unslash( $_POST['lld_mood'] ) ) : '';
+				if ( 'yes' === $harm ) {
+					// Overrides every other answer, answered or not. The hold names the track only, never an answer.
+					self::session_mark( $member_id, 'lld_pass', null );
+					self::session_mark( $member_id, 'lld_hold', 'sleep-stress' );
+					self::layout( 'Before you start', self::emergency_html() );
+					return;
+				}
 				if ( ! in_array( $harm, array( 'yes', 'no' ), true ) || ! in_array( $panic, array( 'yes', 'no' ), true ) || ! in_array( $mood, array( 'yes', 'no' ), true ) ) {
 					self::layout( 'Before you start', self::screen_form( 'Answer all three questions before continuing.' ) );
 					return;
 				}
-				if ( 'yes' === $harm ) {
-					delete_transient( self::screen_key( $member_id ) );
-					$main  = '<h1>Before you start</h1>';
-					$main .= '<div class="lld-safety" role="alert"><h2>If you are in danger now, call your local emergency number</h2>';
-					$main .= '<p>Examples: 999 UK, 911 US and Canada, 112 EU and India, 000 Australia.</p>';
-					$main .= '<p><a href="https://findahelpline.com">Find support in your country</a></p></div>';
-					self::layout( 'Before you start', $main );
-					return;
-				}
-				set_transient( self::screen_key( $member_id ), '1', 10 * MINUTE_IN_SECONDS );
+				self::session_mark( $member_id, 'lld_pass', time() + 10 * MINUTE_IN_SECONDS );
 				$main = '<h1>Before you start</h1>';
 				if ( 'yes' === $panic ) {
 					$main .= '<p class="lld-caution">Panic attacks can have a physical cause. See a doctor before you start this track.</p>';
@@ -361,11 +528,138 @@ class LLD_Members_Personal {
 		self::layout( 'Before you start', self::screen_form( '' ) );
 	}
 
+	/**
+	 * The self-harm response (FR2-38, SCR-08). Never shortened, hidden or skippable.
+	 */
+	private static function emergency_html() {
+		$main  = '<h1>Before you start</h1>';
+		$main .= '<div class="lld-safety" role="alert"><h2>If you are in danger now, call your local emergency number</h2>';
+		$main .= '<p>Examples: 999 UK, 911 US and Canada, 112 EU and India, 000 Australia.</p>';
+		$main .= '<p><a href="https://findahelpline.com">Find support in your country</a></p></div>';
+		return $main;
+	}
+
+	/**
+	 * True when this sign-in session answered yes to self-harm: Sleep and Stress is not offered again in it.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function track_held( $member_id ) {
+		return 'sleep-stress' === self::session_read( $member_id, 'lld_hold' );
+	}
+
+	/**
+	 * @param int $member_id Member number.
+	 */
+	private static function screen_passed( $member_id ) {
+		if ( self::track_held( $member_id ) ) {
+			return false;
+		}
+		$until = (int) self::session_read( $member_id, 'lld_pass' );
+		return $until > time();
+	}
+
+	/**
+	 * Mark the current sign-in session. Signing out ends the session and the mark with it.
+	 *
+	 * @param int        $member_id Member number.
+	 * @param string     $key       lld_hold or lld_pass.
+	 * @param mixed|null $value     Value, or null to clear.
+	 */
+	private static function session_mark( $member_id, $key, $value ) {
+		$user  = get_current_user_id();
+		$token = function_exists( 'wp_get_session_token' ) ? (string) wp_get_session_token() : '';
+		if ( $user > 0 && '' !== $token && class_exists( 'WP_Session_Tokens' ) ) {
+			$manager = WP_Session_Tokens::get_instance( $user );
+			$session = $manager->get( $token );
+			if ( is_array( $session ) ) {
+				if ( null === $value ) {
+					unset( $session[ $key ] );
+				} else {
+					$session[ $key ] = $value;
+				}
+				$manager->update( $token, $session );
+				return;
+			}
+		}
+		$name = $key . '_' . md5( (int) $member_id . '|' . $token );
+		if ( null === $value ) {
+			delete_transient( $name );
+		} else {
+			set_transient( $name, $value, DAY_IN_SECONDS );
+		}
+	}
+
+	/**
+	 * @param int    $member_id Member number.
+	 * @param string $key       lld_hold or lld_pass.
+	 * @return mixed
+	 */
+	private static function session_read( $member_id, $key ) {
+		$user  = get_current_user_id();
+		$token = function_exists( 'wp_get_session_token' ) ? (string) wp_get_session_token() : '';
+		if ( $user > 0 && '' !== $token && class_exists( 'WP_Session_Tokens' ) ) {
+			$session = WP_Session_Tokens::get_instance( $user )->get( $token );
+			if ( is_array( $session ) ) {
+				return isset( $session[ $key ] ) ? $session[ $key ] : null;
+			}
+		}
+		$value = get_transient( $key . '_' . md5( (int) $member_id . '|' . $token ) );
+		return false === $value ? null : $value;
+	}
+
+	/**
+	 * Everything kept about a member's screening, for the FR2-38-AS-04 check: the marks on each sign-in
+	 * session, any screening options or transients, and the member's rows in every lld_ table.
+	 *
+	 * @param int $member_id Member number.
+	 * @return array<string,mixed>
+	 */
+	public static function screening_state( $member_id ) {
+		global $wpdb;
+		$member_id = (int) $member_id;
+		$user      = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT user_id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+		$sessions  = array();
+		if ( $user > 0 && class_exists( 'WP_Session_Tokens' ) ) {
+			foreach ( WP_Session_Tokens::get_instance( $user )->get_all() as $session ) {
+				$marks = array();
+				foreach ( (array) $session as $key => $value ) {
+					if ( 0 === strpos( (string) $key, 'lld' ) ) {
+						$marks[ $key ] = $value;
+					}
+				}
+				$sessions[] = $marks;
+			}
+		}
+		$options = $wpdb->get_col( "SELECT option_name FROM {$wpdb->options} WHERE option_name LIKE '%lld\\_hold%' OR option_name LIKE '%lld\\_pass%' OR option_name LIKE '%lld\\_screen%'" );
+		$meta    = $user > 0 ? $wpdb->get_col( $wpdb->prepare( "SELECT meta_key FROM {$wpdb->usermeta} WHERE user_id = %d AND meta_key LIKE %s", $user, $wpdb->esc_like( 'lld' ) . '%' ) ) : array();
+		$rows    = array();
+		foreach ( $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $wpdb->prefix . 'lld_' ) . '%' ) ) as $table ) {
+			if ( ! is_string( $table ) || ! preg_match( '/^[A-Za-z0-9_]+$/', $table ) ) {
+				continue;
+			}
+			$column = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM `{$table}` LIKE %s", 'member_id' ) );
+			if ( $column ) {
+				$rows[ $table ] = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM `{$table}` WHERE member_id = %d", $member_id ) );
+			}
+		}
+		return array(
+			'sessions' => $sessions,
+			'options'  => array_values( array_map( 'strval', $options ) ),
+			'usermeta' => array_values( array_map( 'strval', $meta ) ),
+			'rows'     => $rows,
+		);
+	}
+
 	private static function tracks() {
 		self::require_member();
 		$member_id = LLD_Members_Access::current_member_id();
 		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_track_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_track_nonce'] ) ), 'lld_track' ) ) {
 			$key = isset( $_POST['lld_track'] ) ? sanitize_title( wp_unslash( $_POST['lld_track'] ) ) : '';
+			if ( 'sleep-stress' === $key && self::track_held( $member_id ) ) {
+				wp_safe_redirect( home_url( '/members/screening/?track=sleep-stress' ) );
+				exit;
+			}
 			if ( 'sleep-stress' === $key ) {
 				wp_safe_redirect( home_url( '/members/screening/?track=sleep-stress' ) );
 				exit;
@@ -382,8 +676,10 @@ class LLD_Members_Personal {
 		$main = '<h1>Start a track</h1>';
 		foreach ( self::track_list() as $key => $title ) {
 			if ( ! LLD_Members_Safety::track_allowed( $member_id, $title ) ) {
-				$note  = implode( ' ', LLD_Members_Safety::notes( $member_id ) );
-				$main .= lld_not_suitable( $title . ' is not suitable for you.', $note, home_url( '/members/home/' ), 'Back to today' );
+				$main .= LLD_Members_Safety::not_suitable( $member_id, $title . ' is not suitable for you.', home_url( '/members/home/' ), 'Back to today' );
+				continue;
+			}
+			if ( 'sleep-stress' === $key && self::track_held( $member_id ) ) {
 				continue;
 			}
 			if ( 'sleep-stress' === $key ) {
@@ -474,7 +770,7 @@ class LLD_Members_Personal {
 		$member_id = LLD_Members_Access::current_member_id();
 		$titles    = self::safe_titles( $member_id, $types );
 		$main      = '<h1>' . esc_html( $heading ) . '</h1>';
-		$main     .= $titles ? self::title_list( $titles, 0 ) : '<p>' . esc_html( LLD_Members_Safety::empty_line( $member_id ) ) . '</p>';
+		$main     .= $titles ? self::title_list( $titles, 0 ) : LLD_Members_Safety::empty_html( $member_id );
 		self::layout( $heading, $main );
 	}
 
@@ -507,6 +803,7 @@ class LLD_Members_Personal {
 		}
 		self::remember_open( $member_id, 'p' . $item_id );
 		$main  = '<h1>' . esc_html( $post->post_title ) . '</h1>';
+		$main .= LLD_Members_Safety::cautions_html( $member_id, $item );
 		$main .= '<div class="lld-content">' . wp_kses_post( wpautop( $post->post_content ) ) . '</div>';
 		self::layout( $post->post_title, $main );
 	}
@@ -517,6 +814,7 @@ class LLD_Members_Personal {
 	public static function daily() {
 		self::reminders();
 		self::owner_reports();
+		self::notify_live_goals();
 		if ( class_exists( 'LLD_Members_Billing' ) ) {
 			LLD_Members_Billing::daily();
 		}
@@ -538,9 +836,10 @@ class LLD_Members_Personal {
 		if ( ! $rows ) {
 			return;
 		}
+		$told = array();
 		foreach ( LLD_Members_Content::member_goals() as $goal ) {
 			foreach ( $rows as $row ) {
-				if ( ! is_string( $row->text_ciphertext ) || '' === $row->text_ciphertext ) {
+				if ( isset( $told[ (int) $row->id ] ) || ! is_string( $row->text_ciphertext ) || '' === $row->text_ciphertext ) {
 					continue;
 				}
 				try {
@@ -558,6 +857,7 @@ class LLD_Members_Personal {
 				if ( is_email( $email ) ) {
 					LLD_Members_Mail::send_goal_live( $email, (string) $goal['title'] );
 				}
+				$told[ (int) $row->id ] = true;
 				$wpdb->update(
 					$table,
 					array( 'told_when_live' => LLD_Members_Clock::now( (int) $row->member_id )->format( 'Y-m-d' ) ),
@@ -688,8 +988,20 @@ class LLD_Members_Personal {
 		$fields   = array(
 			'kind'      => 'profile',
 			'confirmed' => ! empty( $_POST['lld_confirm'] ),
-			'sex'       => isset( $_POST['lld_sex'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_sex'] ) ) : '',
 		);
+		$choices  = array(
+			'sex'            => array( 'lld_sex', self::sex_choices() ),
+			'activity_level' => array( 'lld_activity', self::activity_choices() ),
+			'diet_type'      => array( 'lld_diet', self::diet_choices() ),
+			'ethnicity'      => array( 'lld_ethnicity', self::ethnicity_choices() ),
+		);
+		foreach ( $choices as $column => $choice ) {
+			if ( ! isset( $_POST[ $choice[0] ] ) ) {
+				continue;
+			}
+			$value             = self::posted_text( $choice[0] );
+			$fields[ $column ] = isset( $choice[1][ $value ] ) ? $value : '';
+		}
 		if ( $imperial ) {
 			$feet   = self::posted_number( 'lld_feet' );
 			$inches = self::posted_number( 'lld_inches' );
@@ -719,7 +1031,7 @@ class LLD_Members_Personal {
 		if ( isset( $_POST['lld_condition'] ) && is_array( $_POST['lld_condition'] ) ) {
 			foreach ( wp_unslash( $_POST['lld_condition'] ) as $key ) {
 				$key = sanitize_key( (string) $key );
-				if ( 'none' === $key || isset( self::condition_choices()[ $key ] ) ) {
+				if ( 'none' === $key || 'prefer-not' === $key || isset( self::condition_choices()[ $key ] ) ) {
 					$chosen[] = $key;
 				}
 			}
@@ -727,6 +1039,11 @@ class LLD_Members_Personal {
 		$chosen = array_values( array_unique( $chosen ) );
 		if ( in_array( 'none', $chosen, true ) && count( $chosen ) > 1 ) {
 			$fields['reject'] = 'None cannot be combined with a condition.';
+		} elseif ( in_array( 'prefer-not', $chosen, true ) && count( $chosen ) > 1 ) {
+			$fields['reject'] = 'Prefer not to answer cannot be combined with a condition.';
+		} elseif ( in_array( 'prefer-not', $chosen, true ) ) {
+			$fields['conditions_answered'] = 'not_answered';
+			$fields['conditions']          = '';
 		} elseif ( in_array( 'none', $chosen, true ) ) {
 			$fields['conditions_answered'] = 'none';
 			$fields['conditions']          = '';
@@ -825,8 +1142,10 @@ class LLD_Members_Personal {
 	 * @param string $label Label.
 	 * @param string $name  Field name.
 	 */
-	private static function number_field( $id, $label, $name ) {
-		return '<p><label for="' . esc_attr( $id ) . '">' . esc_html( $label ) . '</label><input id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" type="number" step="0.1" inputmode="decimal"></p>';
+	private static function number_field( $id, $label, $name, $keep = false ) {
+		$value = $keep ? self::posted_number( $name ) : null;
+		$attr  = null === $value ? '' : ' value="' . esc_attr( (string) $value ) . '"';
+		return '<p><label for="' . esc_attr( $id ) . '">' . esc_html( $label ) . '</label><input id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" type="number" step="0.1" inputmode="decimal"' . $attr . '></p>';
 	}
 
 	/**
@@ -849,7 +1168,7 @@ class LLD_Members_Personal {
 		}
 		$items = self::pick( $member_id );
 		if ( ! $items ) {
-			return $html . '<p>' . esc_html( LLD_Members_Safety::empty_line( $member_id ) ) . '</p>';
+			return $html . LLD_Members_Safety::empty_html( $member_id );
 		}
 		foreach ( $items as $item ) {
 			$html .= '<article class="lld-suggestion"><h3><a href="' . esc_url( $item['href'] ) . '">' . esc_html( $item['title'] ) . '</a></h3>';
@@ -1016,23 +1335,17 @@ class LLD_Members_Personal {
 		if ( ! $keys ) {
 			return array();
 		}
-		$posts = get_posts(
-			array(
-				'post_type'      => 'lld_goal',
-				'post_status'    => array( 'publish', 'draft', 'private' ),
-				'post_parent'    => 0,
-				'posts_per_page' => -1,
-			)
-		);
 		$slugs = array();
-		foreach ( $posts as $post ) {
-			if ( ! in_array( sanitize_title( $post->post_title ), $keys, true ) ) {
+		foreach ( LLD_Members_Content::approved_goals() as $snap ) {
+			if ( ! in_array( sanitize_title( (string) $snap['title'] ), $keys, true ) ) {
 				continue;
 			}
-			$tags = wp_get_object_terms( $post->ID, 'lld_tag', array( 'fields' => 'slugs' ) );
-			if ( ! is_wp_error( $tags ) ) {
-				$slugs = array_merge( $slugs, array_map( 'strval', $tags ) );
+			// A goal chosen before a condition was saved stops steering suggestions once its track is not offered.
+			if ( ! LLD_Members_Safety::track_allowed( $member_id, (string) $snap['title'] ) ) {
+				continue;
 			}
+			$tags  = isset( $snap['tags'] ) && is_array( $snap['tags'] ) ? $snap['tags'] : array();
+			$slugs = array_merge( $slugs, array_map( 'strval', $tags ) );
 		}
 		return array_values( array_unique( $slugs ) );
 	}
@@ -1200,6 +1513,9 @@ class LLD_Members_Personal {
 	 * @param string $key       Track key.
 	 */
 	private static function enrol( $member_id, $key ) {
+		if ( 'sleep-stress' === $key && self::track_held( $member_id ) ) {
+			return;
+		}
 		global $wpdb;
 		$table    = LLD_Members_Schema::table( 'enrolment' );
 		$existing = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE member_id = %d AND status = 'active' ORDER BY id DESC LIMIT 1", $member_id ) );
@@ -1368,8 +1684,7 @@ class LLD_Members_Personal {
 	 * @param int $member_id Member number.
 	 */
 	private static function unsuitable( $member_id ) {
-		$note = implode( ' ', LLD_Members_Safety::notes( $member_id ) );
-		self::layout( 'Not suitable for you', lld_not_suitable( 'This is not suitable for you.', $note, home_url( '/members/home/' ), 'Back to today' ) );
+		self::layout( 'Not suitable for you', LLD_Members_Safety::not_suitable( $member_id, 'This is not suitable for you.', home_url( '/members/home/' ), 'Back to today' ) );
 	}
 
 	/**
@@ -1397,13 +1712,6 @@ class LLD_Members_Personal {
 		$html .= '<label class="lld-check"><input type="radio" name="' . esc_attr( $name ) . '" value="no"> No</label>';
 		$html .= '</fieldset>';
 		return $html;
-	}
-
-	/**
-	 * @param int $member_id Member number.
-	 */
-	private static function screen_key( $member_id ) {
-		return 'lld_screen_ok_' . (int) $member_id;
 	}
 
 	/**
