@@ -12,7 +12,7 @@ const STUBS = resolve(dirname(fileURLToPath(import.meta.url)), 'premium-stubs.ph
  * @param {...any} args Arguments.
  */
 export function premium(world, call, ...args) {
-  const input = JSON.stringify({ items: world.items || {}, consent: !!world.consent, profile: world.profile ?? null, call, args });
+  const input = JSON.stringify({ items: world.items || {}, consent: !!world.consent, profile: world.profile ?? null, defines: world.defines || {}, call, args });
   const out = execFileSync('php', [STUBS], { input, encoding: 'utf8' });
   return JSON.parse(out);
 }

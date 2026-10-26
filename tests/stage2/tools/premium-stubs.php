@@ -11,6 +11,13 @@
 define( 'ABSPATH', __DIR__ . '/' );
 
 $GLOBALS['lld_test'] = json_decode( stream_get_contents( STDIN ), true );
+foreach ( $GLOBALS['lld_test']['defines'] ?? array() as $name => $value ) {
+	define( $name, $value );
+}
+
+function wp_parse_url( $url, $component = -1 ) {
+	return parse_url( $url, $component );
+}
 
 function sanitize_title( $text ) {
 	$text = strtolower( trim( (string) $text ) );

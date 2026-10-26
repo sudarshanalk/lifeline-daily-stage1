@@ -417,9 +417,28 @@ class LLD_Members_Premium {
 		}
 		$main  = '<h1>Members\' group</h1>';
 		$main .= self::qa_paragraph( $member_id );
-		$main .= '<p><a href="https://www.facebook.com/">Join the private Facebook group</a></p>';
-		$main .= '<p>The owner will approve your request.</p>';
+		$link  = self::group_link();
+		if ( '' !== $link ) {
+			$main .= '<p><a href="' . esc_url( $link ) . '" rel="noopener">Join the private Facebook group</a></p>';
+			$main .= '<p>The owner will approve your request.</p>';
+		}
 		self::page( 'Members\' group', $main );
+	}
+
+	/**
+	 * The private group's address, from LLD_FACEBOOK_GROUP_URL in wp-config.php (an owner input). Empty while it
+	 * is not set or is not a facebook.com https address, and then no link is shown.
+	 */
+	public static function group_link() {
+		if ( ! defined( 'LLD_FACEBOOK_GROUP_URL' ) ) {
+			return '';
+		}
+		$url  = trim( (string) constant( 'LLD_FACEBOOK_GROUP_URL' ) );
+		$host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		if ( 'https' !== strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) ) || ! preg_match( '/(^|\.)facebook\.com$/', $host ) ) {
+			return '';
+		}
+		return $url;
 	}
 
 	public static function diary_photo() {

@@ -453,6 +453,12 @@ test('TC-FR2-35-AS-02', async ({ page, request }) => {
   await page.goto('/members/home/');
   await expect(page.getByText(`Next live Q&A ${made.qa}`)).toBeVisible();
   await expect(page.getByText("Facebook's own privacy terms apply")).toBeVisible();
+  // the group page: the notice and the Q&A date; no placeholder link while LLD_FACEBOOK_GROUP_URL is not set
+  await page.goto('/members/group/');
+  await expect(page.getByText(`Next live Q&A ${made.qa}`)).toBeVisible();
+  await expect(page.getByText("Facebook's own privacy terms apply")).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Join the private Facebook group' })).toHaveCount(0);
+  await expect(page.locator('main a[href*="facebook.com"]')).toHaveCount(0);
 });
 
 test('TC-FR2-35-AS-03', async ({ page, request }) => {
