@@ -235,7 +235,12 @@ jobs:
       # Photos (FR2-02, FR2-37): staging and production have Imagick with HEIC, EXIF and large uploads; CI matches them
       - name: Image libraries with HEIC support
         if: steps.has.outputs.e2e == 'true'
-        run: sudo apt-get update -q && sudo apt-get install -y -q libmagickwand-dev libheif-dev libmagickcore-6.q16-7-extra
+        # The runner's man-db trigger and recommended packages made this step take about 17 minutes
+        run: |
+          echo 'set man-db/auto-update false' | sudo debconf-communicate >/dev/null 2>&1 || true
+          sudo rm -f /var/lib/man-db/auto-update
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends libmagickwand-dev libheif-dev libheif-plugin-libde265 libmagickcore-6.q16-7-extra
       - uses: shivammathur/setup-php@v2
         if: steps.has.outputs.e2e == 'true'
         with:
