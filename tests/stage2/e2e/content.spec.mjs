@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { expect, test } from '@playwright/test';
-import { approveTitle, asOwner, createMember, editBody, publishItem, signIn } from './helpers.mjs';
+import { approveTitle, asOwner, createMember, editBody, openAdmin, publishItem, signIn } from './helpers.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
 
@@ -192,7 +192,7 @@ test('TC-NFR2-07-AS-02', async ({ page }) => {
   await approveTitle(page, `Blood sugar note ${mark}`);
   const blocked = `Stress missing link ${mark}`;
   await publishItem(page, 'lld_lesson', blocked, `A stress page with no urgent link. ${mark}`, 'stress');
-  await page.goto('/wp-admin/admin.php?page=lld-approvals');
+  await openAdmin(page, '/wp-admin/admin.php?page=lld-approvals');
   const qual = page.locator('#lld_qualifications');
   if (await qual.count()) await qual.fill('Test clinical record for the automated check');
   const row = page.locator('tr', { hasText: blocked });
@@ -214,7 +214,7 @@ test('TC-NFR2-07-AS-03', async ({ page }) => {
   const title = `Wording check ${mark}`;
   await asOwner(page);
   await publishItem(page, 'lld_activity', title, `This cures a cold and treats a headache. It reverses ageing and is clinically   proven. ${mark}`);
-  await page.goto('/wp-admin/admin.php?page=lld-approvals');
+  await openAdmin(page, '/wp-admin/admin.php?page=lld-approvals');
   const row = page.locator('tr', { hasText: title });
   await expect(row.locator('.lld-wording-flags')).toContainText('cures');
   await expect(row.locator('.lld-wording-flags')).toContainText('treats');

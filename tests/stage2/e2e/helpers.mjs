@@ -23,10 +23,36 @@ export async function asOwner(page) {
   if (!res.ok()) throw new Error(`owner sign-in ${res.status()} ${await res.text()}`);
 }
 
-async function openAdmin(page, path) {
-  await page.goto(path);
+// Owner steps in wp-admin: the edit and approval screens are plain HTML forms, so the tests fetch only the document.
+// In WebKit the admin page's scripts, styles and background requests (heartbeat, compression test, emoji loader)
+// open many parallel connections, and the single-process CI server (php -S) stalls on one of them, so the next
+// navigation never completes. Member pages are never touched: only requests made by a /wp-admin/ document are cut.
+// Buttons are clicked for real, never forced: in WebKit a forced click on these pages can report success without
+// submitting the form.
+export const ADMIN = { waitUntil: 'domcontentloaded' };
+const lean = new WeakSet();
+
+async function leanAdmin(page) {
+  if (lean.has(page)) return;
+  lean.add(page);
+  await page.route('**/*', (route) => {
+    const request = route.request();
+    let from = '';
+    try {
+      from = request.frame().url();
+    } catch {
+      from = '';
+    }
+    if (request.resourceType() !== 'document' && from.includes('/wp-admin/')) return route.abort();
+    return route.continue();
+  });
+}
+
+export async function openAdmin(page, path) {
+  await leanAdmin(page);
+  await page.goto(path, ADMIN);
   if (page.url().includes('pmpro-wizard')) {
-    await page.goto(path);
+    await page.goto(path, ADMIN);
   }
 }
 
@@ -35,15 +61,15 @@ export async function publishItem(page, type, title, body, tags = '') {
   await page.locator('#title').fill(title, { force: true });
   await page.locator('#content').fill(body, { force: true });
   if (tags) await page.locator('#lld_tags').fill(tags, { force: true });
-  await page.locator('#publish').click({ force: true });
-  await page.waitForURL(/post=\d+/);
+  await page.locator('#publish').click();
+  await page.waitForURL(/post=\d+/, ADMIN);
   return Number(new URL(page.url()).searchParams.get('post'));
 }
 
 export async function editBody(page, id, body) {
   await openAdmin(page, `/wp-admin/post.php?post=${id}&action=edit`);
   await page.locator('#content').fill(body, { force: true });
-  await page.locator('#publish').click({ force: true });
+  await page.locator('#publish').click();
   await page.locator('#message').waitFor();
 }
 
@@ -54,7 +80,7 @@ export async function approveTitle(page, title) {
   const row = page.locator('tr', { hasText: title });
   const box = row.locator('input[type="checkbox"]');
   if (await box.count()) await box.check({ force: true });
-  await row.getByRole('button', { name: 'Approve' }).click({ force: true });
+  await row.getByRole('button', { name: 'Approve' }).click();
 }
 
 export async function restNonce(page) {

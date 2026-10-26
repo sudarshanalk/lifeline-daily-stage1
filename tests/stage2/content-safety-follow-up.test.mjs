@@ -82,3 +82,14 @@ test('TC-FR2-06-AS-07 EM-15 does not name the goal', () => {
 test('TC-FR2-25-AS-01 the health route refuses "none" with a condition', () => {
   expect(body(account, 'public static function rest_health(')).toContain('None cannot be combined with a condition.');
 });
+
+test('TC-FR2-06-AS-06 the monthly note groups requests into themes and counts, never their text (F5)', () => {
+  const reports = body(personal, 'private static function owner_reports(');
+  expect(reports.indexOf('self::group_something_else()')).toBeGreaterThan(-1);
+  expect(reports.indexOf('self::group_something_else()')).toBeLessThan(reports.indexOf("'Something else themes'"));
+  const grouping = body(personal, 'private static function group_something_else(');
+  expect(grouping).toContain('LLD_Members_Content::approved_goals()');
+  expect(grouping).toContain("$theme = 'Other';");
+  expect(grouping).toContain("array( 'theme' => $theme )");
+  expect(grouping).not.toMatch(/'theme'\s*=>\s*\$text/);
+});
