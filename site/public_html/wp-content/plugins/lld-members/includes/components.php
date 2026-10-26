@@ -223,7 +223,7 @@ function lld_progress( $done, $total ) {
 	$safe_total = max( 1, (int) $total );
 	$pct        = (int) round( ( (int) $done / $safe_total ) * 100 );
 	$html       = '<div class="lld-progress"><p>' . esc_html( (string) (int) $done ) . ' of ' . esc_html( (string) (int) $total ) . ' done</p>';
-	$html      .= '<div class="lld-progress-track" role="progressbar" aria-valuenow="' . esc_attr( (string) (int) $done ) . '" aria-valuemax="' . esc_attr( (string) (int) $total ) . '">';
+	$html      .= '<div class="lld-progress-track" role="progressbar" aria-label="' . esc_attr( 'Progress: ' . (int) $done . ' of ' . (int) $total . ' done' ) . '" aria-valuemin="0" aria-valuenow="' . esc_attr( (string) (int) $done ) . '" aria-valuemax="' . esc_attr( (string) (int) $total ) . '">';
 	$html      .= '<span style="width:' . esc_attr( (string) $pct ) . '%"></span></div></div>';
 	return $html;
 }
