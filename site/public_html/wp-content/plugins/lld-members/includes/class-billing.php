@@ -1054,14 +1054,35 @@ class LLD_Members_Billing {
 		if ( $stamp < 1 ) {
 			return '';
 		}
+		return ( new DateTimeImmutable( '@' . $stamp ) )->setTimezone( self::member_zone( $member_id ) )->format( 'Y-m-d' );
+	}
+
+	/**
+	 * @param int $member_id Member number.
+	 */
+	private static function member_zone( $member_id ) {
 		global $wpdb;
-		$zone = $wpdb->get_var( $wpdb->prepare( 'SELECT timezone FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+		$zone = $member_id > 0 ? $wpdb->get_var( $wpdb->prepare( 'SELECT timezone FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) ) : '';
 		try {
-			$tz = new DateTimeZone( is_string( $zone ) && '' !== $zone ? $zone : 'UTC' );
+			return new DateTimeZone( is_string( $zone ) && '' !== $zone ? $zone : 'UTC' );
 		} catch ( Exception $e ) {
-			$tz = new DateTimeZone( 'UTC' );
+			return new DateTimeZone( 'UTC' );
 		}
-		return ( new DateTimeImmutable( '@' . $stamp ) )->setTimezone( $tz )->format( 'Y-m-d' );
+	}
+
+	/**
+	 * The member's local date of a UTC time stored on an order.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $utc       MySQL datetime in UTC.
+	 */
+	private static function local_date_of( $member_id, $utc ) {
+		try {
+			$at = new DateTimeImmutable( (string) $utc, new DateTimeZone( 'UTC' ) );
+		} catch ( Exception $e ) {
+			return substr( (string) $utc, 0, 10 );
+		}
+		return $at->setTimezone( self::member_zone( (int) $member_id ) )->format( 'Y-m-d' );
 	}
 
 	/**
@@ -1279,7 +1300,7 @@ class LLD_Members_Billing {
 		}
 		$member_id = (int) $order->member_id;
 		$today     = LLD_Members_Programme::local_today( $member_id );
-		$paid_on   = substr( (string) $order->ordered_at, 0, 10 );
+		$paid_on   = self::local_date_of( $member_id, (string) $order->ordered_at );
 		$limit     = ( new DateTimeImmutable( $paid_on ) )->modify( '+14 days' )->format( 'Y-m-d' );
 		if ( $today > $limit ) {
 			return new WP_Error( 'lld_refund', 'Refunds of the first payment are available for 14 days.' );
@@ -1390,7 +1411,7 @@ class LLD_Members_Billing {
 				$wpdb->update( $table, array( 'status' => 'refunded' ), array( 'id' => (int) $row->id ) );
 				continue;
 			}
-			$paid = substr( (string) $order->ordered_at, 0, 10 );
+			$paid = self::local_date_of( (int) $row->friend_member_id, (string) $order->ordered_at );
 			$due  = ( new DateTimeImmutable( $paid ) )->modify( '+14 days' )->format( 'Y-m-d' );
 			$today = LLD_Members_Programme::local_today( (int) $row->friend_member_id );
 			if ( $today <= $due ) {
@@ -1857,13 +1878,19 @@ class LLD_Members_Billing {
 	 */
 	private static function rewards_this_year( $member_id, $year ) {
 		global $wpdb;
-		return (int) $wpdb->get_var(
+		$rows  = $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'referral' ) . " WHERE referrer_member_id = %d AND status = 'rewarded' AND friend_order_id IN (SELECT id FROM " . LLD_Members_Schema::table( 'order' ) . ' WHERE ordered_at LIKE %s)',
-				$member_id,
-				$wpdb->esc_like( $year ) . '%'
+				'SELECT r.friend_member_id, o.ordered_at FROM ' . LLD_Members_Schema::table( 'referral' ) . ' r INNER JOIN ' . LLD_Members_Schema::table( 'order' ) . " o ON o.id = r.friend_order_id WHERE r.referrer_member_id = %d AND r.status = 'rewarded'",
+				$member_id
 			)
 		);
+		$count = 0;
+		foreach ( $rows as $row ) {
+			if ( substr( self::local_date_of( (int) $row->friend_member_id, (string) $row->ordered_at ), 0, 4 ) === (string) $year ) {
+				++$count;
+			}
+		}
+		return $count;
 	}
 
 	/**
@@ -1881,7 +1908,7 @@ class LLD_Members_Billing {
 			LLD_Members_Schema::table( 'order' ),
 			array(
 				'member_id'          => $member_id,
-				'ordered_at'         => LLD_Members_Programme::local_today( $member_id ) . ' 12:00:00',
+				'ordered_at'         => lld_members_now_mysql( $member_id ),
 				'kind'               => $kind,
 				'catalogue_amount'   => (int) $quote['base'],
 				'catalogue_currency' => (string) $quote['currency'],
@@ -2316,7 +2343,7 @@ class LLD_Members_Billing {
 		$sub = self::subscription_row( $member_id );
 		return array(
 			'subscription' => $sub,
-			'orders'       => $wpdb->get_results( $wpdb->prepare( 'SELECT id, kind, charged_amount, tax_amount, charged_currency, discount_code, status FROM ' . LLD_Members_Schema::table( 'order' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
+			'orders'       => $wpdb->get_results( $wpdb->prepare( 'SELECT id, kind, ordered_at, related_order_id, charged_amount, tax_amount, charged_currency, discount_code, discount_amount, discount_currency, status, stripe_payment, stripe_invoice FROM ' . LLD_Members_Schema::table( 'order' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
 			'rewards'      => $wpdb->get_results( $wpdb->prepare( 'SELECT id, form, status, operation_key FROM ' . LLD_Members_Schema::table( 'reward' ) . ' WHERE recipient_member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
 			'referrals'    => $wpdb->get_results( $wpdb->prepare( 'SELECT id, status, self_referral, friend_member_id FROM ' . LLD_Members_Schema::table( 'referral' ) . ' WHERE referrer_member_id = %d OR friend_member_id = %d ORDER BY id ASC', $member_id, $member_id ), ARRAY_A ),
 			'next'         => $member_id ? self::next_charge( $member_id ) : array(),

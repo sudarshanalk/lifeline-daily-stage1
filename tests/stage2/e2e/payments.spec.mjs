@@ -312,6 +312,26 @@ test('TC-FR2-13-AS-04 the plans are Paid Memberships Pro levels that follow the 
   expect(read.levels.yearly.id).toBe(ids.yearly);
 });
 
+test('TC-FR2-14-AS-03 orders are stamped in UTC, and the refund window uses the member local date', async ({ page, request }) => {
+  const email = emailFor('utc');
+  await createMember(request, { email, password, first_name: 'Utc', role: 'member' });
+  // Europe/London is UTC+1 in July: 23:30 UTC is already 2 July there.
+  await clock(request, email, '2026-07-01 23:30:00');
+  await payApi(request, email, { plan: 'yearly', country: 'US' });
+  let snap = await readMember(request, email);
+  expect(snap.orders[0].ordered_at).toBe('2026-07-01 23:30:00');
+  // 14 local days after 2 July is 16 July: still refundable at 16 July 22:30 UTC (23:30 local), not on 17 July local.
+  await clock(request, email, '2026-07-16 22:30:00');
+  await asOwner(page);
+  await page.goto('/wp-admin/admin.php?page=lld-payments');
+  if (page.url().includes('pmpro-wizard')) await page.goto('/wp-admin/admin.php?page=lld-payments');
+  await confirmRefund(page, snap.orders[0].id);
+  snap = await readMember(request, email);
+  expect(snap.subscription.access_state).toBe('Refunded');
+  const refund = snap.orders.find((order) => order.kind === 'refund');
+  expect(refund.ordered_at).toBe('2026-07-16 22:30:00');
+});
+
 test('TC-FR2-13-AS-05', async ({ page, request }) => {
   const yearly = emailFor('year');
   const monthly = emailFor('month');
