@@ -33,6 +33,14 @@ function esc_attr( $text ) {
 	return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
 }
 
+function esc_url( $url ) {
+	return (string) $url;
+}
+
+function home_url( $path = '' ) {
+	return 'https://example.test' . $path;
+}
+
 function sanitize_key( $key ) {
 	return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $key ) );
 }

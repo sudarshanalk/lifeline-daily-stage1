@@ -337,16 +337,23 @@ class LLD_Members_Premium {
 			$main .= lld_button( array( 'label' => 'Join' ) );
 			$main .= '</form>';
 		}
-		$activities = self::challenge_activities( $member_id, $shown );
-		$day        = isset( $_GET['day'] ) ? (int) $_GET['day'] : 0;
+		$items   = self::challenge_items( $member_id, $shown );
+		$day     = isset( $_REQUEST['day'] ) ? (int) $_REQUEST['day'] : 0;
+		$current = 0;
+		$done    = array();
+		$notice  = '';
 		if ( $row && $consent ) {
-			$start = new DateTimeImmutable( (string) $row->joined_on );
-			$now   = new DateTimeImmutable( $today );
-			$day   = $day > 0 ? $day : ( (int) $start->diff( $now )->days + 1 );
+			$start   = new DateTimeImmutable( (string) $row->joined_on );
+			$current = (int) $start->diff( new DateTimeImmutable( $today ) )->days + 1;
+			$day     = $day > 0 ? $day : $current;
 			if ( $today >= $start->modify( '+27 days' )->format( 'Y-m-d' ) && ! $row->finished_on ) {
 				self::finish_challenge( $member_id, $row, $shown, $today );
 				$row = self::challenge_row( $member_id, (int) $shown['parent_id'] );
 			}
+			if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_tick_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_tick_nonce'] ) ), 'lld_tick' ) ) {
+				$notice = self::tick_challenge( $member_id, $row, $items, $day, $current );
+			}
+			$done = self::challenge_done( $member_id, (int) $row->id );
 		}
 		if ( $day < 1 ) {
 			$day = 1;
@@ -354,12 +361,30 @@ class LLD_Members_Premium {
 		if ( $day > 28 ) {
 			$day = 28;
 		}
-		for ( $i = 1; $i <= 28; $i++ ) {
-			$main .= '<p><a href="' . esc_url( home_url( '/members/challenge/?day=' . $i ) ) . '">Day ' . $i . '</a></p>';
+		if ( '' !== $notice ) {
+			$main .= '<p role="status">' . esc_html( $notice ) . '</p>';
 		}
-		if ( array_key_exists( $day - 1, $activities ) ) {
-			$action = $activities[ $day - 1 ];
-			$main  .= '<h2>Action for this day</h2><p>' . esc_html( null === $action ? LLD_Members_Safety::empty_line( $member_id ) : $action ) . '</p>';
+		if ( $row && $consent ) {
+			$main .= '<p data-lld-progress>' . count( $done ) . ' of 28 days done</p>';
+		}
+		$main .= '<ol class="lld-days">';
+		for ( $i = 1; $i <= 28; $i++ ) {
+			$main .= '<li><a href="' . esc_url( home_url( '/members/challenge/?day=' . $i ) ) . '">Day ' . $i . '</a>' . ( isset( $done[ $i ] ) ? ' (done)' : '' ) . '</li>';
+		}
+		$main .= '</ol>';
+		if ( array_key_exists( $day - 1, $items ) ) {
+			$action = $items[ $day - 1 ];
+			$main  .= '<h2>Action for this day</h2><p>' . esc_html( null === $action ? LLD_Members_Safety::empty_line( $member_id ) : $action['title'] ) . '</p>';
+			if ( $row && $consent && null !== $action ) {
+				if ( isset( $done[ $day ] ) ) {
+					$main .= '<p data-lld-day-done>Day ' . (int) $day . ' is done.</p>';
+				} elseif ( self::tick_open( $day, $current ) ) {
+					$main .= '<form method="post">' . wp_nonce_field( 'lld_tick', 'lld_tick_nonce', true, false ) . '<input type="hidden" name="day" value="' . (int) $day . '">' . lld_button( array( 'label' => 'Mark day ' . (int) $day . ' done' ) ) . '</form>';
+				}
+			}
+		}
+		if ( $row && $consent ) {
+			$main .= self::challenge_review( $items, $done, $current, (bool) $row->finished_on );
 		}
 		if ( $row && $row->finished_on ) {
 			$badge = self::badge_title( $shown );
@@ -1808,6 +1833,22 @@ class LLD_Members_Premium {
 	 * @return array<int,string|null>
 	 */
 	private static function challenge_activities( $member_id, $challenge ) {
+		return array_map(
+			static function ( $item ) {
+				return null === $item ? null : $item['title'];
+			},
+			self::challenge_items( $member_id, $challenge )
+		);
+	}
+
+	/**
+	 * Daily actions by position, with their exact versions; null where the safety matrix excludes the action.
+	 *
+	 * @param int                 $member_id Member number.
+	 * @param array<string,mixed> $challenge Challenge snapshot.
+	 * @return array<int,array{title:string,version_key:string}|null>
+	 */
+	private static function challenge_items( $member_id, $challenge ) {
 		$fields = isset( $challenge['fields'] ) && is_array( $challenge['fields'] ) ? $challenge['fields'] : array();
 		$ids    = preg_split( '/\s*,\s*/', trim( (string) ( $fields['activity_ids'] ?? '' ) ) );
 		$titles = array();
@@ -1820,7 +1861,10 @@ class LLD_Members_Premium {
 				continue;
 			}
 			$snap['type'] = 'lld_activity';
-			$titles[]     = LLD_Members_Safety::allows( $member_id, $snap ) ? (string) $snap['title'] : null;
+			$titles[]     = LLD_Members_Safety::allows( $member_id, $snap ) ? array(
+				'title'       => (string) $snap['title'],
+				'version_key' => self::version_key( $snap ),
+			) : null;
 		}
 		return $titles;
 	}
@@ -1862,6 +1906,113 @@ class LLD_Members_Premium {
 	 */
 	private static function version_parent( $stored ) {
 		return (int) strtok( (string) $stored, ':' );
+	}
+
+	/**
+	 * A challenge day can be ticked on the day and up to 2 days late (requirements 8.3), never ahead.
+	 *
+	 * @param int $day     Challenge day.
+	 * @param int $current Today's challenge day.
+	 */
+	private static function tick_open( $day, $current ) {
+		return $day >= 1 && $day <= 28 && $day <= $current && $current - $day <= 2;
+	}
+
+	/**
+	 * Record a challenge day as done (Data Model C8: challenge and day).
+	 *
+	 * @param int                               $member_id Member number.
+	 * @param object                            $row       Challenge participation.
+	 * @param array<int,array<string,string>|null> $items  Daily actions.
+	 * @param int                               $day       Challenge day.
+	 * @param int                               $current   Today's challenge day.
+	 */
+	private static function tick_challenge( $member_id, $row, $items, $day, $current ) {
+		$item = $items[ $day - 1 ] ?? null;
+		if ( ! $item ) {
+			return 'There is no action to mark for that day.';
+		}
+		if ( ! self::tick_open( $day, $current ) ) {
+			return 'Day ' . (int) $day . ' can no longer be marked. Days can be marked up to 2 days late.';
+		}
+		if ( isset( self::challenge_done( $member_id, (int) $row->id )[ $day ] ) ) {
+			return 'Day ' . (int) $day . ' is already done.';
+		}
+		global $wpdb;
+		$wpdb->insert(
+			LLD_Members_Schema::table( 'result' ),
+			array(
+				'member_id'     => $member_id,
+				'item_version'  => (string) $item['version_key'],
+				'context_type'  => 'challenge',
+				'context_id'    => (int) $row->id,
+				'programme_day' => (int) $day,
+				'local_date'    => ( new DateTimeImmutable( (string) $row->joined_on ) )->modify( '+' . ( (int) $day - 1 ) . ' days' )->format( 'Y-m-d' ),
+				'result'        => 'done',
+				'recorded_at'   => lld_members_now_mysql( $member_id ),
+			),
+			array( '%d', '%s', '%s', '%d', '%d', '%s', '%s', '%s' )
+		);
+		return 'Day ' . (int) $day . ' done.';
+	}
+
+	/**
+	 * Challenge days done, built fresh from the results (Data Model C12: reviews are worked out when opened).
+	 *
+	 * @param int $member_id Member number.
+	 * @param int $row_id    Challenge participation.
+	 * @return array<int,bool>
+	 */
+	private static function challenge_done( $member_id, $row_id ) {
+		global $wpdb;
+		$days = $wpdb->get_col( $wpdb->prepare( 'SELECT programme_day FROM ' . LLD_Members_Schema::table( 'result' ) . " WHERE member_id = %d AND context_type = 'challenge' AND context_id = %d AND result = 'done'", $member_id, $row_id ) );
+		$out  = array();
+		foreach ( (array) $days as $day ) {
+			$out[ (int) $day ] = true;
+		}
+		return $out;
+	}
+
+	/**
+	 * The challenge's weekly review (FR2-33): for each finished week, what was done of the actions available, with
+	 * an encouraging close that never shames a missed week; the last week suggests what to do next. Draft wording
+	 * for the owner.
+	 *
+	 * @param array<int,array<string,string>|null> $items    Daily actions.
+	 * @param array<int,bool>                      $done     Days done.
+	 * @param int                                  $current  Today's challenge day.
+	 * @param bool                                 $finished Day 28 reached.
+	 */
+	private static function challenge_review( $items, $done, $current, $finished ) {
+		$html = '';
+		for ( $week = 1; $week <= 4; $week++ ) {
+			if ( $current <= 7 * $week && ! ( 4 === $week && $finished ) ) {
+				break;
+			}
+			$open = 0;
+			$got  = 0;
+			for ( $day = 7 * $week - 6; $day <= 7 * $week; $day++ ) {
+				if ( ! empty( $items[ $day - 1 ] ) ) {
+					++$open;
+					$got += isset( $done[ $day ] ) ? 1 : 0;
+				}
+			}
+			if ( 0 === $open ) {
+				$close = 'There were no actions for you this week.';
+			} elseif ( $got * 10 >= $open * 7 ) {
+				$close = 'A strong week. Keep it going.';
+			} elseif ( $got * 10 >= $open * 3 ) {
+				$close = 'Every action counts. Keep going at your own pace.';
+			} else {
+				$close = 'A new week is a fresh start. Pick one action to try.';
+			}
+			$html .= '<section data-lld-review="' . $week . '"><h3>Week ' . $week . ' review</h3><p>' . $got . ' of ' . $open . ' actions done. ' . esc_html( $close ) . '</p>';
+			if ( 4 === $week ) {
+				$html .= '<p>What next: <a href="' . esc_url( home_url( '/members/tracks/' ) ) . '">start a track</a>, or join next month\'s challenge.</p>';
+			}
+			$html .= '</section>';
+		}
+		return '' === $html ? '' : '<h2>Weekly review</h2>' . $html;
 	}
 
 	/**

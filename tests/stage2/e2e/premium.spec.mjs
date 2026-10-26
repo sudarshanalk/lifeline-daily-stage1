@@ -324,6 +324,26 @@ test('TC-FR2-33-AS-02', async ({ page, request }) => {
   await signIn(page, mid.email, password);
   await page.goto('/members/challenge/');
   await page.getByRole('button', { name: 'Join' }).click();
+  // mark days done, on the day and up to 2 days late, never 3; the weekly review counts them
+  await page.goto('/members/challenge/');
+  await page.getByRole('button', { name: 'Mark day 1 done' }).click();
+  await expect(page.getByText('Day 1 done.')).toBeVisible();
+  await clock(request, mid.email, '2026-06-22 12:00:00');
+  await page.goto('/members/challenge/?day=2');
+  await page.getByRole('button', { name: 'Mark day 2 done' }).click();
+  await expect(page.locator('[data-lld-progress]')).toHaveText('2 of 28 days done');
+  await clock(request, mid.email, '2026-06-27 12:00:00');
+  await page.goto('/members/challenge/?day=5');
+  await expect(page.getByRole('button', { name: 'Mark day 5 done' })).toHaveCount(0);
+  const tickNonce = await (await page.request.get('/members/challenge/?day=8')).text().then((html) => html.match(/name="lld_tick_nonce" value="([^"]+)"/)[1]);
+  await page.request.post('/members/challenge/?day=5', { form: { lld_tick_nonce: tickNonce, day: '5' }, maxRedirects: 0 });
+  await page.goto('/members/challenge/');
+  await expect(page.locator('[data-lld-progress]')).toHaveText('2 of 28 days done');
+  await expect(page.locator('[data-lld-review="1"]')).toContainText('2 of 7 actions done.');
+  await expect(page.locator('[data-lld-review="2"]')).toHaveCount(0);
+  const ticked = (await (await request.post('/wp-json/lld-members/v1/test/premium', { data: { email: mid.email } })).json()).results.filter((r) => r.context_type === 'challenge');
+  expect(ticked.map((r) => r.programme_day)).toEqual(['1', '2']);
+  for (const r of ticked) expect(r.item_version).toMatch(/^\d+:v\d+$/);
   await clock(request, mid.email, '2026-07-05 12:00:00');
   await page.goto('/members/challenge/');
   await expect(page.getByRole('heading', { name: made.challenge })).toBeVisible();
@@ -334,6 +354,10 @@ test('TC-FR2-33-AS-02', async ({ page, request }) => {
   await page.goto('/members/challenge/');
   await expect(page.getByRole('heading', { name: made.challenge })).toBeVisible();
   await expect(page.getByText(made.badge)).toBeVisible();
+  for (const week of ['1', '2', '3', '4']) await expect(page.locator(`[data-lld-review="${week}"]`)).toHaveCount(1);
+  await expect(page.locator('[data-lld-review="3"]')).toContainText('0 of 7 actions done. A new week is a fresh start.');
+  await expect(page.locator('[data-lld-review="4"]')).toContainText('What next:');
+  await expect(page.locator('[data-lld-review="4"]').getByRole('link', { name: 'start a track' })).toBeVisible();
 });
 
 test('TC-FR2-33-AS-03', async ({ page, request }) => {
