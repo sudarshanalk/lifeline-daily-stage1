@@ -232,7 +232,8 @@ jobs:
           tools: wp-cli
       - name: Image support check (HEIC must be listed)
         if: steps.has.outputs.e2e == 'true'
-        run: php -r 'echo "imagick ", extension_loaded("imagick") ? "yes" : "no", ", exif ", extension_loaded("exif") ? "yes" : "no", ", HEIC formats: ", class_exists("Imagick") ? implode(",", Imagick::queryFormats("HEI*")) : "-", ", upload ", ini_get("upload_max_filesize"), PHP_EOL;'
+        run: |
+          php -r 'echo "imagick ", extension_loaded("imagick") ? "yes" : "no", ", exif ", extension_loaded("exif") ? "yes" : "no", ", HEIC formats: ", class_exists("Imagick") ? implode(",", Imagick::queryFormats("HEI*")) : "-", ", upload ", ini_get("upload_max_filesize"), PHP_EOL;'
       - name: Throwaway WordPress with Paid Memberships Pro and lld-members
         if: steps.has.outputs.e2e == 'true'
         run: bash tests/ci/stage2-wp.sh "$RUNNER_TEMP/wp"
