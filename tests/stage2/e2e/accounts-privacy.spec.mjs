@@ -783,18 +783,20 @@ test('TC-FR2-04-AS-01', async ({ page }) => {
   expect(data.version).toBe(1);
   expect(data.member_number).toBe(created.member_id);
   // Table by table against the database, using the erasure checker's list.
-  expect(Object.keys(data.tables).sort()).toEqual(DOWNLOAD_TABLES.slice().sort());
+  const meta = ['format', 'version', 'made_at_utc', 'member_number', 'photos'];
+  expect(data.format).toBe('lifeline-daily-member-data');
+  expect(Object.keys(data).filter((key) => !meta.includes(key)).sort()).toEqual(DOWNLOAD_TABLES.slice().sort());
   for (const name of DOWNLOAD_TABLES) {
-    expect(data.tables[name].length, name).toBe(db.records[name]);
+    expect(data[name].length, name).toBe(db.records[name]);
   }
-  for (const name of NEVER_DOWNLOADED) expect(data.tables[name], name).toBeUndefined();
+  for (const name of NEVER_DOWNLOADED) expect(data[name], name).toBeUndefined();
   for (const [name, least] of Object.entries({ member: 1, email_pref: 1, consent: 2, something_else: 1, survey: 1, referral: 2, reward: 2, subscription: 1, diary_meal: 1 })) {
-    expect(data.tables[name].length, name).toBeGreaterThanOrEqual(least);
+    expect(data[name].length, name).toBeGreaterThanOrEqual(least);
   }
-  expect(data.tables.referral.some((row) => Number(row.friend_member_id) === created.member_id)).toBe(true);
+  expect(data.referral.some((row) => Number(row.friend_member_id) === created.member_id)).toBe(true);
   // Encrypted text is readable, and no ciphertext, password, code or key is included.
-  expect(data.tables.something_else[0].text).toBe(SENTINEL);
-  expect(data.tables.survey[0].quote_text).toBe('Kinder to myself');
+  expect(data.something_else[0].text).toBe(SENTINEL);
+  expect(data.survey[0].quote_text).toBe('Kinder to myself');
   const everything = Object.values(packed).map((part) => part.toString('latin1')).join('\n');
   for (const secret of ['text_ciphertext', 'description_ciphertext', '$wp$', '$P$', '$2y$', 'code_hash', 'token_hash', 'key_hash', 'user_pass', 'data.key']) {
     expect(everything, secret).not.toContain(secret);

@@ -1262,13 +1262,16 @@ class LLD_Members_Account {
 			$photos[] = $name;
 		}
 		$made = gmdate( 'Y-m-d H:i:s' );
-		$data = array(
-			'format'        => 'lifeline-daily-member-data',
-			'version'       => 1,
-			'made_at_utc'   => $made,
-			'member_number' => $member_id,
-			'photos'        => $photos,
-			'tables'        => $tables,
+		// One flat file: the format, its version and the photo list, then one key per table.
+		$data = array_merge(
+			array(
+				'format'        => 'lifeline-daily-member-data',
+				'version'       => 1,
+				'made_at_utc'   => $made,
+				'member_number' => $member_id,
+				'photos'        => $photos,
+			),
+			$tables
 		);
 		$zip->addFromString( 'summary.html', self::download_summary( $row, $tables, $photos, $made ) );
 		$zip->addFromString( 'data.json', (string) wp_json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) );
