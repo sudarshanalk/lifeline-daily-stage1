@@ -220,6 +220,7 @@ test('TC-FR2-13-AS-02', async ({ page }) => {
     const snap = await readMember(page.request, email);
     expect(Number(snap.orders[0].charged_amount)).toBe(quoted.charge);
     expect(Number(snap.orders[0].tax_amount)).toBe(quoted.tax);
+    expect(snap.orders[0].status).toBe('succeeded');
   }
 });
 
@@ -235,6 +236,14 @@ test('TC-FR2-13-AS-03', async ({ page, request }) => {
   const snap = await readMember(request, email);
   expect(Number(snap.orders[1].charged_amount)).toBe(799);
   expect(snap.orders[1].discount_code).toBeFalsy();
+  // P3 order fields: the code's discount with its amount and currency; the renewal points to the first payment.
+  expect(snap.orders[0].discount_code).toBe('LAUNCH');
+  expect(Number(snap.orders[0].discount_amount)).toBe(399);
+  expect(snap.orders[0].discount_currency).toBe('usd');
+  expect(snap.orders[1].discount_amount).toBeNull();
+  expect(Number(snap.orders[1].related_order_id)).toBe(Number(snap.orders[0].id));
+  expect(snap.orders[0].related_order_id).toBeNull();
+  expect(snap.orders.every((order) => order.stripe_invoice === null)).toBeTruthy();
   const lateEmail = emailFor('launch-late');
   await createMember(request, { email: lateEmail, password, first_name: 'Late', role: 'member' });
   await clock(request, lateEmail, '2026-07-02 12:00:00');
@@ -285,6 +294,97 @@ test('TC-FR2-13-AS-04', async ({ page, request }) => {
   await signIn(page, fullEmail, password);
   const full = await showPrice(page, { plan: 'monthly', country: 'US' });
   expect(full.text).toContain('US$8.99');
+});
+
+test('TC-FR2-13-AS-04 the plans are Paid Memberships Pro levels that follow the owner price', async ({ request }) => {
+  const levels = async () => billingAction(request, { action: 'pmpro_levels' });
+  let read = await levels();
+  expect(read.named).toBe(2);
+  expect(read.levels.yearly).toMatchObject({ name: 'Premium yearly', cycle_period: 'Year' });
+  expect(read.levels.monthly).toMatchObject({ name: 'Premium monthly', cycle_period: 'Month' });
+  expect(Number(read.levels.yearly.initial_payment)).toBe(59.99);
+  expect(Number(read.levels.yearly.billing_amount)).toBe(59.99);
+  expect(Number(read.levels.monthly.billing_amount)).toBe(7.99);
+  expect(Number(read.levels.monthly.cycle_number)).toBe(1);
+  expect(Number(read.levels.yearly.allow_signups)).toBe(0);
+  const ids = { yearly: read.levels.yearly.id, monthly: read.levels.monthly.id };
+  const update = await request.post('/wp-json/lld-members/v1/test/db-update', { data: {} });
+  expect(update.ok(), await update.text()).toBeTruthy();
+  expect((await update.json()).version).toBeGreaterThanOrEqual(3);
+  read = await levels();
+  expect(read.named).toBe(2);
+  expect({ yearly: read.levels.yearly.id, monthly: read.levels.monthly.id }).toEqual(ids);
+  await billingAction(request, { action: 'prices', monthly: 899, yearly: 6999 });
+  read = await levels();
+  expect(Number(read.levels.yearly.billing_amount)).toBe(69.99);
+  expect(Number(read.levels.monthly.billing_amount)).toBe(8.99);
+  expect(read.levels.yearly.id).toBe(ids.yearly);
+});
+
+test('TC-FR2-14-AS-03 orders are stamped in UTC, and the refund window uses the member local date', async ({ page, request }) => {
+  const email = emailFor('utc');
+  await createMember(request, { email, password, first_name: 'Utc', role: 'member' });
+  // Europe/London is UTC+1 in July: 23:30 UTC is already 2 July there.
+  await clock(request, email, '2026-07-01 23:30:00');
+  await payApi(request, email, { plan: 'yearly', country: 'US' });
+  let snap = await readMember(request, email);
+  expect(snap.orders[0].ordered_at).toBe('2026-07-01 23:30:00');
+  // 14 local days after 2 July is 16 July: still refundable at 16 July 22:30 UTC (23:30 local), not on 17 July local.
+  await clock(request, email, '2026-07-16 22:30:00');
+  await asOwner(page);
+  await page.goto('/wp-admin/admin.php?page=lld-payments');
+  if (page.url().includes('pmpro-wizard')) await page.goto('/wp-admin/admin.php?page=lld-payments');
+  await confirmRefund(page, snap.orders[0].id);
+  snap = await readMember(request, email);
+  expect(snap.subscription.access_state).toBe('Refunded');
+  const refund = snap.orders.find((order) => order.kind === 'refund');
+  expect(refund.ordered_at).toBe('2026-07-16 22:30:00');
+});
+
+test('TC-FR2-13-AS-04 codes carry the plans, valid-from and valid-to dates and a use count (P4)', async ({ page, request }) => {
+  const day = (offset) => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
+  const made = await request.post('/wp-json/lld-members/v1/test/billing', {
+    data: { action: 'prices', monthly: 799, yearly: 5999, code: 'YEAR20', percent: 20, plans: ['yearly'], valid_from: day(-1), valid_to: day(10) },
+  });
+  expect(made.ok(), await made.text()).toBeTruthy();
+  const later = await request.post('/wp-json/lld-members/v1/test/billing', {
+    data: { action: 'prices', monthly: 799, yearly: 5999, code: 'LATER', percent: 30, plans: ['monthly', 'yearly'], valid_from: day(5), valid_to: day(20) },
+  });
+  expect(later.ok(), await later.text()).toBeTruthy();
+  const again = await request.post('/wp-json/lld-members/v1/test/billing', { data: { action: 'prices', monthly: 799, yearly: 5999, code: 'YEAR20', percent: 10 } });
+  expect(again.status()).toBe(400);
+  const backwards = await request.post('/wp-json/lld-members/v1/test/billing', {
+    data: { action: 'prices', monthly: 799, yearly: 5999, code: 'BACK', percent: 10, valid_from: day(5), valid_to: day(1) },
+  });
+  expect(backwards.status()).toBe(400);
+
+  let codes = (await billingAction(request, { action: 'codes' })).codes;
+  const year = codes.find((row) => row.code === 'YEAR20');
+  expect(year).toMatchObject({ percent: 20, plans: ['yearly'], valid_from: day(-1), valid_to: day(10), times_used: 0 });
+  expect(codes.find((row) => row.code === 'LAUNCH')).toMatchObject({ percent: 50, plans: ['monthly'] });
+  expect(codes.some((row) => row.code === 'BACK')).toBeFalsy();
+
+  const email = emailFor('codes');
+  await createMember(request, { email, password, first_name: 'Codes', role: 'member' });
+  const monthly = await billingAction(request, { action: 'session', email, plan: 'monthly', country: 'US', code: 'YEAR20' });
+  expect(Number(monthly.charged)).toBe(799);
+  const early = await billingAction(request, { action: 'session', email, plan: 'yearly', country: 'US', code: 'LATER' });
+  expect(Number(early.charged)).toBe(5999);
+  const paid = await payApi(request, email, { plan: 'yearly', country: 'US', code: 'YEAR20' });
+  expect(paid.charge).toBe(4799);
+  codes = (await billingAction(request, { action: 'codes' })).codes;
+  expect(codes.find((row) => row.code === 'YEAR20').times_used).toBe(1);
+  const order = (await readMember(request, email)).orders[0];
+  expect(order.discount_code).toBe('YEAR20');
+  expect(Number(order.discount_amount)).toBe(1200);
+
+  await asOwner(page);
+  await page.goto('/wp-admin/admin.php?page=lld-payments');
+  if (page.url().includes('pmpro-wizard')) await page.goto('/wp-admin/admin.php?page=lld-payments');
+  const row = page.locator('[data-lld-codes] tr', { hasText: 'YEAR20' });
+  await expect(row).toContainText('yearly');
+  await expect(row).toContainText(day(10));
+  await expect(row.locator('td').last()).toHaveText('1');
 });
 
 test('TC-FR2-13-AS-05', async ({ page, request }) => {
@@ -597,7 +697,37 @@ test('TC-FR2-14-AS-04 the 7-day window starts at the first failure of the invoic
   expect((await readMember(request, email)).subscription.access_state).toBe('Premium');
   await clock(request, email, '2026-06-08 12:00:00');
   await reports(request);
-  expect((await readMember(request, email)).subscription.access_state).toBe('Premium ended');
+  const ended = await readMember(request, email);
+  expect(ended.subscription.access_state).toBe('Premium ended');
+  // Each failed attempt is an order (P3): kind failed_attempt, status failed.
+  const attempts = ended.orders.filter((order) => order.kind === 'failed_attempt');
+  expect(attempts).toHaveLength(2);
+  expect(attempts.every((order) => order.status === 'failed' && Number(order.charged_amount) === 799)).toBeTruthy();
+});
+
+test('TC-FR2-14-AS-04 a failed attempt points to the payment it belongs to and is not a receipt', async ({ page, request }) => {
+  const email = emailFor('attempt');
+  await createMember(request, { email, password, first_name: 'Attempt', role: 'member' });
+  await clock(request, email, '2026-06-01 12:00:00');
+  const paid = await payApi(request, email, { plan: 'monthly', country: 'US' });
+  await clock(request, email, '2026-07-01 12:00:00');
+  const res = await notify(request, {
+    id: `evt_fail_${stamp()}`, type: 'invoice.payment_failed', data: { object: { id: `in_${stamp()}`, subscription: paid.subscription, amount_due: 799, charge: `ch_${stamp()}` } },
+  });
+  expect(res.ok()).toBeTruthy();
+  const snap = await readMember(request, email);
+  const payment = snap.orders.find((order) => order.kind === 'payment');
+  const attempt = snap.orders.find((order) => order.kind === 'failed_attempt');
+  expect(attempt.status).toBe('failed');
+  expect(Number(attempt.related_order_id)).toBe(Number(payment.id));
+  expect(Number(attempt.charged_amount)).toBe(799);
+  expect(attempt.stripe_payment).toMatch(/^ch_/);
+  expect(attempt.ordered_at).toBe('2026-07-01 12:00:00');
+  expect(payment.status).toBe('succeeded');
+  await signIn(page, email, password);
+  await page.goto('/members/subscription/');
+  await expect(page.getByText('failed_attempt')).toHaveCount(0);
+  await expect(page.getByText('Update your card')).toBeVisible();
 });
 
 test('TC-FR2-14-AS-07 a subscription ended at Stripe ends Premium', async ({ request }) => {
@@ -681,6 +811,8 @@ test('TC-FR2-14-AS-06 a refund made at Stripe is recorded once and ends Premium'
   expect(snap.subscription.access_state).toBe('Refunded');
   expect(snap.orders.filter((order) => order.kind === 'refund')).toHaveLength(1);
   expect(snap.orders.find((order) => order.kind === 'payment').status).toBe('refunded');
+  expect(snap.orders.find((order) => order.kind === 'refund').status).toBe('succeeded');
+  expect(Number(snap.orders.find((order) => order.kind === 'refund').related_order_id)).toBe(Number(snap.orders.find((order) => order.kind === 'payment').id));
 });
 
 test('TC-FR2-14-AS-01 a member who already has Premium cannot start a second checkout', async ({ page, request }) => {
@@ -949,6 +1081,10 @@ test('TC-FR2-29-AS-01', async ({ page, request }) => {
   await reports(request);
   expect((await readMember(request, monthly)).next.charged).toBe(0);
   await renew(request, monthPay.subscription, 0);
+  const rewarded = (await readMember(request, monthly)).orders.find((order) => order.kind === 'renewal');
+  expect(rewarded.discount_code).toMatch(/^referral-reward-\d+$/);
+  expect(Number(rewarded.discount_amount)).toBe(799);
+  expect(rewarded.discount_currency).toBe('usd');
   expect((await readMember(request, monthly)).next.charged).toBe(799);
 
   const twice = emailFor('ref-twice');
@@ -1017,8 +1153,9 @@ test('TC-FR2-29-AS-02', async ({ page, request }) => {
   }
   await reports(request);
   const snap = await readMember(request, referrer);
-  expect(snap.referrals.filter((row) => row.status === 'rewarded')).toHaveLength(3);
-  expect(snap.referrals.filter((row) => row.status === 'limited')).toHaveLength(1);
+  // Data Model P5 names: waiting, qualified, or not qualified with the reason.
+  expect(snap.referrals.filter((row) => row.status === 'qualified')).toHaveLength(3);
+  expect(snap.referrals.filter((row) => row.status === 'not_qualified' && row.not_qualified_why === 'limit')).toHaveLength(1);
 
   const giver = emailFor('give');
   const back = emailFor('back');
@@ -1039,7 +1176,7 @@ test('TC-FR2-29-AS-02', async ({ page, request }) => {
   const giverSnap = await readMember(request, giver);
   const giverId = Number(giverSnap.subscription.member_id);
   expect((await moneyLog(request)).some((row) => row.action === 'reward_withdrawn' && Number(row.member_number) === giverId)).toBeTruthy();
-  expect(giverSnap.referrals.some((row) => row.status === 'refunded')).toBeTruthy();
+  expect(giverSnap.referrals.some((row) => row.status === 'not_qualified' && row.not_qualified_why === 'refunded')).toBeTruthy();
   expect(giverSnap.rewards).toHaveLength(0);
 });
 
@@ -1060,6 +1197,7 @@ test('TC-FR2-29-AS-03', async ({ page, request }) => {
   await reports(request);
   const snap = await readMember(request, referrer);
   expect(snap.referrals.filter((row) => row.self_referral === 'email' || row.self_referral === 'card')).toHaveLength(2);
+  expect(snap.referrals.filter((row) => row.status === 'not_qualified' && row.not_qualified_why === 'self')).toHaveLength(2);
   expect(snap.rewards).toHaveLength(0);
 });
 
@@ -1102,6 +1240,34 @@ test('TC-FR2-29-AS-05', async ({ page, request }) => {
   await signIn(page, referrer, password);
   await page.goto('/members/subscription/');
   await expect(page.getByText('Next payment £52.19')).toBeVisible();
+});
+
+test('TC-FR2-04-AS-03 account deletion removes card fingerprints and the referral code kept in wp_options (S7)', async ({ page, request }) => {
+  const referrer = emailFor('erase-ref');
+  const friend = emailFor('erase-friend');
+  await createMember(request, { email: referrer, password, first_name: 'Erase', role: 'member' });
+  await createMember(request, { email: friend, password, first_name: 'Keep', role: 'member' });
+  await clock(request, referrer, '2026-09-01 12:00:00');
+  await clock(request, friend, '2026-09-01 12:00:00');
+  const ref = await refCode(page, referrer);
+  await payApi(request, referrer, { plan: 'monthly', country: 'US', fingerprint: `fp_${stamp()}` });
+  await payApi(request, friend, { plan: 'monthly', country: 'US', fingerprint: `fp_${stamp()}`, ref });
+  const memberId = Number((await readMember(request, referrer)).subscription.member_id);
+  const friendId = Number((await readMember(request, friend)).subscription.member_id);
+  const failed = await notify(request, {
+    id: `evt_fail_${stamp()}`, type: 'invoice.payment_failed', data: { object: { id: `in_${stamp()}`, subscription: (await readMember(request, referrer)).subscription.stripe_subscription } },
+  });
+  expect(failed.ok()).toBeTruthy();
+  let held = await billingAction(request, { action: 'member_options', member_id: memberId });
+  expect(held.card_fingerprints).toBe(1);
+  expect(held.referral_code).toBe(1);
+  expect(held.retries).toBe(1);
+  const erased = await request.post('/wp-json/lld-members/v1/test/reset', { data: { email: referrer } });
+  expect(erased.ok(), await erased.text()).toBeTruthy();
+  held = await billingAction(request, { action: 'member_options', member_id: memberId });
+  expect(held).toEqual({ card_fingerprints: 0, referral_code: 0, quotes: 0, mismatches: 0, retries: 0 });
+  const other = await billingAction(request, { action: 'member_options', member_id: friendId });
+  expect(other.card_fingerprints).toBe(1);
 });
 
 test('TC-NFR2-10-AS-01', async () => {

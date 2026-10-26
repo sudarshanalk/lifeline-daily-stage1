@@ -41,6 +41,7 @@ class LLD_Members_Erasure {
 		self::delete_where( 'referral', 'referrer_member_id', $member_id );
 		self::delete_where( 'referral', 'friend_member_id', $member_id );
 		self::delete_where( 'reward', 'recipient_member_id', $member_id );
+		do_action( 'lld_members_erase_account', $member_id );
 		self::delete_where( 'support', 'member_id', $member_id );
 		self::delete_where( 'survey', 'member_id', $member_id );
 		self::delete_where( 'fb_removal', 'member_number', $member_id );

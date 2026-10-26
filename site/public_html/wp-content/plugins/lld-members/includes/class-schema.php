@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Schema {
 
-	const VERSION = 2;
+	const VERSION = 3;
 
 	/**
 	 * Full table name for a suffix such as "member".
@@ -37,6 +37,9 @@ class LLD_Members_Schema {
 		$before = (int) get_option( 'lld_members_schema_version', 0 );
 		self::create_all();
 		self::upgrade();
+		if ( class_exists( 'LLD_Members_Billing' ) ) {
+			LLD_Members_Billing::db_update();
+		}
 		update_option( 'lld_members_schema_version', self::VERSION, true );
 		return array(
 			'changed' => $before < self::VERSION,
@@ -670,6 +673,7 @@ class LLD_Members_Schema {
 		self::ensure_unique( 'referral', 'friend_member_id', 'friend_member_id' );
 		self::ensure_column( 'stripe_notice', 'payload', 'LONGTEXT NULL' );
 		self::ensure_column( 'stripe_notice', 'next_attempt_at', 'DATETIME NULL' );
+		self::ensure_column( 'referral', 'not_qualified_why', 'VARCHAR(32) NULL' );
 		self::replace_stripe_unique();
 		self::ensure_check( 'goal_choice', 'goal_order_range', 'sort_order BETWEEN 1 AND 3' );
 		self::install_triggers();

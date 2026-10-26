@@ -22,6 +22,7 @@ class LLD_Members_Billing {
 	public static function boot() {
 		add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ) );
 		add_action( 'lld_members_notice_retry', array( __CLASS__, 'retry_notices' ) );
+		add_action( 'lld_members_erase_account', array( __CLASS__, 'erase_member' ) );
 		if ( ! wp_next_scheduled( 'lld_members_notice_retry' ) ) {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'lld_members_notice_retry' );
 		}
@@ -43,6 +44,184 @@ class LLD_Members_Billing {
 			return self::in_period( $member_id );
 		}
 		return true;
+	}
+
+	/**
+	 * Paid Memberships Pro levels for the two Premium plans (Data Model P1). Free has no level.
+	 */
+	const PMPRO_LEVELS = array(
+		'yearly'  => array(
+			'name'   => 'Premium yearly',
+			'period' => 'Year',
+		),
+		'monthly' => array(
+			'name'   => 'Premium monthly',
+			'period' => 'Month',
+		),
+	);
+
+	/**
+	 * Database update for payments. Safe to run any number of times; makes no Stripe call.
+	 */
+	public static function db_update() {
+		self::rename_statuses();
+		self::sync_pmpro_levels();
+	}
+
+	/**
+	 * Earlier builds used their own status names. Move them to the Data Model's (P3, P5) once.
+	 */
+	private static function rename_statuses() {
+		global $wpdb;
+		$order    = LLD_Members_Schema::table( 'order' );
+		$referral = LLD_Members_Schema::table( 'referral' );
+		$wpdb->query( "UPDATE {$order} SET status = 'succeeded' WHERE status = 'paid' OR ( kind = 'refund' AND status = 'refunded' )" );
+		$wpdb->query( "UPDATE {$referral} SET status = 'qualified' WHERE status = 'rewarded'" );
+		foreach ( array( 'limited' => 'limit', 'self' => 'self', 'refunded' => 'refunded' ) as $old => $why ) {
+			$wpdb->query( $wpdb->prepare( "UPDATE {$referral} SET status = 'not_qualified', not_qualified_why = %s WHERE status = %s", $why, $old ) );
+		}
+	}
+
+	/**
+	 * Create or update the Premium levels in Paid Memberships Pro at the current catalogue prices.
+	 * Levels never take sign-ups through Paid Memberships Pro's own checkout: Stripe Checkout is the only way in.
+	 *
+	 * @return array<string,int> Level id for each plan; empty when Paid Memberships Pro is not installed.
+	 */
+	public static function sync_pmpro_levels() {
+		global $wpdb;
+		$table = $wpdb->prefix . 'pmpro_membership_levels';
+		if ( $table !== $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) ) ) {
+			return array();
+		}
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM {$table}", 0 ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
+		$prices  = self::prices();
+		$stored  = get_option( 'lld_pmpro_levels' );
+		$stored  = is_array( $stored ) ? $stored : array();
+		$ids     = array();
+		foreach ( self::PMPRO_LEVELS as $plan => $level ) {
+			$amount = number_format( (int) $prices[ $plan ] / 100, 2, '.', '' );
+			$row    = array(
+				'name'              => $level['name'],
+				'description'       => 'Lifeline Daily Premium, paid ' . $plan . ' through Stripe. Tax included.',
+				'confirmation'      => '',
+				'initial_payment'   => $amount,
+				'billing_amount'    => $amount,
+				'cycle_number'      => 1,
+				'cycle_period'      => $level['period'],
+				'billing_limit'     => 0,
+				'trial_amount'      => 0,
+				'trial_limit'       => 0,
+				'allow_signups'     => 0,
+				'expiration_number' => 0,
+			);
+			$row = array_intersect_key( $row, array_flip( $columns ) );
+			$id  = isset( $stored[ $plan ] ) ? (int) $stored[ $plan ] : 0;
+			if ( $id > 0 && ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE id = %d", $id ) ) ) {
+				$id = 0;
+			}
+			if ( $id < 1 ) {
+				$id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE name = %s ORDER BY id ASC LIMIT 1", $level['name'] ) );
+			}
+			if ( $id > 0 ) {
+				$wpdb->update( $table, $row, array( 'id' => $id ) );
+			} elseif ( false !== $wpdb->insert( $table, $row ) ) {
+				$id = (int) $wpdb->insert_id;
+			}
+			if ( $id > 0 ) {
+				$ids[ $plan ] = $id;
+			}
+		}
+		if ( $ids !== $stored ) {
+			update_option( 'lld_pmpro_levels', $ids, false );
+		}
+		return $ids;
+	}
+
+	/**
+	 * Account deletion (S7): remove what payments keep about the member in wp_options. Card fingerprints and the
+	 * referral code go; so do quotes, retry windows and mismatch notes that name the member.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function erase_member( $member_id ) {
+		$member_id = (int) $member_id;
+		if ( $member_id < 1 ) {
+			return;
+		}
+		$cards = get_option( 'lld_card_fp' );
+		if ( is_array( $cards ) ) {
+			$kept = array_values(
+				array_filter(
+					$cards,
+					static function ( $row ) use ( $member_id ) {
+						return ! is_array( $row ) || (int) $row['member_id'] !== $member_id;
+					}
+				)
+			);
+			if ( count( $kept ) !== count( $cards ) ) {
+				update_option( 'lld_card_fp', $kept, false );
+			}
+		}
+		$codes = get_option( 'lld_ref_codes' );
+		if ( is_array( $codes ) && array_key_exists( (string) $member_id, $codes ) ) {
+			unset( $codes[ (string) $member_id ] );
+			update_option( 'lld_ref_codes', $codes, false );
+		}
+		$quotes = get_option( 'lld_quotes' );
+		if ( is_array( $quotes ) ) {
+			$kept = array_filter(
+				$quotes,
+				static function ( $row ) use ( $member_id ) {
+					return ! is_array( $row ) || (int) $row['member_id'] !== $member_id;
+				}
+			);
+			if ( count( $kept ) !== count( $quotes ) ) {
+				update_option( 'lld_quotes', $kept, false );
+			}
+		}
+		$notes = get_option( 'lld_mismatches' );
+		if ( is_array( $notes ) ) {
+			$kept = array_values(
+				array_filter(
+					$notes,
+					static function ( $row ) use ( $member_id ) {
+						return ! is_array( $row ) || (int) $row['member_id'] !== $member_id;
+					}
+				)
+			);
+			if ( count( $kept ) !== count( $notes ) ) {
+				update_option( 'lld_mismatches', $kept, false );
+			}
+		}
+		self::clear_retry( $member_id );
+	}
+
+	/**
+	 * What wp_options still holds about one member, for the erasure checks.
+	 *
+	 * @param int $member_id Member number.
+	 * @return array<string,int>
+	 */
+	public static function member_options( $member_id ) {
+		$member_id = (int) $member_id;
+		$count     = static function ( $list, $key = 'member_id' ) use ( $member_id ) {
+			$n = 0;
+			foreach ( is_array( $list ) ? $list : array() as $row ) {
+				if ( is_array( $row ) && isset( $row[ $key ] ) && (int) $row[ $key ] === $member_id ) {
+					++$n;
+				}
+			}
+			return $n;
+		};
+		$codes = get_option( 'lld_ref_codes' );
+		return array(
+			'card_fingerprints' => $count( get_option( 'lld_card_fp' ) ),
+			'referral_code'     => is_array( $codes ) && array_key_exists( (string) $member_id, $codes ) ? 1 : 0,
+			'quotes'            => $count( get_option( 'lld_quotes' ) ),
+			'mismatches'        => $count( get_option( 'lld_mismatches' ) ),
+			'retries'           => $count( self::retries() ),
+		);
 	}
 
 	/**
@@ -660,6 +839,7 @@ class LLD_Members_Billing {
 			delete_option( 'lld_reward_stop' );
 			delete_option( 'lld_notice_fail' );
 			delete_option( 'lld_members_stripe_unreachable' );
+			self::sync_pmpro_levels();
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
 		}
 		if ( 'launch' === $action && ! empty( $params['on'] ) ) {
@@ -672,12 +852,35 @@ class LLD_Members_Billing {
 				isset( $params['yearly'] ) ? (int) $params['yearly'] : self::prices()['yearly'],
 				isset( $params['code'] ) ? (string) $params['code'] : '',
 				isset( $params['percent'] ) ? (int) $params['percent'] : 0,
-				! empty( $params['confirm'] )
+				! empty( $params['confirm'] ),
+				array(
+					'plans'      => isset( $params['plans'] ) && is_array( $params['plans'] ) ? array_map( 'sanitize_key', $params['plans'] ) : array( 'monthly' ),
+					'valid_from' => isset( $params['valid_from'] ) ? sanitize_text_field( (string) $params['valid_from'] ) : '',
+					'valid_to'   => isset( $params['valid_to'] ) ? sanitize_text_field( (string) $params['valid_to'] ) : '',
+				)
 			);
 			if ( is_wp_error( $saved ) ) {
 				return new WP_REST_Response( array( 'message' => $saved->get_error_message() ), 400 );
 			}
 			return new WP_REST_Response( self::prices(), 200 );
+		}
+		if ( 'member_options' === $action ) {
+			return new WP_REST_Response( self::member_options( isset( $params['member_id'] ) ? (int) $params['member_id'] : 0 ), 200 );
+		}
+		if ( 'codes' === $action ) {
+			return new WP_REST_Response( array( 'codes' => self::codes() ), 200 );
+		}
+		if ( 'pmpro_levels' === $action ) {
+			global $wpdb;
+			LLD_Members_Billing::db_update();
+			$ids   = self::sync_pmpro_levels();
+			$table = $wpdb->prefix . 'pmpro_membership_levels';
+			$rows  = array();
+			foreach ( $ids as $plan => $id ) {
+				$rows[ $plan ] = $wpdb->get_row( $wpdb->prepare( "SELECT id, name, initial_payment, billing_amount, cycle_number, cycle_period, allow_signups FROM {$table} WHERE id = %d", $id ), ARRAY_A );
+			}
+			$named = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE name IN (%s, %s)", self::PMPRO_LEVELS['yearly']['name'], self::PMPRO_LEVELS['monthly']['name'] ) );
+			return new WP_REST_Response( array( 'levels' => $rows, 'named' => $named ), 200 );
 		}
 		if ( 'admin_log' === $action ) {
 			global $wpdb;
@@ -749,7 +952,13 @@ class LLD_Members_Billing {
 			$code    = isset( $_POST['lld_new_code'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_new_code'] ) ) : '';
 			$percent = isset( $_POST['lld_percent'] ) ? (int) wp_unslash( $_POST['lld_percent'] ) : 0;
 			$confirm = ! empty( $_POST['lld_confirm_free'] );
-			$saved   = self::save_prices( $monthly, $yearly, $code, $percent, $confirm );
+			$applies = isset( $_POST['lld_code_plans'] ) ? sanitize_key( wp_unslash( $_POST['lld_code_plans'] ) ) : 'monthly';
+			$terms   = array(
+				'plans'      => 'both' === $applies ? array( 'monthly', 'yearly' ) : array( 'yearly' === $applies ? 'yearly' : 'monthly' ),
+				'valid_from' => isset( $_POST['lld_valid_from'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_valid_from'] ) ) : '',
+				'valid_to'   => isset( $_POST['lld_valid_to'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_valid_to'] ) ) : '',
+			);
+			$saved   = self::save_prices( $monthly, $yearly, $code, $percent, $confirm, $terms );
 			if ( is_wp_error( $saved ) ) {
 				echo '<div class="notice notice-error"><p>' . esc_html( $saved->get_error_message() ) . '</p></div>';
 			} else {
@@ -776,9 +985,17 @@ class LLD_Members_Billing {
 		wp_nonce_field( 'lld_pay', 'lld_pay_nonce' );
 		echo '<p><label>Monthly price US$ <input name="lld_monthly" value="' . esc_attr( number_format( $prices['monthly'] / 100, 2, '.', '' ) ) . '"></label></p>';
 		echo '<p><label>Yearly price US$ <input name="lld_yearly" value="' . esc_attr( number_format( $prices['yearly'] / 100, 2, '.', '' ) ) . '"></label></p>';
-		echo '<p><label>New code <input name="lld_new_code"></label> <label>Percent off the first month <input name="lld_percent" value="50"></label></p>';
+		echo '<p><label>New code <input name="lld_new_code"></label> <label>Percent off the first payment <input name="lld_percent" value="50"></label></p>';
+		echo '<p><label>Applies to <select name="lld_code_plans"><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="both">Monthly and yearly</option></select></label>';
+		echo ' <label>Valid from <input type="date" name="lld_valid_from" value="' . esc_attr( gmdate( 'Y-m-d' ) ) . '"></label>';
+		echo ' <label>Valid to <input type="date" name="lld_valid_to" value="' . esc_attr( gmdate( 'Y-m-d', time() + 30 * DAY_IN_SECONDS ) ) . '"></label></p>';
 		echo '<p><label><input type="checkbox" name="lld_confirm_free" value="1"> I confirm a price of 0 or a 100 % code</label></p>';
 		echo '<p><button class="button button-primary">Save prices</button></p></form>';
+		echo '<h2>Discount codes</h2><table class="widefat" data-lld-codes><thead><tr><th>Code</th><th>Percent off</th><th>Plans</th><th>Valid from</th><th>Valid to</th><th>Times used</th></tr></thead><tbody>';
+		foreach ( self::codes() as $row ) {
+			echo '<tr><td>' . esc_html( $row['code'] ) . '</td><td>' . (int) $row['percent'] . ' %</td><td>' . esc_html( implode( ', ', $row['plans'] ) ) . '</td><td>' . esc_html( $row['valid_from'] ) . '</td><td>' . esc_html( $row['valid_to'] ) . '</td><td>' . (int) $row['times_used'] . '</td></tr>';
+		}
+		echo '</tbody></table>';
 		echo '<h2>Refund the first payment</h2>';
 		if ( $ask > 0 ) {
 			self::refund_confirm( $ask );
@@ -800,7 +1017,7 @@ class LLD_Members_Billing {
 		$base     = 'yearly' === $plan ? (int) $prices['yearly'] : (int) $prices['monthly'];
 		$used     = '';
 		$charged  = $base;
-		if ( 'monthly' === $plan && '' !== $code && self::code_applies( $member_id, $code ) ) {
+		if ( '' !== $code && self::code_applies( $member_id, $code, $plan ) ) {
 			$row     = self::find_code( $code );
 			$charged = (int) round( $base * ( 100 - (int) $row['percent'] ) / 100 );
 			$used    = $code;
@@ -836,6 +1053,7 @@ class LLD_Members_Billing {
 			if ( $row ) {
 				$invoice = isset( $object['id'] ) && '' !== (string) $object['id'] ? (string) $object['id'] : 'sub:' . $sub_id;
 				self::mark_retry( (int) $row->member_id, sanitize_text_field( $invoice ) );
+				self::record_failed_attempt( (int) $row->member_id, $object );
 			}
 			return;
 		}
@@ -964,14 +1182,35 @@ class LLD_Members_Billing {
 		if ( $stamp < 1 ) {
 			return '';
 		}
+		return ( new DateTimeImmutable( '@' . $stamp ) )->setTimezone( self::member_zone( $member_id ) )->format( 'Y-m-d' );
+	}
+
+	/**
+	 * @param int $member_id Member number.
+	 */
+	private static function member_zone( $member_id ) {
 		global $wpdb;
-		$zone = $wpdb->get_var( $wpdb->prepare( 'SELECT timezone FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+		$zone = $member_id > 0 ? $wpdb->get_var( $wpdb->prepare( 'SELECT timezone FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) ) : '';
 		try {
-			$tz = new DateTimeZone( is_string( $zone ) && '' !== $zone ? $zone : 'UTC' );
+			return new DateTimeZone( is_string( $zone ) && '' !== $zone ? $zone : 'UTC' );
 		} catch ( Exception $e ) {
-			$tz = new DateTimeZone( 'UTC' );
+			return new DateTimeZone( 'UTC' );
 		}
-		return ( new DateTimeImmutable( '@' . $stamp ) )->setTimezone( $tz )->format( 'Y-m-d' );
+	}
+
+	/**
+	 * The member's local date of a UTC time stored on an order.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $utc       MySQL datetime in UTC.
+	 */
+	private static function local_date_of( $member_id, $utc ) {
+		try {
+			$at = new DateTimeImmutable( (string) $utc, new DateTimeZone( 'UTC' ) );
+		} catch ( Exception $e ) {
+			return substr( (string) $utc, 0, 10 );
+		}
+		return $at->setTimezone( self::member_zone( (int) $member_id ) )->format( 'Y-m-d' );
 	}
 
 	/**
@@ -1060,7 +1299,18 @@ class LLD_Members_Billing {
 			'tax'      => self::tax_inside( $amount, 'gbp' === $next['currency'] ? 'GB' : ( 'eur' === $next['currency'] ? 'DE' : 'US' ) ),
 			'code'     => '',
 		);
-		$order_id = self::insert_order( $member_id, 'renewal', $quote, $payment, self::email_of( $member_id ), '' );
+		$order_id = self::insert_order(
+			$member_id,
+			'renewal',
+			$quote,
+			$payment,
+			self::email_of( $member_id ),
+			'',
+			array(
+				'related_order_id' => self::first_payment_id( $member_id ),
+				'discount_code'    => ! empty( $next['reward_id'] ) ? 'referral-reward-' . (int) $next['reward_id'] : '',
+			)
+		);
 		if ( ! empty( $next['reward_id'] ) ) {
 			self::consume_reward( (int) $next['reward_id'], $order_id );
 		}
@@ -1189,7 +1439,7 @@ class LLD_Members_Billing {
 		}
 		$member_id = (int) $order->member_id;
 		$today     = LLD_Members_Programme::local_today( $member_id );
-		$paid_on   = substr( (string) $order->ordered_at, 0, 10 );
+		$paid_on   = self::local_date_of( $member_id, (string) $order->ordered_at );
 		$limit     = ( new DateTimeImmutable( $paid_on ) )->modify( '+14 days' )->format( 'Y-m-d' );
 		if ( $today > $limit ) {
 			return new WP_Error( 'lld_refund', 'Refunds of the first payment are available for 14 days.' );
@@ -1230,7 +1480,8 @@ class LLD_Members_Billing {
 			),
 			$ref,
 			(string) $order->billing_email,
-			''
+			'',
+			array( 'related_order_id' => $order_id )
 		);
 		self::admin_log( 'refund', $member_id, 'Order ' . $order_id . ' (' . (string) $order->kind . ') refunded in full: ' . self::money( (int) $order->charged_amount, (string) $order->charged_currency ) . ', started by ' . $by . ', reference ' . $ref . '.' );
 		if ( 'payment' === (string) $order->kind ) {
@@ -1297,21 +1548,21 @@ class LLD_Members_Billing {
 				continue;
 			}
 			if ( 'refunded' === (string) $order->status ) {
-				$wpdb->update( $table, array( 'status' => 'refunded' ), array( 'id' => (int) $row->id ) );
+				self::not_qualified( (int) $row->id, 'refunded' );
 				continue;
 			}
-			$paid = substr( (string) $order->ordered_at, 0, 10 );
+			$paid = self::local_date_of( (int) $row->friend_member_id, (string) $order->ordered_at );
 			$due  = ( new DateTimeImmutable( $paid ) )->modify( '+14 days' )->format( 'Y-m-d' );
 			$today = LLD_Members_Programme::local_today( (int) $row->friend_member_id );
 			if ( $today <= $due ) {
 				continue;
 			}
 			if ( self::rewards_this_year( (int) $row->referrer_member_id, substr( $paid, 0, 4 ) ) >= 3 ) {
-				$wpdb->update( $table, array( 'status' => 'limited' ), array( 'id' => (int) $row->id ) );
+				self::not_qualified( (int) $row->id, 'limit' );
 				continue;
 			}
 			if ( self::grant_pair( (int) $row->id, (int) $row->referrer_member_id, (int) $row->friend_member_id ) ) {
-				$wpdb->update( $table, array( 'status' => 'rewarded' ), array( 'id' => (int) $row->id ) );
+				$wpdb->update( $table, array( 'status' => 'qualified' ), array( 'id' => (int) $row->id ) );
 			}
 		}
 	}
@@ -1379,7 +1630,7 @@ class LLD_Members_Billing {
 		if ( ! $referral ) {
 			return;
 		}
-		$wpdb->update( LLD_Members_Schema::table( 'referral' ), array( 'status' => 'refunded' ), array( 'id' => (int) $referral->id ) );
+		self::not_qualified( (int) $referral->id, 'refunded' );
 		if ( 'waiting' === (string) $referral->status ) {
 			self::admin_log( 'reward_withdrawn', (int) $referral->referrer_member_id, 'Referral ' . (int) $referral->id . ' earns no reward: the friend\'s first payment, order ' . (int) $order_id . ', was refunded.' );
 		}
@@ -1413,7 +1664,6 @@ class LLD_Members_Billing {
 			$self = 'card';
 		}
 		$order_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'order' ) . " WHERE member_id = %d AND kind = 'payment' ORDER BY id DESC LIMIT 1", $member_id ) );
-		$status   = '' !== $self ? 'self' : 'waiting';
 		$wpdb->insert(
 			$table,
 			array(
@@ -1421,9 +1671,28 @@ class LLD_Members_Billing {
 				'code'               => $code,
 				'friend_member_id'   => $member_id,
 				'friend_order_id'    => $order_id,
-				'status'             => $status,
+				'status'             => '' !== $self ? 'not_qualified' : 'waiting',
+				'not_qualified_why'  => '' !== $self ? 'self' : null,
 				'self_referral'      => '' !== $self ? $self : null,
 			)
+		);
+	}
+
+	/**
+	 * P5: a referral that earns no reward, and why: refunded, limit (3 a calendar year) or self.
+	 *
+	 * @param int    $referral_id Referral.
+	 * @param string $why         Reason.
+	 */
+	private static function not_qualified( $referral_id, $why ) {
+		global $wpdb;
+		$wpdb->update(
+			LLD_Members_Schema::table( 'referral' ),
+			array(
+				'status'            => 'not_qualified',
+				'not_qualified_why' => $why,
+			),
+			array( 'id' => (int) $referral_id )
 		);
 	}
 
@@ -1506,11 +1775,12 @@ class LLD_Members_Billing {
 	 * @param int    $monthly Monthly cents.
 	 * @param int    $yearly  Yearly cents.
 	 * @param string $code    Optional new code.
-	 * @param int    $percent   Percent off the first month.
+	 * @param int    $percent   Percent off the first payment.
 	 * @param bool   $confirmed The owner ticked the confirm box for a price of 0 or a 100 % code.
+	 * @param array  $terms     P4 fields for a new code: plans, valid_from, valid_to.
 	 * @return true|WP_Error
 	 */
-	private static function save_prices( $monthly, $yearly, $code, $percent, $confirmed = false ) {
+	private static function save_prices( $monthly, $yearly, $code, $percent, $confirmed = false, $terms = array() ) {
 		$monthly = max( 0, (int) $monthly );
 		$yearly  = max( 0, (int) $yearly );
 		$code    = strtoupper( trim( $code ) );
@@ -1529,20 +1799,32 @@ class LLD_Members_Billing {
 			}
 		}
 		if ( $changes ) {
+			self::sync_pmpro_levels();
 			self::admin_log( 'price_change', 0, implode( '; ', $changes ) . ( $confirmed && ( 0 === $monthly || 0 === $yearly ) ? ' (price of 0 confirmed)' : '' ) );
 		}
 		if ( ! $new ) {
 			return true;
 		}
-		$codes   = self::codes();
-		$expires = self::launch_expires();
-		$codes[] = array(
-			'code'       => $code,
-			'percent'    => $percent,
-			'expires_on' => $expires,
+		$row = self::code_fields(
+			array(
+				'code'       => $code,
+				'percent'    => $percent,
+				'plans'      => isset( $terms['plans'] ) ? $terms['plans'] : array( 'monthly' ),
+				'valid_from' => ! empty( $terms['valid_from'] ) ? $terms['valid_from'] : gmdate( 'Y-m-d' ),
+				'valid_to'   => ! empty( $terms['valid_to'] ) ? $terms['valid_to'] : gmdate( 'Y-m-d', time() + 30 * DAY_IN_SECONDS ),
+				'times_used' => 0,
+			)
 		);
-		update_option( 'lld_codes', $codes, false );
-		self::admin_log( 'code_created', 0, $code . ', ' . $percent . ' % off the first month, until ' . $expires . ( 100 === $percent ? ' (100 % confirmed)' : '' ) );
+		if ( $row['valid_to'] < $row['valid_from'] ) {
+			return new WP_Error( 'lld_code_dates', 'The code ends before it starts. The prices were saved; the code was not.' );
+		}
+		if ( self::find_code( $code ) ) {
+			return new WP_Error( 'lld_code_taken', 'That code already exists. The prices were saved; the code was not.' );
+		}
+		$stored   = self::stored_codes();
+		$stored[] = $row;
+		update_option( 'lld_codes', $stored, false );
+		self::admin_log( 'code_created', 0, $code . ', ' . $percent . ' % off the first payment, plans ' . implode( ' and ', $row['plans'] ) . ', valid ' . $row['valid_from'] . ' to ' . $row['valid_to'] . ( 100 === $percent ? ' (100 % confirmed)' : '' ) );
 		return true;
 	}
 
@@ -1584,34 +1866,117 @@ class LLD_Members_Billing {
 	 * @return array<int,array<string,mixed>>
 	 */
 	private static function codes() {
-		$stored = get_option( 'lld_codes' );
-		if ( ! is_array( $stored ) || ! $stored ) {
-			return array(
+		$out    = array();
+		$launch = null;
+		foreach ( self::stored_codes() as $row ) {
+			if ( 'LAUNCH' === $row['code'] ) {
+				$launch = $row;
+				continue;
+			}
+			$out[] = $row;
+		}
+		// The launch code always runs for 30 days from the launch date, monthly sign-ups only (8.4).
+		array_unshift(
+			$out,
+			self::code_fields(
 				array(
 					'code'       => 'LAUNCH',
 					'percent'    => 50,
-					'expires_on' => self::launch_expires(),
-				),
-			);
+					'plans'      => array( 'monthly' ),
+					'valid_from' => self::launch_on(),
+					'valid_to'   => self::launch_expires(),
+					'times_used' => $launch ? (int) $launch['times_used'] : 0,
+				)
+			)
+		);
+		return $out;
+	}
+
+	/**
+	 * Codes saved in the option, read into the P4 fields. Older rows had only expires_on.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	private static function stored_codes() {
+		$stored = get_option( 'lld_codes' );
+		$out    = array();
+		if ( ! is_array( $stored ) ) {
+			return $out;
 		}
-		return $stored;
+		foreach ( $stored as $row ) {
+			if ( is_array( $row ) && ! empty( $row['code'] ) ) {
+				$out[] = self::code_fields( $row );
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * P4: the code, percent off the first payment, the plans it applies to, valid-from and valid-to dates, times used.
+	 *
+	 * @param array<string,mixed> $row Code as stored or entered.
+	 * @return array{code:string,percent:int,plans:string[],valid_from:string,valid_to:string,times_used:int}
+	 */
+	private static function code_fields( $row ) {
+		$plans = isset( $row['plans'] ) && is_array( $row['plans'] ) ? array_values( array_intersect( array( 'monthly', 'yearly' ), $row['plans'] ) ) : array( 'monthly' );
+		$date  = static function ( $value ) {
+			return is_string( $value ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $value ) ? $value : '';
+		};
+		$to    = $date( isset( $row['valid_to'] ) ? $row['valid_to'] : ( isset( $row['expires_on'] ) ? $row['expires_on'] : '' ) );
+		return array(
+			'code'       => strtoupper( (string) $row['code'] ),
+			'percent'    => max( 1, min( 100, (int) ( isset( $row['percent'] ) ? $row['percent'] : 0 ) ) ),
+			'plans'      => $plans ? $plans : array( 'monthly' ),
+			'valid_from' => $date( isset( $row['valid_from'] ) ? $row['valid_from'] : '' ),
+			'valid_to'   => '' !== $to ? $to : '9999-12-31',
+			'times_used' => isset( $row['times_used'] ) ? max( 0, (int) $row['times_used'] ) : 0,
+		);
+	}
+
+	/**
+	 * Count one use of a code on a first payment.
+	 *
+	 * @param string $code Code.
+	 */
+	private static function count_code_use( $code ) {
+		$code   = strtoupper( $code );
+		$stored = self::stored_codes();
+		$found  = false;
+		foreach ( $stored as $i => $row ) {
+			if ( $row['code'] === $code ) {
+				$stored[ $i ]['times_used'] = (int) $row['times_used'] + 1;
+				$found                      = true;
+			}
+		}
+		if ( ! $found && 'LAUNCH' === $code ) {
+			$stored[] = array(
+				'code'       => 'LAUNCH',
+				'percent'    => 50,
+				'plans'      => array( 'monthly' ),
+				'times_used' => 1,
+			);
+			$found = true;
+		}
+		if ( $found ) {
+			update_option( 'lld_codes', $stored, false );
+		}
 	}
 
 	/**
 	 * @param int    $member_id Member number.
 	 * @param string $code      Code.
 	 */
-	private static function code_applies( $member_id, $code ) {
+	private static function code_applies( $member_id, $code, $plan ) {
 		$row = self::find_code( $code );
-		if ( ! $row ) {
+		if ( ! $row || ! in_array( $plan, $row['plans'], true ) ) {
 			return false;
 		}
 		$today = $member_id ? LLD_Members_Programme::local_today( $member_id ) : self::today_for( 0 );
-		if ( $today > (string) $row['expires_on'] ) {
+		if ( $today > (string) $row['valid_to'] || ( '' !== $row['valid_from'] && $today < (string) $row['valid_from'] ) ) {
 			return false;
 		}
 		global $wpdb;
-		$prior = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'order' ) . " WHERE member_id = %d AND kind = 'payment' AND status = 'paid'", $member_id ) );
+		$prior = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'order' ) . " WHERE member_id = %d AND kind = 'payment' AND status = 'succeeded'", $member_id ) );
 		return 0 === $prior;
 	}
 
@@ -1766,41 +2131,59 @@ class LLD_Members_Billing {
 	 */
 	private static function rewards_this_year( $member_id, $year ) {
 		global $wpdb;
-		return (int) $wpdb->get_var(
+		$rows  = $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'referral' ) . " WHERE referrer_member_id = %d AND status = 'rewarded' AND friend_order_id IN (SELECT id FROM " . LLD_Members_Schema::table( 'order' ) . ' WHERE ordered_at LIKE %s)',
-				$member_id,
-				$wpdb->esc_like( $year ) . '%'
+				'SELECT r.friend_member_id, o.ordered_at FROM ' . LLD_Members_Schema::table( 'referral' ) . ' r INNER JOIN ' . LLD_Members_Schema::table( 'order' ) . " o ON o.id = r.friend_order_id WHERE r.referrer_member_id = %d AND r.status = 'qualified'",
+				$member_id
 			)
 		);
+		$count = 0;
+		foreach ( $rows as $row ) {
+			if ( substr( self::local_date_of( (int) $row->friend_member_id, (string) $row->ordered_at ), 0, 4 ) === (string) $year ) {
+				++$count;
+			}
+		}
+		return $count;
 	}
 
 	/**
-	 * @param int                  $member_id Member.
-	 * @param string               $kind      payment, renewal or refund.
-	 * @param array<string,mixed>  $quote     Amounts.
-	 * @param string               $payment   Stripe payment id.
-	 * @param string               $email     Billing email.
+	 * One order row (P3). stripe_invoice stays empty until the Stripe integration reads invoices.
+	 *
+	 * @param int                  $member_id   Member.
+	 * @param string               $kind        payment, renewal, refund or failed_attempt.
+	 * @param array<string,mixed>  $quote       Amounts.
+	 * @param string               $payment     Stripe payment id; empty stores none.
+	 * @param string               $email       Billing email.
 	 * @param string               $fingerprint Card fingerprint, stored aside from the order row.
+	 * @param array<string,mixed>  $extra       status, related_order_id, discount_code (a referral reward).
 	 */
-	private static function insert_order( $member_id, $kind, $quote, $payment, $email, $fingerprint ) {
+	private static function insert_order( $member_id, $kind, $quote, $payment, $email, $fingerprint, $extra = array() ) {
 		unset( $fingerprint );
 		global $wpdb;
-		$result = $wpdb->insert(
+		$code     = '' !== (string) $quote['code'] ? (string) $quote['code'] : ( isset( $extra['discount_code'] ) ? (string) $extra['discount_code'] : '' );
+		$discount = 'refund' !== $kind && '' !== $code ? max( 0, (int) $quote['base'] - (int) $quote['charged'] ) : 0;
+		if ( 'payment' === $kind && '' !== (string) $quote['code'] ) {
+			self::count_code_use( (string) $quote['code'] );
+		}
+		$result   = $wpdb->insert(
 			LLD_Members_Schema::table( 'order' ),
 			array(
 				'member_id'          => $member_id,
-				'ordered_at'         => LLD_Members_Programme::local_today( $member_id ) . ' 12:00:00',
+				'ordered_at'         => lld_members_now_mysql( $member_id ),
 				'kind'               => $kind,
+				'related_order_id'   => ! empty( $extra['related_order_id'] ) ? (int) $extra['related_order_id'] : null,
 				'catalogue_amount'   => (int) $quote['base'],
 				'catalogue_currency' => (string) $quote['currency'],
 				'charged_amount'     => (int) $quote['charged'],
 				'charged_currency'   => (string) $quote['currency'],
 				'tax_amount'         => (int) $quote['tax'],
 				'tax_currency'       => (string) $quote['currency'],
-				'discount_code'      => '' !== (string) $quote['code'] ? (string) $quote['code'] : null,
-				'status'             => 'refund' === $kind ? 'refunded' : 'paid',
-				'stripe_payment'     => $payment,
+				'discount_code'      => '' !== $code ? $code : null,
+				'discount_amount'    => $discount > 0 ? $discount : null,
+				'discount_currency'  => $discount > 0 ? (string) $quote['currency'] : null,
+				'status'             => isset( $extra['status'] ) ? (string) $extra['status'] : 'succeeded',
+				'stripe_payment'     => '' !== (string) $payment ? (string) $payment : null,
+				'stripe_invoice'     => null,
 				'billing_email'      => $email,
 				'billing_country'    => isset( $quote['country'] ) ? (string) $quote['country'] : null,
 			)
@@ -1810,11 +2193,55 @@ class LLD_Members_Billing {
 	}
 
 	/**
+	 * The first payment of the member's current subscription, which renewals, refunds and failed attempts belong to.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function first_payment_id( $member_id ) {
+		global $wpdb;
+		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'order' ) . " WHERE member_id = %d AND kind = 'payment' ORDER BY id DESC LIMIT 1", $member_id ) );
+	}
+
+	/**
+	 * P3: a failed renewal attempt is an order of its own, pointing to the payment it belongs to.
+	 *
+	 * @param int                 $member_id Member number.
+	 * @param array<string,mixed> $object    Invoice object.
+	 */
+	private static function record_failed_attempt( $member_id, $object ) {
+		$sub      = self::subscription_row( $member_id );
+		$next     = self::next_charge( $member_id );
+		$amount   = isset( $object['amount_due'] ) && is_numeric( $object['amount_due'] ) ? (int) $object['amount_due'] : (int) $next['charged'];
+		$country  = 'gbp' === $next['currency'] ? 'GB' : ( 'eur' === $next['currency'] ? 'DE' : 'US' );
+		$charge   = isset( $object['charge'] ) && is_string( $object['charge'] ) ? sanitize_text_field( $object['charge'] ) : '';
+		self::insert_order(
+			$member_id,
+			'failed_attempt',
+			array(
+				'plan'     => $sub ? (string) $sub->plan : 'monthly',
+				'country'  => $country,
+				'currency' => $next['currency'],
+				'base'     => $sub && $sub->locked_amount ? (int) $sub->locked_amount : $amount,
+				'charged'  => $amount,
+				'tax'      => self::tax_inside( $amount, $country ),
+				'code'     => '',
+			),
+			$charge,
+			self::email_of( $member_id ),
+			'',
+			array(
+				'status'           => 'failed',
+				'related_order_id' => self::first_payment_id( $member_id ),
+			)
+		);
+	}
+
+	/**
 	 * @param int $member_id Member number.
 	 */
 	private static function receipt_list( $member_id ) {
 		global $wpdb;
-		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'order' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ) );
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'order' ) . " WHERE member_id = %d AND kind <> 'failed_attempt' ORDER BY id ASC", $member_id ) );
 		$html = '<h2>Receipts</h2><ul>';
 		if ( ! $rows ) {
 			return $html . '<li>No receipts yet.</li></ul>';
@@ -1847,7 +2274,7 @@ class LLD_Members_Billing {
 	 */
 	private static function refund_confirm( $order_id ) {
 		$order = self::order_row( $order_id );
-		if ( ! $order || 'payment' !== (string) $order->kind || 'paid' !== (string) $order->status ) {
+		if ( ! $order || 'payment' !== (string) $order->kind || 'succeeded' !== (string) $order->status ) {
 			echo '<div class="notice notice-error"><p>Only a paid first payment can be refunded.</p></div>';
 			return;
 		}
@@ -1873,7 +2300,7 @@ class LLD_Members_Billing {
 			wp_nonce_field( 'lld_refund', 'lld_refund_nonce' );
 			echo 'Order ' . (int) $row->id . ' member ' . (int) $row->member_id . ' ' . esc_html( self::money( (int) $row->charged_amount, (string) $row->charged_currency ) ) . ' ' . esc_html( (string) $row->status );
 			echo ' <input type="hidden" name="lld_order" value="' . (int) $row->id . '">';
-			if ( 'paid' === (string) $row->status ) {
+			if ( 'succeeded' === (string) $row->status ) {
 				echo ' <button class="button">Refund</button>';
 			}
 			echo '</p></form>';
@@ -2225,9 +2652,9 @@ class LLD_Members_Billing {
 		$sub = self::subscription_row( $member_id );
 		return array(
 			'subscription' => $sub,
-			'orders'       => $wpdb->get_results( $wpdb->prepare( 'SELECT id, kind, charged_amount, tax_amount, charged_currency, discount_code, status FROM ' . LLD_Members_Schema::table( 'order' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
+			'orders'       => $wpdb->get_results( $wpdb->prepare( 'SELECT id, kind, ordered_at, related_order_id, charged_amount, tax_amount, charged_currency, discount_code, discount_amount, discount_currency, status, stripe_payment, stripe_invoice FROM ' . LLD_Members_Schema::table( 'order' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
 			'rewards'      => $wpdb->get_results( $wpdb->prepare( 'SELECT id, form, status, operation_key FROM ' . LLD_Members_Schema::table( 'reward' ) . ' WHERE recipient_member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
-			'referrals'    => $wpdb->get_results( $wpdb->prepare( 'SELECT id, status, self_referral, friend_member_id FROM ' . LLD_Members_Schema::table( 'referral' ) . ' WHERE referrer_member_id = %d OR friend_member_id = %d ORDER BY id ASC', $member_id, $member_id ), ARRAY_A ),
+			'referrals'    => $wpdb->get_results( $wpdb->prepare( 'SELECT id, status, not_qualified_why, self_referral, friend_member_id FROM ' . LLD_Members_Schema::table( 'referral' ) . ' WHERE referrer_member_id = %d OR friend_member_id = %d ORDER BY id ASC', $member_id, $member_id ), ARRAY_A ),
 			'next'         => $member_id ? self::next_charge( $member_id ) : array(),
 			'app'          => ( $sub && 'yearly' === (string) $sub->plan && self::paid_open( $member_id ) ) ? 'included' : 'not included',
 		);
