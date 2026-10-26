@@ -35,15 +35,6 @@ class LLD_Members_Rest {
 		);
 		register_rest_route(
 			'lld-members/v1',
-			'/members/(?P<id>\d+)/health',
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( 'LLD_Members_Account', 'rest_health' ),
-				'permission_callback' => '__return_true',
-			)
-		);
-		register_rest_route(
-			'lld-members/v1',
 			'/members/(?P<id>\d+)/journey',
 			array(
 				'methods'             => 'GET',
@@ -54,6 +45,17 @@ class LLD_Members_Rest {
 		if ( ! lld_members_test_routes_open() ) {
 			return;
 		}
+		// Test-only: saves any kind of health record directly, so the consent checks can try every kind.
+		// Members save health records through their pages. Still checks the member and health consent.
+		register_rest_route(
+			'lld-members/v1',
+			'/members/(?P<id>\d+)/health',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'LLD_Members_Account', 'rest_health' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
+			)
+		);
 		register_rest_route(
 			'lld-members/v1',
 			'/security/password-storage',

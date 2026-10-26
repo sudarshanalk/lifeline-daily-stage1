@@ -325,6 +325,12 @@ test('TC-FR2-03-AS-03', async ({ page }) => {
     });
     expect(res.status(), kind).toBe(403);
   }
+  // The direct save route is a test helper: without the test secret it does not answer at all.
+  const open = await page.request.post(`/wp-json/lld-members/v1/members/${created.member_id}/health`, {
+    data: { kind: 'check_in' },
+    headers: { 'X-WP-Nonce': nonce, 'X-LLD-Test-Secret': 'wrong' },
+  });
+  expect([401, 403]).toContain(open.status());
   await page.goto('/members/settings/');
   await page.locator('#lld_first').fill('Nope');
   await page.getByRole('button', { name: 'Save' }).click();
