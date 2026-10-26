@@ -551,6 +551,8 @@ test('TC-FR2-19-AS-02', async ({ page, request }) => {
   // The owner reads the exact words before approving (FR2-19-AS-03 is checked against them).
   await expect(row).toContainText(quote);
   await row.getByRole('button', { name: 'Approve' }).click();
+  // Wait for the approval to be saved before leaving the page (WebKit otherwise cancels the post).
+  await expect(page.getByText('Approved.')).toBeVisible();
   await page.goto('/testimonials/');
   const block = page.locator('[data-lld-quote]', { hasText: quote });
   await expect(block).toContainText(`${name}, GB`);
@@ -597,6 +599,7 @@ test('TC-FR2-28-AS-02', async ({ page, request }) => {
     await page.goto(`/coming-soon/${track}/`);
     await page.locator('#lld_guide_email').fill(email);
     await page.getByRole('button', { name: 'Join the waitlist' }).click();
+    await expect(page.getByText('Check your email to confirm.')).toBeVisible();
     return email;
   }
   const confirmed = await join('healthy-weight');
@@ -610,12 +613,9 @@ test('TC-FR2-28-AS-02', async ({ page, request }) => {
   const unsub = localise((await mailTo(later)).join('\n').match(/https?:\/\/\S*guide\/unsubscribe\/\S+/)[0]);
   await page.goto(unsub);
   await page.getByRole('button', { name: 'Unsubscribe' }).click();
-  await page.goto('/health-tools/protein/');
-  await page.locator('#lld_guide_email').fill(both);
-  await page.getByRole('button', { name: 'Send me the guide' }).click();
-  await page.goto('/health-tools/diabetes-risk-check/');
-  await page.locator('#lld_guide_email').fill(both);
-  await page.getByRole('button', { name: 'Send me the guide' }).click();
+  await expect(page.getByRole('heading', { name: 'Unsubscribed' })).toBeVisible();
+  await askGuide(page, '/health-tools/protein/', both);
+  await askGuide(page, '/health-tools/diabetes-risk-check/', both);
   await growth(request, { action: 'launch' });
   const launched = [];
   for (const message of await messages()) {
