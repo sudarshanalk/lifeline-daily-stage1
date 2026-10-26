@@ -747,7 +747,7 @@ class LLD_Members_Programme {
 			$ids = json_decode( (string) $stored->actions, true );
 			return array(
 				'level'   => (string) $stored->level,
-				'actions' => self::actions_from_ids( is_array( $ids ) ? $ids : array() ),
+				'actions' => self::actions_from_ids( is_array( $ids ) ? $ids : array(), $member_id ),
 				'note'    => self::note_for( json_decode( (string) $stored->actions, true ) ),
 			);
 		}
@@ -773,11 +773,11 @@ class LLD_Members_Programme {
 	 * @param int[] $ids Parent ids.
 	 * @return array<int,array<string,mixed>>
 	 */
-	private static function actions_from_ids( $ids ) {
+	private static function actions_from_ids( $ids, $member_id = 0 ) {
 		$out = array();
 		foreach ( $ids as $id ) {
 			$shown = LLD_Members_Content::shown( (int) $id );
-			if ( is_array( $shown ) ) {
+			if ( is_array( $shown ) && ( $member_id < 1 || LLD_Members_Safety::allows( $member_id, $shown ) ) ) {
 				$out[] = $shown;
 			}
 		}
