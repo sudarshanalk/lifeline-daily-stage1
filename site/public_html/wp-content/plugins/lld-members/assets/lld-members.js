@@ -137,7 +137,7 @@
   // Shopping-list ticks stay on this device and browser only (UI-3), one set per meal week.
   var shopping = document.querySelector("[data-lld-shopping]");
   if (shopping) {
-    var shopWeek = shopping.getAttribute("data-lld-week") || "";
+    var shopWeek = shopping.getAttribute("data-lld-shop-week") || "";
     shopping.querySelectorAll("input[data-lld-tick]").forEach(function (box) {
       var key = "lld-shop:" + shopWeek + ":" + box.getAttribute("data-lld-tick");
       try {

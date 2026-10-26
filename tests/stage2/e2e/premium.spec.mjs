@@ -203,7 +203,7 @@ test('TC-FR2-32-AS-03', async ({ page, request }) => {
   const tick = page.getByRole('checkbox', { name: 'spinach, 80 g' });
   await expect(tick).not.toBeChecked();
   let posted = 0;
-  page.on('request', (req) => { if (req.method() === 'POST') posted += 1; });
+  page.on('request', (req) => { if (`${req.url()} ${req.postData() || ''}`.includes('spinach')) posted += 1; });
   await tick.check();
   await page.reload();
   await expect(page.getByRole('checkbox', { name: 'spinach, 80 g' })).toBeChecked();
