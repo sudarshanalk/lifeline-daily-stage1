@@ -55,6 +55,9 @@ class LLD_Members_Fixtures {
 		if ( 'days' === $kind ) {
 			return self::days( $stamp );
 		}
+		if ( 'weeks' === $kind ) {
+			return self::weeks( $stamp, $args );
+		}
 		if ( 'premium' === $kind ) {
 			return self::premium( $stamp );
 		}
@@ -558,6 +561,45 @@ class LLD_Members_Fixtures {
 		return array(
 			'track' => $slug,
 			'items' => $items,
+		);
+	}
+
+	/**
+	 * S2-C5: a track with day activities for all 28 days and an action library (FR2-10 completion through the real
+	 * plan). Week 1 holds "week1" activities spread over its 7 days; later days hold one each.
+	 *
+	 * @param string              $stamp Stamp.
+	 * @param array<string,mixed> $args  week1: activities in week 1 (7 to 140).
+	 * @return array<string,mixed>
+	 */
+	private static function weeks( $stamp, $args ) {
+		$slug  = 'wk-' . $stamp;
+		$track = self::track_post( 'Weeks ' . $stamp, $slug );
+		$first = isset( $args['week1'] ) ? max( 7, min( 140, (int) $args['week1'] ) ) : 7;
+		$days  = array();
+		for ( $n = 0; $n < $first; $n++ ) {
+			$day          = ( $n % 7 ) + 1;
+			$title        = 'W' . $day . '-' . ( intdiv( $n, 7 ) + 1 ) . ' ' . $stamp;
+			$days[ $day ] = isset( $days[ $day ] ) ? $days[ $day ] + 1 : 1;
+			self::item( 'lld_activity', $title, '', self::action_fields( $track, $day, 'standard', false ) );
+		}
+		for ( $day = 8; $day <= 28; $day++ ) {
+			self::item( 'lld_activity', 'Day ' . $day . ' ' . $stamp, '', self::action_fields( $track, $day, 'standard', false ) );
+		}
+		$library = array();
+		foreach ( array( 'easier' => 4, 'standard' => 4, 'stretch' => 2 ) as $difficulty => $count ) {
+			for ( $i = 1; $i <= $count; $i++ ) {
+				$title     = ucfirst( $difficulty ) . ' ' . $i . ' ' . $stamp;
+				$library[] = array(
+					'id'    => self::item( 'lld_activity', $title, '', self::action_fields( $track, 0, $difficulty, true ) ),
+					'title' => $title,
+				);
+			}
+		}
+		return array(
+			'track'   => $slug,
+			'week1'   => $first,
+			'library' => $library,
 		);
 	}
 

@@ -457,8 +457,11 @@ test('TC-FR2-15-AS-01', async ({ page, request }) => {
     await createMember(request, {
       email, password, first_name: 'State', role: 'member', access_state: person.state, plan: person.plan, period_ends_on: person.period_ends_on || null,
     });
+    // Day 8 must be reached before anyone can open it (T3): start on 1 August, look on 8 August.
+    await clock(request, email, '2026-08-01 12:00:00');
     await signIn(page, email, password);
     await startTrack(page, fixture.track);
+    await clock(request, email, '2026-08-08 12:00:00');
     await page.goto('/members/track/?day=8');
     if (person.day8) await expect(page.getByRole('heading', { name: title, exact: true })).toBeVisible();
     else await expect(page.getByText('Part of Premium', { exact: true })).toBeVisible();
