@@ -1,0 +1,432 @@
+{
+  "member": [
+    "id",
+    "user_id",
+    "email",
+    "first_name",
+    "last_name",
+    "display_name",
+    "photo_path",
+    "age",
+    "age_entered_on",
+    "timezone",
+    "units",
+    "role",
+    "arrived_from",
+    "email_confirmed_at",
+    "joined_on",
+    "last_signed_in_at",
+    "two_step"
+  ],
+  "consent": [
+    "id",
+    "member_id",
+    "consent_type",
+    "change_kind",
+    "document_version",
+    "occurred_at"
+  ],
+  "email_pref": [
+    "member_id",
+    "welcome",
+    "daily_reminder",
+    "reminder_time",
+    "weekly_review",
+    "end_of_track",
+    "nudges",
+    "nudges_sent",
+    "last_nudge_on"
+  ],
+  "unsubscribe_code": [
+    "id",
+    "member_id",
+    "code_hash",
+    "purpose",
+    "expires_at",
+    "used_at"
+  ],
+  "security_code": [
+    "id",
+    "member_id",
+    "kind",
+    "code_hash",
+    "new_email",
+    "pending_token_hash",
+    "remember",
+    "attempts",
+    "resend_count",
+    "user_id",
+    "expires_at",
+    "used_at"
+  ],
+  "sign_in_lock": [
+    "email",
+    "fail_count",
+    "lock_until"
+  ],
+  "session": [
+    "id",
+    "member_id",
+    "token_hash",
+    "remember",
+    "expires_at",
+    "ended_at"
+  ],
+  "app_key": [
+    "id",
+    "member_id",
+    "key_hash",
+    "created_at",
+    "expires_at",
+    "withdrawn_at"
+  ],
+  "goal_choice": [
+    "id",
+    "member_id",
+    "goal_key",
+    "sort_order",
+    "chosen_on"
+  ],
+  "something_else": [
+    "id",
+    "member_id",
+    "written_at",
+    "text_ciphertext",
+    "theme",
+    "told_when_live"
+  ],
+  "health_profile": [
+    "member_id",
+    "sex",
+    "height_cm",
+    "weight_kg",
+    "waist_cm",
+    "activity_level",
+    "diet_type",
+    "ethnicity",
+    "conditions_answered",
+    "conditions",
+    "updated_on",
+    "reminder_sent_on"
+  ],
+  "calculator_result": [
+    "id",
+    "member_id",
+    "calculator",
+    "saved_at",
+    "headline",
+    "unit",
+    "band",
+    "calculator_version"
+  ],
+  "enrolment": [
+    "id",
+    "member_id",
+    "track_key",
+    "attempt",
+    "status",
+    "free_week_used",
+    "last_open_day",
+    "finished_on",
+    "active_member",
+    "stopped_why",
+    "notice_shown"
+  ],
+  "enrolment_period": [
+    "id",
+    "enrolment_id",
+    "first_on",
+    "last_on"
+  ],
+  "challenge": [
+    "id",
+    "member_id",
+    "challenge_version",
+    "joined_on",
+    "finished_on"
+  ],
+  "workout": [
+    "id",
+    "member_id",
+    "level",
+    "version_key",
+    "started_on",
+    "current_week",
+    "active",
+    "active_member"
+  ],
+  "workout_change": [
+    "id",
+    "workout_id",
+    "level",
+    "changed_on"
+  ],
+  "result": [
+    "id",
+    "member_id",
+    "item_version",
+    "context_type",
+    "context_id",
+    "programme_day",
+    "local_date",
+    "result",
+    "recorded_at"
+  ],
+  "check_in": [
+    "id",
+    "member_id",
+    "enrolment_id",
+    "week_number",
+    "month_key",
+    "local_date",
+    "measures",
+    "weight_kg",
+    "waist_cm",
+    "activity_minutes",
+    "chair_stands",
+    "push_ups",
+    "strength_sessions",
+    "sleep_hours",
+    "sleep_quality",
+    "stress_level",
+    "tests_skipped"
+  ],
+  "reflection": [
+    "id",
+    "member_id",
+    "enrolment_id",
+    "when_key",
+    "answers"
+  ],
+  "weekly_plan": [
+    "id",
+    "member_id",
+    "enrolment_id",
+    "week_number",
+    "actions",
+    "level",
+    "completion_done",
+    "completion_available",
+    "completion_pct",
+    "rule_version",
+    "swapped",
+    "created_on"
+  ],
+  "weekly_review": [
+    "id",
+    "member_id",
+    "enrolment_id",
+    "week_number",
+    "ready_on",
+    "next_steps"
+  ],
+  "diary_meal": [
+    "id",
+    "member_id",
+    "local_date",
+    "meal",
+    "entry_type",
+    "recipe_version",
+    "description_ciphertext",
+    "photo_path",
+    "vegetables",
+    "protein_source",
+    "sugary_drink",
+    "portion",
+    "recorded_at"
+  ],
+  "diary_day": [
+    "member_id",
+    "local_date",
+    "water_glasses",
+    "hunger",
+    "energy"
+  ],
+  "meal_plan": [
+    "id",
+    "member_id",
+    "week_starting",
+    "template_version",
+    "swaps"
+  ],
+  "suggestion": [
+    "id",
+    "member_id",
+    "item_key",
+    "last_opened_on",
+    "hidden_on"
+  ],
+  "badge": [
+    "id",
+    "member_id",
+    "badge_key",
+    "challenge_key",
+    "earned_on"
+  ],
+  "subscription": [
+    "id",
+    "member_id",
+    "plan",
+    "access_state",
+    "stripe_state",
+    "started_on",
+    "period_ends_on",
+    "locked_amount",
+    "locked_currency",
+    "pending_yearly_on",
+    "premium_ended_on",
+    "premium_ended_why",
+    "renewal_reminder_on",
+    "stripe_customer",
+    "stripe_subscription"
+  ],
+  "order": [
+    "id",
+    "member_id",
+    "ordered_at",
+    "kind",
+    "related_order_id",
+    "catalogue_amount",
+    "catalogue_currency",
+    "charged_amount",
+    "charged_currency",
+    "tax_amount",
+    "tax_currency",
+    "discount_code",
+    "discount_amount",
+    "discount_currency",
+    "status",
+    "stripe_payment",
+    "stripe_invoice",
+    "billing_name",
+    "billing_email",
+    "billing_country"
+  ],
+  "referral": [
+    "id",
+    "referrer_member_id",
+    "code",
+    "friend_member_id",
+    "friend_order_id",
+    "status",
+    "self_referral"
+  ],
+  "reward": [
+    "id",
+    "referral_id",
+    "recipient_member_id",
+    "form",
+    "operation_key",
+    "status",
+    "stripe_discount",
+    "used_on_order_id",
+    "withdrawn_on",
+    "withdrawn_why"
+  ],
+  "stripe_notice": [
+    "id",
+    "notice_ref",
+    "notice_type",
+    "received_at",
+    "processing_state",
+    "attempts",
+    "last_error"
+  ],
+  "contact": [
+    "id",
+    "email",
+    "first_name",
+    "source"
+  ],
+  "contact_consent": [
+    "id",
+    "contact_id",
+    "action",
+    "occurred_at"
+  ],
+  "contact_request": [
+    "id",
+    "contact_id",
+    "kind",
+    "track_key",
+    "requested_on"
+  ],
+  "erasure": [
+    "id",
+    "member_number",
+    "email_hash",
+    "what_erased",
+    "erased_at",
+    "emailed_on"
+  ],
+  "admin_log": [
+    "id",
+    "action",
+    "member_number",
+    "member_name",
+    "member_email",
+    "detail",
+    "money_related",
+    "created_at"
+  ],
+  "support": [
+    "id",
+    "member_id",
+    "person_name",
+    "email",
+    "message",
+    "plan",
+    "created_at"
+  ],
+  "survey": [
+    "id",
+    "member_id",
+    "week_number",
+    "answers",
+    "what_changed",
+    "quote_text",
+    "permission",
+    "approved_on",
+    "display_name",
+    "country"
+  ],
+  "theme_count": [
+    "id",
+    "theme",
+    "item_count",
+    "period_key"
+  ],
+  "weekly_report": [
+    "id",
+    "week_starting",
+    "totals"
+  ],
+  "fb_removal": [
+    "id",
+    "member_number",
+    "premium_ended_on",
+    "removed_on",
+    "late"
+  ],
+  "error_log": [
+    "id",
+    "message",
+    "created_at"
+  ],
+  "test_clock": [
+    "member_id",
+    "frozen_at"
+  ],
+  "zone_change": [
+    "member_id",
+    "zone_now",
+    "zone_before",
+    "changed_on"
+  ],
+  "mail_sent": [
+    "id",
+    "member_id",
+    "claim_key",
+    "sent_on"
+  ]
+}

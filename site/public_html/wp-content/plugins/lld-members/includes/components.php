@@ -31,9 +31,13 @@ function lld_members_layout( $args ) {
 		echo '<meta name="lld-rest-nonce" content="' . esc_attr( wp_create_nonce( 'wp_rest' ) ) . '">';
 	}
 	echo '<title>' . esc_html( $title ) . '</title>';
+	if ( ! empty( $args['description'] ) ) {
+		echo '<meta name="description" content="' . esc_attr( (string) $args['description'] ) . '">';
+	}
 	echo '<link rel="stylesheet" href="' . esc_url( $css ) . '?ver=' . esc_attr( LLD_MEMBERS_VERSION ) . '">';
 	echo '</head><body class="' . ( $in ? 'lld-signed-in' : 'lld-signed-out' ) . '">';
 	echo '<a class="lld-skip" href="#lld-main">Skip to content</a>';
+	echo class_exists( 'LLD_Members_Quality' ) ? LLD_Members_Quality::preview_banner() : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
 	echo lld_members_header( $in );
 	echo '<main id="lld-main" class="lld-main" tabindex="-1">';
 	echo '<div class="lld-banner" id="lld-offline" hidden>You\'re offline</div>';
@@ -45,6 +49,9 @@ function lld_members_layout( $args ) {
 	}
 	echo '<div class="lld-toasts" aria-live="polite"></div>';
 	echo '<script src="' . esc_url( $js ) . '?ver=' . esc_attr( LLD_MEMBERS_VERSION ) . '"></script>';
+	if ( class_exists( 'LLD_Members_Growth' ) ) {
+		echo LLD_Members_Growth::script();
+	}
 	echo '</body></html>';
 }
 
@@ -162,6 +169,9 @@ function lld_password_field( $args ) {
 	$html .= '<label for="' . esc_attr( $id ) . '">' . esc_html( $args['label'] ) . '</label>';
 	$html .= '<div class="lld-password-row"><input id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" type="password" autocomplete="current-password">';
 	$html .= '<button type="button" class="lld-eye" aria-controls="' . esc_attr( $id ) . '" aria-pressed="false" data-lld-show="Show password" data-lld-hide="Hide password">Show password</button></div>';
+	if ( ! empty( $args['hint'] ) ) {
+		$html .= '<p class="lld-hint">' . esc_html( $args['hint'] ) . '</p>';
+	}
 	if ( ! empty( $args['error'] ) ) {
 		$html .= '<p class="lld-error">' . esc_html( $args['error'] ) . '</p>';
 	}
@@ -213,7 +223,7 @@ function lld_progress( $done, $total ) {
 	$safe_total = max( 1, (int) $total );
 	$pct        = (int) round( ( (int) $done / $safe_total ) * 100 );
 	$html       = '<div class="lld-progress"><p>' . esc_html( (string) (int) $done ) . ' of ' . esc_html( (string) (int) $total ) . ' done</p>';
-	$html      .= '<div class="lld-progress-track" role="progressbar" aria-valuenow="' . esc_attr( (string) (int) $done ) . '" aria-valuemax="' . esc_attr( (string) (int) $total ) . '">';
+	$html      .= '<div class="lld-progress-track" role="progressbar" aria-label="' . esc_attr( 'Progress: ' . (int) $done . ' of ' . (int) $total . ' done' ) . '" aria-valuemin="0" aria-valuenow="' . esc_attr( (string) (int) $done ) . '" aria-valuemax="' . esc_attr( (string) (int) $total ) . '">';
 	$html      .= '<span style="width:' . esc_attr( (string) $pct ) . '%"></span></div></div>';
 	return $html;
 }
@@ -299,13 +309,15 @@ function lld_health_consent_notice() {
  * @param string $note      Matrix note.
  * @param string $alt_href  Safe alternative.
  * @param string $alt_label Link text that stands alone.
+ * @param string $note_html Optional matrix notes as escaped HTML (helpline links).
  */
-function lld_not_suitable( $reason, $note, $alt_href, $alt_label ) {
+function lld_not_suitable( $reason, $note, $alt_href, $alt_label, $note_html = '' ) {
 	$html  = '<article class="lld-unsuitable"><h2>Not suitable for you</h2>';
 	$html .= '<p>' . esc_html( $reason ) . '</p>';
 	if ( '' !== $note ) {
 		$html .= '<p>' . esc_html( $note ) . '</p>';
 	}
+	$html .= $note_html;
 	$html .= '<p><a href="' . esc_url( $alt_href ) . '">' . esc_html( $alt_label ) . '</a></p></article>';
 	return $html;
 }

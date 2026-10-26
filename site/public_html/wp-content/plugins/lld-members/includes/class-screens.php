@@ -33,13 +33,34 @@ class LLD_Members_Screens {
 				self::two_step();
 				break;
 			case 'settings':
-				self::settings();
+				LLD_Members_Account::screen( 'settings' );
 				break;
 			case 'home':
-				self::home();
+				LLD_Members_Personal::dashboard();
 				break;
 			case 'checkout':
-				self::checkout();
+				LLD_Members_Billing::checkout();
+				break;
+			case 'subscription':
+				LLD_Members_Billing::subscription();
+				break;
+			case 'pricing':
+				LLD_Members_Billing::pricing();
+				break;
+			case 'sales':
+				LLD_Members_Billing::sales( (string) get_query_var( 'lld_track' ) );
+				break;
+			case 'landing':
+				LLD_Members_Billing::landing( (string) get_query_var( 'lld_track' ) );
+				break;
+			case 'safety':
+				LLD_Members_Billing::public_note( 'safety' );
+				break;
+			case 'disclaimer':
+				LLD_Members_Billing::public_note( 'disclaimer' );
+				break;
+			case 'sitemap':
+				LLD_Members_Billing::sitemap();
 				break;
 			case 'record':
 				self::record();
@@ -50,7 +71,56 @@ class LLD_Members_Screens {
 			case 'foundations':
 				self::foundations();
 				break;
+			case 'library':
+				LLD_Members_Content::screen();
+				break;
+			case 'health':
+			case 'suggestions':
+			case 'tracks':
+			case 'screening':
+			case 'check-in':
+			case 'plan':
+			case 'meals':
+			case 'workout':
+			case 'challenge':
+			case 'badges':
+			case 'diary':
+			case 'read':
+				LLD_Members_Personal::screen( $screen );
+				break;
+			case 'group':
+				LLD_Members_Premium::group();
+				break;
+			case 'diary-photo':
+				LLD_Members_Premium::diary_photo();
+				break;
+			case 'help':
+				LLD_Members_Growth::help();
+				break;
+			case 'more':
+				LLD_Members_Growth::more();
+				break;
+			case 'waitlist':
+				LLD_Members_Growth::waitlist_screen( (string) get_query_var( 'lld_track' ) );
+				break;
+			case 'guide-confirm':
+				LLD_Members_Growth::confirm_screen();
+				break;
+			case 'guide-unsub':
+				LLD_Members_Growth::unsubscribe_screen();
+				break;
+			case 'quotes':
+				LLD_Members_Growth::quotes_screen();
+				break;
+			case 'track':
+			case 'review':
+				LLD_Members_Programme::screen( $screen );
+				break;
 			default:
+				if ( LLD_Members_Account::handles( $screen ) ) {
+					LLD_Members_Account::screen( $screen );
+					break;
+				}
 				status_header( 404 );
 				return;
 		}
@@ -70,16 +140,21 @@ class LLD_Members_Screens {
 			$user     = LLD_Members_Auth::check_password( $email, $password );
 			if ( is_wp_error( $user ) ) {
 				$error = $user->get_error_message();
-			} elseif ( LLD_Members_Auth::needs_two_step( $user ) ) {
-				LLD_Members_Auth::issue_code( $user, $remember );
-				wp_safe_redirect( home_url( '/members/two-step/' ) );
-				exit;
 			} else {
 				global $wpdb;
 				$member_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE user_id = %d', $user->ID ) );
-				LLD_Members_Auth::start_session( $user->ID, $member_id, $remember );
-				wp_safe_redirect( self::destination() );
-				exit;
+				$confirmed = $member_id ? $wpdb->get_var( $wpdb->prepare( 'SELECT email_confirmed_at FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) ) : 'yes';
+				if ( $member_id && ! $confirmed ) {
+					$error = 'Confirm your email before you sign in.';
+				} elseif ( LLD_Members_Auth::needs_two_step( $user ) ) {
+					LLD_Members_Auth::issue_code( $user, $remember );
+					wp_safe_redirect( home_url( '/members/two-step/' ) );
+					exit;
+				} else {
+					LLD_Members_Auth::start_session( $user->ID, $member_id, $remember );
+					wp_safe_redirect( self::destination() );
+					exit;
+				}
 			}
 		}
 		$main  = '<h1>Sign in</h1>';
@@ -91,7 +166,8 @@ class LLD_Members_Screens {
 		if ( '' !== $error ) {
 			$main .= '<div class="lld-fail" role="alert" tabindex="-1"><p>' . esc_html( $error ) . '</p></div>';
 		}
-		$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email' ) );
+		$kept_email = ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['lld_email'] ) ) ? sanitize_email( wp_unslash( $_POST['lld_email'] ) ) : '';
+		$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email', 'value' => $kept_email ) );
 		$main .= lld_password_field( array( 'id' => 'lld_password', 'name' => 'lld_password', 'label' => 'Password' ) );
 		$main .= '<label class="lld-check"><input type="checkbox" name="lld_remember" value="1"> Remember me for 30 days</label>';
 		$main .= lld_button( array( 'label' => 'Sign in' ) );
@@ -201,25 +277,6 @@ class LLD_Members_Screens {
 		);
 	}
 
-	private static function checkout() {
-		self::require_member();
-		$reach = LLD_Members_Stripe::reachable();
-		$main  = '<h1>Checkout</h1>';
-		if ( is_wp_error( $reach ) ) {
-			$main .= '<div class="lld-fail" role="alert"><p>' . esc_html( LLD_Members_Stripe::try_again_message() ) . '</p></div>';
-		} else {
-			$main .= '<p>You will continue to Stripe. Card details are never entered on this site.</p>';
-			$main .= lld_button( array( 'label' => 'Continue to payment', 'type' => 'button' ) );
-		}
-		lld_members_layout(
-			array(
-				'title'     => 'Checkout',
-				'main'      => $main,
-				'signed_in' => true,
-			)
-		);
-	}
-
 	private static function record() {
 		self::require_member();
 		$requested = (int) get_query_var( 'lld_member' );
@@ -264,7 +321,14 @@ class LLD_Members_Screens {
 	 */
 	private static function foundations() {
 		if ( lld_members_is_production() || ! current_user_can( 'manage_options' ) ) {
-			status_header( 404 );
+			lld_members_layout(
+				array(
+					'title'     => 'Page not found',
+					'main'      => '<h1>Page not found</h1><p><a href="' . esc_url( home_url( '/members/home/' ) ) . '">Go to Today</a></p>',
+					'status'    => 404,
+					'signed_in' => is_user_logged_in(),
+				)
+			);
 			exit;
 		}
 		$main  = '<h1>Foundations</h1>';
