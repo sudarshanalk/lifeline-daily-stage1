@@ -108,7 +108,6 @@ require $plugin . '/class-safety.php';
 require $plugin . '/class-premium.php';
 
 $method = new ReflectionMethod( 'LLD_Members_Premium', (string) $GLOBALS['lld_test']['call'] );
-$method->setAccessible( true );
 $args = array_map(
 	static function ( $arg ) {
 		return is_array( $arg ) && isset( $arg['__object'] ) ? (object) $arg['__object'] : $arg;
