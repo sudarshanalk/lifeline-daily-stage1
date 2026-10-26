@@ -840,27 +840,195 @@ class LLD_Members_Premium {
 	 */
 	private static function send_shopping_pdf( $member_id ) {
 		$view = self::meal_view( $member_id );
-		$text = $view['shopping'] ? implode( '; ', $view['shopping'] ) : 'Shopping list';
-		$text = str_replace( array( '(', ')', '\\' ), ' ', $text );
-		$body = "BT /F1 12 Tf 72 720 Td (" . $text . ") Tj ET";
-		$pdf  = "%PDF-1.1\n";
-		$pdf .= "1 0 obj<< /Type /Catalog /Pages 2 0 R >>endobj\n";
-		$pdf .= "2 0 obj<< /Type /Pages /Count 1 /Kids [3 0 R] >>endobj\n";
-		$pdf .= "3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources<< /Font<< /F1 5 0 R >> >> >>endobj\n";
-		$pdf .= '4 0 obj<< /Length ' . strlen( $body ) . " >>stream\n" . $body . "\nendstream\nendobj\n";
-		$pdf .= "5 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj\n";
-		$start = strlen( $pdf );
-		$pdf  .= "xref\n0 6\n";
-		$pdf  .= "0000000000 65535 f \n";
-		for ( $i = 1; $i <= 5; $i++ ) {
-			$pdf .= sprintf( "%010d 00000 n \n", 9 );
-		}
-		$pdf .= "trailer<< /Size 6 /Root 1 0 R >>\nstartxref\n" . $start . "\n%%EOF";
+		$pdf  = self::shopping_pdf( 'Shopping list', $view['shopping'] );
 		header( 'Content-Type: application/pdf' );
 		header( 'Content-Disposition: attachment; filename="shopping-list.pdf"' );
+		header( 'Content-Length: ' . strlen( $pdf ) );
 		header( 'Cache-Control: no-store' );
-		echo $pdf;
+		echo $pdf; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- binary PDF.
 		exit;
+	}
+
+	/**
+	 * A plain PDF 1.4 shopping list without a library: Helvetica in WinAnsi encoding, one line per item
+	 * (long items wrap onto indented lines), as many pages as needed, and a cross-reference table with
+	 * the real byte offset of every object.
+	 *
+	 * @param string   $title Heading on the first page.
+	 * @param string[] $items Shopping-list lines, UTF-8.
+	 * @return string PDF bytes.
+	 */
+	public static function shopping_pdf( $title, $items ) {
+		$size    = 11;
+		$leading = 16;
+		$left    = 56;
+		$width   = 612 - 2 * $left;
+		$top     = 740;
+		$bottom  = 56;
+		$rows    = array();
+		foreach ( $items ? $items : array( 'Nothing on the list this week.' ) as $item ) {
+			$text = self::win_ansi( (string) $item );
+			$first = true;
+			foreach ( self::pdf_wrap( "\x95 " . $text, $size, $width - 12 ) as $piece ) {
+				$rows[] = $first ? $piece : '  ' . $piece;
+				$first  = false;
+			}
+		}
+		$pages = array();
+		$y     = $top - 30;
+		$body  = 'BT /F1 16 Tf ' . $left . ' ' . $top . ' Td (' . self::pdf_string( self::win_ansi( (string) $title ) ) . ") Tj ET\n";
+		foreach ( $rows as $row ) {
+			if ( $y < $bottom ) {
+				$pages[] = $body;
+				$body    = '';
+				$y       = $top;
+			}
+			$body .= 'BT /F1 ' . $size . ' Tf ' . $left . ' ' . $y . ' Td (' . self::pdf_string( $row ) . ") Tj ET\n";
+			$y    -= $leading;
+		}
+		$pages[] = $body;
+
+		$objects    = array();
+		$objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
+		$objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+		$kids       = array();
+		foreach ( $pages as $index => $stream ) {
+			$page_id             = 4 + 2 * $index;
+			$content_id          = $page_id + 1;
+			$kids[]              = $page_id . ' 0 R';
+			$objects[ $page_id ] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ' . $content_id . ' 0 R >>';
+			$objects[ $content_id ] = '<< /Length ' . strlen( $stream ) . " >>\nstream\n" . $stream . "\nendstream";
+		}
+		$objects[2] = '<< /Type /Pages /Kids [' . implode( ' ', $kids ) . '] /Count ' . count( $pages ) . ' >>';
+		ksort( $objects );
+
+		$pdf     = "%PDF-1.4\n%\xE2\xE3\xCF\xD3\n";
+		$offsets = array();
+		foreach ( $objects as $id => $object ) {
+			$offsets[ $id ] = strlen( $pdf );
+			$pdf           .= $id . " 0 obj\n" . $object . "\nendobj\n";
+		}
+		$xref = strlen( $pdf );
+		$pdf .= "xref\n0 " . ( count( $objects ) + 1 ) . "\n0000000000 65535 f \n";
+		foreach ( $offsets as $offset ) {
+			$pdf .= sprintf( "%010d 00000 n \n", $offset );
+		}
+		$pdf .= 'trailer << /Size ' . ( count( $objects ) + 1 ) . " /Root 1 0 R >>\nstartxref\n" . $xref . "\n%%EOF\n";
+		return $pdf;
+	}
+
+	/**
+	 * UTF-8 to WinAnsi (Windows-1252) bytes; anything outside it becomes "?". Control characters become spaces.
+	 *
+	 * @param string $text UTF-8 text.
+	 */
+	private static function win_ansi( $text ) {
+		static $map = array(
+			0x20AC => 0x80, 0x201A => 0x82, 0x0192 => 0x83, 0x201E => 0x84, 0x2026 => 0x85, 0x2020 => 0x86, 0x2021 => 0x87,
+			0x02C6 => 0x88, 0x2030 => 0x89, 0x0160 => 0x8A, 0x2039 => 0x8B, 0x0152 => 0x8C, 0x017D => 0x8E, 0x2018 => 0x91,
+			0x2019 => 0x92, 0x201C => 0x93, 0x201D => 0x94, 0x2022 => 0x95, 0x2013 => 0x96, 0x2014 => 0x97, 0x02DC => 0x98,
+			0x2122 => 0x99, 0x0161 => 0x9A, 0x203A => 0x9B, 0x0153 => 0x9C, 0x017E => 0x9E, 0x0178 => 0x9F,
+		);
+		$chars = preg_split( '//u', (string) $text, -1, PREG_SPLIT_NO_EMPTY );
+		if ( false === $chars ) {
+			return (string) preg_replace( '/[^\x20-\x7E]/', '?', (string) $text );
+		}
+		$out = '';
+		foreach ( $chars as $char ) {
+			$bytes = array_values( unpack( 'C*', $char ) );
+			$count = count( $bytes );
+			if ( 1 === $count ) {
+				$code = $bytes[0];
+			} elseif ( 2 === $count ) {
+				$code = ( ( $bytes[0] & 0x1F ) << 6 ) | ( $bytes[1] & 0x3F );
+			} elseif ( 3 === $count ) {
+				$code = ( ( $bytes[0] & 0x0F ) << 12 ) | ( ( $bytes[1] & 0x3F ) << 6 ) | ( $bytes[2] & 0x3F );
+			} else {
+				$code = 0x10000;
+			}
+			if ( $code < 0x20 ) {
+				$out .= ' ';
+			} elseif ( $code < 0x7F ) {
+				$out .= chr( $code );
+			} elseif ( $code >= 0xA0 && $code <= 0xFF ) {
+				$out .= chr( $code );
+			} elseif ( isset( $map[ $code ] ) ) {
+				$out .= chr( $map[ $code ] );
+			} else {
+				$out .= '?';
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Word-wrap WinAnsi text to a width in points, using approximate Helvetica widths.
+	 *
+	 * @param string $text  WinAnsi bytes.
+	 * @param int    $size  Font size.
+	 * @param int    $width Width in points.
+	 * @return string[]
+	 */
+	private static function pdf_wrap( $text, $size, $width ) {
+		$measure = static function ( $piece ) use ( $size ) {
+			$units = 0.0;
+			foreach ( '' === $piece ? array() : str_split( $piece ) as $byte ) {
+				if ( false !== strpos( " ,.:;'!|ijlrtf()[]", $byte ) ) {
+					$units += 0.3;
+				} elseif ( false !== strpos( 'ABCDEFGHKMNOQRUVWXYmw@%&', $byte ) || ord( $byte ) >= 0x80 ) {
+					$units += 0.85;
+				} else {
+					$units += 0.56;
+				}
+			}
+			return $units * $size;
+		};
+		$lines = array();
+		$line  = '';
+		foreach ( explode( ' ', $text ) as $word ) {
+			while ( $measure( $word ) > $width ) {
+				$cut = strlen( $word );
+				while ( $cut > 1 && $measure( substr( $word, 0, $cut ) ) > $width ) {
+					--$cut;
+				}
+				if ( '' !== $line ) {
+					$lines[] = $line;
+					$line    = '';
+				}
+				$lines[] = substr( $word, 0, $cut );
+				$word    = (string) substr( $word, $cut );
+			}
+			$try = '' === $line ? $word : $line . ' ' . $word;
+			if ( '' !== $line && $measure( $try ) > $width ) {
+				$lines[] = $line;
+				$line    = $word;
+			} else {
+				$line = $try;
+			}
+		}
+		if ( '' !== $line || ! $lines ) {
+			$lines[] = $line;
+		}
+		return $lines;
+	}
+
+	/**
+	 * Escape WinAnsi bytes for a PDF literal string; bytes above ASCII are written as octal.
+	 *
+	 * @param string $text WinAnsi bytes.
+	 */
+	private static function pdf_string( $text ) {
+		$out = '';
+		foreach ( '' === (string) $text ? array() : str_split( (string) $text ) as $byte ) {
+			if ( '\\' === $byte || '(' === $byte || ')' === $byte ) {
+				$out .= '\\' . $byte;
+			} elseif ( ord( $byte ) >= 0x80 || ord( $byte ) < 0x20 ) {
+				$out .= sprintf( '\\%03o', ord( $byte ) );
+			} else {
+				$out .= $byte;
+			}
+		}
+		return $out;
 	}
 
 	/**

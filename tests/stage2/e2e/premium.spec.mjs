@@ -145,9 +145,19 @@ test('TC-FR2-32-AS-03', async ({ page, request }) => {
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('link', { name: 'Download PDF' }).click();
   const download = await downloadPromise;
-  const body = readFileSync(await download.path(), 'utf8');
-  expect(body).toContain('red lentils');
-  expect(body).toContain('spinach');
+  const body = readFileSync(await download.path()).toString('latin1');
+  expect(body.startsWith('%PDF-1.4\n')).toBe(true);
+  const xref = Number(body.match(/startxref\n(\d+)\n%%EOF\s*$/)[1]);
+  expect(body.slice(xref, xref + 5)).toBe('xref\n');
+  const count = Number(body.slice(xref).match(/^xref\n0 (\d+)\n/)[1]);
+  const table = body.slice(xref).split('\n').slice(2, 2 + count);
+  table.slice(1).forEach((entry, i) => {
+    const offset = Number(entry.slice(0, 10));
+    expect(body.slice(offset, offset + String(i + 1).length + 6)).toBe(`${i + 1} 0 obj`);
+  });
+  const lines = [...body.matchAll(/\(((?:\.|[^\)])*)\) Tj/g)].map((m) => m[1]);
+  expect(lines).toContain('\225 red lentils, 150 g');
+  expect(lines).toContain('\225 spinach, 80 g');
 });
 
 test('TC-FR2-32-AS-04', async ({ page, request }) => {
