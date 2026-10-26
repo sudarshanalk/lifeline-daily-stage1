@@ -290,7 +290,7 @@ test('TC-FR2-02-AS-01', async ({ page }) => {
   await page.locator('#lld_timezone').fill('Europe/Paris');
   await page.getByRole('checkbox', { name: 'Show imperial units' }).check();
   await page.locator('#lld_goal').fill('sleep');
-  await page.locator('#lld_track').fill('sleep');
+  await page.locator('#lld_track').fill('sleep-stress');
   await page.locator('#lld_height').fill('170');
   await page.getByRole('checkbox', { name: 'Daily reminder' }).check();
   await page.getByRole('checkbox', { name: 'Weekly review' }).check();
@@ -312,7 +312,7 @@ test('TC-FR2-02-AS-01', async ({ page }) => {
   await expect(page.getByRole('checkbox', { name: 'Show imperial units' })).toBeChecked();
   await expect(page.locator('#lld_height')).toHaveValue('170');
   await expect(page.locator('#lld_goal')).toHaveValue('sleep');
-  await expect(page.locator('#lld_track')).toHaveValue('sleep');
+  await expect(page.locator('#lld_track')).toHaveValue('sleep-stress');
   await expect(page.getByRole('checkbox', { name: 'Daily reminder' })).toBeChecked();
   await expect(page.getByRole('checkbox', { name: 'Weekly review' })).toBeChecked();
   await expect(page.locator('#lld_reminder_time')).toHaveValue('06:45');

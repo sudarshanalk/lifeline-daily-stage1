@@ -810,20 +810,14 @@ class LLD_Members_Account {
 				self::save_health( $member_id, array( 'kind' => 'goal', 'goal_key' => sanitize_text_field( wp_unslash( $_POST['lld_goal'] ) ), 'sort_order' => 1 ) );
 			}
 			if ( ! empty( $_POST['lld_track'] ) ) {
-				$track = sanitize_text_field( wp_unslash( $_POST['lld_track'] ) );
-				$enrol = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'enrolment' ) . " WHERE member_id = %d AND status = 'active'", $member_id ) );
-				if ( $enrol ) {
-					$wpdb->update( LLD_Members_Schema::table( 'enrolment' ), array( 'track_key' => $track ), array( 'id' => $enrol ), array( '%s' ), array( '%d' ) );
-				} else {
-					$wpdb->insert(
-						LLD_Members_Schema::table( 'enrolment' ),
-						array(
-							'member_id' => $member_id,
-							'track_key' => $track,
-							'status'    => 'active',
-						),
-						array( '%d', '%s', '%s' )
-					);
+				$track = sanitize_title( wp_unslash( $_POST['lld_track'] ) );
+				$now   = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT track_key FROM ' . LLD_Members_Schema::table( 'enrolment' ) . " WHERE member_id = %d AND status = 'active' ORDER BY id DESC LIMIT 1", $member_id ) );
+				if ( $track !== $now ) {
+					// The same rules as the Tracks page (SCR-25, C5): switching weeks, resuming, safety and Premium.
+					$started = LLD_Members_Personal::enrol( $member_id, $track );
+					if ( is_wp_error( $started ) ) {
+						return $started;
+					}
 				}
 			}
 			if ( isset( $_POST['lld_height'] ) && '' !== (string) $_POST['lld_height'] ) {

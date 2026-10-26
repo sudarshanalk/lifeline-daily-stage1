@@ -1586,7 +1586,7 @@ class LLD_Members_Personal {
 	 * @param string $start     today or tomorrow.
 	 * @return true|WP_Error
 	 */
-	private static function enrol( $member_id, $key, $start = 'today' ) {
+	public static function enrol( $member_id, $key, $start = 'today' ) {
 		if ( 'sleep-stress' === $key && self::track_held( $member_id ) ) {
 			return new WP_Error( 'lld_track', 'Sleep and Stress is not available in this session.' );
 		}
