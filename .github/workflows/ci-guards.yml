@@ -241,14 +241,25 @@ jobs:
         if: steps.has.outputs.e2e == 'true'
         with: { node-version: '24' }
       # Photos (FR2-02, FR2-37): staging and production have Imagick with HEIC, EXIF and large uploads; CI matches them
+      # The runner's Ubuntu mirror sometimes serves these 27 MB at about 37 kB/s (12 minutes on PR #84), so the
+      # downloaded packages are cached. A run on staging saves the cache; pull requests restore it.
+      - name: Cached image library packages
+        if: steps.has.outputs.e2e == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/apt-archives
+          key: apt-heic-${{ runner.os }}-v1
       - name: Image libraries with HEIC support
         if: steps.has.outputs.e2e == 'true'
-        # The runner's man-db trigger and recommended packages made this step take about 17 minutes
+        # The runner's man-db trigger and recommended packages also cost minutes, so both are off
         run: |
           echo 'set man-db/auto-update false' | sudo debconf-communicate >/dev/null 2>&1 || true
           sudo rm -f /var/lib/man-db/auto-update
+          mkdir -p ~/apt-archives/partial
+          APT="-o Dir::Cache::Archives=$HOME/apt-archives -o APT::Keep-Downloaded-Packages=true -o Acquire::Retries=3"
           sudo apt-get update -q
-          sudo apt-get install -y -q --no-install-recommends libmagickwand-dev libheif-dev libheif-plugin-libde265 libmagickcore-6.q16-7-extra
+          sudo apt-get install -y -q --no-install-recommends $APT libmagickwand-dev libheif-dev libheif-plugin-libde265 libmagickcore-6.q16-7-extra
+          sudo chown -R "$USER" ~/apt-archives && rm -rf ~/apt-archives/partial ~/apt-archives/lock && du -sh ~/apt-archives
       - uses: shivammathur/setup-php@v2
         if: steps.has.outputs.e2e == 'true'
         with:
