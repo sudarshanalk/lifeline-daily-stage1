@@ -198,6 +198,7 @@ jobs:
   stage2-e2e:
     if: "!startsWith(github.event.pull_request.title || '', 'SPEC: ')"   # SPEC PRs (DEC-55) carry no code or tests
     runs-on: ubuntu-latest
+    timeout-minutes: 30   # a hung browser once held this job for over two hours; normal runs take a few minutes
     services:
       db:
         image: mariadb:11
