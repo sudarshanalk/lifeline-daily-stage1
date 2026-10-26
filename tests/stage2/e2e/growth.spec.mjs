@@ -195,6 +195,11 @@ test.beforeEach(async ({ request }) => {
   await request.get('/coming-soon/fitness/');
 });
 
+// Tests that configure a Plausible domain leave none behind, so later journeys send nothing to plausible.io.
+test.afterEach(async ({ request }) => {
+  await growth(request, { action: 'domain', domain: '' });
+});
+
 test('TC-FR2-17-AS-01', async ({ page, request }) => {
   await growth(request, { action: 'reset' });
   await growth(request, {
