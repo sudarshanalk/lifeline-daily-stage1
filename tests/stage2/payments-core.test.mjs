@@ -81,7 +81,7 @@ test('orders and referrals use the Data Model status names, and the database upd
   expect(billing).not.toMatch(/'status' => '(rewarded|limited|self|refunded)'/);
   expect(billing).toMatch(/SET status = 'succeeded' WHERE status = 'paid'/);
   expect(billing).toMatch(/SET status = 'qualified' WHERE status = 'rewarded'/);
-  expect(source('class-schema.php')).toMatch(/ensure_column\( 'referral', 'not_qualified_why', 'VARCHAR\(32\) NULL' \)/);
+  expect(billing).toMatch(/'not_qualified_' \. \$why/);
 });
 
 test('TC-FR2-13-AS-04 a code is checked against its plans and its valid-from and valid-to dates (P4)', () => {
@@ -115,4 +115,19 @@ test('TC-FR2-04-AS-03 erasing a member removes their card fingerprints, referral
   expect(Object.keys(after.lld_retries)).toEqual(['in_b']);
   expect(readFileSync(resolve(plugin, 'class-erasure.php'), 'utf8')).toMatch(/do_action\( 'lld_members_erase_account', \$member_id \);/);
   expect(source('class-billing.php')).toMatch(/add_action\( 'lld_members_erase_account', array\( __CLASS__, 'erase_member' \) \)/);
+});
+
+test('payments add no column outside the Data Model: notices keep only the P6 fields, never the notice itself', () => {
+  const frozen = JSON.parse(readFileSync(resolve(plugin, '../../../../../../tests/stage2/personal-columns.json'), 'utf8'));
+  const schema = source('class-schema.php');
+  for (const [, table, column] of schema.matchAll(/ensure_column\( '([a-z_]+)', '([a-z_]+)'/g)) {
+    if (frozen[table]) expect(frozen[table], `${table}.${column}`).toContain(column);
+  }
+  const billing = source('class-billing.php');
+  const notice = billing.slice(billing.indexOf('function rest_notice'));
+  const insert = notice.slice(notice.indexOf('$wpdb->insert('), notice.indexOf('suppress_errors( $quiet )'));
+  const stored = [...insert.matchAll(/'([a-z_]+)'\s*=>/g)].map((m) => m[1]);
+  expect(stored.length).toBeGreaterThan(0);
+  expect(stored.every((field) => frozen.stripe_notice.includes(field))).toBeTruthy();
+  expect(billing).not.toMatch(/'payload'|next_attempt_at|not_qualified_why/);
 });

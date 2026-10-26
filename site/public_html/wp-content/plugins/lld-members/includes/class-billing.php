@@ -21,10 +21,10 @@ class LLD_Members_Billing {
 	 */
 	public static function boot() {
 		add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ) );
-		add_action( 'lld_members_notice_retry', array( __CLASS__, 'retry_notices' ) );
+		add_action( 'lld_members_notice_check', array( __CLASS__, 'close_stale_notices' ) );
 		add_action( 'lld_members_erase_account', array( __CLASS__, 'erase_member' ) );
-		if ( ! wp_next_scheduled( 'lld_members_notice_retry' ) ) {
-			wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'lld_members_notice_retry' );
+		if ( ! wp_next_scheduled( 'lld_members_notice_check' ) ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'lld_members_notice_check' );
 		}
 	}
 
@@ -78,7 +78,7 @@ class LLD_Members_Billing {
 		$wpdb->query( "UPDATE {$order} SET status = 'succeeded' WHERE status = 'paid' OR ( kind = 'refund' AND status = 'refunded' )" );
 		$wpdb->query( "UPDATE {$referral} SET status = 'qualified' WHERE status = 'rewarded'" );
 		foreach ( array( 'limited' => 'limit', 'self' => 'self', 'refunded' => 'refunded' ) as $old => $why ) {
-			$wpdb->query( $wpdb->prepare( "UPDATE {$referral} SET status = 'not_qualified', not_qualified_why = %s WHERE status = %s", $why, $old ) );
+			$wpdb->query( $wpdb->prepare( "UPDATE {$referral} SET status = %s WHERE status = %s", 'not_qualified_' . $why, $old ) );
 		}
 	}
 
@@ -673,6 +673,7 @@ class LLD_Members_Billing {
 		$table = LLD_Members_Schema::table( 'stripe_notice' );
 		$ref   = sanitize_text_field( (string) $event['id'] );
 		// The unique notice_ref decides who processes a notice: only the request that wrote the row goes on.
+		// Only the Data Model P6 fields are stored; the notice itself is never kept.
 		$quiet   = $wpdb->suppress_errors( true );
 		$written = $wpdb->insert(
 			$table,
@@ -682,33 +683,61 @@ class LLD_Members_Billing {
 				'received_at'      => gmdate( 'Y-m-d H:i:s' ),
 				'processing_state' => 'received',
 				'attempts'         => 0,
-				'payload'          => $raw,
 			),
-			array( '%s', '%s', '%s', '%s', '%d', '%s' )
+			array( '%s', '%s', '%s', '%s', '%d' )
 		);
 		$wpdb->suppress_errors( $quiet );
-		if ( 1 !== $written ) {
-			$seen = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE notice_ref = %s", $ref ) );
-			if ( $seen ) {
-				return new WP_REST_Response( array( 'replay' => true ), 200 );
-			}
+		if ( 1 === $written ) {
+			return self::notice_answer( self::process_notice( (int) $wpdb->insert_id, $event, 1 ) );
+		}
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT id, processing_state, attempts, received_at FROM {$table} WHERE notice_ref = %s", $ref ) );
+		if ( ! $row ) {
 			// Not recorded: Stripe sends it again after a non-2xx answer, so nothing is lost.
 			return new WP_REST_Response( array( 'message' => 'not recorded' ), 500 );
 		}
-		$state = self::process_notice( (int) $wpdb->insert_id, $event );
+		$state = (string) $row->processing_state;
+		if ( 'processed' === $state || 'failed' === $state ) {
+			return new WP_REST_Response( array( 'replay' => true ), 200 );
+		}
+		$attempts = (int) $row->attempts;
+		$stuck    = 'received' === $state && 0 === $attempts && strtotime( (string) $row->received_at . ' UTC' ) < time() - 15 * MINUTE_IN_SECONDS;
+		if ( 'retrying' !== $state && ! $stuck ) {
+			// Another request is applying it now. Stripe sends it again later.
+			return new WP_REST_Response( array( 'message' => 'in progress' ), 503 );
+		}
+		// Stripe's repeat of a notice that failed (or whose first try stopped part way) is the retry. Claim it once.
+		$next    = $stuck ? 2 : $attempts + 1;
+		$claimed = $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'received', attempts = %d WHERE id = %d AND processing_state = %s AND attempts = %d", $next - 1, (int) $row->id, $state, $attempts ) );
+		if ( 1 !== $claimed ) {
+			return new WP_REST_Response( array( 'message' => 'in progress' ), 503 );
+		}
+		return self::notice_answer( self::process_notice( (int) $row->id, $event, $next ) );
+	}
+
+	/**
+	 * Processed and finally failed notices answer 200, so Stripe stops. A notice to retry answers 500, so Stripe sends it again.
+	 *
+	 * @param string $state processed, retrying or failed.
+	 */
+	private static function notice_answer( $state ) {
 		return new WP_REST_Response(
 			array(
-				'ok'    => true,
+				'ok'    => 'retrying' !== $state,
 				'state' => $state,
 			),
-			200
+			'retrying' === $state ? 500 : 200
 		);
 	}
 
 	/**
-	 * Hours to wait after each failed attempt: retries at 1, 3, 7, 15 and 24 hours (T4: 5 times over 24 hours).
+	 * At most 5 retries (T4), as Stripe sends a failed notice again with growing gaps.
 	 */
-	const NOTICE_RETRY_HOURS = array( 1, 2, 4, 8, 9 );
+	const NOTICE_RETRIES = 5;
+
+	/**
+	 * Retries stop 24 hours after the notice first arrived (T4); then the owner is told.
+	 */
+	const NOTICE_RETRY_HOURS = 24;
 
 	/**
 	 * True while a notice is applied: a failed write then throws and the notice is retried.
@@ -720,11 +749,12 @@ class LLD_Members_Billing {
 	/**
 	 * Apply one recorded notice inside a transaction, then mark it processed, retrying or failed.
 	 *
-	 * @param int                 $id    Notice row.
-	 * @param array<string,mixed> $event Notice.
+	 * @param int                 $id       Notice row.
+	 * @param array<string,mixed> $event    Notice, as Stripe sent it this time.
+	 * @param int                 $attempts This attempt's number: 1 for the first, up to 6 with 5 retries.
 	 * @return string processed, retrying or failed.
 	 */
-	private static function process_notice( $id, $event ) {
+	private static function process_notice( $id, $event, $attempts ) {
 		global $wpdb;
 		$table = LLD_Members_Schema::table( 'stripe_notice' );
 		$error = '';
@@ -742,62 +772,53 @@ class LLD_Members_Billing {
 			$error = '' !== $e->getMessage() ? $e->getMessage() : get_class( $e );
 		}
 		self::$in_notice = false;
-		$attempts = 1 + (int) $wpdb->get_var( $wpdb->prepare( "SELECT attempts FROM {$table} WHERE id = %d", $id ) );
 		if ( '' === $error ) {
-			$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'processed', attempts = %d, last_error = NULL, next_attempt_at = NULL, payload = NULL WHERE id = %d", $attempts, $id ) );
+			$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'processed', attempts = %d, last_error = NULL WHERE id = %d", $attempts, $id ) );
 			return 'processed';
 		}
-		$error = substr( sanitize_text_field( $error ), 0, 250 );
-		$retry = $attempts - 1;
-		if ( $retry >= count( self::NOTICE_RETRY_HOURS ) ) {
-			$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'failed', attempts = %d, last_error = %s, next_attempt_at = NULL WHERE id = %d", $attempts, $error, $id ) );
-			wp_mail(
-				(string) get_option( 'admin_email' ),
-				'A Stripe notice could not be processed',
-				'Stripe notice ' . sanitize_text_field( (string) $event['id'] ) . ' (' . sanitize_text_field( (string) $event['type'] ) . ') failed ' . $attempts . " times over 24 hours. Please check it in Stripe.\n"
-			);
+		$error    = substr( sanitize_text_field( $error ), 0, 250 );
+		$received = (string) $wpdb->get_var( $wpdb->prepare( "SELECT received_at FROM {$table} WHERE id = %d", $id ) );
+		$late     = strtotime( $received . ' UTC' ) <= time() - self::NOTICE_RETRY_HOURS * HOUR_IN_SECONDS;
+		if ( $attempts - 1 >= self::NOTICE_RETRIES || $late ) {
+			$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'failed', attempts = %d, last_error = %s WHERE id = %d", $attempts, $error, $id ) );
+			self::notice_failed_mail( (string) $event['id'], (string) $event['type'], $attempts );
 			return 'failed';
 		}
-		$next = gmdate( 'Y-m-d H:i:s', time() + self::NOTICE_RETRY_HOURS[ $retry ] * HOUR_IN_SECONDS );
-		$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'retrying', attempts = %d, last_error = %s, next_attempt_at = %s WHERE id = %d", $attempts, $error, $next, $id ) );
+		$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'retrying', attempts = %d, last_error = %s WHERE id = %d", $attempts, $error, $id ) );
 		return 'retrying';
 	}
 
 	/**
-	 * Hourly: run notices that are due again, and any left "received" by a request that stopped part way.
-	 *
-	 * @param string $now UTC time to judge "due" from; the real time when empty.
-	 * @return int Notices attempted.
+	 * @param string $ref      Notice reference.
+	 * @param string $type     Notice type.
+	 * @param int    $attempts Attempts made.
 	 */
-	public static function retry_notices( $now = '' ) {
+	private static function notice_failed_mail( $ref, $type, $attempts ) {
+		wp_mail(
+			(string) get_option( 'admin_email' ),
+			'A Stripe notice could not be processed',
+			'Stripe notice ' . sanitize_text_field( $ref ) . ' (' . sanitize_text_field( $type ) . ') could not be processed after ' . (int) $attempts . " attempts within 24 hours. Please check it in Stripe.\n"
+		);
+	}
+
+	/**
+	 * Hourly: a notice still not processed 24 hours after it arrived is marked failed and flagged to the owner,
+	 * also when Stripe stopped sending it again.
+	 *
+	 * @return int Notices flagged.
+	 */
+	public static function close_stale_notices() {
 		global $wpdb;
 		$table = LLD_Members_Schema::table( 'stripe_notice' );
-		$now   = '' !== $now ? $now : gmdate( 'Y-m-d H:i:s' );
-		$stuck = gmdate( 'Y-m-d H:i:s', strtotime( $now . ' UTC' ) - 15 * MINUTE_IN_SECONDS );
-		$rows  = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT id, processing_state, next_attempt_at, payload FROM {$table} WHERE processing_state IN ('received', 'retrying') AND ( ( next_attempt_at IS NOT NULL AND next_attempt_at <= %s ) OR ( next_attempt_at IS NULL AND received_at <= %s ) ) ORDER BY id ASC LIMIT 50",
-				$now,
-				$stuck
-			)
-		);
+		$limit = gmdate( 'Y-m-d H:i:s', time() - self::NOTICE_RETRY_HOURS * HOUR_IN_SECONDS );
+		$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT id, notice_ref, notice_type, processing_state, attempts FROM {$table} WHERE processing_state IN ('received', 'retrying') AND received_at <= %s ORDER BY id ASC LIMIT 50", $limit ) );
 		$count = 0;
 		foreach ( $rows as $row ) {
-			// Claim the row so a second runner leaves it alone.
-			$hold    = gmdate( 'Y-m-d H:i:s', strtotime( $now . ' UTC' ) + 15 * MINUTE_IN_SECONDS );
-			$claimed = null === $row->next_attempt_at
-				? $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'received', next_attempt_at = %s WHERE id = %d AND processing_state = %s AND next_attempt_at IS NULL", $hold, (int) $row->id, (string) $row->processing_state ) )
-				: $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'received', next_attempt_at = %s WHERE id = %d AND processing_state = %s AND next_attempt_at = %s", $hold, (int) $row->id, (string) $row->processing_state, (string) $row->next_attempt_at ) );
-			if ( 1 !== $claimed ) {
-				continue;
+			$done = $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'failed', last_error = %s WHERE id = %d AND processing_state = %s", 'Not processed within 24 hours.', (int) $row->id, (string) $row->processing_state ) );
+			if ( 1 === $done ) {
+				self::notice_failed_mail( (string) $row->notice_ref, (string) $row->notice_type, (int) $row->attempts );
+				++$count;
 			}
-			$event = is_string( $row->payload ) ? json_decode( $row->payload, true ) : null;
-			if ( ! is_array( $event ) || empty( $event['id'] ) || empty( $event['type'] ) ) {
-				$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'failed', last_error = %s, next_attempt_at = NULL WHERE id = %d", 'The stored notice could not be read.', (int) $row->id ) );
-				continue;
-			}
-			self::process_notice( (int) $row->id, $event );
-			++$count;
 		}
 		return $count;
 	}
@@ -900,15 +921,17 @@ class LLD_Members_Billing {
 			}
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
 		}
-		if ( 'notice' === $action || 'retry_notice' === $action ) {
+		if ( 'notice' === $action || 'age_notice' === $action || 'close_notices' === $action ) {
 			global $wpdb;
 			$table = LLD_Members_Schema::table( 'stripe_notice' );
-			if ( 'retry_notice' === $action ) {
-				// Make this one notice due now; other notices keep their own times.
-				$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET next_attempt_at = %s WHERE notice_ref = %s AND processing_state IN ('received', 'retrying')", gmdate( 'Y-m-d H:i:s', time() - 60 ), $notice_ref ) );
-				self::retry_notices();
+			if ( 'age_notice' === $action ) {
+				$hours = isset( $params['hours'] ) ? (int) $params['hours'] : 25;
+				$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET received_at = %s WHERE notice_ref = %s", gmdate( 'Y-m-d H:i:s', time() - $hours * HOUR_IN_SECONDS ), $notice_ref ) );
 			}
-			$row = $wpdb->get_row( $wpdb->prepare( "SELECT notice_ref, notice_type, processing_state, attempts, last_error, next_attempt_at, payload IS NOT NULL AS has_payload FROM {$table} WHERE notice_ref = %s", $notice_ref ), ARRAY_A );
+			if ( 'close_notices' === $action ) {
+				self::close_stale_notices();
+			}
+			$row = $wpdb->get_row( $wpdb->prepare( "SELECT notice_ref, notice_type, received_at, processing_state, attempts, last_error FROM {$table} WHERE notice_ref = %s", $notice_ref ), ARRAY_A );
 			return new WP_REST_Response( array( 'notice' => $row ), 200 );
 		}
 		$email = isset( $params['email'] ) ? sanitize_email( (string) $params['email'] ) : '';
@@ -1671,29 +1694,22 @@ class LLD_Members_Billing {
 				'code'               => $code,
 				'friend_member_id'   => $member_id,
 				'friend_order_id'    => $order_id,
-				'status'             => '' !== $self ? 'not_qualified' : 'waiting',
-				'not_qualified_why'  => '' !== $self ? 'self' : null,
+				'status'             => '' !== $self ? 'not_qualified_self' : 'waiting',
 				'self_referral'      => '' !== $self ? $self : null,
 			)
 		);
 	}
 
 	/**
-	 * P5: a referral that earns no reward, and why: refunded, limit (3 a calendar year) or self.
+	 * P5: a referral that earns no reward. The status names the reason: not_qualified_refunded,
+	 * not_qualified_limit (3 a calendar year) or not_qualified_self.
 	 *
 	 * @param int    $referral_id Referral.
-	 * @param string $why         Reason.
+	 * @param string $why         refunded, limit or self.
 	 */
 	private static function not_qualified( $referral_id, $why ) {
 		global $wpdb;
-		$wpdb->update(
-			LLD_Members_Schema::table( 'referral' ),
-			array(
-				'status'            => 'not_qualified',
-				'not_qualified_why' => $why,
-			),
-			array( 'id' => (int) $referral_id )
-		);
+		$wpdb->update( LLD_Members_Schema::table( 'referral' ), array( 'status' => 'not_qualified_' . $why ), array( 'id' => (int) $referral_id ) );
 	}
 
 	/**
@@ -2654,7 +2670,7 @@ class LLD_Members_Billing {
 			'subscription' => $sub,
 			'orders'       => $wpdb->get_results( $wpdb->prepare( 'SELECT id, kind, ordered_at, related_order_id, charged_amount, tax_amount, charged_currency, discount_code, discount_amount, discount_currency, status, stripe_payment, stripe_invoice FROM ' . LLD_Members_Schema::table( 'order' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
 			'rewards'      => $wpdb->get_results( $wpdb->prepare( 'SELECT id, form, status, operation_key FROM ' . LLD_Members_Schema::table( 'reward' ) . ' WHERE recipient_member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
-			'referrals'    => $wpdb->get_results( $wpdb->prepare( 'SELECT id, status, not_qualified_why, self_referral, friend_member_id FROM ' . LLD_Members_Schema::table( 'referral' ) . ' WHERE referrer_member_id = %d OR friend_member_id = %d ORDER BY id ASC', $member_id, $member_id ), ARRAY_A ),
+			'referrals'    => $wpdb->get_results( $wpdb->prepare( 'SELECT id, status, self_referral, friend_member_id FROM ' . LLD_Members_Schema::table( 'referral' ) . ' WHERE referrer_member_id = %d OR friend_member_id = %d ORDER BY id ASC', $member_id, $member_id ), ARRAY_A ),
 			'next'         => $member_id ? self::next_charge( $member_id ) : array(),
 			'app'          => ( $sub && 'yearly' === (string) $sub->plan && self::paid_open( $member_id ) ) ? 'included' : 'not included',
 		);

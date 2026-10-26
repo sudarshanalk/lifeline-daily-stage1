@@ -608,9 +608,9 @@ async function noticeRow(request, ref, action = 'notice') {
   return (await billingAction(request, { action, ref })).notice;
 }
 
-const utcMs = (mysql) => Date.parse(`${mysql.replace(' ', 'T')}Z`);
+const P6_FIELDS = ['notice_ref', 'notice_type', 'received_at', 'processing_state', 'attempts', 'last_error'];
 
-test('TC-FR2-14-AS-07 a notice that fails is kept, retried and applied once', async ({ request }) => {
+test('TC-FR2-14-AS-07 a notice that fails is kept, retried when Stripe sends it again, and applied once', async ({ request }) => {
   const email = emailFor('kept');
   await createMember(request, { email, password, first_name: 'Kept', role: 'member' });
   await clock(request, email, '2026-10-01 12:00:00');
@@ -623,60 +623,87 @@ test('TC-FR2-14-AS-07 a notice that fails is kept, retried and applied once', as
   };
   await billingAction(request, { action: 'fail_notice', ref: event.id });
   const first = await notify(request, event);
-  expect(first.ok()).toBeTruthy();
+  // A non-2xx answer makes Stripe send the notice again: that repeat is the retry.
+  expect(first.status()).toBe(500);
   expect((await first.json()).state).toBe('retrying');
   let row = await noticeRow(request, event.id);
+  expect(Object.keys(row).sort()).toEqual([...P6_FIELDS].sort());
   expect(row.processing_state).toBe('retrying');
   expect(Number(row.attempts)).toBe(1);
-  expect(Number(row.has_payload)).toBe(1);
-  const gap = utcMs(row.next_attempt_at) - Date.now();
-  expect(gap).toBeGreaterThan(55 * 60000);
-  expect(gap).toBeLessThan(65 * 60000);
+  expect(row.last_error).toBeTruthy();
   const before = await readMember(request, email);
   expect(before.subscription).toBeFalsy();
   expect(before.orders).toHaveLength(0);
 
-  const repeated = await notify(request, event);
-  expect((await repeated.json()).replay).toBe(true);
+  const second = await notify(request, event);
+  expect(second.status()).toBe(500);
+  expect(Number((await noticeRow(request, event.id)).attempts)).toBe(2);
   expect((await readMember(request, email)).orders).toHaveLength(0);
 
   await billingAction(request, { action: 'fail_notice', ref: '' });
-  row = await noticeRow(request, event.id, 'retry_notice');
+  const third = await notify(request, event);
+  expect(third.status()).toBe(200);
+  expect((await third.json()).state).toBe('processed');
+  row = await noticeRow(request, event.id);
   expect(row.processing_state).toBe('processed');
-  expect(Number(row.attempts)).toBe(2);
-  expect(Number(row.has_payload)).toBe(0);
+  expect(Number(row.attempts)).toBe(3);
+  expect(row.last_error).toBeNull();
   const after = await readMember(request, email);
   expect(after.subscription.access_state).toBe('Premium');
   expect(after.orders).toHaveLength(1);
 
-  row = await noticeRow(request, event.id, 'retry_notice');
-  expect(row.processing_state).toBe('processed');
-  expect(Number(row.attempts)).toBe(2);
+  const replay = await notify(request, event);
+  expect(replay.status()).toBe(200);
+  expect((await replay.json()).replay).toBe(true);
+  expect(Number((await noticeRow(request, event.id)).attempts)).toBe(3);
   expect((await readMember(request, email)).orders).toHaveLength(1);
 });
 
-test('TC-FR2-14-AS-07 a notice that keeps failing is retried 5 times over 24 hours, then flagged to the owner', async ({ request }) => {
+test('TC-FR2-14-AS-07 a notice that keeps failing is retried 5 times, then flagged to the owner', async ({ request }) => {
   const event = { id: `evt_stuck_${stamp()}`, type: 'invoice.paid', data: { object: { id: `in_${stamp()}`, subscription: `sub_${stamp()}`, amount_paid: 799 } } };
   await billingAction(request, { action: 'fail_notice', ref: event.id });
-  expect((await notify(request, event)).ok()).toBeTruthy();
-  const hours = [1, 2, 4, 8, 9];
-  let row = await noticeRow(request, event.id);
-  for (let retry = 0; retry < 5; retry += 1) {
+  for (let attempt = 1; attempt <= 5; attempt += 1) {
+    const res = await notify(request, event);
+    expect(res.status()).toBe(500);
+    const row = await noticeRow(request, event.id);
     expect(row.processing_state).toBe('retrying');
-    expect(Number(row.attempts)).toBe(retry + 1);
-    const gap = (utcMs(row.next_attempt_at) - Date.now()) / 3600000;
-    expect(Math.abs(gap - hours[retry])).toBeLessThan(0.1);
-    row = await noticeRow(request, event.id, 'retry_notice');
+    expect(Number(row.attempts)).toBe(attempt);
   }
-  expect(hours.reduce((a, b) => a + b, 0)).toBe(24);
+  const last = await notify(request, event);
+  expect(last.status()).toBe(200);
+  expect((await last.json()).state).toBe('failed');
+  let row = await noticeRow(request, event.id);
   expect(row.processing_state).toBe('failed');
   expect(Number(row.attempts)).toBe(6);
   expect(row.last_error).toBeTruthy();
-  row = await noticeRow(request, event.id, 'retry_notice');
+  const after = await notify(request, event);
+  expect((await after.json()).replay).toBe(true);
+  row = await noticeRow(request, event.id);
   expect(Number(row.attempts)).toBe(6);
   const mail = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
   const flagged = (mail.messages || []).filter((message) => JSON.stringify(message).includes('A Stripe notice could not be processed'));
   expect(flagged.length).toBeGreaterThan(0);
+  await billingAction(request, { action: 'fail_notice', ref: '' });
+});
+
+test('TC-FR2-14-AS-07 retries stop 24 hours after the notice arrived, and the hourly check flags any left', async ({ request }) => {
+  const late = { id: `evt_late_${stamp()}`, type: 'invoice.paid', data: { object: { id: `in_${stamp()}`, subscription: `sub_${stamp()}`, amount_paid: 799 } } };
+  await billingAction(request, { action: 'fail_notice', ref: late.id });
+  expect((await notify(request, late)).status()).toBe(500);
+  await billingAction(request, { action: 'age_notice', ref: late.id, hours: 25 });
+  const again = await notify(request, late);
+  expect(again.status()).toBe(200);
+  expect((await again.json()).state).toBe('failed');
+  expect(Number((await noticeRow(request, late.id)).attempts)).toBe(2);
+
+  const quiet = { id: `evt_quiet_${stamp()}`, type: 'invoice.paid', data: { object: { id: `in_${stamp()}`, subscription: `sub_${stamp()}`, amount_paid: 799 } } };
+  await billingAction(request, { action: 'fail_notice', ref: quiet.id });
+  expect((await notify(request, quiet)).status()).toBe(500);
+  expect((await noticeRow(request, quiet.id, 'close_notices')).processing_state).toBe('retrying');
+  await billingAction(request, { action: 'age_notice', ref: quiet.id, hours: 25 });
+  const closed = await noticeRow(request, quiet.id, 'close_notices');
+  expect(closed.processing_state).toBe('failed');
+  expect(closed.last_error).toBe('Not processed within 24 hours.');
   await billingAction(request, { action: 'fail_notice', ref: '' });
 });
 
@@ -1153,9 +1180,9 @@ test('TC-FR2-29-AS-02', async ({ page, request }) => {
   }
   await reports(request);
   const snap = await readMember(request, referrer);
-  // Data Model P5 names: waiting, qualified, or not qualified with the reason.
+  // Data Model P5 names: waiting, qualified, or not qualified with its reason in the status.
   expect(snap.referrals.filter((row) => row.status === 'qualified')).toHaveLength(3);
-  expect(snap.referrals.filter((row) => row.status === 'not_qualified' && row.not_qualified_why === 'limit')).toHaveLength(1);
+  expect(snap.referrals.filter((row) => row.status === 'not_qualified_limit')).toHaveLength(1);
 
   const giver = emailFor('give');
   const back = emailFor('back');
@@ -1176,7 +1203,7 @@ test('TC-FR2-29-AS-02', async ({ page, request }) => {
   const giverSnap = await readMember(request, giver);
   const giverId = Number(giverSnap.subscription.member_id);
   expect((await moneyLog(request)).some((row) => row.action === 'reward_withdrawn' && Number(row.member_number) === giverId)).toBeTruthy();
-  expect(giverSnap.referrals.some((row) => row.status === 'not_qualified' && row.not_qualified_why === 'refunded')).toBeTruthy();
+  expect(giverSnap.referrals.some((row) => row.status === 'not_qualified_refunded')).toBeTruthy();
   expect(giverSnap.rewards).toHaveLength(0);
 });
 
@@ -1197,7 +1224,7 @@ test('TC-FR2-29-AS-03', async ({ page, request }) => {
   await reports(request);
   const snap = await readMember(request, referrer);
   expect(snap.referrals.filter((row) => row.self_referral === 'email' || row.self_referral === 'card')).toHaveLength(2);
-  expect(snap.referrals.filter((row) => row.status === 'not_qualified' && row.not_qualified_why === 'self')).toHaveLength(2);
+  expect(snap.referrals.filter((row) => row.status === 'not_qualified_self')).toHaveLength(2);
   expect(snap.rewards).toHaveLength(0);
 });
 
