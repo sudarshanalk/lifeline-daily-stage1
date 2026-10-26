@@ -854,7 +854,9 @@ test('TC-FR2-37-AS-06', async ({ page, request }) => {
   const download = await downloadPromise;
   const packed = unzip(readFileSync(await download.path()));
   expect(packed['data.json'].toString()).toContain(sentinel);
-  expect(JSON.parse(packed['data.json'].toString()).diary_day).toEqual([expect.objectContaining({ water_glasses: '7', hunger: '2', energy: '4' })]);
+  // the day's water, hunger and energy are in the diary_day record of the download (top level, or under "tables")
+  const exported = JSON.parse(packed['data.json'].toString());
+  expect((exported.tables || exported).diary_day).toEqual([expect.objectContaining({ water_glasses: '7', hunger: '2', energy: '4' })]);
   await page.goto('/members/delete/');
   await page.locator('#lld_password').fill(password);
   await page.getByRole('button', { name: 'Delete my account' }).click();
