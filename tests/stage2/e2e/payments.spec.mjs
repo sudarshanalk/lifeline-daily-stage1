@@ -401,7 +401,7 @@ test('TC-FR2-14-AS-07', async ({ page, request }) => {
   });
   expect(completed.ok()).toBeTruthy();
   const finalState = await readMember(request, held);
-  expect(finalState.subscription.access_state).toBe('cancelled');
+  expect(finalState.subscription.access_state).toBe('Premium ended');
   expect(finalState.subscription.period_ends_on > '2026-10-01').toBeTruthy();
 
   const mismatch = emailFor('mismatch');
@@ -503,6 +503,109 @@ test('TC-FR2-14-AS-07 a notice that keeps failing is retried 5 times over 24 hou
   const flagged = (mail.messages || []).filter((message) => JSON.stringify(message).includes('A Stripe notice could not be processed'));
   expect(flagged.length).toBeGreaterThan(0);
   await billingAction(request, { action: 'fail_notice', ref: '' });
+});
+
+test('TC-FR2-14-AS-04 the 7-day window starts at the first failure of the invoice', async ({ request }) => {
+  const email = emailFor('window');
+  const subscription = `sub_window_${stamp()}`;
+  await createMember(request, {
+    email, password, first_name: 'Window', role: 'member', access_state: 'Premium', plan: 'monthly', stripe_subscription: subscription, period_ends_on: '2026-12-01',
+  });
+  const invoice = `in_${stamp()}`;
+  const fail = () => notify(request, { id: `evt_fail_${stamp()}`, type: 'invoice.payment_failed', data: { object: { id: invoice, subscription } } });
+  await clock(request, email, '2026-06-01 12:00:00');
+  expect((await fail()).ok()).toBeTruthy();
+  await clock(request, email, '2026-06-05 12:00:00');
+  expect((await fail()).ok()).toBeTruthy();
+  await clock(request, email, '2026-06-07 12:00:00');
+  await reports(request);
+  expect((await readMember(request, email)).subscription.access_state).toBe('Premium');
+  await clock(request, email, '2026-06-08 12:00:00');
+  await reports(request);
+  expect((await readMember(request, email)).subscription.access_state).toBe('Premium ended');
+});
+
+test('TC-FR2-14-AS-07 a subscription ended at Stripe ends Premium', async ({ request }) => {
+  const email = emailFor('ended');
+  const subscription = `sub_ended_${stamp()}`;
+  await createMember(request, {
+    email, password, first_name: 'Ended', role: 'member', access_state: 'Premium', plan: 'monthly', stripe_subscription: subscription, period_ends_on: '2026-07-01',
+  });
+  await clock(request, email, '2026-07-01 12:00:00');
+  const ended = await notify(request, { id: `evt_del_${stamp()}`, type: 'customer.subscription.deleted', data: { object: { id: subscription, status: 'canceled' } } });
+  expect(ended.ok()).toBeTruthy();
+  const snap = await readMember(request, email);
+  expect(snap.subscription.access_state).toBe('Premium ended');
+  expect(snap.subscription.premium_ended_why).toBe('expired');
+});
+
+test('TC-FR2-14-AS-03 the first invoice of a subscription adds no second order or receipt', async ({ page, request }) => {
+  const email = emailFor('first-invoice');
+  await createMember(request, { email, password, first_name: 'First', role: 'member' });
+  await clock(request, email, '2026-08-01 12:00:00');
+  const paid = await payApi(request, email, { plan: 'monthly', country: 'US' });
+  const res = await notify(request, {
+    id: `evt_${stamp()}`,
+    type: 'invoice.paid',
+    data: { object: { id: `in_${stamp()}`, subscription: paid.subscription, amount_paid: paid.charge, payment_intent: paid.payment, billing_reason: 'subscription_create' } },
+  });
+  expect(res.ok(), await res.text()).toBeTruthy();
+  const snap = await readMember(request, email);
+  expect(snap.orders).toHaveLength(1);
+  expect(snap.orders[0].kind).toBe('payment');
+  const messages = await fetch(`${MAILPIT}/api/v1/messages`).then((r) => r.json());
+  const receipts = (messages.messages || []).filter((message) => JSON.stringify(message).includes(email) && JSON.stringify(message).includes('Your receipt'));
+  expect(receipts).toHaveLength(1);
+  await renew(request, paid.subscription, 799);
+  expect((await readMember(request, email)).orders).toHaveLength(2);
+});
+
+test('TC-FR2-14-AS-05 a subscription update from Stripe sets cancel at period end, resume and the period end', async ({ request }) => {
+  const email = emailFor('updated');
+  const subscription = `sub_upd_${stamp()}`;
+  await createMember(request, {
+    email, password, first_name: 'Updated', role: 'member', access_state: 'Premium', plan: 'monthly', stripe_subscription: subscription, period_ends_on: '2026-09-01',
+  });
+  await clock(request, email, '2026-08-15 12:00:00');
+  const periodEnd = Math.floor(Date.parse('2026-09-15T12:00:00Z') / 1000);
+  const update = (object) => notify(request, { id: `evt_upd_${stamp()}`, type: 'customer.subscription.updated', data: { object: { id: subscription, ...object } } });
+  expect((await update({ status: 'active', cancel_at_period_end: true, current_period_end: periodEnd })).ok()).toBeTruthy();
+  let snap = await readMember(request, email);
+  expect(snap.subscription.access_state).toBe('cancelled');
+  expect(snap.subscription.stripe_state).toBe('cancel_at_period_end');
+  expect(snap.subscription.period_ends_on).toBe('2026-09-15');
+  expect((await update({ status: 'active', cancel_at_period_end: false })).ok()).toBeTruthy();
+  snap = await readMember(request, email);
+  expect(snap.subscription.access_state).toBe('Premium');
+  expect(snap.subscription.stripe_state).toBe('active');
+  expect((await update({ status: 'past_due', cancel_at_period_end: false })).ok()).toBeTruthy();
+  snap = await readMember(request, email);
+  expect(snap.subscription.access_state).toBe('Premium');
+  expect(snap.subscription.stripe_state).toBe('past_due');
+  expect((await update({ status: 'unpaid', cancel_at_period_end: false })).ok()).toBeTruthy();
+  snap = await readMember(request, email);
+  expect(snap.subscription.access_state).toBe('Premium ended');
+  expect((await update({ status: 'active', cancel_at_period_end: false })).ok()).toBeTruthy();
+  expect((await readMember(request, email)).subscription.access_state).toBe('Premium ended');
+});
+
+test('TC-FR2-14-AS-06 a refund made at Stripe is recorded once and ends Premium', async ({ request }) => {
+  const email = emailFor('stripe-refund');
+  await createMember(request, { email, password, first_name: 'Charge', role: 'member' });
+  await clock(request, email, '2026-10-20 12:00:00');
+  const paid = await payApi(request, email, { plan: 'yearly', country: 'US' });
+  const partial = await notify(request, {
+    id: `evt_part_${stamp()}`, type: 'charge.refunded', data: { object: { id: `ch_${stamp()}`, payment_intent: paid.payment, refunded: false, amount_refunded: 100 } },
+  });
+  expect(partial.ok()).toBeTruthy();
+  expect((await readMember(request, email)).subscription.access_state).toBe('Premium');
+  const charge = { id: `ch_${stamp()}`, payment_intent: paid.payment, refunded: true, amount_refunded: paid.charge, refunds: { data: [{ id: `re_${stamp()}` }] } };
+  expect((await notify(request, { id: `evt_ref_${stamp()}`, type: 'charge.refunded', data: { object: charge } })).ok()).toBeTruthy();
+  expect((await notify(request, { id: `evt_ref_${stamp()}`, type: 'charge.refunded', data: { object: charge } })).ok()).toBeTruthy();
+  const snap = await readMember(request, email);
+  expect(snap.subscription.access_state).toBe('Refunded');
+  expect(snap.orders.filter((order) => order.kind === 'refund')).toHaveLength(1);
+  expect(snap.orders.find((order) => order.kind === 'payment').status).toBe('refunded');
 });
 
 test('TC-FR2-14-AS-08', async ({ page, request }) => {

@@ -780,29 +780,155 @@ class LLD_Members_Billing {
 		$type   = (string) $event['type'];
 		$object = isset( $event['data']['object'] ) && is_array( $event['data']['object'] ) ? $event['data']['object'] : array();
 		if ( 'customer.subscription.deleted' === $type ) {
-			$sub_id = isset( $object['id'] ) ? (string) $object['id'] : '';
-			$row    = self::by_stripe_subscription( $sub_id );
-			if ( ! $row ) {
-				self::hold_cancel( $sub_id );
-				return;
-			}
-			self::cancel_at_period_end( (int) $row->member_id );
+			self::apply_subscription_deleted( $object );
+			return;
+		}
+		if ( 'customer.subscription.updated' === $type ) {
+			self::apply_subscription_updated( $object );
 			return;
 		}
 		if ( 'invoice.payment_failed' === $type ) {
-			$row = self::by_stripe_subscription( isset( $object['subscription'] ) ? (string) $object['subscription'] : '' );
+			$sub_id = isset( $object['subscription'] ) ? (string) $object['subscription'] : '';
+			$row    = self::by_stripe_subscription( $sub_id );
 			if ( $row ) {
-				self::mark_retry( (int) $row->member_id );
+				$invoice = isset( $object['id'] ) && '' !== (string) $object['id'] ? (string) $object['id'] : 'sub:' . $sub_id;
+				self::mark_retry( (int) $row->member_id, sanitize_text_field( $invoice ) );
 			}
 			return;
 		}
 		if ( 'invoice.paid' === $type ) {
+			// The first invoice is already recorded from checkout.session.completed; a second order and receipt would double it.
+			if ( isset( $object['billing_reason'] ) && 'subscription_create' === (string) $object['billing_reason'] ) {
+				return;
+			}
 			self::apply_renewal( $object );
+			return;
+		}
+		if ( 'charge.refunded' === $type ) {
+			self::apply_charge_refunded( $object );
 			return;
 		}
 		if ( 'checkout.session.completed' === $type ) {
 			self::apply_checkout( $object );
 		}
+	}
+
+	/**
+	 * T4: a subscription that has ended means Premium ended, unless the first payment was refunded.
+	 *
+	 * @param array<string,mixed> $object Subscription object.
+	 */
+	private static function apply_subscription_deleted( $object ) {
+		$sub_id = isset( $object['id'] ) ? (string) $object['id'] : '';
+		$row    = self::by_stripe_subscription( $sub_id );
+		if ( ! $row ) {
+			// The cancellation arrived before its payment notice; checkout applies it when the payment arrives.
+			self::hold_cancel( $sub_id );
+			return;
+		}
+		$member_id = (int) $row->member_id;
+		if ( in_array( strtolower( (string) $row->access_state ), array( 'premium ended', 'refunded' ), true ) ) {
+			return;
+		}
+		$reason = isset( $object['cancellation_details']['reason'] ) ? (string) $object['cancellation_details']['reason'] : '';
+		self::clear_retry( $member_id );
+		self::end_premium( $member_id, 'payment_failed' === $reason ? 'failed' : 'expired', LLD_Members_Programme::local_today( $member_id ) );
+	}
+
+	/**
+	 * T4 mapping from the subscription in the notice. Fetching the current state from Stripe is still to come.
+	 *
+	 * @param array<string,mixed> $object Subscription object.
+	 */
+	private static function apply_subscription_updated( $object ) {
+		$row = self::by_stripe_subscription( isset( $object['id'] ) ? (string) $object['id'] : '' );
+		if ( ! $row ) {
+			return;
+		}
+		$member_id = (int) $row->member_id;
+		$access    = strtolower( (string) $row->access_state );
+		if ( in_array( $access, array( 'premium ended', 'refunded' ), true ) ) {
+			// Ended access comes back only through a new checkout.
+			return;
+		}
+		$status = isset( $object['status'] ) ? (string) $object['status'] : '';
+		$fields = array();
+		$ends   = self::period_end_of( $member_id, $object );
+		if ( '' !== $ends ) {
+			$fields['period_ends_on'] = $ends;
+		}
+		if ( in_array( $status, array( 'active', 'trialing' ), true ) ) {
+			$cancelling = ! empty( $object['cancel_at_period_end'] ) || ! empty( $object['cancel_at'] );
+			$fields['access_state'] = $cancelling ? 'cancelled' : 'Premium';
+			$fields['stripe_state'] = $cancelling ? 'cancel_at_period_end' : 'active';
+			if ( ! $cancelling ) {
+				self::clear_retry( $member_id );
+			}
+		} elseif ( 'past_due' === $status ) {
+			// Grace period: access is unchanged while Stripe retries (the window starts at the failed invoice).
+			$fields['stripe_state'] = 'past_due';
+		} elseif ( in_array( $status, array( 'unpaid', 'canceled', 'incomplete_expired' ), true ) ) {
+			self::clear_retry( $member_id );
+			self::end_premium( $member_id, 'canceled' === $status ? 'expired' : 'failed', LLD_Members_Programme::local_today( $member_id ) );
+			return;
+		}
+		if ( $fields ) {
+			self::save_sub( $member_id, $fields );
+		}
+	}
+
+	/**
+	 * A charge refunded in full at Stripe. The admin refund already recorded it when it started here.
+	 *
+	 * @param array<string,mixed> $object Charge object.
+	 */
+	private static function apply_charge_refunded( $object ) {
+		if ( empty( $object['refunded'] ) ) {
+			// A partial refund changes no access.
+			return;
+		}
+		$payment = isset( $object['payment_intent'] ) ? (string) $object['payment_intent'] : '';
+		if ( '' === $payment ) {
+			return;
+		}
+		global $wpdb;
+		$order = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'order' ) . " WHERE stripe_payment = %s AND kind IN ('payment', 'renewal') ORDER BY id DESC LIMIT 1", $payment ) );
+		if ( ! $order || 'refunded' === (string) $order->status ) {
+			return;
+		}
+		$refund = '';
+		if ( isset( $object['refunds']['data'][0]['id'] ) ) {
+			$refund = (string) $object['refunds']['data'][0]['id'];
+		} elseif ( isset( $object['id'] ) ) {
+			$refund = 're_' . (string) $object['id'];
+		}
+		self::record_refund( $order, sanitize_text_field( $refund ), 'Stripe' );
+	}
+
+	/**
+	 * Current period end as the member's local date, from the subscription or its first item.
+	 *
+	 * @param int                 $member_id Member number.
+	 * @param array<string,mixed> $object    Subscription object.
+	 */
+	private static function period_end_of( $member_id, $object ) {
+		$stamp = 0;
+		if ( isset( $object['current_period_end'] ) && is_numeric( $object['current_period_end'] ) ) {
+			$stamp = (int) $object['current_period_end'];
+		} elseif ( isset( $object['items']['data'][0]['current_period_end'] ) && is_numeric( $object['items']['data'][0]['current_period_end'] ) ) {
+			$stamp = (int) $object['items']['data'][0]['current_period_end'];
+		}
+		if ( $stamp < 1 ) {
+			return '';
+		}
+		global $wpdb;
+		$zone = $wpdb->get_var( $wpdb->prepare( 'SELECT timezone FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+		try {
+			$tz = new DateTimeZone( is_string( $zone ) && '' !== $zone ? $zone : 'UTC' );
+		} catch ( Exception $e ) {
+			$tz = new DateTimeZone( 'UTC' );
+		}
+		return ( new DateTimeImmutable( '@' . $stamp ) )->setTimezone( $tz )->format( 'Y-m-d' );
 	}
 
 	/**
@@ -847,10 +973,11 @@ class LLD_Members_Billing {
 		);
 		self::remember_card( $member_id, $fingerprint );
 		self::note_referral( $member_id, isset( $stored['ref'] ) ? (string) $stored['ref'] : '', $email, $fingerprint );
-		if ( self::cancel_was_held( $stripe ) ) {
-			self::cancel_at_period_end( $member_id );
-		}
 		self::mail_member( $member_id, 'Your receipt', 'Your receipt. Amount ' . self::money( (int) $quote['charged'], (string) $quote['currency'] ) . ', tax included. Date ' . $today . '.' );
+		if ( self::cancel_was_held( $stripe ) ) {
+			// The subscription ended before its payment notice arrived: T4 maps that to Premium ended.
+			self::end_premium( $member_id, 'expired', $today );
+		}
 	}
 
 	/**
@@ -902,15 +1029,46 @@ class LLD_Members_Billing {
 	}
 
 	/**
-	 * @param int $member_id Member number.
+	 * Retry windows keyed on the failed invoice. Older entries keyed on the member are read as one window each.
+	 *
+	 * @return array<string,array{member_id:int,from:string}>
 	 */
-	private static function mark_retry( $member_id ) {
-		$retries = get_option( 'lld_retries' );
-		if ( ! is_array( $retries ) ) {
-			$retries = array();
+	private static function retries() {
+		$stored = get_option( 'lld_retries' );
+		$out    = array();
+		if ( ! is_array( $stored ) ) {
+			return $out;
 		}
-		$retries[ (string) $member_id ] = LLD_Members_Programme::local_today( $member_id );
-		update_option( 'lld_retries', $retries, false );
+		foreach ( $stored as $key => $value ) {
+			if ( is_array( $value ) && isset( $value['member_id'], $value['from'] ) ) {
+				$out[ (string) $key ] = array(
+					'member_id' => (int) $value['member_id'],
+					'from'      => (string) $value['from'],
+				);
+			} elseif ( is_string( $value ) && is_numeric( $key ) ) {
+				$out[ 'member:' . (int) $key ] = array(
+					'member_id' => (int) $key,
+					'from'      => $value,
+				);
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * @param int    $member_id Member number.
+	 * @param string $invoice   Stripe invoice the failure belongs to.
+	 */
+	private static function mark_retry( $member_id, $invoice ) {
+		$retries = self::retries();
+		// The 7-day window belongs to the invoice and starts at its first failure. Later retries of it never move it.
+		if ( ! isset( $retries[ $invoice ] ) ) {
+			$retries[ $invoice ] = array(
+				'member_id' => (int) $member_id,
+				'from'      => LLD_Members_Programme::local_today( $member_id ),
+			);
+			update_option( 'lld_retries', $retries, false );
+		}
 		self::save_sub( $member_id, array( 'stripe_state' => 'past_due' ) );
 		self::mail_member( $member_id, 'Please update your card', 'Please update your card. Your Premium access continues while we retry for 7 days.' );
 	}
@@ -986,7 +1144,29 @@ class LLD_Members_Billing {
 		if ( $today > $limit ) {
 			return new WP_Error( 'lld_refund', 'Refunds of the first payment are available for 14 days.' );
 		}
-		$ref = 're_test_' . $order_id;
+		if ( 'refunded' === (string) $order->status ) {
+			return new WP_Error( 'lld_refund', 'This payment is already refunded.' );
+		}
+		self::record_refund( $order, 're_test_' . $order_id, 'owner' );
+		return true;
+	}
+
+	/**
+	 * Record a refund of a payment or renewal once. Only a refunded first payment changes access (T4).
+	 *
+	 * @param object $order Order row that was refunded.
+	 * @param string $ref   Stripe refund reference.
+	 * @param string $by    Who started it: owner or Stripe.
+	 */
+	private static function record_refund( $order, $ref, $by ) {
+		global $wpdb;
+		$table     = LLD_Members_Schema::table( 'order' );
+		$member_id = (int) $order->member_id;
+		$order_id  = (int) $order->id;
+		$marked    = self::written( $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET status = 'refunded' WHERE id = %d AND status <> 'refunded'", $order_id ) ), 'an order' );
+		if ( 1 !== $marked ) {
+			return;
+		}
 		self::insert_order(
 			$member_id,
 			'refund',
@@ -1002,25 +1182,29 @@ class LLD_Members_Billing {
 			(string) $order->billing_email,
 			''
 		);
-		$wpdb->update( $table, array( 'status' => 'refunded' ), array( 'id' => $order_id ) );
-		self::end_premium( $member_id, 'refund', $today );
-		self::withdraw_rewards_for_order( $order_id );
-		return true;
+		if ( 'payment' === (string) $order->kind ) {
+			self::end_premium( $member_id, 'refund', LLD_Members_Programme::local_today( $member_id ) );
+			self::withdraw_rewards_for_order( $order_id );
+		}
 	}
 
 	private static function retry_window() {
-		$retries = get_option( 'lld_retries' );
-		if ( ! is_array( $retries ) ) {
+		$retries = self::retries();
+		if ( ! $retries ) {
 			return;
 		}
-		foreach ( $retries as $member_id => $from ) {
-			$member_id = (int) $member_id;
+		foreach ( $retries as $invoice => $window ) {
+			$member_id = (int) $window['member_id'];
 			$today     = LLD_Members_Programme::local_today( $member_id );
-			$due       = ( new DateTimeImmutable( (string) $from ) )->modify( '+7 days' )->format( 'Y-m-d' );
-			if ( $today >= $due ) {
-				self::end_premium( $member_id, 'failed', $today );
-				unset( $retries[ (string) $member_id ] );
+			$due       = ( new DateTimeImmutable( (string) $window['from'] ) )->modify( '+7 days' )->format( 'Y-m-d' );
+			if ( $today < $due ) {
+				continue;
 			}
+			$sub = self::subscription_row( $member_id );
+			if ( $sub && ! in_array( strtolower( (string) $sub->access_state ), array( 'premium ended', 'refunded' ), true ) ) {
+				self::end_premium( $member_id, 'failed', $today );
+			}
+			unset( $retries[ $invoice ] );
 		}
 		update_option( 'lld_retries', $retries, false );
 	}
@@ -1765,12 +1949,16 @@ class LLD_Members_Billing {
 	 * @param int $member_id Member number.
 	 */
 	private static function clear_retry( $member_id ) {
-		$retries = get_option( 'lld_retries' );
-		if ( ! is_array( $retries ) ) {
-			return;
+		$retries = self::retries();
+		$kept    = array();
+		foreach ( $retries as $invoice => $window ) {
+			if ( (int) $window['member_id'] !== (int) $member_id ) {
+				$kept[ $invoice ] = $window;
+			}
 		}
-		unset( $retries[ (string) $member_id ] );
-		update_option( 'lld_retries', $retries, false );
+		if ( count( $kept ) !== count( $retries ) ) {
+			update_option( 'lld_retries', $kept, false );
+		}
 	}
 
 	/**
