@@ -85,6 +85,80 @@ function jpegInfo(body) {
   return { exif, width, height };
 }
 
+// The same HEIC with the size its header claims changed, for the pixel-limit checks.
+function heicClaiming(width, height) {
+  const body = Buffer.from(heic);
+  const at = body.indexOf('ispe');
+  body.writeUInt32BE(width, at + 8);
+  body.writeUInt32BE(height, at + 12);
+  return body;
+}
+
+// An EXIF block holding only an orientation (1 to 8), placed after the JFIF header.
+function withOrientation(body, orientation) {
+  const tiff = Buffer.alloc(26);
+  tiff.write('II', 0, 'latin1');
+  tiff.writeUInt16LE(42, 2);
+  tiff.writeUInt32LE(8, 4);
+  tiff.writeUInt16LE(1, 8);
+  tiff.writeUInt16LE(0x0112, 10);
+  tiff.writeUInt16LE(3, 12);
+  tiff.writeUInt32LE(1, 14);
+  tiff.writeUInt16LE(orientation, 18);
+  tiff.writeUInt32LE(0, 22);
+  const payload = Buffer.concat([Buffer.from('Exif\0\0', 'latin1'), tiff]);
+  const head = Buffer.alloc(4);
+  head.writeUInt16BE(0xffe1, 0);
+  head.writeUInt16BE(payload.length + 2, 2);
+  const at = body.readUInt16BE(2) === 0xffe0 ? 4 + body.readUInt16BE(4) : 2;
+  return Buffer.concat([body.slice(0, at), head, payload, body.slice(at)]);
+}
+
+// The upright picture is 64 by 32, blue, with a red top-left quarter. The file holds it turned
+// the way a camera stores it for each EXIF orientation, so only a correct turn shows it upright.
+function orientedJpeg(orientation) {
+  const path = join(tmpdir(), `lld-orient-${orientation}.jpg`);
+  const script = join(tmpdir(), `lld-orient-${orientation}.php`);
+  writeFileSync(
+    script,
+    `<?php
+$r = imagecreatetruecolor(64, 32);
+imagefilledrectangle($r, 0, 0, 63, 31, imagecolorallocate($r, 0, 0, 255));
+imagefilledrectangle($r, 0, 0, 31, 15, imagecolorallocate($r, 255, 0, 0));
+switch (${orientation}) {
+  case 2: imageflip($r, IMG_FLIP_HORIZONTAL); break;
+  case 3: $r = imagerotate($r, 180, 0); break;
+  case 4: imageflip($r, IMG_FLIP_VERTICAL); break;
+  case 5: $r = imagerotate($r, -90, 0); imageflip($r, IMG_FLIP_HORIZONTAL); break;
+  case 6: $r = imagerotate($r, 90, 0); break;
+  case 7: $r = imagerotate($r, 90, 0); imageflip($r, IMG_FLIP_HORIZONTAL); break;
+  case 8: $r = imagerotate($r, -90, 0); break;
+}
+imagejpeg($r, ${JSON.stringify(path)}, 95);
+`
+  );
+  execFileSync('php', [script], { stdio: 'pipe' });
+  writeFileSync(path, withOrientation(readFileSync(path), orientation));
+  return path;
+}
+
+// Size and the red level at the middle of each quarter of a stored JPEG.
+function quarters(body) {
+  const file = join(tmpdir(), 'lld-quarters.jpg');
+  const script = join(tmpdir(), 'lld-quarters.php');
+  writeFileSync(file, body);
+  writeFileSync(
+    script,
+    `<?php
+$im = imagecreatefromjpeg(${JSON.stringify(file)});
+$w = imagesx($im); $h = imagesy($im);
+$red = function ($x, $y) use ($im) { return (imagecolorat($im, $x, $y) >> 16) & 255; };
+echo json_encode(array('width' => $w, 'height' => $h, 'tl' => $red(intdiv($w, 4), intdiv($h, 4)), 'tr' => $red(intdiv(3 * $w, 4), intdiv($h, 4)), 'bl' => $red(intdiv($w, 4), intdiv(3 * $h, 4)), 'br' => $red(intdiv(3 * $w, 4), intdiv(3 * $h, 4))));
+`
+  );
+  return JSON.parse(execFileSync('php', [script], { encoding: 'utf8' }));
+}
+
 function makeJpeg(name, targetBytes, { width = 16, height = 16, gps = false } = {}) {
   const path = join(tmpdir(), name);
   const script = join(tmpdir(), `lld-make-${name}.php`);
@@ -258,7 +332,7 @@ test('TC-FR2-02-AS-01', async ({ page }) => {
 });
 
 test('TC-FR2-02-AS-02', async ({ page }) => {
-  test.setTimeout(120000);
+  test.setTimeout(300000);
   const email = 'tm-03f@test.lifelinedaily.invalid';
   const other = 'tm-04f@test.lifelinedaily.invalid';
   await reset(page.request, email);
@@ -308,6 +382,40 @@ test('TC-FR2-02-AS-02', async ({ page }) => {
   await expect(page.getByText('Saved')).toBeVisible();
   const fromHeic = jpegInfo(await (await page.request.get(`/members/photo/${created.member_id}/`)).body());
   expect(fromHeic).toEqual({ exif: false, width: 64, height: 48 });
+  const photoNow = async () => jpegInfo(await (await page.request.get(`/members/photo/${created.member_id}/`)).body());
+
+  // The file's own bytes decide: something that is no photo is refused whatever it is called.
+  for (const name of ['fake.heic', 'fake.jpg', 'fake.png']) {
+    await page.locator('#lld_photo').setInputFiles({ name, mimeType: 'application/octet-stream', buffer: Buffer.from('This is a text file, not a photo.') });
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Use a JPG, PNG or HEIC'), name).toBeVisible();
+  }
+  // A HEIC whose size reads as zero, and one claiming 9000 by 9000 pixels, are refused before decoding.
+  for (const [width, height] of [[0, 0], [9000, 9000]]) {
+    await page.locator('#lld_photo').setInputFiles({ name: 'claims.heic', mimeType: 'image/heic', buffer: heicClaiming(width, height) });
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.locator('.lld-fail'), `${width}x${height}`).toContainText(/could not be read|too large to open/);
+    await expect(page.getByText('Saved')).toHaveCount(0);
+  }
+  expect(await photoNow()).toEqual({ exif: false, width: 64, height: 48 });
+  // A request too big for the server shows an error, never "Saved".
+  await page.locator('#lld_photo').setInputFiles(sized('photo-huge.jpg', jpeg, 33 * 1024 * 1024));
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('10 MB or smaller')).toBeVisible();
+  await expect(page.getByText('Saved')).toHaveCount(0);
+  expect(await photoNow()).toEqual({ exif: false, width: 64, height: 48 });
+
+  // Every EXIF orientation, 1 to 8, is turned upright: 64 by 32 with the red quarter top left.
+  for (let orientation = 1; orientation <= 8; orientation += 1) {
+    await page.goto('/members/settings/');
+    await page.locator('#lld_photo').setInputFiles(orientedJpeg(orientation));
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Saved')).toBeVisible();
+    const seen = quarters(await (await page.request.get(`/members/photo/${created.member_id}/`)).body());
+    expect([seen.width, seen.height], `orientation ${orientation}`).toEqual([64, 32]);
+    expect(seen.tl, `orientation ${orientation} top left`).toBeGreaterThan(150);
+    for (const corner of ['tr', 'bl', 'br']) expect(seen[corner], `orientation ${orientation} ${corner}`).toBeLessThan(100);
+  }
 });
 
 test('TC-FR2-02-AS-03', async ({ page }) => {

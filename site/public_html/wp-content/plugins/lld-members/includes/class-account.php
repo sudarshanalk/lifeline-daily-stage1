@@ -584,6 +584,10 @@ class LLD_Members_Account {
 		$row       = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
 		$saved     = false;
 		$error     = '';
+		// A request bigger than post_max_size arrives with no fields at all: say so, never "Saved".
+		if ( 'POST' === $_SERVER['REQUEST_METHOD'] && empty( $_POST ) && empty( $_FILES ) && isset( $_SERVER['CONTENT_LENGTH'] ) && (int) $_SERVER['CONTENT_LENGTH'] > 0 ) {
+			$error = 'Photos must be 10 MB or smaller.';
+		}
 		if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['lld_settings_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_settings_nonce'] ) ), 'lld_settings' ) ) {
 			$result = self::save_profile( $row );
 			if ( 'withdraw' === $result ) {
@@ -711,6 +715,26 @@ class LLD_Members_Account {
 	}
 
 	/**
+	 * A photo that PHP did not accept (too big for the server, or cut short) is an error, not a skipped field.
+	 *
+	 * @param string $field Upload field name.
+	 * @return WP_Error|null
+	 */
+	private static function upload_problem( $field ) {
+		if ( ! isset( $_FILES[ $field ]['error'] ) ) {
+			return null;
+		}
+		$code = (int) $_FILES[ $field ]['error'];
+		if ( UPLOAD_ERR_OK === $code || UPLOAD_ERR_NO_FILE === $code ) {
+			return null;
+		}
+		if ( UPLOAD_ERR_INI_SIZE === $code || UPLOAD_ERR_FORM_SIZE === $code ) {
+			return new WP_Error( 'lld_photo', 'Photos must be 10 MB or smaller.' );
+		}
+		return new WP_Error( 'lld_photo', 'The photo could not be uploaded. Try again.' );
+	}
+
+	/**
 	 * @param object $row Member row.
 	 * @return true|WP_Error|string "withdraw" when health consent was switched off and the warning comes next.
 	 */
@@ -718,6 +742,12 @@ class LLD_Members_Account {
 		$age = isset( $_POST['lld_age'] ) ? (int) $_POST['lld_age'] : (int) $row->age;
 		if ( $age < 18 ) {
 			return new WP_Error( 'lld_age', 'Age cannot be under 18.' );
+		}
+		foreach ( array( 'lld_photo', 'lld_diary' ) as $field ) {
+			$problem = self::upload_problem( $field );
+			if ( $problem ) {
+				return $problem;
+			}
 		}
 		global $wpdb;
 		$member_id = (int) $row->id;
