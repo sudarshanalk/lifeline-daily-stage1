@@ -219,9 +219,20 @@ jobs:
       - uses: actions/setup-node@v4
         if: steps.has.outputs.e2e == 'true'
         with: { node-version: '24' }
+      # Photos (FR2-02, FR2-37): staging and production have Imagick with HEIC, EXIF and large uploads; CI matches them
+      - name: Image libraries with HEIC support
+        if: steps.has.outputs.e2e == 'true'
+        run: sudo apt-get update -q && sudo apt-get install -y -q libmagickwand-dev libheif-dev libmagickcore-6.q16-7-extra
       - uses: shivammathur/setup-php@v2
         if: steps.has.outputs.e2e == 'true'
-        with: { php-version: '8.1', extensions: mysqli, tools: wp-cli }
+        with:
+          php-version: '8.1'
+          extensions: mysqli, gd, zip, exif, imagick
+          ini-values: upload_max_filesize=32M, post_max_size=32M, memory_limit=512M
+          tools: wp-cli
+      - name: Image support check (HEIC must be listed)
+        if: steps.has.outputs.e2e == 'true'
+        run: php -r 'echo "imagick ", extension_loaded("imagick") ? "yes" : "no", ", exif ", extension_loaded("exif") ? "yes" : "no", ", HEIC formats: ", class_exists("Imagick") ? implode(",", Imagick::queryFormats("HEI*")) : "-", ", upload ", ini_get("upload_max_filesize"), PHP_EOL;'
       - name: Throwaway WordPress with Paid Memberships Pro and lld-members
         if: steps.has.outputs.e2e == 'true'
         run: bash tests/ci/stage2-wp.sh "$RUNNER_TEMP/wp"
