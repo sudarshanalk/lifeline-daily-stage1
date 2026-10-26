@@ -31,6 +31,7 @@ async function overflow(page) {
 }
 
 // Every journey page (Test Criteria NFR2-03-AS-01, NFR2-04-AS-01): open pages, then every member screen.
+// /members/foundations/ is the owner-only component sheet (404 for members), not a journey page.
 const OPEN_PAGES = [
   '/members/sign-in/', '/members/join/', '/members/reset/', '/members/confirm/', '/pricing/',
   '/programmes/healthy-weight/', '/programmes/blood-sugar/', '/programmes/fitness/', '/programmes/sleep-stress/',
@@ -42,7 +43,7 @@ const MEMBER_PAGES = [
   '/members/badges/', '/members/diary/', '/members/check-in/', '/members/review/', '/members/suggestions/',
   '/members/tracks/', '/members/goals/', '/members/health/', '/members/screening/?track=sleep-stress',
   '/members/settings/', '/members/subscription/', '/members/checkout/?plan=yearly', '/members/library/',
-  '/members/foundations/', '/members/group/', '/members/more/', '/members/help/', '/members/data/',
+  '/members/group/', '/members/more/', '/members/help/', '/members/data/',
   '/members/withdraw/', '/members/delete/',
 ];
 
