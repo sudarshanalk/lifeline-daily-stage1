@@ -319,6 +319,20 @@ test('TC-FR2-01-AS-05', async ({ page }) => {
   await page.locator('#lld_age').fill('18');
   await page.getByRole('button', { name: 'Create account' }).click();
   await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+  // A second adult whose email shares the part before the @ registers too.
+  const twin = 'tm-01d@twin.lifelinedaily.invalid';
+  await reset(page.request, twin);
+  await page.goto('/members/join/');
+  await page.locator('#lld_first').fill('Twin');
+  await page.locator('#lld_last').fill('One');
+  await page.locator('#lld_email').fill(twin);
+  await page.locator('#lld_password').fill(memberPass);
+  await page.locator('#lld_age').fill('18');
+  await page.getByRole('button', { name: 'Create account' }).click();
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+  const both = await page.request.post('/wp-json/lld-members/v1/test/scan', { data: { email: twin } });
+  expect((await both.json()).user_id).toBeGreaterThan(0);
+  await reset(page.request, twin);
 });
 
 test('TC-FR2-01-AS-06', async ({ browser, page }) => {

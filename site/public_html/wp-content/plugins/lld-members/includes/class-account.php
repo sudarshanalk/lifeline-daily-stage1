@@ -355,10 +355,9 @@ class LLD_Members_Account {
 		if ( ! is_email( $email ) || email_exists( $email ) ) {
 			return new WP_Error( 'lld_email', 'That email is already registered. Sign in.' );
 		}
-		$login   = sanitize_user( strstr( $email, '@', true ), true );
 		$user_id = wp_insert_user(
 			array(
-				'user_login' => $login ? $login : 'member',
+				'user_login' => self::unique_login( $email ),
 				'user_pass'  => $pass,
 				'user_email' => $email,
 				'first_name' => $first,
@@ -396,6 +395,22 @@ class LLD_Members_Account {
 	 * SCR-03. The link confirms the email once, while it is unconfirmed. It never signs anyone in:
 	 * the member signs in with their password afterwards.
 	 */
+	/**
+	 * A WordPress login nobody else has. Members sign in by email; the login is never shown.
+	 * Two emails that share the part before the @ get different logins.
+	 *
+	 * @param string $email Email.
+	 */
+	public static function unique_login( $email ) {
+		$base = sanitize_user( (string) strstr( (string) $email, '@', true ), true );
+		$base = substr( '' !== $base ? $base : 'member', 0, 50 );
+		$login = $base;
+		for ( $n = 2; username_exists( $login ) || email_exists( $login ); ++$n ) {
+			$login = $n < 20 ? $base . '-' . $n : $base . '-' . strtolower( wp_generate_password( 8, false, false ) );
+		}
+		return $login;
+	}
+
 	private static function confirm() {
 		$token = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
 		$sent  = isset( $_GET['sent'] ) ? sanitize_key( wp_unslash( $_GET['sent'] ) ) : '';

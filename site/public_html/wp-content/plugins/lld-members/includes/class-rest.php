@@ -452,10 +452,9 @@ class LLD_Members_Rest {
 			wp_set_password( $password, $user_id );
 			$user->set_role( 'owner_admin' === $role ? 'administrator' : 'subscriber' );
 		} else {
-			$login   = sanitize_user( strstr( $email, '@', true ), true );
 			$user_id = wp_insert_user(
 				array(
-					'user_login'   => $login ? $login : 'member',
+					'user_login'   => LLD_Members_Account::unique_login( $email ),
 					'user_pass'    => $password,
 					'user_email'   => $email,
 					'first_name'   => $first,
