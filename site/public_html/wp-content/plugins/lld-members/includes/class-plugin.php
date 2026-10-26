@@ -119,17 +119,21 @@ class LLD_Members_Plugin {
 		}
 		global $wp_rewrite;
 		$rules = $wp_rewrite->wp_rewrite_rules();
-		$paths = array();
+		$paths   = array();
+		$targets = array();
 		if ( is_array( $rules ) ) {
-			foreach ( array_keys( $rules ) as $pattern ) {
+			foreach ( $rules as $pattern => $query ) {
 				$pattern = (string) $pattern;
 				if ( 0 === strpos( $pattern, '^members/' ) || 0 === strpos( $pattern, 'members/' ) ) {
-					$paths[] = $pattern;
+					$paths[]             = $pattern;
+					$targets[ $pattern ] = (string) $query;
 				}
 			}
 		}
 		$data = $response->get_data();
 		$data['lld_member_rewrites'] = $paths;
+		// What each number stands for: lld_member is a member number, lld_item a content item.
+		$data['lld_member_rewrite_targets'] = $targets;
 		$response->set_data( $data );
 		return $response;
 	}
