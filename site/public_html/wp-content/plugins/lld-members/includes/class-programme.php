@@ -847,10 +847,12 @@ class LLD_Members_Programme {
 			self::finish( $member_id, $row, $periods );
 			return;
 		}
-		if ( $reached > $limit ) {
-			// Access ended: the period closes on the last open date, so the day count carries on from there later.
-			$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", (int) $row->id ) );
-			self::stop( $row, $row->last_open_day ? 'premium_ended' : 'free_week', $limit > 0 ? self::day_date( $periods, $limit ) : '' );
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", (int) $row->id ) );
+		if ( $reached > $limit && $row && $row->last_open_day ) {
+			// T3 rule 6: after the last open day the enrolment stops (Premium ended); the period closes on that date,
+			// so the day count carries on from there when Premium is restored. A free member's track stays active
+			// and simply locks from day 8, as the days keep moving on (section 8.3).
+			self::stop( $row, 'premium_ended', $limit > 0 ? self::day_date( $periods, $limit ) : '' );
 		}
 	}
 
@@ -970,10 +972,13 @@ class LLD_Members_Programme {
 		if ( $current ) {
 			$periods = self::periods( (int) $current->id );
 			$reached = self::days_until( $periods, $today );
-			if ( $reached > 0 && 0 !== $reached % 7 ) {
+			if ( $reached > self::access_limit( $member_id, $current ) ) {
+				$switch = 'locked';
+			} elseif ( $reached > 0 && 0 !== $reached % 7 ) {
 				return new WP_Error( 'lld_switch', 'You can switch at the end of this week on ' . self::nice_date( self::day_date( $periods, (int) ceil( $reached / 7 ) * 7 ) ) . '.' );
+			} else {
+				$switch = $reached > 0 ? 'week_end' : 'not_started';
 			}
-			$switch = $reached > 0 ? 'week_end' : 'not_started';
 		}
 		$target = self::latest_for_track( $member_id, $key );
 		$open   = self::premium_open( $member_id );
@@ -998,6 +1003,10 @@ class LLD_Members_Programme {
 			self::close_period( (int) $current->id, $today );
 			$wpdb->update( $table, array( 'status' => 'set_aside' ), array( 'id' => (int) $current->id ), array( '%s' ), array( '%d' ) );
 			$first = self::add_days( $today, 1 );
+		} elseif ( 'locked' === $switch ) {
+			// The current week cannot be opened without Premium: the track is set aside up to yesterday.
+			self::close_period( (int) $current->id, self::add_days( $today, -1 ) );
+			$wpdb->update( $table, array( 'status' => 'set_aside' ), array( 'id' => (int) $current->id ), array( '%s' ), array( '%d' ) );
 		} elseif ( 'not_started' === $switch ) {
 			self::close_period( (int) $current->id, '' );
 			if ( ! self::periods( (int) $current->id ) ) {
@@ -1978,6 +1987,9 @@ class LLD_Members_Programme {
 				return $html . '<p>' . esc_html( $title . ' starts on ' . self::nice_date( self::day_date( $periods, 1 ) ) . '.' ) . '</p>';
 			}
 			$html .= '<p>' . esc_html( $title . '. ' . self::position_label( $member_id ) ) . '.</p>';
+			if ( $reached > self::access_limit( $member_id, $row ) ) {
+				return $html . '<p>Week 1 is complete. Premium opens the rest of this track.</p>';
+			}
 			$html .= '<p><a href="' . esc_url( home_url( '/members/track/?day=' . $reached ) ) . '">Open today\'s activity</a></p>';
 			if ( self::premium_ended( $member_id ) && $row->last_open_day ) {
 				$html .= '<p>' . esc_html( 'Your current week stays open until ' . self::nice_date( (string) $row->last_open_day ) . '.' ) . '</p>';
@@ -2037,10 +2049,13 @@ class LLD_Members_Programme {
 		if ( $current ) {
 			$periods = self::periods( (int) $current->id );
 			$reached = self::days_until( $periods, $today );
-			if ( $reached > 0 && 0 !== $reached % 7 ) {
+			$locked  = $reached > self::access_limit( $member_id, $current );
+			if ( ! $locked && $reached > 0 && 0 !== $reached % 7 ) {
 				return $html . '<p>' . esc_html( 'You can switch at the end of this week on ' . self::nice_date( self::day_date( $periods, (int) ceil( $reached / 7 ) * 7 ) ) . '.' ) . '</p></section>';
 			}
-			if ( $reached > 0 ) {
+			if ( $locked ) {
+				$html .= '<p>' . esc_html( 'Your progress on ' . self::track_title( (string) $current->track_key ) . ' is kept, and you can resume it later.' ) . '</p>';
+			} elseif ( $reached > 0 ) {
 				$forced = true;
 				$html  .= '<p>' . esc_html( 'Your progress on ' . self::track_title( (string) $current->track_key ) . ' is kept, and you can resume it later. ' . $title . ' starts tomorrow.' ) . '</p>';
 			}
@@ -2106,6 +2121,9 @@ class LLD_Members_Programme {
 			} else {
 				$main .= '<p><a href="' . esc_url( home_url( '/members/tracks/' ) ) . '">Resume it from the tracks page</a></p>';
 			}
+		}
+		if ( 'active' === $status && $reached > $limit ) {
+			$main .= lld_membership_lock( 'Week 1 is complete. Premium opens the rest of this track.' );
 		}
 		if ( 'active' === $status && self::premium_ended( $member_id ) && $row->last_open_day ) {
 			$main .= '<p>' . esc_html( 'Your current week stays open until ' . self::nice_date( (string) $row->last_open_day ) . '. Later weeks need Premium.' ) . '</p>';

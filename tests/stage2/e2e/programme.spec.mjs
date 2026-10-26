@@ -1005,7 +1005,7 @@ test('T3 rule 5: switching only at the end of a week, resuming where it stopped,
   expect(saved.enrolments[0]).toMatchObject({ status: 'finished', attempt: 1 });
 });
 
-test('Section 8.3: the free week is once per track, and the day count waits while Premium is needed', async ({ page }) => {
+test('Section 8.3: the free week is once per track; a free member can move to another track at once', async ({ page }) => {
   test.setTimeout(240000);
   const a = await fixture(page.request, 'days', stamp());
   const b = await fixture(page.request, 'days', stamp());
@@ -1015,29 +1015,29 @@ test('Section 8.3: the free week is once per track, and the day count waits whil
   await signIn(page, email, password);
   const nonce = await trackNonce(page);
   await postTrack(page, nonce, a.track);
-  await clock(page.request, email, '2026-09-08 12:00:00');
+  await clock(page.request, email, '2026-09-10 12:00:00');
   await page.goto('/members/track/?day=8');
   await expect(page.getByText('Part of Premium', { exact: true })).toBeVisible();
   let saved = await state(page.request, email);
-  expect(saved.enrolments[0]).toMatchObject({ status: 'stopped', stopped_why: 'free_week', free_week_used: 1, day: 7 });
+  expect(saved.enrolments[0]).toMatchObject({ status: 'active', free_week_used: 1, day: 10 });
   await page.goto('/members/home/');
   await expect(page.getByText('Week 1 is complete. Premium opens the rest of this track.')).toBeVisible();
+  // Locked in week 2, the member need not wait for the end of the week to use another track's free week.
   await postTrack(page, nonce, b.track);
   saved = await state(page.request, email);
+  expect(saved.enrolments[0]).toMatchObject({ status: 'set_aside', day: 9 });
+  expect(saved.enrolments[0].periods.map((p) => [p.first, p.last])).toEqual([['2026-09-01', '2026-09-09']]);
   expect(saved.enrolments[1]).toMatchObject({ track: b.track, status: 'active', day: 1 });
-  await clock(page.request, email, '2026-09-14 12:00:00');
+  await clock(page.request, email, '2026-09-16 12:00:00');
   expect(await postTrack(page, nonce, a.track)).toContain('is used. Premium continues this track.');
-  // Upgrading carries the stopped track on from day 8: the days without Premium are not counted.
-  await clock(page.request, email, '2026-09-15 12:00:00');
-  saved = await state(page.request, email);
-  expect(saved.enrolments[1]).toMatchObject({ status: 'stopped', stopped_why: 'free_week', day: 7 });
+  expect((await state(page.request, email)).enrolments[1]).toMatchObject({ status: 'active', day: 7 });
+  // With Premium the same track carries on day by day.
   await createMember(page.request, { email, password, first_name: 'Sam', access_state: 'Premium' });
-  await clock(page.request, email, '2026-09-17 12:00:00');
+  await clock(page.request, email, '2026-09-18 12:00:00');
   await signIn(page, email, password);
-  saved = await state(page.request, email);
-  expect(saved.enrolments[1]).toMatchObject({ track: b.track, status: 'active', day: 8 });
-  expect(saved.enrolments[1].periods.map((p) => [p.first, p.last])).toEqual([['2026-09-08', '2026-09-14'], ['2026-09-17', '']]);
-  expect(saved.enrolments[0]).toMatchObject({ status: 'stopped', day: 7 });
+  await page.goto('/members/track/?day=9');
+  await expect(page.getByText('Part of Premium')).toHaveCount(0);
+  expect((await state(page.request, email)).enrolments[1]).toMatchObject({ status: 'active', day: 9 });
 });
 
 test('TC-FR2-15-AS-05 programme side: Premium ended or refunded mid-week keeps the current week only, then check-ins and ticks are read-only', async ({ page }) => {
@@ -1079,9 +1079,13 @@ test('TC-FR2-15-AS-05 programme side: Premium ended or refunded mid-week keeps t
     const saved = await state(page.request, email);
     expect(saved.check_ins).toHaveLength(1);
     expect(saved.results).toHaveLength(0);
-    expect(saved.enrolments[0]).toMatchObject({ status: 'stopped', day: 7 });
-    expect(saved.enrolments[0].periods.map((p) => [p.first, p.last])).toEqual([['2026-09-01', '2026-09-07']]);
-    if (access !== 'past_due') expect(saved.enrolments[0]).toMatchObject({ stopped_why: 'premium_ended', last_open_day: '2026-09-07' });
+    if (access === 'past_due') {
+      // An unknown access state is not Premium: the free-week rule applies and day 8 stays locked.
+      expect(saved.enrolments[0]).toMatchObject({ status: 'active', day: 8 });
+    } else {
+      expect(saved.enrolments[0]).toMatchObject({ status: 'stopped', stopped_why: 'premium_ended', last_open_day: '2026-09-07', day: 7 });
+      expect(saved.enrolments[0].periods.map((p) => [p.first, p.last])).toEqual([['2026-09-01', '2026-09-07']]);
+    }
   }
 });
 
@@ -1185,7 +1189,7 @@ test('TC-FR2-25-AS-05 programme: an active Healthy Weight track ends when pregna
     await page.goto('/members/home/');
     await expect(page.locator('[data-lld-section="today"]')).not.toContainText('no longer offered');
     await page.goto('/members/track/?day=1');
-    await expect(page.getByText('Not suitable for you')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Not suitable for you' })).toBeVisible();
     await page.goto('/members/plan/');
     await expect(page.getByText('Start a track to get a plan.')).toBeVisible();
   }

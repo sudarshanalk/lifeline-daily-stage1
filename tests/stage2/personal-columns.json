@@ -128,7 +128,9 @@
     "free_week_used",
     "last_open_day",
     "finished_on",
-    "active_member"
+    "active_member",
+    "stopped_why",
+    "notice_shown"
   ],
   "enrolment_period": [
     "id",
@@ -414,5 +416,17 @@
   "test_clock": [
     "member_id",
     "frozen_at"
+  ],
+  "zone_change": [
+    "member_id",
+    "zone_now",
+    "zone_before",
+    "changed_on"
+  ],
+  "mail_sent": [
+    "id",
+    "member_id",
+    "claim_key",
+    "sent_on"
   ]
 }
