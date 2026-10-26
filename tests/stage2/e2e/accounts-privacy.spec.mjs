@@ -238,6 +238,8 @@ test('TC-FR2-03-AS-01', async ({ page }) => {
   await page.locator('#lld_age').fill('30');
   await page.getByRole('button', { name: 'Create account' }).click();
   await page.goto(linkFrom(await mailMatching(email)));
+  await expect(page.getByRole('heading', { name: 'Email confirmed' })).toBeVisible();
+  await signIn(page, email, 'adult-pass');
   await page.goto('/members/goals/');
   await expect(page.getByRole('heading', { name: 'Agreements' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Choose up to 3 goals' })).toHaveCount(0);
@@ -318,6 +320,8 @@ test('TC-FR2-03-AS-05', async ({ page }) => {
   await page.locator('#lld_age').fill('40');
   await page.getByRole('button', { name: 'Create account' }).click();
   await page.goto(linkFrom(await mailMatching(email)));
+  await expect(page.getByRole('heading', { name: 'Email confirmed' })).toBeVisible();
+  await signIn(page, email, 'adult-pass');
   await page.goto('/members/agreements/');
   await page.getByRole('checkbox', { name: /I accept the/ }).check();
   await page.getByRole('checkbox', { name: 'Allow Lifeline Daily to store my health information' }).check();

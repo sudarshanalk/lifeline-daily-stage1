@@ -51,6 +51,54 @@ function linkFrom(body) {
   return found[0].replace(/[).,>]+$/, '');
 }
 
+async function mailCount(email, includes) {
+  const list = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
+  let count = 0;
+  for (const message of list.messages || []) {
+    if (!JSON.stringify(message.To || []).includes(email)) continue;
+    const id = message.ID || message.Id || message.id;
+    const full = await fetch(`${MAILPIT}/api/v1/message/${id}`).then((res) => res.json());
+    if (`${full.Subject || ''}\n${full.Text || ''}`.includes(includes)) count += 1;
+  }
+  return count;
+}
+
+// UTC "Y-m-d H:i:s" a given number of milliseconds from now, for the per-member test clock.
+function fromNow(ms) {
+  return new Date(Date.now() + ms).toISOString().slice(0, 19).replace('T', ' ');
+}
+
+const MINUTE = 60 * 1000;
+const HOUR = 60 * MINUTE;
+
+async function register(page, email) {
+  await page.goto('/members/join/');
+  await page.locator('#lld_first').fill('Tina');
+  await page.locator('#lld_last').fill('One');
+  await page.locator('#lld_email').fill(email);
+  await page.locator('#lld_password').fill(memberPass);
+  await page.locator('#lld_age').fill('30');
+  await page.getByRole('button', { name: 'Create account' }).click();
+}
+
+// One sign-in attempt on the members page, without waiting to leave it.
+async function trySignIn(page, email, pass) {
+  await page.goto('/members/sign-in/');
+  await page.locator('#lld_email').fill(email);
+  await page.locator('#lld_password').fill(pass);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+}
+
+// WordPress's own sign-in form. Returns whether WordPress set a signed-in cookie.
+async function wpLogin(request, email, pass) {
+  const res = await request.post('/wp-login.php', {
+    form: { log: email, pwd: pass, 'wp-submit': 'Log In', redirect_to: '/members/home/' },
+    maxRedirects: 0,
+  });
+  const cookies = res.headersArray().filter((h) => h.name.toLowerCase() === 'set-cookie').map((h) => h.value).join('\n');
+  return { signedIn: /wordpress_logged_in_[^=]+=[^;+\s]/.test(cookies), body: await res.text() };
+}
+
 async function setClock(request, email, utc) {
   const res = await request.post('/wp-json/lld-members/v1/test/clock', { data: { email, utc } });
   expect(res.ok(), await res.text()).toBe(true);
@@ -75,32 +123,52 @@ function unzip(buffer) {
 
 test('TC-FR2-01-AS-01', async ({ page }) => {
   const email = 'tm-01@test.lifelinedaily.invalid';
+  const unknown = 'nobody-tm01@test.lifelinedaily.invalid';
   await reset(page.request, email);
-  await page.goto('/members/join/');
-  await page.locator('#lld_first').fill('Tina');
-  await page.locator('#lld_last').fill('One');
-  await page.locator('#lld_email').fill(email);
-  await page.locator('#lld_password').fill(memberPass);
-  await page.locator('#lld_age').fill('30');
-  await page.getByRole('button', { name: 'Create account' }).click();
+  await register(page, email);
   await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
-  await signIn(page, email, memberPass);
+  expect(page.url()).not.toContain('tm-01');
+  // Refused before confirming: the members page, and WordPress's own form.
+  await trySignIn(page, email, memberPass);
   await expect(page.getByText('Confirm your email before you sign in.')).toBeVisible();
+  expect((await wpLogin(page.request, email, memberPass)).signedIn).toBe(false);
+  await page.goto('/members/home/');
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+
   const body = await mailBody(email, 'Confirm your Lifeline Daily email');
   await page.goto(linkFrom(body));
   await expect(page.getByRole('heading', { name: 'Email confirmed' })).toBeVisible();
+  // The link confirms the email but never signs anyone in.
+  await page.goto('/members/home/');
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   await page.goto(linkFrom(body));
   await expect(page.getByText('Already confirmed')).toBeVisible();
+
+  // Resend gives one reply for every address, and sends nothing to a confirmed account.
+  const before = await mailCount(email, 'Confirm your Lifeline Daily email');
+  const replies = [];
+  for (const address of [email, unknown]) {
+    await page.goto('/members/confirm/');
+    await page.locator('#lld_email').fill(address);
+    await page.getByRole('button', { name: 'Resend' }).click();
+    replies.push((await page.locator('.lld-info, .lld-fail').allInnerTexts()).join(' | '));
+  }
+  expect(replies[0]).toContain('If this email is waiting to be confirmed');
+  expect(replies[1]).toBe(replies[0]);
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+  expect(await mailCount(email, 'Confirm your Lifeline Daily email')).toBe(before);
+
+  // After confirming, the password signs in, on both forms.
+  expect((await wpLogin(page.request, email, memberPass)).signedIn).toBe(true);
+  await page.context().clearCookies();
+  await trySignIn(page, email, memberPass);
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toHaveCount(0);
+
+  // A fresh link is refused 25 hours later.
   await reset(page.request, email);
-  await page.goto('/members/join/');
-  await page.locator('#lld_first').fill('Tina');
-  await page.locator('#lld_last').fill('One');
-  await page.locator('#lld_email').fill(email);
-  await page.locator('#lld_password').fill(memberPass);
-  await page.locator('#lld_age').fill('30');
-  await page.getByRole('button', { name: 'Create account' }).click();
+  await register(page, email);
   const fresh = await mailBody(email, 'expires in 24 hours');
-  await setClock(page.request, email, '2028-01-01 00:00:00');
+  await setClock(page.request, email, fromNow(25 * HOUR));
   await page.goto(linkFrom(fresh));
   await expect(page.getByText('That link has expired.')).toBeVisible();
 });
@@ -137,6 +205,10 @@ test('TC-FR2-01-AS-02', async ({ page }) => {
   const body = await mailBody(email, 'Confirm your Lifeline Daily email');
   await page.goto(linkFrom(body));
   await page.getByRole('link', { name: 'Continue' }).click();
+  await page.locator('#lld_email').fill(email);
+  await page.locator('#lld_password').fill(memberPass);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page.getByRole('heading', { name: 'Agreements' })).toBeVisible();
   await page.getByRole('checkbox', { name: /I accept the/ }).check();
   await page.getByRole('button', { name: 'Continue' }).click();
   await page.goto('/members/settings/');

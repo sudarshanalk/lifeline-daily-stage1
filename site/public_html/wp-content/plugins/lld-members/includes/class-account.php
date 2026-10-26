@@ -314,7 +314,9 @@ class LLD_Members_Account {
 			if ( is_wp_error( $result ) ) {
 				$error = $result->get_error_message();
 			} else {
-				wp_safe_redirect( home_url( '/members/confirm/?email=' . rawurlencode( $result ) ) );
+				$sent = bin2hex( random_bytes( 12 ) );
+				set_transient( 'lld_sent_' . $sent, $result, DAY_IN_SECONDS );
+				wp_safe_redirect( home_url( '/members/confirm/?sent=' . $sent ) );
 				exit;
 			}
 		}
@@ -390,56 +392,86 @@ class LLD_Members_Account {
 		return $email;
 	}
 
+	/**
+	 * SCR-03. The link confirms the email once, while it is unconfirmed. It never signs anyone in:
+	 * the member signs in with their password afterwards.
+	 */
 	private static function confirm() {
-		$token  = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
-		$email  = isset( $_REQUEST['email'] ) ? sanitize_email( wp_unslash( $_REQUEST['email'] ) ) : '';
+		$token = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
+		$sent  = isset( $_GET['sent'] ) ? sanitize_key( wp_unslash( $_GET['sent'] ) ) : '';
+		$email = '';
+		if ( '' !== $sent ) {
+			$stored = get_transient( 'lld_sent_' . $sent );
+			$email  = is_string( $stored ) ? $stored : '';
+		}
 		if ( isset( $_POST['lld_email'] ) ) {
 			$email = sanitize_email( wp_unslash( $_POST['lld_email'] ) );
 		}
 		$notice = '';
 		$error  = '';
 		if ( '' !== $token ) {
-			$result = self::consume_link( $token, 'email_confirm' );
+			$result = self::confirm_email( $token );
 			if ( is_wp_error( $result ) ) {
 				$error = $result->get_error_message();
 			} else {
-				global $wpdb;
-				$wpdb->update(
-					LLD_Members_Schema::table( 'member' ),
-					array( 'email_confirmed_at' => lld_members_now_mysql( (int) $result['member_id'] ) ),
-					array( 'id' => (int) $result['member_id'] ),
-					array( '%s' ),
-					array( '%d' )
-				);
-				$confirmed = self::member_row( (int) $result['member_id'] );
-				if ( $confirmed ) {
-					LLD_Members_Auth::start_session( (int) $confirmed->user_id, (int) $confirmed->id, false );
-				}
 				$notice = 'confirmed';
 			}
 		}
 		if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['lld_resend_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_resend_nonce'] ) ), 'lld_resend_confirm' ) ) {
-			$again = self::resend_confirm( $email );
-			$error = is_wp_error( $again ) ? $again->get_error_message() : '';
+			$again  = self::resend_confirm( $email );
+			$error  = is_wp_error( $again ) ? $again->get_error_message() : '';
 			$notice = is_wp_error( $again ) ? '' : 'resent';
 		}
 		if ( 'confirmed' === $notice ) {
-			$main  = '<h1>Email confirmed</h1><p>Your email is confirmed.</p>';
-			$main .= lld_button( array( 'label' => 'Continue', 'href' => home_url( '/members/agreements/' ) ) );
+			$next  = home_url( '/members/sign-in/?redirect_to=' . rawurlencode( home_url( '/members/agreements/' ) ) );
+			$main  = '<h1>Email confirmed</h1><p>Your email is confirmed. Sign in with your password to continue.</p>';
+			$main .= lld_button( array( 'label' => 'Continue', 'href' => $next ) );
 			self::layout( 'Email confirmed', $main, false );
 			return;
 		}
-		$main  = '<h1>Check your email</h1>';
-		$main .= '<p>We\'ve sent a link to ' . esc_html( $email ) . '.</p>';
+		$main = '<h1>Check your email</h1>';
+		if ( '' !== $email ) {
+			$main .= '<p>We\'ve sent a link to ' . esc_html( $email ) . '.</p>';
+		}
 		$main .= self::error_box( $error );
 		if ( 'resent' === $notice ) {
-			$main .= '<p class="lld-info">We sent a new link.</p>';
+			$main .= '<p class="lld-info">If this email is waiting to be confirmed, we\'ve sent a new link.</p>';
 		}
-		$main .= '<form method="post">';
+		$main .= '<form method="post" class="lld-form">';
 		$main .= wp_nonce_field( 'lld_resend_confirm', 'lld_resend_nonce', true, false );
-		$main .= '<input type="hidden" name="lld_email" value="' . esc_attr( $email ) . '">';
+		if ( '' !== $email ) {
+			$main .= '<input type="hidden" name="lld_email" value="' . esc_attr( $email ) . '">';
+		} else {
+			$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email' ) );
+		}
 		$main .= '<button type="submit" class="lld-text-button">Resend</button></form>';
 		self::layout( 'Check your email', $main, false );
+	}
+
+	/**
+	 * Use an email-confirmation link. Only an unconfirmed account can be confirmed, and no session is opened.
+	 *
+	 * @param string $token Token from the link.
+	 * @return true|WP_Error
+	 */
+	private static function confirm_email( $token ) {
+		$result = self::consume_link( $token, 'email_confirm' );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		global $wpdb;
+		$member_id = (int) $result['member_id'];
+		$changed   = $wpdb->query(
+			$wpdb->prepare(
+				'UPDATE ' . LLD_Members_Schema::table( 'member' ) . ' SET email_confirmed_at = %s WHERE id = %d AND email_confirmed_at IS NULL',
+				lld_members_now_mysql( $member_id ),
+				$member_id
+			)
+		);
+		if ( 1 !== (int) $changed ) {
+			return new WP_Error( 'lld_link', 'Already confirmed — sign in' );
+		}
+		return true;
 	}
 
 	private static function reset() {
@@ -879,18 +911,26 @@ class LLD_Members_Account {
 	 * @return true|WP_Error
 	 */
 	private static function resend_confirm( $email ) {
-		$user = get_user_by( 'email', $email );
-		if ( ! $user ) {
+		// The reply is the same for every address: registered or not, confirmed or not.
+		// The limit counts the typed address, so reaching it says nothing about an account either.
+		$key   = 'lld_resend_' . substr( hash( 'sha256', strtolower( trim( (string) $email ) ) ), 0, 40 );
+		$count = (int) get_transient( $key );
+		if ( $count >= 3 ) {
 			return new WP_Error( 'lld_confirm', 'Please wait a few minutes' );
+		}
+		set_transient( $key, $count + 1, 15 * MINUTE_IN_SECONDS );
+		$user = is_email( $email ) ? get_user_by( 'email', $email ) : false;
+		if ( ! $user ) {
+			return true;
 		}
 		global $wpdb;
-		$table = LLD_Members_Schema::table( 'security_code' );
-		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE user_id = %d AND kind = %s ORDER BY id DESC LIMIT 1", $user->ID, 'email_confirm' ) );
-		if ( $row && (int) $row->resend_count >= 3 ) {
-			return new WP_Error( 'lld_confirm', 'Please wait a few minutes' );
+		$member = $wpdb->get_row( $wpdb->prepare( 'SELECT id, email_confirmed_at FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE user_id = %d', $user->ID ) );
+		if ( ! $member || ! empty( $member->email_confirmed_at ) ) {
+			return true;
 		}
-		$member_id = $row ? (int) $row->member_id : 0;
-		self::issue_link( $user, $member_id, 'email_confirm', 24, '', $row ? (int) $row->resend_count + 1 : 1 );
+		$table = LLD_Members_Schema::table( 'security_code' );
+		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT resend_count FROM {$table} WHERE user_id = %d AND kind = %s ORDER BY id DESC LIMIT 1", $user->ID, 'email_confirm' ) );
+		self::issue_link( $user, (int) $member->id, 'email_confirm', 24, '', $row ? (int) $row->resend_count + 1 : 1 );
 		return true;
 	}
 
