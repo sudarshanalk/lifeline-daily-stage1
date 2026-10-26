@@ -57,16 +57,20 @@ function parse(buf) {
   expect(Number(pagesObj.match(/\/Count (\d+)/)[1])).toBe(kids.length);
   const pages = kids.map((id) => {
     expect(objects[id]).toMatch(/^<< \/Type \/Page \/Parent 2 0 R /);
-    const fontRef = Number(objects[id].match(/\/F1 (\d+) 0 R/)[1]);
-    expect(objects[fontRef]).toContain('/BaseFont /Helvetica');
-    expect(objects[fontRef]).toContain('/Encoding /WinAnsiEncoding');
+    const fonts = {};
+    for (const [name, base] of [['F1', '/BaseFont /Helvetica '], ['F2', '/BaseFont /Helvetica-Bold ']]) {
+      const ref = Number(objects[id].match(new RegExp(`/${name} (\\d+) 0 R`))[1]);
+      expect(objects[ref]).toContain(base);
+      expect(objects[ref]).toContain('/Encoding /WinAnsiEncoding');
+      fonts[name] = ref;
+    }
     const content = objects[Number(objects[id].match(/\/Contents (\d+) 0 R/)[1])];
     const length = Number(content.match(/^<< \/Length (\d+) >>\nstream\n/)[1]);
     const data = content.slice(content.indexOf('stream\n') + 7, content.lastIndexOf('\nendstream'));
     expect(data.length, 'stream /Length').toBe(length);
-    const lines = [...data.matchAll(/BT \/F1 (\d+) Tf (\d+) (\d+) Td \(((?:\\.|[^\\)])*)\) Tj ET\n/g)];
+    const lines = [...data.matchAll(/BT \/(F[12]) (\d+) Tf (\d+) (\d+) Td \(((?:\\.|[^\\)])*)\) Tj ET\n/g)];
     expect(lines.map((m) => m[0]).join('')).toBe(data);
-    return lines.map((m) => ({ size: Number(m[1]), y: Number(m[3]), text: winAnsi(literal(m[4])) }));
+    return lines.map((m) => ({ font: m[1], size: Number(m[2]), y: Number(m[4]), text: winAnsi(literal(m[5])) }));
   });
   return { pages, size };
 }
@@ -109,5 +113,27 @@ describe('TC-FR2-32-AS-03 shopping-list PDF', () => {
     const { pages } = parse(premiumRaw({}, 'shopping_pdf', 'Shopping list', []));
     expect(pages).toHaveLength(1);
     expect(pages[0].map((l) => l.text)).toEqual(['Shopping list', '• Nothing on the list this week.']);
+  });
+});
+
+describe('TC-FR2-32-AS-03 shopping-list PDF grouped by type of food', () => {
+  test('TC-FR2-32-AS-03 each group is a bold heading followed by its own lines, and never ends a page', () => {
+    const groups = {};
+    for (const name of ['Beans, pulses, fish, eggs and meat', 'Vegetables and fruit', 'Bread, rice, pasta and grains']) {
+      groups[name] = Array.from({ length: 19 }, (_, i) => `${name.split(' ')[0].toLowerCase()} ${i + 1}`);
+    }
+    const { pages } = parse(premiumRaw({}, 'shopping_pdf', 'Shopping list', groups));
+    expect(pages[0][0]).toMatchObject({ font: 'F2', size: 16, text: 'Shopping list' });
+    const lines = pages.flat().slice(1);
+    const headings = lines.filter((l) => l.font === 'F2').map((l) => l.text);
+    expect(headings).toEqual(Object.keys(groups));
+    let current = '';
+    const seen = {};
+    for (const line of lines) {
+      if (line.font === 'F2') { current = line.text; continue; }
+      (seen[current] ||= []).push(line.text.replace(/^• /, ''));
+    }
+    expect(seen).toEqual(groups);
+    for (const page of pages) expect(page.at(-1).font, 'a page never ends on a heading').toBe('F1');
   });
 });

@@ -102,6 +102,56 @@ test('TC-FR2-32-AS-01', async ({ page, request }) => {
   await expect(page.locator('[data-lld-day]')).toHaveCount(7);
   await expect(page.locator('main')).toContainText(made.lentil);
   await expect(page.locator('main')).not.toContainText(made.tofu);
+
+  // the meal week is the track week: a track started on a Wednesday has meal weeks from Wednesday to Tuesday
+  const midweek = await paid(request, 'meals-wed');
+  const plans = async () => (await (await request.post('/wp-json/lld-members/v1/test/premium', { data: { email: midweek.email } })).json()).meal_plans;
+  await clock(request, midweek.email, '2026-05-06 12:00:00');
+  await signIn(page, midweek.email, password);
+  await saveHealth(page, midweek.id, { kind: 'profile', diet_type: 'vegetarian', confirmed: true });
+  await startSlug(page, made.track);
+  await page.goto('/members/meals/');
+  await expect(page.locator('[data-lld-week]')).toHaveText('Week 1, starting Wednesday 6 May');
+  await expect(page.locator('[data-lld-day="1"]')).toHaveAttribute('data-lld-date', '2026-05-06');
+  await expect(page.locator('[data-lld-day="7"]')).toHaveAttribute('data-lld-date', '2026-05-12');
+  await page.locator('#lld_recipe_1_breakfast').selectOption({ label: made.oat });
+  await page.locator('form[data-lld-swap="1-breakfast"]').getByRole('button', { name: 'Swap' }).click();
+  expect(await plans()).toEqual([expect.objectContaining({ week_starting: '2026-05-06', template_version: `${made.meal}:v1` })]);
+
+  // the owner edits and re-approves the plan: the week already given keeps its version and its swap
+  await request.post('/wp-json/lld-members/v1/test/premium', { data: { revise: { id: made.meal, fields: { meals: JSON.stringify(Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((d) => [d, { breakfast: made.oat_id, lunch: made.oat_id, dinner: made.oat_id, snack: made.oat_id }]))) } } } });
+  await clock(request, midweek.email, '2026-05-11 12:00:00');
+  await page.goto('/members/meals/');
+  await expect(page.locator('[data-lld-week]')).toHaveText('Week 1, starting Wednesday 6 May');
+  await expect(page.locator('[data-lld-meal="1-breakfast"]')).toContainText(made.oat);
+  await expect(page.locator('[data-lld-meal="2-lunch"]')).toContainText(made.lentil);
+  expect(await plans()).toHaveLength(1);
+
+  // track week 2 starts on day 8 with the version approved now
+  await clock(request, midweek.email, '2026-05-13 12:00:00');
+  await page.goto('/members/meals/');
+  await expect(page.locator('[data-lld-week]')).toHaveText('Week 2, starting Wednesday 13 May');
+  await expect(page.locator('[data-lld-meal="2-lunch"]')).toContainText(made.oat);
+  await expect(page.locator('main')).not.toContainText(made.lentil);
+  const both = await plans();
+  expect(both.map((p) => p.week_starting)).toEqual(['2026-05-06', '2026-05-13']);
+  expect(both[1].template_version).toBe(`${made.meal}:v2`);
+
+  // no track and no enrolment: weeks count from the day the member joined
+  const loose = { email: emailFor('meals-none') };
+  const joined = (await createMember(request, { email: loose.email, password, first_name: 'Pat', role: 'member', consents: ['terms', 'health'], access_state: 'Premium' })).joined_on;
+  expect(joined).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  const later = new Date(`${joined}T12:00:00Z`);
+  later.setUTCDate(later.getUTCDate() + 15);
+  await clock(request, loose.email, `${later.toISOString().slice(0, 10)} 12:00:00`);
+  await signIn(page, loose.email, password);
+  await page.goto('/members/meals/');
+  const third = new Date(`${joined}T12:00:00Z`);
+  third.setUTCDate(third.getUTCDate() + 14);
+  const label = third.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).replace(',', '');
+  await expect(page.locator('[data-lld-week]')).toHaveText(`Week 3, starting ${label}`);
+  const rows = await (await request.post('/wp-json/lld-members/v1/test/premium', { data: { email: loose.email } })).json();
+  for (const row of rows.meal_plans) expect(row.week_starting).toBe(third.toISOString().slice(0, 10));
 });
 
 test('TC-FR2-32-AS-02', async ({ page, request }) => {
@@ -143,6 +193,28 @@ test('TC-FR2-32-AS-03', async ({ page, request }) => {
   await page.goto('/members/meals/');
   await expect(page.getByRole('button', { name: 'Print' })).toBeVisible();
   await expect(page.locator('[data-lld-shopping]')).toContainText('red lentils');
+  // grouped by type of food, with tick boxes remembered on this device only
+  const beans = page.locator('[data-lld-aisle="Beans, pulses, fish, eggs and meat"]');
+  const veg = page.locator('[data-lld-aisle="Vegetables and fruit"]');
+  await expect(beans.getByRole('heading', { name: 'Beans, pulses, fish, eggs and meat' })).toBeVisible();
+  await expect(beans).toContainText('red lentils, 150 g');
+  await expect(veg).toContainText('spinach, 80 g');
+  await expect(veg).not.toContainText('red lentils');
+  const tick = page.getByRole('checkbox', { name: 'spinach, 80 g' });
+  await expect(tick).not.toBeChecked();
+  let posted = 0;
+  page.on('request', (req) => { if (req.method() === 'POST') posted += 1; });
+  await tick.check();
+  await page.reload();
+  await expect(page.getByRole('checkbox', { name: 'spinach, 80 g' })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: 'red lentils, 150 g' })).not.toBeChecked();
+  expect(posted, 'ticks are not sent to the server').toBe(0);
+  const elsewhere = await page.context().browser().newContext({ baseURL: test.info().project.use.baseURL || process.env.LLD_WP_URL || 'http://127.0.0.1:8090', extraHTTPHeaders: test.info().project.use.extraHTTPHeaders });
+  const other = await elsewhere.newPage();
+  await signIn(other, member.email, password);
+  await other.goto('/members/meals/');
+  await expect(other.getByRole('checkbox', { name: 'spinach, 80 g' })).not.toBeChecked();
+  await elsewhere.close();
   const downloadPromise = page.waitForEvent('download');
   await page.getByRole('link', { name: 'Download PDF' }).click();
   const download = await downloadPromise;
@@ -159,6 +231,12 @@ test('TC-FR2-32-AS-03', async ({ page, request }) => {
   const lines = [...body.matchAll(/\(((?:\\.|[^\\)])*)\) Tj/g)].map((m) => m[1]);
   expect(lines).toContain('\\225 red lentils, 150 g');
   expect(lines).toContain('\\225 spinach, 80 g');
+  // the PDF has the same groups, as headings before their lines
+  const at = (text) => lines.indexOf(text);
+  expect(at('Beans, pulses, fish, eggs and meat')).toBeGreaterThan(-1);
+  expect(at('Beans, pulses, fish, eggs and meat')).toBeLessThan(at('\\225 red lentils, 150 g'));
+  expect(at('\\225 red lentils, 150 g')).toBeLessThan(at('Vegetables and fruit'));
+  expect(at('Vegetables and fruit')).toBeLessThan(at('\\225 spinach, 80 g'));
 });
 
 test('TC-FR2-32-AS-04', async ({ page, request }) => {
@@ -246,6 +324,26 @@ test('TC-FR2-33-AS-02', async ({ page, request }) => {
   await signIn(page, mid.email, password);
   await page.goto('/members/challenge/');
   await page.getByRole('button', { name: 'Join' }).click();
+  // mark days done, on the day and up to 2 days late, never 3; the weekly review counts them
+  await page.goto('/members/challenge/');
+  await page.getByRole('button', { name: 'Mark day 1 done' }).click();
+  await expect(page.getByText('Day 1 done.')).toBeVisible();
+  await clock(request, mid.email, '2026-06-22 12:00:00');
+  await page.goto('/members/challenge/?day=2');
+  await page.getByRole('button', { name: 'Mark day 2 done' }).click();
+  await expect(page.locator('[data-lld-progress]')).toHaveText('2 of 28 days done');
+  await clock(request, mid.email, '2026-06-27 12:00:00');
+  await page.goto('/members/challenge/?day=5');
+  await expect(page.getByRole('button', { name: 'Mark day 5 done' })).toHaveCount(0);
+  const tickNonce = await (await page.request.get('/members/challenge/?day=8')).text().then((html) => html.match(/name="lld_tick_nonce" value="([^"]+)"/)[1]);
+  await page.request.post('/members/challenge/?day=5', { form: { lld_tick_nonce: tickNonce, day: '5' }, maxRedirects: 0 });
+  await page.goto('/members/challenge/');
+  await expect(page.locator('[data-lld-progress]')).toHaveText('2 of 28 days done');
+  await expect(page.locator('[data-lld-review="1"]')).toContainText('2 of 7 actions done.');
+  await expect(page.locator('[data-lld-review="2"]')).toHaveCount(0);
+  const ticked = (await (await request.post('/wp-json/lld-members/v1/test/premium', { data: { email: mid.email } })).json()).results.filter((r) => r.context_type === 'challenge');
+  expect(ticked.map((r) => r.programme_day)).toEqual(['1', '2']);
+  for (const r of ticked) expect(r.item_version).toMatch(/^\d+:v\d+$/);
   await clock(request, mid.email, '2026-07-05 12:00:00');
   await page.goto('/members/challenge/');
   await expect(page.getByRole('heading', { name: made.challenge })).toBeVisible();
@@ -256,6 +354,10 @@ test('TC-FR2-33-AS-02', async ({ page, request }) => {
   await page.goto('/members/challenge/');
   await expect(page.getByRole('heading', { name: made.challenge })).toBeVisible();
   await expect(page.getByText(made.badge)).toBeVisible();
+  for (const week of ['1', '2', '3', '4']) await expect(page.locator(`[data-lld-review="${week}"]`)).toHaveCount(1);
+  await expect(page.locator('[data-lld-review="3"]')).toContainText('0 of 7 actions done. A new week is a fresh start.');
+  await expect(page.locator('[data-lld-review="4"]')).toContainText('What next:');
+  await expect(page.locator('[data-lld-review="4"]').getByRole('link', { name: 'start a track' })).toBeVisible();
 });
 
 test('TC-FR2-33-AS-03', async ({ page, request }) => {
@@ -403,27 +505,43 @@ test('TC-FR2-35-AS-02', async ({ page, request }) => {
   await page.goto('/members/home/');
   await expect(page.getByText(`Next live Q&A ${made.qa}`)).toBeVisible();
   await expect(page.getByText("Facebook's own privacy terms apply")).toBeVisible();
+  // the group page: the notice and the Q&A date; no placeholder link while LLD_FACEBOOK_GROUP_URL is not set
+  await page.goto('/members/group/');
+  await expect(page.getByText(`Next live Q&A ${made.qa}`)).toBeVisible();
+  await expect(page.getByText("Facebook's own privacy terms apply")).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Join the private Facebook group' })).toHaveCount(0);
+  await expect(page.locator('main a[href*="facebook.com"]')).toHaveCount(0);
 });
 
 test('TC-FR2-35-AS-03', async ({ page, request }) => {
+  test.setTimeout(240000);
+  const daysAgo = (n) => {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - n);
+    return d.toISOString().slice(0, 10);
+  };
+  const firstEnd = daysAgo(30);
+  const secondEnd = daysAgo(10);
   const email = emailFor('ended');
   await createMember(request, {
-    email, password, first_name: 'End', role: 'member', consents: ['terms'], access_state: 'Premium ended', premium_ended_on: '2020-01-01',
+    email, password, first_name: 'End', role: 'member', consents: ['terms'], access_state: 'Premium ended', premium_ended_on: firstEnd,
   });
-  const lists = async () => {
-    const list = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
+  const lists = async (who = email) => {
+    const list = await fetch(`${MAILPIT}/api/v1/messages?limit=500`).then((res) => res.json());
     let hits = 0;
     for (const message of list.messages || []) {
       const subject = String(message.Subject || '');
       if (!subject.includes('People to remove from the group')) continue;
       const full = await fetch(`${MAILPIT}/api/v1/message/${message.ID}`).then((res) => res.json());
       const body = `${full.Subject || ''}\n${full.Text || ''}`;
-      if (body.includes(email)) hits += 1;
+      if (body.includes(who)) hits += 1;
     }
     return hits;
   };
-  const removals = async () => (await (await request.post('/wp-json/lld-members/v1/test/premium', { data: { email } })).json()).removals;
-  await request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
+  const premiumRows = async (data) => (await (await request.post('/wp-json/lld-members/v1/test/premium', { data })).json()).removals;
+  const removals = async () => premiumRows({ email });
+  const reports = () => request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
+  await reports();
   expect(await lists(), 'weekly removal list').toBe(1);
   await asOwner(page);
   const open = async () => {
@@ -437,27 +555,61 @@ test('TC-FR2-35-AS-03', async ({ page, request }) => {
   await expect(page.locator('li', { hasText: email })).toContainText(/Removed on \d{4}-\d{2}-\d{2}/);
 
   // the daily check still sees the same ended subscription: the recorded end is not added again
-  await request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
+  await reports();
   expect(await removals()).toHaveLength(1);
 
   // a second Premium end is tracked for removal on its own row, on the next list, and recorded separately
-  await request.post('/wp-json/lld-members/v1/test/premium', { data: { email, note_ended: '2021-03-01' } });
-  await request.post('/wp-json/lld-members/v1/test/premium', { data: { email, note_ended: '2021-03-01' } });
+  await premiumRows({ email, note_ended: secondEnd });
+  await premiumRows({ email, note_ended: secondEnd });
   const both = await removals();
-  expect(both.map((r) => r.premium_ended_on)).toEqual(['2020-01-01', '2021-03-01']);
+  expect(both.map((r) => r.premium_ended_on)).toEqual([firstEnd, secondEnd]);
   expect(both[0].removed_on).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   expect(both[1].removed_on).toBeNull();
-  await request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
+  await reports();
   expect(await lists(), 'the second end is on the next list').toBe(2);
+
+  // the list comes again every 7 days while someone is still outstanding, and not more often
+  await reports();
+  expect(await lists(), 'no repeat within the week').toBe(2);
+  await premiumRows({ fb_list_on: daysAgo(8) });
+  await reports();
+  expect(await lists(), 'weekly reminder repeats the outstanding member').toBe(3);
+  await reports();
+  expect(await lists()).toBe(3);
+
   await asOwner(page);
   await open();
-  const again = page.locator('li', { hasText: email }).filter({ hasText: 'ended 2021-03-01' });
+  const again = page.locator('li', { hasText: email }).filter({ hasText: `ended ${secondEnd}` });
   await expect(again).toContainText('overdue');
   await again.getByRole('button', { name: 'Record removal' }).click();
-  await expect(page.locator('li', { hasText: email }).filter({ hasText: 'ended 2021-03-01' })).toContainText(/Removed on \d{4}-\d{2}-\d{2}/);
+  await expect(page.locator('li', { hasText: email }).filter({ hasText: `ended ${secondEnd}` })).toContainText(/Removed on \d{4}-\d{2}-\d{2}/);
   const done = await removals();
   expect(done.every((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.removed_on))).toBe(true);
   expect(done[0].removed_on).toBe(both[0].removed_on);
+  // once recorded, the weekly reminder no longer names them
+  await premiumRows({ fb_list_on: daysAgo(8) });
+  await reports();
+  expect(await lists()).toBe(3);
+
+  // the log keeps a removal for 1 year after it was recorded (Data Model F7), then deletes it
+  const old = emailFor('ended-old');
+  await createMember(request, {
+    email: old, password, first_name: 'Old', role: 'member', consents: ['terms'], access_state: 'Premium ended', premium_ended_on: daysAgo(400),
+  });
+  await reports();
+  expect(await premiumRows({ email: old }), 'an end older than the 1-year log is not added by the daily check').toEqual([]);
+  await premiumRows({ email: old, note_ended: daysAgo(400) });
+  await asOwner(page);
+  await open();
+  await page.locator('li', { hasText: old }).getByRole('button', { name: 'Record removal' }).click();
+  await premiumRows({ email: old, age_removed: daysAgo(300) });
+  await reports();
+  expect(await premiumRows({ email: old })).toHaveLength(1);
+  await premiumRows({ email: old, age_removed: daysAgo(370) });
+  await reports();
+  expect(await premiumRows({ email: old })).toEqual([]);
+  // removals recorded within the year are kept
+  expect(await removals()).toHaveLength(2);
 });
 
 test('TC-FR2-36-AS-01', async ({ page, request }) => {
@@ -492,6 +644,37 @@ test('TC-FR2-36-AS-02', async ({ page, request }) => {
   for (const month of ['2026-05', '2026-06', '2026-07', '2026-08']) {
     await expect(chart).toContainText(month);
   }
+
+  // a month with no check-in is still in the chart, and measures other than weight are charted
+  await clock(request, member.email, '2026-10-15 12:00:00');
+  await page.goto('/members/check-in/');
+  await page.getByRole('checkbox', { name: 'Chair stands in 30 seconds' }).check();
+  await page.locator('#lld_chair').fill('14');
+  await page.getByRole('button', { name: 'Save monthly check-in' }).click();
+  await page.goto('/members/badges/');
+  await expect(chart.locator('[data-lld-month="2026-09"]')).toContainText('No check-in');
+  await expect(chart.locator('[data-lld-month="2026-10"]')).toContainText('14');
+  await expect(chart.locator('figure[data-lld-measure="chair_stands"]')).toHaveCount(1);
+  await expect(chart.locator('figure[data-lld-measure="chair_stands"] svg rect')).toHaveCount(1);
+  for (const month of ['2026-05', '2026-06', '2026-07', '2026-08', '2026-09', '2026-10']) {
+    await expect(chart.locator(`[data-lld-month="${month}"]`)).toHaveCount(1);
+  }
+  await expect(page.locator('[data-lld-totals]')).toBeVisible();
+
+  // FR2-36 is Premium: a free member gets the lock; after Premium ends the history stays readable
+  const freeEmail = emailFor('chart-free');
+  await createMember(request, { email: freeEmail, password, first_name: 'Sam', role: 'member', consents: ['terms', 'health'], access_state: 'free' });
+  await signIn(page, freeEmail, password);
+  await page.goto('/members/badges/');
+  await expect(page.getByText('Part of Premium', { exact: true })).toBeVisible();
+  await expect(page.locator('[data-lld-chart]')).toHaveCount(0);
+  await createMember(request, {
+    email: member.email, password, first_name: 'Pat', role: 'member', consents: ['terms', 'health'], access_state: 'Premium ended', premium_ended_on: '2026-10-20',
+  });
+  await signIn(page, member.email, password);
+  await page.goto('/members/badges/');
+  await expect(page.getByRole('link', { name: 'Download my data' })).toBeVisible();
+  await expect(chart.locator('[data-lld-month="2026-10"]')).toContainText('14');
 });
 
 test('TC-FR2-36-AS-03', async ({ page, request }) => {

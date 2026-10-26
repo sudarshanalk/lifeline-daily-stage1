@@ -31,6 +31,34 @@ class LLD_Members_Premium {
 
 	const MEAL_SLOTS = array( 'breakfast', 'lunch', 'dinner', 'snack' );
 
+	/**
+	 * Shopping-list groups by type of food, in shop order, with the words that place an ingredient in each. A recipe
+	 * can name the group itself in a fourth column. Lead default; the owner may change the groups.
+	 */
+	const AISLES = array(
+		'Beans, pulses, fish, eggs and meat' => array( 'lentil', 'bean', 'chickpea', 'tofu', 'tempeh', 'egg', 'chicken', 'turkey', 'beef', 'pork', 'lamb', 'mince', 'fish', 'salmon', 'tuna', 'cod', 'haddock', 'mackerel', 'sardine', 'prawn', 'edamame', 'hummus', 'butter bean' ),
+		'Vegetables and fruit'               => array( 'spinach', 'kale', 'lettuce', 'salad', 'rocket', 'broccoli', 'cauliflower', 'cabbage', 'carrot', 'onion', 'shallot', 'garlic', 'leek', 'celery', 'tomato', 'pepper', 'courgette', 'aubergine', 'cucumber', 'mushroom', 'potato', 'squash', 'pumpkin', 'beetroot', 'pea', 'sweetcorn', 'corn', 'avocado', 'apple', 'pear', 'banana', 'berr', 'orange', 'lemon', 'lime', 'grape', 'mango', 'melon', 'kiwi', 'plum', 'peach', 'cherr', 'fruit', 'veg', 'eggplant', 'sweet potato' ),
+		'Bread, rice, pasta and grains'      => array( 'oat', 'porridge', 'bread', 'roll', 'pitta', 'wrap', 'tortilla', 'rice', 'pasta', 'spaghetti', 'noodle', 'couscous', 'quinoa', 'bulgur', 'barley', 'flour', 'cornflour', 'cereal', 'cracker' ),
+		'Dairy and alternatives'             => array( 'milk', 'yoghurt', 'yogurt', 'cheese', 'feta', 'cream', 'butter', 'kefir' ),
+		'Tins, jars and dry goods'           => array( 'broth', 'stock', 'tinned', 'canned', 'passata', 'puree', 'sauce', 'vinegar', 'nut', 'peanut', 'peanut butter', 'almond', 'walnut', 'seed', 'honey', 'jam', 'raisin', 'sultana', 'cocoa', 'stock cube' ),
+		'Oils, herbs and spices'             => array( 'oil', 'salt', 'black pepper', 'spice', 'cumin', 'paprika', 'chilli', 'turmeric', 'cinnamon', 'ginger', 'herb', 'basil', 'parsley', 'coriander', 'thyme', 'oregano', 'rosemary', 'mint', 'dill' ),
+	);
+
+	/**
+	 * Check-in measures (Data Model C9) and their labels, for the progress charts.
+	 */
+	const CHART_MEASURES = array(
+		'weight_kg'         => 'Weight in kilograms',
+		'waist_cm'          => 'Waist in centimetres',
+		'activity_minutes'  => 'Minutes of activity this week',
+		'chair_stands'      => 'Chair stands in 30 seconds',
+		'push_ups'          => 'Push-ups',
+		'strength_sessions' => 'Strength sessions',
+		'sleep_hours'       => 'Average sleep hours',
+		'sleep_quality'     => 'Sleep quality from 1 to 5',
+		'stress_level'      => 'Stress level from 1 to 5',
+	);
+
 	const LEVELS = array(
 		'beginner'     => 1,
 		'intermediate' => 2,
@@ -55,8 +83,9 @@ class LLD_Members_Premium {
 	 */
 	public static function daily() {
 		self::catch_ended();
-		self::mail_removals();
 		self::flag_late();
+		self::mail_removals();
+		self::purge_removals();
 	}
 
 	/**
@@ -98,6 +127,7 @@ class LLD_Members_Premium {
 		if ( ! LLD_Members_Account::has_consent( $member_id, 'health' ) ) {
 			$main .= '<p>General plan</p>';
 		}
+		$main .= '<p data-lld-week="' . esc_attr( $plan['week']['starting'] ) . '">Week ' . (int) $plan['week']['week'] . ', starting ' . esc_html( ( new DateTimeImmutable( $plan['week']['starting'] ) )->format( 'l j F' ) ) . '</p>';
 		if ( ! $plan['days'] ) {
 			$main .= '<p>' . esc_html( LLD_Members_Safety::empty_line( $member_id ) ) . '</p><p>Contact support if you need a plan that fits you.</p>';
 			self::page( 'Meal plan', $main );
@@ -108,8 +138,10 @@ class LLD_Members_Premium {
 			$main .= '<p class="lld-hint">' . esc_html( $note ) . '</p>';
 		}
 		$nonce = $consent ? wp_create_nonce( 'lld_swap' ) : '';
+		$first = new DateTimeImmutable( $plan['week']['starting'] );
 		foreach ( $plan['days'] as $day => $meals ) {
-			$main .= '<section data-lld-day="' . (int) $day . '"><h2>Day ' . (int) $day . '</h2>';
+			$date  = $first->modify( '+' . ( (int) $day - 1 ) . ' days' );
+			$main .= '<section data-lld-day="' . (int) $day . '" data-lld-date="' . esc_attr( $date->format( 'Y-m-d' ) ) . '"><h2>Day ' . (int) $day . ', ' . esc_html( $date->format( 'l j F' ) ) . '</h2>';
 			foreach ( $meals as $slot => $recipe ) {
 				$key   = (int) $day . '-' . $slot;
 				$main .= '<div class="lld-meal" data-lld-meal="' . esc_attr( $key ) . '">';
@@ -133,11 +165,15 @@ class LLD_Members_Premium {
 			}
 			$main .= '</section>';
 		}
-		$main .= '<h2>Shopping list</h2><ul data-lld-shopping>';
-		foreach ( $plan['shopping'] as $line ) {
-			$main .= '<li>' . esc_html( $line ) . '</li>';
+		$main .= '<h2>Shopping list</h2><p class="lld-hint">Ticks are kept on this device only.</p><div data-lld-shopping data-lld-week="' . esc_attr( $plan['week']['starting'] ) . '">';
+		foreach ( $plan['aisles'] as $aisle => $lines ) {
+			$main .= '<section data-lld-aisle="' . esc_attr( $aisle ) . '"><h3>' . esc_html( $aisle ) . '</h3><ul class="lld-ticks">';
+			foreach ( $lines as $line ) {
+				$main .= '<li><label class="lld-check"><input type="checkbox" data-lld-tick="' . esc_attr( $line ) . '"> ' . esc_html( $line ) . '</label></li>';
+			}
+			$main .= '</ul></section>';
 		}
-		$main .= '</ul>';
+		$main .= '</div>';
 		$main .= '<p><button type="button" onclick="window.print()">Print</button> ';
 		$main .= '<a href="' . esc_url( home_url( '/members/meals/?pdf=1' ) ) . '">Download PDF</a></p>';
 		self::page( 'Meal plan', $main );
@@ -302,16 +338,23 @@ class LLD_Members_Premium {
 			$main .= lld_button( array( 'label' => 'Join' ) );
 			$main .= '</form>';
 		}
-		$activities = self::challenge_activities( $member_id, $shown );
-		$day        = isset( $_GET['day'] ) ? (int) $_GET['day'] : 0;
+		$items   = self::challenge_items( $member_id, $shown );
+		$day     = isset( $_REQUEST['day'] ) ? (int) $_REQUEST['day'] : 0;
+		$current = 0;
+		$done    = array();
+		$notice  = '';
 		if ( $row && $consent ) {
-			$start = new DateTimeImmutable( (string) $row->joined_on );
-			$now   = new DateTimeImmutable( $today );
-			$day   = $day > 0 ? $day : ( (int) $start->diff( $now )->days + 1 );
+			$start   = new DateTimeImmutable( (string) $row->joined_on );
+			$current = (int) $start->diff( new DateTimeImmutable( $today ) )->days + 1;
+			$day     = $day > 0 ? $day : $current;
 			if ( $today >= $start->modify( '+27 days' )->format( 'Y-m-d' ) && ! $row->finished_on ) {
 				self::finish_challenge( $member_id, $row, $shown, $today );
 				$row = self::challenge_row( $member_id, (int) $shown['parent_id'] );
 			}
+			if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_tick_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_tick_nonce'] ) ), 'lld_tick' ) ) {
+				$notice = self::tick_challenge( $member_id, $row, $items, $day, $current );
+			}
+			$done = self::challenge_done( $member_id, (int) $row->id );
 		}
 		if ( $day < 1 ) {
 			$day = 1;
@@ -319,12 +362,30 @@ class LLD_Members_Premium {
 		if ( $day > 28 ) {
 			$day = 28;
 		}
-		for ( $i = 1; $i <= 28; $i++ ) {
-			$main .= '<p><a href="' . esc_url( home_url( '/members/challenge/?day=' . $i ) ) . '">Day ' . $i . '</a></p>';
+		if ( '' !== $notice ) {
+			$main .= '<p role="status">' . esc_html( $notice ) . '</p>';
 		}
-		if ( array_key_exists( $day - 1, $activities ) ) {
-			$action = $activities[ $day - 1 ];
-			$main  .= '<h2>Action for this day</h2><p>' . esc_html( null === $action ? LLD_Members_Safety::empty_line( $member_id ) : $action ) . '</p>';
+		if ( $row && $consent ) {
+			$main .= '<p data-lld-progress>' . count( $done ) . ' of 28 days done</p>';
+		}
+		$main .= '<ol class="lld-days">';
+		for ( $i = 1; $i <= 28; $i++ ) {
+			$main .= '<li><a href="' . esc_url( home_url( '/members/challenge/?day=' . $i ) ) . '">Day ' . $i . '</a>' . ( isset( $done[ $i ] ) ? ' (done)' : '' ) . '</li>';
+		}
+		$main .= '</ol>';
+		if ( array_key_exists( $day - 1, $items ) ) {
+			$action = $items[ $day - 1 ];
+			$main  .= '<h2>Action for this day</h2><p>' . esc_html( null === $action ? LLD_Members_Safety::empty_line( $member_id ) : $action['title'] ) . '</p>';
+			if ( $row && $consent && null !== $action ) {
+				if ( isset( $done[ $day ] ) ) {
+					$main .= '<p data-lld-day-done>Day ' . (int) $day . ' is done.</p>';
+				} elseif ( self::tick_open( $day, $current ) ) {
+					$main .= '<form method="post">' . wp_nonce_field( 'lld_tick', 'lld_tick_nonce', true, false ) . '<input type="hidden" name="day" value="' . (int) $day . '">' . lld_button( array( 'label' => 'Mark day ' . (int) $day . ' done' ) ) . '</form>';
+				}
+			}
+		}
+		if ( $row && $consent ) {
+			$main .= self::challenge_review( $items, $done, $current, (bool) $row->finished_on );
 		}
 		if ( $row && $row->finished_on ) {
 			$badge = self::badge_title( $shown );
@@ -335,12 +396,25 @@ class LLD_Members_Premium {
 		self::page( 'Challenge', $main );
 	}
 
+	/**
+	 * SCR-21 Progress and badges. FR2-36 is Premium: a free member gets the membership lock. When Premium has
+	 * ended, the history stays readable with "Download my data" (requirements 8.3), and nothing new is awarded.
+	 */
 	public static function badges() {
 		$member_id = LLD_Members_Access::current_member_id();
-		if ( LLD_Members_Account::has_consent( $member_id, 'health' ) ) {
+		$paid      = LLD_Members_Billing::paid_open( $member_id );
+		if ( ! $paid && ! LLD_Members_Billing::ended( $member_id ) ) {
+			self::page( 'Progress and badges', '<h1>Progress and badges</h1>' . lld_membership_lock( 'Progress charts and badges are part of Premium.' ) );
+			return;
+		}
+		if ( $paid && LLD_Members_Account::has_consent( $member_id, 'health' ) ) {
 			self::award( $member_id );
 		}
 		$main = '<h1>Progress and badges</h1>';
+		if ( ! $paid ) {
+			$main .= '<p>Your history is still here to read. <a href="' . esc_url( home_url( '/members/data/' ) ) . '">Download my data</a></p>';
+		}
+		$main .= self::totals_html( $member_id );
 		$main .= self::chart_html( $member_id );
 		$main .= '<h2>Badges</h2>';
 		$any  = false;
@@ -415,9 +489,28 @@ class LLD_Members_Premium {
 		}
 		$main  = '<h1>Members\' group</h1>';
 		$main .= self::qa_paragraph( $member_id );
-		$main .= '<p><a href="https://www.facebook.com/">Join the private Facebook group</a></p>';
-		$main .= '<p>The owner will approve your request.</p>';
+		$link  = self::group_link();
+		if ( '' !== $link ) {
+			$main .= '<p><a href="' . esc_url( $link ) . '" rel="noopener">Join the private Facebook group</a></p>';
+			$main .= '<p>The owner will approve your request.</p>';
+		}
 		self::page( 'Members\' group', $main );
+	}
+
+	/**
+	 * The private group's address, from LLD_FACEBOOK_GROUP_URL in wp-config.php (an owner input). Empty while it
+	 * is not set or is not a facebook.com https address, and then no link is shown.
+	 */
+	public static function group_link() {
+		if ( ! defined( 'LLD_FACEBOOK_GROUP_URL' ) ) {
+			return '';
+		}
+		$url  = trim( (string) constant( 'LLD_FACEBOOK_GROUP_URL' ) );
+		$host = strtolower( (string) wp_parse_url( $url, PHP_URL_HOST ) );
+		if ( 'https' !== strtolower( (string) wp_parse_url( $url, PHP_URL_SCHEME ) ) || ! preg_match( '/(^|\.)facebook\.com$/', $host ) ) {
+			return '';
+		}
+		return $url;
 	}
 
 	public static function diary_photo() {
@@ -601,6 +694,27 @@ class LLD_Members_Premium {
 		if ( $member_id && isset( $params['note_ended'] ) ) {
 			self::note_ended( $member_id, sanitize_text_field( (string) $params['note_ended'] ) );
 		}
+		// Move this member's recorded removals back in time, and the date of the last weekly list.
+		if ( $member_id && isset( $params['age_removed'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $params['age_removed'] ) ) {
+			$wpdb->query( $wpdb->prepare( 'UPDATE ' . LLD_Members_Schema::table( 'fb_removal' ) . ' SET removed_on = %s WHERE member_number = %d AND removed_on IS NOT NULL', (string) $params['age_removed'], $member_id ) );
+		}
+		if ( isset( $params['fb_list_on'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $params['fb_list_on'] ) ) {
+			update_option( 'lld_fb_list_on', (string) $params['fb_list_on'], false );
+		}
+		// The owner edits and re-approves a meal plan or challenge (a new approved version).
+		if ( isset( $params['revise'] ) && is_array( $params['revise'] ) ) {
+			$post_id = (int) ( $params['revise']['id'] ?? 0 );
+			$changes = isset( $params['revise']['fields'] ) && is_array( $params['revise']['fields'] ) ? $params['revise']['fields'] : array();
+			if ( in_array( get_post_type( $post_id ), array( 'lld_meal', 'lld_challenge' ), true ) ) {
+				$fields = get_post_meta( $post_id, '_lld_fields', true );
+				$fields = is_array( $fields ) ? $fields : array();
+				foreach ( $changes as $key => $value ) {
+					$fields[ sanitize_key( (string) $key ) ] = is_scalar( $value ) ? (string) $value : wp_json_encode( $value );
+				}
+				update_post_meta( $post_id, '_lld_fields', $fields );
+				LLD_Members_Content::approve_now( $post_id );
+			}
+		}
 		return new WP_REST_Response(
 			array(
 				'badges'    => self::badge_rows( $member_id ),
@@ -610,6 +724,7 @@ class LLD_Members_Premium {
 				'plan'      => $wpdb->get_row( $wpdb->prepare( 'SELECT level, version_key, started_on, current_week FROM ' . LLD_Members_Schema::table( 'workout' ) . ' WHERE member_id = %d AND active = 1', $member_id ), ARRAY_A ),
 				'changes'   => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'workout_change' ) . ' c JOIN ' . LLD_Members_Schema::table( 'workout' ) . ' w ON w.id = c.workout_id WHERE w.member_id = %d', $member_id ) ),
 				'results'   => $wpdb->get_results( $wpdb->prepare( 'SELECT item_version, context_type, programme_day FROM ' . LLD_Members_Schema::table( 'result' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
+				'meal_plans' => $wpdb->get_results( $wpdb->prepare( 'SELECT week_starting, template_version, swaps FROM ' . LLD_Members_Schema::table( 'meal_plan' ) . ' WHERE member_id = %d ORDER BY week_starting ASC', $member_id ), ARRAY_A ),
 				'removals'  => $wpdb->get_results( $wpdb->prepare( 'SELECT premium_ended_on, removed_on, late FROM ' . LLD_Members_Schema::table( 'fb_removal' ) . ' WHERE member_number = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
 				'days'      => $wpdb->get_results( $wpdb->prepare( 'SELECT local_date, water_glasses, hunger, energy FROM ' . LLD_Members_Schema::table( 'diary_day' ) . ' WHERE member_id = %d ORDER BY local_date ASC', $member_id ), ARRAY_A ),
 				'photos'    => $member_id > 0 ? array_map( 'basename', glob( lld_members_private_dir() . '/photos/' . $member_id . '/diary-*' ) ?: array() ) : array(),
@@ -701,19 +816,27 @@ class LLD_Members_Premium {
 	 * @return array{days:array<int,array<string,array<string,mixed>>>,shopping:string[]}
 	 */
 	private static function meal_view( $member_id ) {
-		$empty    = array(
+		$where = self::meal_week( $member_id );
+		$given = self::week_template( $member_id, $where );
+		$empty = array(
 			'days'     => array(),
 			'shopping' => array(),
+			'aisles'   => array(),
+			'week'     => $where,
+			'template' => null,
+			'plan_id'  => 0,
+			'swaps'    => array(),
 		);
-		$template = self::matching_template( $member_id );
+		$template = $given['template'];
 		if ( ! $template ) {
 			return $empty;
 		}
-		$swaps = self::saved_swaps( $member_id, $template );
+		$swaps = $given['swaps'];
 		$meals = self::decode_meals( $template );
 		$offer = self::decode_swaps( $template );
 		$days  = array();
 		$bag   = array();
+		$group = array();
 		foreach ( $meals as $day => $slots ) {
 			if ( ! is_array( $slots ) || (int) $day < 1 || (int) $day > 7 ) {
 				continue;
@@ -748,7 +871,8 @@ class LLD_Members_Premium {
 				$recipe['options']           = $options;
 				$days[ (int) $day ][ $slot ] = $recipe;
 				foreach ( $recipe['ingredients'] as $line ) {
-					$bag[ $line ] = $line;
+					$bag[ $line ]   = $line;
+					$group[ $line ] = $recipe['aisles'][ $line ] ?? 'Other';
 				}
 			}
 		}
@@ -756,7 +880,208 @@ class LLD_Members_Premium {
 		return array(
 			'days'     => $days,
 			'shopping' => array_values( $bag ),
+			'aisles'   => self::group_aisles( $group ),
+			'week'     => $where,
+			'template' => $template,
+			'plan_id'  => $given['plan_id'],
+			'swaps'    => $swaps,
 		);
+	}
+
+	/**
+	 * Shopping lines by group, in the shop's usual order, then "Other".
+	 *
+	 * @param array<string,string> $group Line => group.
+	 * @return array<string,string[]>
+	 */
+	private static function group_aisles( $group ) {
+		$out = array();
+		foreach ( array_merge( array_keys( self::AISLES ), array( 'Other' ) ) as $aisle ) {
+			foreach ( $group as $line => $name ) {
+				if ( $name === $aisle ) {
+					$out[ $aisle ][] = (string) $line;
+				}
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Where the member is for meal plans: the track, its week and the local date that week started. A week is 7 days
+	 * from the day the track started (requirements section 8.3), so the meal week and the track week stay in step.
+	 * With no active track, the latest enrolment's track counts on from its first day; with no enrolment at all,
+	 * weeks count from the day the member joined, with no track.
+	 *
+	 * @param int $member_id Member number.
+	 * @return array{track:int,week:int,starting:string}
+	 */
+	private static function meal_week( $member_id ) {
+		global $wpdb;
+		$today  = LLD_Members_Programme::local_today( $member_id );
+		$active = LLD_Members_Programme::active( $member_id );
+		if ( $active ) {
+			$parts = LLD_Members_Programme::position_parts( LLD_Members_Programme::programme_day( $member_id, (int) $active->id ) );
+			return array(
+				'track'    => (int) LLD_Members_Programme::track_id( (string) $active->track_key ),
+				'week'     => (int) $parts['week'],
+				'starting' => ( new DateTimeImmutable( $today ) )->modify( '-' . ( (int) $parts['day'] - 1 ) . ' days' )->format( 'Y-m-d' ),
+			);
+		}
+		$last   = $wpdb->get_row( $wpdb->prepare( 'SELECT id, track_key FROM ' . LLD_Members_Schema::table( 'enrolment' ) . ' WHERE member_id = %d ORDER BY id DESC LIMIT 1', $member_id ) );
+		$track  = 0;
+		$anchor = '';
+		if ( $last ) {
+			$track  = (int) LLD_Members_Programme::track_id( (string) $last->track_key );
+			$anchor = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT MIN(first_on) FROM ' . LLD_Members_Schema::table( 'enrolment_period' ) . ' WHERE enrolment_id = %d', (int) $last->id ) );
+		} else {
+			$anchor = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT joined_on FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+		}
+		return self::week_from( $track, $anchor, $today );
+	}
+
+	/**
+	 * Week number and its first day, counting 7-day weeks from an anchor date.
+	 *
+	 * @param int    $track  Track id, or 0.
+	 * @param string $anchor First day, Y-m-d; today when missing or later than today.
+	 * @param string $today  Local date.
+	 * @return array{track:int,week:int,starting:string}
+	 */
+	private static function week_from( $track, $anchor, $today ) {
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $anchor ) || $anchor > $today ) {
+			$anchor = $today;
+		}
+		$days = (int) ( new DateTimeImmutable( $anchor ) )->diff( new DateTimeImmutable( $today ) )->days;
+		$week = intdiv( $days, 7 ) + 1;
+		return array(
+			'track'    => (int) $track,
+			'week'     => $week,
+			'starting' => ( new DateTimeImmutable( $anchor ) )->modify( '+' . ( ( $week - 1 ) * 7 ) . ' days' )->format( 'Y-m-d' ),
+		);
+	}
+
+	/**
+	 * The template for this week. Once a week is given, its template version is fixed (Data Model C14): later edits
+	 * don't change it. It is replaced only if that version is no longer approved and live, or no longer safe for
+	 * the member, and then the week's swaps start again. Without health consent nothing is stored.
+	 *
+	 * @param int                                         $member_id Member number.
+	 * @param array{track:int,week:int,starting:string}   $where     Meal week.
+	 * @return array{template:array<string,mixed>|null,plan_id:int,swaps:array<string,string>}
+	 */
+	private static function week_template( $member_id, $where ) {
+		if ( ! LLD_Members_Account::has_consent( $member_id, 'health' ) ) {
+			return array(
+				'template' => self::matching_template( $member_id, $where ),
+				'plan_id'  => 0,
+				'swaps'    => array(),
+			);
+		}
+		global $wpdb;
+		$table = LLD_Members_Schema::table( 'meal_plan' );
+		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT id, template_version, swaps FROM {$table} WHERE member_id = %d AND week_starting = %s", $member_id, $where['starting'] ) );
+		$swaps = $row ? json_decode( (string) $row->swaps, true ) : array();
+		$swaps = is_array( $swaps ) ? $swaps : array();
+		if ( $row ) {
+			$kept = self::exact_version( 'lld_meal', (string) $row->template_version );
+			if ( $kept && LLD_Members_Safety::allows( $member_id, $kept ) ) {
+				return array(
+					'template' => $kept,
+					'plan_id'  => (int) $row->id,
+					'swaps'    => $swaps,
+				);
+			}
+		}
+		$template = self::matching_template( $member_id, $where );
+		if ( ! $template ) {
+			return array(
+				'template' => null,
+				'plan_id'  => $row ? (int) $row->id : 0,
+				'swaps'    => array(),
+			);
+		}
+		$key = self::version_key( $template );
+		if ( ! $row ) {
+			$wpdb->insert(
+				$table,
+				array(
+					'member_id'        => $member_id,
+					'week_starting'    => $where['starting'],
+					'template_version' => $key,
+					'swaps'            => '{}',
+				),
+				array( '%d', '%s', '%s', '%s' )
+			);
+			return array(
+				'template' => $template,
+				'plan_id'  => (int) $wpdb->insert_id,
+				'swaps'    => array(),
+			);
+		}
+		if ( self::version_parent( (string) $row->template_version ) !== (int) $template['parent_id'] ) {
+			$swaps = array();
+		}
+		$wpdb->update( $table, array( 'template_version' => $key, 'swaps' => wp_json_encode( (object) $swaps ) ), array( 'id' => (int) $row->id ), array( '%s', '%s' ), array( '%d' ) );
+		return array(
+			'template' => $template,
+			'plan_id'  => (int) $row->id,
+			'swaps'    => $swaps,
+		);
+	}
+
+	/**
+	 * The exact approved version a member record points at ("parent:vN"), while the item is still approved and live.
+	 * Older records that hold only the parent id get the live version.
+	 *
+	 * @param string $type   Content type.
+	 * @param string $stored Stored version key.
+	 * @return array<string,mixed>|null
+	 */
+	private static function exact_version( $type, $stored ) {
+		$stored = (string) $stored;
+		if ( preg_match( '/^\d+$/', $stored ) ) {
+			$live = LLD_Members_Content::shown( (int) $stored );
+			if ( ! is_array( $live ) || $type !== (string) ( $live['type'] ?? $type ) ) {
+				return null;
+			}
+			$live['type'] = $type;
+			return $live;
+		}
+		if ( ! preg_match( '/^(\d+):v(\d+)$/', $stored, $m ) ) {
+			return null;
+		}
+		$live = LLD_Members_Content::shown( (int) $m[1] );
+		if ( ! is_array( $live ) || $type !== (string) ( $live['type'] ?? $type ) ) {
+			return null;
+		}
+		if ( (int) ( $live['version'] ?? 0 ) === (int) $m[2] ) {
+			$live['type'] = $type;
+			return $live;
+		}
+		$posts = get_posts(
+			array(
+				'post_type'      => $type,
+				'post_status'    => 'lld_version',
+				'post_parent'    => (int) $m[1],
+				'posts_per_page' => 1,
+				'meta_key'       => '_lld_version',
+				'meta_value'     => (int) $m[2],
+			)
+		);
+		if ( ! $posts || '' === (string) get_post_meta( $posts[0]->ID, '_lld_approved_on', true ) ) {
+			return null;
+		}
+		$snap = json_decode( (string) $posts[0]->post_content, true );
+		if ( ! is_array( $snap ) ) {
+			return null;
+		}
+		$snap['type']        = $type;
+		$snap['parent_id']   = (int) $m[1];
+		$snap['version']     = (int) $m[2];
+		$snap['version_id']  = (int) $posts[0]->ID;
+		$snap['fingerprint'] = (string) get_post_meta( $posts[0]->ID, '_lld_fingerprint', true );
+		$snap['approved_on'] = (string) get_post_meta( $posts[0]->ID, '_lld_approved_on', true );
+		return $snap;
 	}
 
 	/**
@@ -778,75 +1103,64 @@ class LLD_Members_Premium {
 	}
 
 	/**
-	 * @param int $member_id Member number.
+	 * The approved, safe template for the member's track, diet and week.
+	 *
+	 * @param int                                            $member_id Member number.
+	 * @param array{track:int,week:int,starting:string}|null $where     Meal week; worked out when null.
 	 * @return array<string,mixed>|null
 	 */
-	private static function matching_template( $member_id ) {
-		$active = LLD_Members_Programme::active( $member_id );
-		$track  = $active ? LLD_Members_Programme::track_id( (string) $active->track_key ) : 0;
-		$week   = 1;
-		if ( $active ) {
-			$week = LLD_Members_Programme::position_parts( LLD_Members_Programme::programme_day( $member_id, (int) $active->id ) )['week'];
-		}
+	private static function matching_template( $member_id, $where = null ) {
+		$where   = is_array( $where ) ? $where : self::meal_week( $member_id );
+		$track   = (int) $where['track'];
 		$diet    = self::diet_of( $member_id );
-		$best    = null;
-		$fallback = null;
+		$weeks   = array();
+		$general = array();
 		foreach ( self::approved_of( 'lld_meal' ) as $meal ) {
 			$meal['type'] = 'lld_meal';
 			if ( ! LLD_Members_Safety::allows( $member_id, $meal ) ) {
 				continue;
 			}
 			$fields = isset( $meal['fields'] ) && is_array( $meal['fields'] ) ? $meal['fields'] : array();
-			if ( $track && (int) ( $fields['track_id'] ?? 0 ) !== (int) $track ) {
+			$owner  = (int) ( $fields['track_id'] ?? 0 );
+			if ( $track && $owner !== $track ) {
 				continue;
 			}
 			$meal_diet = sanitize_title( (string) ( $fields['diet'] ?? '' ) );
 			if ( $diet && $meal_diet && $meal_diet !== $diet && 'everyone' !== $meal_diet ) {
 				continue;
 			}
-			$meal_week = (int) ( $fields['week_number'] ?? 1 );
-			if ( $meal_week === (int) $week ) {
-				return $meal;
+			$number = max( 1, (int) ( $fields['week_number'] ?? 1 ) );
+			if ( ! $track && ! $owner && ! isset( $general[ $number ] ) ) {
+				$general[ $number ] = $meal;
 			}
-			if ( 1 === $meal_week ) {
-				$fallback = $meal;
-			}
-			if ( ! $best ) {
-				$best = $meal;
+			if ( ! isset( $weeks[ $number ] ) ) {
+				$weeks[ $number ] = $meal;
 			}
 		}
-		return $fallback ? $fallback : $best;
+		if ( ! $track && $general ) {
+			$weeks = $general;
+		}
+		return self::pick_week( $weeks, (int) $where['week'] );
 	}
 
 	/**
-	 * @param int                  $member_id Member number.
-	 * @param array<string,mixed>  $template  Approved meal template.
-	 * @return array<string,int>
+	 * The template for a week number: that week if approved, otherwise the approved weeks in turn, so a member past
+	 * the last approved week keeps getting new weeks rather than week 1 again and again.
+	 *
+	 * @param array<int,array<string,mixed>> $weeks Week number => template.
+	 * @param int                            $week  Week wanted.
+	 * @return array<string,mixed>|null
 	 */
-	private static function saved_swaps( $member_id, $template ) {
-		if ( ! LLD_Members_Account::has_consent( $member_id, 'health' ) ) {
-			return array();
+	private static function pick_week( $weeks, $week ) {
+		if ( ! $weeks ) {
+			return null;
 		}
-		global $wpdb;
-		$today = LLD_Members_Programme::local_today( $member_id );
-		$start = ( new DateTimeImmutable( $today ) )->modify( '-' . ( (int) ( new DateTimeImmutable( $today ) )->format( 'N' ) - 1 ) . ' days' )->format( 'Y-m-d' );
-		$table = LLD_Members_Schema::table( 'meal_plan' );
-		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT id, swaps FROM {$table} WHERE member_id = %d AND week_starting = %s", $member_id, $start ) );
-		if ( ! $row ) {
-			$wpdb->insert(
-				$table,
-				array(
-					'member_id'        => $member_id,
-					'week_starting'    => $start,
-					'template_version' => (int) $template['parent_id'] . ':' . (string) ( $template['fingerprint'] ?? '' ),
-					'swaps'            => '{}',
-				),
-				array( '%d', '%s', '%s', '%s' )
-			);
-			return array();
+		if ( isset( $weeks[ $week ] ) ) {
+			return $weeks[ $week ];
 		}
-		$decoded = json_decode( (string) $row->swaps, true );
-		return is_array( $decoded ) ? $decoded : array();
+		ksort( $weeks );
+		$list = array_values( $weeks );
+		return $list[ ( max( 1, (int) $week ) - 1 ) % count( $list ) ];
 	}
 
 	/**
@@ -864,12 +1178,12 @@ class LLD_Members_Premium {
 		if ( ! preg_match( '/^([1-7])-(breakfast|lunch|dinner|snack)$/', $slot, $parts ) ) {
 			return;
 		}
-		$template = self::matching_template( $member_id );
-		if ( ! $template ) {
+		// Only an alternative this meal offers right now; meal_view has applied the safety matrix to each one.
+		$view     = self::meal_view( $member_id );
+		$template = $view['template'];
+		if ( ! $template || ! $view['plan_id'] ) {
 			return;
 		}
-		// Only an alternative this meal offers right now; meal_view has applied the safety matrix to each one.
-		$view   = self::meal_view( $member_id );
 		$meal   = $view['days'][ (int) $parts[1] ][ $parts[2] ] ?? null;
 		$picked = null;
 		foreach ( $meal ? $meal['options'] : array() as $option ) {
@@ -882,24 +1196,22 @@ class LLD_Members_Premium {
 		}
 		$meals   = self::decode_meals( $template );
 		$planned = (int) ( $meals[ $parts[1] ][ $parts[2] ] ?? 0 );
-		$swaps   = self::saved_swaps( $member_id, $template );
+		$swaps   = $view['swaps'];
 		if ( $recipe === $planned ) {
 			unset( $swaps[ $slot ] );
 		} else {
 			$swaps[ $slot ] = (string) $picked['version_key'];
 		}
 		global $wpdb;
-		$today = LLD_Members_Programme::local_today( $member_id );
-		$start = ( new DateTimeImmutable( $today ) )->modify( '-' . ( (int) ( new DateTimeImmutable( $today ) )->format( 'N' ) - 1 ) . ' days' )->format( 'Y-m-d' );
 		$wpdb->update(
 			LLD_Members_Schema::table( 'meal_plan' ),
-			array( 'swaps' => wp_json_encode( $swaps ) ),
+			array( 'swaps' => wp_json_encode( (object) $swaps ) ),
 			array(
-				'member_id'     => $member_id,
-				'week_starting' => $start,
+				'id'        => (int) $view['plan_id'],
+				'member_id' => $member_id,
 			),
 			array( '%s' ),
-			array( '%d', '%s' )
+			array( '%d', '%d' )
 		);
 	}
 
@@ -947,21 +1259,54 @@ class LLD_Members_Premium {
 		}
 		$fields = isset( $snap['fields'] ) && is_array( $snap['fields'] ) ? $snap['fields'] : array();
 		$lines  = array();
+		$aisles = array();
 		$raw    = (string) ( $fields['ingredients'] ?? '' );
 		foreach ( preg_split( '/\r\n|\r|\n/', $raw ) as $line ) {
 			$line = trim( (string) $line );
 			if ( '' === $line ) {
 				continue;
 			}
-			$parts   = array_map( 'trim', explode( '|', $line ) );
-			$lines[] = $parts[0] . ( isset( $parts[1] ) ? ', ' . $parts[1] . ( isset( $parts[2] ) ? ' ' . $parts[2] : '' ) : '' );
+			$parts           = array_map( 'trim', explode( '|', $line ) );
+			$text            = $parts[0] . ( isset( $parts[1] ) && '' !== $parts[1] ? ', ' . $parts[1] . ( isset( $parts[2] ) && '' !== $parts[2] ? ' ' . $parts[2] : '' ) : '' );
+			$lines[]         = $text;
+			$aisles[ $text ] = self::aisle_of( $parts[0], $parts[3] ?? '' );
 		}
 		return array(
 			'id'          => (int) $snap['parent_id'],
 			'version_key' => self::version_key( $snap ),
 			'title'       => (string) $snap['title'],
 			'ingredients' => $lines,
+			'aisles'      => $aisles,
 		);
+	}
+
+	/**
+	 * The shopping-list group for an ingredient (SCR-15 "grouped by type of food"). The recipe's own fourth
+	 * column ("name | amount | unit | group") wins when it names a group; otherwise the name decides.
+	 *
+	 * @param string $name  Ingredient name.
+	 * @param string $given Group written on the recipe, if any.
+	 */
+	private static function aisle_of( $name, $given = '' ) {
+		$given = trim( (string) $given );
+		foreach ( array_keys( self::AISLES ) as $aisle ) {
+			if ( '' !== $given && 0 === strcasecmp( $given, $aisle ) ) {
+				return $aisle;
+			}
+		}
+		// The longest word that starts a word in the name decides: "butter beans" is beans, "black pepper" a spice.
+		$name = ' ' . strtolower( (string) preg_replace( '/[^a-z ]+/i', ' ', (string) $name ) ) . ' ';
+		$best = 'Other';
+		$size = 0;
+		foreach ( self::AISLES as $aisle => $words ) {
+			foreach ( $words as $word ) {
+				if ( strlen( $word ) > $size && false !== strpos( $name, ' ' . $word ) ) {
+					$best = $aisle;
+					$size = strlen( $word );
+				}
+			}
+		}
+		return $best;
 	}
 
 	/**
@@ -978,7 +1323,7 @@ class LLD_Members_Premium {
 	 */
 	private static function send_shopping_pdf( $member_id ) {
 		$view = self::meal_view( $member_id );
-		$pdf  = self::shopping_pdf( 'Shopping list', $view['shopping'] );
+		$pdf  = self::shopping_pdf( 'Shopping list', $view['aisles'] );
 		header( 'Content-Type: application/pdf' );
 		header( 'Content-Disposition: attachment; filename="shopping-list.pdf"' );
 		header( 'Content-Length: ' . strlen( $pdf ) );
@@ -1003,25 +1348,41 @@ class LLD_Members_Premium {
 		$width   = 612 - 2 * $left;
 		$top     = 740;
 		$bottom  = 56;
-		$rows    = array();
-		foreach ( $items ? $items : array( 'Nothing on the list this week.' ) as $item ) {
-			$text = self::win_ansi( (string) $item );
-			$first = true;
-			foreach ( self::pdf_wrap( "\x95 " . $text, $size, $width - 12 ) as $piece ) {
-				$rows[] = $first ? $piece : '  ' . $piece;
-				$first  = false;
+		$groups  = array();
+		foreach ( $items ? $items : array( 'Nothing on the list this week.' ) as $key => $item ) {
+			if ( is_array( $item ) ) {
+				$groups[ (string) $key ] = $item;
+			} else {
+				$groups[''][] = $item;
+			}
+		}
+		$rows = array();
+		foreach ( $groups as $heading => $lines ) {
+			if ( '' !== $heading ) {
+				$rows[] = array( 'F2', 12, self::win_ansi( $heading ) );
+			}
+			foreach ( $lines as $item ) {
+				$first = true;
+				foreach ( self::pdf_wrap( "\x95 " . self::win_ansi( (string) $item ), $size, $width - 12 ) as $piece ) {
+					$rows[] = array( 'F1', $size, $first ? $piece : '  ' . $piece );
+					$first  = false;
+				}
 			}
 		}
 		$pages = array();
 		$y     = $top - 30;
-		$body  = 'BT /F1 16 Tf ' . $left . ' ' . $top . ' Td (' . self::pdf_string( self::win_ansi( (string) $title ) ) . ") Tj ET\n";
-		foreach ( $rows as $row ) {
-			if ( $y < $bottom ) {
+		$body  = 'BT /F2 16 Tf ' . $left . ' ' . $top . ' Td (' . self::pdf_string( self::win_ansi( (string) $title ) ) . ") Tj ET\n";
+		foreach ( $rows as $index => $row ) {
+			// a heading never ends a page: it moves on with its first line
+			$needs = 'F2' === $row[0] ? $bottom + $leading : $bottom;
+			if ( $y < $needs ) {
 				$pages[] = $body;
 				$body    = '';
 				$y       = $top;
+			} elseif ( 'F2' === $row[0] && $index > 0 ) {
+				$y -= 6;
 			}
-			$body .= 'BT /F1 ' . $size . ' Tf ' . $left . ' ' . $y . ' Td (' . self::pdf_string( $row ) . ") Tj ET\n";
+			$body .= 'BT /' . $row[0] . ' ' . $row[1] . ' Tf ' . $left . ' ' . $y . ' Td (' . self::pdf_string( $row[2] ) . ") Tj ET\n";
 			$y    -= $leading;
 		}
 		$pages[] = $body;
@@ -1029,12 +1390,13 @@ class LLD_Members_Premium {
 		$objects    = array();
 		$objects[1] = '<< /Type /Catalog /Pages 2 0 R >>';
 		$objects[3] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+		$objects[4] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
 		$kids       = array();
 		foreach ( $pages as $index => $stream ) {
-			$page_id             = 4 + 2 * $index;
+			$page_id             = 5 + 2 * $index;
 			$content_id          = $page_id + 1;
 			$kids[]              = $page_id . ' 0 R';
-			$objects[ $page_id ] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ' . $content_id . ' 0 R >>';
+			$objects[ $page_id ] = '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ' . $content_id . ' 0 R >>';
 			$objects[ $content_id ] = '<< /Length ' . strlen( $stream ) . " >>\nstream\n" . $stream . "\nendstream";
 		}
 		$objects[2] = '<< /Type /Pages /Kids [' . implode( ' ', $kids ) . '] /Count ' . count( $pages ) . ' >>';
@@ -1472,6 +1834,22 @@ class LLD_Members_Premium {
 	 * @return array<int,string|null>
 	 */
 	private static function challenge_activities( $member_id, $challenge ) {
+		return array_map(
+			static function ( $item ) {
+				return null === $item ? null : $item['title'];
+			},
+			self::challenge_items( $member_id, $challenge )
+		);
+	}
+
+	/**
+	 * Daily actions by position, with their exact versions; null where the safety matrix excludes the action.
+	 *
+	 * @param int                 $member_id Member number.
+	 * @param array<string,mixed> $challenge Challenge snapshot.
+	 * @return array<int,array{title:string,version_key:string}|null>
+	 */
+	private static function challenge_items( $member_id, $challenge ) {
 		$fields = isset( $challenge['fields'] ) && is_array( $challenge['fields'] ) ? $challenge['fields'] : array();
 		$ids    = preg_split( '/\s*,\s*/', trim( (string) ( $fields['activity_ids'] ?? '' ) ) );
 		$titles = array();
@@ -1484,7 +1862,10 @@ class LLD_Members_Premium {
 				continue;
 			}
 			$snap['type'] = 'lld_activity';
-			$titles[]     = LLD_Members_Safety::allows( $member_id, $snap ) ? (string) $snap['title'] : null;
+			$titles[]     = LLD_Members_Safety::allows( $member_id, $snap ) ? array(
+				'title'       => (string) $snap['title'],
+				'version_key' => self::version_key( $snap ),
+			) : null;
 		}
 		return $titles;
 	}
@@ -1529,6 +1910,113 @@ class LLD_Members_Premium {
 	}
 
 	/**
+	 * A challenge day can be ticked on the day and up to 2 days late (requirements 8.3), never ahead.
+	 *
+	 * @param int $day     Challenge day.
+	 * @param int $current Today's challenge day.
+	 */
+	private static function tick_open( $day, $current ) {
+		return $day >= 1 && $day <= 28 && $day <= $current && $current - $day <= 2;
+	}
+
+	/**
+	 * Record a challenge day as done (Data Model C8: challenge and day).
+	 *
+	 * @param int                               $member_id Member number.
+	 * @param object                            $row       Challenge participation.
+	 * @param array<int,array<string,string>|null> $items  Daily actions.
+	 * @param int                               $day       Challenge day.
+	 * @param int                               $current   Today's challenge day.
+	 */
+	private static function tick_challenge( $member_id, $row, $items, $day, $current ) {
+		$item = $items[ $day - 1 ] ?? null;
+		if ( ! $item ) {
+			return 'There is no action to mark for that day.';
+		}
+		if ( ! self::tick_open( $day, $current ) ) {
+			return 'Day ' . (int) $day . ' can no longer be marked. Days can be marked up to 2 days late.';
+		}
+		if ( isset( self::challenge_done( $member_id, (int) $row->id )[ $day ] ) ) {
+			return 'Day ' . (int) $day . ' is already done.';
+		}
+		global $wpdb;
+		$wpdb->insert(
+			LLD_Members_Schema::table( 'result' ),
+			array(
+				'member_id'     => $member_id,
+				'item_version'  => (string) $item['version_key'],
+				'context_type'  => 'challenge',
+				'context_id'    => (int) $row->id,
+				'programme_day' => (int) $day,
+				'local_date'    => ( new DateTimeImmutable( (string) $row->joined_on ) )->modify( '+' . ( (int) $day - 1 ) . ' days' )->format( 'Y-m-d' ),
+				'result'        => 'done',
+				'recorded_at'   => lld_members_now_mysql( $member_id ),
+			),
+			array( '%d', '%s', '%s', '%d', '%d', '%s', '%s', '%s' )
+		);
+		return 'Day ' . (int) $day . ' done.';
+	}
+
+	/**
+	 * Challenge days done, built fresh from the results (Data Model C12: reviews are worked out when opened).
+	 *
+	 * @param int $member_id Member number.
+	 * @param int $row_id    Challenge participation.
+	 * @return array<int,bool>
+	 */
+	private static function challenge_done( $member_id, $row_id ) {
+		global $wpdb;
+		$days = $wpdb->get_col( $wpdb->prepare( 'SELECT programme_day FROM ' . LLD_Members_Schema::table( 'result' ) . " WHERE member_id = %d AND context_type = 'challenge' AND context_id = %d AND result = 'done'", $member_id, $row_id ) );
+		$out  = array();
+		foreach ( (array) $days as $day ) {
+			$out[ (int) $day ] = true;
+		}
+		return $out;
+	}
+
+	/**
+	 * The challenge's weekly review (FR2-33): for each finished week, what was done of the actions available, with
+	 * an encouraging close that never shames a missed week; the last week suggests what to do next. Draft wording
+	 * for the owner.
+	 *
+	 * @param array<int,array<string,string>|null> $items    Daily actions.
+	 * @param array<int,bool>                      $done     Days done.
+	 * @param int                                  $current  Today's challenge day.
+	 * @param bool                                 $finished Day 28 reached.
+	 */
+	private static function challenge_review( $items, $done, $current, $finished ) {
+		$html = '';
+		for ( $week = 1; $week <= 4; $week++ ) {
+			if ( $current <= 7 * $week && ! ( 4 === $week && $finished ) ) {
+				break;
+			}
+			$open = 0;
+			$got  = 0;
+			for ( $day = 7 * $week - 6; $day <= 7 * $week; $day++ ) {
+				if ( ! empty( $items[ $day - 1 ] ) ) {
+					++$open;
+					$got += isset( $done[ $day ] ) ? 1 : 0;
+				}
+			}
+			if ( 0 === $open ) {
+				$close = 'There were no actions for you this week.';
+			} elseif ( $got * 10 >= $open * 7 ) {
+				$close = 'A strong week. Keep it going.';
+			} elseif ( $got * 10 >= $open * 3 ) {
+				$close = 'Every action counts. Keep going at your own pace.';
+			} else {
+				$close = 'A new week is a fresh start. Pick one action to try.';
+			}
+			$html .= '<section data-lld-review="' . $week . '"><h3>Week ' . $week . ' review</h3><p>' . $got . ' of ' . $open . ' actions done. ' . esc_html( $close ) . '</p>';
+			if ( 4 === $week ) {
+				$html .= '<p>What next: <a href="' . esc_url( home_url( '/members/tracks/' ) ) . '">start a track</a>, or join next month\'s challenge.</p>';
+			}
+			$html .= '</section>';
+		}
+		return '' === $html ? '' : '<h2>Weekly review</h2>' . $html;
+	}
+
+	/**
 	 * @param int $member_id    Member number.
 	 * @param int $challenge_id Challenge id.
 	 */
@@ -1556,11 +2044,10 @@ class LLD_Members_Premium {
 	 * @return array<string,mixed>|null
 	 */
 	private static function challenge_by_version( $member_id, $stored ) {
-		$snap = LLD_Members_Content::shown( self::version_parent( $stored ) );
-		if ( ! is_array( $snap ) || 'lld_challenge' !== (string) ( $snap['type'] ?? 'lld_challenge' ) ) {
+		$snap = self::exact_version( 'lld_challenge', $stored );
+		if ( ! $snap ) {
 			return null;
 		}
-		$snap['type'] = 'lld_challenge';
 		return LLD_Members_Safety::allows( $member_id, $snap ) ? $snap : null;
 	}
 
@@ -1692,19 +2179,117 @@ class LLD_Members_Premium {
 	}
 
 	/**
+	 * Activity totals (SCR-21): track activities, challenge days and workout sessions done.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function totals_html( $member_id ) {
+		global $wpdb;
+		$counts = array(
+			'enrolment' => 0,
+			'challenge' => 0,
+			'workout'   => 0,
+		);
+		$rows   = $wpdb->get_results( $wpdb->prepare( 'SELECT context_type, COUNT(*) AS n FROM ' . LLD_Members_Schema::table( 'result' ) . " WHERE member_id = %d AND result = 'done' GROUP BY context_type", $member_id ) );
+		foreach ( (array) $rows as $row ) {
+			if ( isset( $counts[ (string) $row->context_type ] ) ) {
+				$counts[ (string) $row->context_type ] = (int) $row->n;
+			}
+		}
+		return '<h2>Activity</h2><p data-lld-totals>Track activities done: ' . $counts['enrolment'] . '. Challenge days done: ' . $counts['challenge'] . '. Workout sessions done: ' . $counts['workout'] . '.</p>';
+	}
+
+	/**
+	 * Check-in charts across all months since joining (FR2-36, SCR-21).
+	 *
 	 * @param int $member_id Member number.
 	 */
 	private static function chart_html( $member_id ) {
 		global $wpdb;
-		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT month_key, weight_kg FROM ' . LLD_Members_Schema::table( 'check_in' ) . ' WHERE member_id = %d AND month_key IS NOT NULL AND month_key <> "" ORDER BY month_key ASC', $member_id ) );
-		$html = '<table data-lld-chart><caption>Check-ins since joining</caption><thead><tr><th>Month</th><th>Weight</th></tr></thead><tbody>';
-		if ( ! $rows ) {
-			$html .= '<tr><td colspan="2">No history yet</td></tr>';
-		}
+		$rows   = $wpdb->get_results( $wpdb->prepare( 'SELECT local_date, ' . implode( ', ', array_keys( self::CHART_MEASURES ) ) . ' FROM ' . LLD_Members_Schema::table( 'check_in' ) . ' WHERE member_id = %d ORDER BY local_date ASC, id ASC', $member_id ), ARRAY_A );
+		$joined = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT joined_on FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+		return self::progress_chart( is_array( $rows ) ? $rows : array(), $joined, LLD_Members_Programme::local_today( $member_id ) );
+	}
+
+	/**
+	 * Every month from joining (or the first check-in, if earlier) to this month (or the last check-in, if later),
+	 * with a check-in or not. Each measure the member has recorded gets a bar chart, and "Show as table" gives the
+	 * same numbers: the last value recorded in each month.
+	 *
+	 * @param array<int,array<string,mixed>> $rows   Check-ins, oldest first, with local_date and measure columns.
+	 * @param string                         $joined Join date.
+	 * @param string                         $today  Local date.
+	 */
+	private static function progress_chart( $rows, $joined, $today ) {
+		$months = array();
+		$values = array();
+		$seen   = array();
 		foreach ( $rows as $row ) {
-			$html .= '<tr><td>' . esc_html( (string) $row->month_key ) . '</td><td>' . esc_html( (string) $row->weight_kg ) . '</td></tr>';
+			$month = substr( (string) ( $row['local_date'] ?? '' ), 0, 7 );
+			if ( ! preg_match( '/^\d{4}-\d{2}$/', $month ) ) {
+				continue;
+			}
+			$seen[ $month ] = true;
+			foreach ( array_keys( self::CHART_MEASURES ) as $column ) {
+				if ( isset( $row[ $column ] ) && '' !== (string) $row[ $column ] && is_numeric( $row[ $column ] ) ) {
+					$values[ $column ][ $month ] = 0 + $row[ $column ];
+				}
+			}
 		}
-		$html .= '</tbody></table>';
+		$ends = array_keys( $seen );
+		foreach ( array( (string) $joined, (string) $today ) as $date ) {
+			if ( preg_match( '/^\d{4}-\d{2}/', $date ) ) {
+				$ends[] = substr( $date, 0, 7 );
+			}
+		}
+		$html = '<section data-lld-chart><h2>Check-ins since joining</h2>';
+		if ( ! $seen ) {
+			$html .= '<p>No history yet</p>';
+		}
+		if ( $ends ) {
+			sort( $ends );
+			$cursor = new DateTimeImmutable( $ends[0] . '-01' );
+			$stop   = $ends[ count( $ends ) - 1 ];
+			for ( $i = 0; $i < 600 && $cursor->format( 'Y-m' ) <= $stop; $i++ ) {
+				$months[] = $cursor->format( 'Y-m' );
+				$cursor   = $cursor->modify( '+1 month' );
+			}
+		}
+		foreach ( self::CHART_MEASURES as $column => $label ) {
+			if ( empty( $values[ $column ] ) ) {
+				continue;
+			}
+			$top   = max( $values[ $column ] );
+			$top   = $top > 0 ? $top : 1;
+			$width = max( 1, count( $months ) ) * 24;
+			$bars  = '';
+			$said  = array();
+			foreach ( $months as $index => $month ) {
+				if ( ! isset( $values[ $column ][ $month ] ) ) {
+					continue;
+				}
+				$value  = $values[ $column ][ $month ];
+				$height = (int) round( 100 * $value / $top );
+				$bars  .= '<rect x="' . ( $index * 24 + 4 ) . '" y="' . ( 110 - $height ) . '" width="16" height="' . $height . '" fill="#157a42"><title>' . esc_html( $month . ': ' . $value ) . '</title></rect>';
+				$said[] = $month . ' ' . $value;
+			}
+			$html .= '<figure data-lld-measure="' . esc_attr( $column ) . '"><figcaption>' . esc_html( $label ) . '</figcaption>';
+			$html .= '<svg viewBox="0 0 ' . $width . ' 112" width="100%" height="112" role="img" aria-label="' . esc_attr( $label . ' by month: ' . implode( ', ', $said ) ) . '">' . $bars . '</svg></figure>';
+		}
+		$shown = array_keys( array_filter( $values ) );
+		$html .= '<details data-lld-chart-table><summary>Show as table</summary><table><caption>Check-ins by month</caption><thead><tr><th scope="col">Month</th><th scope="col">Check-in</th>';
+		foreach ( $shown as $column ) {
+			$html .= '<th scope="col">' . esc_html( self::CHART_MEASURES[ $column ] ) . '</th>';
+		}
+		$html .= '</tr></thead><tbody>';
+		foreach ( $months as $month ) {
+			$html .= '<tr data-lld-month="' . esc_attr( $month ) . '"><th scope="row">' . esc_html( $month ) . '</th><td>' . ( isset( $seen[ $month ] ) ? 'Yes' : 'No check-in' ) . '</td>';
+			foreach ( $shown as $column ) {
+				$html .= '<td>' . esc_html( isset( $values[ $column ][ $month ] ) ? (string) $values[ $column ][ $month ] : '—' ) . '</td>';
+			}
+			$html .= '</tr>';
+		}
+		$html .= '</tbody></table></details></section>';
 		return $html;
 	}
 
@@ -1878,12 +2463,9 @@ class LLD_Members_Premium {
 	 * @param string $meal      Meal slot.
 	 */
 	private static function planned_recipe( $member_id, $meal ) {
-		$view = self::meal_view( $member_id );
-		$day  = 1;
-		$active = LLD_Members_Programme::active( $member_id );
-		if ( $active ) {
-			$day = LLD_Members_Programme::position_parts( LLD_Members_Programme::programme_day( $member_id, (int) $active->id ) )['day'];
-		}
+		$view  = self::meal_view( $member_id );
+		$today = LLD_Members_Programme::local_today( $member_id );
+		$day   = (int) ( new DateTimeImmutable( $view['week']['starting'] ) )->diff( new DateTimeImmutable( $today ) )->days + 1;
 		if ( isset( $view['days'][ $day ][ $meal ]['version_key'] ) ) {
 			return (string) $view['days'][ $day ][ $meal ]['version_key'];
 		}
@@ -2104,48 +2686,92 @@ class LLD_Members_Premium {
 		return $next;
 	}
 
+	/**
+	 * Safety net for ends the billing code did not report: ended subscriptions from the last year (the log is kept
+	 * 1 year, Data Model F7), so an end whose record has been purged is not added again.
+	 */
 	private static function catch_ended() {
 		global $wpdb;
 		$rows = $wpdb->get_results( 'SELECT member_id, access_state, premium_ended_on FROM ' . LLD_Members_Schema::table( 'subscription' ) );
 		if ( ! $rows ) {
 			return;
 		}
+		$table = LLD_Members_Schema::table( 'fb_removal' );
 		foreach ( $rows as $row ) {
 			$state = strtolower( (string) $row->access_state );
 			if ( ! in_array( $state, array( 'premium ended', 'refunded' ), true ) ) {
 				continue;
 			}
-			$on = is_string( $row->premium_ended_on ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $row->premium_ended_on ) ? $row->premium_ended_on : LLD_Members_Programme::local_today( (int) $row->member_id );
-			self::note_ended( (int) $row->member_id, $on );
+			$member = (int) $row->member_id;
+			$today  = LLD_Members_Programme::local_today( $member );
+			$on     = is_string( $row->premium_ended_on ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $row->premium_ended_on ) ? $row->premium_ended_on : '';
+			if ( '' === $on ) {
+				// no end date recorded: note it once, today, unless this member is already on the log
+				if ( (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE member_number = %d", $member ) ) ) {
+					continue;
+				}
+				$on = $today;
+			}
+			if ( $on < self::year_before( $today ) ) {
+				continue;
+			}
+			self::note_ended( $member, $on );
 		}
 	}
 
+	/**
+	 * @param string $date Y-m-d.
+	 */
+	private static function year_before( $date ) {
+		return ( new DateTimeImmutable( (string) $date ) )->modify( '-1 year' )->format( 'Y-m-d' );
+	}
+
+	/**
+	 * The owner's removal list (FR2-35): sent when someone new is to be removed, and again every 7 days while
+	 * anyone is still outstanding, each time listing everyone not yet removed.
+	 */
 	private static function mail_removals() {
 		global $wpdb;
-		$rows = $wpdb->get_results( 'SELECT id, member_number FROM ' . LLD_Members_Schema::table( 'fb_removal' ) . ' WHERE removed_on IS NULL ORDER BY id ASC' );
+		$rows = $wpdb->get_results( 'SELECT id, member_number, premium_ended_on, late FROM ' . LLD_Members_Schema::table( 'fb_removal' ) . ' WHERE removed_on IS NULL ORDER BY id ASC' );
 		if ( ! $rows ) {
 			return;
 		}
-		$sent = get_option( 'lld_fb_sent' );
-		if ( ! is_array( $sent ) ) {
-			$sent = array();
-		}
-		$lines = array();
+		$listed = get_option( 'lld_fb_sent' );
+		$listed = is_array( $listed ) ? array_map( 'intval', $listed ) : array();
+		$last   = (string) get_option( 'lld_fb_list_on', '' );
+		$today  = current_time( 'Y-m-d' );
+		$fresh  = false;
+		$lines  = array();
+		$ids    = array();
 		foreach ( $rows as $row ) {
-			if ( in_array( (int) $row->id, $sent, true ) ) {
-				continue;
+			$ids[] = (int) $row->id;
+			if ( ! in_array( (int) $row->id, $listed, true ) ) {
+				$fresh = true;
 			}
 			$email = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT email FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', (int) $row->member_number ) );
 			if ( '' !== $email ) {
-				$lines[] = $email;
+				$lines[] = $email . ', Premium ended ' . (string) $row->premium_ended_on . ( (int) $row->late ? ', overdue' : '' );
 			}
-			$sent[] = (int) $row->id;
 		}
-		if ( ! $lines ) {
+		$due = '' === $last || $last <= ( new DateTimeImmutable( $today ) )->modify( '-7 days' )->format( 'Y-m-d' );
+		if ( ! $lines || ( ! $fresh && ! $due ) ) {
 			return;
 		}
-		wp_mail( (string) get_option( 'admin_email' ), 'People to remove from the group', "Remove these people from the private group:\n" . implode( "\n", $lines ) );
-		update_option( 'lld_fb_sent', $sent, false );
+		$sent = wp_mail( (string) get_option( 'admin_email' ), 'People to remove from the group', "Remove these people from the private group, then record each removal under Payments, Group removals:\n" . implode( "\n", $lines ) );
+		if ( $sent ) {
+			update_option( 'lld_fb_sent', $ids, false );
+			update_option( 'lld_fb_list_on', $today, false );
+		}
+	}
+
+	/**
+	 * Removal records are kept for 1 year after the removal was recorded (Data Model F7), then deleted. Records still
+	 * outstanding are kept.
+	 */
+	private static function purge_removals() {
+		global $wpdb;
+		$table = LLD_Members_Schema::table( 'fb_removal' );
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE removed_on IS NOT NULL AND removed_on < %s", self::year_before( current_time( 'Y-m-d' ) ) ) );
 	}
 
 	private static function flag_late() {

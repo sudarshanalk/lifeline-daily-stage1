@@ -11,11 +11,34 @@
 define( 'ABSPATH', __DIR__ . '/' );
 
 $GLOBALS['lld_test'] = json_decode( stream_get_contents( STDIN ), true );
+foreach ( $GLOBALS['lld_test']['defines'] ?? array() as $name => $value ) {
+	define( $name, $value );
+}
+
+function wp_parse_url( $url, $component = -1 ) {
+	return parse_url( $url, $component );
+}
 
 function sanitize_title( $text ) {
 	$text = strtolower( trim( (string) $text ) );
 	$text = preg_replace( '/[^a-z0-9_\-]+/', '-', $text );
 	return trim( (string) $text, '-' );
+}
+
+function esc_html( $text ) {
+	return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
+}
+
+function esc_attr( $text ) {
+	return htmlspecialchars( (string) $text, ENT_QUOTES, 'UTF-8' );
+}
+
+function esc_url( $url ) {
+	return (string) $url;
+}
+
+function home_url( $path = '' ) {
+	return 'https://example.test' . $path;
 }
 
 function sanitize_key( $key ) {
@@ -29,12 +52,32 @@ function wp_json_encode( $data ) {
 function get_posts( $args ) {
 	$type = isset( $args['post_type'] ) ? $args['post_type'] : '';
 	$out  = array();
+	if ( 'lld_version' === ( $args['post_status'] ?? '' ) ) {
+		// items[parent].versions[N] = { snapshot, approved_on }
+		$parent = (string) (int) ( $args['post_parent'] ?? 0 );
+		$number = (string) (int) ( $args['meta_value'] ?? 0 );
+		$found  = $GLOBALS['lld_test']['items'][ $parent ]['versions'][ $number ] ?? null;
+		if ( ! is_array( $found ) || ( $GLOBALS['lld_test']['items'][ $parent ]['type'] ?? '' ) !== $type ) {
+			return array();
+		}
+		$id                            = 9000 + (int) $parent * 10 + (int) $number;
+		$GLOBALS['lld_test_meta'][ $id ] = array(
+			'_lld_approved_on' => (string) ( $found['approved_on'] ?? '' ),
+			'_lld_fingerprint' => 'fp' . $number,
+		);
+		unset( $found['approved_on'] );
+		return array( (object) array( 'ID' => $id, 'post_content' => json_encode( $found ) ) );
+	}
 	foreach ( $GLOBALS['lld_test']['items'] as $id => $snap ) {
 		if ( ( $snap['type'] ?? '' ) === $type ) {
 			$out[] = (object) array( 'ID' => (int) $id );
 		}
 	}
 	return $out;
+}
+
+function get_post_meta( $id, $key, $single = false ) {
+	return $GLOBALS['lld_test_meta'][ (int) $id ][ $key ] ?? '';
 }
 
 class LLD_Members_Content {
@@ -73,6 +116,8 @@ class LLD_Members_Programme {
 }
 
 class LLD_Test_Wpdb {
+	public $insert_id = 1;
+
 	public function prepare( $query, ...$args ) {
 		return $query;
 	}

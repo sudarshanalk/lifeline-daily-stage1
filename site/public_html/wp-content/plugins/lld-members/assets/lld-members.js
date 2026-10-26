@@ -135,6 +135,24 @@
     paintImperial();
   }
 
+  // Shopping-list ticks stay on this device and browser only (UI-3), one set per meal week.
+  var shopping = document.querySelector("[data-lld-shopping]");
+  if (shopping) {
+    var shopWeek = shopping.getAttribute("data-lld-week") || "";
+    shopping.querySelectorAll("input[data-lld-tick]").forEach(function (box) {
+      var key = "lld-shop:" + shopWeek + ":" + box.getAttribute("data-lld-tick");
+      try {
+        box.checked = window.localStorage.getItem(key) === "1";
+      } catch (e) {}
+      box.addEventListener("change", function () {
+        try {
+          if (box.checked) window.localStorage.setItem(key, "1");
+          else window.localStorage.removeItem(key);
+        } catch (e) {}
+      });
+    });
+  }
+
   var ready = document.getElementById("lld-ready");
   var session = document.getElementById("lld-session");
   var timer = document.getElementById("lld-timer");
