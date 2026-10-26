@@ -1850,16 +1850,13 @@ class LLD_Members_Billing {
 	 * @param int $day       Programme day.
 	 */
 	private static function programme_date( $member_id, $day ) {
-		global $wpdb;
 		$row = LLD_Members_Programme::active( $member_id );
 		if ( ! $row ) {
 			return '';
 		}
-		$start = $wpdb->get_var( $wpdb->prepare( 'SELECT MIN(first_on) FROM ' . LLD_Members_Schema::table( 'enrolment_period' ) . ' WHERE enrolment_id = %d', (int) $row->id ) );
-		if ( ! is_string( $start ) || '' === $start ) {
-			return '';
-		}
-		return ( new DateTimeImmutable( $start ) )->modify( '+' . ( (int) $day - 1 ) . ' days' )->format( 'Y-m-d' );
+		// Day n's date counts across every period of the enrolment (T3), as close_current_week() does,
+		// not from the first period's start: a switch or resume leaves gaps between periods.
+		return LLD_Members_Programme::day_date( LLD_Members_Programme::periods( (int) $row->id ), (int) $day );
 	}
 
 	/**
