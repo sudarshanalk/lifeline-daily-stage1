@@ -15,7 +15,41 @@ if ( ! defined( 'ABSPATH' ) ) {
 class LLD_Members_Mail {
 
 	/**
-	 * Point WordPress mail at Mailpit when LLD_SMTP_HOST is set and this is not production.
+	 * Logo, 120 by 32 pixels, sent inside the email (cid:) so no remote image is loaded and Gmail still shows it.
+	 */
+	const LOGO_PNG = 'iVBORw0KGgoAAAANSUhEUgAAAHgAAAAgCAIAAABW2ysfAAAAWElEQVR42u3ZoQ0AMAhFQTbpPqzC/poOAK5J1ZGnkGd/nEp9KBCABi3QoEGPVz8cUNCgQYMGDZopaNCgQYMGzRQ0aNCgQYMWaNCgQYM2zgo0aNACDVoL9AWaFMzyBkvdrAAAAABJRU5ErkJggg==';
+
+	/**
+	 * True while WordPress is sending an email that this plugin wrote. Other plugins' mail is left as it is.
+	 *
+	 * @var bool
+	 */
+	private static $own = false;
+
+	/**
+	 * Runs at the start of every wp_mail() call: note whether the caller is this plugin.
+	 *
+	 * @param array $args wp_mail arguments.
+	 * @return array
+	 */
+	public static function mark( $args ) {
+		self::$own = self::called_by_plugin();
+		return $args;
+	}
+
+	private static function called_by_plugin() {
+		$dir = wp_normalize_path( LLD_MEMBERS_DIR );
+		foreach ( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS, 16 ) as $frame ) { // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_debug_backtrace
+			if ( isset( $frame['function'], $frame['file'] ) && 'wp_mail' === $frame['function'] && empty( $frame['class'] ) ) {
+				return 0 === strpos( wp_normalize_path( (string) $frame['file'] ), $dir );
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Point WordPress mail at Mailpit when LLD_SMTP_HOST is set and this is not production,
+	 * then give this plugin's own emails the UI2-04 layout. Mail from WordPress or other plugins is not changed.
 	 *
 	 * @param PHPMailer\PHPMailer\PHPMailer $phpmailer Mailer.
 	 */
@@ -28,18 +62,44 @@ class LLD_Members_Mail {
 			$phpmailer->SMTPAutoTLS = false;
 			$phpmailer->SMTPSecure  = '';
 		}
-		$body = (string) $phpmailer->Body;
-		if ( str_contains( $body, 'max-width:600px' ) ) {
+		$own       = self::$own;
+		self::$own = false;
+		if ( ! $own || 'text/plain' !== (string) $phpmailer->ContentType ) {
 			return;
 		}
-		$plain = trim( (string) $phpmailer->AltBody );
-		if ( '' === $plain || str_contains( $plain, '<' ) ) {
-			$plain = trim( wp_strip_all_tags( $body ) );
-		}
+		$plain = trim( (string) $phpmailer->Body );
 		$phpmailer->isHTML( true );
 		$phpmailer->AltBody = $plain;
-		$logo = '<img alt="Lifeline Daily" width="120" height="32" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%2232%22%3E%3Crect width=%22120%22 height=%2232%22 fill=%22%231f6b4a%22/%3E%3C/svg%3E">';
-		$phpmailer->Body    = '<div style="max-width:600px">' . $logo . '<pre style="white-space:pre-wrap">' . esc_html( $plain ) . '</pre></div>';
+		$phpmailer->Body    = self::layout( (string) $phpmailer->Subject, $plain );
+		$phpmailer->addStringEmbeddedImage( (string) base64_decode( self::LOGO_PNG ), 'lld-logo', 'lifeline-daily.png', 'base64', 'image/png' );
+	}
+
+	/**
+	 * At most 600 pixels wide, the logo, the text, one button for the main link, and no remote images or scripts.
+	 *
+	 * @param string $subject Subject, used as the button label.
+	 * @param string $plain   Plain-text body.
+	 */
+	public static function layout( $subject, $plain ) {
+		$button = '';
+		$parts  = array();
+		foreach ( preg_split( '/\r\n|\n/', $plain ) as $line ) {
+			if ( preg_match( '#^(.*?)(https?://\S+)\s*$#', $line, $match ) ) {
+				$url = esc_url( $match[2] );
+				if ( '' === $button && false === stripos( $match[1] . $match[2], 'unsubscribe' ) ) {
+					$button  = '<p style="margin:24px 0"><a href="' . $url . '" style="display:inline-block;background:#1f6b4a;color:#ffffff;padding:12px 20px;border-radius:6px;text-decoration:none;font-weight:bold">' . esc_html( '' !== $subject ? $subject : 'Open' ) . '</a></p>';
+					$parts[] = '' !== trim( $match[1] ) ? '<p style="margin:0 0 12px">' . esc_html( trim( $match[1] ) ) . '</p>' . $button : $button;
+					continue;
+				}
+				$parts[] = '<p style="margin:0 0 12px">' . esc_html( $match[1] ) . '<a href="' . $url . '" style="color:#1f6b4a">' . esc_html( $match[2] ) . '</a></p>';
+				continue;
+			}
+			$parts[] = '' === trim( $line ) ? '' : '<p style="margin:0 0 12px">' . esc_html( $line ) . '</p>';
+		}
+		$logo = '<img alt="Lifeline Daily" width="120" height="32" src="cid:lld-logo" style="display:block;border:0">';
+		return '<!DOCTYPE html><html><body style="margin:0;padding:0;background:#f4f4f1">'
+			. '<div style="max-width:600px;margin:0 auto;padding:24px 16px;background:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;color:#1d1d1b">'
+			. $logo . '<div style="margin-top:20px">' . implode( '', $parts ) . '</div></div></body></html>';
 	}
 
 	/**
