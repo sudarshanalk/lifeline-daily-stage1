@@ -1807,7 +1807,8 @@ class LLD_Members_Premium {
 		if ( ! in_array( $meal, array( 'breakfast', 'lunch', 'dinner', 'snack' ), true ) ) {
 			$meal = 'breakfast';
 		}
-		$planned = ! empty( $_POST['lld_planned'] );
+		// "I ate the planned meal" is Premium only (FR2-37); a free member's post is taken as a description.
+		$planned = ! empty( $_POST['lld_planned'] ) && LLD_Members_Billing::paid_open( $member_id );
 		$photo   = '';
 		if ( isset( $_FILES['lld_photo'] ) && is_array( $_FILES['lld_photo'] ) ) {
 			$upload_error = isset( $_FILES['lld_photo']['error'] ) ? (int) $_FILES['lld_photo']['error'] : UPLOAD_ERR_NO_FILE;

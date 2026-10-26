@@ -558,6 +558,12 @@ test('TC-FR2-37-AS-01', async ({ page, request }) => {
   await page.locator('#lld_description').fill('Chicken salad');
   await page.getByRole('button', { name: 'Save meal' }).click();
   await expect(page.getByText('Chicken salad')).toBeVisible();
+  // "ate the planned meal" posted directly by a free member is not a planned entry
+  const nonce = await page.locator('input[name="lld_diary_nonce"]').first().inputValue();
+  await page.request.post('/members/diary/', { form: { lld_diary_nonce: nonce, lld_meal: 'lunch', lld_planned: '1' }, maxRedirects: 0 });
+  await page.reload();
+  await expect(page.getByText('Lunch: Add')).toBeVisible();
+  await expect(page.getByText('Lunch: Logged')).toHaveCount(0);
 });
 
 test('TC-FR2-37-AS-02', async ({ page, request }) => {
