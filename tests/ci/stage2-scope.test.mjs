@@ -14,7 +14,8 @@ describe('stage2-scope', () => {
     expect(classify('S2-C1: Foundations')).toMatchObject({ kind: 'C', n: 1 });
     expect(classify('S2-C10: Quality')).toMatchObject({ kind: 'C', n: 10 });
     expect(classify('S2-L0: Phase 0')).toMatchObject({ kind: 'L', n: 0 });
-    for (const t of ['S2-C0: x', 'S2-C11: x', 'S2-L9: x', 'S2-C1 x', 'FR2-01: x', 'S2-C1: ']) expect(classify(t), t).toBeNull();
+    expect(classify('S2-C2-C10: Packages')).toMatchObject({ kind: 'C', n: 2, to: 10 });
+    for (const t of ['S2-C0: x', 'S2-C11: x', 'S2-L9: x', 'S2-C1 x', 'FR2-01: x', 'S2-C1: ', 'S2-C5-C3: x', 'S2-C2-C11: x']) expect(classify(t), t).toBeNull();
   });
 
   test('Cursor packages stay in the plugin and tests/stage2', () => {
@@ -28,6 +29,8 @@ describe('stage2-scope', () => {
     const files = [PAGE, 'site/public_html/tools/lld-members-link.js', 'manifests/diabetes.json'];
     expect(stage2Scope({ title: 'S2-C9: Calculator link', files }).ok).toBe(true);
     expect(stage2Scope({ title: 'S2-C5: Programme', files }).ok).toBe(false);
+    expect(stage2Scope({ title: 'S2-C2-C10: Packages', files }).ok).toBe(true);    // a range that includes C9
+    expect(stage2Scope({ title: 'S2-C2-C8: Packages', files }).ok).toBe(false);    // a range without C9
     expect(stage2Scope({ title: 'S2-C9: Calculator link', files: ['site/public_html/tools/api/submit.php'] }).ok).toBe(false);
   });
 
