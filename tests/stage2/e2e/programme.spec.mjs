@@ -535,12 +535,29 @@ test('TC-FR2-12-AS-03', async ({ page }) => {
   const kinds = ['welcome', 'daily_reminder', 'weekly_review', 'nudges', 'end_of_track'];
   await page.request.post('/wp-json/lld-members/v1/test/logout');
   await page.context().clearCookies();
+  // A code that does not exist, or one past its expiry date, never says "Unsubscribed".
+  await page.goto('/members/unsubscribe/?code=nosuchcode&kind=welcome');
+  await expect(page.getByRole('heading', { name: 'Link expired' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Unsubscribed' })).toHaveCount(0);
+  const welcome = messages.find((item) => bodyOf(item).includes('kind=welcome'));
+  const first = bodyOf(welcome).match(/\/members\/unsubscribe\/\?code=[a-z]+&kind=[a-z_]+/);
+  // Programme emails carry the one-click unsubscribe headers (RFC 8058).
+  const headers = await fetch(`${MAILPIT}/api/v1/message/${welcome.ID}/headers`).then((res) => res.json());
+  expect(headers['List-Unsubscribe'][0]).toContain(first[0]);
+  expect(headers['List-Unsubscribe-Post']).toEqual(['List-Unsubscribe=One-Click']);
+  await clock(page.request, email, '2027-06-01 12:00:00');
+  await page.goto(first[0]);
+  await expect(page.getByRole('heading', { name: 'Link expired' })).toBeVisible();
+  await clock(page.request, email, '2026-02-28 12:00:00');
   for (const kind of kinds) {
     const message = messages.find((item) => bodyOf(item).includes(`kind=${kind}`));
     expect(message, kind).toBeTruthy();
     const link = bodyOf(message).match(/\/members\/unsubscribe\/\?code=[a-z]+&kind=[a-z_]+/);
     expect(link, kind).toBeTruthy();
+    // Opening the link asks first; the button (or a mail app's one-click POST) unsubscribes.
     await page.goto(link[0]);
+    await expect(page.getByRole('heading', { name: 'Stop these emails?' })).toBeVisible();
+    await page.getByRole('button', { name: 'Unsubscribe' }).click();
     await expect(page.getByRole('heading', { name: 'Unsubscribed' })).toBeVisible();
     await page.goto(link[0]);
     await expect(page.getByRole('heading', { name: 'Already unsubscribed' })).toBeVisible();

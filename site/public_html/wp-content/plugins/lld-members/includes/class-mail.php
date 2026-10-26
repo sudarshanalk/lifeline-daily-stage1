@@ -34,7 +34,172 @@ class LLD_Members_Mail {
 	 */
 	public static function mark( $args ) {
 		self::$own = self::called_by_plugin();
+		if ( self::$own && is_array( $args ) ) {
+			$args = self::unsubscribe_headers( $args );
+		}
 		return $args;
+	}
+
+	/**
+	 * Every email of ours that carries an unsubscribe link also carries List-Unsubscribe and
+	 * List-Unsubscribe-Post, so mail apps offer one-click unsubscribe (RFC 8058, FR2-12).
+	 *
+	 * @param array $args wp_mail arguments.
+	 * @return array
+	 */
+	private static function unsubscribe_headers( $args ) {
+		$message = isset( $args['message'] ) ? (string) $args['message'] : '';
+		if ( ! preg_match( '#https?://[^\s<>"]+/(?:members|guide)/unsubscribe/[^\s<>"]*#', $message, $match ) ) {
+			return $args;
+		}
+		$headers = isset( $args['headers'] ) ? $args['headers'] : array();
+		if ( ! is_array( $headers ) ) {
+			$headers = '' === trim( (string) $headers ) ? array() : explode( "\n", str_replace( "\r\n", "\n", (string) $headers ) );
+		}
+		$headers[]       = 'List-Unsubscribe: <' . esc_url_raw( $match[0] ) . '>';
+		$headers[]       = 'List-Unsubscribe-Post: List-Unsubscribe=One-Click';
+		$args['headers'] = $headers;
+		return $args;
+	}
+
+	/**
+	 * A signed link token: a record number, when it was issued, and an HMAC. It never contains an email address.
+	 *
+	 * @param string $purpose What the link is for.
+	 * @param int    $id      Record number.
+	 * @param int    $issued  Unix time issued, or 0 for a link that does not expire.
+	 */
+	public static function token( $purpose, $id, $issued = 0 ) {
+		$id     = (int) $id;
+		$issued = (int) $issued;
+		return $id . '-' . $issued . '-' . self::token_sig( $purpose, $id, $issued );
+	}
+
+	/**
+	 * @param string $purpose What the link is for.
+	 * @param string $token   Token from the link.
+	 * @param int    $max_age Seconds the link stays valid, or 0.
+	 * @return int Record number, or 0 when the token is not valid.
+	 */
+	public static function read_token( $purpose, $token, $max_age = 0 ) {
+		if ( ! preg_match( '/^(\d{1,20})-(\d{1,12})-([a-f0-9]{32})$/', (string) $token, $match ) ) {
+			return 0;
+		}
+		if ( ! hash_equals( self::token_sig( $purpose, (int) $match[1], (int) $match[2] ), $match[3] ) ) {
+			return 0;
+		}
+		if ( $max_age > 0 && time() - (int) $match[2] > $max_age ) {
+			return 0;
+		}
+		return (int) $match[1];
+	}
+
+	/**
+	 * @param string $purpose Purpose.
+	 * @param int    $id      Record number.
+	 * @param int    $issued  Issue time.
+	 */
+	private static function token_sig( $purpose, $id, $issued ) {
+		return substr( hash_hmac( 'sha256', $purpose . '|' . $id . '|' . $issued, wp_salt( 'auth' ) ), 0, 32 );
+	}
+
+	/**
+	 * "Check your email" page after joining: a token instead of the address in the link (valid 24 hours).
+	 *
+	 * @param string $email New member's email.
+	 */
+	public static function pending_link( $email ) {
+		global $wpdb;
+		$member_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE email = %s', $email ) );
+		return home_url( '/members/confirm/?pending=' . rawurlencode( self::token( 'confirm-page', $member_id, time() ) ) );
+	}
+
+	/**
+	 * @param string $token Token from the link.
+	 */
+	public static function pending_email( $token ) {
+		$member_id = self::read_token( 'confirm-page', $token, DAY_IN_SECONDS );
+		if ( $member_id < 1 ) {
+			return '';
+		}
+		global $wpdb;
+		return (string) $wpdb->get_var( $wpdb->prepare( 'SELECT email FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+	}
+
+	/**
+	 * Programme email names, by email preference column.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function programme_kinds() {
+		return array(
+			'welcome'        => 'the welcome email',
+			'daily_reminder' => 'the daily reminder',
+			'weekly_review'  => 'the weekly review notice',
+			'end_of_track'   => 'the end-of-track email',
+			'nudges'         => 'the "pick up where you left off" emails',
+		);
+	}
+
+	/**
+	 * State of a programme-email unsubscribe code: valid, used, or invalid (unknown, wrong kind or past expires_at).
+	 *
+	 * @param string $code Code from the link.
+	 * @param string $kind Email preference column.
+	 * @return array{state:string,row:object|null}
+	 */
+	private static function code_state( $code, $kind ) {
+		if ( '' === $code || ! isset( self::programme_kinds()[ $kind ] ) ) {
+			return array( 'state' => 'invalid', 'row' => null );
+		}
+		global $wpdb;
+		$table = LLD_Members_Schema::table( 'unsubscribe_code' );
+		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE code_hash = %s AND purpose = %s ORDER BY id DESC LIMIT 1", hash( 'sha256', $code ), $kind ) );
+		if ( ! $row ) {
+			return array( 'state' => 'invalid', 'row' => null );
+		}
+		if ( $row->used_at ) {
+			return array( 'state' => 'used', 'row' => $row );
+		}
+		if ( (string) $row->expires_at < LLD_Members_Clock::now( (int) $row->member_id )->format( 'Y-m-d H:i:s' ) ) {
+			return array( 'state' => 'invalid', 'row' => $row );
+		}
+		return array( 'state' => 'valid', 'row' => $row );
+	}
+
+	/**
+	 * /members/unsubscribe/: GET shows what will stop and a button; POST unsubscribes, including a mail app's
+	 * one-click POST (List-Unsubscribe=One-Click). An unknown or expired code never says "Unsubscribed".
+	 */
+	public static function unsubscribe_screen() {
+		$code  = isset( $_REQUEST['code'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['code'] ) ) : '';
+		$kind  = isset( $_REQUEST['kind'] ) ? sanitize_key( wp_unslash( $_REQUEST['kind'] ) ) : '';
+		$found = self::code_state( $code, $kind );
+		$prefs = '<p><a href="' . esc_url( home_url( '/members/settings/' ) ) . '">Email preferences</a></p>';
+		$in    = is_user_logged_in();
+		if ( 'invalid' === $found['state'] ) {
+			lld_members_layout( array( 'title' => 'Link expired', 'main' => '<h1>Link expired</h1><p>This unsubscribe link is not valid any more. You can turn emails off in your email preferences.</p>' . $prefs, 'signed_in' => $in ) );
+			return;
+		}
+		if ( 'used' === $found['state'] ) {
+			lld_members_layout( array( 'title' => 'Already unsubscribed', 'main' => '<h1>Already unsubscribed</h1><p>Already unsubscribed.</p>' . $prefs, 'signed_in' => $in ) );
+			return;
+		}
+		$label = self::programme_kinds()[ $kind ];
+		if ( 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
+			$main  = '<h1>Stop these emails?</h1><p>You will no longer get ' . esc_html( $label ) . '.</p>';
+			$main .= '<form method="post" action="' . esc_url( add_query_arg( array( 'code' => $code, 'kind' => $kind ), home_url( '/members/unsubscribe/' ) ) ) . '">';
+			$main .= lld_button( array( 'label' => 'Unsubscribe' ) ) . '</form>' . $prefs;
+			lld_members_layout( array( 'title' => 'Unsubscribe', 'main' => $main, 'signed_in' => $in ) );
+			return;
+		}
+		global $wpdb;
+		$row  = $found['row'];
+		$used = $wpdb->query( $wpdb->prepare( 'UPDATE ' . LLD_Members_Schema::table( 'unsubscribe_code' ) . ' SET used_at = %s WHERE id = %d AND used_at IS NULL', gmdate( 'Y-m-d H:i:s' ), (int) $row->id ) );
+		if ( 1 === (int) $used ) {
+			$wpdb->update( LLD_Members_Schema::table( 'email_pref' ), array( $kind => 0 ), array( 'member_id' => (int) $row->member_id ), array( '%d' ), array( '%d' ) );
+		}
+		lld_members_layout( array( 'title' => 'Unsubscribed', 'main' => '<h1>Unsubscribed</h1><p>You won\'t get these emails any more.</p>' . $prefs, 'signed_in' => $in ) );
 	}
 
 	private static function called_by_plugin() {
