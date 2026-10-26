@@ -109,7 +109,13 @@ require $plugin . '/class-premium.php';
 
 $method = new ReflectionMethod( 'LLD_Members_Premium', (string) $GLOBALS['lld_test']['call'] );
 $method->setAccessible( true );
-$result = $method->invokeArgs( null, $GLOBALS['lld_test']['args'] ?? array() );
+$args = array_map(
+	static function ( $arg ) {
+		return is_array( $arg ) && isset( $arg['__object'] ) ? (object) $arg['__object'] : $arg;
+	},
+	$GLOBALS['lld_test']['args'] ?? array()
+);
+$result = $method->invokeArgs( null, $args );
 if ( ! empty( $GLOBALS['lld_test']['raw'] ) ) {
 	$result = base64_encode( (string) $result );
 }

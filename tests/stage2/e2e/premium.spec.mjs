@@ -155,9 +155,9 @@ test('TC-FR2-32-AS-03', async ({ page, request }) => {
     const offset = Number(entry.slice(0, 10));
     expect(body.slice(offset, offset + String(i + 1).length + 6)).toBe(`${i + 1} 0 obj`);
   });
-  const lines = [...body.matchAll(/\(((?:\.|[^\)])*)\) Tj/g)].map((m) => m[1]);
-  expect(lines).toContain('\225 red lentils, 150 g');
-  expect(lines).toContain('\225 spinach, 80 g');
+  const lines = [...body.matchAll(/\(((?:\\.|[^\\)])*)\) Tj/g)].map((m) => m[1]);
+  expect(lines).toContain('\\225 red lentils, 150 g');
+  expect(lines).toContain('\\225 spinach, 80 g');
 });
 
 test('TC-FR2-32-AS-04', async ({ page, request }) => {
@@ -289,8 +289,14 @@ test('TC-FR2-34-AS-02', async ({ page, request }) => {
   await signIn(page, member.email, password);
   await page.goto('/members/workout/?level=beginner&place=home&session=1');
   await expect(page.getByText('Warm up for 5 minutes. Stop if you feel pain.')).toBeVisible();
+  await expect(page.getByText('Warm up before you start. Stop if you feel pain. Check with your doctor if you need to.')).toBeVisible();
+  // no profile yet: the matrix note for an unknown situation comes with the advice
+  await expect(page.locator('#lld-safety')).toContainText('Complete your health profile for more suggestions');
   await expect(page.locator('#lld-session')).toBeHidden();
   await page.getByRole('button', { name: "I'm ready" }).click();
+  await expect(page.locator('#lld-safety')).toBeHidden();
+  await expect(page.locator('#lld-exercise')).toHaveText('Squat to chair');
+  await expect(page.locator('#lld-how')).toHaveText('Sit down and stand up slowly.');
   await expect(page.locator('#lld-phase')).toHaveText('exercise');
   await expect(page.locator('#lld-timer')).toHaveText('10');
   await page.getByRole('button', { name: 'Start' }).click();
@@ -298,10 +304,30 @@ test('TC-FR2-34-AS-02', async ({ page, request }) => {
   await expect(page.locator('#lld-phase')).toHaveText('rest');
   await expect(page.locator('#lld-timer')).toHaveText('30');
   await page.clock.runFor(30000);
+  // the session's second exercise follows its own time and rest
+  await expect(page.locator('#lld-exercise')).toHaveText('Wall press');
+  await expect(page.locator('#lld-phase')).toHaveText('exercise');
+  await expect(page.locator('#lld-timer')).toHaveText('10');
+  await page.getByRole('button', { name: 'Pause' }).click();
+  await page.clock.runFor(5000);
+  await expect(page.locator('#lld-timer')).toHaveText('10');
+  await page.getByRole('button', { name: 'Start' }).click();
+  await page.clock.runFor(10000);
+  await expect(page.locator('#lld-phase')).toHaveText('rest');
+  await expect(page.locator('#lld-timer')).toHaveText('20');
+  await page.clock.runFor(20000);
   await expect(page.locator('#lld-phase')).toHaveText('done');
+
+  // type 2 diabetes: the section 8.2 line before exercise
+  const diabetic = await paid(request, 'timer-t2');
+  await signIn(page, diabetic.email, password);
+  await saveHealth(page, diabetic.id, { kind: 'profile', conditions_answered: 'declared', conditions: ['type-2-diabetes'], confirmed: true });
+  await page.goto('/members/workout/?level=beginner&place=home&session=1');
+  await expect(page.locator('#lld-safety')).toContainText('If you take insulin or medicine that can cause low blood sugar, check with your doctor.');
 });
 
 test('TC-FR2-34-AS-04', async ({ page, request }) => {
+  test.setTimeout(240000);
   await fixture(request);
   const email = emailFor('nowork');
   const created = await createMember(request, { email, password, first_name: 'Sam', role: 'member', consents: ['terms'], access_state: 'Premium' });
@@ -314,6 +340,58 @@ test('TC-FR2-34-AS-04', async ({ page, request }) => {
   await expect(page.getByText("progress isn't saved")).toBeVisible();
   const scan = await request.post('/wp-json/lld-members/v1/test/scan', { data: { member_id: created.member_id, scope: 'health' } });
   expect((await scan.json()).problems).toEqual([]);
+  const none = await (await request.post('/wp-json/lld-members/v1/test/premium', { data: { email } })).json();
+  expect(none).toMatchObject({ result: 0, workout: 0, plan: null });
+
+  // control: with health consent the same steps are stored, per week and session, and the plan progresses
+  const member = await paid(request, 'work-saved');
+  await clock(request, member.email, '2026-05-04 12:00:00');
+  await signIn(page, member.email, password);
+  const rows = async () => (await request.post('/wp-json/lld-members/v1/test/premium', { data: { email: member.email } })).json();
+  await page.goto('/members/workout/?level=beginner&place=home');
+  await page.getByRole('button', { name: 'Choose this plan' }).click();
+  expect((await rows()).plan).toMatchObject({ level: 'beginner', version_key: 'home', current_week: '1' });
+  await page.goto('/members/workout/');
+  await expect(page.getByRole('heading', { name: 'Week 1' })).toBeVisible();
+  await expect(page.locator('#lld_level')).toHaveValue('beginner');
+  for (const session of [1, 2]) {
+    await page.goto(`/members/workout/?session=${session}`);
+    await page.getByRole('button', { name: "I'm ready" }).click();
+    await page.getByRole('button', { name: 'Done' }).click();
+    await expect(page.getByText('Session saved.')).toBeVisible();
+  }
+  await page.goto('/members/workout/?session=1');
+  await page.getByRole('button', { name: "I'm ready" }).click();
+  await page.getByRole('button', { name: 'Done' }).click();
+  await expect(page.getByText('This session is already saved for week 1.')).toBeVisible();
+  expect((await rows()).results.map((r) => r.programme_day)).toEqual(['1', '1']);
+
+  // 7 days on, the plan moves to week 2 by itself, and week 2's session 1 is a new result
+  await clock(request, member.email, '2026-05-11 12:00:00');
+  await page.goto('/members/workout/');
+  await expect(page.getByRole('heading', { name: 'Week 2' })).toBeVisible();
+  expect((await rows()).plan.current_week).toBe('2');
+  await page.goto('/members/workout/?session=1');
+  await expect(page.locator('#lld-timer')).toHaveText('20');
+  await page.getByRole('button', { name: "I'm ready" }).click();
+  await page.getByRole('button', { name: 'Done' }).click();
+  await expect(page.getByText('Session saved.')).toBeVisible();
+  const saved = await rows();
+  expect(saved.results).toHaveLength(3);
+  expect(saved.results[2].programme_day).toBe('2');
+  expect(new Set(saved.results.map((r) => `${r.item_version}@${r.programme_day}`)).size).toBe(3);
+  for (const r of saved.results) expect(r.item_version).toMatch(/^\d+:v\d+:s[12]$/);
+
+  // "Move up a level" moves up: intermediate from week 1, recorded as a change
+  await page.goto('/members/workout/');
+  await page.getByRole('button', { name: 'Move up a level' }).click();
+  await expect(page.locator('#lld_level')).toHaveValue('intermediate');
+  await expect(page.getByRole('heading', { name: 'Week 1' })).toBeVisible();
+  const moved = await rows();
+  expect(moved.plan).toMatchObject({ level: 'intermediate', version_key: 'home', current_week: '1' });
+  expect(moved.changes).toBe(1);
+  await page.goto('/members/workout/');
+  await expect(page.locator('#lld_level')).toHaveValue('intermediate');
 });
 
 test('TC-FR2-35-AS-02', async ({ page, request }) => {

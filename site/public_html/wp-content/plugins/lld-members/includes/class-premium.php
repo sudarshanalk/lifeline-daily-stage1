@@ -31,6 +31,17 @@ class LLD_Members_Premium {
 
 	const MEAL_SLOTS = array( 'breakfast', 'lunch', 'dinner', 'snack' );
 
+	const LEVELS = array(
+		'beginner'     => 1,
+		'intermediate' => 2,
+		'active'       => 3,
+	);
+
+	const NEXT_LEVEL = array(
+		'beginner'     => 'intermediate',
+		'intermediate' => 'active',
+	);
+
 	public static function boot() {
 		add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ), 11 );
 	}
@@ -133,31 +144,59 @@ class LLD_Members_Premium {
 	public static function workout() {
 		$member_id = LLD_Members_Access::current_member_id();
 		$consent   = LLD_Members_Account::has_consent( $member_id, 'health' );
-		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_done_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_done_nonce'] ) ), 'lld_done' ) ) {
-			if ( $consent ) {
-				self::store_result( $member_id, 'workout', isset( $_POST['lld_session'] ) ? (int) $_POST['lld_session'] : 1 );
+		$is_post   = 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' );
+		$saved     = $consent ? self::active_workout( $member_id ) : null;
+		$notice    = '';
+		$level     = '';
+		$place     = '';
+		if ( $consent && $is_post && isset( $_POST['lld_plan_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_plan_nonce'] ) ), 'lld_plan' ) ) {
+			$level = self::level_of( isset( $_POST['level'] ) ? wp_unslash( $_POST['level'] ) : '' );
+			$place = self::place_of( isset( $_POST['place'] ) ? wp_unslash( $_POST['place'] ) : '' );
+			if ( isset( $_POST['lld_plan_action'] ) && 'up' === sanitize_key( wp_unslash( $_POST['lld_plan_action'] ) ) ) {
+				$from  = $saved ? (string) $saved->level : $level;
+				$level = self::NEXT_LEVEL[ $from ] ?? $from;
+			}
+			self::save_workout( $member_id, $level, $place );
+			$saved  = self::active_workout( $member_id );
+			$notice = 'Your plan is now ' . $level . ', ' . $place . '.';
+		}
+		if ( '' === $level ) {
+			$level = isset( $_REQUEST['level'] ) ? self::level_of( wp_unslash( $_REQUEST['level'] ) ) : ( $saved ? self::level_of( $saved->level ) : 'beginner' );
+			$place = isset( $_REQUEST['place'] ) ? self::place_of( wp_unslash( $_REQUEST['place'] ) ) : ( $saved ? self::place_of( $saved->version_key ) : 'home' );
+		}
+		$weeks    = self::workout_weeks( $member_id, $level, $place );
+		$mine     = $saved && (string) $saved->level === $level && (string) $saved->version_key === $place;
+		$last     = $weeks ? max( array_keys( $weeks ) ) : 1;
+		$elapsed  = $mine ? self::elapsed_week( $member_id, $saved ) : 1;
+		$current  = $mine ? self::advance_week( $saved, $elapsed, $last ) : ( $weeks ? min( array_keys( $weeks ) ) : 1 );
+		$week     = isset( $_REQUEST['week'] ) ? (int) $_REQUEST['week'] : $current;
+		$week     = isset( $weeks[ $week ] ) ? $week : $current;
+		$plan     = $weeks[ $week ] ?? null;
+		$session  = isset( $_GET['session'] ) ? max( 1, (int) $_GET['session'] ) : 0;
+		if ( $is_post && $plan && isset( $_POST['lld_done_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_done_nonce'] ) ), 'lld_done' ) ) {
+			$index = isset( $_POST['lld_session'] ) ? (int) $_POST['lld_session'] : 0;
+			if ( $consent && isset( $plan['sessions'][ $index - 1 ] ) ) {
+				if ( ! $saved ) {
+					self::save_workout( $member_id, $level, $place );
+					$saved = self::active_workout( $member_id );
+					$mine  = (bool) $saved;
+				}
+				if ( $mine ) {
+					$notice = self::store_session( $member_id, (int) $saved->id, $plan, $week, $index ) ? 'Session saved.' : 'This session is already saved for week ' . $week . '.';
+				} else {
+					$notice = 'Choose this plan to save your progress on it.';
+				}
 			}
 		}
-		$level = isset( $_REQUEST['level'] ) ? sanitize_key( wp_unslash( $_REQUEST['level'] ) ) : 'beginner';
-		$place = isset( $_REQUEST['place'] ) ? sanitize_key( wp_unslash( $_REQUEST['place'] ) ) : 'home';
-		if ( ! in_array( $level, array( 'beginner', 'intermediate', 'active' ), true ) ) {
-			$level = 'beginner';
+		$main = '<h1>Workout</h1>';
+		if ( '' !== $notice ) {
+			$main .= '<p role="status">' . esc_html( $notice ) . '</p>';
 		}
-		if ( ! in_array( $place, array( 'home', 'equipment' ), true ) ) {
-			$place = 'home';
-		}
-		if ( $consent && 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_plan_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_plan_nonce'] ) ), 'lld_plan' ) ) {
-			self::save_workout( $member_id, $level, $place );
-		}
-		$week    = 1;
-		$plan    = self::workout_plan( $member_id, $level, $place, $week );
-		$session = isset( $_GET['session'] ) ? max( 1, (int) $_GET['session'] ) : 0;
-		$main    = '<h1>Workout</h1>';
 		if ( ! $consent ) {
 			$main .= '<p>progress isn\'t saved</p>';
 		}
 		$main .= '<form method="get" class="lld-form"><p><label for="lld_level">Level</label> <select id="lld_level" name="level">';
-		foreach ( array( 'beginner', 'intermediate', 'active' ) as $choice ) {
+		foreach ( array_keys( self::LEVELS ) as $choice ) {
 			$main .= '<option value="' . esc_attr( $choice ) . '"' . selected( $level, $choice, false ) . '>' . esc_html( $choice ) . '</option>';
 		}
 		$main .= '</select> <label for="lld_place">Version</label> <select id="lld_place" name="place">';
@@ -166,39 +205,63 @@ class LLD_Members_Premium {
 		}
 		$main .= '</select> <button class="lld-button" type="submit">Show this week</button></p></form>';
 		if ( $consent ) {
-			$main .= '<form method="post"><p>';
-			$main .= wp_nonce_field( 'lld_plan', 'lld_plan_nonce', true, false );
-			$main .= '<input type="hidden" name="level" value="' . esc_attr( $level ) . '"><input type="hidden" name="place" value="' . esc_attr( $place ) . '">';
-			$main .= '<button class="lld-button" type="submit">Move up a level</button></p></form>';
+			$hidden = wp_nonce_field( 'lld_plan', 'lld_plan_nonce', true, false ) . '<input type="hidden" name="level" value="' . esc_attr( $level ) . '"><input type="hidden" name="place" value="' . esc_attr( $place ) . '">';
+			if ( ! $mine ) {
+				$main .= '<form method="post"><p>' . $hidden . '<input type="hidden" name="lld_plan_action" value="choose"><button class="lld-button" type="submit">Choose this plan</button></p></form>';
+			}
+			if ( isset( self::NEXT_LEVEL[ $level ] ) ) {
+				if ( $mine && $elapsed > $last ) {
+					$main .= '<p>You have finished this level\'s weeks. Move up a level when you\'re ready.</p>';
+				}
+				$main .= '<form method="post"><p>' . str_replace( 'id="lld_plan_nonce"', 'id="lld_plan_nonce_up"', $hidden ) . '<input type="hidden" name="lld_plan_action" value="up"><button class="lld-button" type="submit">Move up a level</button></p></form>';
+			}
 		}
 		if ( ! $plan ) {
 			$main .= '<p>' . esc_html( LLD_Members_Safety::empty_line( $member_id ) ) . '</p>';
 			self::page( 'Workout', $main );
 			return;
 		}
+		$base  = '/members/workout/?level=' . rawurlencode( $level ) . '&place=' . rawurlencode( $place );
 		$main .= '<h2>Week ' . (int) $week . '</h2>';
+		if ( count( $weeks ) > 1 ) {
+			$main .= '<p>';
+			foreach ( array_keys( $weeks ) as $number ) {
+				$main .= ( $number === $week ? '<strong>Week ' . (int) $number . '</strong>' : '<a href="' . esc_url( home_url( $base . '&week=' . (int) $number ) ) . '">Week ' . (int) $number . '</a>' ) . ' ';
+			}
+			$main .= '</p>';
+		}
 		$index = 0;
 		foreach ( $plan['sessions'] as $row ) {
 			++$index;
-			$href  = home_url( '/members/workout/?level=' . rawurlencode( $level ) . '&place=' . rawurlencode( $place ) . '&session=' . $index );
+			$href  = home_url( $base . '&week=' . (int) $week . '&session=' . $index );
 			$main .= '<p><a href="' . esc_url( $href ) . '">' . esc_html( $row['name'] ) . '</a></p>';
 		}
 		if ( $session > 0 && isset( $plan['sessions'][ $session - 1 ] ) ) {
 			$row   = $plan['sessions'][ $session - 1 ];
-			$steps = (int) $row['seconds'] . '|' . (int) $row['rest'];
+			$steps = array();
+			foreach ( $row['exercises'] as $exercise ) {
+				$steps[] = (int) $exercise['seconds'] . '|' . (int) $exercise['rest'];
+			}
+			$first = $row['exercises'][0];
 			$main .= '<section id="lld-safety"><h2>Safety advice</h2>';
 			foreach ( $plan['safety'] as $line ) {
 				$main .= '<p>' . esc_html( $line ) . '</p>';
 			}
 			$main .= '<p><button type="button" class="lld-button" id="lld-ready">I\'m ready</button></p></section>';
-			$main .= '<section id="lld-session" hidden><h2 id="lld-exercise">' . esc_html( $row['name'] ) . '</h2>';
-			$main .= '<p id="lld-timer" data-steps="' . esc_attr( $steps ) . '">' . (int) $row['seconds'] . '</p>';
+			$main .= '<section id="lld-session" hidden><h2 id="lld-exercise">' . esc_html( $first['name'] ) . '</h2>';
+			$main .= '<p id="lld-how">' . esc_html( $first['how'] ) . '</p>';
+			$main .= '<p id="lld-timer" data-steps="' . esc_attr( implode( ';', $steps ) ) . '">' . (int) $first['seconds'] . '</p>';
 			$main .= '<p id="lld-phase">exercise</p>';
 			$main .= '<p><button type="button" class="lld-button" id="lld-start">Start</button> <button type="button" class="lld-button" id="lld-pause">Pause</button></p>';
+			$main .= '<ol id="lld-steps">';
+			foreach ( $row['exercises'] as $exercise ) {
+				$main .= '<li data-lld-step data-name="' . esc_attr( $exercise['name'] ) . '" data-how="' . esc_attr( $exercise['how'] ) . '">' . esc_html( $exercise['name'] ) . ': ' . (int) $exercise['seconds'] . ' seconds, then ' . (int) $exercise['rest'] . ' seconds rest.' . ( '' !== $exercise['how'] ? ' ' . esc_html( $exercise['how'] ) : '' ) . '</li>';
+			}
+			$main .= '</ol>';
 			$main .= '<form method="post">';
 			$main .= wp_nonce_field( 'lld_done', 'lld_done_nonce', true, false );
 			$main .= '<input type="hidden" name="lld_session" value="' . (int) $session . '">';
-			$main .= '<input type="hidden" name="level" value="' . esc_attr( $level ) . '"><input type="hidden" name="place" value="' . esc_attr( $place ) . '">';
+			$main .= '<input type="hidden" name="level" value="' . esc_attr( $level ) . '"><input type="hidden" name="place" value="' . esc_attr( $place ) . '"><input type="hidden" name="week" value="' . (int) $week . '">';
 			$main .= lld_button( array( 'label' => 'Done' ) );
 			$main .= '</form></section>';
 		}
@@ -530,6 +593,9 @@ class LLD_Members_Premium {
 				'challenge' => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'challenge' ) . ' WHERE member_id = %d', $member_id ) ),
 				'result'    => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'result' ) . ' WHERE member_id = %d', $member_id ) ),
 				'workout'   => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'workout' ) . ' WHERE member_id = %d', $member_id ) ),
+				'plan'      => $wpdb->get_row( $wpdb->prepare( 'SELECT level, version_key, started_on, current_week FROM ' . LLD_Members_Schema::table( 'workout' ) . ' WHERE member_id = %d AND active = 1', $member_id ), ARRAY_A ),
+				'changes'   => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'workout_change' ) . ' c JOIN ' . LLD_Members_Schema::table( 'workout' ) . ' w ON w.id = c.workout_id WHERE w.member_id = %d', $member_id ) ),
+				'results'   => $wpdb->get_results( $wpdb->prepare( 'SELECT item_version, context_type, programme_day FROM ' . LLD_Members_Schema::table( 'result' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
 			),
 			200
 		);
@@ -1087,45 +1153,103 @@ class LLD_Members_Premium {
 	}
 
 	/**
-	 * @param string $level Level.
-	 * @param string $place home or equipment.
-	 * @param int    $week  Week number.
-	 * @return array{safety:string[],sessions:array<int,array<string,mixed>>}|null
+	 * Approved workout weeks for one level and version that pass the safety matrix: week number => plan.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $level     Level.
+	 * @param string $place     home or equipment.
+	 * @return array<int,array{id:int,version_key:string,safety:string[],sessions:array<int,array<string,mixed>>}>
 	 */
-	private static function workout_plan( $member_id, $level, $place, $week ) {
+	private static function workout_weeks( $member_id, $level, $place ) {
+		$weeks = array();
 		foreach ( self::approved_of( 'lld_workout' ) as $plan ) {
 			$plan['type'] = 'lld_workout';
 			if ( ! LLD_Members_Safety::allows( $member_id, $plan ) ) {
 				continue;
 			}
 			$fields = isset( $plan['fields'] ) && is_array( $plan['fields'] ) ? $plan['fields'] : array();
-			if ( sanitize_key( (string) ( $fields['level'] ?? '' ) ) !== $level ) {
+			if ( sanitize_key( (string) ( $fields['level'] ?? '' ) ) !== $level || sanitize_key( (string) ( $fields['place'] ?? '' ) ) !== $place ) {
 				continue;
 			}
-			if ( sanitize_key( (string) ( $fields['place'] ?? '' ) ) !== $place ) {
+			$number = max( 1, (int) ( $fields['week_number'] ?? 1 ) );
+			if ( isset( $weeks[ $number ] ) ) {
 				continue;
 			}
-			if ( (int) ( $fields['week_number'] ?? 1 ) !== (int) $week ) {
+			$sessions = self::parse_sessions( (string) ( $fields['sessions'] ?? '' ) );
+			if ( ! $sessions ) {
 				continue;
 			}
-			$sessions = array();
-			foreach ( preg_split( '/\r\n|\r|\n/', (string) ( $fields['sessions'] ?? '' ) ) as $line ) {
-				$parts = array_map( 'trim', explode( '|', (string) $line ) );
-				if ( '' === ( $parts[0] ?? '' ) ) {
-					continue;
-				}
-				$sessions[] = array(
-					'name'    => $parts[0],
-					'seconds' => isset( $parts[1] ) ? (int) $parts[1] : 30,
-					'rest'    => isset( $parts[2] ) ? (int) $parts[2] : 15,
-				);
-			}
-			return array(
-				'safety'   => self::workout_advice( $member_id, $plan ),
-				'sessions' => $sessions,
+			$weeks[ $number ] = array(
+				'id'          => (int) $plan['parent_id'],
+				'version_key' => self::version_key( $plan ),
+				'safety'      => self::workout_advice( $member_id, $plan ),
+				'sessions'    => $sessions,
 			);
 		}
-		return null;
+		ksort( $weeks );
+		return $weeks;
+	}
+
+	/**
+	 * @param int    $member_id Member number.
+	 * @param string $level     Level.
+	 * @param string $place     home or equipment.
+	 * @param int    $week      Week number.
+	 * @return array{id:int,version_key:string,safety:string[],sessions:array<int,array<string,mixed>>}|null
+	 */
+	private static function workout_plan( $member_id, $level, $place, $week ) {
+		$weeks = self::workout_weeks( $member_id, $level, $place );
+		return $weeks[ (int) $week ] ?? null;
+	}
+
+	/**
+	 * Sessions from the owner's text. Sessions are blocks separated by a blank line; a line without "|" names the
+	 * session, and each "name | seconds | rest | instructions" line is one exercise. Text with no blank line and no
+	 * session names is the older form: each line is a session with one exercise.
+	 *
+	 * @param string $text Sessions field.
+	 * @return array<int,array{name:string,exercises:array<int,array{name:string,seconds:int,rest:int,how:string}>}>
+	 */
+	private static function parse_sessions( $text ) {
+		$text   = trim( str_replace( array( "\r\n", "\r" ), "\n", (string) $text ) );
+		$blocks = '' === $text ? array() : preg_split( '/\n[ \t]*\n/', $text );
+		$named  = (bool) preg_match( '/^[^|\n]+$/m', $text );
+		if ( 1 === count( $blocks ) && ! $named ) {
+			$blocks = explode( "\n", $text );
+		}
+		$sessions = array();
+		foreach ( $blocks as $block ) {
+			$name      = '';
+			$exercises = array();
+			foreach ( explode( "\n", (string) $block ) as $line ) {
+				$line = trim( $line );
+				if ( '' === $line ) {
+					continue;
+				}
+				if ( false === strpos( $line, '|' ) ) {
+					$name = '' === $name ? $line : $name;
+					continue;
+				}
+				$parts = array_map( 'trim', explode( '|', $line ) );
+				if ( '' === $parts[0] ) {
+					continue;
+				}
+				$exercises[] = array(
+					'name'    => $parts[0],
+					'seconds' => isset( $parts[1] ) && (int) $parts[1] > 0 ? (int) $parts[1] : 30,
+					'rest'    => isset( $parts[2] ) && '' !== $parts[2] ? max( 0, (int) $parts[2] ) : 15,
+					'how'     => isset( $parts[3] ) ? implode( ' | ', array_slice( $parts, 3 ) ) : '',
+				);
+			}
+			if ( ! $exercises ) {
+				continue;
+			}
+			$sessions[] = array(
+				'name'      => '' !== $name ? $name : $exercises[0]['name'],
+				'exercises' => $exercises,
+			);
+		}
+		return $sessions;
 	}
 
 	/**
@@ -1161,16 +1285,85 @@ class LLD_Members_Premium {
 	}
 
 	/**
+	 * @param mixed $value Posted or stored level.
+	 */
+	private static function level_of( $value ) {
+		$value = sanitize_key( (string) $value );
+		return isset( self::LEVELS[ $value ] ) ? $value : 'beginner';
+	}
+
+	/**
+	 * @param mixed $value Posted or stored version.
+	 */
+	private static function place_of( $value ) {
+		$value = sanitize_key( (string) $value );
+		return in_array( $value, array( 'home', 'equipment' ), true ) ? $value : 'home';
+	}
+
+	/**
+	 * @param int $member_id Member number.
+	 */
+	private static function active_workout( $member_id ) {
+		global $wpdb;
+		return $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'workout' ) . ' WHERE member_id = %d AND active = 1 ORDER BY id DESC LIMIT 1', $member_id ) );
+	}
+
+	/**
+	 * Week of the plan by the calendar: week 1 for the first 7 days from the start, and so on.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param object $saved     Active workout row.
+	 */
+	private static function elapsed_week( $member_id, $saved ) {
+		$start = (string) $saved->started_on;
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $start ) ) {
+			return 1;
+		}
+		$today = LLD_Members_Programme::local_today( $member_id );
+		if ( $today <= $start ) {
+			return 1;
+		}
+		$days = (int) ( new DateTimeImmutable( $start ) )->diff( new DateTimeImmutable( $today ) )->days;
+		return intdiv( $days, 7 ) + 1;
+	}
+
+	/**
+	 * Current week moves on after 7 days (Data Model C7), never back, and not past the last approved week.
+	 *
+	 * @param object $saved   Active workout row.
+	 * @param int    $elapsed Week by the calendar.
+	 * @param int    $last    Last approved week for this plan.
+	 */
+	private static function advance_week( $saved, $elapsed, $last ) {
+		$stored = max( 1, (int) $saved->current_week );
+		$week   = min( max( $stored, (int) $elapsed ), max( 1, (int) $last ) );
+		if ( $week !== $stored ) {
+			global $wpdb;
+			$wpdb->update( LLD_Members_Schema::table( 'workout' ), array( 'current_week' => $week ), array( 'id' => (int) $saved->id ), array( '%d' ), array( '%d' ) );
+		}
+		return $week;
+	}
+
+	/**
+	 * Save the member's chosen plan. A new level starts again at week 1 and is recorded as a change; a new version
+	 * of the same level keeps the week.
+	 *
 	 * @param int    $member_id Member number.
 	 * @param string $level     Level.
 	 * @param string $place     Version.
 	 */
 	private static function save_workout( $member_id, $level, $place ) {
 		global $wpdb;
-		$table = LLD_Members_Schema::table( 'workout' );
-		$today = LLD_Members_Programme::local_today( $member_id );
-		$current = $wpdb->get_row( $wpdb->prepare( "SELECT id, level FROM {$table} WHERE member_id = %d AND active = 1 LIMIT 1", $member_id ) );
-		if ( $current && (string) $current->level !== $level ) {
+		$table   = LLD_Members_Schema::table( 'workout' );
+		$today   = LLD_Members_Programme::local_today( $member_id );
+		$current = self::active_workout( $member_id );
+		if ( $current && (string) $current->level === $level ) {
+			if ( (string) $current->version_key !== $place ) {
+				$wpdb->update( $table, array( 'version_key' => $place ), array( 'id' => (int) $current->id ), array( '%s' ), array( '%d' ) );
+			}
+			return;
+		}
+		if ( $current ) {
 			$wpdb->update( $table, array( 'active' => 0 ), array( 'id' => (int) $current->id ), array( '%d' ), array( '%d' ) );
 			$wpdb->insert(
 				LLD_Members_Schema::table( 'workout_change' ),
@@ -1182,43 +1375,53 @@ class LLD_Members_Premium {
 				array( '%d', '%s', '%s' )
 			);
 		}
-		if ( ! $current || (string) $current->level !== $level ) {
-			$wpdb->insert(
-				$table,
-				array(
-					'member_id'   => $member_id,
-					'level'       => $level,
-					'version_key' => $place,
-					'started_on'  => $today,
-					'current_week'=> 1,
-					'active'      => 1,
-				),
-				array( '%d', '%s', '%s', '%s', '%d', '%d' )
-			);
-		}
+		$wpdb->insert(
+			$table,
+			array(
+				'member_id'    => $member_id,
+				'level'        => $level,
+				'version_key'  => $place,
+				'started_on'   => $today,
+				'current_week' => 1,
+				'active'       => 1,
+			),
+			array( '%d', '%s', '%s', '%s', '%d', '%d' )
+		);
 	}
 
 	/**
-	 * @param int    $member_id Member number.
-	 * @param string $context   workout or challenge.
-	 * @param int    $day       Session or day.
+	 * One result per occurrence (Data Model C8): this session version, in this week of this workout plan.
+	 *
+	 * @param int                 $member_id  Member number.
+	 * @param int                 $workout_id Active workout row.
+	 * @param array<string,mixed> $plan       The week's plan.
+	 * @param int                 $week       Week number.
+	 * @param int                 $index      Session number in the week.
+	 * @return bool False when this occurrence is already saved.
 	 */
-	private static function store_result( $member_id, $context, $day ) {
+	private static function store_session( $member_id, $workout_id, $plan, $week, $index ) {
 		global $wpdb;
-		$wpdb->insert(
-			LLD_Members_Schema::table( 'result' ),
+		$table = LLD_Members_Schema::table( 'result' );
+		$item  = (string) $plan['version_key'] . ':s' . (int) $index;
+		$found = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE member_id = %d AND item_version = %s AND context_type = 'workout' AND context_id = %d AND programme_day = %d", $member_id, $item, $workout_id, $week ) );
+		if ( $found ) {
+			return false;
+		}
+		$ok = $wpdb->insert(
+			$table,
 			array(
-				'member_id'    => $member_id,
-				'item_version' => $context . '-' . $day,
-				'context_type' => $context,
-				'context_id'   => 0,
-				'programme_day'=> $day,
-				'local_date'   => LLD_Members_Programme::local_today( $member_id ),
-				'result'       => 'done',
-				'recorded_at'  => lld_members_now_mysql( $member_id ),
+				'member_id'     => $member_id,
+				'item_version'  => $item,
+				'context_type'  => 'workout',
+				'context_id'    => $workout_id,
+				'programme_day' => (int) $week,
+				'local_date'    => LLD_Members_Programme::local_today( $member_id ),
+				'result'        => 'done',
+				'recorded_at'   => lld_members_now_mysql( $member_id ),
 			),
 			array( '%d', '%s', '%s', '%d', '%d', '%s', '%s', '%s' )
 		);
+		return false !== $ok;
 	}
 
 	/**

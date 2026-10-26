@@ -532,7 +532,31 @@ class LLD_Members_Fixtures {
 				'place'       => 'home',
 				'week_number' => 1,
 				'safety'      => 'Warm up for 5 minutes. Stop if you feel pain.',
-				'sessions'    => "Squat to chair | 10 | 30\nWall press | 10 | 20",
+				'sessions'    => "Session A\nSquat to chair | 10 | 30 | Sit down and stand up slowly.\nWall press | 10 | 20 | Push away from the wall.\n\nSession B\nMarch on the spot | 15 | 15 | Lift your knees gently.",
+			)
+		);
+		self::item(
+			'lld_workout',
+			'Beginner home week 2 ' . $stamp,
+			'',
+			array(
+				'level'       => 'beginner',
+				'place'       => 'home',
+				'week_number' => 2,
+				'safety'      => 'Warm up for 5 minutes. Stop if you feel pain.',
+				'sessions'    => "Session A\nSquat to chair | 20 | 30 | Sit down and stand up slowly.\nWall press | 20 | 20 | Push away from the wall.\n\nSession B\nMarch on the spot | 30 | 15 | Lift your knees gently.",
+			)
+		);
+		self::item(
+			'lld_workout',
+			'Intermediate home ' . $stamp,
+			'',
+			array(
+				'level'       => 'intermediate',
+				'place'       => 'home',
+				'week_number' => 1,
+				'safety'      => 'Warm up for 5 minutes. Stop if you feel pain.',
+				'sessions'    => "Session A\nStep-ups | 30 | 30 | Step up and down a low step.",
 			)
 		);
 		self::item( 'lld_qa', 'Live ' . $stamp, '', array( 'session_date' => '2026-11-04', 'session_time' => '19:00' ) );
