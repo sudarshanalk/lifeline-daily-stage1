@@ -452,6 +452,7 @@ class LLD_Members_Fixtures {
 		$oat    = self::item( 'lld_recipe', 'Oat ' . $stamp, '', array( 'ingredients' => 'oats | 40 | g', 'diet' => 'vegetarian', 'meal_type' => 'breakfast' ) );
 		$loss   = self::item( 'lld_recipe', 'Loss ' . $stamp, 'weight-loss', array( 'ingredients' => 'loss broth | 10 | g', 'diet' => 'vegetarian', 'meal_type' => 'dinner' ) );
 		$tofu   = self::item( 'lld_recipe', 'Tofu ' . $stamp, '', array( 'ingredients' => 'tofu | 100 | g', 'diet' => 'vegan', 'meal_type' => 'lunch' ) );
+		$bean   = self::item( 'lld_recipe', 'Bean stew ' . $stamp, '', array( 'ingredients' => 'butter beans | 200 | g', 'diet' => 'vegetarian', 'meal_type' => 'dinner' ) );
 		$days   = array();
 		for ( $day = 1; $day <= 7; $day++ ) {
 			$days[ (string) $day ] = array(
@@ -470,7 +471,7 @@ class LLD_Members_Fixtures {
 				'diet'        => 'vegetarian',
 				'week_number' => 1,
 				'meals'       => wp_json_encode( $days ),
-				'swaps'       => wp_json_encode( array( '1-breakfast' => array( $oat, $loss ) ) ),
+				'swaps'       => wp_json_encode( array( '1-breakfast' => array( $oat, $loss ), '3-dinner' => array( $bean ) ) ),
 			)
 		);
 		self::item(
@@ -541,6 +542,9 @@ class LLD_Members_Fixtures {
 			'track'     => get_post_field( 'post_name', $track ),
 			'lentil'    => 'Lentil ' . $stamp,
 			'oat'       => 'Oat ' . $stamp,
+			'oat_id'    => $oat,
+			'bean'      => 'Bean stew ' . $stamp,
+			'bean_id'   => $bean,
 			'loss'      => 'Loss ' . $stamp,
 			'tofu'      => 'Tofu ' . $stamp,
 			'lean'      => get_post_field( 'post_name', $lean ),

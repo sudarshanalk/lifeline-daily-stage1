@@ -29,6 +29,8 @@ class LLD_Members_Premium {
 	 */
 	const INTENSE_EXERCISE = 'Check with your doctor first.';
 
+	const MEAL_SLOTS = array( 'breakfast', 'lunch', 'dinner', 'snack' );
+
 	public static function boot() {
 		add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ), 11 );
 	}
@@ -88,24 +90,35 @@ class LLD_Members_Premium {
 			self::page( 'Meal plan', $main );
 			return;
 		}
+		$consent = LLD_Members_Account::has_consent( $member_id, 'health' );
+		foreach ( LLD_Members_Safety::notes( $member_id ) as $note ) {
+			$main .= '<p class="lld-hint">' . esc_html( $note ) . '</p>';
+		}
+		$nonce = $consent ? wp_create_nonce( 'lld_swap' ) : '';
 		foreach ( $plan['days'] as $day => $meals ) {
 			$main .= '<section data-lld-day="' . (int) $day . '"><h2>Day ' . (int) $day . '</h2>';
 			foreach ( $meals as $slot => $recipe ) {
+				$key   = (int) $day . '-' . $slot;
+				$main .= '<div class="lld-meal" data-lld-meal="' . esc_attr( $key ) . '">';
 				$main .= '<p>' . esc_html( ucfirst( (string) $slot ) ) . ': ' . esc_html( $recipe['title'] ) . '</p>';
+				if ( $consent && $recipe['options'] ) {
+					$field = 'lld_recipe_' . (int) $day . '_' . $slot;
+					$main .= '<form method="post" class="lld-form" data-lld-swap="' . esc_attr( $key ) . '">';
+					$main .= '<input type="hidden" name="lld_swap_nonce" value="' . esc_attr( $nonce ) . '">';
+					$main .= '<input type="hidden" name="lld_slot" value="' . esc_attr( $key ) . '">';
+					$main .= '<p><label for="' . esc_attr( $field ) . '">Swap Day ' . (int) $day . ' ' . esc_html( $slot ) . '</label> <select id="' . esc_attr( $field ) . '" name="lld_recipe">';
+					foreach ( $recipe['options'] as $option ) {
+						$main .= '<option value="' . (int) $option['id'] . '">' . esc_html( $option['title'] ) . '</option>';
+					}
+					$main .= '</select></p>';
+					$main .= lld_button( array( 'label' => 'Swap' ) );
+					$main .= '</form>';
+				} elseif ( $consent ) {
+					$main .= '<p class="lld-hint">No safe swap for this meal.</p>';
+				}
+				$main .= '</div>';
 			}
 			$main .= '</section>';
-		}
-		if ( $plan['swap_slot'] && $plan['swap_options'] && LLD_Members_Account::has_consent( $member_id, 'health' ) ) {
-			$main .= '<form method="post" class="lld-form">';
-			$main .= wp_nonce_field( 'lld_swap', 'lld_swap_nonce', true, false );
-			$main .= '<input type="hidden" name="lld_slot" value="' . esc_attr( $plan['swap_slot'] ) . '">';
-			$main .= '<p><label for="lld_recipe">Swap Day 1 breakfast</label> <select id="lld_recipe" name="lld_recipe">';
-			foreach ( $plan['swap_options'] as $option ) {
-				$main .= '<option value="' . (int) $option['id'] . '">' . esc_html( $option['title'] ) . '</option>';
-			}
-			$main .= '</select></p>';
-			$main .= lld_button( array( 'label' => 'Swap' ) );
-			$main .= '</form>';
 		}
 		$main .= '<h2>Shopping list</h2><ul data-lld-shopping>';
 		foreach ( $plan['shopping'] as $line ) {
@@ -599,15 +612,15 @@ class LLD_Members_Premium {
 	}
 
 	/**
+	 * The member's week: each meal with its safe swap alternatives, and the shopping list.
+	 *
 	 * @param int $member_id Member number.
-	 * @return array{days:array<int,array<string,array<string,mixed>>>,shopping:string[],swap_slot:string,swap_options:array<int,array<string,mixed>>}
+	 * @return array{days:array<int,array<string,array<string,mixed>>>,shopping:string[]}
 	 */
 	private static function meal_view( $member_id ) {
-		$empty = array(
-			'days'         => array(),
-			'shopping'     => array(),
-			'swap_slot'    => '',
-			'swap_options' => array(),
+		$empty    = array(
+			'days'     => array(),
+			'shopping' => array(),
 		);
 		$template = self::matching_template( $member_id );
 		if ( ! $template ) {
@@ -618,44 +631,67 @@ class LLD_Members_Premium {
 		$offer = self::decode_swaps( $template );
 		$days  = array();
 		$bag   = array();
-		$slot_key = '';
-		$options  = array();
 		foreach ( $meals as $day => $slots ) {
-			if ( ! is_array( $slots ) ) {
+			if ( ! is_array( $slots ) || (int) $day < 1 || (int) $day > 7 ) {
 				continue;
 			}
 			foreach ( $slots as $name => $recipe_id ) {
-				$key    = (int) $day . '-' . sanitize_key( (string) $name );
-				$chosen = isset( $swaps[ $key ] ) ? (int) $swaps[ $key ] : (int) $recipe_id;
-				$recipe = self::safe_recipe( $member_id, $chosen );
-				if ( ! $recipe && (int) $chosen !== (int) $recipe_id ) {
-					$recipe = self::safe_recipe( $member_id, (int) $recipe_id );
+				$slot = sanitize_key( (string) $name );
+				if ( ! in_array( $slot, self::MEAL_SLOTS, true ) ) {
+					continue;
 				}
+				$key     = (int) $day . '-' . $slot;
+				$offered = self::offered_ids( $offer, $key, $slot );
+				$planned = self::safe_recipe( $member_id, (int) $recipe_id );
+				$chosen  = null;
+				if ( isset( $swaps[ $key ] ) && in_array( self::version_parent( (string) $swaps[ $key ] ), $offered, true ) ) {
+					$chosen = self::safe_recipe( $member_id, self::version_parent( (string) $swaps[ $key ] ) );
+				}
+				$recipe = $chosen ? $chosen : $planned;
 				if ( ! $recipe ) {
 					continue;
 				}
-				$days[ (int) $day ][ sanitize_key( (string) $name ) ] = $recipe;
+				$options = array();
+				$ids     = $planned ? array_merge( array( (int) $planned['id'] ), $offered ) : $offered;
+				foreach ( array_unique( $ids ) as $option_id ) {
+					if ( (int) $option_id === (int) $recipe['id'] ) {
+						continue;
+					}
+					$option = self::safe_recipe( $member_id, (int) $option_id );
+					if ( $option ) {
+						$options[] = $option;
+					}
+				}
+				$recipe['options']           = $options;
+				$days[ (int) $day ][ $slot ] = $recipe;
 				foreach ( $recipe['ingredients'] as $line ) {
 					$bag[ $line ] = $line;
 				}
 			}
 		}
-		if ( isset( $offer['1-breakfast'] ) && is_array( $offer['1-breakfast'] ) ) {
-			$slot_key = '1-breakfast';
-			foreach ( $offer['1-breakfast'] as $recipe_id ) {
-				$recipe = self::safe_recipe( $member_id, (int) $recipe_id );
-				if ( $recipe ) {
-					$options[] = $recipe;
-				}
-			}
-		}
 		ksort( $days );
 		return array(
-			'days'         => $days,
-			'shopping'     => array_values( $bag ),
-			'swap_slot'    => $slot_key,
-			'swap_options' => $options,
+			'days'     => $days,
+			'shopping' => array_values( $bag ),
 		);
+	}
+
+	/**
+	 * Recipe ids the template offers for one meal: "3-dinner" first, then the slot on every day ("dinner").
+	 *
+	 * @param array<string,mixed> $offer Template swap options.
+	 * @param string              $key   Day and slot, for example 3-dinner.
+	 * @param string              $slot  Slot.
+	 * @return int[]
+	 */
+	private static function offered_ids( $offer, $key, $slot ) {
+		$list = array();
+		if ( isset( $offer[ $key ] ) && is_array( $offer[ $key ] ) ) {
+			$list = $offer[ $key ];
+		} elseif ( isset( $offer[ $slot ] ) && is_array( $offer[ $slot ] ) ) {
+			$list = $offer[ $slot ];
+		}
+		return array_values( array_filter( array_map( 'intval', $list ) ) );
 	}
 
 	/**
@@ -742,15 +778,33 @@ class LLD_Members_Premium {
 		}
 		$slot   = isset( $_POST['lld_slot'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_slot'] ) ) : '';
 		$recipe = isset( $_POST['lld_recipe'] ) ? (int) $_POST['lld_recipe'] : 0;
-		if ( '' === $slot || ! self::safe_recipe( $member_id, $recipe ) ) {
+		if ( ! preg_match( '/^([1-7])-(breakfast|lunch|dinner|snack)$/', $slot, $parts ) ) {
 			return;
 		}
 		$template = self::matching_template( $member_id );
 		if ( ! $template ) {
 			return;
 		}
-		$swaps          = self::saved_swaps( $member_id, $template );
-		$swaps[ $slot ] = $recipe;
+		// Only an alternative this meal offers right now; meal_view has applied the safety matrix to each one.
+		$view   = self::meal_view( $member_id );
+		$meal   = $view['days'][ (int) $parts[1] ][ $parts[2] ] ?? null;
+		$picked = null;
+		foreach ( $meal ? $meal['options'] : array() as $option ) {
+			if ( (int) $option['id'] === $recipe ) {
+				$picked = $option;
+			}
+		}
+		if ( ! $picked ) {
+			return;
+		}
+		$meals   = self::decode_meals( $template );
+		$planned = (int) ( $meals[ $parts[1] ][ $parts[2] ] ?? 0 );
+		$swaps   = self::saved_swaps( $member_id, $template );
+		if ( $recipe === $planned ) {
+			unset( $swaps[ $slot ] );
+		} else {
+			$swaps[ $slot ] = (string) $picked['version_key'];
+		}
 		global $wpdb;
 		$today = LLD_Members_Programme::local_today( $member_id );
 		$start = ( new DateTimeImmutable( $today ) )->modify( '-' . ( (int) ( new DateTimeImmutable( $today ) )->format( 'N' ) - 1 ) . ' days' )->format( 'Y-m-d' );
@@ -821,6 +875,7 @@ class LLD_Members_Premium {
 		}
 		return array(
 			'id'          => (int) $snap['parent_id'],
+			'version_key' => self::version_key( $snap ),
 			'title'       => (string) $snap['title'],
 			'ingredients' => $lines,
 		);
@@ -1604,8 +1659,8 @@ class LLD_Members_Premium {
 		if ( $active ) {
 			$day = LLD_Members_Programme::position_parts( LLD_Members_Programme::programme_day( $member_id, (int) $active->id ) )['day'];
 		}
-		if ( isset( $view['days'][ $day ][ $meal ]['id'] ) ) {
-			return (string) $view['days'][ $day ][ $meal ]['id'];
+		if ( isset( $view['days'][ $day ][ $meal ]['version_key'] ) ) {
+			return (string) $view['days'][ $day ][ $meal ]['version_key'];
 		}
 		return '';
 	}

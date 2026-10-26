@@ -125,3 +125,35 @@ describe('section 8.2 safety matrix: meal-plan templates', () => {
     });
   }
 });
+
+describe('section 8.2 safety matrix: meal plans and every swap list', () => {
+  const recipe = (title, tags, ingredient) => ({ type: 'lld_recipe', title, tags, fields: { ingredients: `${ingredient} | 1 | g` } });
+
+  for (const row of rows) {
+    test(`meal plan and swaps, ${row.name}`, () => {
+      for (const tag of hiddenOf(row)) {
+        const days = {};
+        for (let d = 1; d <= 7; d += 1) days[d] = { breakfast: 50, lunch: d === 2 ? 52 : 50, dinner: 50, snack: 50 };
+        const items = {
+          50: recipe('Safe porridge', [], 'oats'),
+          51: recipe('Safe soup', [], 'leeks'),
+          52: recipe(`Planned ${tag}`, [tag], 'tagged planned'),
+          53: recipe(`Swap ${tag}`, [tag], 'tagged swap'),
+          60: { type: 'lld_meal', title: 'Week', tags: [], fields: { diet: '', week_number: 1, meals: JSON.stringify(days), swaps: JSON.stringify({ dinner: [51, 53], '2-lunch': [51, 53] }) } },
+        };
+        const view = premium(world(row, items), 'meal_view', 7);
+        const text = JSON.stringify(view);
+        expect(text).not.toContain(`Swap ${tag}`);
+        expect(text).not.toContain(`Planned ${tag}`);
+        expect(text).not.toContain('tagged');
+        // the excluded planned meal is left out; every other meal is there, each dinner can swap to the safe soup
+        expect(view.days['2'].lunch).toBeUndefined();
+        expect(Object.keys(view.days)).toHaveLength(7);
+        for (let d = 1; d <= 7; d += 1) {
+          expect(view.days[d].dinner.options.map((o) => o.title)).toEqual(['Safe soup']);
+          expect(view.days[d].breakfast.options).toEqual([]);
+        }
+      }
+    });
+  }
+});

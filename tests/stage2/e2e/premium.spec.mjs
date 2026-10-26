@@ -168,11 +168,47 @@ test('TC-FR2-32-AS-04', async ({ page, request }) => {
   await saveHealth(page, member.id, { kind: 'profile', diet_type: 'vegetarian', confirmed: true });
   await startSlug(page, made.track);
   await page.goto('/members/meals/');
-  await expect(page.locator('#lld_recipe')).toContainText(made.oat);
+  // every meal of the week has a Swap control or the no-safe-swap state
+  const meals = page.locator('[data-lld-meal]');
+  await expect(meals).toHaveCount(28);
+  for (let i = 0; i < 28; i += 1) {
+    const meal = meals.nth(i);
+    expect(await meal.locator('form[data-lld-swap] select').count() + await meal.getByText('No safe swap for this meal.').count()).toBe(1);
+  }
+  const breakfast = page.locator('#lld_recipe_1_breakfast');
+  await expect(breakfast).toContainText(made.oat);
+  await expect(breakfast).not.toContainText(made.loss);
   await expect(page.locator('[data-lld-shopping]')).not.toContainText('oats');
-  await page.locator('#lld_recipe').selectOption({ label: made.oat });
-  await page.getByRole('button', { name: 'Swap' }).click();
+  await breakfast.selectOption({ label: made.oat });
+  await page.locator('form[data-lld-swap="1-breakfast"]').getByRole('button', { name: 'Swap' }).click();
   await expect(page.locator('[data-lld-shopping]')).toContainText('oats');
+  await expect(page.locator('[data-lld-meal="1-breakfast"]')).toContainText(made.oat);
+
+  // a meal other than breakfast: Day 3 dinner
+  const dinner = page.locator('#lld_recipe_3_dinner');
+  await expect(dinner).toContainText(made.bean);
+  await dinner.selectOption({ label: made.bean });
+  await page.locator('form[data-lld-swap="3-dinner"]').getByRole('button', { name: 'Swap' }).click();
+  await expect(page.locator('[data-lld-meal="3-dinner"]')).toContainText(made.bean);
+  await expect(page.locator('[data-lld-meal="2-dinner"]')).toContainText(made.lentil);
+  await expect(page.locator('[data-lld-shopping]')).toContainText('butter beans');
+  await page.reload();
+  await expect(page.locator('[data-lld-meal="3-dinner"]')).toContainText(made.bean);
+  await expect(page.locator('[data-lld-meal="1-breakfast"]')).toContainText(made.oat);
+
+  // the slot is checked, and the recipe must be one that slot offers
+  const nonce = await page.locator('form[data-lld-swap="1-breakfast"] input[name="lld_swap_nonce"]').inputValue();
+  for (const form of [
+    { lld_slot: '2-breakfast', lld_recipe: String(made.bean_id) },
+    { lld_slot: '1-breakfast', lld_recipe: String(made.bean_id) },
+    { lld_slot: '9-brunch', lld_recipe: String(made.oat_id) },
+  ]) {
+    const res = await page.request.post('/members/meals/', { form: { lld_swap_nonce: nonce, ...form }, maxRedirects: 0 });
+    expect(res.status()).toBeLessThan(400);
+  }
+  await page.reload();
+  await expect(page.locator('[data-lld-meal="2-breakfast"]')).toContainText(made.lentil);
+  await expect(page.locator('[data-lld-meal="1-breakfast"]')).toContainText(made.oat);
 });
 
 test('TC-FR2-32-AS-06', async ({ page, request }) => {

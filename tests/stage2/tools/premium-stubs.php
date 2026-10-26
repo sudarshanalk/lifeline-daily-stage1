@@ -66,6 +66,10 @@ class LLD_Members_Programme {
 	public static function active( $member_id ) {
 		return null;
 	}
+
+	public static function local_today( $member_id ) {
+		return '2026-05-04';
+	}
 }
 
 class LLD_Test_Wpdb {
@@ -86,6 +90,14 @@ class LLD_Test_Wpdb {
 
 	public function get_var( $query ) {
 		return null;
+	}
+
+	public function insert( $table, $data, $format = null ) {
+		return 1;
+	}
+
+	public function update( $table, $data, $where, $format = null, $where_format = null ) {
+		return 1;
 	}
 }
 
