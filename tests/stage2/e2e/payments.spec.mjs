@@ -423,6 +423,88 @@ test('TC-FR2-14-AS-07', async ({ page, request }) => {
   expect(flagged.length).toBeGreaterThan(0);
 });
 
+async function billingAction(request, data) {
+  const res = await request.post('/wp-json/lld-members/v1/test/billing', { data });
+  expect(res.ok(), await res.text()).toBeTruthy();
+  return res.json();
+}
+
+async function noticeRow(request, ref, action = 'notice') {
+  return (await billingAction(request, { action, ref })).notice;
+}
+
+const utcMs = (mysql) => Date.parse(`${mysql.replace(' ', 'T')}Z`);
+
+test('TC-FR2-14-AS-07 a notice that fails is kept, retried and applied once', async ({ request }) => {
+  const email = emailFor('kept');
+  await createMember(request, { email, password, first_name: 'Kept', role: 'member' });
+  await clock(request, email, '2026-10-01 12:00:00');
+  const quoted = await billingAction(request, { action: 'session', email, plan: 'monthly', country: 'US' });
+  const payment = `pi_${stamp()}`;
+  const event = {
+    id: `evt_${payment}`,
+    type: 'checkout.session.completed',
+    data: { object: { id: quoted.session, amount_total: Number(quoted.charged), subscription: `sub_${stamp()}`, payment_intent: payment, email } },
+  };
+  await billingAction(request, { action: 'fail_notice', ref: event.id });
+  const first = await notify(request, event);
+  expect(first.ok()).toBeTruthy();
+  expect((await first.json()).state).toBe('retrying');
+  let row = await noticeRow(request, event.id);
+  expect(row.processing_state).toBe('retrying');
+  expect(Number(row.attempts)).toBe(1);
+  expect(Number(row.has_payload)).toBe(1);
+  const gap = utcMs(row.next_attempt_at) - Date.now();
+  expect(gap).toBeGreaterThan(55 * 60000);
+  expect(gap).toBeLessThan(65 * 60000);
+  const before = await readMember(request, email);
+  expect(before.subscription).toBeFalsy();
+  expect(before.orders).toHaveLength(0);
+
+  const repeated = await notify(request, event);
+  expect((await repeated.json()).replay).toBe(true);
+  expect((await readMember(request, email)).orders).toHaveLength(0);
+
+  await billingAction(request, { action: 'fail_notice', ref: '' });
+  row = await noticeRow(request, event.id, 'retry_notice');
+  expect(row.processing_state).toBe('processed');
+  expect(Number(row.attempts)).toBe(2);
+  expect(Number(row.has_payload)).toBe(0);
+  const after = await readMember(request, email);
+  expect(after.subscription.access_state).toBe('Premium');
+  expect(after.orders).toHaveLength(1);
+
+  row = await noticeRow(request, event.id, 'retry_notice');
+  expect(row.processing_state).toBe('processed');
+  expect(Number(row.attempts)).toBe(2);
+  expect((await readMember(request, email)).orders).toHaveLength(1);
+});
+
+test('TC-FR2-14-AS-07 a notice that keeps failing is retried 5 times over 24 hours, then flagged to the owner', async ({ request }) => {
+  const event = { id: `evt_stuck_${stamp()}`, type: 'invoice.paid', data: { object: { id: `in_${stamp()}`, subscription: `sub_${stamp()}`, amount_paid: 799 } } };
+  await billingAction(request, { action: 'fail_notice', ref: event.id });
+  expect((await notify(request, event)).ok()).toBeTruthy();
+  const hours = [1, 2, 4, 8, 9];
+  let row = await noticeRow(request, event.id);
+  for (let retry = 0; retry < 5; retry += 1) {
+    expect(row.processing_state).toBe('retrying');
+    expect(Number(row.attempts)).toBe(retry + 1);
+    const gap = (utcMs(row.next_attempt_at) - Date.now()) / 3600000;
+    expect(Math.abs(gap - hours[retry])).toBeLessThan(0.1);
+    row = await noticeRow(request, event.id, 'retry_notice');
+  }
+  expect(hours.reduce((a, b) => a + b, 0)).toBe(24);
+  expect(row.processing_state).toBe('failed');
+  expect(Number(row.attempts)).toBe(6);
+  expect(row.last_error).toBeTruthy();
+  row = await noticeRow(request, event.id, 'retry_notice');
+  expect(Number(row.attempts)).toBe(6);
+  const mail = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
+  const flagged = (mail.messages || []).filter((message) => JSON.stringify(message).includes('A Stripe notice could not be processed'));
+  expect(flagged.length).toBeGreaterThan(0);
+  await billingAction(request, { action: 'fail_notice', ref: '' });
+});
+
 test('TC-FR2-14-AS-08', async ({ page, request }) => {
   const email = emailFor('switch');
   const subscription = `sub_${stamp()}`;

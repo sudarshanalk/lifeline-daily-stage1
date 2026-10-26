@@ -21,6 +21,10 @@ class LLD_Members_Billing {
 	 */
 	public static function boot() {
 		add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ) );
+		add_action( 'lld_members_notice_retry', array( __CLASS__, 'retry_notices' ) );
+		if ( ! wp_next_scheduled( 'lld_members_notice_retry' ) ) {
+			wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'lld_members_notice_retry' );
+		}
 	}
 
 	public static function admin_menu() {
@@ -98,6 +102,7 @@ class LLD_Members_Billing {
 		self::close_elapsed();
 		self::renewal_reminders();
 		self::mismatch_mail();
+		self::purge_notices();
 	}
 
 	/**
@@ -472,22 +477,158 @@ class LLD_Members_Billing {
 		global $wpdb;
 		$table = LLD_Members_Schema::table( 'stripe_notice' );
 		$ref   = sanitize_text_field( (string) $event['id'] );
-		$seen  = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE notice_ref = %s", $ref ) );
-		if ( $seen ) {
-			return new WP_REST_Response( array( 'replay' => true ), 200 );
-		}
-		$wpdb->insert(
+		// The unique notice_ref decides who processes a notice: only the request that wrote the row goes on.
+		$quiet   = $wpdb->suppress_errors( true );
+		$written = $wpdb->insert(
 			$table,
 			array(
-				'notice_ref'        => $ref,
-				'notice_type'       => sanitize_text_field( (string) $event['type'] ),
-				'received_at'       => lld_members_now_mysql(),
-				'processing_state'  => 'processed',
-				'attempts'          => 1,
+				'notice_ref'       => $ref,
+				'notice_type'      => sanitize_text_field( (string) $event['type'] ),
+				'received_at'      => gmdate( 'Y-m-d H:i:s' ),
+				'processing_state' => 'received',
+				'attempts'         => 0,
+				'payload'          => $raw,
+			),
+			array( '%s', '%s', '%s', '%s', '%d', '%s' )
+		);
+		$wpdb->suppress_errors( $quiet );
+		if ( 1 !== $written ) {
+			$seen = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE notice_ref = %s", $ref ) );
+			if ( $seen ) {
+				return new WP_REST_Response( array( 'replay' => true ), 200 );
+			}
+			// Not recorded: Stripe sends it again after a non-2xx answer, so nothing is lost.
+			return new WP_REST_Response( array( 'message' => 'not recorded' ), 500 );
+		}
+		$state = self::process_notice( (int) $wpdb->insert_id, $event );
+		return new WP_REST_Response(
+			array(
+				'ok'    => true,
+				'state' => $state,
+			),
+			200
+		);
+	}
+
+	/**
+	 * Hours to wait after each failed attempt: retries at 1, 3, 7, 15 and 24 hours (T4: 5 times over 24 hours).
+	 */
+	const NOTICE_RETRY_HOURS = array( 1, 2, 4, 8, 9 );
+
+	/**
+	 * True while a notice is applied: a failed write then throws and the notice is retried.
+	 *
+	 * @var bool
+	 */
+	private static $in_notice = false;
+
+	/**
+	 * Apply one recorded notice inside a transaction, then mark it processed, retrying or failed.
+	 *
+	 * @param int                 $id    Notice row.
+	 * @param array<string,mixed> $event Notice.
+	 * @return string processed, retrying or failed.
+	 */
+	private static function process_notice( $id, $event ) {
+		global $wpdb;
+		$table = LLD_Members_Schema::table( 'stripe_notice' );
+		$error = '';
+		$wpdb->query( 'START TRANSACTION' );
+		self::$in_notice = true;
+		try {
+			$forced = lld_members_test_routes_open() ? (string) get_option( 'lld_notice_fail' ) : '';
+			if ( '' !== $forced && $forced === (string) $event['id'] ) {
+				throw new RuntimeException( 'Processing stopped for a test.' );
+			}
+			self::apply_event( $event );
+			$wpdb->query( 'COMMIT' );
+		} catch ( Throwable $e ) {
+			$wpdb->query( 'ROLLBACK' );
+			$error = '' !== $e->getMessage() ? $e->getMessage() : get_class( $e );
+		}
+		self::$in_notice = false;
+		$attempts = 1 + (int) $wpdb->get_var( $wpdb->prepare( "SELECT attempts FROM {$table} WHERE id = %d", $id ) );
+		if ( '' === $error ) {
+			$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'processed', attempts = %d, last_error = NULL, next_attempt_at = NULL, payload = NULL WHERE id = %d", $attempts, $id ) );
+			return 'processed';
+		}
+		$error = substr( sanitize_text_field( $error ), 0, 250 );
+		$retry = $attempts - 1;
+		if ( $retry >= count( self::NOTICE_RETRY_HOURS ) ) {
+			$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'failed', attempts = %d, last_error = %s, next_attempt_at = NULL WHERE id = %d", $attempts, $error, $id ) );
+			wp_mail(
+				(string) get_option( 'admin_email' ),
+				'A Stripe notice could not be processed',
+				'Stripe notice ' . sanitize_text_field( (string) $event['id'] ) . ' (' . sanitize_text_field( (string) $event['type'] ) . ') failed ' . $attempts . " times over 24 hours. Please check it in Stripe.\n"
+			);
+			return 'failed';
+		}
+		$next = gmdate( 'Y-m-d H:i:s', time() + self::NOTICE_RETRY_HOURS[ $retry ] * HOUR_IN_SECONDS );
+		$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'retrying', attempts = %d, last_error = %s, next_attempt_at = %s WHERE id = %d", $attempts, $error, $next, $id ) );
+		return 'retrying';
+	}
+
+	/**
+	 * Hourly: run notices that are due again, and any left "received" by a request that stopped part way.
+	 *
+	 * @param string $now UTC time to judge "due" from; the real time when empty.
+	 * @return int Notices attempted.
+	 */
+	public static function retry_notices( $now = '' ) {
+		global $wpdb;
+		$table = LLD_Members_Schema::table( 'stripe_notice' );
+		$now   = '' !== $now ? $now : gmdate( 'Y-m-d H:i:s' );
+		$stuck = gmdate( 'Y-m-d H:i:s', strtotime( $now . ' UTC' ) - 15 * MINUTE_IN_SECONDS );
+		$rows  = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, processing_state, next_attempt_at, payload FROM {$table} WHERE processing_state IN ('received', 'retrying') AND ( ( next_attempt_at IS NOT NULL AND next_attempt_at <= %s ) OR ( next_attempt_at IS NULL AND received_at <= %s ) ) ORDER BY id ASC LIMIT 50",
+				$now,
+				$stuck
 			)
 		);
-		self::apply_event( $event );
-		return new WP_REST_Response( array( 'ok' => true ), 200 );
+		$count = 0;
+		foreach ( $rows as $row ) {
+			// Claim the row so a second runner leaves it alone.
+			$hold    = gmdate( 'Y-m-d H:i:s', strtotime( $now . ' UTC' ) + 15 * MINUTE_IN_SECONDS );
+			$claimed = null === $row->next_attempt_at
+				? $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'received', next_attempt_at = %s WHERE id = %d AND processing_state = %s AND next_attempt_at IS NULL", $hold, (int) $row->id, (string) $row->processing_state ) )
+				: $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'received', next_attempt_at = %s WHERE id = %d AND processing_state = %s AND next_attempt_at = %s", $hold, (int) $row->id, (string) $row->processing_state, (string) $row->next_attempt_at ) );
+			if ( 1 !== $claimed ) {
+				continue;
+			}
+			$event = is_string( $row->payload ) ? json_decode( $row->payload, true ) : null;
+			if ( ! is_array( $event ) || empty( $event['id'] ) || empty( $event['type'] ) ) {
+				$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET processing_state = 'failed', last_error = %s, next_attempt_at = NULL WHERE id = %d", 'The stored notice could not be read.', (int) $row->id ) );
+				continue;
+			}
+			self::process_notice( (int) $row->id, $event );
+			++$count;
+		}
+		return $count;
+	}
+
+	/**
+	 * P6: notice records are kept for 90 days.
+	 */
+	private static function purge_notices() {
+		global $wpdb;
+		$table = LLD_Members_Schema::table( 'stripe_notice' );
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE received_at < %s", gmdate( 'Y-m-d H:i:s', time() - 90 * DAY_IN_SECONDS ) ) );
+	}
+
+	/**
+	 * Throw when a write in the notice path fails, so the transaction rolls back and the notice is retried.
+	 *
+	 * @param int|false $result wpdb result.
+	 * @param string    $what   What was being written.
+	 * @return int
+	 */
+	private static function written( $result, $what ) {
+		if ( false === $result && self::$in_notice ) {
+			global $wpdb;
+			throw new RuntimeException( 'Could not write ' . $what . ': ' . (string) $wpdb->last_error );
+		}
+		return (int) $result;
 	}
 
 	/**
@@ -501,6 +642,7 @@ class LLD_Members_Billing {
 			delete_option( 'lld_codes' );
 			delete_option( 'lld_launch_on' );
 			delete_option( 'lld_reward_stop' );
+			delete_option( 'lld_notice_fail' );
 			delete_option( 'lld_members_stripe_unreachable' );
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
 		}
@@ -520,6 +662,26 @@ class LLD_Members_Billing {
 		if ( 'stop_reward' === $action ) {
 			update_option( 'lld_reward_stop', '1', false );
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
+		}
+		$notice_ref = isset( $params['ref'] ) ? sanitize_text_field( (string) $params['ref'] ) : '';
+		if ( 'fail_notice' === $action ) {
+			if ( '' === $notice_ref ) {
+				delete_option( 'lld_notice_fail' );
+			} else {
+				update_option( 'lld_notice_fail', $notice_ref, false );
+			}
+			return new WP_REST_Response( array( 'ok' => true ), 200 );
+		}
+		if ( 'notice' === $action || 'retry_notice' === $action ) {
+			global $wpdb;
+			$table = LLD_Members_Schema::table( 'stripe_notice' );
+			if ( 'retry_notice' === $action ) {
+				// Make this one notice due now; other notices keep their own times.
+				$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET next_attempt_at = %s WHERE notice_ref = %s AND processing_state IN ('received', 'retrying')", gmdate( 'Y-m-d H:i:s', time() - 60 ), $notice_ref ) );
+				self::retry_notices();
+			}
+			$row = $wpdb->get_row( $wpdb->prepare( "SELECT notice_ref, notice_type, processing_state, attempts, last_error, next_attempt_at, payload IS NOT NULL AS has_payload FROM {$table} WHERE notice_ref = %s", $notice_ref ), ARRAY_A );
+			return new WP_REST_Response( array( 'notice' => $row ), 200 );
 		}
 		$email = isset( $params['email'] ) ? sanitize_email( (string) $params['email'] ) : '';
 		$member_id = self::member_by_email( $email );
@@ -1322,7 +1484,7 @@ class LLD_Members_Billing {
 	private static function insert_order( $member_id, $kind, $quote, $payment, $email, $fingerprint ) {
 		unset( $fingerprint );
 		global $wpdb;
-		$wpdb->insert(
+		$result = $wpdb->insert(
 			LLD_Members_Schema::table( 'order' ),
 			array(
 				'member_id'          => $member_id,
@@ -1341,6 +1503,7 @@ class LLD_Members_Billing {
 				'billing_country'    => isset( $quote['country'] ) ? (string) $quote['country'] : null,
 			)
 		);
+		self::written( $result, 'an order' );
 		return (int) $wpdb->insert_id;
 	}
 
@@ -1411,17 +1574,17 @@ class LLD_Members_Billing {
 				}
 			}
 			if ( $fields ) {
-				$wpdb->update( $table, $fields, array( 'id' => $id ) );
+				self::written( $wpdb->update( $table, $fields, array( 'id' => $id ) ), 'a subscription' );
 			}
 			foreach ( $nulls as $column ) {
-				$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET `{$column}` = NULL WHERE id = %d", $id ) );
+				self::written( $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET `{$column}` = NULL WHERE id = %d", $id ) ), 'a subscription' );
 			}
 			return;
 		}
 		$fields['member_id']    = $member_id;
 		$fields['plan']         = isset( $fields['plan'] ) ? $fields['plan'] : 'free';
 		$fields['access_state'] = isset( $fields['access_state'] ) ? $fields['access_state'] : 'free';
-		$wpdb->insert( $table, $fields );
+		self::written( $wpdb->insert( $table, $fields ), 'a subscription' );
 	}
 
 	/**
