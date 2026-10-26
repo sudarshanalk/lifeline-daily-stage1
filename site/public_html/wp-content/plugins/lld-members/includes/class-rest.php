@@ -42,6 +42,64 @@ class LLD_Members_Rest {
 				'permission_callback' => '__return_true',
 			)
 		);
+		// Live routes: Stripe notices (C6) and the app API (C10) exist on every site. Each checks its caller
+		// itself (Stripe signature; app key or sign-in). Test-only routes stay below the gate.
+		register_rest_route(
+			'lld-members/v1',
+			'/stripe/notice',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'LLD_Members_Billing', 'rest_notice' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
+			'/app/session',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'LLD_Members_Quality', 'session' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
+			'/app/me',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( 'LLD_Members_Quality', 'me' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
+			'/app/profile',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'LLD_Members_Quality', 'profile' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
+			'/app/members/(?P<id>\d+)',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( 'LLD_Members_Quality', 'other' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+		foreach ( array( 'orders', 'premium', 'rewards', 'role' ) as $blocked ) {
+			register_rest_route(
+				'lld-members/v1',
+				'/app/' . $blocked,
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( 'LLD_Members_Quality', 'refused' ),
+					'permission_callback' => '__return_true',
+				)
+			);
+		}
 		if ( ! lld_members_test_routes_open() ) {
 			return;
 		}
@@ -72,15 +130,6 @@ class LLD_Members_Rest {
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'test_member' ),
 				'permission_callback' => array( __CLASS__, 'test_only' ),
-			)
-		);
-		register_rest_route(
-			'lld-members/v1',
-			'/stripe/notice',
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( 'LLD_Members_Billing', 'rest_notice' ),
-				'permission_callback' => '__return_true',
 			)
 		);
 		register_rest_route(
@@ -281,53 +330,6 @@ class LLD_Members_Rest {
 				'permission_callback' => array( __CLASS__, 'test_only' ),
 			)
 		);
-		register_rest_route(
-			'lld-members/v1',
-			'/app/session',
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( 'LLD_Members_Quality', 'session' ),
-				'permission_callback' => '__return_true',
-			)
-		);
-		register_rest_route(
-			'lld-members/v1',
-			'/app/me',
-			array(
-				'methods'             => 'GET',
-				'callback'            => array( 'LLD_Members_Quality', 'me' ),
-				'permission_callback' => '__return_true',
-			)
-		);
-		register_rest_route(
-			'lld-members/v1',
-			'/app/profile',
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( 'LLD_Members_Quality', 'profile' ),
-				'permission_callback' => '__return_true',
-			)
-		);
-		register_rest_route(
-			'lld-members/v1',
-			'/app/members/(?P<id>\d+)',
-			array(
-				'methods'             => 'GET',
-				'callback'            => array( 'LLD_Members_Quality', 'other' ),
-				'permission_callback' => '__return_true',
-			)
-		);
-		foreach ( array( 'orders', 'premium', 'rewards', 'role' ) as $blocked ) {
-			register_rest_route(
-				'lld-members/v1',
-				'/app/' . $blocked,
-				array(
-					'methods'             => 'POST',
-					'callback'            => array( 'LLD_Members_Quality', 'refused' ),
-					'permission_callback' => '__return_true',
-				)
-			);
-		}
 		register_rest_route(
 			'lld-members/v1',
 			'/test/search',
