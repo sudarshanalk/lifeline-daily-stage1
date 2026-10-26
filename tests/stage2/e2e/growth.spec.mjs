@@ -65,7 +65,26 @@ async function messages() {
 
 async function bodyOf(message) {
   const full = await fetch(`${MAILPIT}/api/v1/message/${message.ID}`).then((res) => res.json());
-  return `${full.Subject || ''}\n${full.Text || ''}`;
+  const to = (full.To || []).map((item) => item.Address).join(', ');
+  return `To: ${to}\n${full.Subject || ''}\n${full.Text || ''}`;
+}
+
+/** Newest message to this address with this subject, with its headers. */
+async function messageTo(email, subject) {
+  for (const message of await messages()) {
+    if (message.Subject !== subject || !(message.To || []).some((item) => item.Address === email)) continue;
+    const full = await fetch(`${MAILPIT}/api/v1/message/${message.ID}`).then((res) => res.json());
+    const headers = await fetch(`${MAILPIT}/api/v1/message/${message.ID}/headers`).then((res) => res.json());
+    return { text: full.Text || '', headers };
+  }
+  return null;
+}
+
+async function askGuide(page, path, email) {
+  await page.goto(path);
+  await page.locator('#lld_guide_email').fill(email);
+  await page.getByRole('button', { name: 'Send me the guide' }).click();
+  await expect(page.getByText('Check your email to confirm.')).toBeVisible();
 }
 
 async function mailTo(email) {
@@ -417,31 +436,50 @@ test('TC-FR2-17-AS-04', async ({ page, request }) => {
 
 test('TC-FR2-18-AS-01', async ({ page }) => {
   const email = emailFor('guide');
-  await page.goto('/health-tools/protein/');
-  await page.locator('#lld_guide_email').fill(email);
-  await page.getByRole('button', { name: 'Send me the guide' }).click();
-  await expect(page.getByText('Check your email to confirm.')).toBeVisible();
+  await askGuide(page, '/health-tools/protein/', email);
   const first = await mailTo(email);
   expect(first.join('\n')).toContain('Confirm your starter guide');
   expect(first.join('\n')).not.toContain('Your starter guide');
   const link = localise(first.join('\n').match(/https?:\/\/\S*guide\/confirm\/\S+/)[0]);
+  // Links name the contact by a signed token, never by the email address.
+  expect(link).not.toContain(email);
+  expect(link).not.toContain(encodeURIComponent(email));
+  expect(link).not.toContain('%40');
+  await page.goto(link.replace(/c=(\d+)-/, (all, id) => `c=${Number(id) + 1}-`));
+  await expect(page.getByRole('heading', { name: 'Link expired' })).toBeVisible();
   await page.goto(link);
   await expect(page.getByRole('heading', { name: 'Confirmed' })).toBeVisible();
   const second = await mailTo(email);
   expect(second.join('\n')).toContain('Your starter guide');
+  expect(second.join('\n')).toContain('/programmes/fitness/');
+  // A confirmed contact who asks for another guide gets it straight away, with no second confirmation.
+  await askGuide(page, '/health-tools/diabetes-risk-check/', email);
+  await expect.poll(async () => (await mailTo(email)).filter((body) => body.includes('/programmes/blood-sugar/')).length).toBe(1);
+  expect((await mailTo(email)).filter((body) => body.includes('Confirm your starter guide'))).toHaveLength(1);
 });
 
-test('TC-FR2-18-AS-02', async ({ page }) => {
+test('TC-FR2-18-AS-02', async ({ page, request }) => {
   const email = emailFor('unsub');
-  await page.goto('/health-tools/protein/');
-  await page.locator('#lld_guide_email').fill(email);
-  await page.getByRole('button', { name: 'Send me the guide' }).click();
-  const first = await mailTo(email);
-  const link = localise(first.join('\n').match(/https?:\/\/\S*guide\/confirm\/\S+/)[0]);
+  await askGuide(page, '/health-tools/protein/', email);
+  const link = localise((await mailTo(email)).join('\n').match(/https?:\/\/\S*guide\/confirm\/\S+/)[0]);
   await page.goto(link);
-  const guide = (await mailTo(email)).join('\n');
-  const unsub = localise(guide.match(/https?:\/\/\S*guide\/unsubscribe\/\S+/)[0]);
+  const guide = await messageTo(email, 'Your starter guide');
+  expect(guide).toBeTruthy();
+  const unsub = localise(guide.text.match(/https?:\/\/\S*guide\/unsubscribe\/\S+/)[0]);
+  expect(unsub).not.toContain('%40');
+  // Every list email carries one-click unsubscribe headers pointing at the same link.
+  expect(guide.headers['List-Unsubscribe'][0]).toContain('/guide/unsubscribe/');
+  expect(guide.headers['List-Unsubscribe-Post']).toEqual(['List-Unsubscribe=One-Click']);
+  // A tampered link never claims to unsubscribe.
+  await page.goto(unsub.replace(/-([a-f0-9]{32})$/, (all, sig) => `-${sig.split('').reverse().join('')}`));
+  await expect(page.getByRole('heading', { name: 'Link expired' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Unsubscribed' })).toHaveCount(0);
+  // Opening the link only asks; the button unsubscribes.
   await page.goto(unsub);
+  await expect(page.getByRole('heading', { name: 'Stop these emails?' })).toBeVisible();
+  const kept = await request.post('/wp-json/lld-members/v1/test/growth', { data: { action: 'contact', email } });
+  expect((await kept.json()).exists).toBe(true);
+  await page.getByRole('button', { name: 'Unsubscribe' }).click();
   await expect(page.getByRole('heading', { name: 'Unsubscribed' })).toBeVisible();
   const before = (await messages()).length;
   await page.goto('/health-tools/protein/');
@@ -450,6 +488,25 @@ test('TC-FR2-18-AS-02', async ({ page }) => {
   expect((await messages()).length).toBe(before);
   await page.goto(unsub);
   await expect(page.getByRole('heading', { name: 'Already unsubscribed' })).toBeVisible();
+
+  // One-click unsubscribe from a mail app: a POST to the List-Unsubscribe address.
+  const other = emailFor('oneclick');
+  await askGuide(page, '/health-tools/protein/', other);
+  await page.goto(localise((await mailTo(other)).join('\n').match(/https?:\/\/\S*guide\/confirm\/\S+/)[0]));
+  const header = (await messageTo(other, 'Your starter guide')).headers['List-Unsubscribe'][0].replace(/^<|>$/g, '');
+  const oneClick = await request.post(localise(header), { headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, data: 'List-Unsubscribe=One-Click' });
+  expect(oneClick.ok()).toBeTruthy();
+  await page.goto(localise(header));
+  await expect(page.getByRole('heading', { name: 'Already unsubscribed' })).toBeVisible();
+
+  // DM-7: unsubscribed and unconfirmed contacts are deleted after 30 days, not before.
+  const pending = emailFor('unconfirmed');
+  await askGuide(page, '/health-tools/protein/', pending);
+  const exists = async (who) => (await (await request.post('/wp-json/lld-members/v1/test/growth', { data: { action: 'contact', email: who } })).json()).exists;
+  await request.post('/wp-json/lld-members/v1/test/growth', { data: { action: 'sweep', days: 29 } });
+  for (const who of [email, other, pending]) expect(await exists(who), who).toBe(true);
+  await request.post('/wp-json/lld-members/v1/test/growth', { data: { action: 'sweep', days: 31 } });
+  for (const who of [email, other, pending]) expect(await exists(who), who).toBe(false);
 });
 
 test('TC-FR2-18-AS-03', async ({ page, request }) => {
@@ -552,6 +609,7 @@ test('TC-FR2-28-AS-02', async ({ page, request }) => {
   }
   const unsub = localise((await mailTo(later)).join('\n').match(/https?:\/\/\S*guide\/unsubscribe\/\S+/)[0]);
   await page.goto(unsub);
+  await page.getByRole('button', { name: 'Unsubscribe' }).click();
   await page.goto('/health-tools/protein/');
   await page.locator('#lld_guide_email').fill(both);
   await page.getByRole('button', { name: 'Send me the guide' }).click();

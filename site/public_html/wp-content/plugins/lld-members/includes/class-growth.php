@@ -56,6 +56,7 @@ class LLD_Members_Growth {
 		add_action( 'lld_members_event', array( __CLASS__, 'on_event' ), 10, 3 );
 		add_action( self::REPORT_HOOK, array( __CLASS__, 'monday_report' ) );
 		add_action( 'lld_members_daily', array( __CLASS__, 'sweep_week1' ) );
+		add_action( 'lld_members_daily', array( __CLASS__, 'sweep_contacts' ) );
 		if ( lld_members_test_routes_open() ) {
 			add_filter( 'pre_http_request', array( __CLASS__, 'stub_plausible' ), 10, 3 );
 		}
@@ -85,7 +86,7 @@ class LLD_Members_Growth {
 		if ( '' === $source || ! empty( $_COOKIE['lld_src'] ) ) {
 			return;
 		}
-		setcookie( 'lld_src', $source, time() + 30 * DAY_IN_SECONDS, '/', '', is_ssl(), true );
+		setcookie( 'lld_src', $source, 0, '/', '', is_ssl(), true );
 		$_COOKIE['lld_src'] = $source;
 	}
 
@@ -217,39 +218,104 @@ class LLD_Members_Growth {
 		}
 		if ( ! self::confirmed( $email ) ) {
 			self::mail_confirm( $email );
+		} elseif ( 'guide' === $kind ) {
+			// Already confirmed: a further guide is sent straight away.
+			self::send_guides( $email, array( $track ) );
 		}
 		return true;
 	}
 
+	/**
+	 * Email of the contact named by a link token, or '' when the token is not valid.
+	 *
+	 * @param string $purpose guide-confirm or guide-unsub.
+	 * @param int    $max_age Seconds the link stays valid, or 0.
+	 */
+	private static function email_from_link( $purpose, $max_age ) {
+		$token = isset( $_REQUEST['c'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['c'] ) ) : '';
+		$id    = LLD_Members_Mail::read_token( $purpose, $token, $max_age );
+		if ( $id < 1 ) {
+			return '';
+		}
+		global $wpdb;
+		return (string) $wpdb->get_var( $wpdb->prepare( 'SELECT email FROM ' . LLD_Members_Schema::table( 'contact' ) . ' WHERE id = %d', $id ) );
+	}
+
+	/**
+	 * Double opt-in. The link names the contact by a signed token, never by email, and lasts 30 days (DM-7).
+	 */
 	public static function confirm_screen() {
-		$email = isset( $_GET['email'] ) ? sanitize_email( wp_unslash( $_GET['email'] ) ) : '';
-		$sig   = isset( $_GET['sig'] ) ? sanitize_text_field( wp_unslash( $_GET['sig'] ) ) : '';
-		if ( ! is_email( $email ) || ! hash_equals( self::sig( $email, 'confirm' ), $sig ) ) {
+		$email = self::email_from_link( 'guide-confirm', 30 * DAY_IN_SECONDS );
+		if ( ! is_email( $email ) ) {
 			lld_members_layout( array( 'title' => 'Link expired', 'main' => '<h1>Link expired</h1><p>Ask for the guide again.</p>' ) );
 			return;
 		}
-		if ( ! self::confirmed( $email ) ) {
+		if ( ! self::confirmed( $email ) && ! self::unsubscribed( $email ) ) {
 			self::consent( $email, 'confirmed' );
-		}
-		if ( ! self::unsubscribed( $email ) ) {
 			self::send_guides( $email );
 		}
 		lld_members_layout( array( 'title' => 'Confirmed', 'main' => '<h1>Confirmed</h1><p>Your guide is on its way.</p>' ) );
 	}
 
+	/**
+	 * GET shows a button; POST unsubscribes, including a mail app's one-click POST. A bad link never says "Unsubscribed".
+	 */
 	public static function unsubscribe_screen() {
-		$email = isset( $_GET['email'] ) ? sanitize_email( wp_unslash( $_GET['email'] ) ) : '';
-		$sig   = isset( $_GET['sig'] ) ? sanitize_text_field( wp_unslash( $_GET['sig'] ) ) : '';
-		if ( ! is_email( $email ) || ! hash_equals( self::sig( $email, 'unsub' ), $sig ) ) {
-			lld_members_layout( array( 'title' => 'Link expired', 'main' => '<h1>Link expired</h1>' ) );
+		$email = self::email_from_link( 'guide-unsub', 0 );
+		$in    = is_user_logged_in();
+		if ( ! is_email( $email ) ) {
+			lld_members_layout( array( 'title' => 'Link expired', 'main' => '<h1>Link expired</h1><p>This unsubscribe link is not valid any more.</p>', 'signed_in' => $in ) );
 			return;
 		}
 		if ( self::unsubscribed( $email ) ) {
-			lld_members_layout( array( 'title' => 'Already unsubscribed', 'main' => '<h1>Already unsubscribed</h1><p>Already unsubscribed.</p>', 'signed_in' => is_user_logged_in() ) );
+			lld_members_layout( array( 'title' => 'Already unsubscribed', 'main' => '<h1>Already unsubscribed</h1><p>Already unsubscribed.</p>', 'signed_in' => $in ) );
+			return;
+		}
+		if ( 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
+			$token = sanitize_text_field( wp_unslash( $_REQUEST['c'] ) );
+			$main  = '<h1>Stop these emails?</h1><p>You will no longer get starter guides, waitlist news or the launch email.</p>';
+			$main .= '<form method="post" action="' . esc_url( add_query_arg( 'c', $token, home_url( '/guide/unsubscribe/' ) ) ) . '">';
+			$main .= lld_button( array( 'label' => 'Unsubscribe' ) ) . '</form>';
+			lld_members_layout( array( 'title' => 'Unsubscribe', 'main' => $main, 'signed_in' => $in ) );
 			return;
 		}
 		self::consent( $email, 'unsubscribe' );
-		lld_members_layout( array( 'title' => 'Unsubscribed', 'main' => '<h1>Unsubscribed</h1><p>You won\'t get these emails any more.</p>', 'signed_in' => is_user_logged_in() ) );
+		lld_members_layout( array( 'title' => 'Unsubscribed', 'main' => '<h1>Unsubscribed</h1><p>You won\'t get these emails any more.</p>', 'signed_in' => $in ) );
+	}
+
+	/**
+	 * DM-7: contacts are deleted 30 days after unsubscribing, and unconfirmed sign-ups 30 days after the last request.
+	 *
+	 * @param int $now Unix time to judge from (tests only pass a later time).
+	 */
+	public static function sweep_contacts( $now = 0 ) {
+		global $wpdb;
+		$now      = $now > 0 ? (int) $now : time();
+		$cut      = gmdate( 'Y-m-d H:i:s', $now - 30 * DAY_IN_SECONDS );
+		$contacts = LLD_Members_Schema::table( 'contact' );
+		$consents = LLD_Members_Schema::table( 'contact_consent' );
+		$requests = LLD_Members_Schema::table( 'contact_request' );
+		$removed  = 0;
+		foreach ( (array) $wpdb->get_col( "SELECT id FROM {$contacts}" ) as $id ) {
+			$id   = (int) $id;
+			$last = $wpdb->get_row( $wpdb->prepare( "SELECT action, occurred_at FROM {$consents} WHERE contact_id = %d ORDER BY id DESC LIMIT 1", $id ) );
+			if ( $last && 'unsubscribe' === (string) $last->action ) {
+				$gone = (string) $last->occurred_at < $cut;
+			} elseif ( $last ) {
+				$gone = false;
+			} else {
+				$asked = (string) $wpdb->get_var( $wpdb->prepare( "SELECT MAX(requested_on) FROM {$requests} WHERE contact_id = %d", $id ) );
+				$gone  = '' === $asked || $asked < substr( $cut, 0, 10 );
+			}
+			if ( ! $gone ) {
+				continue;
+			}
+			$wpdb->delete( $requests, array( 'contact_id' => $id ), array( '%d' ) );
+			$wpdb->delete( $consents, array( 'contact_id' => $id ), array( '%d' ) );
+			$wpdb->delete( $contacts, array( 'id' => $id ), array( '%d' ) );
+			++$removed;
+		}
+		return $removed;
 	}
 
 	public static function waitlist_screen( $track ) {
@@ -921,6 +987,14 @@ class LLD_Members_Growth {
 				200
 			);
 		}
+		if ( 'sweep' === $action ) {
+			$days = isset( $params['days'] ) ? (int) $params['days'] : 0;
+			return new WP_REST_Response( array( 'removed' => self::sweep_contacts( time() + $days * DAY_IN_SECONDS ) ), 200 );
+		}
+		if ( 'contact' === $action ) {
+			$email = isset( $params['email'] ) ? sanitize_email( (string) $params['email'] ) : '';
+			return new WP_REST_Response( array( 'exists' => self::contact_id( $email, false ) > 0 ), 200 );
+		}
 		if ( 'launch' === $action ) {
 			self::launch();
 		}
@@ -1447,57 +1521,41 @@ class LLD_Members_Growth {
 	 * @param string $email Email.
 	 */
 	private static function mail_confirm( $email ) {
-		$url = add_query_arg(
-			array(
-				'email' => $email,
-				'sig'   => self::sig( $email, 'confirm' ),
-			),
-			home_url( '/guide/confirm/' )
-		);
+		$url = add_query_arg( 'c', LLD_Members_Mail::token( 'guide-confirm', self::contact_id( $email, false ), time() ), home_url( '/guide/confirm/' ) );
 		wp_mail( $email, 'Confirm your starter guide', "Confirm your email:\n" . $url . "\n" . self::unsub_line( $email ) );
 	}
 
 	/**
-	 * @param string $email Email.
+	 * @param string        $email  Email.
+	 * @param string[]|null $tracks Only these guides, or every guide the contact asked for.
 	 */
-	private static function send_guides( $email ) {
+	private static function send_guides( $email, $tracks = null ) {
 		if ( self::unsubscribed( $email ) || ! self::confirmed( $email ) ) {
 			return;
 		}
-		global $wpdb;
-		$id   = self::contact_id( $email, false );
-		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT track_key FROM ' . LLD_Members_Schema::table( 'contact_request' ) . " WHERE contact_id = %d AND kind = 'guide'", $id ) );
-		if ( ! $rows ) {
+		if ( null === $tracks ) {
+			global $wpdb;
+			$id     = self::contact_id( $email, false );
+			$tracks = $wpdb->get_col( $wpdb->prepare( 'SELECT track_key FROM ' . LLD_Members_Schema::table( 'contact_request' ) . " WHERE contact_id = %d AND kind = 'guide'", $id ) );
+		}
+		if ( ! $tracks ) {
 			return;
 		}
 		$lines = array( 'Your starter guide' );
-		foreach ( $rows as $row ) {
-			$lines[] = home_url( '/programmes/' . $row->track_key . '/' );
+		foreach ( $tracks as $track ) {
+			$lines[] = home_url( '/programmes/' . sanitize_title( (string) $track ) . '/' );
 		}
 		$lines[] = self::unsub_line( $email );
 		wp_mail( $email, 'Your starter guide', implode( "\n", $lines ) );
 	}
 
 	/**
+	 * Unsubscribe link: a signed contact token, never the email address. It does not expire.
+	 *
 	 * @param string $email Email.
 	 */
 	private static function unsub_line( $email ) {
-		$url = add_query_arg(
-			array(
-				'email' => $email,
-				'sig'   => self::sig( $email, 'unsub' ),
-			),
-			home_url( '/guide/unsubscribe/' )
-		);
-		return 'Unsubscribe: ' . $url;
-	}
-
-	/**
-	 * @param string $email   Email.
-	 * @param string $purpose confirm or unsub.
-	 */
-	private static function sig( $email, $purpose ) {
-		return substr( hash_hmac( 'sha256', strtolower( $email ) . '|' . $purpose, wp_salt( 'auth' ) ), 0, 32 );
+		return 'Unsubscribe: ' . add_query_arg( 'c', LLD_Members_Mail::token( 'guide-unsub', self::contact_id( $email, false ) ), home_url( '/guide/unsubscribe/' ) );
 	}
 
 	/**
