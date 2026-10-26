@@ -46,6 +46,15 @@ class LLD_Members_Billing {
 	}
 
 	/**
+	 * Premium now, including cancelled in its paid period and the failed-payment grace period.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function has_premium( $member_id ) {
+		return (int) $member_id > 0 && self::paid_open( (int) $member_id );
+	}
+
+	/**
 	 * @param int $member_id Member number.
 	 */
 	public static function ended( $member_id ) {
@@ -321,6 +330,13 @@ class LLD_Members_Billing {
 		if ( 'back' === $result ) {
 			$main .= '<p>We\'re confirming your payment. This usually takes less than a minute. Please don\'t pay again.</p>';
 			$main .= lld_button( array( 'label' => 'Check again', 'href' => home_url( '/members/subscription/' ) ) );
+			LLD_Members_Personal::render( 'Checkout', $main );
+			return;
+		}
+		if ( self::has_premium( $member_id ) ) {
+			// A second checkout would start a second subscription while the first keeps charging.
+			$main .= '<p>You already have Premium. No payment was taken.</p>';
+			$main .= lld_button( array( 'label' => 'My subscription', 'href' => home_url( '/members/subscription/' ) ) );
 			LLD_Members_Personal::render( 'Checkout', $main );
 			return;
 		}
@@ -696,6 +712,9 @@ class LLD_Members_Billing {
 			if ( ! in_array( $country, array( 'GB', 'DE', 'US' ), true ) ) {
 				$country = 'US';
 			}
+			if ( self::has_premium( $member_id ) ) {
+				return new WP_REST_Response( array( 'message' => 'You already have Premium.' ), 409 );
+			}
 			$quote   = self::quote( $member_id, $plan, $country, $code );
 			$session = 'cs_test_' . bin2hex( random_bytes( 8 ) );
 			self::store_quote( $session, $quote, $member_id, $ref );
@@ -954,6 +973,13 @@ class LLD_Members_Billing {
 		$payment  = isset( $object['payment_intent'] ) ? sanitize_text_field( (string) $object['payment_intent'] ) : $session;
 		$fingerprint = isset( $object['fingerprint'] ) ? sanitize_text_field( (string) $object['fingerprint'] ) : '';
 		$email    = isset( $object['email'] ) ? sanitize_email( (string) $object['email'] ) : self::email_of( $member_id );
+		$current  = self::subscription_row( $member_id );
+		if ( self::has_premium( $member_id ) && $current && '' !== (string) $current->stripe_subscription && (string) $current->stripe_subscription !== $stripe ) {
+			// Paid twice: keep the first subscription, record the payment so the owner can refund it, and flag it.
+			self::insert_order( $member_id, 'payment', $quote, $payment, $email, $fingerprint );
+			self::flag_mismatch( $member_id, $today );
+			return;
+		}
 		self::insert_order( $member_id, 'payment', $quote, $payment, $email, $fingerprint );
 		self::save_sub(
 			$member_id,

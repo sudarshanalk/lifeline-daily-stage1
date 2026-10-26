@@ -211,8 +211,10 @@ test('TC-FR2-13-AS-03', async ({ page, request }) => {
   const snap = await readMember(request, email);
   expect(Number(snap.orders[1].charged_amount)).toBe(799);
   expect(snap.orders[1].discount_code).toBeFalsy();
-  await clock(request, email, '2026-07-02 12:00:00');
-  await signIn(page, email, password);
+  const lateEmail = emailFor('launch-late');
+  await createMember(request, { email: lateEmail, password, first_name: 'Late', role: 'member' });
+  await clock(request, lateEmail, '2026-07-02 12:00:00');
+  await signIn(page, lateEmail, password);
   const late = await showPrice(page, { plan: 'monthly', country: 'US', code: 'LAUNCH' });
   expect(late.charge).toBe(799);
   await expect(page.getByText('This code has ended.')).toBeVisible();
@@ -232,7 +234,9 @@ test('TC-FR2-13-AS-04', async ({ page, request }) => {
   const quoted = await pay(page, email, { plan: 'monthly', country: 'US', code: 'HALF' });
   expect(quoted.charge).toBe(450);
   expect(quoted.text).toContain('US$4.50');
-  await signIn(page, email, password);
+  const fullEmail = emailFor('owner-price-full');
+  await createMember(request, { email: fullEmail, password, first_name: 'Full', role: 'member' });
+  await signIn(page, fullEmail, password);
   const full = await showPrice(page, { plan: 'monthly', country: 'US' });
   expect(full.text).toContain('US$8.99');
 });
@@ -606,6 +610,43 @@ test('TC-FR2-14-AS-06 a refund made at Stripe is recorded once and ends Premium'
   expect(snap.subscription.access_state).toBe('Refunded');
   expect(snap.orders.filter((order) => order.kind === 'refund')).toHaveLength(1);
   expect(snap.orders.find((order) => order.kind === 'payment').status).toBe('refunded');
+});
+
+test('TC-FR2-14-AS-01 a member who already has Premium cannot start a second checkout', async ({ page, request }) => {
+  const email = emailFor('twice-pay');
+  await createMember(request, { email, password, first_name: 'Twice', role: 'member' });
+  await clock(request, email, '2026-10-01 12:00:00');
+  const paid = await pay(page, email, { plan: 'monthly', country: 'US' });
+  await page.goto('/members/checkout/?plan=yearly');
+  await expect(page.getByText('You already have Premium.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Show the price' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Continue to payment' })).toHaveCount(0);
+  const api = await request.post('/wp-json/lld-members/v1/test/billing', { data: { action: 'session', email, plan: 'yearly', country: 'US' } });
+  expect(api.status()).toBe(409);
+
+  const cancelled = emailFor('twice-cancelled');
+  await createMember(request, { email: cancelled, password, first_name: 'Still', role: 'member', access_state: 'cancelled', plan: 'monthly', period_ends_on: '2026-12-01' });
+  await clock(request, cancelled, '2026-10-01 12:00:00');
+  await signIn(page, cancelled, password);
+  await page.goto('/members/checkout/');
+  await expect(page.getByText('You already have Premium.')).toBeVisible();
+
+  // A second payment that still reaches us keeps the first subscription and is flagged to the owner.
+  const free = emailFor('twice-late');
+  await createMember(request, { email: free, password, first_name: 'Late', role: 'member' });
+  await clock(request, free, '2026-10-01 12:00:00');
+  const quote = await billingAction(request, { action: 'session', email: free, plan: 'monthly', country: 'US' });
+  const first = await payApi(request, free, { plan: 'monthly', country: 'US' });
+  const res = await notify(request, {
+    id: `evt_${stamp()}`,
+    type: 'checkout.session.completed',
+    data: { object: { id: quote.session, amount_total: Number(quote.charged), subscription: `sub_${stamp()}`, payment_intent: `pi_${stamp()}`, email: free } },
+  });
+  expect(res.ok()).toBeTruthy();
+  const snap = await readMember(request, free);
+  expect(snap.subscription.stripe_subscription).toBe(first.subscription);
+  expect(snap.orders).toHaveLength(2);
+  expect(paid.subscription).toBeTruthy();
 });
 
 test('TC-FR2-14-AS-08', async ({ page, request }) => {
