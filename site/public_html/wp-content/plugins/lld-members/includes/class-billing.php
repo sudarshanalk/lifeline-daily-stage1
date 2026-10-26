@@ -46,6 +46,83 @@ class LLD_Members_Billing {
 	}
 
 	/**
+	 * Paid Memberships Pro levels for the two Premium plans (Data Model P1). Free has no level.
+	 */
+	const PMPRO_LEVELS = array(
+		'yearly'  => array(
+			'name'   => 'Premium yearly',
+			'period' => 'Year',
+		),
+		'monthly' => array(
+			'name'   => 'Premium monthly',
+			'period' => 'Month',
+		),
+	);
+
+	/**
+	 * Database update for payments. Safe to run any number of times; makes no Stripe call.
+	 */
+	public static function db_update() {
+		self::sync_pmpro_levels();
+	}
+
+	/**
+	 * Create or update the Premium levels in Paid Memberships Pro at the current catalogue prices.
+	 * Levels never take sign-ups through Paid Memberships Pro's own checkout: Stripe Checkout is the only way in.
+	 *
+	 * @return array<string,int> Level id for each plan; empty when Paid Memberships Pro is not installed.
+	 */
+	public static function sync_pmpro_levels() {
+		global $wpdb;
+		$table = $wpdb->prefix . 'pmpro_membership_levels';
+		if ( $table !== $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) ) ) {
+			return array();
+		}
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM {$table}", 0 ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
+		$prices  = self::prices();
+		$stored  = get_option( 'lld_pmpro_levels' );
+		$stored  = is_array( $stored ) ? $stored : array();
+		$ids     = array();
+		foreach ( self::PMPRO_LEVELS as $plan => $level ) {
+			$amount = number_format( (int) $prices[ $plan ] / 100, 2, '.', '' );
+			$row    = array(
+				'name'              => $level['name'],
+				'description'       => 'Lifeline Daily Premium, paid ' . $plan . ' through Stripe. Tax included.',
+				'confirmation'      => '',
+				'initial_payment'   => $amount,
+				'billing_amount'    => $amount,
+				'cycle_number'      => 1,
+				'cycle_period'      => $level['period'],
+				'billing_limit'     => 0,
+				'trial_amount'      => 0,
+				'trial_limit'       => 0,
+				'allow_signups'     => 0,
+				'expiration_number' => 0,
+			);
+			$row = array_intersect_key( $row, array_flip( $columns ) );
+			$id  = isset( $stored[ $plan ] ) ? (int) $stored[ $plan ] : 0;
+			if ( $id > 0 && ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE id = %d", $id ) ) ) {
+				$id = 0;
+			}
+			if ( $id < 1 ) {
+				$id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE name = %s ORDER BY id ASC LIMIT 1", $level['name'] ) );
+			}
+			if ( $id > 0 ) {
+				$wpdb->update( $table, $row, array( 'id' => $id ) );
+			} elseif ( false !== $wpdb->insert( $table, $row ) ) {
+				$id = (int) $wpdb->insert_id;
+			}
+			if ( $id > 0 ) {
+				$ids[ $plan ] = $id;
+			}
+		}
+		if ( $ids !== $stored ) {
+			update_option( 'lld_pmpro_levels', $ids, false );
+		}
+		return $ids;
+	}
+
+	/**
 	 * Premium now, including cancelled in its paid period and the failed-payment grace period.
 	 *
 	 * @param int $member_id Member number.
@@ -660,6 +737,7 @@ class LLD_Members_Billing {
 			delete_option( 'lld_reward_stop' );
 			delete_option( 'lld_notice_fail' );
 			delete_option( 'lld_members_stripe_unreachable' );
+			self::sync_pmpro_levels();
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
 		}
 		if ( 'launch' === $action && ! empty( $params['on'] ) ) {
@@ -678,6 +756,18 @@ class LLD_Members_Billing {
 				return new WP_REST_Response( array( 'message' => $saved->get_error_message() ), 400 );
 			}
 			return new WP_REST_Response( self::prices(), 200 );
+		}
+		if ( 'pmpro_levels' === $action ) {
+			global $wpdb;
+			LLD_Members_Billing::db_update();
+			$ids   = self::sync_pmpro_levels();
+			$table = $wpdb->prefix . 'pmpro_membership_levels';
+			$rows  = array();
+			foreach ( $ids as $plan => $id ) {
+				$rows[ $plan ] = $wpdb->get_row( $wpdb->prepare( "SELECT id, name, initial_payment, billing_amount, cycle_number, cycle_period, allow_signups FROM {$table} WHERE id = %d", $id ), ARRAY_A );
+			}
+			$named = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE name IN (%s, %s)", self::PMPRO_LEVELS['yearly']['name'], self::PMPRO_LEVELS['monthly']['name'] ) );
+			return new WP_REST_Response( array( 'levels' => $rows, 'named' => $named ), 200 );
 		}
 		if ( 'admin_log' === $action ) {
 			global $wpdb;
@@ -1529,6 +1619,7 @@ class LLD_Members_Billing {
 			}
 		}
 		if ( $changes ) {
+			self::sync_pmpro_levels();
 			self::admin_log( 'price_change', 0, implode( '; ', $changes ) . ( $confirmed && ( 0 === $monthly || 0 === $yearly ) ? ' (price of 0 confirmed)' : '' ) );
 		}
 		if ( ! $new ) {

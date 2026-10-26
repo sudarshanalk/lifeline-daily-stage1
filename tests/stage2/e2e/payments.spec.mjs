@@ -287,6 +287,31 @@ test('TC-FR2-13-AS-04', async ({ page, request }) => {
   expect(full.text).toContain('US$8.99');
 });
 
+test('TC-FR2-13-AS-04 the plans are Paid Memberships Pro levels that follow the owner price', async ({ request }) => {
+  const levels = async () => billingAction(request, { action: 'pmpro_levels' });
+  let read = await levels();
+  expect(read.named).toBe(2);
+  expect(read.levels.yearly).toMatchObject({ name: 'Premium yearly', cycle_period: 'Year' });
+  expect(read.levels.monthly).toMatchObject({ name: 'Premium monthly', cycle_period: 'Month' });
+  expect(Number(read.levels.yearly.initial_payment)).toBe(59.99);
+  expect(Number(read.levels.yearly.billing_amount)).toBe(59.99);
+  expect(Number(read.levels.monthly.billing_amount)).toBe(7.99);
+  expect(Number(read.levels.monthly.cycle_number)).toBe(1);
+  expect(Number(read.levels.yearly.allow_signups)).toBe(0);
+  const ids = { yearly: read.levels.yearly.id, monthly: read.levels.monthly.id };
+  const update = await request.post('/wp-json/lld-members/v1/test/db-update', { data: {} });
+  expect(update.ok(), await update.text()).toBeTruthy();
+  expect((await update.json()).version).toBeGreaterThanOrEqual(3);
+  read = await levels();
+  expect(read.named).toBe(2);
+  expect({ yearly: read.levels.yearly.id, monthly: read.levels.monthly.id }).toEqual(ids);
+  await billingAction(request, { action: 'prices', monthly: 899, yearly: 6999 });
+  read = await levels();
+  expect(Number(read.levels.yearly.billing_amount)).toBe(69.99);
+  expect(Number(read.levels.monthly.billing_amount)).toBe(8.99);
+  expect(read.levels.yearly.id).toBe(ids.yearly);
+});
+
 test('TC-FR2-13-AS-05', async ({ page, request }) => {
   const yearly = emailFor('year');
   const monthly = emailFor('month');

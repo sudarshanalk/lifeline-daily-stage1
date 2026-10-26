@@ -14,7 +14,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Schema {
 
-	const VERSION = 2;
+	const VERSION = 3;
 
 	/**
 	 * Full table name for a suffix such as "member".
@@ -37,6 +37,9 @@ class LLD_Members_Schema {
 		$before = (int) get_option( 'lld_members_schema_version', 0 );
 		self::create_all();
 		self::upgrade();
+		if ( class_exists( 'LLD_Members_Billing' ) ) {
+			LLD_Members_Billing::db_update();
+		}
 		update_option( 'lld_members_schema_version', self::VERSION, true );
 		return array(
 			'changed' => $before < self::VERSION,

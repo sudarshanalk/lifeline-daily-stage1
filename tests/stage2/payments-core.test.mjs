@@ -1,4 +1,7 @@
 import { createHmac, randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { expect, test } from 'vitest';
 import { billing } from './tools/billing-php.mjs';
 
@@ -54,4 +57,20 @@ test('live Stripe keys are refused unless LLD_ENV is production', () => {
   expect(billing('live_keys_refused', [], { LLD_STRIPE_SECRET: SK_LIVE })).toBe(true);
   expect(billing('stripe_key', ['secret'], { LLD_ENV: 'production', LLD_STRIPE_SECRET: SK_LIVE })).toBe(SK_LIVE);
   expect(billing('live_keys_refused', [], { LLD_ENV: 'production', LLD_STRIPE_SECRET: SK_LIVE, LLD_STRIPE_PUBLISHABLE: PK_LIVE })).toBe(false);
+});
+
+const plugin = resolve(dirname(fileURLToPath(import.meta.url)), '../../site/public_html/wp-content/plugins/lld-members/includes');
+const source = (name) => readFileSync(resolve(plugin, name), 'utf8');
+
+test('TC-FR2-13-AS-04 the database update creates the Paid Memberships Pro levels without calling Stripe', () => {
+  const schema = source('class-schema.php');
+  expect(Number(schema.match(/const VERSION = (\d+);/)[1])).toBeGreaterThanOrEqual(3);
+  expect(schema).toMatch(/LLD_Members_Billing::db_update\(\)/);
+  const billing = source('class-billing.php');
+  const sync = billing.slice(billing.indexOf('function sync_pmpro_levels'), billing.indexOf('function has_premium'));
+  expect(sync).toContain('pmpro_membership_levels');
+  expect(sync).toMatch(/'allow_signups'\s*=>\s*0/);
+  expect(sync).not.toMatch(/api\.stripe\.com|wp_remote_/);
+  expect(billing).toMatch(/'name'\s*=>\s*'Premium yearly'[\s\S]*'period'\s*=>\s*'Year'/);
+  expect(billing).toMatch(/'name'\s*=>\s*'Premium monthly'[\s\S]*'period'\s*=>\s*'Month'/);
 });
