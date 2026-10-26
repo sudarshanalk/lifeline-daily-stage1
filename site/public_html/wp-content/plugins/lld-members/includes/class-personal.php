@@ -1579,6 +1579,17 @@ class LLD_Members_Personal {
 	}
 
 	/**
+	 * A track change from another screen (settings): the same rules and event as the Tracks page.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $key       Track key.
+	 * @return true|WP_Error
+	 */
+	public static function start_track( $member_id, $key ) {
+		return self::enrol( $member_id, $key );
+	}
+
+	/**
 	 * Start, switch, resume or repeat a track (SCR-25). The rules are in LLD_Members_Programme::start().
 	 *
 	 * @param int    $member_id Member number.
@@ -1586,7 +1597,7 @@ class LLD_Members_Personal {
 	 * @param string $start     today or tomorrow.
 	 * @return true|WP_Error
 	 */
-	public static function enrol( $member_id, $key, $start = 'today' ) {
+	private static function enrol( $member_id, $key, $start = 'today' ) {
 		if ( 'sleep-stress' === $key && self::track_held( $member_id ) ) {
 			return new WP_Error( 'lld_track', 'Sleep and Stress is not available in this session.' );
 		}

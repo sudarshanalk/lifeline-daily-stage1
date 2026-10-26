@@ -814,7 +814,7 @@ class LLD_Members_Account {
 				$now   = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT track_key FROM ' . LLD_Members_Schema::table( 'enrolment' ) . " WHERE member_id = %d AND status = 'active' ORDER BY id DESC LIMIT 1", $member_id ) );
 				if ( $track !== $now ) {
 					// The same rules as the Tracks page (SCR-25, C5): switching weeks, resuming, safety and Premium.
-					$started = LLD_Members_Personal::enrol( $member_id, $track );
+					$started = LLD_Members_Personal::start_track( $member_id, $track );
 					if ( is_wp_error( $started ) ) {
 						return $started;
 					}
