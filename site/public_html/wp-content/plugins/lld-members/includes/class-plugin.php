@@ -18,6 +18,7 @@ class LLD_Members_Plugin {
 		add_action( 'init', array( __CLASS__, 'rewrites' ) );
 		LLD_Members_Content::boot();
 		LLD_Members_Personal::boot();
+		LLD_Members_Programme::boot();
 		LLD_Members_Billing::boot();
 		LLD_Members_Premium::boot();
 		LLD_Members_Growth::boot();

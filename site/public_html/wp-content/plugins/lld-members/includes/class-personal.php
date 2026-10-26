@@ -136,7 +136,7 @@ class LLD_Members_Personal {
 		}
 		$main .= '</section>';
 		$main .= '<section data-lld-section="today"><h2>Activity</h2><p>Today\'s activity</p>' . self::today_line( $member_id ) . '</section>';
-		$main .= '<section data-lld-section="plan"><h2>This week\'s plan</h2>' . self::title_list( self::safe_titles( $member_id, array( 'lld_week', 'lld_activity' ), 3 ), 3 ) . '</section>';
+		$main .= '<section data-lld-section="plan"><h2>This week\'s plan</h2>' . ( class_exists( 'LLD_Members_Programme' ) ? LLD_Members_Programme::dashboard_plan_html( $member_id ) : '' ) . '</section>';
 		$main .= '<section data-lld-section="meals"><h2>Meals</h2><p>Today\'s meals</p>' . self::title_list( self::safe_titles( $member_id, array( 'lld_meal', 'lld_recipe' ), 3 ), 3 ) . '</section>';
 		$main .= '<section data-lld-section="diary"><h2>Food diary</h2><p><a href="' . esc_url( home_url( '/members/diary/' ) ) . '">Open food diary</a></p>';
 		if ( class_exists( 'LLD_Members_Premium' ) ) {
@@ -654,8 +654,10 @@ class LLD_Members_Personal {
 	private static function tracks() {
 		self::require_member();
 		$member_id = LLD_Members_Access::current_member_id();
+		$error     = '';
 		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_track_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_track_nonce'] ) ), 'lld_track' ) ) {
-			$key = isset( $_POST['lld_track'] ) ? sanitize_title( wp_unslash( $_POST['lld_track'] ) ) : '';
+			$key   = isset( $_POST['lld_track'] ) ? sanitize_title( wp_unslash( $_POST['lld_track'] ) ) : '';
+			$start = isset( $_POST['lld_start'] ) && 'tomorrow' === sanitize_key( wp_unslash( $_POST['lld_start'] ) ) ? 'tomorrow' : 'today';
 			if ( 'sleep-stress' === $key && self::track_held( $member_id ) ) {
 				wp_safe_redirect( home_url( '/members/screening/?track=sleep-stress' ) );
 				exit;
@@ -668,12 +670,15 @@ class LLD_Members_Personal {
 			$title = isset( $known[ $key ] ) ? $known[ $key ] : $key;
 			$real  = isset( $known[ $key ] ) || ( class_exists( 'LLD_Members_Programme' ) && LLD_Members_Programme::track_id( $key ) > 0 );
 			if ( $real && LLD_Members_Safety::track_allowed( $member_id, $title ) ) {
-				self::enrol( $member_id, $key );
-				wp_safe_redirect( home_url( '/members/home/' ) );
-				exit;
+				$started = self::enrol( $member_id, $key, $start );
+				if ( true === $started ) {
+					wp_safe_redirect( home_url( '/members/home/' ) );
+					exit;
+				}
+				$error = is_wp_error( $started ) ? $started->get_error_message() : '';
 			}
 		}
-		$main = '<h1>Start a track</h1>';
+		$main = '<h1>Start a track</h1>' . self::fail( $error ) . LLD_Members_Programme::notices_html( $member_id );
 		foreach ( self::track_list() as $key => $title ) {
 			if ( ! LLD_Members_Safety::track_allowed( $member_id, $title ) ) {
 				$main .= LLD_Members_Safety::not_suitable( $member_id, $title . ' is not suitable for you.', home_url( '/members/home/' ), 'Back to today' );
@@ -682,14 +687,7 @@ class LLD_Members_Personal {
 			if ( 'sleep-stress' === $key && self::track_held( $member_id ) ) {
 				continue;
 			}
-			if ( 'sleep-stress' === $key ) {
-				$main .= '<p><a href="' . esc_url( home_url( '/members/screening/?track=sleep-stress' ) ) . '">Start ' . esc_html( $title ) . '</a></p>';
-				continue;
-			}
-			$main .= '<form method="post"><p>';
-			$main .= wp_nonce_field( 'lld_track', 'lld_track_nonce', true, false );
-			$main .= '<input type="hidden" name="lld_track" value="' . esc_attr( $key ) . '">';
-			$main .= '<button class="lld-button" type="submit">Start ' . esc_html( $title ) . '</button></p></form>';
+			$main .= LLD_Members_Programme::track_choice_html( $member_id, $key, $title );
 		}
 		self::layout( 'Tracks', $main );
 	}
@@ -1481,19 +1479,7 @@ class LLD_Members_Personal {
 	 * @param int $member_id Member number.
 	 */
 	private static function today_line( $member_id ) {
-		global $wpdb;
-		$key = (string) $wpdb->get_var(
-			$wpdb->prepare(
-				'SELECT track_key FROM ' . LLD_Members_Schema::table( 'enrolment' ) . " WHERE member_id = %d AND status = 'active' ORDER BY id DESC LIMIT 1",
-				$member_id
-			)
-		);
-		$names = self::track_list();
-		if ( '' === $key || ! isset( $names[ $key ] ) ) {
-			return '<p><a href="' . esc_url( home_url( '/members/tracks/' ) ) . '">Start a track</a></p>';
-		}
-		$label = class_exists( 'LLD_Members_Programme' ) ? LLD_Members_Programme::position_label( $member_id ) : 'Week 1, day 1';
-		return '<p>' . esc_html( $names[ $key ] . '. ' . $label ) . '.</p>';
+		return LLD_Members_Programme::today_html( $member_id );
 	}
 
 	/**
@@ -1509,60 +1495,18 @@ class LLD_Members_Personal {
 	}
 
 	/**
+	 * Start, switch, resume or repeat a track (SCR-25). The rules are in LLD_Members_Programme::start().
+	 *
 	 * @param int    $member_id Member number.
 	 * @param string $key       Track key.
+	 * @param string $start     today or tomorrow.
+	 * @return true|WP_Error
 	 */
-	private static function enrol( $member_id, $key ) {
+	private static function enrol( $member_id, $key, $start = 'today' ) {
 		if ( 'sleep-stress' === $key && self::track_held( $member_id ) ) {
-			return;
+			return new WP_Error( 'lld_track', 'Sleep and Stress is not available in this session.' );
 		}
-		global $wpdb;
-		$table    = LLD_Members_Schema::table( 'enrolment' );
-		$existing = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE member_id = %d AND status = 'active' ORDER BY id DESC LIMIT 1", $member_id ) );
-		if ( $existing ) {
-			$current = (string) $wpdb->get_var( $wpdb->prepare( "SELECT track_key FROM {$table} WHERE id = %d", $existing ) );
-			$wpdb->update( $table, array( 'track_key' => $key ), array( 'id' => $existing ), array( '%s' ), array( '%d' ) );
-			$wpdb->delete( LLD_Members_Schema::table( 'weekly_plan' ), array( 'enrolment_id' => $existing ), array( '%d' ) );
-			if ( $current !== $key ) {
-				self::roll_period( $existing, $member_id );
-			}
-			$id = $existing;
-		} else {
-			$wpdb->insert(
-				$table,
-				array(
-					'member_id' => $member_id,
-					'track_key' => $key,
-					'attempt'   => 1,
-					'status'    => 'active',
-				),
-				array( '%d', '%s', '%d', '%s' )
-			);
-			$id = (int) $wpdb->insert_id;
-		}
-		if ( class_exists( 'LLD_Members_Programme' ) ) {
-			LLD_Members_Programme::ensure_period( $id, $member_id );
-		}
-	}
-
-	/**
-	 * A different track starts a new period. Earlier days stay in the closed period.
-	 *
-	 * @param int $enrolment_id Enrolment.
-	 * @param int $member_id    Member number.
-	 */
-	private static function roll_period( $enrolment_id, $member_id ) {
-		if ( ! class_exists( 'LLD_Members_Programme' ) ) {
-			return;
-		}
-		global $wpdb;
-		$today = LLD_Members_Programme::local_today( $member_id );
-		$table = LLD_Members_Schema::table( 'enrolment_period' );
-		$open  = $wpdb->get_row( $wpdb->prepare( "SELECT id, first_on FROM {$table} WHERE enrolment_id = %d AND last_on IS NULL LIMIT 1", $enrolment_id ) );
-		if ( $open && (string) $open->first_on < $today ) {
-			$yesterday = ( new DateTimeImmutable( $today ) )->modify( '-1 day' )->format( 'Y-m-d' );
-			$wpdb->update( $table, array( 'last_on' => $yesterday ), array( 'id' => (int) $open->id ), array( '%s' ), array( '%d' ) );
-		}
+		return LLD_Members_Programme::start( $member_id, $key, $start );
 	}
 
 	/**

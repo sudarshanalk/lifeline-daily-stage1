@@ -326,6 +326,21 @@ class LLD_Members_Content {
 	}
 
 	/**
+	 * One approved version, as members saw it (T2 rule 3), or null when its approval record cannot be trusted.
+	 * Added for S2-C5: weekly plans and reviews show the action version they stored.
+	 *
+	 * @param int $version_id Version row.
+	 * @return array<string,mixed>|null
+	 */
+	public static function shown_version( $version_id ) {
+		$version = get_post( (int) $version_id );
+		if ( ! $version || 'lld_version' !== $version->post_status || '' !== self::record_problem( $version ) ) {
+			return null;
+		}
+		return self::read_version( $version );
+	}
+
+	/**
 	 * Why a version's approval record cannot be trusted, or an empty string when it can.
 	 * An unapproved version returns "not approved".
 	 *
@@ -1052,6 +1067,10 @@ class LLD_Members_Content {
 					'signed_in' => true,
 				)
 			);
+			return;
+		}
+		if ( class_exists( 'LLD_Members_Programme' ) && ! LLD_Members_Programme::item_open( $member_id, $shown ) ) { // S2-C5: day 8 onwards by any route.
+			LLD_Members_Programme::item_locked();
 			return;
 		}
 		$cautions = class_exists( 'LLD_Members_Safety' ) ? LLD_Members_Safety::cautions( $member_id, $shown ) : array();
