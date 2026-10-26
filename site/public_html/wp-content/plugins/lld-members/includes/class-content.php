@@ -1006,8 +1006,18 @@ class LLD_Members_Content {
 				'order'          => 'DESC',
 			)
 		);
-		$out = array();
+		$out    = array();
+		$latest = array();
 		foreach ( $rows as $row ) {
+			$parent = (int) $row->post_parent;
+			if ( ! isset( $latest[ $parent ] ) ) {
+				$shown             = self::shown( $parent );
+				$latest[ $parent ] = $shown ? (int) $shown['version_id'] : 0;
+			}
+			// A version older than the one members see has been superseded; it is not offered for approval.
+			if ( (int) $row->ID < $latest[ $parent ] ) {
+				continue;
+			}
 			$on   = (string) get_post_meta( $row->ID, '_lld_approved_on', true );
 			$back = (string) get_post_meta( $row->ID, '_lld_sent_back', true );
 			if ( '' === $on && '' === $back ) {
