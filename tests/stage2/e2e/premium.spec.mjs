@@ -209,7 +209,7 @@ test('TC-FR2-32-AS-03', async ({ page, request }) => {
   await expect(page.getByRole('checkbox', { name: 'spinach, 80 g' })).toBeChecked();
   await expect(page.getByRole('checkbox', { name: 'red lentils, 150 g' })).not.toBeChecked();
   expect(posted, 'ticks are not sent to the server').toBe(0);
-  const elsewhere = await page.context().browser().newContext({ baseURL: test.info().project.use.baseURL, extraHTTPHeaders: test.info().project.use.extraHTTPHeaders });
+  const elsewhere = await page.context().browser().newContext({ baseURL: test.info().project.use.baseURL || process.env.LLD_WP_URL || 'http://127.0.0.1:8090', extraHTTPHeaders: test.info().project.use.extraHTTPHeaders });
   const other = await elsewhere.newPage();
   await signIn(other, member.email, password);
   await other.goto('/members/meals/');
