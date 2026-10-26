@@ -29,12 +29,32 @@ function wp_json_encode( $data ) {
 function get_posts( $args ) {
 	$type = isset( $args['post_type'] ) ? $args['post_type'] : '';
 	$out  = array();
+	if ( 'lld_version' === ( $args['post_status'] ?? '' ) ) {
+		// items[parent].versions[N] = { snapshot, approved_on }
+		$parent = (string) (int) ( $args['post_parent'] ?? 0 );
+		$number = (string) (int) ( $args['meta_value'] ?? 0 );
+		$found  = $GLOBALS['lld_test']['items'][ $parent ]['versions'][ $number ] ?? null;
+		if ( ! is_array( $found ) || ( $GLOBALS['lld_test']['items'][ $parent ]['type'] ?? '' ) !== $type ) {
+			return array();
+		}
+		$id                            = 9000 + (int) $parent * 10 + (int) $number;
+		$GLOBALS['lld_test_meta'][ $id ] = array(
+			'_lld_approved_on' => (string) ( $found['approved_on'] ?? '' ),
+			'_lld_fingerprint' => 'fp' . $number,
+		);
+		unset( $found['approved_on'] );
+		return array( (object) array( 'ID' => $id, 'post_content' => json_encode( $found ) ) );
+	}
 	foreach ( $GLOBALS['lld_test']['items'] as $id => $snap ) {
 		if ( ( $snap['type'] ?? '' ) === $type ) {
 			$out[] = (object) array( 'ID' => (int) $id );
 		}
 	}
 	return $out;
+}
+
+function get_post_meta( $id, $key, $single = false ) {
+	return $GLOBALS['lld_test_meta'][ (int) $id ][ $key ] ?? '';
 }
 
 class LLD_Members_Content {
@@ -73,6 +93,8 @@ class LLD_Members_Programme {
 }
 
 class LLD_Test_Wpdb {
+	public $insert_id = 1;
+
 	public function prepare( $query, ...$args ) {
 		return $query;
 	}

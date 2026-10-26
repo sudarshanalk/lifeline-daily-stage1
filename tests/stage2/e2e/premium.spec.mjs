@@ -102,6 +102,56 @@ test('TC-FR2-32-AS-01', async ({ page, request }) => {
   await expect(page.locator('[data-lld-day]')).toHaveCount(7);
   await expect(page.locator('main')).toContainText(made.lentil);
   await expect(page.locator('main')).not.toContainText(made.tofu);
+
+  // the meal week is the track week: a track started on a Wednesday has meal weeks from Wednesday to Tuesday
+  const midweek = await paid(request, 'meals-wed');
+  const plans = async () => (await (await request.post('/wp-json/lld-members/v1/test/premium', { data: { email: midweek.email } })).json()).meal_plans;
+  await clock(request, midweek.email, '2026-05-06 12:00:00');
+  await signIn(page, midweek.email, password);
+  await saveHealth(page, midweek.id, { kind: 'profile', diet_type: 'vegetarian', confirmed: true });
+  await startSlug(page, made.track);
+  await page.goto('/members/meals/');
+  await expect(page.locator('[data-lld-week]')).toHaveText('Week 1, starting Wednesday 6 May');
+  await expect(page.locator('[data-lld-day="1"]')).toHaveAttribute('data-lld-date', '2026-05-06');
+  await expect(page.locator('[data-lld-day="7"]')).toHaveAttribute('data-lld-date', '2026-05-12');
+  await page.locator('#lld_recipe_1_breakfast').selectOption({ label: made.oat });
+  await page.locator('form[data-lld-swap="1-breakfast"]').getByRole('button', { name: 'Swap' }).click();
+  expect(await plans()).toEqual([expect.objectContaining({ week_starting: '2026-05-06', template_version: `${made.meal}:v1` })]);
+
+  // the owner edits and re-approves the plan: the week already given keeps its version and its swap
+  await request.post('/wp-json/lld-members/v1/test/premium', { data: { revise: { id: made.meal, fields: { meals: JSON.stringify(Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((d) => [d, { breakfast: made.oat_id, lunch: made.oat_id, dinner: made.oat_id, snack: made.oat_id }]))) } } } });
+  await clock(request, midweek.email, '2026-05-11 12:00:00');
+  await page.goto('/members/meals/');
+  await expect(page.locator('[data-lld-week]')).toHaveText('Week 1, starting Wednesday 6 May');
+  await expect(page.locator('[data-lld-meal="1-breakfast"]')).toContainText(made.oat);
+  await expect(page.locator('[data-lld-meal="2-lunch"]')).toContainText(made.lentil);
+  expect(await plans()).toHaveLength(1);
+
+  // track week 2 starts on day 8 with the version approved now
+  await clock(request, midweek.email, '2026-05-13 12:00:00');
+  await page.goto('/members/meals/');
+  await expect(page.locator('[data-lld-week]')).toHaveText('Week 2, starting Wednesday 13 May');
+  await expect(page.locator('[data-lld-meal="2-lunch"]')).toContainText(made.oat);
+  await expect(page.locator('main')).not.toContainText(made.lentil);
+  const both = await plans();
+  expect(both.map((p) => p.week_starting)).toEqual(['2026-05-06', '2026-05-13']);
+  expect(both[1].template_version).toBe(`${made.meal}:v2`);
+
+  // no track and no enrolment: weeks count from the day the member joined
+  const loose = { email: emailFor('meals-none') };
+  const joined = (await createMember(request, { email: loose.email, password, first_name: 'Pat', role: 'member', consents: ['terms', 'health'], access_state: 'Premium' })).joined_on;
+  expect(joined).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  const later = new Date(`${joined}T12:00:00Z`);
+  later.setUTCDate(later.getUTCDate() + 15);
+  await clock(request, loose.email, `${later.toISOString().slice(0, 10)} 12:00:00`);
+  await signIn(page, loose.email, password);
+  await page.goto('/members/meals/');
+  const third = new Date(`${joined}T12:00:00Z`);
+  third.setUTCDate(third.getUTCDate() + 14);
+  const label = third.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).replace(',', '');
+  await expect(page.locator('[data-lld-week]')).toHaveText(`Week 3, starting ${label}`);
+  const rows = await (await request.post('/wp-json/lld-members/v1/test/premium', { data: { email: loose.email } })).json();
+  for (const row of rows.meal_plans) expect(row.week_starting).toBe(third.toISOString().slice(0, 10));
 });
 
 test('TC-FR2-32-AS-02', async ({ page, request }) => {
