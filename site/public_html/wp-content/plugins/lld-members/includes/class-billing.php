@@ -107,6 +107,8 @@ class LLD_Members_Billing {
 		$prices = self::prices();
 		$main   = '<h1>Pricing</h1>';
 		$main  .= '<article data-lld-plan="yearly"><p>best value</p><p>' . esc_html( self::money( $prices['yearly'], 'usd' ) ) . ' a year</p><p>tax included</p>';
+		$main  .= '<p>What\'s included: weeks 2 to 4, meal plans, workouts and the food diary.</p>';
+		$main  .= '<p>How to cancel: cancel from My subscription. Access continues to the end of the paid period.</p>';
 		$main  .= '<p>That is US$5 a month, a saving of 37 %.</p>';
 		$main  .= lld_button( array( 'label' => 'Choose yearly', 'href' => home_url( '/members/checkout/?plan=yearly' ) ) ) . '</article>';
 		$main  .= '<article data-lld-plan="monthly"><p>' . esc_html( self::money( $prices['monthly'], 'usd' ) ) . ' a month</p><p>tax included</p>';

@@ -12,7 +12,8 @@ export async function signIn(page, email, password) {
   await page.goto('/members/sign-in/');
   await page.locator('#lld_email').fill(email);
   await page.locator('#lld_password').fill(password);
-  await page.getByRole('button', { name: 'Sign in' }).click();
+  await page.locator('#lld_password').press('Enter');
+  await page.waitForURL((url) => !url.pathname.includes('/members/sign-in'));
 }
 
 export async function asOwner(page) {

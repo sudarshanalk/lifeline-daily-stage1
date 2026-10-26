@@ -71,6 +71,8 @@ img, svg { max-width: 100%; }
   overflow-wrap: anywhere;
 }
 
+img, svg, iframe, video, pre, table { max-width: 100%; }
+
 .lld-dash section, .lld-suggestion { min-width: 0; }
 .lld-suggestion { border-top: 1px solid var(--lld-line, #d9e4df); padding-top: 12px; margin: 0 0 12px; }
 

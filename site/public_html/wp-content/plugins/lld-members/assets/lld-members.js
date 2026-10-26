@@ -1,10 +1,7 @@
 (function () {
-  function focusHeading() {
-    var heading = document.querySelector("main h1");
-    if (!heading) return;
-    if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1");
-    heading.focus();
-  }
+  document.querySelectorAll("a[href]").forEach(function (link) {
+    if (!link.hasAttribute("tabindex")) link.setAttribute("tabindex", "0");
+  });
 
   document.querySelectorAll(".lld-eye").forEach(function (button) {
     button.addEventListener("click", function () {
@@ -205,7 +202,5 @@
   if (fail) {
     if (!fail.hasAttribute("tabindex")) fail.setAttribute("tabindex", "-1");
     fail.focus();
-  } else if (document.querySelector("main h1")) {
-    focusHeading();
   }
 })();

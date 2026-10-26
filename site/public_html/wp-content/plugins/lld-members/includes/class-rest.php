@@ -263,6 +263,62 @@ class LLD_Members_Rest {
 		);
 		register_rest_route(
 			'lld-members/v1',
+			'/test/mail',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'test_mail' ),
+				'permission_callback' => array( __CLASS__, 'test_only' ),
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
+			'/app/session',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'LLD_Members_Quality', 'session' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
+			'/app/me',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( 'LLD_Members_Quality', 'me' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
+			'/app/profile',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( 'LLD_Members_Quality', 'profile' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+		register_rest_route(
+			'lld-members/v1',
+			'/app/members/(?P<id>\d+)',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( 'LLD_Members_Quality', 'other' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+		foreach ( array( 'orders', 'premium', 'rewards', 'role' ) as $blocked ) {
+			register_rest_route(
+				'lld-members/v1',
+				'/app/' . $blocked,
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( 'LLD_Members_Quality', 'refused' ),
+					'permission_callback' => '__return_true',
+				)
+			);
+		}
+		register_rest_route(
+			'lld-members/v1',
 			'/test/search',
 			array(
 				'methods'             => 'POST',
@@ -366,6 +422,16 @@ class LLD_Members_Rest {
 			return new WP_REST_Response( array( 'saved' => false ), 404 );
 		}
 		return new WP_REST_Response( $row, 200 );
+	}
+
+	/**
+	 * @param WP_REST_Request $request Request.
+	 */
+	public static function test_mail( $request ) {
+		$params  = $request->get_json_params();
+		$subject = isset( $params['subject'] ) ? sanitize_text_field( (string) $params['subject'] ) : 'Layout check';
+		$sent    = wp_mail( 'layout@test.lifelinedaily.invalid', $subject, "Hello from Lifeline Daily\n" );
+		return new WP_REST_Response( array( 'sent' => (bool) $sent ), $sent ? 200 : 500 );
 	}
 
 	/**

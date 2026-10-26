@@ -20,15 +20,26 @@ class LLD_Members_Mail {
 	 * @param PHPMailer\PHPMailer\PHPMailer $phpmailer Mailer.
 	 */
 	public static function configure( $phpmailer ) {
-		if ( lld_members_is_production() || ! defined( 'LLD_SMTP_HOST' ) || '' === (string) LLD_SMTP_HOST ) {
+		if ( ! lld_members_is_production() && defined( 'LLD_SMTP_HOST' ) && '' !== (string) LLD_SMTP_HOST ) {
+			$phpmailer->isSMTP();
+			$phpmailer->Host        = (string) LLD_SMTP_HOST;
+			$phpmailer->Port        = defined( 'LLD_SMTP_PORT' ) ? (int) LLD_SMTP_PORT : 1025;
+			$phpmailer->SMTPAuth    = false;
+			$phpmailer->SMTPAutoTLS = false;
+			$phpmailer->SMTPSecure  = '';
+		}
+		$body = (string) $phpmailer->Body;
+		if ( str_contains( $body, 'max-width:600px' ) ) {
 			return;
 		}
-		$phpmailer->isSMTP();
-		$phpmailer->Host        = (string) LLD_SMTP_HOST;
-		$phpmailer->Port        = defined( 'LLD_SMTP_PORT' ) ? (int) LLD_SMTP_PORT : 1025;
-		$phpmailer->SMTPAuth    = false;
-		$phpmailer->SMTPAutoTLS = false;
-		$phpmailer->SMTPSecure  = '';
+		$plain = trim( (string) $phpmailer->AltBody );
+		if ( '' === $plain || str_contains( $plain, '<' ) ) {
+			$plain = trim( wp_strip_all_tags( $body ) );
+		}
+		$phpmailer->isHTML( true );
+		$phpmailer->AltBody = $plain;
+		$logo = '<img alt="Lifeline Daily" width="120" height="32" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22120%22 height=%2232%22%3E%3Crect width=%22120%22 height=%2232%22 fill=%22%231f6b4a%22/%3E%3C/svg%3E">';
+		$phpmailer->Body    = '<div style="max-width:600px">' . $logo . '<pre style="white-space:pre-wrap">' . esc_html( $plain ) . '</pre></div>';
 	}
 
 	/**

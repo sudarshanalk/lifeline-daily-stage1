@@ -21,6 +21,7 @@ class LLD_Members_Plugin {
 		LLD_Members_Billing::boot();
 		LLD_Members_Premium::boot();
 		LLD_Members_Growth::boot();
+		LLD_Members_Quality::boot();
 		add_action( 'init', array( 'LLD_Members_Account', 'expire_sessions' ), 20 );
 		add_action( 'profile_update', array( 'LLD_Members_Account', 'sync_email' ) );
 		add_filter( 'query_vars', array( __CLASS__, 'query_vars' ) );
@@ -28,7 +29,7 @@ class LLD_Members_Plugin {
 		add_action( 'rest_api_init', array( 'LLD_Members_Rest', 'register' ) );
 		add_filter( 'rest_pre_dispatch', array( __CLASS__, 'rest_closed' ), 10, 3 );
 		add_filter( 'rest_namespace_index', array( __CLASS__, 'namespace_index' ), 10, 2 );
-		add_action( 'phpmailer_init', array( 'LLD_Members_Mail', 'configure' ) );
+		add_action( 'phpmailer_init', array( 'LLD_Members_Mail', 'configure' ), 20 );
 		add_filter( 'wp_mail_from', array( 'LLD_Members_Mail', 'from_email' ) );
 		add_filter( 'wp_mail_from_name', array( 'LLD_Members_Mail', 'from_name' ) );
 		add_filter( 'authenticate', array( 'LLD_Members_Auth', 'block_when_closed' ), 1, 1 );

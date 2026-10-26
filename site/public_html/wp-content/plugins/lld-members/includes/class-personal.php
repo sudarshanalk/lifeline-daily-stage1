@@ -132,8 +132,8 @@ class LLD_Members_Personal {
 		}
 		$main .= '</section>';
 		$main .= '<section data-lld-section="today"><h2>Activity</h2><p>Today\'s activity</p>' . self::today_line( $member_id ) . '</section>';
-		$main .= '<section data-lld-section="plan"><h2>This week\'s plan</h2>' . self::title_list( self::safe_titles( $member_id, array( 'lld_week', 'lld_activity' ) ), 3 ) . '</section>';
-		$main .= '<section data-lld-section="meals"><h2>Meals</h2><p>Today\'s meals</p>' . self::title_list( self::safe_titles( $member_id, array( 'lld_meal', 'lld_recipe' ) ), 3 ) . '</section>';
+		$main .= '<section data-lld-section="plan"><h2>This week\'s plan</h2>' . self::title_list( self::safe_titles( $member_id, array( 'lld_week', 'lld_activity' ), 3 ), 3 ) . '</section>';
+		$main .= '<section data-lld-section="meals"><h2>Meals</h2><p>Today\'s meals</p>' . self::title_list( self::safe_titles( $member_id, array( 'lld_meal', 'lld_recipe' ), 3 ), 3 ) . '</section>';
 		$main .= '<section data-lld-section="diary"><h2>Food diary</h2><p><a href="' . esc_url( home_url( '/members/diary/' ) ) . '">Open food diary</a></p>';
 		if ( class_exists( 'LLD_Members_Premium' ) ) {
 			$summary = LLD_Members_Premium::summary_line( $member_id );
@@ -1272,9 +1272,13 @@ class LLD_Members_Personal {
 	/**
 	 * @param int      $member_id Member number.
 	 * @param string[] $types     Post types.
+	 * @param int      $limit     Zero reads the whole library. A positive limit stops after that many safe titles.
 	 * @return string[]
 	 */
-	private static function safe_titles( $member_id, $types ) {
+	private static function safe_titles( $member_id, $types, $limit = 0 ) {
+		if ( $limit > 0 ) {
+			return self::safe_titles_limited( $member_id, $types, $limit );
+		}
 		$posts = get_posts(
 			array(
 				'post_type'      => $types,
@@ -1292,6 +1296,51 @@ class LLD_Members_Personal {
 				continue;
 			}
 			$out[] = (string) $shown['title'];
+		}
+		return $out;
+	}
+
+	/**
+	 * Approved titles only, in title order, stopping once the dashboard has enough.
+	 *
+	 * @param int      $member_id Member number.
+	 * @param string[] $types     Post types.
+	 * @param int      $limit     How many titles to keep.
+	 * @return string[]
+	 */
+	private static function safe_titles_limited( $member_id, $types, $limit ) {
+		global $wpdb;
+		$types = array_values( array_filter( array_map( 'sanitize_key', $types ) ) );
+		if ( ! $types ) {
+			return array();
+		}
+		$statuses = array( 'publish', 'draft', 'pending', 'private' );
+		$type_sql = implode( ',', array_fill( 0, count( $types ), '%s' ) );
+		$status_sql = implode( ',', array_fill( 0, count( $statuses ), '%s' ) );
+		$sql = "SELECT p.ID FROM {$wpdb->posts} p WHERE p.post_parent = 0 AND p.post_type IN ($type_sql) AND p.post_status IN ($status_sql) AND EXISTS ( SELECT 1 FROM {$wpdb->posts} v INNER JOIN {$wpdb->postmeta} m ON m.post_id = v.ID AND m.meta_key = '_lld_approved_on' AND m.meta_value <> '' WHERE v.post_parent = p.ID AND v.post_status = 'lld_version' ) ORDER BY p.post_title ASC LIMIT %d OFFSET %d";
+		$out = array();
+		$offset = 0;
+		$batch = 24;
+		while ( count( $out ) < $limit ) {
+			$args = array_merge( $types, $statuses, array( $batch, $offset ) );
+			$ids  = $wpdb->get_col( $wpdb->prepare( $sql, ...$args ) );
+			if ( ! $ids ) {
+				break;
+			}
+			foreach ( $ids as $id ) {
+				$shown = LLD_Members_Content::shown( (int) $id );
+				if ( ! is_array( $shown ) || ! LLD_Members_Safety::allows( $member_id, $shown ) ) {
+					continue;
+				}
+				$out[] = (string) $shown['title'];
+				if ( count( $out ) >= $limit ) {
+					break;
+				}
+			}
+			if ( count( $ids ) < $batch ) {
+				break;
+			}
+			$offset += $batch;
 		}
 		return $out;
 	}
@@ -1399,6 +1448,10 @@ class LLD_Members_Personal {
 	}
 
 	private static function require_member() {
+		$preview = class_exists( 'LLD_Members_Access' ) ? LLD_Members_Access::preview_state() : '';
+		if ( in_array( $preview, array( 'free', 'premium' ), true ) && current_user_can( 'manage_options' ) ) {
+			return;
+		}
 		if ( ! is_user_logged_in() || LLD_Members_Access::current_member_id() < 1 ) {
 			wp_safe_redirect( home_url( '/members/sign-in/' ) );
 			exit;
