@@ -147,7 +147,18 @@ class LLD_Members_Mail {
 		return wp_mail( get_option( 'admin_email' ), $subject, $body );
 	}
 
-	public static function send_cancel_alert( $member_id ) {
-		return wp_mail( get_option( 'admin_email' ), 'Stripe cancellation failed', "Stripe did not accept cancellation for member {$member_id}. Please cancel it by hand within 1 working day.\n" );
+	/**
+	 * @param int    $member_id    Member number.
+	 * @param string $subscription Stripe subscription reference, kept here because the account is deleted.
+	 * @param string $customer     Stripe customer reference.
+	 */
+	public static function send_cancel_alert( $member_id, $subscription = '', $customer = '' ) {
+		$ref  = '' !== (string) $subscription ? (string) $subscription : 'none recorded';
+		$body = "Stripe did not accept cancellation for member {$member_id}. Please cancel it by hand within 1 working day.\n\n";
+		$body .= "Stripe subscription: {$ref}\n";
+		if ( '' !== (string) $customer ) {
+			$body .= "Stripe customer: {$customer}\n";
+		}
+		return wp_mail( get_option( 'admin_email' ), 'Stripe cancellation failed', $body );
 	}
 }

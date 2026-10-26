@@ -831,7 +831,8 @@ class LLD_Members_Account {
 				wp_logout();
 				LLD_Members_Erasure::delete_account( $member_id, true );
 				if ( is_wp_error( $cancel ) ) {
-					LLD_Members_Mail::send_cancel_alert( (int) $row->id );
+					$refs = (array) $cancel->get_error_data();
+					LLD_Members_Mail::send_cancel_alert( (int) $row->id, isset( $refs['subscription'] ) ? (string) $refs['subscription'] : '', isset( $refs['customer'] ) ? (string) $refs['customer'] : '' );
 					$main = '<h1>Account closed</h1><p>Your account is closed. We\'re finishing cancelling your subscription with our payment provider and will email you when it\'s done.</p>';
 				} else {
 					$main = '<h1>Account closed</h1><p>Your account is closed. Your data will be removed within 24 hours.</p>';
