@@ -80,7 +80,13 @@ export async function approveTitle(page, title) {
   const row = page.locator('tr', { hasText: title });
   const box = row.locator('input[type="checkbox"]');
   if (await box.count()) await box.check({ force: true });
-  await row.getByRole('button', { name: 'Approve' }).click();
+  // Wait until the approval post has been answered. The next step usually opens another admin page at once, and in
+  // WebKit that navigation cancels a form post still in flight, so the approval was never stored.
+  await Promise.all([
+    page.waitForResponse((res) => res.request().method() === 'POST' && res.request().isNavigationRequest()),
+    row.getByRole('button', { name: 'Approve' }).click(),
+  ]);
+  await page.waitForLoadState('domcontentloaded');
 }
 
 export async function restNonce(page) {
