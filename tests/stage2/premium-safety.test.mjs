@@ -11,7 +11,7 @@ const NOTES = {
   kidney: 'Your kidney team should set your protein target',
   pregnancy: 'Talk to your midwife or doctor about weight and exercise during pregnancy',
   'eating-disorder': 'For support with eating, talk to your doctor',
-  diabetes: 'Talk to your diabetes team before you change when you eat',
+  diabetes: 'Talk to your diabetes team',
   'blood-pressure': 'Talk to your doctor before starting intense exercise',
 };
 
