@@ -490,24 +490,34 @@ test('TC-FR2-35-AS-02', async ({ page, request }) => {
 });
 
 test('TC-FR2-35-AS-03', async ({ page, request }) => {
+  test.setTimeout(240000);
+  const daysAgo = (n) => {
+    const d = new Date();
+    d.setUTCDate(d.getUTCDate() - n);
+    return d.toISOString().slice(0, 10);
+  };
+  const firstEnd = daysAgo(30);
+  const secondEnd = daysAgo(10);
   const email = emailFor('ended');
   await createMember(request, {
-    email, password, first_name: 'End', role: 'member', consents: ['terms'], access_state: 'Premium ended', premium_ended_on: '2020-01-01',
+    email, password, first_name: 'End', role: 'member', consents: ['terms'], access_state: 'Premium ended', premium_ended_on: firstEnd,
   });
-  const lists = async () => {
-    const list = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
+  const lists = async (who = email) => {
+    const list = await fetch(`${MAILPIT}/api/v1/messages?limit=500`).then((res) => res.json());
     let hits = 0;
     for (const message of list.messages || []) {
       const subject = String(message.Subject || '');
       if (!subject.includes('People to remove from the group')) continue;
       const full = await fetch(`${MAILPIT}/api/v1/message/${message.ID}`).then((res) => res.json());
       const body = `${full.Subject || ''}\n${full.Text || ''}`;
-      if (body.includes(email)) hits += 1;
+      if (body.includes(who)) hits += 1;
     }
     return hits;
   };
-  const removals = async () => (await (await request.post('/wp-json/lld-members/v1/test/premium', { data: { email } })).json()).removals;
-  await request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
+  const premiumRows = async (data) => (await (await request.post('/wp-json/lld-members/v1/test/premium', { data })).json()).removals;
+  const removals = async () => premiumRows({ email });
+  const reports = () => request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
+  await reports();
   expect(await lists(), 'weekly removal list').toBe(1);
   await asOwner(page);
   const open = async () => {
@@ -521,27 +531,61 @@ test('TC-FR2-35-AS-03', async ({ page, request }) => {
   await expect(page.locator('li', { hasText: email })).toContainText(/Removed on \d{4}-\d{2}-\d{2}/);
 
   // the daily check still sees the same ended subscription: the recorded end is not added again
-  await request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
+  await reports();
   expect(await removals()).toHaveLength(1);
 
   // a second Premium end is tracked for removal on its own row, on the next list, and recorded separately
-  await request.post('/wp-json/lld-members/v1/test/premium', { data: { email, note_ended: '2021-03-01' } });
-  await request.post('/wp-json/lld-members/v1/test/premium', { data: { email, note_ended: '2021-03-01' } });
+  await premiumRows({ email, note_ended: secondEnd });
+  await premiumRows({ email, note_ended: secondEnd });
   const both = await removals();
-  expect(both.map((r) => r.premium_ended_on)).toEqual(['2020-01-01', '2021-03-01']);
+  expect(both.map((r) => r.premium_ended_on)).toEqual([firstEnd, secondEnd]);
   expect(both[0].removed_on).toMatch(/^\d{4}-\d{2}-\d{2}$/);
   expect(both[1].removed_on).toBeNull();
-  await request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
+  await reports();
   expect(await lists(), 'the second end is on the next list').toBe(2);
+
+  // the list comes again every 7 days while someone is still outstanding, and not more often
+  await reports();
+  expect(await lists(), 'no repeat within the week').toBe(2);
+  await premiumRows({ fb_list_on: daysAgo(8) });
+  await reports();
+  expect(await lists(), 'weekly reminder repeats the outstanding member').toBe(3);
+  await reports();
+  expect(await lists()).toBe(3);
+
   await asOwner(page);
   await open();
-  const again = page.locator('li', { hasText: email }).filter({ hasText: 'ended 2021-03-01' });
+  const again = page.locator('li', { hasText: email }).filter({ hasText: `ended ${secondEnd}` });
   await expect(again).toContainText('overdue');
   await again.getByRole('button', { name: 'Record removal' }).click();
-  await expect(page.locator('li', { hasText: email }).filter({ hasText: 'ended 2021-03-01' })).toContainText(/Removed on \d{4}-\d{2}-\d{2}/);
+  await expect(page.locator('li', { hasText: email }).filter({ hasText: `ended ${secondEnd}` })).toContainText(/Removed on \d{4}-\d{2}-\d{2}/);
   const done = await removals();
   expect(done.every((r) => /^\d{4}-\d{2}-\d{2}$/.test(r.removed_on))).toBe(true);
   expect(done[0].removed_on).toBe(both[0].removed_on);
+  // once recorded, the weekly reminder no longer names them
+  await premiumRows({ fb_list_on: daysAgo(8) });
+  await reports();
+  expect(await lists()).toBe(3);
+
+  // the log keeps a removal for 1 year after it was recorded (Data Model F7), then deletes it
+  const old = emailFor('ended-old');
+  await createMember(request, {
+    email: old, password, first_name: 'Old', role: 'member', consents: ['terms'], access_state: 'Premium ended', premium_ended_on: daysAgo(400),
+  });
+  await reports();
+  expect(await premiumRows({ email: old }), 'an end older than the 1-year log is not added by the daily check').toEqual([]);
+  await premiumRows({ email: old, note_ended: daysAgo(400) });
+  await asOwner(page);
+  await open();
+  await page.locator('li', { hasText: old }).getByRole('button', { name: 'Record removal' }).click();
+  await premiumRows({ email: old, age_removed: daysAgo(300) });
+  await reports();
+  expect(await premiumRows({ email: old })).toHaveLength(1);
+  await premiumRows({ email: old, age_removed: daysAgo(370) });
+  await reports();
+  expect(await premiumRows({ email: old })).toEqual([]);
+  // removals recorded within the year are kept
+  expect(await removals()).toHaveLength(2);
 });
 
 test('TC-FR2-36-AS-01', async ({ page, request }) => {

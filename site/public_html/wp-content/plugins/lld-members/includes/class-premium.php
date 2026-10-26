@@ -83,8 +83,9 @@ class LLD_Members_Premium {
 	 */
 	public static function daily() {
 		self::catch_ended();
-		self::mail_removals();
 		self::flag_late();
+		self::mail_removals();
+		self::purge_removals();
 	}
 
 	/**
@@ -666,6 +667,13 @@ class LLD_Members_Premium {
 		$member_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE email = %s', $email ) );
 		if ( $member_id && isset( $params['note_ended'] ) ) {
 			self::note_ended( $member_id, sanitize_text_field( (string) $params['note_ended'] ) );
+		}
+		// Move this member's recorded removals back in time, and the date of the last weekly list.
+		if ( $member_id && isset( $params['age_removed'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $params['age_removed'] ) ) {
+			$wpdb->query( $wpdb->prepare( 'UPDATE ' . LLD_Members_Schema::table( 'fb_removal' ) . ' SET removed_on = %s WHERE member_number = %d AND removed_on IS NOT NULL', (string) $params['age_removed'], $member_id ) );
+		}
+		if ( isset( $params['fb_list_on'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $params['fb_list_on'] ) ) {
+			update_option( 'lld_fb_list_on', (string) $params['fb_list_on'], false );
 		}
 		// The owner edits and re-approves a meal plan or challenge (a new approved version).
 		if ( isset( $params['revise'] ) && is_array( $params['revise'] ) ) {
@@ -2526,48 +2534,92 @@ class LLD_Members_Premium {
 		return $next;
 	}
 
+	/**
+	 * Safety net for ends the billing code did not report: ended subscriptions from the last year (the log is kept
+	 * 1 year, Data Model F7), so an end whose record has been purged is not added again.
+	 */
 	private static function catch_ended() {
 		global $wpdb;
 		$rows = $wpdb->get_results( 'SELECT member_id, access_state, premium_ended_on FROM ' . LLD_Members_Schema::table( 'subscription' ) );
 		if ( ! $rows ) {
 			return;
 		}
+		$table = LLD_Members_Schema::table( 'fb_removal' );
 		foreach ( $rows as $row ) {
 			$state = strtolower( (string) $row->access_state );
 			if ( ! in_array( $state, array( 'premium ended', 'refunded' ), true ) ) {
 				continue;
 			}
-			$on = is_string( $row->premium_ended_on ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $row->premium_ended_on ) ? $row->premium_ended_on : LLD_Members_Programme::local_today( (int) $row->member_id );
-			self::note_ended( (int) $row->member_id, $on );
+			$member = (int) $row->member_id;
+			$today  = LLD_Members_Programme::local_today( $member );
+			$on     = is_string( $row->premium_ended_on ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $row->premium_ended_on ) ? $row->premium_ended_on : '';
+			if ( '' === $on ) {
+				// no end date recorded: note it once, today, unless this member is already on the log
+				if ( (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE member_number = %d", $member ) ) ) {
+					continue;
+				}
+				$on = $today;
+			}
+			if ( $on < self::year_before( $today ) ) {
+				continue;
+			}
+			self::note_ended( $member, $on );
 		}
 	}
 
+	/**
+	 * @param string $date Y-m-d.
+	 */
+	private static function year_before( $date ) {
+		return ( new DateTimeImmutable( (string) $date ) )->modify( '-1 year' )->format( 'Y-m-d' );
+	}
+
+	/**
+	 * The owner's removal list (FR2-35): sent when someone new is to be removed, and again every 7 days while
+	 * anyone is still outstanding, each time listing everyone not yet removed.
+	 */
 	private static function mail_removals() {
 		global $wpdb;
-		$rows = $wpdb->get_results( 'SELECT id, member_number FROM ' . LLD_Members_Schema::table( 'fb_removal' ) . ' WHERE removed_on IS NULL ORDER BY id ASC' );
+		$rows = $wpdb->get_results( 'SELECT id, member_number, premium_ended_on, late FROM ' . LLD_Members_Schema::table( 'fb_removal' ) . ' WHERE removed_on IS NULL ORDER BY id ASC' );
 		if ( ! $rows ) {
 			return;
 		}
-		$sent = get_option( 'lld_fb_sent' );
-		if ( ! is_array( $sent ) ) {
-			$sent = array();
-		}
-		$lines = array();
+		$listed = get_option( 'lld_fb_sent' );
+		$listed = is_array( $listed ) ? array_map( 'intval', $listed ) : array();
+		$last   = (string) get_option( 'lld_fb_list_on', '' );
+		$today  = current_time( 'Y-m-d' );
+		$fresh  = false;
+		$lines  = array();
+		$ids    = array();
 		foreach ( $rows as $row ) {
-			if ( in_array( (int) $row->id, $sent, true ) ) {
-				continue;
+			$ids[] = (int) $row->id;
+			if ( ! in_array( (int) $row->id, $listed, true ) ) {
+				$fresh = true;
 			}
 			$email = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT email FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', (int) $row->member_number ) );
 			if ( '' !== $email ) {
-				$lines[] = $email;
+				$lines[] = $email . ', Premium ended ' . (string) $row->premium_ended_on . ( (int) $row->late ? ', overdue' : '' );
 			}
-			$sent[] = (int) $row->id;
 		}
-		if ( ! $lines ) {
+		$due = '' === $last || $last <= ( new DateTimeImmutable( $today ) )->modify( '-7 days' )->format( 'Y-m-d' );
+		if ( ! $lines || ( ! $fresh && ! $due ) ) {
 			return;
 		}
-		wp_mail( (string) get_option( 'admin_email' ), 'People to remove from the group', "Remove these people from the private group:\n" . implode( "\n", $lines ) );
-		update_option( 'lld_fb_sent', $sent, false );
+		$sent = wp_mail( (string) get_option( 'admin_email' ), 'People to remove from the group', "Remove these people from the private group, then record each removal under Payments, Group removals:\n" . implode( "\n", $lines ) );
+		if ( $sent ) {
+			update_option( 'lld_fb_sent', $ids, false );
+			update_option( 'lld_fb_list_on', $today, false );
+		}
+	}
+
+	/**
+	 * Removal records are kept for 1 year after the removal was recorded (Data Model F7), then deleted. Records still
+	 * outstanding are kept.
+	 */
+	private static function purge_removals() {
+		global $wpdb;
+		$table = LLD_Members_Schema::table( 'fb_removal' );
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE removed_on IS NOT NULL AND removed_on < %s", self::year_before( current_time( 'Y-m-d' ) ) ) );
 	}
 
 	private static function flag_late() {
