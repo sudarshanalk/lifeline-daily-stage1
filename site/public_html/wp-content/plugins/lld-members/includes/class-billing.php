@@ -1383,6 +1383,7 @@ class LLD_Members_Billing {
 			)
 		);
 		do_action( 'lld_members_event', 'upgraded', $member_id, array( 'plan' => (string) $quote['plan'] ) );
+		LLD_Members_Programme::premium_restored( $member_id );
 		self::remember_card( $member_id, $fingerprint );
 		self::note_referral( $member_id, isset( $stored['ref'] ) ? (string) $stored['ref'] : '', $email, $fingerprint );
 		self::mail_member( $member_id, 'Your receipt', 'Your receipt. Amount ' . self::money( (int) $quote['charged'], (string) $quote['currency'] ) . ', tax included. Date ' . $today . '.' );
@@ -1449,6 +1450,7 @@ class LLD_Members_Billing {
 			)
 		);
 		do_action( 'lld_members_event', 'renewed', $member_id, array( 'switched' => 'yearly' === $plan && 'yearly' !== (string) $row->plan ) );
+		LLD_Members_Programme::premium_restored( $member_id );
 		self::clear_retry( $member_id );
 		self::mail_member( $member_id, 'Your receipt', 'Your receipt. Amount ' . self::money( $amount, $next['currency'] ) . ', tax included. Date ' . $today . '.' );
 	}
@@ -1819,24 +1821,12 @@ class LLD_Members_Billing {
 	 * @param string $as_of     Date the ending week is judged from.
 	 */
 	private static function close_week( $member_id, $as_of ) {
-		global $wpdb;
 		$row = LLD_Members_Programme::active( $member_id );
 		if ( ! $row || $row->last_open_day ) {
 			return;
 		}
-		$start = $wpdb->get_var( $wpdb->prepare( 'SELECT MIN(first_on) FROM ' . LLD_Members_Schema::table( 'enrolment_period' ) . ' WHERE enrolment_id = %d', (int) $row->id ) );
-		if ( ! is_string( $start ) || '' === $start ) {
-			return;
-		}
-		$start_d = new DateTimeImmutable( $start );
-		$as      = new DateTimeImmutable( $as_of );
-		if ( $as < $start_d ) {
-			$as = $start_d;
-		}
-		$day  = (int) $start_d->diff( $as )->days + 1;
-		$week = (int) ceil( $day / 7 );
-		$last = $start_d->modify( '+' . ( ( $week * 7 ) - 1 ) . ' days' )->format( 'Y-m-d' );
-		$wpdb->update( LLD_Members_Schema::table( 'enrolment' ), array( 'last_open_day' => $last ), array( 'id' => (int) $row->id ) );
+		// The programme class counts days across every period of the enrolment (T3), not from the first period's start.
+		LLD_Members_Programme::close_current_week( $member_id, $as_of, $row );
 	}
 
 	/**
