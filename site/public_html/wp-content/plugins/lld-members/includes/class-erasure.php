@@ -104,6 +104,12 @@ class LLD_Members_Erasure {
 		}
 		self::delete_periods_for_missing_enrolments();
 		self::delete_workout_changes_for_missing_workouts();
+		// Data Model A3: records naming an enrolment are deleted with that enrolment. The programme emails' claim
+		// keys name it as review:<enrolment>:<week> and end:<enrolment>; daily and welcome claims stay.
+		$sent = LLD_Members_Schema::table( 'mail_sent' );
+		foreach ( array( 'review:', 'end:' ) as $prefix ) {
+			$wpdb->query( $wpdb->prepare( "DELETE FROM {$sent} WHERE member_id = %d AND claim_key LIKE %s", $member_id, $wpdb->esc_like( $prefix ) . '%' ) );
+		}
 		LLD_Members_Photos::delete_member( $member_id, 'diary' );
 		LLD_Members_Privacy::sweep_downloads( $member_id );
 		// "What changed for you" answers and testimonials go with health consent (FR2-03, F4).
