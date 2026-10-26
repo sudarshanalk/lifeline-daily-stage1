@@ -22,6 +22,7 @@ class LLD_Members_Billing {
 	public static function boot() {
 		add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ) );
 		add_action( 'lld_members_notice_retry', array( __CLASS__, 'retry_notices' ) );
+		add_action( 'lld_members_erase_account', array( __CLASS__, 'erase_member' ) );
 		if ( ! wp_next_scheduled( 'lld_members_notice_retry' ) ) {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'lld_members_notice_retry' );
 		}
@@ -135,6 +136,92 @@ class LLD_Members_Billing {
 			update_option( 'lld_pmpro_levels', $ids, false );
 		}
 		return $ids;
+	}
+
+	/**
+	 * Account deletion (S7): remove what payments keep about the member in wp_options. Card fingerprints and the
+	 * referral code go; so do quotes, retry windows and mismatch notes that name the member.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function erase_member( $member_id ) {
+		$member_id = (int) $member_id;
+		if ( $member_id < 1 ) {
+			return;
+		}
+		$cards = get_option( 'lld_card_fp' );
+		if ( is_array( $cards ) ) {
+			$kept = array_values(
+				array_filter(
+					$cards,
+					static function ( $row ) use ( $member_id ) {
+						return ! is_array( $row ) || (int) $row['member_id'] !== $member_id;
+					}
+				)
+			);
+			if ( count( $kept ) !== count( $cards ) ) {
+				update_option( 'lld_card_fp', $kept, false );
+			}
+		}
+		$codes = get_option( 'lld_ref_codes' );
+		if ( is_array( $codes ) && array_key_exists( (string) $member_id, $codes ) ) {
+			unset( $codes[ (string) $member_id ] );
+			update_option( 'lld_ref_codes', $codes, false );
+		}
+		$quotes = get_option( 'lld_quotes' );
+		if ( is_array( $quotes ) ) {
+			$kept = array_filter(
+				$quotes,
+				static function ( $row ) use ( $member_id ) {
+					return ! is_array( $row ) || (int) $row['member_id'] !== $member_id;
+				}
+			);
+			if ( count( $kept ) !== count( $quotes ) ) {
+				update_option( 'lld_quotes', $kept, false );
+			}
+		}
+		$notes = get_option( 'lld_mismatches' );
+		if ( is_array( $notes ) ) {
+			$kept = array_values(
+				array_filter(
+					$notes,
+					static function ( $row ) use ( $member_id ) {
+						return ! is_array( $row ) || (int) $row['member_id'] !== $member_id;
+					}
+				)
+			);
+			if ( count( $kept ) !== count( $notes ) ) {
+				update_option( 'lld_mismatches', $kept, false );
+			}
+		}
+		self::clear_retry( $member_id );
+	}
+
+	/**
+	 * What wp_options still holds about one member, for the erasure checks.
+	 *
+	 * @param int $member_id Member number.
+	 * @return array<string,int>
+	 */
+	public static function member_options( $member_id ) {
+		$member_id = (int) $member_id;
+		$count     = static function ( $list, $key = 'member_id' ) use ( $member_id ) {
+			$n = 0;
+			foreach ( is_array( $list ) ? $list : array() as $row ) {
+				if ( is_array( $row ) && isset( $row[ $key ] ) && (int) $row[ $key ] === $member_id ) {
+					++$n;
+				}
+			}
+			return $n;
+		};
+		$codes = get_option( 'lld_ref_codes' );
+		return array(
+			'card_fingerprints' => $count( get_option( 'lld_card_fp' ) ),
+			'referral_code'     => is_array( $codes ) && array_key_exists( (string) $member_id, $codes ) ? 1 : 0,
+			'quotes'            => $count( get_option( 'lld_quotes' ) ),
+			'mismatches'        => $count( get_option( 'lld_mismatches' ) ),
+			'retries'           => $count( self::retries() ),
+		);
 	}
 
 	/**
@@ -776,6 +863,9 @@ class LLD_Members_Billing {
 				return new WP_REST_Response( array( 'message' => $saved->get_error_message() ), 400 );
 			}
 			return new WP_REST_Response( self::prices(), 200 );
+		}
+		if ( 'member_options' === $action ) {
+			return new WP_REST_Response( self::member_options( isset( $params['member_id'] ) ? (int) $params['member_id'] : 0 ), 200 );
 		}
 		if ( 'codes' === $action ) {
 			return new WP_REST_Response( array( 'codes' => self::codes() ), 200 );

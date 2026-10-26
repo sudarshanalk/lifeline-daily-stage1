@@ -1242,6 +1242,34 @@ test('TC-FR2-29-AS-05', async ({ page, request }) => {
   await expect(page.getByText('Next payment £52.19')).toBeVisible();
 });
 
+test('TC-FR2-04-AS-03 account deletion removes card fingerprints and the referral code kept in wp_options (S7)', async ({ page, request }) => {
+  const referrer = emailFor('erase-ref');
+  const friend = emailFor('erase-friend');
+  await createMember(request, { email: referrer, password, first_name: 'Erase', role: 'member' });
+  await createMember(request, { email: friend, password, first_name: 'Keep', role: 'member' });
+  await clock(request, referrer, '2026-09-01 12:00:00');
+  await clock(request, friend, '2026-09-01 12:00:00');
+  const ref = await refCode(page, referrer);
+  await payApi(request, referrer, { plan: 'monthly', country: 'US', fingerprint: `fp_${stamp()}` });
+  await payApi(request, friend, { plan: 'monthly', country: 'US', fingerprint: `fp_${stamp()}`, ref });
+  const memberId = Number((await readMember(request, referrer)).subscription.member_id);
+  const friendId = Number((await readMember(request, friend)).subscription.member_id);
+  const failed = await notify(request, {
+    id: `evt_fail_${stamp()}`, type: 'invoice.payment_failed', data: { object: { id: `in_${stamp()}`, subscription: (await readMember(request, referrer)).subscription.stripe_subscription } },
+  });
+  expect(failed.ok()).toBeTruthy();
+  let held = await billingAction(request, { action: 'member_options', member_id: memberId });
+  expect(held.card_fingerprints).toBe(1);
+  expect(held.referral_code).toBe(1);
+  expect(held.retries).toBe(1);
+  const erased = await request.post('/wp-json/lld-members/v1/test/reset', { data: { email: referrer } });
+  expect(erased.ok(), await erased.text()).toBeTruthy();
+  held = await billingAction(request, { action: 'member_options', member_id: memberId });
+  expect(held).toEqual({ card_fingerprints: 0, referral_code: 0, quotes: 0, mismatches: 0, retries: 0 });
+  const other = await billingAction(request, { action: 'member_options', member_id: friendId });
+  expect(other.card_fingerprints).toBe(1);
+});
+
 test('TC-NFR2-10-AS-01', async () => {
   const pipeline = readFileSync(resolve(root, '.github/workflows/ci-guards.yml'), 'utf8');
   expect(pipeline).toContain('saf-protein');

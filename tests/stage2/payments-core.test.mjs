@@ -93,3 +93,26 @@ test('TC-FR2-13-AS-04 a code is checked against its plans and its valid-from and
   expect(billing).not.toMatch(/'monthly' === \$plan && '' !== \$code/);
   for (const field of ['plans', 'valid_from', 'valid_to', 'times_used']) expect(billing).toContain(`'${field}'`);
 });
+
+test('TC-FR2-04-AS-03 erasing a member removes their card fingerprints, referral code, quotes, mismatch notes and retry windows', () => {
+  const options = {
+    lld_card_fp: [{ member_id: 7, fingerprint: 'fp_a' }, { member_id: 8, fingerprint: 'fp_b' }, { member_id: 7, fingerprint: 'fp_c' }],
+    lld_ref_codes: { 7: 'r7', 8: 'r8' },
+    lld_quotes: { cs_a: { member_id: 7, quote: {}, ref: '' }, cs_b: { member_id: 8, quote: {}, ref: '' } },
+    lld_mismatches: [{ member_id: 7, flagged_on: '2026-01-01' }],
+    lld_retries: { in_a: { member_id: 7, from: '2026-01-01' }, in_b: { member_id: 8, from: '2026-01-02' } },
+  };
+  const prelude = [
+    `$GLOBALS['opts'] = json_decode( ${JSON.stringify(JSON.stringify(options))}, true );`,
+    "function get_option( $name ) { return isset( $GLOBALS['opts'][ $name ] ) ? $GLOBALS['opts'][ $name ] : false; }",
+    "function update_option( $name, $value ) { $GLOBALS['opts'][ $name ] = $value; return true; }",
+  ].join(' ');
+  const after = billing('erase_member', [7], { LLD_ENV: 'ci' }, { prelude, result: "$GLOBALS['opts']" });
+  expect(after.lld_card_fp).toEqual([{ member_id: 8, fingerprint: 'fp_b' }]);
+  expect(after.lld_ref_codes).toEqual({ 8: 'r8' });
+  expect(Object.keys(after.lld_quotes)).toEqual(['cs_b']);
+  expect(after.lld_mismatches).toEqual([]);
+  expect(Object.keys(after.lld_retries)).toEqual(['in_b']);
+  expect(readFileSync(resolve(plugin, 'class-erasure.php'), 'utf8')).toMatch(/do_action\( 'lld_members_erase_account', \$member_id \);/);
+  expect(source('class-billing.php')).toMatch(/add_action\( 'lld_members_erase_account', array\( __CLASS__, 'erase_member' \) \)/);
+});
