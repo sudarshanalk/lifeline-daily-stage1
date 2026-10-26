@@ -70,6 +70,9 @@ class LLD_Members_Fixtures {
 		if ( 'tampered' === $kind ) {
 			return self::tampered( $stamp );
 		}
+		if ( 'linked' === $kind ) {
+			return self::linked( $stamp );
+		}
 		return new WP_Error( 'lld_fixture', 'Unknown fixture.' );
 	}
 
@@ -303,6 +306,11 @@ class LLD_Members_Fixtures {
 			self::tagged( 'lld_activity', 'Approved action ' . $i . ' ' . $stamp, array( $slug ), self::action_fields( $track, 0, 'standard', true ) );
 		}
 		$article = self::post( 'post', 'Unreviewed article ' . $hidden, 'Not reviewed ' . $hidden, array( $slug ) );
+		// Approved, then moved to the bin: members never see a trashed item.
+		$trashed = self::tagged( 'lld_activity', 'Trashed activity ' . $hidden, array( $slug ), self::action_fields( $track, 0, 'standard', true ) );
+		wp_trash_post( $trashed );
+		// An approved matrix row for a situation no member has: owner data, never a library item.
+		$matrix = self::tagged( 'lld_matrix', 'Matrix row ' . $hidden, array(), array( 'situation' => 'fixture-' . $stamp, 'remove_tags' => '', 'tracks' => '' ) );
 		return array(
 			'hidden'  => $hidden,
 			'goal'    => $goal,
@@ -310,6 +318,8 @@ class LLD_Members_Fixtures {
 			'track'   => get_post_field( 'post_name', $track ),
 			'ids'     => $ids,
 			'article' => $article,
+			'trashed' => $trashed,
+			'matrix'  => $matrix,
 		);
 	}
 
@@ -331,9 +341,51 @@ class LLD_Members_Fixtures {
 		$unsigned = 'Unsigned ' . $stamp;
 		$b        = self::tagged( 'lld_activity', $unsigned, array(), array() );
 		delete_post_meta( self::last_version( $b ), '_lld_approved_by' );
+		// Text changed and the stored hash rewritten to match: only the fingerprint check can catch it.
+		$rehashed = 'Rehashed ' . $stamp;
+		$c        = self::tagged( 'lld_activity', $rehashed, array(), array() );
+		$cv       = self::last_version( $c );
+		$new      = str_replace( $rehashed . ' body', 'Rewritten after approval ' . $stamp, (string) get_post_field( 'post_content', $cv, 'raw' ) );
+		$wpdb->update( $wpdb->posts, array( 'post_content' => $new ), array( 'ID' => $cv ), array( '%s' ), array( '%d' ) );
+		clean_post_cache( $cv );
+		update_post_meta( $cv, '_lld_stored_hash', hash( 'sha256', $new ) );
 		return array(
 			'changed'  => array( 'id' => $a, 'title' => $changed, 'text' => 'Changed after approval ' . $stamp ),
 			'unsigned' => array( 'id' => $b, 'title' => $unsigned ),
+			'rehashed' => array( 'id' => $c, 'title' => $rehashed, 'text' => 'Rewritten after approval ' . $stamp ),
+		);
+	}
+
+	/**
+	 * A meal plan linking an approved recipe. An unapproved edit of the recipe leaves the plan alone; approving
+	 * the edit gives the plan a new version to approve (B16).
+	 *
+	 * @param string $stamp Stamp.
+	 * @return array<string,mixed>
+	 */
+	private static function linked( $stamp ) {
+		$recipe = self::tagged( 'lld_recipe', 'Linked recipe ' . $stamp, array(), array( 'ingredients' => 'oats | 40 | g', 'meal_type' => 'breakfast' ) );
+		$meal   = self::tagged(
+			'lld_meal',
+			'Linked plan ' . $stamp,
+			array(),
+			array(
+				'week_number' => 1,
+				'meals'       => wp_json_encode( array( '1' => array( 'breakfast' => $recipe ) ) ),
+				'swaps'       => '{}',
+			)
+		);
+		$count  = static function () use ( $meal ) {
+			return count( get_posts( array( 'post_type' => 'lld_meal', 'post_status' => 'lld_version', 'post_parent' => $meal, 'posts_per_page' => -1, 'fields' => 'ids' ) ) );
+		};
+		$start  = $count();
+		wp_update_post( array( 'ID' => $recipe, 'post_content' => 'Linked recipe edited ' . $stamp ) );
+		$edited = $count();
+		LLD_Members_Content::approve_now( $recipe );
+		return array(
+			'meal'     => $meal,
+			'recipe'   => $recipe,
+			'versions' => array( $start, $edited, $count() ),
 		);
 	}
 

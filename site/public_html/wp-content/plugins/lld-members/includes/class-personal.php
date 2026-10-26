@@ -876,6 +876,11 @@ class LLD_Members_Personal {
 			if ( ! $joined ) {
 				continue;
 			}
+			// EM-14 and the health profile row are health data: never without health consent, and never again
+			// after the member's health data or account was erased (the reminder is sent once only).
+			if ( ! LLD_Members_Account::has_consent( $member_id, 'health' ) || self::health_erased( $member_id ) ) {
+				continue;
+			}
 			$today   = LLD_Members_Clock::now( $member_id )->format( 'Y-m-d' );
 			$due     = $joined->modify( '+30 days' )->format( 'Y-m-d' );
 			$profile = self::profile_row( $member_id );
@@ -908,6 +913,19 @@ class LLD_Members_Personal {
 		}
 	}
 
+	/**
+	 * @param int $member_id Member number.
+	 */
+	private static function health_erased( $member_id ) {
+		global $wpdb;
+		return (bool) $wpdb->get_var(
+			$wpdb->prepare(
+				'SELECT id FROM ' . LLD_Members_Schema::table( 'erasure' ) . " WHERE member_number = %d AND what_erased IN ('health', 'account') LIMIT 1",
+				$member_id
+			)
+		);
+	}
+
 	private static function owner_reports() {
 		foreach ( self::report_dates() as $date ) {
 			$when = DateTimeImmutable::createFromFormat( 'Y-m-d', $date, new DateTimeZone( 'UTC' ) );
@@ -923,6 +941,7 @@ class LLD_Members_Personal {
 			}
 			if ( '01' === $when->format( 'd' ) && ! get_option( 'lld_theme_note_' . $when->format( 'Y-m' ) ) ) {
 				global $wpdb;
+				self::group_something_else();
 				$rows  = $wpdb->get_results( 'SELECT theme, COUNT(*) AS n FROM ' . LLD_Members_Schema::table( 'something_else' ) . " WHERE theme IS NOT NULL AND theme <> '' GROUP BY theme ORDER BY theme ASC" );
 				$lines = array( 'Something else themes:' );
 				if ( $rows ) {
@@ -935,6 +954,62 @@ class LLD_Members_Personal {
 				LLD_Members_Mail::send_owner_note( 'Something else themes', implode( "\n", $lines ) );
 				update_option( 'lld_theme_note_' . $when->format( 'Y-m' ), '1', false );
 			}
+		}
+	}
+
+	/**
+	 * The monthly grouping (C2 theme, F5): each request is given a theme, and only themes and counts leave this
+	 * step. The text is decrypted here and never stored or sent in plain form.
+	 *
+	 * Until the AI grouping in decision D34 exists, a theme is the owner's own wording: the first approved goal
+	 * name, or goal tag, that the request mentions. Anything else is counted as "Other".
+	 */
+	private static function group_something_else() {
+		global $wpdb;
+		$table  = LLD_Members_Schema::table( 'something_else' );
+		$themes = array();
+		foreach ( LLD_Members_Content::approved_goals() as $snap ) {
+			$themes[] = trim( (string) $snap['title'] );
+		}
+		$tags = get_terms(
+			array(
+				'taxonomy'   => 'lld_tag',
+				'hide_empty' => false,
+				'meta_key'   => 'lld_kind',
+				'meta_value' => 'goal',
+				'fields'     => 'names',
+			)
+		);
+		if ( is_array( $tags ) ) {
+			foreach ( $tags as $tag ) {
+				$themes[] = trim( str_replace( '-', ' ', (string) $tag ) );
+			}
+		}
+		$themes = array_values( array_unique( array_filter( $themes ) ) );
+		// Longer names first, so "Blood Sugar Balance" wins over "blood sugar".
+		usort(
+			$themes,
+			static function ( $a, $b ) {
+				return strlen( $b ) - strlen( $a );
+			}
+		);
+		$rows = $wpdb->get_results( "SELECT id, text_ciphertext FROM {$table}" );
+		foreach ( (array) $rows as $row ) {
+			$theme = 'Other';
+			try {
+				$text = LLD_Members_Crypto::decrypt( (string) $row->text_ciphertext, 'something_else:' . (int) $row->id );
+			} catch ( RuntimeException $failed ) {
+				$text = '';
+			}
+			if ( is_string( $text ) && '' !== $text ) {
+				foreach ( $themes as $name ) {
+					if ( preg_match( '/(?<![\p{L}\p{N}])' . str_replace( ' ', '[\s-]+', preg_quote( $name, '/' ) ) . '(?![\p{L}\p{N}])/iu', $text ) ) {
+						$theme = $name;
+						break;
+					}
+				}
+			}
+			$wpdb->update( $table, array( 'theme' => $theme ), array( 'id' => (int) $row->id ), array( '%s' ), array( '%d' ) );
 		}
 	}
 
@@ -1160,7 +1235,8 @@ class LLD_Members_Personal {
 	 * @param int $member_id Member number.
 	 */
 	private static function suggestion_block( $member_id ) {
-		$html  = '';
+		$html    = '';
+		$consent = LLD_Members_Account::has_consent( $member_id, 'health' );
 		if ( self::general_path( $member_id ) ) {
 			$html .= '<p>You are on the general wellbeing path.</p>';
 		}
@@ -1171,10 +1247,14 @@ class LLD_Members_Personal {
 		foreach ( $items as $item ) {
 			$html .= '<article class="lld-suggestion"><h3><a href="' . esc_url( $item['href'] ) . '">' . esc_html( $item['title'] ) . '</a></h3>';
 			$html .= '<p class="lld-reason">' . esc_html( $item['reason'] ) . '</p>';
-			$html .= '<form method="post">';
-			$html .= wp_nonce_field( 'lld_suggest', 'lld_suggest_nonce', true, false );
-			$html .= '<input type="hidden" name="lld_hide" value="' . esc_attr( $item['key'] ) . '">';
-			$html .= '<button type="submit">Not for me</button></form></article>';
+			// "Not for me" is remembered in the suggestion history (C15), which needs health consent.
+			if ( $consent ) {
+				$html .= '<form method="post">';
+				$html .= wp_nonce_field( 'lld_suggest', 'lld_suggest_nonce', true, false );
+				$html .= '<input type="hidden" name="lld_hide" value="' . esc_attr( $item['key'] ) . '">';
+				$html .= '<button type="submit">Not for me</button></form>';
+			}
+			$html .= '</article>';
 		}
 		return $html;
 	}
@@ -1312,8 +1392,7 @@ class LLD_Members_Personal {
 	 * @return array{key:string,title:string,href:string,reason:string,tags:array<int,string>,type:string}|null
 	 */
 	private static function tool_card( $member_id ) {
-		unset( $member_id );
-		return array(
+		$card = array(
 			'key'    => 'tool-protein',
 			'title'  => 'Protein calculator',
 			'href'   => home_url( '/tools/protein-requirement-tool.html' ),
@@ -1321,6 +1400,7 @@ class LLD_Members_Personal {
 			'tags'   => array(),
 			'type'   => 'tool',
 		);
+		return LLD_Members_Safety::allows( $member_id, $card ) ? $card : null;
 	}
 
 	/**
@@ -1415,6 +1495,10 @@ class LLD_Members_Personal {
 	 * @param string $key       Item key.
 	 */
 	public static function remember_open( $member_id, $key ) {
+		// Suggestion history (C15) is health data.
+		if ( ! LLD_Members_Account::has_consent( (int) $member_id, 'health' ) ) {
+			return;
+		}
 		global $wpdb;
 		$table = LLD_Members_Schema::table( 'suggestion' );
 		$id    = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE member_id = %d AND item_key = %s ORDER BY id DESC LIMIT 1", $member_id, $key ) );
@@ -1440,7 +1524,7 @@ class LLD_Members_Personal {
 	 */
 	private static function hide_item( $member_id, $key ) {
 		$key = sanitize_text_field( $key );
-		if ( '' === $key || strlen( $key ) > 64 ) {
+		if ( '' === $key || strlen( $key ) > 64 || ! LLD_Members_Account::has_consent( (int) $member_id, 'health' ) ) {
 			return;
 		}
 		global $wpdb;

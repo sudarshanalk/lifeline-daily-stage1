@@ -132,11 +132,15 @@ class LLD_Members_Mail {
 	}
 
 	/**
+	 * EM-15. The goal is not named: it was matched from the member's own "Something else" text, which is
+	 * health information, and an email can be read by others.
+	 *
 	 * @param string $email Address.
-	 * @param string $title Goal title.
+	 * @param string $title Goal title, not used in the email.
 	 */
 	public static function send_goal_live( $email, $title ) {
-		return wp_mail( $email, 'A goal you asked for is now available', "A goal you asked for is now available: {$title}\n\n" . home_url( '/members/goals/' ) . "\n" );
+		unset( $title );
+		return wp_mail( $email, 'A goal you asked for is now available', "A goal you asked for is now available. Choose it here:\n\n" . home_url( '/members/goals/' ) . "\n" );
 	}
 
 	/**
