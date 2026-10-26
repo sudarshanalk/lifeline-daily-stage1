@@ -1165,7 +1165,7 @@ class LLD_Members_Account {
 		$html  = '<fieldset class="lld-card"><legend>Email preferences</legend>';
 		$html .= '<label class="lld-check"><input type="checkbox" name="lld_welcome" value="1"' . ( $row && '1' === (string) $row->welcome ? ' checked' : '' ) . '> Welcome</label>';
 		$html .= '<label class="lld-check"><input type="checkbox" name="lld_reminder" value="1"' . ( $on ? ' checked' : '' ) . '> Daily reminder</label>';
-		$html .= lld_field( array( 'id' => 'lld_reminder_time', 'name' => 'lld_reminder_time', 'label' => 'Reminder time', 'value' => $row ? (string) $row->reminder_time : '07:30' ) );
+		$html .= lld_field( array( 'id' => 'lld_reminder_time', 'name' => 'lld_reminder_time', 'label' => 'Reminder time', 'value' => $row ? substr( (string) $row->reminder_time, 0, 5 ) : '07:30' ) );
 		$html .= '<label class="lld-check"><input type="checkbox" name="lld_weekly" value="1"' . ( $row && '1' === (string) $row->weekly_review ? ' checked' : '' ) . '> Weekly review</label>';
 		$html .= '<label class="lld-check"><input type="checkbox" name="lld_end" value="1"' . ( $row && '1' === (string) $row->end_of_track ? ' checked' : '' ) . '> End of track</label>';
 		$html .= '<label class="lld-check"><input type="checkbox" name="lld_nudges" value="1"' . ( $row && '1' === (string) $row->nudges ? ' checked' : '' ) . '> Nudges</label>';

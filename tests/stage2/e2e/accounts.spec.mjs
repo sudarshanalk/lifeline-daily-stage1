@@ -239,7 +239,12 @@ test('TC-FR2-01-AS-03', async ({ page }) => {
   await page.locator('#lld_password').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page.getByText('Sign-in is paused')).toBeVisible();
-  await setClock(page.request, email, '2027-06-01 12:00:00');
+  // Still paused a little before 15 minutes; accepted once 15 minutes have passed.
+  await setClock(page.request, email, fromNow(14 * MINUTE));
+  await page.locator('#lld_password').fill(password);
+  await page.getByRole('button', { name: 'Sign in' }).click();
+  await expect(page.getByText('Sign-in is paused')).toBeVisible();
+  await setClock(page.request, email, fromNow(15 * MINUTE + 30 * 1000));
   await page.locator('#lld_password').fill(password);
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
@@ -287,7 +292,7 @@ test('TC-FR2-01-AS-04', async ({ browser, page }) => {
   await page.locator('#lld_email').fill('tm-03c@test.lifelinedaily.invalid');
   await page.getByRole('button', { name: 'Send link' }).click();
   const later = await mailBody('tm-03c@test.lifelinedaily.invalid', 'expires in 60 minutes');
-  await setClock(page.request, 'tm-03c@test.lifelinedaily.invalid', '2028-01-01 00:00:00');
+  await setClock(page.request, 'tm-03c@test.lifelinedaily.invalid', fromNow(61 * MINUTE));
   await page.goto(linkFrom(later));
   await expect(page.getByText('That link has expired.')).toBeVisible();
   await otherPage.goto('/members/home/');

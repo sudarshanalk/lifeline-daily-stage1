@@ -26,24 +26,76 @@ function sized(name, bytes, extra = 0) {
   return path;
 }
 
-function makeJpeg(name, targetBytes) {
+// An EXIF block holding a GPS latitude (51 deg 30 min N), placed after the JFIF header.
+function withGps(body) {
+  const tiff = Buffer.alloc(80);
+  tiff.write('II', 0, 'latin1');
+  tiff.writeUInt16LE(42, 2);
+  tiff.writeUInt32LE(8, 4);
+  tiff.writeUInt16LE(1, 8); // IFD0: one entry, the GPS IFD pointer
+  tiff.writeUInt16LE(0x8825, 10);
+  tiff.writeUInt16LE(4, 12);
+  tiff.writeUInt32LE(1, 14);
+  tiff.writeUInt32LE(26, 18);
+  tiff.writeUInt32LE(0, 22);
+  tiff.writeUInt16LE(2, 26); // GPS IFD: latitude reference and latitude
+  tiff.writeUInt16LE(1, 28);
+  tiff.writeUInt16LE(2, 30);
+  tiff.writeUInt32LE(2, 32);
+  tiff.write('N\0', 36, 'latin1');
+  tiff.writeUInt16LE(2, 40);
+  tiff.writeUInt16LE(5, 42);
+  tiff.writeUInt32LE(3, 44);
+  tiff.writeUInt32LE(56, 48);
+  tiff.writeUInt32LE(0, 52);
+  [[51, 1], [30, 1], [0, 1]].forEach(([n, d], i) => {
+    tiff.writeUInt32LE(n, 56 + i * 8);
+    tiff.writeUInt32LE(d, 60 + i * 8);
+  });
+  const payload = Buffer.concat([Buffer.from('Exif\0\0', 'latin1'), tiff]);
+  const head = Buffer.alloc(4);
+  head.writeUInt16BE(0xffe1, 0);
+  head.writeUInt16BE(payload.length + 2, 2);
+  const at = body.readUInt16BE(2) === 0xffe0 ? 4 + body.readUInt16BE(4) : 2;
+  return Buffer.concat([body.slice(0, at), head, payload, body.slice(at)]);
+}
+
+// Whether a JPEG carries an EXIF block, and its pixel size, read from its markers.
+function jpegInfo(body) {
+  let exif = false;
+  let width = 0;
+  let height = 0;
+  let offset = 2;
+  while (offset + 4 <= body.length && body[offset] === 0xff) {
+    const marker = body[offset + 1];
+    if (marker === 0xd9 || marker === 0xda) break;
+    const length = body.readUInt16BE(offset + 2);
+    if (marker === 0xe1 && body.slice(offset + 4, offset + 10).toString('latin1') === 'Exif\0\0') exif = true;
+    if (marker >= 0xc0 && marker <= 0xc3) {
+      height = body.readUInt16BE(offset + 5);
+      width = body.readUInt16BE(offset + 7);
+    }
+    offset += 2 + length;
+  }
+  return { exif, width, height };
+}
+
+function makeJpeg(name, targetBytes, { width = 16, height = 16, gps = false } = {}) {
   const path = join(tmpdir(), name);
   const script = join(tmpdir(), `lld-make-${name}.php`);
   writeFileSync(
     script,
     `<?php
-$im = imagecreatetruecolor(16, 16);
-imagefilledrectangle($im, 0, 0, 15, 15, imagecolorallocate($im, 20, 80, 40));
+$im = imagecreatetruecolor(${width}, ${height});
+imagefilledrectangle($im, 0, 0, ${width - 1}, ${height - 1}, imagecolorallocate($im, 20, 80, 40));
 imagejpeg($im, ${JSON.stringify(path)}, 85);
-$extra = ${Math.floor(targetBytes)} - filesize(${JSON.stringify(path)});
-if ($extra > 0) {
-  $handle = fopen(${JSON.stringify(path)}, 'ab');
-  fwrite($handle, str_repeat("\\0", $extra));
-  fclose($handle);
-}
 `
   );
   execFileSync('php', [script], { stdio: 'pipe' });
+  let body = readFileSync(path);
+  if (gps) body = withGps(body);
+  if (body.length < targetBytes) body = Buffer.concat([body, Buffer.alloc(Math.floor(targetBytes) - body.length)]);
+  writeFileSync(path, body);
   return path;
 }
 
@@ -156,26 +208,36 @@ test('TC-FR2-02-AS-01', async ({ page }) => {
   await page.locator('#lld_last').fill('Lee');
   await page.locator('#lld_display').fill('Sammy');
   await page.locator('#lld_age').fill('41');
-  await page.locator('#lld_timezone').fill('Europe/London');
+  await page.locator('#lld_timezone').fill('Europe/Paris');
   await page.getByRole('checkbox', { name: 'Show imperial units' }).check();
   await page.locator('#lld_goal').fill('sleep');
   await page.locator('#lld_track').fill('sleep');
   await page.locator('#lld_height').fill('170');
   await page.getByRole('checkbox', { name: 'Daily reminder' }).check();
-  await page.locator('#lld_reminder_time').fill('07:30');
+  await page.getByRole('checkbox', { name: 'Weekly review' }).check();
+  await page.locator('#lld_reminder_time').fill('06:45');
   await page.locator('#lld_password').fill('newer-pass');
   const next = 'sam-new@test.lifelinedaily.invalid';
   await reset(page.request, next);
   await page.locator('#lld_email').fill(next);
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Saved')).toBeVisible();
-  await page.reload();
+  // A fresh load of the page shows every new value.
+  await page.goto('/members/settings/');
   await expect(page.locator('#lld_first')).toHaveValue('Samantha');
+  await expect(page.locator('#lld_last')).toHaveValue('Lee');
   await expect(page.locator('#lld_display')).toHaveValue('Sammy');
-  await expect(page.locator('#lld_timezone')).toHaveValue('Europe/London');
+  await expect(page.locator('#lld_age')).toHaveValue('41');
+  await expect(page.getByText('Age: 41')).toBeVisible();
+  await expect(page.locator('#lld_timezone')).toHaveValue('Europe/Paris');
+  await expect(page.getByRole('checkbox', { name: 'Show imperial units' })).toBeChecked();
   await expect(page.locator('#lld_height')).toHaveValue('170');
   await expect(page.locator('#lld_goal')).toHaveValue('sleep');
   await expect(page.locator('#lld_track')).toHaveValue('sleep');
+  await expect(page.getByRole('checkbox', { name: 'Daily reminder' })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: 'Weekly review' })).toBeChecked();
+  await expect(page.locator('#lld_reminder_time')).toHaveValue('06:45');
+  await expect(page.getByText(`Check ${next} to confirm`)).toBeVisible();
   await page.context().clearCookies();
   await signIn(page, email, 'newer-pass');
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
@@ -185,6 +247,8 @@ test('TC-FR2-02-AS-01', async ({ page }) => {
   await page.context().clearCookies();
   await signIn(page, next, 'newer-pass');
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
+  await page.goto('/members/settings/');
+  await expect(page.locator('#lld_email')).toHaveValue(next);
   expect(created.member_id).toBeGreaterThan(0);
 });
 
@@ -195,12 +259,23 @@ test('TC-FR2-02-AS-02', async ({ page }) => {
   await reset(page.request, email);
   await reset(page.request, other);
   const created = await createMember(page.request, { email, password, first_name: 'Sam', role: 'member' });
-  await createMember(page.request, { email: other, password, first_name: 'Tee', role: 'member' });
+  await createMember(page.request, { email: other, password, first_name: 'Ola', role: 'member' });
   await signIn(page, email, password);
   await page.goto('/members/settings/');
-  await page.locator('#lld_photo').setInputFiles(makeJpeg('photo-ok.jpg', 9.9 * 1024 * 1024));
+  // A 9.9 MB photo, 3200 by 2400 pixels, carrying a GPS position.
+  const big = makeJpeg('photo-ok.jpg', 9.9 * 1024 * 1024, { width: 3200, height: 2400, gps: true });
+  expect(jpegInfo(readFileSync(big))).toEqual({ exif: true, width: 3200, height: 2400 });
+  await page.locator('#lld_photo').setInputFiles(big);
   await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Saved')).toBeVisible();
   await expect(page.locator('img')).toBeVisible();
+  // Stored without any EXIF block, so without the location, and resized to at most 1,600 pixels.
+  const kept = await page.request.get(`/members/photo/${created.member_id}/`);
+  expect(kept.ok()).toBe(true);
+  const stored = jpegInfo(await kept.body());
+  expect(stored.exif).toBe(false);
+  expect(Math.max(stored.width, stored.height)).toBe(1600);
+  expect(stored.width * 3).toBe(stored.height * 4);
   await page.locator('#lld_photo').setInputFiles(sized('photo.png', png, 0));
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Saved')).toBeVisible();
@@ -221,7 +296,7 @@ test('TC-FR2-02-AS-02', async ({ page }) => {
   await signIn(page, email, password);
   const own = await page.request.get(`/members/photo/${created.member_id}/`);
   expect(own.ok()).toBe(true);
-  expect(await own.text()).not.toContain('GPS');
+  expect(jpegInfo(await own.body()).exif).toBe(false);
   await page.goto('/members/settings/');
   await page.locator('#lld_photo').setInputFiles(sized('photo.heic', jpeg, 0));
   await page.getByRole('button', { name: 'Save' }).click();
@@ -255,15 +330,18 @@ test('TC-FR2-02-AS-04', async ({ page }) => {
   const paid = 'tm-04h@test.lifelinedaily.invalid';
   await reset(page.request, free);
   await reset(page.request, paid);
-  await createMember(page.request, { email: free, password, first_name: 'Sam', role: 'member', access_state: 'free' });
-  await createMember(page.request, { email: paid, password, first_name: 'Tee', role: 'member', access_state: 'Premium', period_ends_on: '2027-02-01' });
+  const today = new Date().toISOString().slice(0, 10);
+  const freeMember = await createMember(page.request, { email: free, password, first_name: 'Sam', role: 'member', access_state: 'free' });
+  const paidMember = await createMember(page.request, { email: paid, password, first_name: 'Tee', role: 'member', access_state: 'Premium', period_ends_on: '2027-02-01' });
+  expect(freeMember.joined_on).toBe(today);
   await signIn(page, free, password);
   await page.goto('/members/settings/');
-  await expect(page.getByText('Joined on')).toBeVisible();
-  await expect(page.getByText('not applicable')).toBeVisible();
+  await expect(page.getByText(`Joined on ${freeMember.joined_on}`)).toBeVisible();
+  await expect(page.getByText('Next renewal: not applicable')).toBeVisible();
   await signIn(page, paid, password);
   await page.goto('/members/settings/');
-  await expect(page.getByText('2027-02-01')).toBeVisible();
+  await expect(page.getByText(`Joined on ${paidMember.joined_on}`)).toBeVisible();
+  await expect(page.getByText('Next renewal: 2027-02-01')).toBeVisible();
 });
 
 test('TC-FR2-02-AS-05', async ({ page }) => {
@@ -313,16 +391,32 @@ test('TC-FR2-03-AS-02', async ({ page }) => {
 
 test('TC-FR2-03-AS-03', async ({ page }) => {
   const email = 'tm-02@test.lifelinedaily.invalid';
+  const allowed = 'tm-02-ok@test.lifelinedaily.invalid';
   await reset(page.request, email);
-  const created = await createMember(page.request, { email, password, first_name: 'No', role: 'member' });
+  await reset(page.request, allowed);
+  const created = await createMember(page.request, { email, password, first_name: 'No', role: 'member', consents: ['terms'] });
+  const control = await createMember(page.request, { email: allowed, password, first_name: 'Yes', role: 'member', consents: ['terms', 'health'] });
+  const kinds = ['goal', 'profile', 'check_in', 'diary', 'result'];
+  const tables = { goal: 'goal_choice', profile: 'health_profile', check_in: 'check_in', diary: 'diary_day', result: 'calculator_result' };
+  const save = async (memberId, kind) => {
+    await page.goto('/members/goals/');
+    const restNonce = await page.locator('meta[name="lld-rest-nonce"]').getAttribute('content');
+    return page.request.post(`/wp-json/lld-members/v1/members/${memberId}/health`, {
+      data: { kind, goal_key: 'sleep', sort_order: 1, height_cm: 170 },
+      headers: { 'X-WP-Nonce': restNonce },
+    });
+  };
+  // Positive control: with health consent, the same five saves succeed and are stored.
+  await signIn(page, allowed, password);
+  for (const kind of kinds) expect((await save(control.member_id, kind)).status(), kind).toBe(200);
+  const stored = await scanOf(page.request, { member_id: control.member_id });
+  for (const kind of kinds) expect(stored.records[tables[kind]], kind).toBeGreaterThan(0);
+
   await signIn(page, email, password);
   await page.goto('/members/goals/');
   const nonce = await page.locator('meta[name="lld-rest-nonce"]').getAttribute('content');
-  for (const kind of ['goal', 'profile', 'check_in', 'diary', 'result']) {
-    const res = await page.request.post(`/wp-json/lld-members/v1/members/${created.member_id}/health`, {
-      data: { kind, goal_key: 'sleep', sort_order: 1, height_cm: 170 },
-      headers: { 'X-WP-Nonce': nonce },
-    });
+  for (const kind of kinds) {
+    const res = await save(created.member_id, kind);
     expect(res.status(), kind).toBe(403);
   }
   // The direct save route is a test helper: without the test secret it does not answer at all.
@@ -331,11 +425,27 @@ test('TC-FR2-03-AS-03', async ({ page }) => {
     headers: { 'X-WP-Nonce': nonce, 'X-LLD-Test-Secret': 'wrong' },
   });
   expect([401, 403]).toContain(open.status());
+  // Through the page: the health fields are not offered, and posting them anyway stores nothing.
   await page.goto('/members/settings/');
-  await page.locator('#lld_first').fill('Nope');
-  await page.getByRole('button', { name: 'Save' }).click();
+  for (const field of ['#lld_goal', '#lld_track', '#lld_height', '#lld_diary']) await expect(page.locator(field), field).toHaveCount(0);
+  const settingsNonce = await page.locator('input[name="lld_settings_nonce"]').getAttribute('value');
+  await page.request.post('/members/settings/', {
+    multipart: {
+      lld_settings_nonce: settingsNonce,
+      lld_first: 'Nope',
+      lld_age: '40',
+      lld_goal: 'sleep',
+      lld_track: 'sleep',
+      lld_height: '170',
+      lld_diary: { name: 'refused-diary.jpg', mimeType: 'image/jpeg', buffer: readFileSync(makeJpeg('refused-diary.jpg', 2048)) },
+    },
+  });
+  await page.goto('/members/settings/');
+  await expect(page.locator('#lld_first')).toHaveValue('Nope');
   const scan = await page.request.post('/wp-json/lld-members/v1/test/scan', { data: { member_id: created.member_id, sentinel: SENTINEL } });
-  const problems = (await scan.json()).problems.join(' ');
+  const refused = await scan.json();
+  for (const name of [...Object.values(tables), 'enrolment', 'diary_meal']) expect(refused.records[name], name).toBe(0);
+  const problems = refused.problems.join(' ');
   expect(problems).not.toContain('goal_choice');
   expect(problems).not.toContain('health_profile');
   expect(problems).not.toContain('check_in');
@@ -726,15 +836,22 @@ test('TC-FR2-04-AS-05', async ({ browser, page }) => {
 
 test('TC-FR2-04-AS-06', async ({ page }) => {
   const email = 'tm-04e@test.lifelinedaily.invalid';
+  const first = `Tee${randomBytes(3).toString('hex')}`;
   await reset(page.request, email);
-  await createMember(page.request, { email, password, first_name: 'Tee', role: 'member' });
+  const created = await createMember(page.request, { email, password, first_name: first, role: 'member' });
   await signIn(page, email, password);
   await page.goto('/members/delete/');
   await page.locator('#lld_password').fill(password);
   await page.getByRole('button', { name: 'Delete my account' }).click();
-  await expect(mailMatching('Your account is closed')).resolves.toContain('Tee');
+  await expect(page.getByText('Your account is closed.')).toBeVisible();
+  // The confirmation goes to this member, by name.
+  await expect(mailTo(email, 'Your account is closed')).resolves.toContain(`Hello ${first},`);
+  // The next erasure-list email goes to the owner, not the member, and holds this deletion.
   await page.request.post('/wp-json/lld-members/v1/test/retain');
-  await expect(mailMatching('erasure list')).resolves.toContain('account');
+  const list = await erasureMail(created.member_id, 'account');
+  expect(list.body).toContain('Lifeline Daily erasure list');
+  expect(list.to).toContain('@');
+  expect(list.to.toLowerCase()).not.toContain(email);
 });
 
 test('TC-NFR2-01-AS-01', async ({ page }) => {
