@@ -297,6 +297,11 @@ class LLD_Members_Billing {
 		$member_id = LLD_Members_Access::current_member_id();
 		$reach     = LLD_Members_Stripe::reachable();
 		$main      = '<h1>Checkout</h1>';
+		if ( self::live_keys_refused() ) {
+			$main .= '<div class="lld-fail" role="alert"><p>Payments are switched off on this site.</p></div>';
+			LLD_Members_Personal::render( 'Checkout', $main );
+			return;
+		}
 		if ( is_wp_error( $reach ) ) {
 			$main .= '<div class="lld-fail" role="alert"><p>' . esc_html( LLD_Members_Stripe::try_again_message() ) . '</p></div>';
 			LLD_Members_Personal::render( 'Checkout', $main );
@@ -563,6 +568,9 @@ class LLD_Members_Billing {
 		}
 		$prices = self::prices();
 		echo '<div class="wrap"><h1>Payments</h1>';
+		if ( self::live_keys_refused() ) {
+			echo '<div class="notice notice-error"><p>A live Stripe key is set outside production. Checkout is switched off until it is replaced with a test key.</p></div>';
+		}
 		echo '<form method="post">';
 		wp_nonce_field( 'lld_pay', 'lld_pay_nonce' );
 		echo '<p><label>Monthly price US$ <input name="lld_monthly" value="' . esc_attr( number_format( $prices['monthly'] / 100, 2, '.', '' ) ) . '"></label></p>';
@@ -1621,14 +1629,61 @@ class LLD_Members_Billing {
 		return abs( time() - (int) $match[1] ) < 300;
 	}
 
+	/**
+	 * LLD_STRIPE_WEBHOOK is required on staging and production. Only ci and local may sign
+	 * test notices with the shared test secret; staging never falls back to it.
+	 */
 	private static function webhook_secret() {
 		if ( defined( 'LLD_STRIPE_WEBHOOK' ) && '' !== (string) LLD_STRIPE_WEBHOOK ) {
 			return (string) LLD_STRIPE_WEBHOOK;
 		}
-		if ( lld_members_is_production() ) {
+		if ( ! in_array( lld_members_env(), array( 'ci', 'local' ), true ) ) {
 			return '';
 		}
 		return lld_members_test_secret();
+	}
+
+	/**
+	 * A Stripe key from wp-config.php. A live key is refused unless LLD_ENV is exactly production.
+	 *
+	 * @param string $kind secret or publishable.
+	 * @return string|WP_Error The key, an empty string when it is not set, or an error for a refused live key.
+	 */
+	public static function stripe_key( $kind ) {
+		$name = 'publishable' === $kind ? 'LLD_STRIPE_PUBLISHABLE' : 'LLD_STRIPE_SECRET';
+		$key  = defined( $name ) ? (string) constant( $name ) : '';
+		if ( self::live_key_refused( $key ) ) {
+			return new WP_Error( 'lld_stripe_live', 'A live Stripe key is set outside production.' );
+		}
+		return $key;
+	}
+
+	/**
+	 * True when any configured Stripe key is a live key outside production. Checkout stays closed then.
+	 */
+	public static function live_keys_refused() {
+		foreach ( array( 'LLD_STRIPE_SECRET', 'LLD_STRIPE_PUBLISHABLE' ) as $name ) {
+			if ( defined( $name ) && self::live_key_refused( (string) constant( $name ) ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * @param string $key Stripe key.
+	 */
+	private static function live_key_refused( $key ) {
+		$production = defined( 'LLD_ENV' ) && 'production' === (string) LLD_ENV;
+		if ( $production ) {
+			return false;
+		}
+		foreach ( array( 'sk_live_', 'pk_live_', 'rk_live_' ) as $prefix ) {
+			if ( 0 === strpos( $key, $prefix ) ) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
