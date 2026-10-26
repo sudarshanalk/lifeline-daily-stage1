@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
-import { asOwner, createMember, signIn } from './helpers.mjs';
+import { asOwner, createMember, signIn, submitAndWait } from './helpers.mjs';
 import { fillProteinForm, submitProtein } from '../../e2e/helpers/protein-form.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '../../..');
@@ -414,7 +414,8 @@ test('TC-FR2-17-AS-04', async ({ page, request }) => {
     await expect(page.getByText('Check your email to confirm.')).toBeVisible();
     await page.goto('/coming-soon/sleep-stress/');
     await page.locator('#lld_guide_email').fill(emailFor('wait'));
-    await page.getByRole('button', { name: 'Join the waitlist' }).click();
+    // Wait for the waitlist post to finish: in WebKit the sign-in navigation that follows cancelled it.
+    await submitAndWait(page, page.getByRole('button', { name: 'Join the waitlist' }));
     // TM-03: a signed-in member starts a track and opens member pages, including one with their member number.
     await signIn(page, email, password);
     await startTrack(page, 'fitness');

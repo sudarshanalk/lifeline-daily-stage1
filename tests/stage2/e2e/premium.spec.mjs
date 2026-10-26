@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { inflateRawSync } from 'node:zlib';
 import { expect, test } from '@playwright/test';
-import { asOwner, createMember, mailCode, signIn } from './helpers.mjs';
+import { asOwner, createMember, mailCode, signIn, submitAndWait } from './helpers.mjs';
 import { GPS_MARK, gpsJpeg, hasGps } from '../tools/gps-jpeg.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
@@ -317,7 +317,8 @@ test('TC-FR2-33-AS-02', async ({ page, request }) => {
   for (const email of [alone.email, tracked.email]) {
     await signIn(page, email, password);
     await page.goto('/members/challenge/');
-    await page.getByRole('button', { name: 'Join' }).click();
+    // Wait for the join post to finish before the clock moves: in WebKit the next navigation cancelled it.
+    await submitAndWait(page, page.getByRole('button', { name: 'Join' }));
     await clock(request, email, '2026-06-28 12:00:00');
     await page.goto('/members/challenge/');
     await expect(page.getByText(made.badge)).toBeVisible();
@@ -328,7 +329,7 @@ test('TC-FR2-33-AS-02', async ({ page, request }) => {
   await clock(request, mid.email, '2026-06-20 12:00:00');
   await signIn(page, mid.email, password);
   await page.goto('/members/challenge/');
-  await page.getByRole('button', { name: 'Join' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Join' }));
   // mark days done, on the day and up to 2 days late, never 3; the weekly review counts them
   await page.goto('/members/challenge/');
   await page.getByRole('button', { name: 'Mark day 1 done' }).click();

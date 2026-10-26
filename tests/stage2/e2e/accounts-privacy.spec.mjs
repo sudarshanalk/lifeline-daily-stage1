@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { inflateRawSync } from 'node:zlib';
 import { expect, test } from '@playwright/test';
-import { asOwner, createMember, signIn } from './helpers.mjs';
+import { asOwner, createMember, signIn, submitAndWait } from './helpers.mjs';
 import { MAP, columnDifferences, mapProblems } from '../data-model.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
@@ -625,7 +625,8 @@ test('TC-FR2-03-AS-05', async ({ page }) => {
   await page.locator('#lld_email').fill(email);
   await page.locator('#lld_password').fill('adult-pass');
   await page.locator('#lld_age').fill('40');
-  await page.getByRole('button', { name: 'Create account' }).click();
+  // The confirmation email is read once the join post has finished, so it is this account's newest email.
+  await submitAndWait(page, page.getByRole('button', { name: 'Create account' }));
   await page.goto(linkFrom(await mailMatching(email)));
   await expect(page.getByRole('heading', { name: 'Email confirmed' })).toBeVisible();
   await signIn(page, email, 'adult-pass');
@@ -650,11 +651,8 @@ test('TC-FR2-03-AS-05', async ({ page }) => {
   // Each later change, made with its switch on the profile page, adds one dated line.
   const change = async (expected) => {
     const lines = await history.count();
-    // The reload waits for the save to be answered: in WebKit, navigating straight after the click cancelled the post.
-    await Promise.all([
-      page.waitForResponse((res) => res.request().method() === 'POST' && res.url().includes('/members/settings/')),
-      page.getByRole('button', { name: 'Save' }).click(),
-    ]);
+    // The reload waits for the save to finish: in WebKit, navigating straight after the click cancelled the post.
+    await submitAndWait(page, page.getByRole('button', { name: 'Save' }));
     await page.goto('/members/settings/');
     await expect(history).toHaveCount(lines + 1);
     await expect(history.last()).toContainText(expected);

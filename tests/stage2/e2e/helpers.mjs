@@ -48,6 +48,13 @@ async function leanAdmin(page) {
   });
 }
 
+// Click a button that submits a plain form and wait until the page it leads to has loaded (after any redirect).
+// In WebKit, a navigation started before that cancels the post, or is interrupted by the post's redirect.
+export async function submitAndWait(page, button) {
+  await Promise.all([page.waitForEvent('framenavigated', (frame) => frame === page.mainFrame()), button.click()]);
+  await page.waitForLoadState('domcontentloaded');
+}
+
 export async function openAdmin(page, path) {
   await leanAdmin(page);
   await page.goto(path, ADMIN);
@@ -80,13 +87,8 @@ export async function approveTitle(page, title) {
   const row = page.locator('tr', { hasText: title });
   const box = row.locator('input[type="checkbox"]');
   if (await box.count()) await box.check({ force: true });
-  // Wait until the approval post has been answered. The next step usually opens another admin page at once, and in
-  // WebKit that navigation cancels a form post still in flight, so the approval was never stored.
-  await Promise.all([
-    page.waitForResponse((res) => res.request().method() === 'POST' && res.request().isNavigationRequest()),
-    row.getByRole('button', { name: 'Approve' }).click(),
-  ]);
-  await page.waitForLoadState('domcontentloaded');
+  // The next step usually opens another admin page at once; in WebKit that cancelled the approval post still in flight.
+  await submitAndWait(page, row.getByRole('button', { name: 'Approve' }));
 }
 
 export async function restNonce(page) {
