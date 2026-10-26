@@ -609,27 +609,54 @@ test('TC-FR2-06-AS-05', async ({ page }) => {
   await expect(page.getByText(made.items[0].title)).toBeVisible();
 });
 
+// Every message that mentions the needle, however many other messages Mailpit holds.
+async function mailSearch(needle) {
+  const found = await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(needle)}&limit=1000`).then((res) => res.json());
+  const out = [];
+  for (const message of found.messages || []) {
+    const id = message.ID || message.Id || message.id;
+    const full = await fetch(`${MAILPIT}/api/v1/message/${id}`).then((res) => res.json());
+    out.push({ subject: full.Subject || '', text: full.Text || '' });
+  }
+  return out;
+}
+
+// The 1st of a month that is also a Monday, in a year no earlier run used, so the once-per-date notes are fresh.
+function reportDate() {
+  for (;;) {
+    const day = new Date(Date.UTC(2100 + Math.floor(Math.random() * 800), Math.floor(Math.random() * 12), 1));
+    if (day.getUTCDay() === 1) return day.toISOString().slice(0, 10);
+  }
+}
+
 test('TC-FR2-06-AS-06', async ({ page }) => {
   const mark = stamp();
   const email = emailFor('report');
-  const theme = `plaza report ${mark}`;
   const gap = await fixture(page.request, 'gap', mark);
+  const secret = `plaza-${mark}`;
   const created = await createMember(page.request, { email, password, first_name: 'Sam', consents: ['terms', 'health'] });
   await signIn(page, email, password);
-  await saveHealth(page, created.member_id, { kind: 'something_else', text: theme });
-  await page.request.post('/wp-json/lld-members/v1/test/clock', { data: { email, utc: '2027-11-01 09:00:00' } });
-  const gapsBefore = (await mailBodies('Content gaps')).length;
-  const themesBefore = (await mailBodies('Something else themes')).length;
+  await saveHealth(page, created.member_id, { kind: 'something_else', text: `Help with ${gap.title.toLowerCase()} please ${secret}` });
+  await page.request.post('/wp-json/lld-members/v1/test/clock', { data: { email, utc: `${reportDate()} 09:00:00` } });
   await page.request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
-  await expect.poll(async () => (await mailBodies('Content gaps')).length).toBeGreaterThan(gapsBefore);
-  await expect.poll(async () => (await mailBodies('Something else themes')).length).toBeGreaterThan(themesBefore);
-  expect((await mailBodies('Content gaps')).some((body) => body.includes(gap.title))).toBeTruthy();
-  expect((await mailBodies('Something else themes')).some((body) => body.includes('plaza report'))).toBeTruthy();
-  const gapsOnce = (await mailBodies('Content gaps')).length;
-  const themesOnce = (await mailBodies('Something else themes')).length;
+  const gaps = async () => (await mailSearch(gap.title)).filter((mail) => mail.subject === 'Content gaps');
+  const themes = async () => (await mailSearch(gap.title)).filter((mail) => mail.subject === 'Something else themes');
+  // The weekly note names the goal that is short of content.
+  await expect.poll(async () => (await gaps()).length).toBeGreaterThan(0);
+  // The monthly note holds themes and counts only (data model F5): the request is counted under the goal it
+  // mentions, and none of the member's own words are in it.
+  await expect.poll(async () => (await themes()).length).toBeGreaterThan(0);
+  const sent = await themes();
+  expect(sent.some((mail) => mail.text.includes(`${gap.title}: 1`))).toBeTruthy();
+  expect((await mailSearch(secret)).length).toBe(0);
+  // Each note goes once per date.
+  const gapsOnce = (await gaps()).length;
+  const themesOnce = sent.length;
   await page.request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
-  expect((await mailBodies('Content gaps')).length).toBe(gapsOnce);
-  expect((await mailBodies('Something else themes')).length).toBe(themesOnce);
+  expect((await gaps()).length).toBe(gapsOnce);
+  expect((await themes()).length).toBe(themesOnce);
+  const found = await page.request.post('/wp-json/lld-members/v1/test/search', { data: { q: secret } });
+  expect((await found.json()).hits).toEqual([]);
 });
 
 test('TC-FR2-06-AS-07', async ({ page }) => {
