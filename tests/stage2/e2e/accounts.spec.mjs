@@ -260,6 +260,19 @@ test('TC-FR2-01-AS-04', async ({ browser, page }) => {
   await page.locator('#lld_email').fill('missing-c2@test.lifelinedaily.invalid');
   await page.getByRole('button', { name: 'Send link' }).click();
   await expect(page.getByText("If an account exists, we've sent a link")).toBeVisible();
+  // WordPress's own lost-password page hands members to this reset, with one reply for every email.
+  await page.goto('/wp-login.php?action=lostpassword');
+  await expect(page).toHaveURL(/\/members\/reset\/?$/);
+  for (const login of [email, 'missing-c2@test.lifelinedaily.invalid']) {
+    const handed = await page.request.post('/wp-login.php?action=lostpassword', {
+      form: { user_login: login, 'wp-submit': 'Get New Password' },
+      maxRedirects: 0,
+    });
+    expect(handed.status(), login).toBe(302);
+    expect(handed.headers().location, login).toContain('/members/reset/?sent=1');
+  }
+  await page.goto('/members/reset/?sent=1');
+  await expect(page.getByText("If an account exists, we've sent a link")).toBeVisible();
   const body = await mailBody(email, 'Reset your Lifeline Daily password');
   const url = linkFrom(body);
   await page.goto(url);
@@ -280,6 +293,8 @@ test('TC-FR2-01-AS-04', async ({ browser, page }) => {
   await otherPage.goto('/members/home/');
   await expect(otherPage.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   await other.close();
+  // No WordPress reset key was mailed to the member: only the members reset link.
+  expect(await mailCount(email, 'Password Reset')).toBe(0);
 });
 
 test('TC-FR2-01-AS-05', async ({ page }) => {

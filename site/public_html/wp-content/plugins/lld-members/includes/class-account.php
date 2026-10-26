@@ -476,7 +476,7 @@ class LLD_Members_Account {
 
 	private static function reset() {
 		$error  = '';
-		$notice = '';
+		$notice = isset( $_GET['sent'] ) ? 'If an account exists, we\'ve sent a link' : '';
 		$token  = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
 		if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['lld_reset_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_reset_nonce'] ) ), 'lld_reset' ) ) {
 			$email = isset( $_POST['lld_email'] ) ? sanitize_email( wp_unslash( $_POST['lld_email'] ) ) : '';
@@ -869,6 +869,15 @@ class LLD_Members_Account {
 	}
 
 	/**
+	 * Send a members reset link. Used by WordPress's lost-password page too. Nothing is sent for an unknown email.
+	 *
+	 * @param string $email Email.
+	 */
+	public static function send_reset_link( $email ) {
+		self::request_reset( sanitize_email( $email ) );
+	}
+
+	/**
 	 * @param string $email Email.
 	 */
 	private static function request_reset( $email ) {
@@ -894,15 +903,18 @@ class LLD_Members_Account {
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
-		$row = self::member_row( (int) $result['member_id'] );
-		if ( ! $row ) {
+		$row     = self::member_row( (int) $result['member_id'] );
+		$user_id = $row ? (int) $row->user_id : (int) $result['user_id'];
+		if ( $user_id < 1 || ! get_userdata( $user_id ) ) {
 			return new WP_Error( 'lld_reset', 'That link has expired.' );
 		}
-		wp_set_password( $pass, (int) $row->user_id );
-		$tokens = WP_Session_Tokens::get_instance( (int) $row->user_id );
+		wp_set_password( $pass, $user_id );
+		$tokens = WP_Session_Tokens::get_instance( $user_id );
 		$tokens->destroy_all();
-		global $wpdb;
-		$wpdb->query( $wpdb->prepare( 'UPDATE ' . LLD_Members_Schema::table( 'session' ) . ' SET ended_at = %s WHERE member_id = %d AND ended_at IS NULL', gmdate( 'Y-m-d H:i:s' ), $row->id ) );
+		if ( $row ) {
+			global $wpdb;
+			$wpdb->query( $wpdb->prepare( 'UPDATE ' . LLD_Members_Schema::table( 'session' ) . ' SET ended_at = %s WHERE member_id = %d AND ended_at IS NULL', gmdate( 'Y-m-d H:i:s' ), $row->id ) );
+		}
 		return true;
 	}
 
@@ -1016,6 +1028,7 @@ class LLD_Members_Account {
 		}
 		return array(
 			'member_id' => (int) $row->member_id,
+			'user_id'   => (int) $row->user_id,
 			'new_email' => (string) $row->new_email,
 		);
 	}
