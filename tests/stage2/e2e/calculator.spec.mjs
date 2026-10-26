@@ -93,6 +93,22 @@ test('TC-FR2-23-AS-02', async ({ page, request }) => {
   await expect(save).toBeHidden();
   await expect(page.locator('#lld-save-result input[name="lld_headline"]')).toHaveValue('');
   await expect(page.locator('#lld-save-result input[name="lld_band"]')).toHaveValue('');
+
+  // Pregnancy and breastfeeding show one minimum and no range: they can still be saved, the unit line standing as the band.
+  for (const stage of ['pregnant', 'breastfeeding']) {
+    const fixture = JSON.parse(readFileSync(resolve(root, 'fixtures/protein/prg.json'), 'utf8')).fixtures.find((item) => item.inputs.preg === stage);
+    await page.goto('/health-tools/protein/');
+    const tool = page.frameLocator('.lld-tool-frame');
+    await tool.locator('#age').waitFor();
+    await fillProteinForm(tool, fixture.inputs);
+    await submitProtein(tool);
+    await expect(tool.getByRole('heading', { name: `${fixture.expected.targetG} g` })).toBeVisible();
+    await save.click();
+    await expect(page.getByText('Saved', { exact: true })).toBeVisible();
+    const kept = await (await page.request.post('/wp-json/lld-members/v1/test/calculator', { data: { email: withConsent } })).json();
+    expect(kept.headline, stage).toBe(`${fixture.expected.targetG} g`);
+    expect(kept.band, stage).toBe('of protein per day (minimum)');
+  }
 });
 
 test('TC-FR2-23-AS-03', async ({ page }) => {

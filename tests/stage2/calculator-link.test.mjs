@@ -65,6 +65,10 @@ test('TC-FR2-23-AS-02', async () => {
   block.innerHTML = ' ';
   await flush();
   expect(protein.sent.length).toBe(count);
+  // Pregnancy and breastfeeding show one minimum and no range: the unit line is saved as the band.
+  block.innerHTML = '<div class="headline"><h2 class="num">95 g</h2><div class="unit">of protein per day (minimum)</div></div>';
+  await flush();
+  expect(protein.sent.at(-1).message).toMatchObject({ type: 'lld-calculator-result', headline: '95 g', unit: 'of protein per day (minimum)', band: 'of protein per day (minimum)' });
 
   const diabetes = toolFrame('diabetes');
   await flush();

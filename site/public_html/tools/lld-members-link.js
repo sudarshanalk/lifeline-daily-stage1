@@ -18,10 +18,13 @@
       var unit = document.querySelector('#headlineBlock .unit');
       var range = document.querySelector('#headlineBlock .range');
       if (!num || !num.textContent.trim()) return null;
+      var unitText = unit ? unit.textContent.trim() : '';
+      var rangeText = range ? range.textContent.trim() : '';
       return {
         headline: num.textContent.trim(),
-        unit: unit ? unit.textContent.trim() : '',
-        band: range ? range.textContent.trim() : ''
+        unit: unitText,
+        // Pregnancy and breastfeeding show a single minimum with no range: the unit line is the band then.
+        band: rangeText || unitText
       };
     }
     var shown = document.getElementById('riskNum');
