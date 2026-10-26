@@ -363,6 +363,10 @@ class LLD_Members_Premium {
 		if ( $writable && 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_diary_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_diary_nonce'] ) ), 'lld_diary' ) ) {
 			if ( ! empty( $_POST['lld_undo'] ) ) {
 				self::undo_meal( $member_id, (int) $_POST['lld_undo'] );
+			} elseif ( ! empty( $_POST['lld_remove_photo'] ) ) {
+				self::remove_photo( $member_id, (int) $_POST['lld_remove_photo'] );
+			} elseif ( ! empty( $_POST['lld_day_save'] ) ) {
+				self::save_day( $member_id );
 			} elseif ( self::hides_portion( $member_id ) && array_key_exists( 'lld_portion', $_POST ) ) {
 				self::page( 'Food diary', '<h1>Food diary</h1><p>The portion question is not shown.</p>', 403 );
 				return;
@@ -370,6 +374,8 @@ class LLD_Members_Premium {
 				$saved = self::save_meal( $member_id );
 				if ( is_wp_error( $saved ) ) {
 					$error = 'This file is too large or not a supported type';
+				} else {
+					self::save_day( $member_id );
 				}
 			}
 		}
@@ -378,7 +384,8 @@ class LLD_Members_Premium {
 			$main .= '<p>' . esc_html( $error ) . '</p>';
 		}
 		$main .= $writable ? '<p>You can add meals.</p>' : '<p>This diary is read-only.</p>';
-		$main .= self::diary_list( $member_id );
+		$main .= self::diary_list( $member_id, $writable );
+		$main .= self::day_html( $member_id, $writable );
 		$summary = self::summary_line( $member_id );
 		if ( '' !== $summary ) {
 			$main .= '<p data-lld-summary>' . esc_html( $summary ) . '</p>';
@@ -416,7 +423,8 @@ class LLD_Members_Premium {
 			exit;
 		}
 		$requested = (int) get_query_var( 'lld_member' );
-		if ( ! LLD_Members_Access::can_read( $requested ) ) {
+		// Diary photos open for their own member only: not for another member, and not for an administrator.
+		if ( $requested < 1 || LLD_Members_Access::current_member_id() !== $requested ) {
 			lld_members_layout(
 				array(
 					'title'     => 'This page isn\'t available',
@@ -596,6 +604,8 @@ class LLD_Members_Premium {
 				'plan'      => $wpdb->get_row( $wpdb->prepare( 'SELECT level, version_key, started_on, current_week FROM ' . LLD_Members_Schema::table( 'workout' ) . ' WHERE member_id = %d AND active = 1', $member_id ), ARRAY_A ),
 				'changes'   => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'workout_change' ) . ' c JOIN ' . LLD_Members_Schema::table( 'workout' ) . ' w ON w.id = c.workout_id WHERE w.member_id = %d', $member_id ) ),
 				'results'   => $wpdb->get_results( $wpdb->prepare( 'SELECT item_version, context_type, programme_day FROM ' . LLD_Members_Schema::table( 'result' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
+				'days'      => $wpdb->get_results( $wpdb->prepare( 'SELECT local_date, water_glasses, hunger, energy FROM ' . LLD_Members_Schema::table( 'diary_day' ) . ' WHERE member_id = %d ORDER BY local_date ASC', $member_id ), ARRAY_A ),
+				'photos'    => $member_id > 0 ? array_map( 'basename', glob( lld_members_private_dir() . '/photos/' . $member_id . '/diary-*' ) ?: array() ) : array(),
 			),
 			200
 		);
@@ -1832,11 +1842,15 @@ class LLD_Members_Premium {
 		if ( '' !== $photo ) {
 			$data['photo_path'] = $photo;
 		}
+		$old = $id ? (string) $wpdb->get_var( $wpdb->prepare( "SELECT photo_path FROM {$table} WHERE id = %d AND member_id = %d", $id, $member_id ) ) : '';
 		if ( $id ) {
 			$wpdb->update( $table, $data, array( 'id' => $id ) );
 		} else {
 			$wpdb->insert( $table, $data );
 			$id = (int) $wpdb->insert_id;
+		}
+		if ( '' !== $photo && '' !== $old && $old !== $photo ) {
+			self::delete_photo_file( $member_id, $old );
 		}
 		$cipher = '' !== $text ? LLD_Members_Crypto::encrypt( $text, 'diary_meal:' . $id ) : '';
 		$wpdb->query(
@@ -1869,28 +1883,130 @@ class LLD_Members_Premium {
 	}
 
 	/**
+	 * Remove a meal entry, and its photo file with it (requirements section 8.1).
+	 *
 	 * @param int $member_id Member number.
 	 * @param int $meal_id   Meal row.
 	 */
 	private static function undo_meal( $member_id, $meal_id ) {
 		global $wpdb;
-		$wpdb->delete(
-			LLD_Members_Schema::table( 'diary_meal' ),
+		$table = LLD_Members_Schema::table( 'diary_meal' );
+		$photo = (string) $wpdb->get_var( $wpdb->prepare( "SELECT photo_path FROM {$table} WHERE id = %d AND member_id = %d", $meal_id, $member_id ) );
+		$gone  = $wpdb->delete(
+			$table,
 			array(
 				'id'        => $meal_id,
 				'member_id' => $member_id,
 			),
 			array( '%d', '%d' )
 		);
+		if ( $gone && '' !== $photo ) {
+			self::delete_photo_file( $member_id, $photo );
+		}
 	}
 
 	/**
+	 * Remove the photo from one meal entry and delete its file.
+	 *
+	 * @param int $member_id Member number.
+	 * @param int $meal_id   Meal row.
+	 */
+	private static function remove_photo( $member_id, $meal_id ) {
+		global $wpdb;
+		$table = LLD_Members_Schema::table( 'diary_meal' );
+		$photo = (string) $wpdb->get_var( $wpdb->prepare( "SELECT photo_path FROM {$table} WHERE id = %d AND member_id = %d", $meal_id, $member_id ) );
+		if ( '' === $photo ) {
+			return;
+		}
+		$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET photo_path = NULL WHERE id = %d AND member_id = %d", $meal_id, $member_id ) );
+		self::delete_photo_file( $member_id, $photo );
+	}
+
+	/**
+	 * Delete one stored diary photo of this member from the protected store.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $relative  Path as stored on the meal row.
+	 */
+	private static function delete_photo_file( $member_id, $relative ) {
+		$relative = (string) $relative;
+		if ( 0 !== strpos( $relative, (int) $member_id . '/diary-' ) ) {
+			return;
+		}
+		$file = LLD_Members_Photos::resolve( $relative );
+		if ( $file ) {
+			wp_delete_file( $file );
+		}
+	}
+
+	/**
+	 * Today's water, hunger and energy (Data Model C13 daily entries). Only the values given are changed.
+	 *
 	 * @param int $member_id Member number.
 	 */
-	private static function diary_list( $member_id ) {
+	private static function save_day( $member_id ) {
+		$limits = array(
+			'water_glasses' => array( 'lld_water', 0, 40 ),
+			'hunger'        => array( 'lld_hunger', 1, 5 ),
+			'energy'        => array( 'lld_energy', 1, 5 ),
+		);
+		$values = array();
+		foreach ( $limits as $column => $limit ) {
+			$value = self::posted_int( $limit[0] );
+			if ( null !== $value && $value >= $limit[1] && $value <= $limit[2] ) {
+				$values[ $column ] = $value;
+			}
+		}
+		if ( ! $values ) {
+			return;
+		}
 		global $wpdb;
-		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'diary_meal' ) . ' WHERE member_id = %d ORDER BY local_date ASC, id ASC', $member_id ) );
-		$html = '';
+		$table   = LLD_Members_Schema::table( 'diary_day' );
+		$columns = implode( ', ', array_keys( $values ) );
+		$holders = implode( ', ', array_fill( 0, count( $values ), '%d' ) );
+		$updates = implode( ', ', array_map( static function ( $column ) { return $column . ' = VALUES(' . $column . ')'; }, array_keys( $values ) ) );
+		$args    = array_merge( array( $member_id, LLD_Members_Programme::local_today( $member_id ) ), array_values( $values ) );
+		$wpdb->query( $wpdb->prepare( "INSERT INTO {$table} (member_id, local_date, {$columns}) VALUES (%d, %s, {$holders}) ON DUPLICATE KEY UPDATE {$updates}", $args ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- columns from the list above.
+	}
+
+	/**
+	 * Today's water, hunger and energy, with a form while the diary is open.
+	 *
+	 * @param int  $member_id Member number.
+	 * @param bool $writable  Diary open.
+	 */
+	private static function day_html( $member_id, $writable ) {
+		global $wpdb;
+		$today = LLD_Members_Programme::local_today( $member_id );
+		$row   = $wpdb->get_row( $wpdb->prepare( 'SELECT water_glasses, hunger, energy FROM ' . LLD_Members_Schema::table( 'diary_day' ) . ' WHERE member_id = %d AND local_date = %s', $member_id, $today ) );
+		$water = $row && null !== $row->water_glasses ? (string) (int) $row->water_glasses : '';
+		$hunger = $row && null !== $row->hunger ? (string) (int) $row->hunger : '';
+		$energy = $row && null !== $row->energy ? (string) (int) $row->energy : '';
+		$html  = '<h2>Today</h2>';
+		$html .= '<p data-lld-day-extras>Water: ' . esc_html( '' === $water ? 'not logged' : $water . ' glasses' ) . '. Hunger: ' . esc_html( '' === $hunger ? 'not logged' : $hunger . ' of 5' ) . '. Energy: ' . esc_html( '' === $energy ? 'not logged' : $energy . ' of 5' ) . '.</p>';
+		if ( ! $writable ) {
+			return $html;
+		}
+		$html .= '<form method="post" class="lld-form">';
+		$html .= wp_nonce_field( 'lld_diary', 'lld_diary_nonce', true, false );
+		$html .= '<input type="hidden" name="lld_day_save" value="1">';
+		$html .= '<p><label for="lld_water">Glasses of water</label><input id="lld_water" name="lld_water" type="number" min="0" max="40" step="1" inputmode="numeric" value="' . esc_attr( $water ) . '"></p>';
+		$html .= '<p><label for="lld_hunger">Hunger from 1 to 5</label><input id="lld_hunger" name="lld_hunger" type="number" min="1" max="5" step="1" inputmode="numeric" value="' . esc_attr( $hunger ) . '"></p>';
+		$html .= '<p><label for="lld_energy">Energy from 1 to 5</label><input id="lld_energy" name="lld_energy" type="number" min="1" max="5" step="1" inputmode="numeric" value="' . esc_attr( $energy ) . '"></p>';
+		$html .= lld_button( array( 'label' => 'Save today' ) );
+		$html .= '</form>';
+		return $html;
+	}
+
+	/**
+	 * @param int  $member_id Member number.
+	 * @param bool $writable  Diary open.
+	 */
+	private static function diary_list( $member_id, $writable = false ) {
+		global $wpdb;
+		$rows  = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'diary_meal' ) . ' WHERE member_id = %d ORDER BY local_date ASC, id ASC', $member_id ) );
+		$html  = '';
+		$nonce = $writable ? wp_create_nonce( 'lld_diary' ) : '';
 		foreach ( $rows as $row ) {
 			$text = '';
 			if ( is_string( $row->description_ciphertext ) && '' !== $row->description_ciphertext ) {
@@ -1901,14 +2017,22 @@ class LLD_Members_Premium {
 				}
 			}
 			$state = ( 'planned' === (string) $row->entry_type || '' !== $text ) ? 'Logged' : 'Add';
-			$html .= '<p>' . esc_html( ucfirst( (string) $row->meal ) ) . ': ' . esc_html( $state );
+			$html .= '<div class="lld-diary-entry" data-lld-entry="' . (int) $row->id . '"><p>' . esc_html( ucfirst( (string) $row->meal ) ) . ': ' . esc_html( $state );
 			if ( '' !== $text ) {
 				$html .= ' ' . esc_html( $text );
 			}
-			if ( is_string( $row->photo_path ) && '' !== $row->photo_path ) {
+			$photo = is_string( $row->photo_path ) && '' !== $row->photo_path;
+			if ( $photo ) {
 				$html .= ' <a href="' . esc_url( '/members/diary-photo/' . $member_id . '/?meal=' . (int) $row->id ) . '">Photo</a>';
 			}
 			$html .= '</p>';
+			if ( $writable ) {
+				$html .= '<form method="post" class="lld-inline"><input type="hidden" name="lld_diary_nonce" value="' . esc_attr( $nonce ) . '"><input type="hidden" name="lld_undo" value="' . (int) $row->id . '"><button class="lld-button lld-button-secondary" type="submit">Undo</button></form>';
+				if ( $photo ) {
+					$html .= '<form method="post" class="lld-inline"><input type="hidden" name="lld_diary_nonce" value="' . esc_attr( $nonce ) . '"><input type="hidden" name="lld_remove_photo" value="' . (int) $row->id . '"><button class="lld-button lld-button-secondary" type="submit">Remove photo</button></form>';
+				}
+			}
+			$html .= '</div>';
 		}
 		return $html;
 	}
@@ -1932,9 +2056,6 @@ class LLD_Members_Premium {
 		if ( ! $hide ) {
 			$html .= '<p><label for="lld_portion">Portion</label> <select id="lld_portion" name="lld_portion"><option value=""> </option><option>small</option><option>normal</option><option>large</option></select></p>';
 		}
-		$html .= '<p><label for="lld_water">Glasses of water</label><input id="lld_water" name="lld_water" inputmode="numeric"></p>';
-		$html .= '<p><label for="lld_hunger">Hunger from 1 to 5</label><input id="lld_hunger" name="lld_hunger" inputmode="numeric"></p>';
-		$html .= '<p><label for="lld_energy">Energy from 1 to 5</label><input id="lld_energy" name="lld_energy" inputmode="numeric"></p>';
 		$html .= lld_button( array( 'label' => 'Save meal' ) );
 		$html .= '</form>';
 		return $html;

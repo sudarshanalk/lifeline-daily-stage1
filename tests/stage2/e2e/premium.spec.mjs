@@ -4,7 +4,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { inflateRawSync } from 'node:zlib';
 import { expect, test } from '@playwright/test';
-import { asOwner, createMember, signIn } from './helpers.mjs';
+import { asOwner, createMember, mailCode, signIn } from './helpers.mjs';
+import { GPS_MARK, gpsJpeg, hasGps } from '../tools/gps-jpeg.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
 const MAILPIT = process.env.MAILPIT_URL || 'http://127.0.0.1:8025';
@@ -606,6 +607,22 @@ test('TC-FR2-37-AS-06', async ({ page, request }) => {
   await page.goto('/members/diary/');
   await page.locator('#lld_description').fill(sentinel);
   await page.getByRole('button', { name: 'Save meal' }).click();
+  // the day's water, hunger and energy are saved to the daily entry (Data Model C13)
+  await page.locator('#lld_water').fill('6');
+  await page.locator('#lld_hunger').fill('2');
+  await page.locator('#lld_energy').fill('4');
+  await page.getByRole('button', { name: 'Save today' }).click();
+  await expect(page.locator('[data-lld-day-extras]')).toHaveText('Water: 6 glasses. Hunger: 2 of 5. Energy: 4 of 5.');
+  await page.locator('#lld_water').fill('7');
+  await page.getByRole('button', { name: 'Save today' }).click();
+  await expect(page.locator('[data-lld-day-extras]')).toHaveText('Water: 7 glasses. Hunger: 2 of 5. Energy: 4 of 5.');
+  const dayNonce = await page.locator('input[name="lld_diary_nonce"]').first().inputValue();
+  await page.request.post('/members/diary/', { form: { lld_diary_nonce: dayNonce, lld_day_save: '1', lld_hunger: '9', lld_energy: '0' }, maxRedirects: 0 });
+  await page.reload();
+  await expect(page.locator('[data-lld-day-extras]')).toHaveText('Water: 7 glasses. Hunger: 2 of 5. Energy: 4 of 5.');
+  const days = (await (await request.post('/wp-json/lld-members/v1/test/premium', { data: { email: member.email } })).json()).days;
+  expect(days).toHaveLength(1);
+  expect(days[0]).toMatchObject({ water_glasses: '7', hunger: '2', energy: '4' });
   await request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
   const search = await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(sentinel)}`);
   if (search.ok) {
@@ -618,6 +635,7 @@ test('TC-FR2-37-AS-06', async ({ page, request }) => {
   const download = await downloadPromise;
   const packed = unzip(readFileSync(await download.path()));
   expect(packed['data.json'].toString()).toContain(sentinel);
+  expect(JSON.parse(packed['data.json'].toString()).diary_day).toEqual([expect.objectContaining({ water_glasses: '7', hunger: '2', energy: '4' })]);
   await page.goto('/members/delete/');
   await page.locator('#lld_password').fill(password);
   await page.getByRole('button', { name: 'Delete my account' }).click();
@@ -628,6 +646,9 @@ test('TC-FR2-37-AS-06', async ({ page, request }) => {
 test('TC-FR2-37-AS-07', async ({ page, request }) => {
   const member = await paid(request, 'photo');
   const other = await paid(request, 'other');
+  const ownerEmail = emailFor('owner');
+  await createMember(request, { email: ownerEmail, password, first_name: 'Owner', role: 'owner_admin' });
+  const rows = async () => (await request.post('/wp-json/lld-members/v1/test/premium', { data: { email: member.email } })).json();
   await signIn(page, member.email, password);
   await page.goto('/members/diary/');
   await page.locator('#lld_photo').setInputFiles(fileOf(`gif-${stamp()}.gif`, Buffer.from('GIF89a')));
@@ -636,17 +657,54 @@ test('TC-FR2-37-AS-07', async ({ page, request }) => {
   await page.locator('#lld_photo').setInputFiles(fileOf(`big-${stamp()}.jpg`, Buffer.alloc(11 * 1024 * 1024, 1)));
   await page.getByRole('button', { name: 'Save meal' }).click();
   await expect(page.getByText('This file is too large or not a supported type')).toBeVisible();
-  await page.locator('#lld_photo').setInputFiles(fileOf(`ok-${stamp()}.png`, png));
+
+  // a JPEG with GPS location in its EXIF data is stored without it
+  const located = gpsJpeg();
+  expect(hasGps(located)).toBe(true);
+  expect(located.includes(Buffer.from(GPS_MARK))).toBe(true);
+  await page.locator('#lld_photo').setInputFiles(fileOf(`gps-${stamp()}.jpg`, located));
   await page.getByRole('button', { name: 'Save meal' }).click();
   const href = await page.getByRole('link', { name: 'Photo' }).getAttribute('href');
   const own = await page.request.get(href);
   expect(own.status()).toBe(200);
   expect(own.headers()['content-type'] || '').toContain('image/jpeg');
-  expect(await own.body()).not.toContain(Buffer.from('GPS'));
+  const stored = await own.body();
+  expect(stored.subarray(0, 2)).toEqual(Buffer.from([0xff, 0xd8]));
+  expect(hasGps(stored)).toBe(false);
+  expect(stored.includes(Buffer.from(GPS_MARK))).toBe(false);
+  expect(stored).not.toContain(Buffer.from('GPS'));
+  const first = (await rows()).photos;
+  expect(first).toHaveLength(1);
+
+  // replacing the photo deletes the old file
+  await page.locator('#lld_photo').setInputFiles(fileOf(`ok-${stamp()}.png`, png));
+  await page.getByRole('button', { name: 'Save meal' }).click();
+  await expect(page.getByRole('link', { name: 'Photo' })).toHaveCount(1);
+  const second = (await rows()).photos;
+  expect(second).toHaveLength(1);
+  expect(second[0]).not.toBe(first[0]);
+
+  // only its member: not another member, not an administrator, not signed out
   await signIn(page, other.email, password);
   const refused = await page.request.get(href, { maxRedirects: 0 });
   expect(refused.status()).toBeGreaterThanOrEqual(400);
+  await signIn(page, ownerEmail, password);
+  await expect(page.getByRole('heading', { name: 'Enter your code' })).toBeVisible();
+  await page.locator('#lld_code').fill(await mailCode(ownerEmail));
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await page.waitForURL((url) => !url.pathname.includes('/members/sign-in'));
+  const admin = await page.request.get(href, { maxRedirects: 0 });
+  expect(admin.status()).toBeGreaterThanOrEqual(400);
+  expect(admin.headers()['content-type'] || '').not.toContain('image/');
   await page.context().clearCookies();
   const signedOut = await page.request.get(href, { maxRedirects: 0 });
   expect(signedOut.status()).not.toBe(200);
+
+  // undo removes the entry and deletes its photo file
+  await signIn(page, member.email, password);
+  await page.goto('/members/diary/');
+  await page.locator('[data-lld-entry]').getByRole('button', { name: 'Undo' }).click();
+  await expect(page.getByRole('link', { name: 'Photo' })).toHaveCount(0);
+  expect((await rows()).photos).toEqual([]);
+  expect((await page.request.get(href)).status()).toBe(404);
 });
