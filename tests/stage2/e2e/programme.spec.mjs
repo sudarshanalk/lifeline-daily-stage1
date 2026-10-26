@@ -1044,6 +1044,7 @@ test('Section 8.3: the free week is once per track; a free member can move to an
   expect(saved.enrolments[0]).toMatchObject({ status: 'active', free_week_used: 1, day: 10 });
   await page.goto('/members/home/');
   await expect(page.getByText('Week 1 is complete. Premium opens the rest of this track.')).toBeVisible();
+  await expect(page.locator('[data-lld-section="today"]')).toContainText('Day 10 is part of Premium.');
   // Locked in week 2, the member need not wait for the end of the week to use another track's free week.
   await postTrack(page, nonce, b.track);
   saved = await state(page.request, email);

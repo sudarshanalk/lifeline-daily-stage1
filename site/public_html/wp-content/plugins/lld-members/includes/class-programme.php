@@ -1988,7 +1988,8 @@ class LLD_Members_Programme {
 			}
 			$html .= '<p>' . esc_html( $title . '. ' . self::position_label( $member_id ) ) . '.</p>';
 			if ( $reached > self::access_limit( $member_id, $row ) ) {
-				return $html . '<p>Week 1 is complete. Premium opens the rest of this track.</p>';
+				// The membership section of the dashboard says what Premium opens; this line only says why today is shut.
+				return $html . '<p>' . esc_html( 'Day ' . $reached . ' is part of Premium.' ) . '</p>';
 			}
 			$html .= '<p><a href="' . esc_url( home_url( '/members/track/?day=' . $reached ) ) . '">Open today\'s activity</a></p>';
 			if ( self::premium_ended( $member_id ) && $row->last_open_day ) {
