@@ -253,7 +253,7 @@ test('TC-FR2-01-AS-03', async ({ page }) => {
 test('TC-FR2-01-AS-04', async ({ browser, page }) => {
   const email = 'tm-03b@test.lifelinedaily.invalid';
   await reset(page.request, email);
-  await createMember(page.request, { email, password, first_name: 'Sam', role: 'member' });
+  const created = await createMember(page.request, { email, password, first_name: 'Sam', role: 'member' });
   const other = await browser.newContext();
   const otherPage = await other.newPage();
   await signIn(otherPage, email, password);
@@ -298,6 +298,14 @@ test('TC-FR2-01-AS-04', async ({ browser, page }) => {
   await otherPage.goto('/members/home/');
   await expect(otherPage.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   await other.close();
+  // The ended session records are swept by the daily clean-up (A4: kept until they end).
+  const sessions = async () => {
+    const res = await page.request.post('/wp-json/lld-members/v1/test/scan', { data: { member_id: created.member_id, email } });
+    return (await res.json()).records.session;
+  };
+  expect(await sessions()).toBeGreaterThan(0);
+  await page.request.post('/wp-json/lld-members/v1/test/retain');
+  expect(await sessions()).toBe(0);
   // No WordPress reset key was mailed to the member: only the members reset link.
   expect(await mailCount(email, 'Password Reset')).toBe(0);
 });

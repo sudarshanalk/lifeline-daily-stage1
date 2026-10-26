@@ -28,12 +28,34 @@ class LLD_Members_Privacy {
 		$now = gmdate( 'Y-m-d H:i:s' );
 		$codes = LLD_Members_Schema::table( 'security_code' );
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$codes} WHERE used_at IS NOT NULL OR expires_at < %s", $now ) );
+		self::sweep_sessions();
 		$locks = LLD_Members_Schema::table( 'sign_in_lock' );
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$locks} WHERE lock_until IS NOT NULL AND lock_until < %s", $now ) );
 		$erasure = LLD_Members_Schema::table( 'erasure' );
 		$cut     = gmdate( 'Y-m-d H:i:s', time() - 60 * DAY_IN_SECONDS );
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$erasure} WHERE erased_at < %s", $cut ) );
 		self::inactive_accounts();
+	}
+
+	/**
+	 * Delete website session records once they have ended (A4: kept "until they end"). An unended
+	 * record is deleted 2 days after its expiry on the member's own clock, by when any sign-in
+	 * cookie it stood for has expired too.
+	 *
+	 * @return int Records removed.
+	 */
+	public static function sweep_sessions() {
+		global $wpdb;
+		$table   = LLD_Members_Schema::table( 'session' );
+		$removed = (int) $wpdb->query( "DELETE FROM {$table} WHERE ended_at IS NOT NULL" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
+		$rows    = $wpdb->get_results( "SELECT id, member_id, expires_at FROM {$table} WHERE ended_at IS NULL" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		foreach ( (array) $rows as $row ) {
+			$cut = LLD_Members_Clock::now( (int) $row->member_id )->modify( '-2 days' )->format( 'Y-m-d H:i:s' );
+			if ( (string) $row->expires_at < $cut ) {
+				$removed += (int) $wpdb->delete( $table, array( 'id' => (int) $row->id ), array( '%d' ) );
+			}
+		}
+		return $removed;
 	}
 
 	/**
