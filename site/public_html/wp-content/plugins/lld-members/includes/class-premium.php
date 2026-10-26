@@ -165,7 +165,7 @@ class LLD_Members_Premium {
 			}
 			$main .= '</section>';
 		}
-		$main .= '<h2>Shopping list</h2><p class="lld-hint">Ticks are kept on this device only.</p><div data-lld-shopping data-lld-week="' . esc_attr( $plan['week']['starting'] ) . '">';
+		$main .= '<h2>Shopping list</h2><p class="lld-hint">Ticks are kept on this device only.</p><div data-lld-shopping data-lld-shop-week="' . esc_attr( $plan['week']['starting'] ) . '">';
 		foreach ( $plan['aisles'] as $aisle => $lines ) {
 			$main .= '<section data-lld-aisle="' . esc_attr( $aisle ) . '"><h3>' . esc_html( $aisle ) . '</h3><ul class="lld-ticks">';
 			foreach ( $lines as $line ) {

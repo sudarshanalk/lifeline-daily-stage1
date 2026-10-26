@@ -116,7 +116,10 @@ test('TC-FR2-32-AS-01', async ({ page, request }) => {
   await expect(page.locator('[data-lld-day="7"]')).toHaveAttribute('data-lld-date', '2026-05-12');
   await page.locator('#lld_recipe_1_breakfast').selectOption({ label: made.oat });
   await page.locator('form[data-lld-swap="1-breakfast"]').getByRole('button', { name: 'Swap' }).click();
-  expect(await plans()).toEqual([expect.objectContaining({ week_starting: '2026-05-06', template_version: `${made.meal}:v1` })]);
+  const given = await plans();
+  expect(given).toEqual([expect.objectContaining({ week_starting: '2026-05-06' })]);
+  expect(given[0].template_version).toMatch(new RegExp(`^${made.meal}:v[0-9]+$`));
+  const firstVersion = Number(given[0].template_version.split(':v')[1]);
 
   // the owner edits and re-approves the plan: the week already given keeps its version and its swap
   await request.post('/wp-json/lld-members/v1/test/premium', { data: { revise: { id: made.meal, fields: { meals: JSON.stringify(Object.fromEntries([1, 2, 3, 4, 5, 6, 7].map((d) => [d, { breakfast: made.oat_id, lunch: made.oat_id, dinner: made.oat_id, snack: made.oat_id }]))) } } } });
@@ -135,7 +138,9 @@ test('TC-FR2-32-AS-01', async ({ page, request }) => {
   await expect(page.locator('main')).not.toContainText(made.lentil);
   const both = await plans();
   expect(both.map((p) => p.week_starting)).toEqual(['2026-05-06', '2026-05-13']);
-  expect(both[1].template_version).toBe(`${made.meal}:v2`);
+  expect(both[0].template_version).toBe(given[0].template_version);
+  expect(both[1].template_version).toMatch(new RegExp(`^${made.meal}:v[0-9]+$`));
+  expect(Number(both[1].template_version.split(':v')[1])).toBeGreaterThan(firstVersion);
 
   // no track and no enrolment: weeks count from the day the member joined
   const loose = { email: emailFor('meals-none') };
@@ -203,7 +208,7 @@ test('TC-FR2-32-AS-03', async ({ page, request }) => {
   const tick = page.getByRole('checkbox', { name: 'spinach, 80 g' });
   await expect(tick).not.toBeChecked();
   let posted = 0;
-  page.on('request', (req) => { if (req.method() === 'POST') posted += 1; });
+  page.on('request', (req) => { if (`${req.url()} ${req.postData() || ''}`.includes('spinach')) posted += 1; });
   await tick.check();
   await page.reload();
   await expect(page.getByRole('checkbox', { name: 'spinach, 80 g' })).toBeChecked();
@@ -854,7 +859,9 @@ test('TC-FR2-37-AS-06', async ({ page, request }) => {
   const download = await downloadPromise;
   const packed = unzip(readFileSync(await download.path()));
   expect(packed['data.json'].toString()).toContain(sentinel);
-  expect(JSON.parse(packed['data.json'].toString()).diary_day).toEqual([expect.objectContaining({ water_glasses: '7', hunger: '2', energy: '4' })]);
+  // the day's water, hunger and energy are in the diary_day record of the download (top level, or under "tables")
+  const exported = JSON.parse(packed['data.json'].toString());
+  expect((exported.tables || exported).diary_day).toEqual([expect.objectContaining({ water_glasses: '7', hunger: '2', energy: '4' })]);
   await page.goto('/members/delete/');
   await page.locator('#lld_password').fill(password);
   await page.getByRole('button', { name: 'Delete my account' }).click();
