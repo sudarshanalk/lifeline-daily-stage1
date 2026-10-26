@@ -7,4 +7,8 @@ if ($path !== '/' && is_file($file)) {
     if (preg_match('#^/tools/api/#', $path)) { http_response_code(403); exit; }
     return false;
 }
+// A folder with its own index.php (/wp-admin/) is served by that file, as Apache's DirectoryIndex does.
+if ($path !== '/' && !preg_match('#^/tools/api/#', $path) && is_file(rtrim($file, '/') . '/index.php')) {
+    return false;
+}
 require $_SERVER['DOCUMENT_ROOT'] . '/index.php';

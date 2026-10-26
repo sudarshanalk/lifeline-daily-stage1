@@ -31,6 +31,8 @@ wp plugin activate paid-memberships-pro --path="$DIR" --quiet
 cp -R "$REPO/site/public_html/wp-content/plugins/lld-members" "$DIR/wp-content/plugins/lld-members"
 wp plugin activate lld-members --path="$DIR" --quiet
 wp lld-members db-update --path="$DIR"
-nohup php -S 127.0.0.1:8090 -t "$DIR" > "$DIR/../php-server.log" 2>&1 &
+# Router: without one, PHP's built-in server answers 404 itself for any missing path with a dot (/sitemap.xml)
+# instead of passing it to WordPress, unlike Apache/LiteSpeed with the WordPress .htaccess on staging and production
+nohup php -S 127.0.0.1:8090 -t "$DIR" "$REPO/tools/local/router.php" > "$DIR/../php-server.log" 2>&1 &
 for i in $(seq 1 30); do curl -fsS -o /dev/null "$URL/" && { echo "stage2-wp: WordPress ready at $URL"; exit 0; }; sleep 1; done
 echo "stage2-wp: WordPress did not start"; cat "$DIR/../php-server.log"; exit 1
