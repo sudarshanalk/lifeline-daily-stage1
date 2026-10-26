@@ -83,3 +83,13 @@ test('orders and referrals use the Data Model status names, and the database upd
   expect(billing).toMatch(/SET status = 'qualified' WHERE status = 'rewarded'/);
   expect(source('class-schema.php')).toMatch(/ensure_column\( 'referral', 'not_qualified_why', 'VARCHAR\(32\) NULL' \)/);
 });
+
+test('TC-FR2-13-AS-04 a code is checked against its plans and its valid-from and valid-to dates (P4)', () => {
+  const billing = source('class-billing.php');
+  const applies = billing.slice(billing.indexOf('function code_applies'), billing.indexOf('function find_code'));
+  expect(applies).toMatch(/in_array\( \$plan, \$row\['plans'\], true \)/);
+  expect(applies).toMatch(/valid_to/);
+  expect(applies).toMatch(/valid_from/);
+  expect(billing).not.toMatch(/'monthly' === \$plan && '' !== \$code/);
+  for (const field of ['plans', 'valid_from', 'valid_to', 'times_used']) expect(billing).toContain(`'${field}'`);
+});

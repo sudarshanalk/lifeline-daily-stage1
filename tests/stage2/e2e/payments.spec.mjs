@@ -341,6 +341,52 @@ test('TC-FR2-14-AS-03 orders are stamped in UTC, and the refund window uses the 
   expect(refund.ordered_at).toBe('2026-07-16 22:30:00');
 });
 
+test('TC-FR2-13-AS-04 codes carry the plans, valid-from and valid-to dates and a use count (P4)', async ({ page, request }) => {
+  const day = (offset) => new Date(Date.now() + offset * 86400000).toISOString().slice(0, 10);
+  const made = await request.post('/wp-json/lld-members/v1/test/billing', {
+    data: { action: 'prices', monthly: 799, yearly: 5999, code: 'YEAR20', percent: 20, plans: ['yearly'], valid_from: day(-1), valid_to: day(10) },
+  });
+  expect(made.ok(), await made.text()).toBeTruthy();
+  const later = await request.post('/wp-json/lld-members/v1/test/billing', {
+    data: { action: 'prices', monthly: 799, yearly: 5999, code: 'LATER', percent: 30, plans: ['monthly', 'yearly'], valid_from: day(5), valid_to: day(20) },
+  });
+  expect(later.ok(), await later.text()).toBeTruthy();
+  const again = await request.post('/wp-json/lld-members/v1/test/billing', { data: { action: 'prices', monthly: 799, yearly: 5999, code: 'YEAR20', percent: 10 } });
+  expect(again.status()).toBe(400);
+  const backwards = await request.post('/wp-json/lld-members/v1/test/billing', {
+    data: { action: 'prices', monthly: 799, yearly: 5999, code: 'BACK', percent: 10, valid_from: day(5), valid_to: day(1) },
+  });
+  expect(backwards.status()).toBe(400);
+
+  let codes = (await billingAction(request, { action: 'codes' })).codes;
+  const year = codes.find((row) => row.code === 'YEAR20');
+  expect(year).toMatchObject({ percent: 20, plans: ['yearly'], valid_from: day(-1), valid_to: day(10), times_used: 0 });
+  expect(codes.find((row) => row.code === 'LAUNCH')).toMatchObject({ percent: 50, plans: ['monthly'] });
+  expect(codes.some((row) => row.code === 'BACK')).toBeFalsy();
+
+  const email = emailFor('codes');
+  await createMember(request, { email, password, first_name: 'Codes', role: 'member' });
+  const monthly = await billingAction(request, { action: 'session', email, plan: 'monthly', country: 'US', code: 'YEAR20' });
+  expect(Number(monthly.charged)).toBe(799);
+  const early = await billingAction(request, { action: 'session', email, plan: 'yearly', country: 'US', code: 'LATER' });
+  expect(Number(early.charged)).toBe(5999);
+  const paid = await payApi(request, email, { plan: 'yearly', country: 'US', code: 'YEAR20' });
+  expect(paid.charge).toBe(4799);
+  codes = (await billingAction(request, { action: 'codes' })).codes;
+  expect(codes.find((row) => row.code === 'YEAR20').times_used).toBe(1);
+  const order = (await readMember(request, email)).orders[0];
+  expect(order.discount_code).toBe('YEAR20');
+  expect(Number(order.discount_amount)).toBe(1200);
+
+  await asOwner(page);
+  await page.goto('/wp-admin/admin.php?page=lld-payments');
+  if (page.url().includes('pmpro-wizard')) await page.goto('/wp-admin/admin.php?page=lld-payments');
+  const row = page.locator('[data-lld-codes] tr', { hasText: 'YEAR20' });
+  await expect(row).toContainText('yearly');
+  await expect(row).toContainText(day(10));
+  await expect(row.locator('td').last()).toHaveText('1');
+});
+
 test('TC-FR2-13-AS-05', async ({ page, request }) => {
   const yearly = emailFor('year');
   const monthly = emailFor('month');

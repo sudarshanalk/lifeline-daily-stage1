@@ -765,12 +765,20 @@ class LLD_Members_Billing {
 				isset( $params['yearly'] ) ? (int) $params['yearly'] : self::prices()['yearly'],
 				isset( $params['code'] ) ? (string) $params['code'] : '',
 				isset( $params['percent'] ) ? (int) $params['percent'] : 0,
-				! empty( $params['confirm'] )
+				! empty( $params['confirm'] ),
+				array(
+					'plans'      => isset( $params['plans'] ) && is_array( $params['plans'] ) ? array_map( 'sanitize_key', $params['plans'] ) : array( 'monthly' ),
+					'valid_from' => isset( $params['valid_from'] ) ? sanitize_text_field( (string) $params['valid_from'] ) : '',
+					'valid_to'   => isset( $params['valid_to'] ) ? sanitize_text_field( (string) $params['valid_to'] ) : '',
+				)
 			);
 			if ( is_wp_error( $saved ) ) {
 				return new WP_REST_Response( array( 'message' => $saved->get_error_message() ), 400 );
 			}
 			return new WP_REST_Response( self::prices(), 200 );
+		}
+		if ( 'codes' === $action ) {
+			return new WP_REST_Response( array( 'codes' => self::codes() ), 200 );
 		}
 		if ( 'pmpro_levels' === $action ) {
 			global $wpdb;
@@ -854,7 +862,13 @@ class LLD_Members_Billing {
 			$code    = isset( $_POST['lld_new_code'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_new_code'] ) ) : '';
 			$percent = isset( $_POST['lld_percent'] ) ? (int) wp_unslash( $_POST['lld_percent'] ) : 0;
 			$confirm = ! empty( $_POST['lld_confirm_free'] );
-			$saved   = self::save_prices( $monthly, $yearly, $code, $percent, $confirm );
+			$applies = isset( $_POST['lld_code_plans'] ) ? sanitize_key( wp_unslash( $_POST['lld_code_plans'] ) ) : 'monthly';
+			$terms   = array(
+				'plans'      => 'both' === $applies ? array( 'monthly', 'yearly' ) : array( 'yearly' === $applies ? 'yearly' : 'monthly' ),
+				'valid_from' => isset( $_POST['lld_valid_from'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_valid_from'] ) ) : '',
+				'valid_to'   => isset( $_POST['lld_valid_to'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_valid_to'] ) ) : '',
+			);
+			$saved   = self::save_prices( $monthly, $yearly, $code, $percent, $confirm, $terms );
 			if ( is_wp_error( $saved ) ) {
 				echo '<div class="notice notice-error"><p>' . esc_html( $saved->get_error_message() ) . '</p></div>';
 			} else {
@@ -881,9 +895,17 @@ class LLD_Members_Billing {
 		wp_nonce_field( 'lld_pay', 'lld_pay_nonce' );
 		echo '<p><label>Monthly price US$ <input name="lld_monthly" value="' . esc_attr( number_format( $prices['monthly'] / 100, 2, '.', '' ) ) . '"></label></p>';
 		echo '<p><label>Yearly price US$ <input name="lld_yearly" value="' . esc_attr( number_format( $prices['yearly'] / 100, 2, '.', '' ) ) . '"></label></p>';
-		echo '<p><label>New code <input name="lld_new_code"></label> <label>Percent off the first month <input name="lld_percent" value="50"></label></p>';
+		echo '<p><label>New code <input name="lld_new_code"></label> <label>Percent off the first payment <input name="lld_percent" value="50"></label></p>';
+		echo '<p><label>Applies to <select name="lld_code_plans"><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="both">Monthly and yearly</option></select></label>';
+		echo ' <label>Valid from <input type="date" name="lld_valid_from" value="' . esc_attr( gmdate( 'Y-m-d' ) ) . '"></label>';
+		echo ' <label>Valid to <input type="date" name="lld_valid_to" value="' . esc_attr( gmdate( 'Y-m-d', time() + 30 * DAY_IN_SECONDS ) ) . '"></label></p>';
 		echo '<p><label><input type="checkbox" name="lld_confirm_free" value="1"> I confirm a price of 0 or a 100 % code</label></p>';
 		echo '<p><button class="button button-primary">Save prices</button></p></form>';
+		echo '<h2>Discount codes</h2><table class="widefat" data-lld-codes><thead><tr><th>Code</th><th>Percent off</th><th>Plans</th><th>Valid from</th><th>Valid to</th><th>Times used</th></tr></thead><tbody>';
+		foreach ( self::codes() as $row ) {
+			echo '<tr><td>' . esc_html( $row['code'] ) . '</td><td>' . (int) $row['percent'] . ' %</td><td>' . esc_html( implode( ', ', $row['plans'] ) ) . '</td><td>' . esc_html( $row['valid_from'] ) . '</td><td>' . esc_html( $row['valid_to'] ) . '</td><td>' . (int) $row['times_used'] . '</td></tr>';
+		}
+		echo '</tbody></table>';
 		echo '<h2>Refund the first payment</h2>';
 		if ( $ask > 0 ) {
 			self::refund_confirm( $ask );
@@ -905,7 +927,7 @@ class LLD_Members_Billing {
 		$base     = 'yearly' === $plan ? (int) $prices['yearly'] : (int) $prices['monthly'];
 		$used     = '';
 		$charged  = $base;
-		if ( 'monthly' === $plan && '' !== $code && self::code_applies( $member_id, $code ) ) {
+		if ( '' !== $code && self::code_applies( $member_id, $code, $plan ) ) {
 			$row     = self::find_code( $code );
 			$charged = (int) round( $base * ( 100 - (int) $row['percent'] ) / 100 );
 			$used    = $code;
@@ -1663,11 +1685,12 @@ class LLD_Members_Billing {
 	 * @param int    $monthly Monthly cents.
 	 * @param int    $yearly  Yearly cents.
 	 * @param string $code    Optional new code.
-	 * @param int    $percent   Percent off the first month.
+	 * @param int    $percent   Percent off the first payment.
 	 * @param bool   $confirmed The owner ticked the confirm box for a price of 0 or a 100 % code.
+	 * @param array  $terms     P4 fields for a new code: plans, valid_from, valid_to.
 	 * @return true|WP_Error
 	 */
-	private static function save_prices( $monthly, $yearly, $code, $percent, $confirmed = false ) {
+	private static function save_prices( $monthly, $yearly, $code, $percent, $confirmed = false, $terms = array() ) {
 		$monthly = max( 0, (int) $monthly );
 		$yearly  = max( 0, (int) $yearly );
 		$code    = strtoupper( trim( $code ) );
@@ -1692,15 +1715,26 @@ class LLD_Members_Billing {
 		if ( ! $new ) {
 			return true;
 		}
-		$codes   = self::codes();
-		$expires = self::launch_expires();
-		$codes[] = array(
-			'code'       => $code,
-			'percent'    => $percent,
-			'expires_on' => $expires,
+		$row = self::code_fields(
+			array(
+				'code'       => $code,
+				'percent'    => $percent,
+				'plans'      => isset( $terms['plans'] ) ? $terms['plans'] : array( 'monthly' ),
+				'valid_from' => ! empty( $terms['valid_from'] ) ? $terms['valid_from'] : gmdate( 'Y-m-d' ),
+				'valid_to'   => ! empty( $terms['valid_to'] ) ? $terms['valid_to'] : gmdate( 'Y-m-d', time() + 30 * DAY_IN_SECONDS ),
+				'times_used' => 0,
+			)
 		);
-		update_option( 'lld_codes', $codes, false );
-		self::admin_log( 'code_created', 0, $code . ', ' . $percent . ' % off the first month, until ' . $expires . ( 100 === $percent ? ' (100 % confirmed)' : '' ) );
+		if ( $row['valid_to'] < $row['valid_from'] ) {
+			return new WP_Error( 'lld_code_dates', 'The code ends before it starts. The prices were saved; the code was not.' );
+		}
+		if ( self::find_code( $code ) ) {
+			return new WP_Error( 'lld_code_taken', 'That code already exists. The prices were saved; the code was not.' );
+		}
+		$stored   = self::stored_codes();
+		$stored[] = $row;
+		update_option( 'lld_codes', $stored, false );
+		self::admin_log( 'code_created', 0, $code . ', ' . $percent . ' % off the first payment, plans ' . implode( ' and ', $row['plans'] ) . ', valid ' . $row['valid_from'] . ' to ' . $row['valid_to'] . ( 100 === $percent ? ' (100 % confirmed)' : '' ) );
 		return true;
 	}
 
@@ -1742,30 +1776,113 @@ class LLD_Members_Billing {
 	 * @return array<int,array<string,mixed>>
 	 */
 	private static function codes() {
-		$stored = get_option( 'lld_codes' );
-		if ( ! is_array( $stored ) || ! $stored ) {
-			return array(
+		$out    = array();
+		$launch = null;
+		foreach ( self::stored_codes() as $row ) {
+			if ( 'LAUNCH' === $row['code'] ) {
+				$launch = $row;
+				continue;
+			}
+			$out[] = $row;
+		}
+		// The launch code always runs for 30 days from the launch date, monthly sign-ups only (8.4).
+		array_unshift(
+			$out,
+			self::code_fields(
 				array(
 					'code'       => 'LAUNCH',
 					'percent'    => 50,
-					'expires_on' => self::launch_expires(),
-				),
-			);
+					'plans'      => array( 'monthly' ),
+					'valid_from' => self::launch_on(),
+					'valid_to'   => self::launch_expires(),
+					'times_used' => $launch ? (int) $launch['times_used'] : 0,
+				)
+			)
+		);
+		return $out;
+	}
+
+	/**
+	 * Codes saved in the option, read into the P4 fields. Older rows had only expires_on.
+	 *
+	 * @return array<int,array<string,mixed>>
+	 */
+	private static function stored_codes() {
+		$stored = get_option( 'lld_codes' );
+		$out    = array();
+		if ( ! is_array( $stored ) ) {
+			return $out;
 		}
-		return $stored;
+		foreach ( $stored as $row ) {
+			if ( is_array( $row ) && ! empty( $row['code'] ) ) {
+				$out[] = self::code_fields( $row );
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * P4: the code, percent off the first payment, the plans it applies to, valid-from and valid-to dates, times used.
+	 *
+	 * @param array<string,mixed> $row Code as stored or entered.
+	 * @return array{code:string,percent:int,plans:string[],valid_from:string,valid_to:string,times_used:int}
+	 */
+	private static function code_fields( $row ) {
+		$plans = isset( $row['plans'] ) && is_array( $row['plans'] ) ? array_values( array_intersect( array( 'monthly', 'yearly' ), $row['plans'] ) ) : array( 'monthly' );
+		$date  = static function ( $value ) {
+			return is_string( $value ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', $value ) ? $value : '';
+		};
+		$to    = $date( isset( $row['valid_to'] ) ? $row['valid_to'] : ( isset( $row['expires_on'] ) ? $row['expires_on'] : '' ) );
+		return array(
+			'code'       => strtoupper( (string) $row['code'] ),
+			'percent'    => max( 1, min( 100, (int) ( isset( $row['percent'] ) ? $row['percent'] : 0 ) ) ),
+			'plans'      => $plans ? $plans : array( 'monthly' ),
+			'valid_from' => $date( isset( $row['valid_from'] ) ? $row['valid_from'] : '' ),
+			'valid_to'   => '' !== $to ? $to : '9999-12-31',
+			'times_used' => isset( $row['times_used'] ) ? max( 0, (int) $row['times_used'] ) : 0,
+		);
+	}
+
+	/**
+	 * Count one use of a code on a first payment.
+	 *
+	 * @param string $code Code.
+	 */
+	private static function count_code_use( $code ) {
+		$code   = strtoupper( $code );
+		$stored = self::stored_codes();
+		$found  = false;
+		foreach ( $stored as $i => $row ) {
+			if ( $row['code'] === $code ) {
+				$stored[ $i ]['times_used'] = (int) $row['times_used'] + 1;
+				$found                      = true;
+			}
+		}
+		if ( ! $found && 'LAUNCH' === $code ) {
+			$stored[] = array(
+				'code'       => 'LAUNCH',
+				'percent'    => 50,
+				'plans'      => array( 'monthly' ),
+				'times_used' => 1,
+			);
+			$found = true;
+		}
+		if ( $found ) {
+			update_option( 'lld_codes', $stored, false );
+		}
 	}
 
 	/**
 	 * @param int    $member_id Member number.
 	 * @param string $code      Code.
 	 */
-	private static function code_applies( $member_id, $code ) {
+	private static function code_applies( $member_id, $code, $plan ) {
 		$row = self::find_code( $code );
-		if ( ! $row ) {
+		if ( ! $row || ! in_array( $plan, $row['plans'], true ) ) {
 			return false;
 		}
 		$today = $member_id ? LLD_Members_Programme::local_today( $member_id ) : self::today_for( 0 );
-		if ( $today > (string) $row['expires_on'] ) {
+		if ( $today > (string) $row['valid_to'] || ( '' !== $row['valid_from'] && $today < (string) $row['valid_from'] ) ) {
 			return false;
 		}
 		global $wpdb;
@@ -1955,6 +2072,9 @@ class LLD_Members_Billing {
 		global $wpdb;
 		$code     = '' !== (string) $quote['code'] ? (string) $quote['code'] : ( isset( $extra['discount_code'] ) ? (string) $extra['discount_code'] : '' );
 		$discount = 'refund' !== $kind && '' !== $code ? max( 0, (int) $quote['base'] - (int) $quote['charged'] ) : 0;
+		if ( 'payment' === $kind && '' !== (string) $quote['code'] ) {
+			self::count_code_use( (string) $quote['code'] );
+		}
 		$result   = $wpdb->insert(
 			LLD_Members_Schema::table( 'order' ),
 			array(
