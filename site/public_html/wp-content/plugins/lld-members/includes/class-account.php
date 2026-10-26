@@ -803,6 +803,7 @@ class LLD_Members_Account {
 			array( '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s', '%d' ),
 			array( '%d' )
 		);
+		LLD_Members_Programme::zone_saved( $member_id, (string) $row->timezone ); // S2-C5: T3 rule 2, a new time zone applies from the next local date.
 		self::save_preferences( $member_id );
 		if ( self::has_consent( $member_id, 'health' ) ) {
 			if ( ! empty( $_POST['lld_goal'] ) ) {

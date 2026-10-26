@@ -125,6 +125,8 @@ class LLD_Members_Schema {
 			'fb_removal',
 			'error_log',
 			'test_clock',
+			'zone_change',
+			'mail_sent',
 		);
 	}
 
@@ -285,6 +287,8 @@ class LLD_Members_Schema {
 			free_week_used TINYINT(1) NOT NULL DEFAULT 0,
 			last_open_day DATE NULL,
 			finished_on DATE NULL,
+			stopped_why VARCHAR(32) NULL,
+			notice_shown TINYINT(1) NOT NULL DEFAULT 1,
 			active_member BIGINT UNSIGNED AS (IF(status = \'active\', member_id, NULL)) STORED,
 			PRIMARY KEY (id),
 			KEY member_status (member_id, status),
@@ -640,6 +644,23 @@ class LLD_Members_Schema {
 			frozen_at DATETIME NOT NULL,
 			PRIMARY KEY (member_id)
 		' );
+		// A1 time zone, T3 rule 2: the zone in force and, while a new zone waits for the next local date, the one before.
+		self::create( 'zone_change', '
+			member_id BIGINT UNSIGNED NOT NULL,
+			zone_now VARCHAR(64) NOT NULL,
+			zone_before VARCHAR(64) NULL,
+			changed_on DATE NULL,
+			PRIMARY KEY (member_id)
+		' );
+		// Programme emails claimed before sending, so a scheduled send happens once (FR2-11, FR2-12). No health details.
+		self::create( 'mail_sent', '
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			member_id BIGINT UNSIGNED NOT NULL,
+			claim_key VARCHAR(64) NOT NULL,
+			sent_on DATE NOT NULL,
+			PRIMARY KEY (id),
+			UNIQUE KEY one_claim (member_id, claim_key)
+		' );
 	}
 
 	/**
@@ -666,6 +687,8 @@ class LLD_Members_Schema {
 		self::ensure_column( 'security_code', 'user_id', 'BIGINT UNSIGNED NOT NULL DEFAULT 0' );
 		self::ensure_column( 'enrolment', 'active_member', "BIGINT UNSIGNED AS (IF(status = 'active', member_id, NULL)) STORED" );
 		self::ensure_unique( 'enrolment', 'one_active', 'active_member' );
+		self::ensure_column( 'enrolment', 'stopped_why', 'VARCHAR(32) NULL' );
+		self::ensure_column( 'enrolment', 'notice_shown', 'TINYINT(1) NOT NULL DEFAULT 1' );
 		self::ensure_column( 'workout', 'active_member', 'BIGINT UNSIGNED AS (IF(active = 1, member_id, NULL)) STORED' );
 		self::ensure_unique( 'workout', 'one_active_plan', 'active_member' );
 		self::ensure_unique( 'check_in', 'one_week', 'enrolment_id, week_number' );

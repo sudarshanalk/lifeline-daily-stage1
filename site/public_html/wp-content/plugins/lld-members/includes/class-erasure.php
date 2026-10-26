@@ -58,6 +58,8 @@ class LLD_Members_Erasure {
 		self::delete_where( 'app_key', 'member_id', $member_id );
 		self::delete_where( 'consent', 'member_id', $member_id );
 		self::delete_where( 'test_clock', 'member_id', $member_id );
+		self::delete_where( 'zone_change', 'member_id', $member_id );
+		self::delete_where( 'mail_sent', 'member_id', $member_id );
 
 		$log = LLD_Members_Schema::table( 'admin_log' );
 		$wpdb->query( $wpdb->prepare( "DELETE FROM {$log} WHERE member_number = %d AND money_related = 0", $member_id ) );
