@@ -21,9 +21,12 @@ if [ -n "${LLD_STRIPE_SECRET:-}" ]; then wp config set --path="$DIR" LLD_STRIPE_
 ADMIN_PW=$(openssl rand -hex 16)   # throwaway admin, never printed
 wp core install --path="$DIR" --url="$URL" --title="LLD CI" --admin_user=ci-admin --admin_password="$ADMIN_PW" --admin_email=ci-admin@example.test --skip-email --quiet
 wp rewrite structure '/%postname%/' --path="$DIR" --quiet
-# Paid Memberships Pro from wordpress.org, fetched directly (wp plugin install answered "No plugins installed" on the runner)
-curl -fsSL --retry 3 -o "$DIR/../pmpro.zip" https://downloads.wordpress.org/plugin/paid-memberships-pro.latest-stable.zip
-unzip -q -o "$DIR/../pmpro.zip" -d "$DIR/wp-content/plugins"
+# Paid Memberships Pro left wordpress.org in October 2024 (its "latest-stable" there is the old 3.2.2), so CI, local and
+# staging all use the vendor's tagged release from GitHub, pinned to the same version
+PMPRO_VERSION=3.8.9
+curl -fsSL --retry 3 -o "$DIR/../pmpro.zip" "https://codeload.github.com/strangerstudios/paid-memberships-pro/zip/refs/tags/$PMPRO_VERSION"
+unzip -q -o "$DIR/../pmpro.zip" -d "$DIR/../pmpro"
+mv "$DIR/../pmpro/paid-memberships-pro-$PMPRO_VERSION" "$DIR/wp-content/plugins/paid-memberships-pro"
 wp plugin activate paid-memberships-pro --path="$DIR" --quiet
 cp -R "$REPO/site/public_html/wp-content/plugins/lld-members" "$DIR/wp-content/plugins/lld-members"
 wp plugin activate lld-members --path="$DIR" --quiet
