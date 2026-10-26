@@ -84,7 +84,7 @@ jobs:
         with: { node-version: '24' }
       - run: npm ci
       - name: fixtures/**/expected changes only by the oracle runner or a reviewer-signed commit
-        run: node tests/ci/oracle-guard.mjs --base origin/${{ github.base_ref }} --head HEAD
+        run: node tests/ci/oracle-guard.mjs --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }}
 
   assertion-map:
     if: "github.event_name == 'pull_request' && !startsWith(github.event.pull_request.title, 'SPEC: ') && !startsWith(github.event.pull_request.title, 'S2-')"   # Stage 1 registry map; Stage 2 test names are checked by stage2-tests
@@ -107,10 +107,12 @@ jobs:
         with: { node-version: '24' }
       - run: npm ci
       - name: Diff touches only the requirement's component paths (+ harness, + provenance refresh set)
+        # The PR head, not HEAD: on GitHub HEAD is the merge ref, whose second parent is the PR head itself, so every
+        # changed file looked like it came in through a merge and the check saw nothing
         run: |
-          if echo "$PR_TITLE" | grep -Eq '^SPEC: '; then node tests/ci/component-scope.mjs --spec --base origin/${{ github.base_ref }} --head HEAD;
-          elif echo "$PR_TITLE" | grep -Eq '^S2-'; then node tests/ci/stage2-scope.mjs --title "$PR_TITLE" --base origin/${{ github.base_ref }} --head HEAD;
-          else node tests/ci/component-scope.mjs --req "$(echo "$PR_TITLE" | grep -oE '^(FR1|NFR1|UI1)-[0-9]{2}')" --base origin/${{ github.base_ref }} --head HEAD; fi
+          if echo "$PR_TITLE" | grep -Eq '^SPEC: '; then node tests/ci/component-scope.mjs --spec --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }};
+          elif echo "$PR_TITLE" | grep -Eq '^S2-'; then node tests/ci/stage2-scope.mjs --title "$PR_TITLE" --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }};
+          else node tests/ci/component-scope.mjs --req "$(echo "$PR_TITLE" | grep -oE '^(FR1|NFR1|UI1)-[0-9]{2}')" --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }}; fi
 
   copy-hash:
     runs-on: ubuntu-latest
