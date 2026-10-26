@@ -109,9 +109,20 @@ async function followLink(page, browserName, name) {
   await page.keyboard.press('Enter');
 }
 
+async function keyboardSignIn(page, email) {
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+  await tabTo(page, (focus) => focus.id === 'lld_email', 'lld_email');
+  await page.keyboard.type(email);
+  await tabTo(page, (focus) => focus.id === 'lld_password', 'lld_password');
+  await page.keyboard.type(password);
+  await tabTo(page, (focus) => focus.tag === 'BUTTON' && focus.text === 'Sign in', 'Sign in');
+  await page.keyboard.press('Enter');
+  await page.waitForURL((url) => !url.pathname.includes('/members/sign-in'));
+}
+
 async function mailLink(email, pattern) {
   for (let attempt = 0; attempt < 20; attempt += 1) {
-    const list = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
+    const list = await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}&limit=100`).then((res) => res.json());
     for (const message of list.messages || []) {
       if (!(message.To || []).some((item) => item.Address === email)) continue;
       const full = await fetch(`${MAILPIT}/api/v1/message/${message.ID}`).then((res) => res.json());
@@ -193,6 +204,9 @@ test('TC-NFR2-04-AS-02', async ({ page, browserName }) => {
   await page.goto(await mailLink(email, /https?:\/\/\S*\/members\/confirm\/\S+/));
   await expect(page.getByRole('heading', { name: 'Email confirmed' })).toBeVisible();
   await followLink(page, browserName, 'Continue');
+  // Confirming never signs anyone in: Continue leads to sign-in, then on to the agreements.
+  await page.waitForURL(/\/members\/(sign-in|agreements)\//);
+  if (page.url().includes('/members/sign-in/')) await keyboardSignIn(page, email);
   await expect(page).toHaveURL(/\/members\/agreements\//);
   for (const name of ['lld_terms', 'lld_health']) {
     await tabTo(page, (focus) => focus.name === name, name);
@@ -213,12 +227,7 @@ test('TC-NFR2-04-AS-02', async ({ page, browserName }) => {
   await page.request.post('/wp-json/lld-members/v1/test/logout');
   await page.context().clearCookies();
   await page.goto('/members/sign-in/');
-  await tabTo(page, (focus) => focus.id === 'lld_email', 'lld_email');
-  await page.keyboard.type(email);
-  await tabTo(page, (focus) => focus.id === 'lld_password', 'lld_password');
-  await page.keyboard.type(password);
-  await tabTo(page, (focus) => focus.tag === 'BUTTON' && focus.text === 'Sign in', 'Sign in');
-  await page.keyboard.press('Enter');
+  await keyboardSignIn(page, email);
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
 });
 
@@ -462,10 +471,19 @@ test('TC-UI2-04-AS-01', async ({ page, request }) => {
   await page.goto('/coming-soon/blood-sugar/');
   await page.locator('#lld_guide_email').fill(guest);
   await page.getByRole('button', { name: 'Join the waitlist' }).click();
-  const list = await fetch(`${MAILPIT}/api/v1/messages`).then((res) => res.json());
+  // Search by this test's own subject and address, polling until each message has arrived.
+  async function first(query, match) {
+    const deadline = Date.now() + 15000;
+    for (;;) {
+      const list = await fetch(`${MAILPIT}/api/v1/search?query=${encodeURIComponent(query)}&limit=100`).then((res) => res.json());
+      const hit = (list.messages || []).find(match);
+      if (hit || Date.now() > deadline) return hit;
+      await new Promise((done) => setTimeout(done, 500));
+    }
+  }
   const found = [
-    (list.messages || []).find((item) => JSON.stringify(item).includes(subject)),
-    (list.messages || []).find((item) => JSON.stringify(item).includes(guest)),
+    await first(`subject:"${subject}"`, (item) => item.Subject === subject),
+    await first(`to:"${guest}"`, (item) => (item.To || []).some((to) => to.Address === guest)),
   ];
   for (const message of found) {
     expect(message).toBeTruthy();
