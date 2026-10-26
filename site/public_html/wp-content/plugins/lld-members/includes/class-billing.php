@@ -63,7 +63,22 @@ class LLD_Members_Billing {
 	 * Database update for payments. Safe to run any number of times; makes no Stripe call.
 	 */
 	public static function db_update() {
+		self::rename_statuses();
 		self::sync_pmpro_levels();
+	}
+
+	/**
+	 * Earlier builds used their own status names. Move them to the Data Model's (P3, P5) once.
+	 */
+	private static function rename_statuses() {
+		global $wpdb;
+		$order    = LLD_Members_Schema::table( 'order' );
+		$referral = LLD_Members_Schema::table( 'referral' );
+		$wpdb->query( "UPDATE {$order} SET status = 'succeeded' WHERE status = 'paid' OR ( kind = 'refund' AND status = 'refunded' )" );
+		$wpdb->query( "UPDATE {$referral} SET status = 'qualified' WHERE status = 'rewarded'" );
+		foreach ( array( 'limited' => 'limit', 'self' => 'self', 'refunded' => 'refunded' ) as $old => $why ) {
+			$wpdb->query( $wpdb->prepare( "UPDATE {$referral} SET status = 'not_qualified', not_qualified_why = %s WHERE status = %s", $why, $old ) );
+		}
 	}
 
 	/**
@@ -1408,7 +1423,7 @@ class LLD_Members_Billing {
 				continue;
 			}
 			if ( 'refunded' === (string) $order->status ) {
-				$wpdb->update( $table, array( 'status' => 'refunded' ), array( 'id' => (int) $row->id ) );
+				self::not_qualified( (int) $row->id, 'refunded' );
 				continue;
 			}
 			$paid = self::local_date_of( (int) $row->friend_member_id, (string) $order->ordered_at );
@@ -1418,11 +1433,11 @@ class LLD_Members_Billing {
 				continue;
 			}
 			if ( self::rewards_this_year( (int) $row->referrer_member_id, substr( $paid, 0, 4 ) ) >= 3 ) {
-				$wpdb->update( $table, array( 'status' => 'limited' ), array( 'id' => (int) $row->id ) );
+				self::not_qualified( (int) $row->id, 'limit' );
 				continue;
 			}
 			if ( self::grant_pair( (int) $row->id, (int) $row->referrer_member_id, (int) $row->friend_member_id ) ) {
-				$wpdb->update( $table, array( 'status' => 'rewarded' ), array( 'id' => (int) $row->id ) );
+				$wpdb->update( $table, array( 'status' => 'qualified' ), array( 'id' => (int) $row->id ) );
 			}
 		}
 	}
@@ -1490,7 +1505,7 @@ class LLD_Members_Billing {
 		if ( ! $referral ) {
 			return;
 		}
-		$wpdb->update( LLD_Members_Schema::table( 'referral' ), array( 'status' => 'refunded' ), array( 'id' => (int) $referral->id ) );
+		self::not_qualified( (int) $referral->id, 'refunded' );
 		if ( 'waiting' === (string) $referral->status ) {
 			self::admin_log( 'reward_withdrawn', (int) $referral->referrer_member_id, 'Referral ' . (int) $referral->id . ' earns no reward: the friend\'s first payment, order ' . (int) $order_id . ', was refunded.' );
 		}
@@ -1524,7 +1539,6 @@ class LLD_Members_Billing {
 			$self = 'card';
 		}
 		$order_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'order' ) . " WHERE member_id = %d AND kind = 'payment' ORDER BY id DESC LIMIT 1", $member_id ) );
-		$status   = '' !== $self ? 'self' : 'waiting';
 		$wpdb->insert(
 			$table,
 			array(
@@ -1532,9 +1546,28 @@ class LLD_Members_Billing {
 				'code'               => $code,
 				'friend_member_id'   => $member_id,
 				'friend_order_id'    => $order_id,
-				'status'             => $status,
+				'status'             => '' !== $self ? 'not_qualified' : 'waiting',
+				'not_qualified_why'  => '' !== $self ? 'self' : null,
 				'self_referral'      => '' !== $self ? $self : null,
 			)
+		);
+	}
+
+	/**
+	 * P5: a referral that earns no reward, and why: refunded, limit (3 a calendar year) or self.
+	 *
+	 * @param int    $referral_id Referral.
+	 * @param string $why         Reason.
+	 */
+	private static function not_qualified( $referral_id, $why ) {
+		global $wpdb;
+		$wpdb->update(
+			LLD_Members_Schema::table( 'referral' ),
+			array(
+				'status'            => 'not_qualified',
+				'not_qualified_why' => $why,
+			),
+			array( 'id' => (int) $referral_id )
 		);
 	}
 
@@ -1723,7 +1756,7 @@ class LLD_Members_Billing {
 			return false;
 		}
 		global $wpdb;
-		$prior = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'order' ) . " WHERE member_id = %d AND kind = 'payment' AND status = 'paid'", $member_id ) );
+		$prior = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'order' ) . " WHERE member_id = %d AND kind = 'payment' AND status = 'succeeded'", $member_id ) );
 		return 0 === $prior;
 	}
 
@@ -1880,7 +1913,7 @@ class LLD_Members_Billing {
 		global $wpdb;
 		$rows  = $wpdb->get_results(
 			$wpdb->prepare(
-				'SELECT r.friend_member_id, o.ordered_at FROM ' . LLD_Members_Schema::table( 'referral' ) . ' r INNER JOIN ' . LLD_Members_Schema::table( 'order' ) . " o ON o.id = r.friend_order_id WHERE r.referrer_member_id = %d AND r.status = 'rewarded'",
+				'SELECT r.friend_member_id, o.ordered_at FROM ' . LLD_Members_Schema::table( 'referral' ) . ' r INNER JOIN ' . LLD_Members_Schema::table( 'order' ) . " o ON o.id = r.friend_order_id WHERE r.referrer_member_id = %d AND r.status = 'qualified'",
 				$member_id
 			)
 		);
@@ -1917,7 +1950,7 @@ class LLD_Members_Billing {
 				'tax_amount'         => (int) $quote['tax'],
 				'tax_currency'       => (string) $quote['currency'],
 				'discount_code'      => '' !== (string) $quote['code'] ? (string) $quote['code'] : null,
-				'status'             => 'refund' === $kind ? 'refunded' : 'paid',
+				'status'             => 'succeeded',
 				'stripe_payment'     => $payment,
 				'billing_email'      => $email,
 				'billing_country'    => isset( $quote['country'] ) ? (string) $quote['country'] : null,
@@ -1965,7 +1998,7 @@ class LLD_Members_Billing {
 	 */
 	private static function refund_confirm( $order_id ) {
 		$order = self::order_row( $order_id );
-		if ( ! $order || 'payment' !== (string) $order->kind || 'paid' !== (string) $order->status ) {
+		if ( ! $order || 'payment' !== (string) $order->kind || 'succeeded' !== (string) $order->status ) {
 			echo '<div class="notice notice-error"><p>Only a paid first payment can be refunded.</p></div>';
 			return;
 		}
@@ -1991,7 +2024,7 @@ class LLD_Members_Billing {
 			wp_nonce_field( 'lld_refund', 'lld_refund_nonce' );
 			echo 'Order ' . (int) $row->id . ' member ' . (int) $row->member_id . ' ' . esc_html( self::money( (int) $row->charged_amount, (string) $row->charged_currency ) ) . ' ' . esc_html( (string) $row->status );
 			echo ' <input type="hidden" name="lld_order" value="' . (int) $row->id . '">';
-			if ( 'paid' === (string) $row->status ) {
+			if ( 'succeeded' === (string) $row->status ) {
 				echo ' <button class="button">Refund</button>';
 			}
 			echo '</p></form>';
@@ -2345,7 +2378,7 @@ class LLD_Members_Billing {
 			'subscription' => $sub,
 			'orders'       => $wpdb->get_results( $wpdb->prepare( 'SELECT id, kind, ordered_at, related_order_id, charged_amount, tax_amount, charged_currency, discount_code, discount_amount, discount_currency, status, stripe_payment, stripe_invoice FROM ' . LLD_Members_Schema::table( 'order' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
 			'rewards'      => $wpdb->get_results( $wpdb->prepare( 'SELECT id, form, status, operation_key FROM ' . LLD_Members_Schema::table( 'reward' ) . ' WHERE recipient_member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
-			'referrals'    => $wpdb->get_results( $wpdb->prepare( 'SELECT id, status, self_referral, friend_member_id FROM ' . LLD_Members_Schema::table( 'referral' ) . ' WHERE referrer_member_id = %d OR friend_member_id = %d ORDER BY id ASC', $member_id, $member_id ), ARRAY_A ),
+			'referrals'    => $wpdb->get_results( $wpdb->prepare( 'SELECT id, status, not_qualified_why, self_referral, friend_member_id FROM ' . LLD_Members_Schema::table( 'referral' ) . ' WHERE referrer_member_id = %d OR friend_member_id = %d ORDER BY id ASC', $member_id, $member_id ), ARRAY_A ),
 			'next'         => $member_id ? self::next_charge( $member_id ) : array(),
 			'app'          => ( $sub && 'yearly' === (string) $sub->plan && self::paid_open( $member_id ) ) ? 'included' : 'not included',
 		);

@@ -220,6 +220,7 @@ test('TC-FR2-13-AS-02', async ({ page }) => {
     const snap = await readMember(page.request, email);
     expect(Number(snap.orders[0].charged_amount)).toBe(quoted.charge);
     expect(Number(snap.orders[0].tax_amount)).toBe(quoted.tax);
+    expect(snap.orders[0].status).toBe('succeeded');
   }
 });
 
@@ -726,6 +727,7 @@ test('TC-FR2-14-AS-06 a refund made at Stripe is recorded once and ends Premium'
   expect(snap.subscription.access_state).toBe('Refunded');
   expect(snap.orders.filter((order) => order.kind === 'refund')).toHaveLength(1);
   expect(snap.orders.find((order) => order.kind === 'payment').status).toBe('refunded');
+  expect(snap.orders.find((order) => order.kind === 'refund').status).toBe('succeeded');
 });
 
 test('TC-FR2-14-AS-01 a member who already has Premium cannot start a second checkout', async ({ page, request }) => {
@@ -1062,8 +1064,9 @@ test('TC-FR2-29-AS-02', async ({ page, request }) => {
   }
   await reports(request);
   const snap = await readMember(request, referrer);
-  expect(snap.referrals.filter((row) => row.status === 'rewarded')).toHaveLength(3);
-  expect(snap.referrals.filter((row) => row.status === 'limited')).toHaveLength(1);
+  // Data Model P5 names: waiting, qualified, or not qualified with the reason.
+  expect(snap.referrals.filter((row) => row.status === 'qualified')).toHaveLength(3);
+  expect(snap.referrals.filter((row) => row.status === 'not_qualified' && row.not_qualified_why === 'limit')).toHaveLength(1);
 
   const giver = emailFor('give');
   const back = emailFor('back');
@@ -1084,7 +1087,7 @@ test('TC-FR2-29-AS-02', async ({ page, request }) => {
   const giverSnap = await readMember(request, giver);
   const giverId = Number(giverSnap.subscription.member_id);
   expect((await moneyLog(request)).some((row) => row.action === 'reward_withdrawn' && Number(row.member_number) === giverId)).toBeTruthy();
-  expect(giverSnap.referrals.some((row) => row.status === 'refunded')).toBeTruthy();
+  expect(giverSnap.referrals.some((row) => row.status === 'not_qualified' && row.not_qualified_why === 'refunded')).toBeTruthy();
   expect(giverSnap.rewards).toHaveLength(0);
 });
 
@@ -1105,6 +1108,7 @@ test('TC-FR2-29-AS-03', async ({ page, request }) => {
   await reports(request);
   const snap = await readMember(request, referrer);
   expect(snap.referrals.filter((row) => row.self_referral === 'email' || row.self_referral === 'card')).toHaveLength(2);
+  expect(snap.referrals.filter((row) => row.status === 'not_qualified' && row.not_qualified_why === 'self')).toHaveLength(2);
   expect(snap.rewards).toHaveLength(0);
 });
 

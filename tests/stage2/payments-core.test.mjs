@@ -74,3 +74,12 @@ test('TC-FR2-13-AS-04 the database update creates the Paid Memberships Pro level
   expect(billing).toMatch(/'name'\s*=>\s*'Premium yearly'[\s\S]*'period'\s*=>\s*'Year'/);
   expect(billing).toMatch(/'name'\s*=>\s*'Premium monthly'[\s\S]*'period'\s*=>\s*'Month'/);
 });
+
+test('orders and referrals use the Data Model status names, and the database update renames older rows', () => {
+  const billing = source('class-billing.php');
+  expect(billing).not.toMatch(/'paid' ===|status = 'paid'"|=> 'paid'/);
+  expect(billing).not.toMatch(/'status' => '(rewarded|limited|self|refunded)'/);
+  expect(billing).toMatch(/SET status = 'succeeded' WHERE status = 'paid'/);
+  expect(billing).toMatch(/SET status = 'qualified' WHERE status = 'rewarded'/);
+  expect(source('class-schema.php')).toMatch(/ensure_column\( 'referral', 'not_qualified_why', 'VARCHAR\(32\) NULL' \)/);
+});
