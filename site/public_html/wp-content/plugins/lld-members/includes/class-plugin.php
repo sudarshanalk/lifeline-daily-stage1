@@ -25,6 +25,7 @@ class LLD_Members_Plugin {
 		add_action( 'init', array( 'LLD_Members_Account', 'expire_sessions' ), 20 );
 		add_action( 'profile_update', array( 'LLD_Members_Account', 'sync_email' ) );
 		add_filter( 'query_vars', array( __CLASS__, 'query_vars' ) );
+		add_filter( 'redirect_canonical', array( __CLASS__, 'keep_sitemap_url' ), 10, 2 );
 		add_action( 'template_redirect', array( 'LLD_Members_Screens', 'dispatch' ) );
 		add_action( 'rest_api_init', array( 'LLD_Members_Rest', 'register' ) );
 		add_filter( 'rest_pre_dispatch', array( __CLASS__, 'rest_closed' ), 10, 3 );
@@ -74,6 +75,19 @@ class LLD_Members_Plugin {
 		$vars[] = 'lld_item';
 		$vars[] = 'lld_track';
 		return $vars;
+	}
+
+	/**
+	 * Keep /sitemap.xml as it is. WordPress would add a trailing slash (redirect_canonical), and /sitemap.xml/
+	 * no longer matches the plugin's sitemap rule, so the sitemap answered 404 after the redirect.
+	 *
+	 * @param string|false $redirect_url  Canonical URL WordPress wants.
+	 * @param string       $requested_url Requested URL.
+	 * @return string|false
+	 */
+	public static function keep_sitemap_url( $redirect_url, $requested_url ) {
+		unset( $requested_url );
+		return 'sitemap' === get_query_var( 'lld_screen' ) ? false : $redirect_url;
 	}
 
 	/**
