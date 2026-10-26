@@ -236,7 +236,7 @@ function lld_tools_render_cta(array $atts = []): string {
   $c = lld_tools_card($atts['slug']); if (!$c) return '';
   $href = $c['landing_url'];
   if ((int)$atts['post_id'] > 0) $href .= '?' . http_build_query(array_merge(lld_tools_links_doc()['utm'] ?? ['utm_source' => 'article'], ['utm_content' => (int)$atts['post_id']]));
-  return '<p class="lld-tool-cta" data-test="tool-cta" data-tool="' . esc_attr($atts['slug']) . '"><a href="' . esc_url($href) . '">' . esc_html($c['cta_label']) . ': ' . esc_html($c['name']) . '</a></p>';
+  return '<p class="lld-tool-cta" data-test="tool-cta" data-tool="' . esc_attr($atts['slug']) . '"><a href="' . esc_url($href) . '" target="_blank" rel="noopener">' . esc_html($c['cta_label']) . ': ' . esc_html($c['name']) . '</a></p>';
 }
 add_shortcode('lld_tool_cta', 'lld_tools_render_cta');
 
@@ -360,7 +360,7 @@ if (function_exists('add_filter')) add_filter('the_content', function ($content)
   if (empty(lld_tools_links_doc()['hub_link']) || !function_exists('is_singular') || !is_singular('post') || !in_the_loop() || !is_main_query()) return $content;
   $post = get_post(); if (!$post || $post->post_status !== 'publish') return $content;
   $t = lld_tools_hub_term($post); if (!$t) return $content;
-  return $content . '<p class="lld-hub-link" data-test="hub-link">More articles on this topic: <a href="' . esc_url(get_term_link($t)) . '">' . esc_html($t->name) . '</a></p>';
+  return $content . '<p class="lld-hub-link" data-test="hub-link">More articles on this topic: <a href="' . esc_url(get_term_link($t)) . '" target="_blank" rel="noopener">' . esc_html($t->name) . '</a></p>';
 }, 16);
 
 /* ---------------------------------------------------------------- homepage (FR1-03, DEC-23): Composer template transform */
