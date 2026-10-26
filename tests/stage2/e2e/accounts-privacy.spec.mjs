@@ -6,9 +6,9 @@ import { join } from 'node:path';
 import { inflateRawSync } from 'node:zlib';
 import { expect, test } from '@playwright/test';
 import { asOwner, createMember, signIn } from './helpers.mjs';
+import { MAP, columnDifferences, mapProblems } from '../data-model.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
-const columns = JSON.parse(readFileSync(new URL('../personal-columns.json', import.meta.url), 'utf8'));
 const MAILPIT = process.env.MAILPIT_URL || 'http://127.0.0.1:8025';
 const SENTINEL = 'SENTINEL-ELSE-5520';
 const jpeg = Buffer.from(
@@ -871,12 +871,11 @@ test('TC-NFR2-01-AS-01', async ({ page }) => {
   const body = await stores.json();
   expect(body.extra_tables).toEqual([]);
   expect(body.extra_files).toEqual([]);
-  const liveNames = Object.keys(body.columns).sort();
-  const frozenNames = Object.keys(columns).sort();
-  expect(liveNames).toEqual(frozenNames);
-  for (const name of frozenNames) {
-    expect(body.columns[name].slice().sort(), name).toEqual(columns[name].slice().sort());
-  }
+  // Every live table and column, and every file store, is tied to a field the Data Model names
+  // (docs/stage2/02_Data_Model_Stage2.md, read here, through tests/stage2/data-model-map.json).
+  expect(columnDifferences(body.columns)).toEqual([]);
+  expect(body.files.slice().sort()).toEqual(Object.keys(MAP.stores).sort());
+  expect(mapProblems()).toEqual([]);
 });
 
 test('TC-NFR2-01-AS-03', async ({ page }) => {
