@@ -148,6 +148,19 @@ async function refCode(page, email) {
   return new URL(href).searchParams.get('ref');
 }
 
+async function confirmRefund(page, orderId) {
+  await page.locator('form', { hasText: `Order ${orderId}` }).getByRole('button', { name: 'Refund' }).click();
+  await expect(page.locator(`[data-lld-refund-confirm="${orderId}"]`)).toBeVisible();
+  await page.getByRole('button', { name: 'Confirm refund' }).click();
+  await expect(page.locator('.notice', { hasText: 'Refunded' })).toBeVisible();
+}
+
+async function moneyLog(request) {
+  const res = await request.post('/wp-json/lld-members/v1/test/billing', { data: { action: 'admin_log' } });
+  expect(res.ok(), await res.text()).toBeTruthy();
+  return (await res.json()).lines;
+}
+
 async function startTrack(page, slug) {
   await page.goto('/members/tracks/');
   const nonce = await page.locator('input[name="lld_track_nonce"]').first().inputValue();
@@ -231,6 +244,28 @@ test('TC-FR2-13-AS-04', async ({ page, request }) => {
   await page.locator('input[name="lld_percent"]').fill('50');
   await page.getByRole('button', { name: 'Save prices' }).click();
   await expect(page.getByText('Saved')).toBeVisible();
+  const lines = await moneyLog(request);
+  expect(lines.some((row) => row.action === 'price_change' && row.detail.includes('Monthly US$7.99 to US$8.99'))).toBeTruthy();
+  expect(lines.some((row) => row.action === 'code_created' && row.detail.startsWith('HALF, 50 %'))).toBeTruthy();
+
+  await page.locator('input[name="lld_monthly"]').fill('0');
+  await page.getByRole('button', { name: 'Save prices' }).click();
+  await expect(page.getByText('needs the confirm box ticked')).toBeVisible();
+  await expect(page.locator('input[name="lld_monthly"]')).toHaveValue('8.99');
+  await page.locator('input[name="lld_new_code"]').fill('FREE');
+  await page.locator('input[name="lld_percent"]').fill('100');
+  await page.getByRole('button', { name: 'Save prices' }).click();
+  await expect(page.getByText('needs the confirm box ticked')).toBeVisible();
+  expect((await moneyLog(request)).some((row) => row.detail.startsWith('FREE,'))).toBeFalsy();
+  const refused = await request.post('/wp-json/lld-members/v1/test/billing', { data: { action: 'prices', monthly: 0, yearly: 5999 } });
+  expect(refused.status()).toBe(400);
+  await page.locator('input[name="lld_new_code"]').fill('FREE');
+  await page.locator('input[name="lld_percent"]').fill('100');
+  await page.locator('input[name="lld_confirm_free"]').check();
+  await page.getByRole('button', { name: 'Save prices' }).click();
+  await expect(page.getByText('Saved')).toBeVisible();
+  expect((await moneyLog(request)).some((row) => row.action === 'code_created' && row.detail.includes('(100 % confirmed)'))).toBeTruthy();
+
   const quoted = await pay(page, email, { plan: 'monthly', country: 'US', code: 'HALF' });
   expect(quoted.charge).toBe(450);
   expect(quoted.text).toContain('US$4.50');
@@ -360,9 +395,22 @@ test('TC-FR2-14-AS-06', async ({ page, request }) => {
   await page.goto('/wp-admin/admin.php?page=lld-payments');
   if (page.url().includes('pmpro-wizard')) await page.goto('/wp-admin/admin.php?page=lld-payments');
   await page.locator('form', { hasText: `Order ${orderId}` }).getByRole('button', { name: 'Refund' }).click();
+  const ask = page.locator(`[data-lld-refund-confirm="${orderId}"]`);
+  await expect(ask).toBeVisible();
+  await expect(ask).toContainText('US$59.99');
+  await expect(ask).toContainText(email);
+  const waiting = await readMember(request, email);
+  expect(waiting.subscription.access_state).toBe('Premium');
+  expect(waiting.orders.some((order) => order.kind === 'refund')).toBeFalsy();
+  await page.getByRole('button', { name: 'Confirm refund' }).click();
   await expect(page.locator('.notice', { hasText: 'Refunded' })).toBeVisible();
   const after = await readMember(request, email);
   expect(after.subscription.access_state).toBe('Refunded');
+  const line = (await moneyLog(request)).find((row) => row.action === 'refund' && row.detail.includes(`Order ${orderId} `));
+  expect(line).toBeTruthy();
+  expect(Number(line.member_number)).toBe(Number(after.subscription.member_id));
+  expect(line.member_email).toBe(email);
+  expect(Number(line.money_related)).toBe(1);
   expect(after.orders.some((order) => order.kind === 'refund')).toBeTruthy();
 });
 
@@ -752,7 +800,7 @@ test('TC-FR2-15-AS-05', async ({ page, request }) => {
       await asOwner(page);
       await page.goto('/wp-admin/admin.php?page=lld-payments');
       if (page.url().includes('pmpro-wizard')) await page.goto('/wp-admin/admin.php?page=lld-payments');
-      await page.locator('form', { hasText: `Order ${orderId}` }).getByRole('button', { name: 'Refund' }).click();
+      await confirmRefund(page, orderId);
     } else {
       await pay(page, email, { plan: 'monthly', country: 'US' });
       const snap = await readMember(request, email);
@@ -962,10 +1010,12 @@ test('TC-FR2-29-AS-02', async ({ page, request }) => {
   await asOwner(page);
   await page.goto('/wp-admin/admin.php?page=lld-payments');
   if (page.url().includes('pmpro-wizard')) await page.goto('/wp-admin/admin.php?page=lld-payments');
-  await page.locator('form', { hasText: `Order ${orderId}` }).getByRole('button', { name: 'Refund' }).click();
+  await confirmRefund(page, orderId);
   await clock(request, back, '2026-04-20 12:00:00');
   await reports(request);
   const giverSnap = await readMember(request, giver);
+  const giverId = Number(giverSnap.subscription.member_id);
+  expect((await moneyLog(request)).some((row) => row.action === 'reward_withdrawn' && Number(row.member_number) === giverId)).toBeTruthy();
   expect(giverSnap.referrals.some((row) => row.status === 'refunded')).toBeTruthy();
   expect(giverSnap.rewards).toHaveLength(0);
 });

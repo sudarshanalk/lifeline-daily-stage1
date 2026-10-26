@@ -667,13 +667,22 @@ class LLD_Members_Billing {
 			return new WP_REST_Response( array( 'expires_on' => self::launch_expires() ), 200 );
 		}
 		if ( 'prices' === $action ) {
-			self::save_prices(
+			$saved = self::save_prices(
 				isset( $params['monthly'] ) ? (int) $params['monthly'] : self::prices()['monthly'],
 				isset( $params['yearly'] ) ? (int) $params['yearly'] : self::prices()['yearly'],
 				isset( $params['code'] ) ? (string) $params['code'] : '',
-				isset( $params['percent'] ) ? (int) $params['percent'] : 0
+				isset( $params['percent'] ) ? (int) $params['percent'] : 0,
+				! empty( $params['confirm'] )
 			);
+			if ( is_wp_error( $saved ) ) {
+				return new WP_REST_Response( array( 'message' => $saved->get_error_message() ), 400 );
+			}
 			return new WP_REST_Response( self::prices(), 200 );
+		}
+		if ( 'admin_log' === $action ) {
+			global $wpdb;
+			$rows = $wpdb->get_results( 'SELECT action, member_number, member_name, member_email, detail, money_related FROM ' . LLD_Members_Schema::table( 'admin_log' ) . " WHERE action IN ('price_change', 'code_created', 'refund', 'reward_withdrawn') ORDER BY id DESC LIMIT 50", ARRAY_A );
+			return new WP_REST_Response( array( 'lines' => $rows ), 200 );
 		}
 		if ( 'stop_reward' === $action ) {
 			update_option( 'lld_reward_stop', '1', false );
@@ -739,13 +748,24 @@ class LLD_Members_Billing {
 			$yearly  = isset( $_POST['lld_yearly'] ) ? (int) round( (float) wp_unslash( $_POST['lld_yearly'] ) * 100 ) : self::prices()['yearly'];
 			$code    = isset( $_POST['lld_new_code'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_new_code'] ) ) : '';
 			$percent = isset( $_POST['lld_percent'] ) ? (int) wp_unslash( $_POST['lld_percent'] ) : 0;
-			self::save_prices( $monthly, $yearly, $code, $percent );
-			echo '<div class="notice notice-success"><p>Saved</p></div>';
+			$confirm = ! empty( $_POST['lld_confirm_free'] );
+			$saved   = self::save_prices( $monthly, $yearly, $code, $percent, $confirm );
+			if ( is_wp_error( $saved ) ) {
+				echo '<div class="notice notice-error"><p>' . esc_html( $saved->get_error_message() ) . '</p></div>';
+			} else {
+				echo '<div class="notice notice-success"><p>Saved</p></div>';
+			}
 		}
+		$ask = 0;
 		if ( isset( $_POST['lld_refund_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_refund_nonce'] ) ), 'lld_refund' ) ) {
-			$order_id = isset( $_POST['lld_order'] ) ? (int) $_POST['lld_order'] : 0;
-			$result   = self::refund_order( $order_id );
-			echo '<div class="notice"><p>' . esc_html( is_wp_error( $result ) ? $result->get_error_message() : 'Refunded' ) . '</p></div>';
+			$order_id  = isset( $_POST['lld_order'] ) ? absint( wp_unslash( $_POST['lld_order'] ) ) : 0;
+			$confirmed = isset( $_POST['lld_refund_confirm'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_refund_confirm'] ) ), 'lld_refund_confirm_' . $order_id );
+			if ( $confirmed ) {
+				$result = self::refund_order( $order_id );
+				echo '<div class="notice"><p>' . esc_html( is_wp_error( $result ) ? $result->get_error_message() : 'Refunded' ) . '</p></div>';
+			} else {
+				$ask = $order_id;
+			}
 		}
 		$prices = self::prices();
 		echo '<div class="wrap"><h1>Payments</h1>';
@@ -757,8 +777,12 @@ class LLD_Members_Billing {
 		echo '<p><label>Monthly price US$ <input name="lld_monthly" value="' . esc_attr( number_format( $prices['monthly'] / 100, 2, '.', '' ) ) . '"></label></p>';
 		echo '<p><label>Yearly price US$ <input name="lld_yearly" value="' . esc_attr( number_format( $prices['yearly'] / 100, 2, '.', '' ) ) . '"></label></p>';
 		echo '<p><label>New code <input name="lld_new_code"></label> <label>Percent off the first month <input name="lld_percent" value="50"></label></p>';
+		echo '<p><label><input type="checkbox" name="lld_confirm_free" value="1"> I confirm a price of 0 or a 100 % code</label></p>';
 		echo '<p><button class="button button-primary">Save prices</button></p></form>';
 		echo '<h2>Refund the first payment</h2>';
+		if ( $ask > 0 ) {
+			self::refund_confirm( $ask );
+		}
 		self::admin_refunds();
 		echo '</div>';
 	}
@@ -1208,6 +1232,7 @@ class LLD_Members_Billing {
 			(string) $order->billing_email,
 			''
 		);
+		self::admin_log( 'refund', $member_id, 'Order ' . $order_id . ' (' . (string) $order->kind . ') refunded in full: ' . self::money( (int) $order->charged_amount, (string) $order->charged_currency ) . ', started by ' . $by . ', reference ' . $ref . '.' );
 		if ( 'payment' === (string) $order->kind ) {
 			self::end_premium( $member_id, 'refund', LLD_Members_Programme::local_today( $member_id ) );
 			self::withdraw_rewards_for_order( $order_id );
@@ -1355,7 +1380,17 @@ class LLD_Members_Billing {
 			return;
 		}
 		$wpdb->update( LLD_Members_Schema::table( 'referral' ), array( 'status' => 'refunded' ), array( 'id' => (int) $referral->id ) );
-		$wpdb->query( $wpdb->prepare( 'UPDATE ' . LLD_Members_Schema::table( 'reward' ) . " SET status = 'withdrawn', withdrawn_on = %s, withdrawn_why = %s WHERE referral_id = %d AND status = 'pending'", lld_members_now_mysql(), 'refund', (int) $referral->id ) );
+		if ( 'waiting' === (string) $referral->status ) {
+			self::admin_log( 'reward_withdrawn', (int) $referral->referrer_member_id, 'Referral ' . (int) $referral->id . ' earns no reward: the friend\'s first payment, order ' . (int) $order_id . ', was refunded.' );
+		}
+		$table   = LLD_Members_Schema::table( 'reward' );
+		$pending = $wpdb->get_results( $wpdb->prepare( "SELECT id, recipient_member_id, form FROM {$table} WHERE referral_id = %d AND status = 'pending'", (int) $referral->id ) );
+		foreach ( $pending as $reward ) {
+			$done = $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET status = 'withdrawn', withdrawn_on = %s, withdrawn_why = %s WHERE id = %d AND status = 'pending'", lld_members_now_mysql(), 'refund', (int) $reward->id ) );
+			if ( 1 === $done ) {
+				self::admin_log( 'reward_withdrawn', (int) $reward->recipient_member_id, 'Reward ' . (int) $reward->id . ' (' . (string) $reward->form . ') withdrawn: the friend\'s payment, order ' . (int) $order_id . ', was refunded.' );
+			}
+		}
 	}
 
 	/**
@@ -1471,21 +1506,78 @@ class LLD_Members_Billing {
 	 * @param int    $monthly Monthly cents.
 	 * @param int    $yearly  Yearly cents.
 	 * @param string $code    Optional new code.
-	 * @param int    $percent Percent off the first month.
+	 * @param int    $percent   Percent off the first month.
+	 * @param bool   $confirmed The owner ticked the confirm box for a price of 0 or a 100 % code.
+	 * @return true|WP_Error
 	 */
-	private static function save_prices( $monthly, $yearly, $code, $percent ) {
-		update_option( 'lld_prices', array( 'monthly' => max( 0, $monthly ), 'yearly' => max( 0, $yearly ) ), false );
-		$code = strtoupper( trim( $code ) );
-		if ( '' === $code || $percent < 1 ) {
-			return;
+	private static function save_prices( $monthly, $yearly, $code, $percent, $confirmed = false ) {
+		$monthly = max( 0, (int) $monthly );
+		$yearly  = max( 0, (int) $yearly );
+		$code    = strtoupper( trim( $code ) );
+		$percent = min( 100, (int) $percent );
+		$new     = '' !== $code && $percent >= 1;
+		$free    = 0 === $monthly || 0 === $yearly || ( $new && 100 === $percent );
+		if ( $free && ! $confirmed ) {
+			return new WP_Error( 'lld_free', 'A price of 0 or a 100 % code needs the confirm box ticked. Nothing was saved.' );
+		}
+		$before = self::prices();
+		update_option( 'lld_prices', array( 'monthly' => $monthly, 'yearly' => $yearly ), false );
+		$changes = array();
+		foreach ( array( 'monthly' => $monthly, 'yearly' => $yearly ) as $plan => $cents ) {
+			if ( (int) $before[ $plan ] !== $cents ) {
+				$changes[] = ucfirst( $plan ) . ' ' . self::money( (int) $before[ $plan ], 'usd' ) . ' to ' . self::money( $cents, 'usd' );
+			}
+		}
+		if ( $changes ) {
+			self::admin_log( 'price_change', 0, implode( '; ', $changes ) . ( $confirmed && ( 0 === $monthly || 0 === $yearly ) ? ' (price of 0 confirmed)' : '' ) );
+		}
+		if ( ! $new ) {
+			return true;
 		}
 		$codes   = self::codes();
+		$expires = self::launch_expires();
 		$codes[] = array(
 			'code'       => $code,
-			'percent'    => min( 100, $percent ),
-			'expires_on' => self::launch_expires(),
+			'percent'    => $percent,
+			'expires_on' => $expires,
 		);
 		update_option( 'lld_codes', $codes, false );
+		self::admin_log( 'code_created', 0, $code . ', ' . $percent . ' % off the first month, until ' . $expires . ( 100 === $percent ? ' (100 % confirmed)' : '' ) );
+		return true;
+	}
+
+	/**
+	 * F2 admin log line for a money action. Erasure later removes the name and email and keeps the member number.
+	 *
+	 * @param string $action    price_change, code_created, refund or reward_withdrawn.
+	 * @param int    $member_id Member named in the action, or 0.
+	 * @param string $detail    What happened, with no health details.
+	 */
+	private static function admin_log( $action, $member_id, $detail ) {
+		global $wpdb;
+		$name  = null;
+		$email = null;
+		if ( $member_id > 0 ) {
+			$member = $wpdb->get_row( $wpdb->prepare( 'SELECT first_name, last_name, email FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+			if ( $member ) {
+				$name  = trim( (string) $member->first_name . ' ' . (string) $member->last_name );
+				$email = (string) $member->email;
+			}
+		}
+		$user  = function_exists( 'get_current_user_id' ) ? (int) get_current_user_id() : 0;
+		$by    = $user > 0 ? ' By user ' . $user . '.' : '';
+		$wpdb->insert(
+			LLD_Members_Schema::table( 'admin_log' ),
+			array(
+				'action'        => $action,
+				'member_number' => $member_id > 0 ? $member_id : null,
+				'member_name'   => '' !== (string) $name ? $name : null,
+				'member_email'  => $email,
+				'detail'        => $detail . $by,
+				'money_related' => 1,
+				'created_at'    => gmdate( 'Y-m-d H:i:s' ),
+			)
+		);
 	}
 
 	/**
@@ -1746,6 +1838,27 @@ class LLD_Members_Billing {
 			$html .= '<p>' . esc_html( $label ) . '</p>';
 		}
 		return $html;
+	}
+
+	/**
+	 * Second step before a refund: the owner sees the order, amount and member, then confirms.
+	 *
+	 * @param int $order_id Order.
+	 */
+	private static function refund_confirm( $order_id ) {
+		$order = self::order_row( $order_id );
+		if ( ! $order || 'payment' !== (string) $order->kind || 'paid' !== (string) $order->status ) {
+			echo '<div class="notice notice-error"><p>Only a paid first payment can be refunded.</p></div>';
+			return;
+		}
+		echo '<div class="notice notice-warning" data-lld-refund-confirm="' . (int) $order_id . '"><form method="post"><p>';
+		wp_nonce_field( 'lld_refund', 'lld_refund_nonce' );
+		wp_nonce_field( 'lld_refund_confirm_' . (int) $order_id, 'lld_refund_confirm' );
+		echo 'Refund order ' . (int) $order_id . ' in full: ' . esc_html( self::money( (int) $order->charged_amount, (string) $order->charged_currency ) ) . ' to member ' . (int) $order->member_id . ' (' . esc_html( (string) $order->billing_email ) . ')? Premium ends and the rest of the current track week stays open. This cannot be undone.';
+		echo ' <input type="hidden" name="lld_order" value="' . (int) $order_id . '">';
+		echo ' <button class="button button-primary">Confirm refund</button>';
+		echo ' <a class="button" href="' . esc_url( admin_url( 'admin.php?page=lld-payments' ) ) . '">Keep the payment</a>';
+		echo '</p></form></div>';
 	}
 
 	private static function admin_refunds() {
