@@ -47,6 +47,17 @@ async function notify(request, event) {
   });
 }
 
+// Test Criteria 4.4: forged notices are made by changing the signature of a real one.
+async function notifySigned(request, event, { at = Math.floor(Date.now() / 1000), tamper = false } = {}) {
+  const body = JSON.stringify(event);
+  let v1 = createHmac('sha256', testSecret()).update(`${at}.${body}`).digest('hex');
+  if (tamper) v1 = `${v1.slice(0, -1)}${v1.endsWith('0') ? '1' : '0'}`;
+  return request.post('/wp-json/lld-members/v1/stripe/notice', {
+    headers: { 'Stripe-Signature': `t=${at},v1=${v1}`, 'Content-Type': 'application/json' },
+    data: body,
+  });
+}
+
 async function showPrice(page, { plan = 'monthly', country = 'US', code = '', ref = '' } = {}) {
   await page.goto(`/members/checkout/?plan=${plan}&lld_ref=${encodeURIComponent(ref)}`);
   await page.locator('#lld_country').selectOption(country);
@@ -424,6 +435,18 @@ test('TC-FR2-14-AS-07', async ({ page, request }) => {
   expect(forged.status()).toBe(400);
   expect((await readMember(request, email)).subscription).toBeFalsy();
   await signIn(page, email, password);
+  const real = await showPrice(page, { plan: 'monthly', country: 'US' });
+  const genuine = {
+    id: `evt_tampered_${stamp()}`,
+    type: 'checkout.session.completed',
+    data: { object: { id: real.session, amount_total: real.charge, subscription: `sub_${stamp()}`, payment_intent: `pi_${stamp()}`, email } },
+  };
+  const tampered = await notifySigned(request, genuine, { tamper: true });
+  expect(tampered.status()).toBe(400);
+  const stale = await notifySigned(request, genuine, { at: Math.floor(Date.now() / 1000) - 600 });
+  expect(stale.status()).toBe(400);
+  expect((await readMember(request, email)).subscription).toBeFalsy();
+  expect((await noticeRow(request, genuine.id))).toBeFalsy();
   const quoted = await showPrice(page, { plan: 'monthly', country: 'US' });
   const payment = `pi_${stamp()}`;
   const subscription = `sub_${stamp()}`;
