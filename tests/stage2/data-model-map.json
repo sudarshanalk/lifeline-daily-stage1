@@ -203,7 +203,9 @@
         "active_member": {
           "section": "T1",
           "phrase": "at most one active enrolment per member"
-        }
+        },
+        "stopped_why": "why stopped",
+        "notice_shown": "stop notice shown"
       }
     },
     "enrolment_period": {
@@ -585,6 +587,24 @@
       "columns": {
         "member_id": "per test member",
         "frozen_at": "\"today\" setting"
+      }
+    },
+    "zone_change": {
+      "section": "A1",
+      "columns": {
+        "member_id": "#link",
+        "zone_now": "time zone",
+        "zone_before": "time zone before a change",
+        "changed_on": "local date of the change"
+      }
+    },
+    "mail_sent": {
+      "section": "A3",
+      "columns": {
+        "id": "#id",
+        "member_id": "#link",
+        "claim_key": "the kind",
+        "sent_on": "local date it was sent"
       }
     }
   }
