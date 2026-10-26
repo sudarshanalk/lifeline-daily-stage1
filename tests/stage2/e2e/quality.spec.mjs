@@ -219,7 +219,8 @@ test('TC-NFR2-04-AS-02', async ({ page, browserName }) => {
   await page.keyboard.press('Enter');
   await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
   // Focus goes to the new screen's main heading (Screen Design section 4).
-  expect((await focusState(page)).tag).toBe('H1');
+  // The heading is visible as soon as it is parsed; the script that moves focus runs at the end of the page.
+  await expect.poll(async () => (await focusState(page)).tag).toBe('H1');
   await followLink(page, browserName, 'Open food diary');
   await expect(page.getByRole('heading', { name: 'Food diary' })).toBeVisible();
 
