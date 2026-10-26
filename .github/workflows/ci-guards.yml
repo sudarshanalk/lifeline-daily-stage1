@@ -199,12 +199,18 @@ jobs:
   # tests/stage2/e2e/playwright.config.mjs; until then it reports that and succeeds. No secrets: Stripe is not called here.
   stage2-e2e:
     if: "!startsWith(github.event.pull_request.title || '', 'SPEC: ')"   # SPEC PRs (DEC-55) carry no code or tests
+    name: "stage2-e2e (${{ matrix.browser }}${{ matrix.parts > 1 && format(' {0} of {1}', matrix.part, matrix.parts) || '' }})"
     runs-on: ubuntu-latest
-    # one job per browser engine, run side by side: the full Stage 2 suite outgrew one 30-minute job for both engines
+    # one job per browser engine, run side by side: the full Stage 2 suite outgrew one 30-minute job for both engines.
+    # WebKit is slower (about 38 of its 40 minutes on PR #84), so it runs as two Playwright shards, each on its own
+    # throwaway WordPress; Chromium (about 21 minutes) stays one job.
     strategy:
       fail-fast: false
       matrix:
-        browser: [chromium, webkit]
+        include:
+          - { browser: chromium, part: 1, parts: 1 }
+          - { browser: webkit, part: 1, parts: 2 }
+          - { browser: webkit, part: 2, parts: 2 }
     timeout-minutes: 40   # a hung browser once held this job for over two hours; a normal run per engine is well under this
     services:
       db:
@@ -237,7 +243,12 @@ jobs:
       # Photos (FR2-02, FR2-37): staging and production have Imagick with HEIC, EXIF and large uploads; CI matches them
       - name: Image libraries with HEIC support
         if: steps.has.outputs.e2e == 'true'
-        run: sudo apt-get update -q && sudo apt-get install -y -q libmagickwand-dev libheif-dev libmagickcore-6.q16-7-extra
+        # The runner's man-db trigger and recommended packages made this step take about 17 minutes
+        run: |
+          echo 'set man-db/auto-update false' | sudo debconf-communicate >/dev/null 2>&1 || true
+          sudo rm -f /var/lib/man-db/auto-update
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends libmagickwand-dev libheif-dev libheif-plugin-libde265 libmagickcore-6.q16-7-extra
       - uses: shivammathur/setup-php@v2
         if: steps.has.outputs.e2e == 'true'
         with:
@@ -252,14 +263,14 @@ jobs:
       - name: Throwaway WordPress with Paid Memberships Pro and lld-members
         if: steps.has.outputs.e2e == 'true'
         run: bash tests/ci/stage2-wp.sh "$RUNNER_TEMP/wp"
-      - name: Playwright Stage 2 journeys (${{ matrix.browser }})
+      - name: Playwright Stage 2 journeys (${{ matrix.browser }}, part ${{ matrix.part }} of ${{ matrix.parts }})
         if: steps.has.outputs.e2e == 'true'
         run: |
           npm ci && npx playwright install --with-deps ${{ matrix.browser }}
-          npx playwright test -c tests/stage2/e2e/playwright.config.mjs --project=${{ matrix.browser }}
+          npx playwright test -c tests/stage2/e2e/playwright.config.mjs --project=${{ matrix.browser }} --shard=${{ matrix.part }}/${{ matrix.parts }}
       - uses: actions/upload-artifact@v4
         if: failure()
-        with: { name: 'stage2-playwright-traces-${{ matrix.browser }}', path: test-results/, if-no-files-found: ignore }
+        with: { name: 'stage2-playwright-traces-${{ matrix.browser }}-${{ matrix.part }}', path: test-results/, if-no-files-found: ignore }
 
   saf:
     if: "!startsWith(github.event.pull_request.title || '', 'SPEC: ')"   # SPEC PRs (DEC-55) carry no code or tests
