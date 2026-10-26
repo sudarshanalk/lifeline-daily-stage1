@@ -650,7 +650,11 @@ test('TC-FR2-03-AS-05', async ({ page }) => {
   // Each later change, made with its switch on the profile page, adds one dated line.
   const change = async (expected) => {
     const lines = await history.count();
-    await page.getByRole('button', { name: 'Save' }).click();
+    // The reload waits for the save to be answered: in WebKit, navigating straight after the click cancelled the post.
+    await Promise.all([
+      page.waitForResponse((res) => res.request().method() === 'POST' && res.url().includes('/members/settings/')),
+      page.getByRole('button', { name: 'Save' }).click(),
+    ]);
     await page.goto('/members/settings/');
     await expect(history).toHaveCount(lines + 1);
     await expect(history.last()).toContainText(expected);
