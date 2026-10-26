@@ -78,7 +78,8 @@ export async function approveTitle(page, title) {
   const row = page.locator('tr', { hasText: title });
   const box = row.locator('input[type="checkbox"]');
   if (await box.count()) await box.check({ force: true });
-  await row.getByRole('button', { name: 'Approve' }).click({ force: true });
+  // A real click, not a forced one: in WebKit a forced click on the lean admin page lands without submitting the form.
+  await row.getByRole('button', { name: 'Approve' }).click();
 }
 
 export async function restNonce(page) {
