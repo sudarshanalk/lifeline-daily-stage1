@@ -236,6 +236,14 @@ test('TC-FR2-13-AS-03', async ({ page, request }) => {
   const snap = await readMember(request, email);
   expect(Number(snap.orders[1].charged_amount)).toBe(799);
   expect(snap.orders[1].discount_code).toBeFalsy();
+  // P3 order fields: the code's discount with its amount and currency; the renewal points to the first payment.
+  expect(snap.orders[0].discount_code).toBe('LAUNCH');
+  expect(Number(snap.orders[0].discount_amount)).toBe(399);
+  expect(snap.orders[0].discount_currency).toBe('usd');
+  expect(snap.orders[1].discount_amount).toBeNull();
+  expect(Number(snap.orders[1].related_order_id)).toBe(Number(snap.orders[0].id));
+  expect(snap.orders[0].related_order_id).toBeNull();
+  expect(snap.orders.every((order) => order.stripe_invoice === null)).toBeTruthy();
   const lateEmail = emailFor('launch-late');
   await createMember(request, { email: lateEmail, password, first_name: 'Late', role: 'member' });
   await clock(request, lateEmail, '2026-07-02 12:00:00');
@@ -643,7 +651,37 @@ test('TC-FR2-14-AS-04 the 7-day window starts at the first failure of the invoic
   expect((await readMember(request, email)).subscription.access_state).toBe('Premium');
   await clock(request, email, '2026-06-08 12:00:00');
   await reports(request);
-  expect((await readMember(request, email)).subscription.access_state).toBe('Premium ended');
+  const ended = await readMember(request, email);
+  expect(ended.subscription.access_state).toBe('Premium ended');
+  // Each failed attempt is an order (P3): kind failed_attempt, status failed.
+  const attempts = ended.orders.filter((order) => order.kind === 'failed_attempt');
+  expect(attempts).toHaveLength(2);
+  expect(attempts.every((order) => order.status === 'failed' && Number(order.charged_amount) === 799)).toBeTruthy();
+});
+
+test('TC-FR2-14-AS-04 a failed attempt points to the payment it belongs to and is not a receipt', async ({ page, request }) => {
+  const email = emailFor('attempt');
+  await createMember(request, { email, password, first_name: 'Attempt', role: 'member' });
+  await clock(request, email, '2026-06-01 12:00:00');
+  const paid = await payApi(request, email, { plan: 'monthly', country: 'US' });
+  await clock(request, email, '2026-07-01 12:00:00');
+  const res = await notify(request, {
+    id: `evt_fail_${stamp()}`, type: 'invoice.payment_failed', data: { object: { id: `in_${stamp()}`, subscription: paid.subscription, amount_due: 799, charge: `ch_${stamp()}` } },
+  });
+  expect(res.ok()).toBeTruthy();
+  const snap = await readMember(request, email);
+  const payment = snap.orders.find((order) => order.kind === 'payment');
+  const attempt = snap.orders.find((order) => order.kind === 'failed_attempt');
+  expect(attempt.status).toBe('failed');
+  expect(Number(attempt.related_order_id)).toBe(Number(payment.id));
+  expect(Number(attempt.charged_amount)).toBe(799);
+  expect(attempt.stripe_payment).toMatch(/^ch_/);
+  expect(attempt.ordered_at).toBe('2026-07-01 12:00:00');
+  expect(payment.status).toBe('succeeded');
+  await signIn(page, email, password);
+  await page.goto('/members/subscription/');
+  await expect(page.getByText('failed_attempt')).toHaveCount(0);
+  await expect(page.getByText('Update your card')).toBeVisible();
 });
 
 test('TC-FR2-14-AS-07 a subscription ended at Stripe ends Premium', async ({ request }) => {
@@ -728,6 +766,7 @@ test('TC-FR2-14-AS-06 a refund made at Stripe is recorded once and ends Premium'
   expect(snap.orders.filter((order) => order.kind === 'refund')).toHaveLength(1);
   expect(snap.orders.find((order) => order.kind === 'payment').status).toBe('refunded');
   expect(snap.orders.find((order) => order.kind === 'refund').status).toBe('succeeded');
+  expect(Number(snap.orders.find((order) => order.kind === 'refund').related_order_id)).toBe(Number(snap.orders.find((order) => order.kind === 'payment').id));
 });
 
 test('TC-FR2-14-AS-01 a member who already has Premium cannot start a second checkout', async ({ page, request }) => {
@@ -996,6 +1035,10 @@ test('TC-FR2-29-AS-01', async ({ page, request }) => {
   await reports(request);
   expect((await readMember(request, monthly)).next.charged).toBe(0);
   await renew(request, monthPay.subscription, 0);
+  const rewarded = (await readMember(request, monthly)).orders.find((order) => order.kind === 'renewal');
+  expect(rewarded.discount_code).toMatch(/^referral-reward-\d+$/);
+  expect(Number(rewarded.discount_amount)).toBe(799);
+  expect(rewarded.discount_currency).toBe('usd');
   expect((await readMember(request, monthly)).next.charged).toBe(799);
 
   const twice = emailFor('ref-twice');

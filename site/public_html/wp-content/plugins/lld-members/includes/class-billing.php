@@ -941,6 +941,7 @@ class LLD_Members_Billing {
 			if ( $row ) {
 				$invoice = isset( $object['id'] ) && '' !== (string) $object['id'] ? (string) $object['id'] : 'sub:' . $sub_id;
 				self::mark_retry( (int) $row->member_id, sanitize_text_field( $invoice ) );
+				self::record_failed_attempt( (int) $row->member_id, $object );
 			}
 			return;
 		}
@@ -1186,7 +1187,18 @@ class LLD_Members_Billing {
 			'tax'      => self::tax_inside( $amount, 'gbp' === $next['currency'] ? 'GB' : ( 'eur' === $next['currency'] ? 'DE' : 'US' ) ),
 			'code'     => '',
 		);
-		$order_id = self::insert_order( $member_id, 'renewal', $quote, $payment, self::email_of( $member_id ), '' );
+		$order_id = self::insert_order(
+			$member_id,
+			'renewal',
+			$quote,
+			$payment,
+			self::email_of( $member_id ),
+			'',
+			array(
+				'related_order_id' => self::first_payment_id( $member_id ),
+				'discount_code'    => ! empty( $next['reward_id'] ) ? 'referral-reward-' . (int) $next['reward_id'] : '',
+			)
+		);
 		if ( ! empty( $next['reward_id'] ) ) {
 			self::consume_reward( (int) $next['reward_id'], $order_id );
 		}
@@ -1356,7 +1368,8 @@ class LLD_Members_Billing {
 			),
 			$ref,
 			(string) $order->billing_email,
-			''
+			'',
+			array( 'related_order_id' => $order_id )
 		);
 		self::admin_log( 'refund', $member_id, 'Order ' . $order_id . ' (' . (string) $order->kind . ') refunded in full: ' . self::money( (int) $order->charged_amount, (string) $order->charged_currency ) . ', started by ' . $by . ', reference ' . $ref . '.' );
 		if ( 'payment' === (string) $order->kind ) {
@@ -1927,31 +1940,40 @@ class LLD_Members_Billing {
 	}
 
 	/**
-	 * @param int                  $member_id Member.
-	 * @param string               $kind      payment, renewal or refund.
-	 * @param array<string,mixed>  $quote     Amounts.
-	 * @param string               $payment   Stripe payment id.
-	 * @param string               $email     Billing email.
+	 * One order row (P3). stripe_invoice stays empty until the Stripe integration reads invoices.
+	 *
+	 * @param int                  $member_id   Member.
+	 * @param string               $kind        payment, renewal, refund or failed_attempt.
+	 * @param array<string,mixed>  $quote       Amounts.
+	 * @param string               $payment     Stripe payment id; empty stores none.
+	 * @param string               $email       Billing email.
 	 * @param string               $fingerprint Card fingerprint, stored aside from the order row.
+	 * @param array<string,mixed>  $extra       status, related_order_id, discount_code (a referral reward).
 	 */
-	private static function insert_order( $member_id, $kind, $quote, $payment, $email, $fingerprint ) {
+	private static function insert_order( $member_id, $kind, $quote, $payment, $email, $fingerprint, $extra = array() ) {
 		unset( $fingerprint );
 		global $wpdb;
-		$result = $wpdb->insert(
+		$code     = '' !== (string) $quote['code'] ? (string) $quote['code'] : ( isset( $extra['discount_code'] ) ? (string) $extra['discount_code'] : '' );
+		$discount = 'refund' !== $kind && '' !== $code ? max( 0, (int) $quote['base'] - (int) $quote['charged'] ) : 0;
+		$result   = $wpdb->insert(
 			LLD_Members_Schema::table( 'order' ),
 			array(
 				'member_id'          => $member_id,
 				'ordered_at'         => lld_members_now_mysql( $member_id ),
 				'kind'               => $kind,
+				'related_order_id'   => ! empty( $extra['related_order_id'] ) ? (int) $extra['related_order_id'] : null,
 				'catalogue_amount'   => (int) $quote['base'],
 				'catalogue_currency' => (string) $quote['currency'],
 				'charged_amount'     => (int) $quote['charged'],
 				'charged_currency'   => (string) $quote['currency'],
 				'tax_amount'         => (int) $quote['tax'],
 				'tax_currency'       => (string) $quote['currency'],
-				'discount_code'      => '' !== (string) $quote['code'] ? (string) $quote['code'] : null,
-				'status'             => 'succeeded',
-				'stripe_payment'     => $payment,
+				'discount_code'      => '' !== $code ? $code : null,
+				'discount_amount'    => $discount > 0 ? $discount : null,
+				'discount_currency'  => $discount > 0 ? (string) $quote['currency'] : null,
+				'status'             => isset( $extra['status'] ) ? (string) $extra['status'] : 'succeeded',
+				'stripe_payment'     => '' !== (string) $payment ? (string) $payment : null,
+				'stripe_invoice'     => null,
 				'billing_email'      => $email,
 				'billing_country'    => isset( $quote['country'] ) ? (string) $quote['country'] : null,
 			)
@@ -1961,11 +1983,55 @@ class LLD_Members_Billing {
 	}
 
 	/**
+	 * The first payment of the member's current subscription, which renewals, refunds and failed attempts belong to.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function first_payment_id( $member_id ) {
+		global $wpdb;
+		return (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'order' ) . " WHERE member_id = %d AND kind = 'payment' ORDER BY id DESC LIMIT 1", $member_id ) );
+	}
+
+	/**
+	 * P3: a failed renewal attempt is an order of its own, pointing to the payment it belongs to.
+	 *
+	 * @param int                 $member_id Member number.
+	 * @param array<string,mixed> $object    Invoice object.
+	 */
+	private static function record_failed_attempt( $member_id, $object ) {
+		$sub      = self::subscription_row( $member_id );
+		$next     = self::next_charge( $member_id );
+		$amount   = isset( $object['amount_due'] ) && is_numeric( $object['amount_due'] ) ? (int) $object['amount_due'] : (int) $next['charged'];
+		$country  = 'gbp' === $next['currency'] ? 'GB' : ( 'eur' === $next['currency'] ? 'DE' : 'US' );
+		$charge   = isset( $object['charge'] ) && is_string( $object['charge'] ) ? sanitize_text_field( $object['charge'] ) : '';
+		self::insert_order(
+			$member_id,
+			'failed_attempt',
+			array(
+				'plan'     => $sub ? (string) $sub->plan : 'monthly',
+				'country'  => $country,
+				'currency' => $next['currency'],
+				'base'     => $sub && $sub->locked_amount ? (int) $sub->locked_amount : $amount,
+				'charged'  => $amount,
+				'tax'      => self::tax_inside( $amount, $country ),
+				'code'     => '',
+			),
+			$charge,
+			self::email_of( $member_id ),
+			'',
+			array(
+				'status'           => 'failed',
+				'related_order_id' => self::first_payment_id( $member_id ),
+			)
+		);
+	}
+
+	/**
 	 * @param int $member_id Member number.
 	 */
 	private static function receipt_list( $member_id ) {
 		global $wpdb;
-		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'order' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ) );
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'order' ) . " WHERE member_id = %d AND kind <> 'failed_attempt' ORDER BY id ASC", $member_id ) );
 		$html = '<h2>Receipts</h2><ul>';
 		if ( ! $rows ) {
 			return $html . '<li>No receipts yet.</li></ul>';
