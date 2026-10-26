@@ -749,6 +749,7 @@ test('TC-FR2-11-AS-02', async ({ page }) => {
   await page.locator('#lld_display').fill(sentinel);
   await page.getByRole('checkbox', { name: 'Weekly review' }).check();
   await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Saved')).toBeVisible();
   await startSlug(page, made.track);
   await clock(page.request, email, '2026-05-07 12:00:00');
   await reports(page.request);
@@ -790,12 +791,14 @@ test('TC-FR2-12-AS-01', async ({ page }) => {
   await page.locator('#lld_reminder_time').fill('07:30');
   await page.getByRole('checkbox', { name: 'Daily reminder' }).check();
   await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Saved')).toBeVisible();
   await signIn(page, york, password);
   await page.goto('/members/settings/');
   await page.locator('#lld_timezone').fill('America/New_York');
   await page.locator('#lld_reminder_time').fill('07:30');
   await page.getByRole('checkbox', { name: 'Daily reminder' }).check();
   await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Saved')).toBeVisible();
   const count = async (email) => (await mailFor(email)).filter((message) => (message.Subject || '').includes("Today's activity is ready")).length;
   await clock(page.request, london, '2026-01-15 07:29:00');
   await tick(page.request);
@@ -844,6 +847,7 @@ test('TC-FR2-12-AS-02', async ({ page }) => {
   await page.goto('/members/settings/');
   await page.getByRole('checkbox', { name: 'Nudges' }).check();
   await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Saved')).toBeVisible();
   const count = async () => (await mailFor(email)).filter((message) => (message.Subject || '').includes('Pick up where you left off')).length;
   await clock(page.request, email, '2026-04-05 12:00:00');
   await reports(page.request);
@@ -879,6 +883,7 @@ test('TC-FR2-12-AS-03', async ({ page }) => {
     await page.getByRole('checkbox', { name }).check();
   }
   await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('Saved')).toBeVisible();
   await startSlug(page, made.track);
   await reports(page.request);
   await tick(page.request);
