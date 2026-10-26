@@ -582,7 +582,7 @@ test('TC-FR2-37-AS-03', async ({ page, request }) => {
   });
   await page.goto('/members/diary/');
   await expect(page.locator('#lld_portion')).toHaveCount(0);
-  const nonce = await page.locator('input[name="lld_diary_nonce"]').inputValue();
+  const nonce = await page.locator('input[name="lld_diary_nonce"]').first().inputValue();
   const refused = await page.request.post('/members/diary/', {
     form: { lld_diary_nonce: nonce, lld_meal: 'lunch', lld_description: 'Hidden portion note', lld_portion: 'large' },
     maxRedirects: 0,
@@ -596,7 +596,7 @@ test('TC-FR2-37-AS-04', async ({ page, request }) => {
   const member = await paid(request, 'sum');
   await signIn(page, member.email, password);
   await page.goto('/members/diary/');
-  const nonce = await page.locator('input[name="lld_diary_nonce"]').inputValue();
+  const nonce = await page.locator('input[name="lld_diary_nonce"]').first().inputValue();
   const plan = [
     ['2026-06-01', 'breakfast', '1'], ['2026-06-01', 'lunch', ''],
     ['2026-06-02', 'breakfast', '1'], ['2026-06-02', 'lunch', ''],
