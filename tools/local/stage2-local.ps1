@@ -95,14 +95,21 @@ function Install-Site {
   Write-Output "Stage 2 site ready at $Url (settings in $EnvFile)"
 }
 function Install-Pmpro {
-  # Paid Memberships Pro from wordpress.org; unpacked here for the same reason as WordPress itself.
+  # Paid Memberships Pro left wordpress.org in October 2024, so this takes the vendor's tagged release from GitHub,
+  # the same version as CI (tests/ci/stage2-wp.sh) and staging; unpacked here for the same reason as WordPress itself.
+  $version = '3.8.9'
   $dir = "$Site\wp-content\plugins\paid-memberships-pro"
-  if (-not (Test-Path "$dir\paid-memberships-pro.php")) {
+  $main = "$dir\paid-memberships-pro.php"
+  if (-not ((Test-Path $main) -and (Select-String -Path $main -SimpleMatch "Version: $version" -Quiet))) {
     $zip = Join-Path $env:TMP 'pmpro.zip'
+    $tmp = Join-Path $env:TMP 'pmpro-unpack'
     [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    Invoke-WebRequest -Uri 'https://downloads.wordpress.org/plugin/paid-memberships-pro.latest-stable.zip' -OutFile $zip -UseBasicParsing
-    Expand-Archive -Path $zip -DestinationPath "$Site\wp-content\plugins" -Force
-    Remove-Item -Force $zip
+    Invoke-WebRequest -Uri "https://codeload.github.com/strangerstudios/paid-memberships-pro/zip/refs/tags/$version" -OutFile $zip -UseBasicParsing
+    if (Test-Path $tmp) { Remove-Item -Recurse -Force $tmp }
+    Expand-Archive -Path $zip -DestinationPath $tmp -Force
+    if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
+    Move-Item "$tmp\paid-memberships-pro-$version" $dir
+    Remove-Item -Recurse -Force $zip, $tmp
   }
   Wp plugin activate paid-memberships-pro --quiet
 }
