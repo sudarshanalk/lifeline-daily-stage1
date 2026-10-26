@@ -149,7 +149,7 @@ test('TC-FR2-05-AS-05', async ({ page }) => {
 
 test('TC-FR2-25-AS-01', async ({ page }) => {
   const email = emailFor('profile');
-  await createMember(page.request, { email, password, first_name: 'Sam', consents: ['terms', 'health'] });
+  const created = await createMember(page.request, { email, password, first_name: 'Sam', consents: ['terms', 'health'] });
   await signIn(page, email, password);
   await page.goto('/members/health/');
   await page.getByRole('button', { name: 'Save' }).click();
@@ -159,6 +159,19 @@ test('TC-FR2-25-AS-01', async ({ page }) => {
   await expect(page.getByText('Saved')).toBeVisible();
   await page.reload();
   await expect(page.locator('#lld_sex')).toHaveValue('female');
+  // T1: "None" can't be combined with a condition through the REST route either.
+  await page.goto('/members/home/');
+  const headers = { 'X-WP-Nonce': await nonce(page) };
+  for (const data of [
+    { kind: 'profile', confirmed: true, conditions_answered: 'none', conditions: ['pregnancy'] },
+    { kind: 'profile', confirmed: true, conditions_answered: 'declared', conditions: JSON.stringify(['none', 'kidney']) },
+  ]) {
+    const res = await page.request.post(`/wp-json/lld-members/v1/members/${created.member_id}/health`, { data, headers });
+    expect(res.status(), JSON.stringify(data)).toBe(400);
+  }
+  await page.goto('/members/health/');
+  await expect(page.getByRole('checkbox', { name: 'Pregnancy or breastfeeding' })).not.toBeChecked();
+  await expect(page.getByRole('checkbox', { name: 'Kidney disease' })).not.toBeChecked();
 });
 
 test('TC-FR2-25-AS-02', async ({ page }) => {
@@ -323,6 +336,20 @@ test('TC-FR2-25-AS-06', async ({ page }) => {
   await expect.poll(async () => countTo(email, 'Complete your profile')).toBe(before + 1);
   await page.request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
   expect(await countTo(email, 'Complete your profile')).toBe(before + 1);
+
+  // Without health consent: no EM-14 and no health profile row (C3 is health data).
+  const quiet = emailFor('remind-none');
+  const other = await createMember(page.request, { email: quiet, password, first_name: 'Ned', consents: ['terms'] });
+  const later = new Date(`${other.joined_on}T12:00:00Z`);
+  later.setUTCDate(later.getUTCDate() + 31);
+  await page.request.post('/wp-json/lld-members/v1/test/clock', { data: { email: quiet, utc: later.toISOString().slice(0, 19).replace('T', ' ') } });
+  await page.request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
+  await page.request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
+  expect(await countTo(quiet, 'Complete your profile')).toBe(0);
+  const state = await (await page.request.post('/wp-json/lld-members/v1/test/screen-state', { data: { email: quiet } })).json();
+  const profileRows = Object.entries(state.rows).filter(([table]) => table.endsWith('lld_health_profile'));
+  expect(profileRows.length).toBe(1);
+  expect(profileRows[0][1]).toBe(0);
 });
 
 test('TC-FR2-38-AS-01', async ({ browser, page }) => {
@@ -469,6 +496,12 @@ test('TC-FR2-38-AS-06', async ({ page }) => {
   await asOwner(page);
   await publishItem(page, 'lld_lesson', `Holding ${mark}`, 'A short lesson.', 'breath-holding');
   await expect(page.getByText('Breath-holding is not allowed.')).toBeVisible();
+  // B2: one managed tag list. A typed tag that is not in it is refused, so no new tag is created.
+  const loose = `free-text-${mark}`;
+  const looseId = await publishItem(page, 'lld_lesson', `Loose tag ${mark}`, 'A short lesson.', loose);
+  await expect(page.getByText(`Not saved: ${loose} is not in the tag list.`)).toBeVisible();
+  await page.goto(`/wp-admin/post.php?post=${looseId}&action=edit`);
+  await expect(page.locator('#lld_tags')).toHaveValue('');
   const found = await page.request.post('/wp-json/lld-members/v1/test/search', { data: { q: 'breath-holding' } });
   expect((await found.json()).hits).toEqual([]);
 });
@@ -530,6 +563,19 @@ test('TC-FR2-06-AS-03', async ({ page }) => {
   await page.locator('.lld-suggestion', { hasText: made.a.title }).getByRole('button', { name: 'Not for me' }).click();
   await expect(page.getByText(made.a.title)).toHaveCount(0);
   await expect(page.getByText(made.b.title)).toBeVisible();
+
+  // Without health consent, opening an item or "not for me" writes no suggestion history (C15).
+  const plain = emailFor('hide-none');
+  await createMember(page.request, { email: plain, password, first_name: 'Ned', consents: ['terms'] });
+  await signIn(page, plain, password);
+  await page.goto('/members/suggestions/');
+  await expect(page.getByRole('button', { name: 'Not for me' })).toHaveCount(0);
+  await page.goto(`/members/library/${made.a.id}/`);
+  await expect(page.getByRole('heading', { name: made.a.title })).toBeVisible();
+  const state = await (await page.request.post('/wp-json/lld-members/v1/test/screen-state', { data: { email: plain } })).json();
+  const history = Object.entries(state.rows).filter(([table]) => table.endsWith('lld_suggestion'));
+  expect(history.length).toBe(1);
+  expect(history[0][1]).toBe(0);
 });
 
 test('TC-FR2-06-AS-04', async ({ page }) => {
@@ -605,6 +651,10 @@ test('TC-FR2-06-AS-07', async ({ page }) => {
   await page.request.post('/wp-json/lld-members/v1/test/reports', { data: {} });
   await expect.poll(async () => countTo(asked, 'A goal you asked for is now available')).toBe(beforeYes + 1);
   expect(await countTo(quiet, 'A goal you asked for is now available')).toBe(beforeNo);
+  // EM-15 does not name the goal: it came from the member's own "Something else" text.
+  const sent = (await mailBodies('A goal you asked for is now available')).filter((text) => text.includes(asked));
+  expect(sent.length).toBeGreaterThan(0);
+  for (const text of sent) expect(text).not.toContain(title);
 });
 
 test('TC-FR2-07-AS-01', async ({ page }) => {

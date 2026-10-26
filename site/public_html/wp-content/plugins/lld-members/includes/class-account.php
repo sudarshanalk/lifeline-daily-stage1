@@ -300,6 +300,16 @@ class LLD_Members_Account {
 		if ( ! is_array( $params ) ) {
 			$params = array();
 		}
+		if ( 'profile' === ( $params['kind'] ?? '' ) && isset( $params['conditions_answered'] ) ) {
+			// T1: "None" can't be combined with a condition, through this route as on the profile screen.
+			$conditions = $params['conditions'] ?? array();
+			$conditions = is_array( $conditions ) ? $conditions : json_decode( (string) $conditions, true );
+			$conditions = is_array( $conditions ) ? array_values( array_filter( array_map( 'strval', $conditions ) ) ) : array();
+			$answered   = (string) $params['conditions_answered'];
+			if ( ( 'none' === $answered && $conditions ) || ( in_array( 'none', $conditions, true ) && count( $conditions ) > 1 ) ) {
+				return new WP_REST_Response( array( 'message' => 'None cannot be combined with a condition.' ), 400 );
+			}
+		}
 		$result = self::save_health( $member_id, $params );
 		if ( is_wp_error( $result ) ) {
 			return new WP_REST_Response( array( 'message' => $result->get_error_message() ), 403 );
