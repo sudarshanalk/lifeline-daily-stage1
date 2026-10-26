@@ -225,9 +225,8 @@ class LLD_Members_Account {
 			if ( '' === $text ) {
 				$ok = 1;
 			} else {
-				$theme = preg_replace( '/\S+@\S+/', '', $text );
-				$theme = preg_replace( '/\d{6,}/', '', (string) $theme );
-				$theme = sanitize_text_field( wp_trim_words( (string) $theme, 3, '' ) );
+				// The text is health data and stays encrypted (S3). No words of it are copied into
+				// the theme column; the owner's monthly grouping sets themes, never this request.
 				$table = LLD_Members_Schema::table( 'something_else' );
 				$wpdb->insert(
 					$table,
@@ -235,7 +234,7 @@ class LLD_Members_Account {
 						'member_id'       => $member_id,
 						'written_at'      => $now,
 						'text_ciphertext' => LLD_Members_Crypto::encrypt( 'pending', 'something_else:0' ),
-						'theme'           => $theme,
+						'theme'           => null,
 					)
 				);
 				$else_id = (int) $wpdb->insert_id;
