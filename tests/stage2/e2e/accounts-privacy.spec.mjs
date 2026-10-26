@@ -6,9 +6,9 @@ import { join } from 'node:path';
 import { inflateRawSync } from 'node:zlib';
 import { expect, test } from '@playwright/test';
 import { asOwner, createMember, signIn } from './helpers.mjs';
+import { MAP, columnDifferences, mapProblems } from '../data-model.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
-const columns = JSON.parse(readFileSync(new URL('../personal-columns.json', import.meta.url), 'utf8'));
 const MAILPIT = process.env.MAILPIT_URL || 'http://127.0.0.1:8025';
 const SENTINEL = 'SENTINEL-ELSE-5520';
 const jpeg = Buffer.from(
@@ -83,6 +83,80 @@ function jpegInfo(body) {
     offset += 2 + length;
   }
   return { exif, width, height };
+}
+
+// The same HEIC with the size its header claims changed, for the pixel-limit checks.
+function heicClaiming(width, height) {
+  const body = Buffer.from(heic);
+  const at = body.indexOf('ispe');
+  body.writeUInt32BE(width, at + 8);
+  body.writeUInt32BE(height, at + 12);
+  return body;
+}
+
+// An EXIF block holding only an orientation (1 to 8), placed after the JFIF header.
+function withOrientation(body, orientation) {
+  const tiff = Buffer.alloc(26);
+  tiff.write('II', 0, 'latin1');
+  tiff.writeUInt16LE(42, 2);
+  tiff.writeUInt32LE(8, 4);
+  tiff.writeUInt16LE(1, 8);
+  tiff.writeUInt16LE(0x0112, 10);
+  tiff.writeUInt16LE(3, 12);
+  tiff.writeUInt32LE(1, 14);
+  tiff.writeUInt16LE(orientation, 18);
+  tiff.writeUInt32LE(0, 22);
+  const payload = Buffer.concat([Buffer.from('Exif\0\0', 'latin1'), tiff]);
+  const head = Buffer.alloc(4);
+  head.writeUInt16BE(0xffe1, 0);
+  head.writeUInt16BE(payload.length + 2, 2);
+  const at = body.readUInt16BE(2) === 0xffe0 ? 4 + body.readUInt16BE(4) : 2;
+  return Buffer.concat([body.slice(0, at), head, payload, body.slice(at)]);
+}
+
+// The upright picture is 64 by 32, blue, with a red top-left quarter. The file holds it turned
+// the way a camera stores it for each EXIF orientation, so only a correct turn shows it upright.
+function orientedJpeg(orientation) {
+  const path = join(tmpdir(), `lld-orient-${orientation}.jpg`);
+  const script = join(tmpdir(), `lld-orient-${orientation}.php`);
+  writeFileSync(
+    script,
+    `<?php
+$r = imagecreatetruecolor(64, 32);
+imagefilledrectangle($r, 0, 0, 63, 31, imagecolorallocate($r, 0, 0, 255));
+imagefilledrectangle($r, 0, 0, 31, 15, imagecolorallocate($r, 255, 0, 0));
+switch (${orientation}) {
+  case 2: imageflip($r, IMG_FLIP_HORIZONTAL); break;
+  case 3: $r = imagerotate($r, 180, 0); break;
+  case 4: imageflip($r, IMG_FLIP_VERTICAL); break;
+  case 5: $r = imagerotate($r, -90, 0); imageflip($r, IMG_FLIP_HORIZONTAL); break;
+  case 6: $r = imagerotate($r, 90, 0); break;
+  case 7: $r = imagerotate($r, 90, 0); imageflip($r, IMG_FLIP_HORIZONTAL); break;
+  case 8: $r = imagerotate($r, -90, 0); break;
+}
+imagejpeg($r, ${JSON.stringify(path)}, 95);
+`
+  );
+  execFileSync('php', [script], { stdio: 'pipe' });
+  writeFileSync(path, withOrientation(readFileSync(path), orientation));
+  return path;
+}
+
+// Size and the red level at the middle of each quarter of a stored JPEG.
+function quarters(body) {
+  const file = join(tmpdir(), 'lld-quarters.jpg');
+  const script = join(tmpdir(), 'lld-quarters.php');
+  writeFileSync(file, body);
+  writeFileSync(
+    script,
+    `<?php
+$im = imagecreatefromjpeg(${JSON.stringify(file)});
+$w = imagesx($im); $h = imagesy($im);
+$red = function ($x, $y) use ($im) { return (imagecolorat($im, $x, $y) >> 16) & 255; };
+echo json_encode(array('width' => $w, 'height' => $h, 'tl' => $red(intdiv($w, 4), intdiv($h, 4)), 'tr' => $red(intdiv(3 * $w, 4), intdiv($h, 4)), 'bl' => $red(intdiv($w, 4), intdiv(3 * $h, 4)), 'br' => $red(intdiv(3 * $w, 4), intdiv(3 * $h, 4))));
+`
+  );
+  return JSON.parse(execFileSync('php', [script], { encoding: 'utf8' }));
 }
 
 function makeJpeg(name, targetBytes, { width = 16, height = 16, gps = false } = {}) {
@@ -258,7 +332,7 @@ test('TC-FR2-02-AS-01', async ({ page }) => {
 });
 
 test('TC-FR2-02-AS-02', async ({ page }) => {
-  test.setTimeout(120000);
+  test.setTimeout(300000);
   const email = 'tm-03f@test.lifelinedaily.invalid';
   const other = 'tm-04f@test.lifelinedaily.invalid';
   await reset(page.request, email);
@@ -308,6 +382,40 @@ test('TC-FR2-02-AS-02', async ({ page }) => {
   await expect(page.getByText('Saved')).toBeVisible();
   const fromHeic = jpegInfo(await (await page.request.get(`/members/photo/${created.member_id}/`)).body());
   expect(fromHeic).toEqual({ exif: false, width: 64, height: 48 });
+  const photoNow = async () => jpegInfo(await (await page.request.get(`/members/photo/${created.member_id}/`)).body());
+
+  // The file's own bytes decide: something that is no photo is refused whatever it is called.
+  for (const name of ['fake.heic', 'fake.jpg', 'fake.png']) {
+    await page.locator('#lld_photo').setInputFiles({ name, mimeType: 'application/octet-stream', buffer: Buffer.from('This is a text file, not a photo.') });
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Use a JPG, PNG or HEIC'), name).toBeVisible();
+  }
+  // A HEIC whose size reads as zero, and one claiming 9000 by 9000 pixels, are refused before decoding.
+  for (const [width, height] of [[0, 0], [9000, 9000]]) {
+    await page.locator('#lld_photo').setInputFiles({ name: 'claims.heic', mimeType: 'image/heic', buffer: heicClaiming(width, height) });
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.locator('.lld-fail'), `${width}x${height}`).toContainText(/could not be read|too large to open/);
+    await expect(page.getByText('Saved')).toHaveCount(0);
+  }
+  expect(await photoNow()).toEqual({ exif: false, width: 64, height: 48 });
+  // A request too big for the server shows an error, never "Saved".
+  await page.locator('#lld_photo').setInputFiles(sized('photo-huge.jpg', jpeg, 33 * 1024 * 1024));
+  await page.getByRole('button', { name: 'Save' }).click();
+  await expect(page.getByText('10 MB or smaller')).toBeVisible();
+  await expect(page.getByText('Saved')).toHaveCount(0);
+  expect(await photoNow()).toEqual({ exif: false, width: 64, height: 48 });
+
+  // Every EXIF orientation, 1 to 8, is turned upright: 64 by 32 with the red quarter top left.
+  for (let orientation = 1; orientation <= 8; orientation += 1) {
+    await page.goto('/members/settings/');
+    await page.locator('#lld_photo').setInputFiles(orientedJpeg(orientation));
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.getByText('Saved')).toBeVisible();
+    const seen = quarters(await (await page.request.get(`/members/photo/${created.member_id}/`)).body());
+    expect([seen.width, seen.height], `orientation ${orientation}`).toEqual([64, 32]);
+    expect(seen.tl, `orientation ${orientation} top left`).toBeGreaterThan(150);
+    for (const corner of ['tr', 'bl', 'br']) expect(seen[corner], `orientation ${orientation} ${corner}`).toBeLessThan(100);
+  }
 });
 
 test('TC-FR2-02-AS-03', async ({ page }) => {
@@ -675,18 +783,20 @@ test('TC-FR2-04-AS-01', async ({ page }) => {
   expect(data.version).toBe(1);
   expect(data.member_number).toBe(created.member_id);
   // Table by table against the database, using the erasure checker's list.
-  expect(Object.keys(data.tables).sort()).toEqual(DOWNLOAD_TABLES.slice().sort());
+  const meta = ['format', 'version', 'made_at_utc', 'member_number', 'photos'];
+  expect(data.format).toBe('lifeline-daily-member-data');
+  expect(Object.keys(data).filter((key) => !meta.includes(key)).sort()).toEqual(DOWNLOAD_TABLES.slice().sort());
   for (const name of DOWNLOAD_TABLES) {
-    expect(data.tables[name].length, name).toBe(db.records[name]);
+    expect(data[name].length, name).toBe(db.records[name]);
   }
-  for (const name of NEVER_DOWNLOADED) expect(data.tables[name], name).toBeUndefined();
+  for (const name of NEVER_DOWNLOADED) expect(data[name], name).toBeUndefined();
   for (const [name, least] of Object.entries({ member: 1, email_pref: 1, consent: 2, something_else: 1, survey: 1, referral: 2, reward: 2, subscription: 1, diary_meal: 1 })) {
-    expect(data.tables[name].length, name).toBeGreaterThanOrEqual(least);
+    expect(data[name].length, name).toBeGreaterThanOrEqual(least);
   }
-  expect(data.tables.referral.some((row) => Number(row.friend_member_id) === created.member_id)).toBe(true);
+  expect(data.referral.some((row) => Number(row.friend_member_id) === created.member_id)).toBe(true);
   // Encrypted text is readable, and no ciphertext, password, code or key is included.
-  expect(data.tables.something_else[0].text).toBe(SENTINEL);
-  expect(data.tables.survey[0].quote_text).toBe('Kinder to myself');
+  expect(data.something_else[0].text).toBe(SENTINEL);
+  expect(data.survey[0].quote_text).toBe('Kinder to myself');
   const everything = Object.values(packed).map((part) => part.toString('latin1')).join('\n');
   for (const secret of ['text_ciphertext', 'description_ciphertext', '$wp$', '$P$', '$2y$', 'code_hash', 'token_hash', 'key_hash', 'user_pass', 'data.key']) {
     expect(everything, secret).not.toContain(secret);
@@ -703,6 +813,27 @@ test('TC-FR2-04-AS-01', async ({ page }) => {
   const stores = await page.request.get('/wp-json/lld-members/v1/test/stores');
   expect((await stores.json()).download_files).toBe(0);
   await reset(page.request, referrer);
+
+  // Encrypted text is bound to its own record (S3): copied into another member's record, it is
+  // not shown by the journey read or the download.
+  const copyEmail = 'tm-04a-copy@test.lifelinedaily.invalid';
+  await reset(page.request, copyEmail);
+  const copy = await createMember(page.request, { email: copyEmail, password, first_name: 'Cy', role: 'member', health_consent: true, sentinel: 'Own words of Cy' });
+  await signIn(page, copyEmail, password);
+  const journey = async () => {
+    await page.goto('/members/settings/');
+    const restNonce = await page.locator('meta[name="lld-rest-nonce"]').getAttribute('content');
+    return page.request.get(`/wp-json/lld-members/v1/members/${copy.member_id}/journey`, { headers: { 'X-WP-Nonce': restNonce } });
+  };
+  const before = await journey();
+  expect(before.status()).toBe(200);
+  expect((await before.json()).something_else).toBe('Own words of Cy');
+  const copied = await page.request.post(`/wp-json/lld-members/v1/test/ciphertext?member_id=${created.member_id}&copy_to=${copy.member_id}`);
+  expect(copied.ok()).toBe(true);
+  const after = await journey();
+  expect(after.status()).toBe(500);
+  expect(await after.text()).not.toContain(SENTINEL);
+  await reset(page.request, copyEmail);
 });
 
 test('TC-FR2-04-AS-02', async ({ page }) => {
@@ -871,12 +1002,11 @@ test('TC-NFR2-01-AS-01', async ({ page }) => {
   const body = await stores.json();
   expect(body.extra_tables).toEqual([]);
   expect(body.extra_files).toEqual([]);
-  const liveNames = Object.keys(body.columns).sort();
-  const frozenNames = Object.keys(columns).sort();
-  expect(liveNames).toEqual(frozenNames);
-  for (const name of frozenNames) {
-    expect(body.columns[name].slice().sort(), name).toEqual(columns[name].slice().sort());
-  }
+  // Every live table and column, and every file store, is tied to a field the Data Model names
+  // (docs/stage2/02_Data_Model_Stage2.md, read here, through tests/stage2/data-model-map.json).
+  expect(columnDifferences(body.columns)).toEqual([]);
+  expect(body.files.slice().sort()).toEqual(Object.keys(MAP.stores).sort());
+  expect(mapProblems()).toEqual([]);
 });
 
 test('TC-NFR2-01-AS-03', async ({ page }) => {
