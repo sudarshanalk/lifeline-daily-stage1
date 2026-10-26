@@ -62,6 +62,7 @@ async function showPrice(page, { plan = 'monthly', country = 'US', code = '', re
   await page.goto(`/members/checkout/?plan=${plan}&lld_ref=${encodeURIComponent(ref)}`);
   await page.locator('#lld_country').selectOption(country);
   if (code) await page.locator('#lld_code').fill(code);
+  await page.locator('#lld_sale_terms').check();
   await page.getByRole('button', { name: 'Show the price' }).click();
   const box = page.locator('[data-lld-charge]');
   await expect(box).toBeVisible();
@@ -79,7 +80,7 @@ async function showPrice(page, { plan = 'monthly', country = 'US', code = '', re
 
 async function payApi(request, email, options = {}) {
   const ready = await request.post('/wp-json/lld-members/v1/test/billing', {
-    data: { action: 'session', email, plan: options.plan || 'monthly', country: options.country || 'US', code: options.code || '', ref: options.ref || '' },
+    data: { action: 'session', sale_terms: true, email, plan: options.plan || 'monthly', country: options.country || 'US', code: options.code || '', ref: options.ref || '' },
   });
   expect(ready.ok(), await ready.text()).toBeTruthy();
   const quoted = await ready.json();
@@ -366,9 +367,9 @@ test('TC-FR2-13-AS-04 codes carry the plans, valid-from and valid-to dates and a
 
   const email = emailFor('codes');
   await createMember(request, { email, password, first_name: 'Codes', role: 'member' });
-  const monthly = await billingAction(request, { action: 'session', email, plan: 'monthly', country: 'US', code: 'YEAR20' });
+  const monthly = await billingAction(request, { action: 'session', sale_terms: true, email, plan: 'monthly', country: 'US', code: 'YEAR20' });
   expect(Number(monthly.charged)).toBe(799);
-  const early = await billingAction(request, { action: 'session', email, plan: 'yearly', country: 'US', code: 'LATER' });
+  const early = await billingAction(request, { action: 'session', sale_terms: true, email, plan: 'yearly', country: 'US', code: 'LATER' });
   expect(Number(early.charged)).toBe(5999);
   const paid = await payApi(request, email, { plan: 'yearly', country: 'US', code: 'YEAR20' });
   expect(paid.charge).toBe(4799);
@@ -417,6 +418,46 @@ test('TC-FR2-14-AS-01', async ({ page, request }) => {
   const card = page.locator('input[autocomplete="cc-number"], input[name="cardnumber"], input[name="card_number"]');
   await expect(card).toHaveCount(0);
   await expect(page.getByText('We never see your card details.')).toBeVisible();
+});
+
+test('TC-FR2-31-AS-02 the terms of sale are linked from pricing and checkout, must be ticked, and are recorded as a consent', async ({ page, request }) => {
+  await page.goto('/pricing/');
+  const pricingLink = page.locator('main [data-lld-sale-terms] a');
+  await expect(pricingLink).toHaveText('Terms of sale');
+  expect(new URL(await pricingLink.getAttribute('href')).pathname).toBe('/terms-of-sale/');
+
+  const email = emailFor('sale');
+  await createMember(request, { email, password, first_name: 'Sale', role: 'member' });
+  await clock(request, email, '2026-09-01 12:00:00');
+  await signIn(page, email, password);
+  await page.goto('/members/checkout/?plan=monthly');
+  await expect(page.locator('#lld_sale_terms')).not.toBeChecked();
+  const checkoutLink = page.locator('[data-lld-sale-terms] a');
+  await expect(checkoutLink).toHaveText('terms of sale');
+  expect(new URL(await checkoutLink.getAttribute('href')).pathname).toBe('/terms-of-sale/');
+
+  // The server refuses a checkout without the tick, whatever the browser sends.
+  const nonce = await page.locator('input[name="lld_checkout_nonce"]').inputValue();
+  const refused = await page.request.post('/members/checkout/', { form: { lld_checkout_nonce: nonce, lld_plan: 'monthly', lld_country: 'US', lld_code: '' } });
+  expect(refused.status()).toBe(200);
+  const html = await refused.text();
+  expect(html).toContain('Please accept the terms of sale to continue.');
+  expect(html).not.toContain('data-lld-session');
+  expect(html).not.toContain('Continue to payment');
+  const api = await request.post('/wp-json/lld-members/v1/test/billing', { data: { action: 'session', email, plan: 'monthly', country: 'US' } });
+  expect(api.status()).toBe(400);
+  expect((await readMember(request, email)).sale_consent).toHaveLength(0);
+
+  const quoted = await showPrice(page, { plan: 'monthly', country: 'US' });
+  expect(quoted.session).toBeTruthy();
+  expect(new URL(await page.locator('[data-lld-sale-terms] a').getAttribute('href')).pathname).toBe('/terms-of-sale/');
+  let consent = (await readMember(request, email)).sale_consent;
+  expect(consent).toHaveLength(1);
+  expect(consent[0]).toMatchObject({ consent_type: 'sale', change_kind: 'given', document_version: 'sale-2026-11', occurred_at: '2026-09-01 12:00:00' });
+  // Starting checkout again under the same version is not a change, so no second line.
+  await showPrice(page, { plan: 'yearly', country: 'US' });
+  consent = (await readMember(request, email)).sale_consent;
+  expect(consent).toHaveLength(1);
 });
 
 test('TC-FR2-14-AS-02', async ({ page, request }) => {
@@ -614,7 +655,7 @@ test('TC-FR2-14-AS-07 a notice that fails is kept, retried when Stripe sends it 
   const email = emailFor('kept');
   await createMember(request, { email, password, first_name: 'Kept', role: 'member' });
   await clock(request, email, '2026-10-01 12:00:00');
-  const quoted = await billingAction(request, { action: 'session', email, plan: 'monthly', country: 'US' });
+  const quoted = await billingAction(request, { action: 'session', sale_terms: true, email, plan: 'monthly', country: 'US' });
   const payment = `pi_${stamp()}`;
   const event = {
     id: `evt_${payment}`,
@@ -865,7 +906,7 @@ test('TC-FR2-14-AS-01 a member who already has Premium cannot start a second che
   const free = emailFor('twice-late');
   await createMember(request, { email: free, password, first_name: 'Late', role: 'member' });
   await clock(request, free, '2026-10-01 12:00:00');
-  const quote = await billingAction(request, { action: 'session', email: free, plan: 'monthly', country: 'US' });
+  const quote = await billingAction(request, { action: 'session', sale_terms: true, email: free, plan: 'monthly', country: 'US' });
   const first = await payApi(request, free, { plan: 'monthly', country: 'US' });
   const res = await notify(request, {
     id: `evt_${stamp()}`,

@@ -225,6 +225,82 @@ class LLD_Members_Billing {
 	}
 
 	/**
+	 * Terms of sale, consent type "sale" in the consent history (Data Model A2), as the account screens read it.
+	 */
+	const SALE_CONSENT = 'sale';
+
+	/**
+	 * The terms-of-sale page and the version members accept. Legal pages sit at the site root (/terms/, /privacy/),
+	 * so the default is /terms-of-sale/; the owner can point it elsewhere until the approved page is published.
+	 *
+	 * @return array{path:string,version:string}
+	 */
+	private static function sale_terms_setting() {
+		$stored = get_option( 'lld_terms_of_sale' );
+		$stored = is_array( $stored ) ? $stored : array();
+		return array(
+			'path'    => ! empty( $stored['path'] ) ? (string) $stored['path'] : '/terms-of-sale/',
+			'version' => ! empty( $stored['version'] ) ? (string) $stored['version'] : 'sale-2026-11',
+		);
+	}
+
+	/**
+	 * @param string $path    Site path such as /terms-of-sale/.
+	 * @param string $version Version label such as sale-2026-11.
+	 */
+	private static function save_sale_terms( $path, $version ) {
+		$path    = '/' . trim( preg_replace( '#[^a-z0-9/_-]#i', '', $path ), '/' ) . '/';
+		$version = substr( preg_replace( '/[^a-z0-9._-]/i', '', $version ), 0, 64 );
+		if ( '//' === $path || '' === $version ) {
+			return;
+		}
+		update_option(
+			'lld_terms_of_sale',
+			array(
+				'path'    => $path,
+				'version' => $version,
+			),
+			false
+		);
+	}
+
+	/**
+	 * Link to the terms of sale (FR2-31-AS-02).
+	 */
+	public static function terms_of_sale_url() {
+		return home_url( self::sale_terms_setting()['path'] );
+	}
+
+	/**
+	 * Record acceptance of the current terms of sale. A line is added only when it is a change: the first acceptance,
+	 * or a new version.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function accept_terms_of_sale( $member_id ) {
+		if ( $member_id < 1 ) {
+			return;
+		}
+		global $wpdb;
+		$table   = LLD_Members_Schema::table( 'consent' );
+		$version = self::sale_terms_setting()['version'];
+		$latest  = $wpdb->get_row( $wpdb->prepare( "SELECT change_kind, document_version FROM {$table} WHERE member_id = %d AND consent_type = %s ORDER BY id DESC LIMIT 1", $member_id, self::SALE_CONSENT ) );
+		if ( $latest && 'given' === (string) $latest->change_kind && $version === (string) $latest->document_version ) {
+			return;
+		}
+		$wpdb->insert(
+			$table,
+			array(
+				'member_id'        => (int) $member_id,
+				'consent_type'     => self::SALE_CONSENT,
+				'change_kind'      => 'given',
+				'document_version' => $version,
+				'occurred_at'      => lld_members_now_mysql( (int) $member_id ),
+			)
+		);
+	}
+
+	/**
 	 * Premium now, including cancelled in its paid period and the failed-payment grace period.
 	 *
 	 * @param int $member_id Member number.
@@ -306,6 +382,7 @@ class LLD_Members_Billing {
 		$main  .= lld_button( array( 'label' => 'Choose yearly', 'href' => home_url( '/members/checkout/?plan=yearly' ) ) ) . '</article>';
 		$main  .= '<article data-lld-plan="monthly"><p>' . esc_html( self::money( $prices['monthly'], 'usd' ) ) . ' a month</p><p>tax included</p>';
 		$main  .= lld_button( array( 'label' => 'Choose monthly', 'href' => home_url( '/members/checkout/?plan=monthly' ) ) ) . '</article>';
+		$main  .= '<p data-lld-sale-terms><a href="' . esc_url( self::terms_of_sale_url() ) . '">Terms of sale</a>: price, plans, renewal, cancellation, refunds, discounts and referral rewards.</p>';
 		lld_members_layout(
 			array(
 				'title'       => 'Pricing',
@@ -536,7 +613,15 @@ class LLD_Members_Billing {
 		$ref  = isset( $_REQUEST['lld_ref'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['lld_ref'] ) ) : '';
 		$shown = false;
 		$note  = '';
-		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_checkout_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_checkout_nonce'] ) ), 'lld_checkout' ) ) {
+		$posted = 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_checkout_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_checkout_nonce'] ) ), 'lld_checkout' );
+		$refuse = '';
+		if ( $posted && empty( $_POST['lld_sale_terms'] ) ) {
+			// Refused on the server: no quote, no session and no payment link without the terms of sale.
+			$refuse = 'Please accept the terms of sale to continue.';
+			$posted = false;
+		}
+		if ( $posted ) {
+			self::accept_terms_of_sale( $member_id );
 			$quote = self::quote( $member_id, $plan, $country, $code );
 			if ( $code && empty( $quote['code'] ) ) {
 				$note = 'This code has ended.';
@@ -551,11 +636,15 @@ class LLD_Members_Billing {
 			$main .= '<p>' . esc_html( self::tax_line( $quote ) ) . '</p>';
 			$main .= '<p>Apple Pay and Google Pay are offered by Stripe on devices that support them.</p>';
 			$main .= '<p><a href="' . esc_url( 'https://checkout.stripe.com/c/pay/' . $session ) . '">Continue to payment</a></p>';
+			$main .= '<p data-lld-sale-terms>You accepted the <a href="' . esc_url( self::terms_of_sale_url() ) . '">terms of sale</a>.</p>';
 			if ( $note ) {
 				$main .= '<p>' . esc_html( $note ) . '</p>';
 			}
 		}
 		if ( ! $shown ) {
+			if ( '' !== $refuse ) {
+				$main .= '<div class="lld-fail" role="alert"><p>' . esc_html( $refuse ) . '</p></div>';
+			}
 			$main .= '<form method="post">';
 			$main .= wp_nonce_field( 'lld_checkout', 'lld_checkout_nonce', true, false );
 			$main .= '<input type="hidden" name="lld_ref" value="' . esc_attr( $ref ) . '">';
@@ -566,6 +655,7 @@ class LLD_Members_Billing {
 			$main .= '<label for="lld_country">Country</label> <select id="lld_country" name="lld_country">';
 			$main .= '<option value="US">United States</option><option value="GB">United Kingdom</option><option value="DE">Germany</option></select>';
 			$main .= '<label for="lld_code">Discount code</label> <input id="lld_code" name="lld_code" value="' . esc_attr( $code ) . '">';
+			$main .= '<label class="lld-check" data-lld-sale-terms><input type="checkbox" id="lld_sale_terms" name="lld_sale_terms" value="1" required> I accept the <a href="' . esc_url( self::terms_of_sale_url() ) . '">terms of sale</a></label>';
 			$main .= lld_button( array( 'label' => 'Show the price' ) );
 			$main .= '</form>';
 		}
@@ -950,6 +1040,10 @@ class LLD_Members_Billing {
 			if ( self::has_premium( $member_id ) ) {
 				return new WP_REST_Response( array( 'message' => 'You already have Premium.' ), 409 );
 			}
+			if ( empty( $params['sale_terms'] ) ) {
+				return new WP_REST_Response( array( 'message' => 'Please accept the terms of sale to continue.' ), 400 );
+			}
+			self::accept_terms_of_sale( $member_id );
 			$quote   = self::quote( $member_id, $plan, $country, $code );
 			$session = 'cs_test_' . bin2hex( random_bytes( 8 ) );
 			self::store_quote( $session, $quote, $member_id, $ref );
@@ -970,6 +1064,9 @@ class LLD_Members_Billing {
 			return;
 		}
 		if ( isset( $_POST['lld_pay_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_pay_nonce'] ) ), 'lld_pay' ) ) {
+			if ( isset( $_POST['lld_sale_path'], $_POST['lld_sale_version'] ) ) {
+				self::save_sale_terms( sanitize_text_field( wp_unslash( $_POST['lld_sale_path'] ) ), sanitize_text_field( wp_unslash( $_POST['lld_sale_version'] ) ) );
+			}
 			$monthly = isset( $_POST['lld_monthly'] ) ? (int) round( (float) wp_unslash( $_POST['lld_monthly'] ) * 100 ) : self::prices()['monthly'];
 			$yearly  = isset( $_POST['lld_yearly'] ) ? (int) round( (float) wp_unslash( $_POST['lld_yearly'] ) * 100 ) : self::prices()['yearly'];
 			$code    = isset( $_POST['lld_new_code'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_new_code'] ) ) : '';
@@ -1006,6 +1103,8 @@ class LLD_Members_Billing {
 		}
 		echo '<form method="post">';
 		wp_nonce_field( 'lld_pay', 'lld_pay_nonce' );
+		echo '<p><label>Terms of sale address <input name="lld_sale_path" value="' . esc_attr( self::sale_terms_setting()['path'] ) . '"></label>';
+		echo ' <label>Terms of sale version <input name="lld_sale_version" value="' . esc_attr( self::sale_terms_setting()['version'] ) . '"></label></p>';
 		echo '<p><label>Monthly price US$ <input name="lld_monthly" value="' . esc_attr( number_format( $prices['monthly'] / 100, 2, '.', '' ) ) . '"></label></p>';
 		echo '<p><label>Yearly price US$ <input name="lld_yearly" value="' . esc_attr( number_format( $prices['yearly'] / 100, 2, '.', '' ) ) . '"></label></p>';
 		echo '<p><label>New code <input name="lld_new_code"></label> <label>Percent off the first payment <input name="lld_percent" value="50"></label></p>';
@@ -2673,6 +2772,7 @@ class LLD_Members_Billing {
 			'referrals'    => $wpdb->get_results( $wpdb->prepare( 'SELECT id, status, self_referral, friend_member_id FROM ' . LLD_Members_Schema::table( 'referral' ) . ' WHERE referrer_member_id = %d OR friend_member_id = %d ORDER BY id ASC', $member_id, $member_id ), ARRAY_A ),
 			'next'         => $member_id ? self::next_charge( $member_id ) : array(),
 			'app'          => ( $sub && 'yearly' === (string) $sub->plan && self::paid_open( $member_id ) ) ? 'included' : 'not included',
+			'sale_consent' => $wpdb->get_results( $wpdb->prepare( 'SELECT consent_type, change_kind, document_version, occurred_at FROM ' . LLD_Members_Schema::table( 'consent' ) . " WHERE member_id = %d AND consent_type = 'sale' ORDER BY id ASC", $member_id ), ARRAY_A ),
 		);
 	}
 

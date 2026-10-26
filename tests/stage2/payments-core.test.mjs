@@ -131,3 +131,13 @@ test('payments add no column outside the Data Model: notices keep only the P6 fi
   expect(stored.every((field) => frozen.stripe_notice.includes(field))).toBeTruthy();
   expect(billing).not.toMatch(/'payload'|next_attempt_at|not_qualified_why/);
 });
+
+test('TC-FR2-31-AS-02 checkout records the terms of sale as consent type sale, the type the account screens read', () => {
+  const billing = source('class-billing.php');
+  expect(billing).toMatch(/const SALE_CONSENT = 'sale';/);
+  const checkout = billing.slice(billing.indexOf('public static function checkout'), billing.indexOf('public static function subscription'));
+  expect(checkout).toMatch(/empty\( \$_POST\['lld_sale_terms'\] \)/);
+  expect(checkout.indexOf('accept_terms_of_sale')).toBeLessThan(checkout.indexOf('store_quote'));
+  expect(checkout).toMatch(/name="lld_sale_terms"/);
+  expect(billing.slice(billing.indexOf('public static function pricing'), billing.indexOf('public static function sales'))).toMatch(/terms_of_sale_url\(\)/);
+});
