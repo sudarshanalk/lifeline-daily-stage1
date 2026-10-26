@@ -14,6 +14,21 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Premium {
 
+	/**
+	 * FR2-34: warming up, stopping if in pain and checking with a doctor. Draft wording for the owner's clinical review.
+	 */
+	const WORKOUT_ADVICE = 'Warm up before you start. Stop if you feel pain. Check with your doctor if you need to.';
+
+	/**
+	 * Requirements section 8.2, Type 2 diabetes row: shown before exercise.
+	 */
+	const DIABETES_EXERCISE = 'If you take insulin or medicine that can cause low blood sugar, check with your doctor.';
+
+	/**
+	 * Requirements section 8.2, high blood pressure row: high-intensity content carries this note.
+	 */
+	const INTENSE_EXERCISE = 'Check with your doctor first.';
+
 	public static function boot() {
 		add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ), 11 );
 	}
@@ -122,7 +137,7 @@ class LLD_Members_Premium {
 			self::save_workout( $member_id, $level, $place );
 		}
 		$week    = 1;
-		$plan    = self::workout_plan( $level, $place, $week );
+		$plan    = self::workout_plan( $member_id, $level, $place, $week );
 		$session = isset( $_GET['session'] ) ? max( 1, (int) $_GET['session'] ) : 0;
 		$main    = '<h1>Workout</h1>';
 		if ( ! $consent ) {
@@ -158,7 +173,10 @@ class LLD_Members_Premium {
 		if ( $session > 0 && isset( $plan['sessions'][ $session - 1 ] ) ) {
 			$row   = $plan['sessions'][ $session - 1 ];
 			$steps = (int) $row['seconds'] . '|' . (int) $row['rest'];
-			$main .= '<section id="lld-safety"><h2>Safety advice</h2><p>' . esc_html( $plan['safety'] ) . '</p>';
+			$main .= '<section id="lld-safety"><h2>Safety advice</h2>';
+			foreach ( $plan['safety'] as $line ) {
+				$main .= '<p>' . esc_html( $line ) . '</p>';
+			}
 			$main .= '<p><button type="button" class="lld-button" id="lld-ready">I\'m ready</button></p></section>';
 			$main .= '<section id="lld-session" hidden><h2 id="lld-exercise">' . esc_html( $row['name'] ) . '</h2>';
 			$main .= '<p id="lld-timer" data-steps="' . esc_attr( $steps ) . '">' . (int) $row['seconds'] . '</p>';
@@ -178,7 +196,7 @@ class LLD_Members_Premium {
 		$member_id = LLD_Members_Access::current_member_id();
 		$consent   = LLD_Members_Account::has_consent( $member_id, 'health' );
 		$today     = LLD_Members_Programme::local_today( $member_id );
-		$shown     = self::current_challenge( $today );
+		$shown     = self::current_challenge( $member_id, $today );
 		if ( $consent && 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_join_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_join_nonce'] ) ), 'lld_join' ) && $shown ) {
 			self::join_challenge( $member_id, (int) $shown['parent_id'], $today );
 		}
@@ -199,7 +217,7 @@ class LLD_Members_Premium {
 			$main .= lld_button( array( 'label' => 'Join' ) );
 			$main .= '</form>';
 		}
-		$activities = self::challenge_activities( $shown );
+		$activities = self::challenge_activities( $member_id, $shown );
 		$day        = isset( $_GET['day'] ) ? (int) $_GET['day'] : 0;
 		if ( $row && $consent ) {
 			$start = new DateTimeImmutable( (string) $row->joined_on );
@@ -219,8 +237,9 @@ class LLD_Members_Premium {
 		for ( $i = 1; $i <= 28; $i++ ) {
 			$main .= '<p><a href="' . esc_url( home_url( '/members/challenge/?day=' . $i ) ) . '">Day ' . $i . '</a></p>';
 		}
-		if ( isset( $activities[ $day - 1 ] ) ) {
-			$main .= '<h2>Action for this day</h2><p>' . esc_html( $activities[ $day - 1 ] ) . '</p>';
+		if ( array_key_exists( $day - 1, $activities ) ) {
+			$action = $activities[ $day - 1 ];
+			$main  .= '<h2>Action for this day</h2><p>' . esc_html( null === $action ? LLD_Members_Safety::empty_line( $member_id ) : $action ) . '</p>';
 		}
 		if ( $row && $row->finished_on ) {
 			$badge = self::badge_title( $shown );
@@ -648,6 +667,10 @@ class LLD_Members_Premium {
 		$best    = null;
 		$fallback = null;
 		foreach ( self::approved_of( 'lld_meal' ) as $meal ) {
+			$meal['type'] = 'lld_meal';
+			if ( ! LLD_Members_Safety::allows( $member_id, $meal ) ) {
+				continue;
+			}
 			$fields = isset( $meal['fields'] ) && is_array( $meal['fields'] ) ? $meal['fields'] : array();
 			if ( $track && (int) ( $fields['track_id'] ?? 0 ) !== (int) $track ) {
 				continue;
@@ -838,10 +861,14 @@ class LLD_Members_Premium {
 	 * @param string $level Level.
 	 * @param string $place home or equipment.
 	 * @param int    $week  Week number.
-	 * @return array{safety:string,sessions:array<int,array<string,mixed>>}|null
+	 * @return array{safety:string[],sessions:array<int,array<string,mixed>>}|null
 	 */
-	private static function workout_plan( $level, $place, $week ) {
+	private static function workout_plan( $member_id, $level, $place, $week ) {
 		foreach ( self::approved_of( 'lld_workout' ) as $plan ) {
+			$plan['type'] = 'lld_workout';
+			if ( ! LLD_Members_Safety::allows( $member_id, $plan ) ) {
+				continue;
+			}
 			$fields = isset( $plan['fields'] ) && is_array( $plan['fields'] ) ? $plan['fields'] : array();
 			if ( sanitize_key( (string) ( $fields['level'] ?? '' ) ) !== $level ) {
 				continue;
@@ -865,11 +892,43 @@ class LLD_Members_Premium {
 				);
 			}
 			return array(
-				'safety'   => (string) ( $fields['safety'] ?? 'Warm up. Stop if you feel pain.' ),
+				'safety'   => self::workout_advice( $member_id, $plan ),
 				'sessions' => $sessions,
 			);
 		}
 		return null;
+	}
+
+	/**
+	 * Safety advice shown before every workout (FR2-34, requirements section 8.2).
+	 *
+	 * @param int                 $member_id Member number.
+	 * @param array<string,mixed> $plan      Approved workout snapshot.
+	 * @return string[]
+	 */
+	private static function workout_advice( $member_id, $plan ) {
+		$fields = isset( $plan['fields'] ) && is_array( $plan['fields'] ) ? $plan['fields'] : array();
+		$tags   = array();
+		foreach ( ( isset( $plan['tags'] ) && is_array( $plan['tags'] ) ) ? $plan['tags'] : array() as $tag ) {
+			$tags[] = sanitize_title( (string) $tag );
+		}
+		$lines = array();
+		$own   = trim( (string) ( $fields['safety'] ?? '' ) );
+		if ( '' !== $own ) {
+			$lines[] = $own;
+		}
+		$lines[]    = self::WORKOUT_ADVICE;
+		$situations = LLD_Members_Safety::situations( $member_id );
+		if ( in_array( 'diabetes', $situations, true ) ) {
+			$lines[] = self::DIABETES_EXERCISE;
+		}
+		if ( in_array( 'blood-pressure', $situations, true ) && in_array( 'high-intensity', $tags, true ) ) {
+			$lines[] = self::INTENSE_EXERCISE;
+		}
+		foreach ( LLD_Members_Safety::notes( $member_id ) as $note ) {
+			$lines[] = (string) $note;
+		}
+		return array_values( array_unique( $lines ) );
 	}
 
 	/**
@@ -937,10 +996,14 @@ class LLD_Members_Premium {
 	 * @param string $today Local date.
 	 * @return array<string,mixed>|null
 	 */
-	private static function current_challenge( $today ) {
+	private static function current_challenge( $member_id, $today ) {
 		$month = substr( $today, 0, 7 );
 		$found = null;
 		foreach ( self::approved_of( 'lld_challenge' ) as $challenge ) {
+			$challenge['type'] = 'lld_challenge';
+			if ( ! LLD_Members_Safety::allows( $member_id, $challenge ) ) {
+				continue;
+			}
 			$fields = isset( $challenge['fields'] ) && is_array( $challenge['fields'] ) ? $challenge['fields'] : array();
 			if ( (string) ( $fields['month'] ?? '' ) !== $month ) {
 				continue;
@@ -953,18 +1016,26 @@ class LLD_Members_Premium {
 	}
 
 	/**
+	 * Daily actions by position. An action the safety matrix excludes stays in its day as null, so later days keep their place.
+	 *
+	 * @param int                 $member_id Member number.
 	 * @param array<string,mixed> $challenge Challenge snapshot.
-	 * @return string[]
+	 * @return array<int,string|null>
 	 */
-	private static function challenge_activities( $challenge ) {
+	private static function challenge_activities( $member_id, $challenge ) {
 		$fields = isset( $challenge['fields'] ) && is_array( $challenge['fields'] ) ? $challenge['fields'] : array();
-		$ids    = preg_split( '/\s*,\s*/', (string) ( $fields['activity_ids'] ?? '' ) );
+		$ids    = preg_split( '/\s*,\s*/', trim( (string) ( $fields['activity_ids'] ?? '' ) ) );
 		$titles = array();
 		foreach ( $ids as $id ) {
-			$snap = LLD_Members_Content::shown( (int) $id );
-			if ( is_array( $snap ) ) {
-				$titles[] = (string) $snap['title'];
+			if ( (int) $id < 1 ) {
+				continue;
 			}
+			$snap = LLD_Members_Content::shown( (int) $id );
+			if ( ! is_array( $snap ) ) {
+				continue;
+			}
+			$snap['type'] = 'lld_activity';
+			$titles[]     = LLD_Members_Safety::allows( $member_id, $snap ) ? (string) $snap['title'] : null;
 		}
 		return $titles;
 	}

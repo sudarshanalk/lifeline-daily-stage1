@@ -115,6 +115,21 @@ test('TC-FR2-32-AS-02', async ({ page, request }) => {
   await page.goto('/members/meals/');
   await expect(page.locator('main')).toContainText(made.lentil);
   await expect(page.locator('main')).not.toContainText(made.loss);
+
+  // the week's own template is tagged weight-loss: a pregnant member gets the safe empty state, not that week
+  const lean = await paid(request, 'preg-lean');
+  await clock(request, lean.email, '2026-05-04 12:00:00');
+  await signIn(page, lean.email, password);
+  await saveHealth(page, lean.id, {
+    kind: 'profile', diet_type: 'vegetarian', conditions_answered: 'declared', conditions: ['pregnancy'], confirmed: true,
+  });
+  await startSlug(page, made.lean);
+  await page.goto('/members/meals/');
+  await expect(page.locator('main')).not.toContainText(made.broth);
+  await expect(page.locator('[data-lld-day]')).toHaveCount(0);
+  await expect(page.getByText('Contact support if you need a plan that fits you.')).toBeVisible();
+  const pdf = await page.request.get('/members/meals/?pdf=1');
+  expect((await pdf.body()).toString('latin1')).not.toContain('clear broth');
 });
 
 test('TC-FR2-32-AS-03', async ({ page, request }) => {

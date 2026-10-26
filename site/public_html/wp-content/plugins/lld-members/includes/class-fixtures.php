@@ -485,6 +485,24 @@ class LLD_Members_Fixtures {
 				'swaps'       => '{}',
 			)
 		);
+		$lean   = self::post( 'lld_track', 'Lean ' . $stamp, 'Track ' . $stamp, array() );
+		$broth  = self::item( 'lld_recipe', 'Broth ' . $stamp, '', array( 'ingredients' => 'clear broth | 200 | ml', 'diet' => 'vegetarian', 'meal_type' => 'lunch' ) );
+		$week   = array();
+		for ( $day = 1; $day <= 7; $day++ ) {
+			$week[ (string) $day ] = array( 'breakfast' => $broth, 'lunch' => $broth, 'dinner' => $broth, 'snack' => $broth );
+		}
+		self::item(
+			'lld_meal',
+			'Lean plan ' . $stamp,
+			'weight-loss',
+			array(
+				'track_id'    => $lean,
+				'diet'        => 'vegetarian',
+				'week_number' => 1,
+				'meals'       => wp_json_encode( $week ),
+				'swaps'       => '{}',
+			)
+		);
 		$activities = array();
 		$titles     = array();
 		for ( $day = 1; $day <= 28; $day++ ) {
@@ -525,6 +543,8 @@ class LLD_Members_Fixtures {
 			'oat'       => 'Oat ' . $stamp,
 			'loss'      => 'Loss ' . $stamp,
 			'tofu'      => 'Tofu ' . $stamp,
+			'lean'      => get_post_field( 'post_name', $lean ),
+			'broth'     => 'Broth ' . $stamp,
 			'meal'      => $meal,
 			'challenge' => 'Fibre ' . $stamp,
 			'hidden'    => 'Hidden challenge ' . $stamp,

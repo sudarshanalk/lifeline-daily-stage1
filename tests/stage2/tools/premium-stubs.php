@@ -1,0 +1,104 @@
+<?php
+/**
+ * Just enough WordPress for the Premium class's pure parts to run in PHP CLI: the real safety matrix
+ * (class-safety.php) and the real Premium class (class-premium.php), with content, consent and the
+ * health profile supplied by the test as JSON on stdin.
+ *
+ * Input: { "items": { "<id>": snapshot }, "consent": bool, "profile": { conditions_answered, conditions } | null,
+ *          "call": "<method>", "args": [...] }
+ */
+
+define( 'ABSPATH', __DIR__ . '/' );
+
+$GLOBALS['lld_test'] = json_decode( stream_get_contents( STDIN ), true );
+
+function sanitize_title( $text ) {
+	$text = strtolower( trim( (string) $text ) );
+	$text = preg_replace( '/[^a-z0-9_\-]+/', '-', $text );
+	return trim( (string) $text, '-' );
+}
+
+function sanitize_key( $key ) {
+	return preg_replace( '/[^a-z0-9_\-]/', '', strtolower( (string) $key ) );
+}
+
+function wp_json_encode( $data ) {
+	return json_encode( $data );
+}
+
+function get_posts( $args ) {
+	$type = isset( $args['post_type'] ) ? $args['post_type'] : '';
+	$out  = array();
+	foreach ( $GLOBALS['lld_test']['items'] as $id => $snap ) {
+		if ( ( $snap['type'] ?? '' ) === $type ) {
+			$out[] = (object) array( 'ID' => (int) $id );
+		}
+	}
+	return $out;
+}
+
+class LLD_Members_Content {
+	public static function shown( $id ) {
+		$items = $GLOBALS['lld_test']['items'];
+		if ( ! isset( $items[ (string) (int) $id ] ) ) {
+			return null;
+		}
+		$snap              = $items[ (string) (int) $id ];
+		$snap['parent_id'] = (int) $id;
+		$snap['version']   = isset( $snap['version'] ) ? (int) $snap['version'] : 1;
+		return $snap;
+	}
+}
+
+class LLD_Members_Account {
+	public static function has_consent( $member_id, $kind ) {
+		return 'health' === $kind && ! empty( $GLOBALS['lld_test']['consent'] );
+	}
+}
+
+class LLD_Members_Schema {
+	public static function table( $suffix ) {
+		return 'wp_lld_' . $suffix;
+	}
+}
+
+class LLD_Members_Programme {
+	public static function active( $member_id ) {
+		return null;
+	}
+}
+
+class LLD_Test_Wpdb {
+	public function prepare( $query, ...$args ) {
+		return $query;
+	}
+
+	public function get_row( $query ) {
+		$profile = $GLOBALS['lld_test']['profile'] ?? null;
+		if ( false !== strpos( $query, 'health_profile' ) && is_array( $profile ) ) {
+			return (object) array(
+				'conditions_answered' => (string) ( $profile['conditions_answered'] ?? 'not_answered' ),
+				'conditions'          => json_encode( $profile['conditions'] ?? array() ),
+			);
+		}
+		return null;
+	}
+
+	public function get_var( $query ) {
+		return null;
+	}
+}
+
+$GLOBALS['wpdb'] = new LLD_Test_Wpdb();
+
+$plugin = dirname( __DIR__, 3 ) . '/site/public_html/wp-content/plugins/lld-members/includes';
+require $plugin . '/class-safety.php';
+require $plugin . '/class-premium.php';
+
+$method = new ReflectionMethod( 'LLD_Members_Premium', (string) $GLOBALS['lld_test']['call'] );
+$method->setAccessible( true );
+$result = $method->invokeArgs( null, $GLOBALS['lld_test']['args'] ?? array() );
+if ( ! empty( $GLOBALS['lld_test']['raw'] ) ) {
+	$result = base64_encode( (string) $result );
+}
+echo json_encode( $result, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
