@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { expect, test } from '@playwright/test';
-import { asOwner, createMember, signIn } from './helpers.mjs';
+import { asOwner, createMember, editBody, openAdmin, signIn } from './helpers.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
 const MAILPIT = process.env.MAILPIT_URL || 'http://127.0.0.1:8025';
@@ -35,40 +35,13 @@ async function startSlug(page, slug) {
   expect([200, 302, 303]).toContain(res.status());
 }
 
-// WebKit on the CI web server: once the classic editor page has loaded, the first background request its scripts
-// make to WordPress (seen as admin-ajax.php?action=wp-compression-test, and as /wp-json/wp/v2/users/me once
-// compression was settled) never gets an answer, and nothing on the page can be read or filled after that; Chromium
-// is not affected. The editor does not need those background answers to save a post, so on admin pages the browser
-// answers background (XHR and fetch) calls to admin-ajax.php and the core REST routes itself, and the external
-// avatar is not fetched. The edit and the approval still go through the real editor form and approvals screen.
-async function quietAdmin(page) {
-  await page.route(/\/(wp-admin\/admin-ajax\.php|wp-json\/wp\/v2\/)/, (route) => {
-    if (['xhr', 'fetch'].includes(route.request().resourceType())) return route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
-    return route.continue();
-  });
-  await page.route(/^https:\/\/secure\.gravatar\.com\//, (route) => route.fulfill({ status: 204, body: '' }));
-}
-
-async function openAdmin(page, path) {
-  await quietAdmin(page);
-  await page.goto(path, { waitUntil: 'domcontentloaded' });
-  if (page.url().includes('pmpro-wizard')) {
-    await page.goto(path, { waitUntil: 'domcontentloaded' });
-  }
-}
-
-async function editBody(page, id, body) {
-  await openAdmin(page, `/wp-admin/post.php?post=${id}&action=edit`);
-  await page.locator('#content').fill(body, { force: true });
-  await page.locator('#publish').click({ force: true });
-  await page.locator('#message').waitFor();
-}
-
 async function approveNewest(page, title) {
   await openAdmin(page, '/wp-admin/admin.php?page=lld-approvals');
   const qual = page.locator('#lld_qualifications');
   if (await qual.count()) await qual.fill('Test clinical record for the automated check', { force: true });
-  await page.locator('tr', { hasText: title }).first().getByRole('button', { name: 'Approve' }).click({ force: true });
+  // A real click: in WebKit a forced click on this page can report success without submitting the form.
+  await page.locator('tr', { hasText: title }).first().getByRole('button', { name: 'Approve' }).click();
+  await expect(page.getByText('Approved. Members can now see this version.')).toBeVisible();
 }
 
 async function reports(request) {
