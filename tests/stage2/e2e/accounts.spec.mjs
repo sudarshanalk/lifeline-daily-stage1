@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { inflateRawSync } from 'node:zlib';
 import { expect, test } from '@playwright/test';
-import { createMember, signIn } from './helpers.mjs';
+import { createMember, signIn, submitAndWait } from './helpers.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
 const memberPass = 'adult-pass';
@@ -196,7 +196,7 @@ test('TC-FR2-01-AS-02', async ({ page }) => {
   }
   await page.goto('/members/reset/');
   await page.locator('#lld_email').fill(email);
-  await page.getByRole('button', { name: 'Send link' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Send link' }));
   await page.goto(linkFrom(await mailBody(email, 'Reset your Lifeline Daily password')));
   const resetEye = page.locator('.lld-eye');
   await resetEye.click();
@@ -210,7 +210,7 @@ test('TC-FR2-01-AS-02', async ({ page }) => {
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page.getByRole('heading', { name: 'Agreements' })).toBeVisible();
   await page.getByRole('checkbox', { name: /I accept the/ }).check();
-  await page.getByRole('button', { name: 'Continue' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Continue' }));
   await page.goto('/members/settings/');
   const change = page.locator('.lld-eye');
   await change.click();

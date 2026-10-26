@@ -220,7 +220,7 @@ async function quoteFrom(page, request, name, quote) {
   await clock(request, email, '2026-05-01 12:00:00');
   await signIn(page, email, password);
   await page.goto('/members/tracks/');
-  await page.getByRole('button', { name: 'Start Healthy Weight' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Start Healthy Weight' }));
   await clock(request, email, '2026-05-22 12:00:00');
   await page.goto('/members/check-in/');
   await page.locator('#lld_score').fill('9');
@@ -555,7 +555,7 @@ test('TC-FR2-19-AS-01', async ({ page, request }) => {
   await clock(request, email, '2026-05-01 12:00:00');
   await signIn(page, email, password);
   await page.goto('/members/tracks/');
-  await page.getByRole('button', { name: 'Start Healthy Weight' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Start Healthy Weight' }));
   await clock(request, email, '2026-05-07 12:00:00');
   await page.goto('/members/check-in/');
   await expect(page.getByRole('heading', { name: 'Week 1 survey' })).toBeVisible();

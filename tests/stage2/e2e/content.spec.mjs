@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { expect, test } from '@playwright/test';
-import { approveTitle, asOwner, createMember, editBody, openAdmin, publishItem, signIn } from './helpers.mjs';
+import { approveTitle, asOwner, createMember, editBody, openAdmin, publishItem, signIn, submitAndWait } from './helpers.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
 
@@ -49,7 +49,7 @@ test('TC-FR2-08-AS-04', async ({ page }) => {
   await expect(page.locator('main')).not.toContainText(made.hidden);
   await expect(page.locator('main')).not.toContainText(made.waiting);
   await page.locator('label', { hasText: made.goal }).locator('input').check();
-  await page.getByRole('button', { name: 'Save goals' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Save goals' }));
   await page.goto('/members/tracks/');
   const value = await page.locator('input[name="lld_track_nonce"]').first().inputValue();
   await page.request.post('/members/tracks/', { form: { lld_track_nonce: value, lld_track: made.track }, maxRedirects: 0 });

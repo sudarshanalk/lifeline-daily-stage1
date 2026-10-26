@@ -490,7 +490,7 @@ test('TC-FR2-03-AS-01', async ({ page }) => {
   await page.locator('#lld_email').fill(email);
   await page.locator('#lld_password').fill('adult-pass');
   await page.locator('#lld_age').fill('30');
-  await page.getByRole('button', { name: 'Create account' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Create account' }));
   await page.goto(linkFrom(await mailMatching(email)));
   await expect(page.getByRole('heading', { name: 'Email confirmed' })).toBeVisible();
   await signIn(page, email, 'adult-pass');
@@ -634,7 +634,7 @@ test('TC-FR2-03-AS-05', async ({ page }) => {
   await page.getByRole('checkbox', { name: /I accept the/ }).check();
   await page.getByRole('checkbox', { name: 'Allow Lifeline Daily to store my health information' }).check();
   await page.getByRole('checkbox', { name: 'Send me marketing emails' }).check();
-  await page.getByRole('button', { name: 'Continue' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Continue' }));
   await page.goto('/members/settings/');
   const history = page.locator('.lld-consent-history li');
   await expect(page.locator('.lld-consent-history')).toContainText('terms given terms-2026-11');
@@ -769,7 +769,7 @@ test('TC-FR2-04-AS-01', async ({ page }) => {
   // Records the download must leave out exist too: a reset code, a session and a test clock.
   await page.goto('/members/reset/');
   await page.locator('#lld_email').fill(email);
-  await page.getByRole('button', { name: 'Send link' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Send link' }));
   await page.request.post('/wp-json/lld-members/v1/test/clock', { data: { email, utc: fromNow(0) } });
   const db = await scanOf(page.request, { member_id: created.member_id, email });
   for (const name of ['security_code', 'session', 'test_clock']) expect(db.records[name], name).toBeGreaterThan(0);

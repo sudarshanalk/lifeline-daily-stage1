@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { expect, test } from '@playwright/test';
-import { asOwner, createMember, editBody, openAdmin, signIn } from './helpers.mjs';
+import { asOwner, createMember, editBody, openAdmin, signIn, submitAndWait } from './helpers.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
 const MAILPIT = process.env.MAILPIT_URL || 'http://127.0.0.1:8025';
@@ -298,7 +298,7 @@ test('FR2-09 Sleep and Stress reflections are labelled personal reflection and s
   await page.goto('/members/screening/?track=sleep-stress');
   for (const name of ['lld_harm', 'lld_panic', 'lld_mood']) await page.locator(`input[name="${name}"][value="no"]`).check();
   await page.getByRole('button', { name: 'Continue' }).click();
-  await page.getByRole('button', { name: 'Continue' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Continue' }));
   await page.goto('/members/check-in/');
   const reflection = page.locator('fieldset.lld-reflection');
   await expect(reflection.locator('legend')).toHaveText('Personal reflection');

@@ -1,6 +1,6 @@
 import { randomBytes } from 'node:crypto';
 import { expect, test } from '@playwright/test';
-import { asOwner, createMember, openAdmin, publishItem, signIn } from './helpers.mjs';
+import { asOwner, createMember, openAdmin, publishItem, signIn, submitAndWait } from './helpers.mjs';
 import { matrixRows, safetyTags } from '../tools/safety-matrix.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
@@ -480,7 +480,7 @@ test('TC-FR2-38-AS-05', async ({ browser, page }) => {
   await page.locator('input[name="lld_panic"][value="no"]').check();
   await page.locator('input[name="lld_mood"][value="no"]').check();
   await page.getByRole('button', { name: 'Continue' }).click();
-  await page.getByRole('button', { name: 'Continue' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Continue' }));
   await page.goto('/members/screening/?track=sleep-stress');
   await expect(page.getByText('Are you currently having thoughts of harming yourself?')).toBeVisible();
   const other = await browser.newContext();

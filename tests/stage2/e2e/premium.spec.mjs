@@ -61,7 +61,7 @@ async function startSlug(page, slug) {
 
 async function startNamed(page, name) {
   await page.goto('/members/tracks/');
-  await page.getByRole('button', { name }).click();
+  await submitAndWait(page, page.getByRole('button', { name }));
 }
 
 function fileOf(name, bytes) {
@@ -643,7 +643,7 @@ test('TC-FR2-36-AS-02', async ({ page, request }) => {
   for (const when of ['2026-05-28', '2026-06-15', '2026-07-15', '2026-08-15']) {
     await clock(request, member.email, `${when} 12:00:00`);
     await page.goto('/members/check-in/');
-    await page.getByRole('button', { name: 'Save monthly check-in' }).click();
+    await submitAndWait(page, page.getByRole('button', { name: 'Save monthly check-in' }));
   }
   await page.goto('/members/badges/');
   const chart = page.locator('[data-lld-chart]');
@@ -656,7 +656,7 @@ test('TC-FR2-36-AS-02', async ({ page, request }) => {
   await page.goto('/members/check-in/');
   await page.getByRole('checkbox', { name: 'Chair stands in 30 seconds' }).check();
   await page.locator('#lld_chair').fill('14');
-  await page.getByRole('button', { name: 'Save monthly check-in' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Save monthly check-in' }));
   await page.goto('/members/badges/');
   await expect(chart.locator('[data-lld-month="2026-09"]')).toContainText('No check-in');
   await expect(chart.locator('[data-lld-month="2026-10"]')).toContainText('14');
@@ -692,11 +692,11 @@ test('TC-FR2-36-AS-03', async ({ page, request }) => {
   await startNamed(page, 'Start Healthy Weight');
   await page.goto('/members/check-in/');
   await page.locator('#lld_weight').fill('80');
-  await page.getByRole('button', { name: 'Save check-in' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Save check-in' }));
   await clock(request, member.email, '2026-05-08 12:00:00');
   await page.goto('/members/check-in/');
   await page.locator('#lld_weight').fill('74');
-  await page.getByRole('button', { name: 'Save check-in' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Save check-in' }));
   await clock(request, member.email, '2028-06-01 12:00:00');
   await page.goto('/members/badges/');
   await expect(page.getByText(made.weight)).toBeVisible();
@@ -714,11 +714,11 @@ test('TC-FR2-36-AS-03', async ({ page, request }) => {
     await page.goto('/members/check-in/');
     await page.getByRole('checkbox', { name: 'Weight in kilograms' }).check();
     await page.locator('#lld_weight').fill('80');
-    await page.getByRole('button', { name: 'Save monthly check-in' }).click();
+    await submitAndWait(page, page.getByRole('button', { name: 'Save monthly check-in' }));
     await clock(request, blocked.email, '2026-06-15 12:00:00');
     await page.goto('/members/check-in/');
     await page.locator('#lld_weight').fill('74');
-    await page.getByRole('button', { name: 'Save monthly check-in' }).click();
+    await submitAndWait(page, page.getByRole('button', { name: 'Save monthly check-in' }));
     await page.goto('/members/badges/');
     await expect(page.locator('main')).not.toContainText(made.weight);
     const rows = await request.post('/wp-json/lld-members/v1/test/premium', { data: { email: blocked.email } });
@@ -814,7 +814,7 @@ test('TC-FR2-37-AS-05', async ({ page, request }) => {
   await startNamed(page, 'Start Healthy Weight');
   await page.goto('/members/diary/');
   await page.locator('#lld_description').fill('First week soup');
-  await page.getByRole('button', { name: 'Save meal' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Save meal' }));
   await clock(request, email, '2026-05-08 12:00:00');
   await page.goto('/members/diary/');
   await expect(page.getByText('This diary is read-only.')).toBeVisible();
