@@ -259,6 +259,11 @@ class LLD_Members_Content {
 				return;
 			}
 		}
+		$unknown = self::unknown_tags( $tags );
+		if ( $unknown ) {
+			self::remember( 'Not saved: ' . implode( ', ', $unknown ) . ' is not in the tag list. Add it on the Tags screen first, so a tag is never spelt two ways.' );
+			return;
+		}
 		wp_set_object_terms( $post_id, $tags, 'lld_tag' );
 		update_post_meta( $post_id, '_lld_premium', empty( $_POST['lld_premium'] ) ? 0 : 1 );
 	}
@@ -285,6 +290,11 @@ class LLD_Members_Content {
 					return;
 				}
 			}
+			$unknown = self::unknown_tags( $posted );
+			if ( $unknown ) {
+				self::remember( 'Not saved: ' . implode( ', ', $unknown ) . ' is not in the tag list. Add it on the Tags screen first, so a tag is never spelt two ways.' );
+				return;
+			}
 		}
 		if ( is_array( self::$next_fields ) ) {
 			update_post_meta( $post_id, '_lld_fields', self::$next_fields );
@@ -310,7 +320,7 @@ class LLD_Members_Content {
 	 */
 	public static function shown( $parent_id ) {
 		$post = get_post( $parent_id );
-		if ( ! $post || 'lld_version' === $post->post_status || ! in_array( $post->post_type, self::types(), true ) ) {
+		if ( ! $post || in_array( $post->post_status, array( 'lld_version', 'trash', 'auto-draft' ), true ) || ! in_array( $post->post_type, self::types(), true ) ) {
 			return null;
 		}
 		$best = null;
@@ -342,8 +352,12 @@ class LLD_Members_Content {
 		if ( (int) get_post_meta( $version->ID, '_lld_approved_by', true ) < 1 ) {
 			return 'the approval does not name who approved it';
 		}
-		if ( '' === (string) get_post_meta( $version->ID, '_lld_fingerprint', true ) ) {
+		$fingerprint = (string) get_post_meta( $version->ID, '_lld_fingerprint', true );
+		if ( '' === $fingerprint ) {
 			return 'the version has no fingerprint';
+		}
+		if ( ! hash_equals( $fingerprint, substr( hash( 'sha256', (string) $version->post_content ), 0, 16 ) ) ) {
+			return 'the approved text does not match its fingerprint';
 		}
 		$stored = (string) get_post_meta( $version->ID, '_lld_stored_hash', true );
 		if ( '' !== $stored && ! hash_equals( $stored, hash( 'sha256', (string) $version->post_content ) ) ) {
@@ -585,12 +599,43 @@ class LLD_Members_Content {
 	 * @return string[]
 	 */
 	public static function wording_flags( $text ) {
-		preg_match_all( '/\b(cures|treats)\b/i', (string) $text, $found );
 		$list = array();
-		foreach ( $found[1] as $word ) {
-			$list[] = strtolower( (string) $word );
+		foreach ( self::flagged_phrases() as $phrase ) {
+			if ( preg_match( '/\b' . str_replace( ' ', '\s+', preg_quote( $phrase, '/' ) ) . '\b/i', (string) $text ) ) {
+				$list[] = $phrase;
+			}
 		}
-		return array_values( array_unique( $list ) );
+		return $list;
+	}
+
+	/**
+	 * Phrases that read as diagnosis, treatment or a promise of a cure. The list supports the owner's review;
+	 * it does not replace it (NFR2-07-AS-03).
+	 *
+	 * @return string[]
+	 */
+	public static function flagged_phrases() {
+		return array( 'cure', 'cures', 'cured', 'curing', 'treats', 'treatment for', 'heals', 'reverses', 'reversing', 'diagnose', 'diagnosis', 'prescription', 'guaranteed', 'miracle', 'detox', 'clinically proven', 'stop taking', 'instead of medication' );
+	}
+
+	/**
+	 * Tags typed on an item that are not in the managed list (B2). Saving them would create a new term.
+	 *
+	 * @param string[] $tags Typed tags.
+	 * @return string[]
+	 */
+	public static function unknown_tags( $tags ) {
+		$out = array();
+		foreach ( (array) $tags as $tag ) {
+			$tag = trim( (string) $tag );
+			if ( '' === $tag ) {
+				continue;
+			}
+			if ( ! term_exists( sanitize_title( $tag ), 'lld_tag' ) && ! term_exists( $tag, 'lld_tag' ) ) {
+				$out[] = $tag;
+			}
+		}
+		return $out;
 	}
 
 	/**
@@ -671,6 +716,12 @@ class LLD_Members_Content {
 		if ( is_wp_error( $version_id ) || ! $version_id ) {
 			return;
 		}
+		global $wpdb;
+		if ( (string) get_post_field( 'post_content', $version_id, 'raw' ) !== (string) $encoded ) {
+			// Content filters (kses, link rel) must not change a fingerprinted snapshot.
+			$wpdb->update( $wpdb->posts, array( 'post_content' => (string) $encoded ), array( 'ID' => (int) $version_id ), array( '%s' ), array( '%d' ) );
+			clean_post_cache( (int) $version_id );
+		}
 		update_post_meta( $version_id, '_lld_fingerprint', $fp );
 		update_post_meta( $version_id, '_lld_stored_hash', hash( 'sha256', (string) get_post_field( 'post_content', $version_id, 'raw' ) ) );
 		update_post_meta( $version_id, '_lld_version', $n );
@@ -705,41 +756,94 @@ class LLD_Members_Content {
 	}
 
 	/**
+	 * Fingerprints of the linked items' approved versions, the versions members are actually given.
+	 *
 	 * @param array<string,mixed> $fields Saved fields.
-	 * @return string[]
+	 * @return string[] "id:fingerprint", or "id:" while a linked item has no approved version.
 	 */
 	private static function link_fingerprints( $fields ) {
 		$out = array();
-		foreach ( $fields as $key => $value ) {
-			$ids = array();
-			if ( is_array( $value ) ) {
-				foreach ( $value as $item ) {
-					if ( is_numeric( $item ) ) {
-						$ids[] = (int) $item;
-					}
-				}
-			} elseif ( is_numeric( $value ) && is_string( $key ) && str_ends_with( $key, '_id' ) ) {
-				$ids[] = (int) $value;
-			}
-			foreach ( $ids as $id ) {
-				if ( $id > 0 ) {
-					$out[] = self::latest_fingerprint( $id );
-				}
-			}
+		foreach ( self::linked_ids( $fields ) as $id ) {
+			$shown = self::shown( $id );
+			$out[] = $id . ':' . ( is_array( $shown ) ? (string) $shown['fingerprint'] : '' );
 		}
 		return $out;
 	}
 
 	/**
-	 * @param int $post_id Linked item.
+	 * Items a working copy links to: *_id fields, activity_ids, and recipe ids inside meals and swaps.
+	 *
+	 * @param array<string,mixed> $fields Saved fields.
+	 * @return int[]
 	 */
-	private static function latest_fingerprint( $post_id ) {
-		$versions = self::versions( $post_id );
-		if ( ! $versions ) {
-			return '';
+	private static function linked_ids( $fields ) {
+		$ids = array();
+		foreach ( $fields as $key => $value ) {
+			$key = (string) $key;
+			if ( in_array( $key, array( 'meals', 'swaps' ), true ) && is_array( $value ) ) {
+				$value = (string) wp_json_encode( $value );
+			}
+			if ( is_array( $value ) ) {
+				// A list of ids. Nested arrays (ingredient rows and their amounts) are not links.
+				foreach ( $value as $item ) {
+					if ( is_numeric( $item ) ) {
+						$ids[] = (int) $item;
+					}
+				}
+			} elseif ( str_ends_with( $key, '_id' ) && is_numeric( $value ) ) {
+				$ids[] = (int) $value;
+			} elseif ( 'activity_ids' === $key ) {
+				foreach ( preg_split( '/\s*,\s*/', (string) $value ) as $part ) {
+					if ( is_numeric( $part ) ) {
+						$ids[] = (int) $part;
+					}
+				}
+			} elseif ( in_array( $key, array( 'meals', 'swaps' ), true ) ) {
+				$decoded = json_decode( (string) $value, true );
+				if ( is_array( $decoded ) ) {
+					array_walk_recursive(
+						$decoded,
+						static function ( $item ) use ( &$ids ) {
+							if ( is_numeric( $item ) ) {
+								$ids[] = (int) $item;
+							}
+						}
+					);
+				}
+			}
 		}
-		$last = $versions[ count( $versions ) - 1 ];
-		return (string) get_post_meta( $last->ID, '_lld_fingerprint', true );
+		$ids = array_values( array_unique( array_filter( $ids ) ) );
+		sort( $ids );
+		return $ids;
+	}
+
+	/**
+	 * A linked item has a new approved version: every item linking to it gets a new version, which needs
+	 * a fresh approval (B16). Members keep the parent's last approved version until then.
+	 *
+	 * @param int $item_id Linked item that changed.
+	 */
+	private static function reversion_parents( $item_id ) {
+		global $wpdb;
+		$item_id = (int) $item_id;
+		// Only working copies hold _lld_fields. The LIKE narrows the scan; linked_ids() decides.
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT post_id, meta_value FROM {$wpdb->postmeta} WHERE meta_key = '_lld_fields' AND meta_value LIKE %s",
+				'%' . $wpdb->esc_like( (string) $item_id ) . '%'
+			)
+		);
+		foreach ( (array) $rows as $row ) {
+			$parent = (int) $row->post_id;
+			$post   = get_post( $parent );
+			if ( $parent === $item_id || ! $post || ! in_array( $post->post_type, self::types(), true ) || in_array( $post->post_status, array( 'lld_version', 'trash', 'auto-draft', 'inherit' ), true ) ) {
+				continue;
+			}
+			$fields = maybe_unserialize( $row->meta_value );
+			if ( is_array( $fields ) && in_array( $item_id, self::linked_ids( $fields ), true ) ) {
+				self::store_version( $parent );
+			}
+		}
 	}
 
 	/**
@@ -867,6 +971,7 @@ class LLD_Members_Content {
 		update_post_meta( $id, '_lld_approved_by', get_current_user_id() );
 		update_post_meta( $id, '_lld_approved_on', gmdate( 'Y-m-d' ) );
 		delete_post_meta( $id, '_lld_sent_back' );
+		self::reversion_parents( (int) $version->post_parent );
 		self::remember( 'Approved. Members can now see this version.' );
 	}
 
@@ -1031,7 +1136,7 @@ class LLD_Members_Content {
 	 * @param int $item_id Working copy id.
 	 */
 	private static function one( $item_id ) {
-		$shown = self::shown( $item_id );
+		$shown = in_array( get_post_type( $item_id ), self::not_in_library(), true ) ? null : self::shown( $item_id );
 		if ( ! $shown ) {
 			lld_members_layout(
 				array(
@@ -1077,10 +1182,19 @@ class LLD_Members_Content {
 		);
 	}
 
+	/**
+	 * Owner records that are not member-facing content items.
+	 *
+	 * @return string[]
+	 */
+	private static function not_in_library() {
+		return array( 'lld_matrix', 'lld_wording', 'lld_rule', 'lld_qa' );
+	}
+
 	private static function catalog() {
 		$posts = get_posts(
 			array(
-				'post_type'      => self::types(),
+				'post_type'      => array_values( array_diff( self::types(), self::not_in_library() ) ),
 				'post_status'    => array( 'publish', 'draft', 'pending', 'private' ),
 				'post_parent'    => 0,
 				'posts_per_page' => -1,
@@ -1242,6 +1356,7 @@ class LLD_Members_Content {
 		$last = $versions[ count( $versions ) - 1 ];
 		update_post_meta( $last->ID, '_lld_approved_on', gmdate( 'Y-m-d' ) );
 		update_post_meta( $last->ID, '_lld_approved_by', get_current_user_id() ? (int) get_current_user_id() : 1 );
+		self::reversion_parents( (int) $post_id );
 		return (int) $last->ID;
 	}
 
@@ -1735,11 +1850,12 @@ class LLD_Members_Content {
 	}
 
 	private static function seed_tags() {
-		if ( get_option( 'lld_tag_seed' ) ) {
+		if ( '2' === (string) get_option( 'lld_tag_seed' ) ) {
 			return;
 		}
 		$groups = array(
-			'goal'   => array( 'healthy-weight', 'blood-sugar', 'fitness', 'sleep-stress', 'heart', 'gut', 'ageing', 'energy' ),
+			// stress, mood and sleep trigger the NFR2-07 approval checks, so they are part of the managed list.
+			'goal'   => array( 'healthy-weight', 'blood-sugar', 'fitness', 'sleep-stress', 'heart', 'gut', 'ageing', 'energy', 'stress', 'mood', 'sleep' ),
 			'person' => array( 'over-50', 'vegetarian', 'vegan', 'beginner' ),
 			'safety' => array( 'weight-loss', 'fasting', 'high-intensity', 'high-protein', 'high-salt', 'high-saturated-fat', 'pregnancy-unsafe-food', 'alcohol', 'calorie-mention', 'portion-question' ),
 		);
@@ -1756,7 +1872,7 @@ class LLD_Members_Content {
 				update_term_meta( $id, 'lld_kind', $kind );
 			}
 		}
-		update_option( 'lld_tag_seed', '1', true );
+		update_option( 'lld_tag_seed', '2', true );
 	}
 
 	/**

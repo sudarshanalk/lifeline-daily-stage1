@@ -71,7 +71,8 @@ test('TC-FR2-08-AS-04', async ({ page }) => {
   expect(await html('/members/plan/')).not.toContain(made.hidden);
 
   // Direct links and downloads of every unapproved item.
-  for (const item of [id, ...Object.values(made.ids)]) {
+  // Unapproved items, an approved item moved to the bin, and an approved matrix row (owner data, not a library item).
+  for (const item of [id, ...Object.values(made.ids), made.trashed, made.matrix]) {
     for (const path of [`/members/library/${item}/`, `/members/library/${item}/?download=1`]) {
       const res = await page.request.get(path);
       const text = await res.text();
@@ -116,6 +117,7 @@ test('TC-NFR2-07-AS-01', async ({ page }) => {
   await approveTitle(page, title);
   await editBody(page, id, waiting);
   const broken = await fixture(page.request, 'tampered', mark);
+  const linked = await fixture(page.request, 'linked', mark);
   const audit = await page.request.get('/wp-json/lld-members/v1/test/content-audit');
   expect(audit.ok()).toBeTruthy();
   const body = await audit.json();
@@ -131,19 +133,31 @@ test('TC-NFR2-07-AS-01', async ({ page }) => {
   expect(pending.some((item) => item.fingerprint === shown.fingerprint)).toBeFalsy();
 
   // Broken records: approved text changed afterwards, and an approval naming nobody. Both are reported and neither is shown.
-  for (const item of [broken.changed, broken.unsigned]) {
+  for (const item of [broken.changed, broken.unsigned, broken.rehashed]) {
     expect(body.problems.some((line) => line.startsWith(`${item.id}:`)), `${item.title} reported`).toBeTruthy();
     expect(body.shown.find((row) => row.id === item.id), `${item.title} not shown`).toBeUndefined();
   }
   const email = `tm04-${stamp()}@example.test`;
   await createMember(page.request, { email, password, first_name: 'Tee', role: 'member', access_state: 'Premium' });
   await signIn(page, email, password);
-  for (const item of [broken.changed, broken.unsigned]) {
+  // B16: a plan's record holds the approved version of its recipe. An unapproved recipe edit leaves the plan alone;
+  // approving it gives the plan a new version to approve, while members keep the approved plan.
+  const [start, edited, relinked] = linked.versions;
+  expect(edited).toBe(start);
+  expect(relinked).toBe(start + 1);
+  const plan = body.shown.find((row) => row.id === linked.meal);
+  expect(plan, 'linked plan still shown').toBeTruthy();
+  const planWaiting = body.waiting.filter((row) => row.id === linked.meal);
+  expect(planWaiting.length).toBeGreaterThan(0);
+  expect(planWaiting.some((row) => row.fingerprint === plan.fingerprint)).toBeFalsy();
+
+  for (const item of [broken.changed, broken.unsigned, broken.rehashed]) {
     await page.goto(`/members/library/${item.id}/`);
     await expect(page.getByRole('heading', { name: "This page isn't available" })).toBeVisible();
   }
   await page.goto('/members/library/');
   await expect(page.locator('main')).not.toContainText(broken.changed.text);
+  await expect(page.locator('main')).not.toContainText(broken.rehashed.text);
   await expect(page.locator('main')).not.toContainText(broken.unsigned.title);
 });
 
@@ -199,11 +213,13 @@ test('TC-NFR2-07-AS-03', async ({ page }) => {
   const mark = stamp();
   const title = `Wording check ${mark}`;
   await asOwner(page);
-  await publishItem(page, 'lld_activity', title, `This cures a cold and treats a headache. ${mark}`);
+  await publishItem(page, 'lld_activity', title, `This cures a cold and treats a headache. It reverses ageing and is clinically   proven. ${mark}`);
   await page.goto('/wp-admin/admin.php?page=lld-approvals');
   const row = page.locator('tr', { hasText: title });
   await expect(row.locator('.lld-wording-flags')).toContainText('cures');
   await expect(row.locator('.lld-wording-flags')).toContainText('treats');
+  await expect(row.locator('.lld-wording-flags')).toContainText('reverses');
+  await expect(row.locator('.lld-wording-flags')).toContainText('clinically proven');
   const qual = page.locator('#lld_qualifications');
   if (await qual.count()) await qual.fill('Test clinical record for the automated check');
   await row.getByRole('button', { name: 'Approve' }).click();
