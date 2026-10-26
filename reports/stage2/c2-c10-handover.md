@@ -8,7 +8,7 @@ Branch `fix/growth-quality`, draft PR #88 (do not merge). This note covers each 
 - **Pending (webkit)**: in the latest run, the WebKit job was cancelled during `playwright install --with-deps webkit`, before any test ran. The result comes from the next run.
 - **Fail**: a real finding. The reason is given.
 
-"Chromium" is the latest `stage2-e2e (chromium)` job on commit `d1bc7dd`. Vitest results come from the `stage2-tests` job.
+"Chromium" is the `stage2-e2e (chromium)` job on commit `05751fe`, which passed every C8 to C10 check. The fixes after it are marked Pending. Vitest results come from the `stage2-tests` job.
 
 ## C8 Growth
 
@@ -40,10 +40,10 @@ Branch `fix/growth-quality`, draft PR #88 (do not merge). This note covers each 
 
 | Check | Test | Chromium | WebKit | Notes |
 |---|---|---|---|---|
-| TC-NFR2-03-AS-01 | quality.spec | Pass | Pending | 16 open pages and 25 member screens at 360, 768 and 1280 px. |
+| TC-NFR2-03-AS-01 | quality.spec | Pass | Pending | 16 open pages and 26 member screens at 360, 768 and 1280 px. WebKit gives file, date and time inputs a wide intrinsic size, which made the diary and settings pages 3 px too wide at 360 px. The CSS now caps form controls at 100% and lets flex children shrink. |
 | TC-NFR2-03-AS-02 | quality.spec | Pass | Pending | |
-| TC-NFR2-04-AS-01 | quality.spec | Fail, then fixed | Pending | axe on every journey page. The only finding was `/members/foundations/`, the owner-only component sheet: it returns an empty 404 to members and is not a journey page, so it has been removed from the list. The calculator frames are excluded because they are Stage 1 pages with their own checks. |
-| TC-NFR2-04-AS-02 | quality.spec | Pass | Pending | Keyboard-only registration (join, confirm, agreements, goals), then the dashboard and the diary. WebKit leaves links out of the Tab order (Option+Tab), so there links are focused directly and opened with Enter. |
+| TC-NFR2-04-AS-01 | quality.spec | Pending | Pending | axe on every journey page (16 open pages, 26 member screens). The first run found `/members/foundations/` (the owner-only component sheet) answering members with an empty 404 that had no title and no language. It now answers with a proper "Page not found" page. The calculator frames are excluded because they are Stage 1 pages with their own checks. |
+| TC-NFR2-04-AS-02 | quality.spec | Pass | Pending | Keyboard-only registration: join, confirm, then sign in by keyboard (confirming never signs anyone in), agreements and goals. Then the dashboard and the diary. WebKit leaves links out of the Tab order (Option+Tab), so there links are focused directly and opened with Enter. |
 | TC-NFR2-05-AS-01 | quality.spec | Pass | Pending | Chromium uses DevTools network emulation. WebKit holds back each response by the 150 ms latency plus its size at 1.6 Mbps. |
 | TC-NFR2-08-AS-02 | quality.spec | Pass | Pending | Banner, switch, Exit preview, and another member unaffected by the preview. |
 | TC-NFR2-09-AS-01 | quality.spec | Pass | Pending | Sign-in through wp_authenticate, scope to /app/ routes, one key per installation, 90-day expiry, withdrawal, revocation on password change, two-step and the sign-in pause. |

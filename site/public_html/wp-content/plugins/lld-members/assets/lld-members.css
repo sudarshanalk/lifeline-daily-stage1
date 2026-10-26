@@ -138,8 +138,13 @@ input[type="text"], input[type="email"], input[type="password"], input[type="num
   background: #fff;
 }
 
+/* NFR2-03: no form control may push a 360 px screen sideways. WebKit gives file, date and time inputs a wide
+   intrinsic size, and a flex child will not shrink below it unless min-width is 0. */
+input, select, textarea, button { max-width: 100%; min-width: 0; }
+input[type="file"], input[type="date"], input[type="time"] { width: 100%; }
+
 .lld-password-row { display: flex; gap: 8px; align-items: center; }
-.lld-password-row input { flex: 1; }
+.lld-password-row input { flex: 1; min-width: 0; }
 .lld-eye { flex: 0 0 auto; }
 
 .lld-error { color: var(--lld-danger); font-size: 14px; }

@@ -321,7 +321,14 @@ class LLD_Members_Screens {
 	 */
 	private static function foundations() {
 		if ( lld_members_is_production() || ! current_user_can( 'manage_options' ) ) {
-			status_header( 404 );
+			lld_members_layout(
+				array(
+					'title'     => 'Page not found',
+					'main'      => '<h1>Page not found</h1><p><a href="' . esc_url( home_url( '/members/home/' ) ) . '">Go to Today</a></p>',
+					'status'    => 404,
+					'signed_in' => is_user_logged_in(),
+				)
+			);
 			exit;
 		}
 		$main  = '<h1>Foundations</h1>';
