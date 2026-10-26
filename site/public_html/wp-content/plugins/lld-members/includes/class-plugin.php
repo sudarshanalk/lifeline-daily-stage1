@@ -35,12 +35,19 @@ class LLD_Members_Plugin {
 		add_filter( 'wp_mail_from_name', array( 'LLD_Members_Mail', 'from_name' ) );
 		add_filter( 'authenticate', array( 'LLD_Members_Auth', 'block_when_closed' ), 1, 1 );
 		add_filter( 'authenticate', array( 'LLD_Members_Auth', 'enforce_lock' ), 30, 3 );
+		add_filter( 'authenticate', array( 'LLD_Members_Auth', 'require_confirmed' ), 40, 1 );
+		add_action( 'login_form_lostpassword', array( 'LLD_Members_Auth', 'lost_password_page' ) );
+		add_action( 'login_form_retrievepassword', array( 'LLD_Members_Auth', 'lost_password_page' ) );
+		add_filter( 'allow_password_reset', array( 'LLD_Members_Auth', 'allow_password_reset' ), 10, 2 );
+		add_filter( 'lostpassword_url', array( 'LLD_Members_Auth', 'lost_password_url' ) );
+		add_filter( 'lostpassword_redirect', array( 'LLD_Members_Auth', 'lost_password_redirect' ) );
 		add_filter( 'authenticate', array( 'LLD_Members_Auth', 'require_code' ), 99, 3 );
 		add_filter( 'wp_is_application_passwords_available_for_user', array( 'LLD_Members_Auth', 'application_passwords' ), 10, 2 );
 		add_action( 'wp_login_failed', array( 'LLD_Members_Auth', 'redirect_wp_login' ), 10, 2 );
 		add_filter( 'auth_cookie_expiration', array( 'LLD_Members_Auth', 'cookie_expiration' ), 10, 3 );
 		add_action( 'lld_members_daily', array( 'LLD_Members_Erasure', 'email_new_lines' ) );
 		add_action( 'lld_members_daily', array( 'LLD_Members_Privacy', 'sweep' ) );
+		add_action( 'lld_members_sweep_downloads', array( 'LLD_Members_Privacy', 'sweep_downloads' ), 10, 0 );
 		if ( ! wp_next_scheduled( 'lld_members_daily' ) ) {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, 'daily', 'lld_members_daily' );
 		}
@@ -104,6 +111,10 @@ class LLD_Members_Plugin {
 			return $result;
 		}
 		$route = $request->get_route();
+		// The restore procedure's test helpers (ci and local only, with the test secret) still run.
+		if ( is_string( $route ) && 0 === strpos( $route, '/lld-members/v1/test/' ) && lld_members_test_request_allowed() ) {
+			return $result;
+		}
 		if ( is_string( $route ) && 0 === strpos( $route, '/lld-members/' ) ) {
 			return new WP_Error( 'lld_closed', 'Lifeline Daily is closed', array( 'status' => 503 ) );
 		}

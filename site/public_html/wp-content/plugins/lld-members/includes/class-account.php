@@ -225,9 +225,8 @@ class LLD_Members_Account {
 			if ( '' === $text ) {
 				$ok = 1;
 			} else {
-				$theme = preg_replace( '/\S+@\S+/', '', $text );
-				$theme = preg_replace( '/\d{6,}/', '', (string) $theme );
-				$theme = sanitize_text_field( wp_trim_words( (string) $theme, 3, '' ) );
+				// The text is health data and stays encrypted (S3). No words of it are copied into
+				// the theme column; the owner's monthly grouping sets themes, never this request.
 				$table = LLD_Members_Schema::table( 'something_else' );
 				$wpdb->insert(
 					$table,
@@ -235,7 +234,7 @@ class LLD_Members_Account {
 						'member_id'       => $member_id,
 						'written_at'      => $now,
 						'text_ciphertext' => LLD_Members_Crypto::encrypt( 'pending', 'something_else:0' ),
-						'theme'           => $theme,
+						'theme'           => null,
 					)
 				);
 				$else_id = (int) $wpdb->insert_id;
@@ -324,7 +323,9 @@ class LLD_Members_Account {
 			if ( is_wp_error( $result ) ) {
 				$error = $result->get_error_message();
 			} else {
-				wp_safe_redirect( home_url( '/members/confirm/?email=' . rawurlencode( $result ) ) );
+				$sent = bin2hex( random_bytes( 12 ) );
+				set_transient( 'lld_sent_' . $sent, $result, DAY_IN_SECONDS );
+				wp_safe_redirect( home_url( '/members/confirm/?sent=' . $sent ) );
 				exit;
 			}
 		}
@@ -363,10 +364,9 @@ class LLD_Members_Account {
 		if ( ! is_email( $email ) || email_exists( $email ) ) {
 			return new WP_Error( 'lld_email', 'That email is already registered. Sign in.' );
 		}
-		$login   = sanitize_user( strstr( $email, '@', true ), true );
 		$user_id = wp_insert_user(
 			array(
-				'user_login' => $login ? $login : 'member',
+				'user_login' => self::unique_login( $email ),
 				'user_pass'  => $pass,
 				'user_email' => $email,
 				'first_name' => $first,
@@ -400,61 +400,107 @@ class LLD_Members_Account {
 		return $email;
 	}
 
+	/**
+	 * SCR-03. The link confirms the email once, while it is unconfirmed. It never signs anyone in:
+	 * the member signs in with their password afterwards.
+	 */
+	/**
+	 * A WordPress login nobody else has. Members sign in by email; the login is never shown.
+	 * Two emails that share the part before the @ get different logins.
+	 *
+	 * @param string $email Email.
+	 */
+	public static function unique_login( $email ) {
+		$base = sanitize_user( (string) strstr( (string) $email, '@', true ), true );
+		$base = substr( '' !== $base ? $base : 'member', 0, 50 );
+		$login = $base;
+		for ( $n = 2; username_exists( $login ) || email_exists( $login ); ++$n ) {
+			$login = $n < 20 ? $base . '-' . $n : $base . '-' . strtolower( wp_generate_password( 8, false, false ) );
+		}
+		return $login;
+	}
+
 	private static function confirm() {
-		$token  = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
-		$email  = isset( $_REQUEST['email'] ) ? sanitize_email( wp_unslash( $_REQUEST['email'] ) ) : '';
+		$token = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
+		$sent  = isset( $_GET['sent'] ) ? sanitize_key( wp_unslash( $_GET['sent'] ) ) : '';
+		$email = '';
+		if ( '' !== $sent ) {
+			$stored = get_transient( 'lld_sent_' . $sent );
+			$email  = is_string( $stored ) ? $stored : '';
+		}
 		if ( isset( $_POST['lld_email'] ) ) {
 			$email = sanitize_email( wp_unslash( $_POST['lld_email'] ) );
 		}
 		$notice = '';
 		$error  = '';
 		if ( '' !== $token ) {
-			$result = self::consume_link( $token, 'email_confirm' );
+			$result = self::confirm_email( $token );
 			if ( is_wp_error( $result ) ) {
 				$error = $result->get_error_message();
 			} else {
-				global $wpdb;
-				$wpdb->update(
-					LLD_Members_Schema::table( 'member' ),
-					array( 'email_confirmed_at' => lld_members_now_mysql( (int) $result['member_id'] ) ),
-					array( 'id' => (int) $result['member_id'] ),
-					array( '%s' ),
-					array( '%d' )
-				);
-				$confirmed = self::member_row( (int) $result['member_id'] );
-				if ( $confirmed ) {
-					LLD_Members_Auth::start_session( (int) $confirmed->user_id, (int) $confirmed->id, false );
-				}
 				$notice = 'confirmed';
 			}
 		}
 		if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['lld_resend_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_resend_nonce'] ) ), 'lld_resend_confirm' ) ) {
-			$again = self::resend_confirm( $email );
-			$error = is_wp_error( $again ) ? $again->get_error_message() : '';
+			$again  = self::resend_confirm( $email );
+			$error  = is_wp_error( $again ) ? $again->get_error_message() : '';
 			$notice = is_wp_error( $again ) ? '' : 'resent';
 		}
 		if ( 'confirmed' === $notice ) {
-			$main  = '<h1>Email confirmed</h1><p>Your email is confirmed.</p>';
-			$main .= lld_button( array( 'label' => 'Continue', 'href' => home_url( '/members/agreements/' ) ) );
+			$next  = home_url( '/members/sign-in/?redirect_to=' . rawurlencode( home_url( '/members/agreements/' ) ) );
+			$main  = '<h1>Email confirmed</h1><p>Your email is confirmed. Sign in with your password to continue.</p>';
+			$main .= lld_button( array( 'label' => 'Continue', 'href' => $next ) );
 			self::layout( 'Email confirmed', $main, false );
 			return;
 		}
-		$main  = '<h1>Check your email</h1>';
-		$main .= '<p>We\'ve sent a link to ' . esc_html( $email ) . '.</p>';
+		$main = '<h1>Check your email</h1>';
+		if ( '' !== $email ) {
+			$main .= '<p>We\'ve sent a link to ' . esc_html( $email ) . '.</p>';
+		}
 		$main .= self::error_box( $error );
 		if ( 'resent' === $notice ) {
-			$main .= '<p class="lld-info">We sent a new link.</p>';
+			$main .= '<p class="lld-info">If this email is waiting to be confirmed, we\'ve sent a new link.</p>';
 		}
-		$main .= '<form method="post">';
+		$main .= '<form method="post" class="lld-form">';
 		$main .= wp_nonce_field( 'lld_resend_confirm', 'lld_resend_nonce', true, false );
-		$main .= '<input type="hidden" name="lld_email" value="' . esc_attr( $email ) . '">';
+		if ( '' !== $email ) {
+			$main .= '<input type="hidden" name="lld_email" value="' . esc_attr( $email ) . '">';
+		} else {
+			$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email' ) );
+		}
 		$main .= '<button type="submit" class="lld-text-button">Resend</button></form>';
 		self::layout( 'Check your email', $main, false );
 	}
 
+	/**
+	 * Use an email-confirmation link. Only an unconfirmed account can be confirmed, and no session is opened.
+	 *
+	 * @param string $token Token from the link.
+	 * @return true|WP_Error
+	 */
+	private static function confirm_email( $token ) {
+		$result = self::consume_link( $token, 'email_confirm' );
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+		global $wpdb;
+		$member_id = (int) $result['member_id'];
+		$changed   = $wpdb->query(
+			$wpdb->prepare(
+				'UPDATE ' . LLD_Members_Schema::table( 'member' ) . ' SET email_confirmed_at = %s WHERE id = %d AND email_confirmed_at IS NULL',
+				lld_members_now_mysql( $member_id ),
+				$member_id
+			)
+		);
+		if ( 1 !== (int) $changed ) {
+			return new WP_Error( 'lld_link', 'Already confirmed — sign in' );
+		}
+		return true;
+	}
+
 	private static function reset() {
 		$error  = '';
-		$notice = '';
+		$notice = isset( $_GET['sent'] ) ? 'If an account exists, we\'ve sent a link' : '';
 		$token  = isset( $_GET['token'] ) ? sanitize_text_field( wp_unslash( $_GET['token'] ) ) : '';
 		if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['lld_reset_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_reset_nonce'] ) ), 'lld_reset' ) ) {
 			$email = isset( $_POST['lld_email'] ) ? sanitize_email( wp_unslash( $_POST['lld_email'] ) ) : '';
@@ -550,6 +596,11 @@ class LLD_Members_Account {
 		$error     = '';
 		if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['lld_settings_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_settings_nonce'] ) ), 'lld_settings' ) ) {
 			$result = self::save_profile( $row );
+			if ( 'withdraw' === $result ) {
+				// Switching health consent off first shows what will be deleted (SCR-36).
+				wp_safe_redirect( home_url( '/members/withdraw/' ) );
+				exit;
+			}
 			if ( is_wp_error( $result ) ) {
 				$error = $result->get_error_message();
 			} else {
@@ -606,7 +657,7 @@ class LLD_Members_Account {
 		} else {
 			$main .= lld_health_consent_notice();
 		}
-		$main .= '<p>Health consent: ' . ( self::has_consent( $member_id, 'health' ) ? 'on' : 'off' ) . '. <a href="' . esc_url( home_url( '/members/withdraw/' ) ) . '">Withdraw health consent</a></p>';
+		$main .= self::consent_fields( $member_id );
 		$history = $wpdb->get_results( $wpdb->prepare( 'SELECT consent_type, change_kind, document_version, occurred_at FROM ' . LLD_Members_Schema::table( 'consent' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ) );
 		$main   .= '<ul class="lld-consent-history">';
 		foreach ( $history as $line ) {
@@ -621,8 +672,57 @@ class LLD_Members_Account {
 	}
 
 	/**
+	 * SCR-30 consents: each with its date. Health information and marketing emails are switches
+	 * that can be changed at any time (FR2-03). Terms and privacy are needed for the account.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function consent_fields( $member_id ) {
+		$html  = '<fieldset class="lld-card"><legend>Consents</legend>';
+		$html .= '<input type="hidden" name="lld_consents_shown" value="1">';
+		$fixed = array(
+			'terms'   => 'Terms of use',
+			'privacy' => 'Privacy policy',
+			'sale'    => 'Terms of sale',
+		);
+		foreach ( $fixed as $type => $label ) {
+			$line = self::latest_consent( $member_id, $type );
+			if ( ! $line && 'sale' === $type ) {
+				continue;
+			}
+			$state = $line && 'given' === $line->change_kind ? 'Accepted' . ( '' !== (string) $line->document_version ? ' (' . $line->document_version . ')' : '' ) . ' on ' . substr( (string) $line->occurred_at, 0, 10 ) : 'Not accepted';
+			$html .= '<p>' . esc_html( $label . ': ' . $state ) . '</p>';
+		}
+		$html  .= '<p class="lld-hint">These are needed for your account. To end them, delete your account.</p>';
+		$switch = array(
+			'health'    => 'Store my health information',
+			'marketing' => 'Marketing emails',
+		);
+		foreach ( $switch as $type => $label ) {
+			$line  = self::latest_consent( $member_id, $type );
+			$on    = $line && 'given' === $line->change_kind;
+			$id    = 'lld_consent_' . $type;
+			$since = $line ? ( $on ? 'On' : 'Off' ) . ' since ' . substr( (string) $line->occurred_at, 0, 10 ) : 'Off';
+			$html .= '<label class="lld-check"><input type="checkbox" id="' . esc_attr( $id ) . '" name="' . esc_attr( $id ) . '" value="1" aria-describedby="' . esc_attr( $id . '_date' ) . '"' . ( $on ? ' checked' : '' ) . '> ' . esc_html( $label ) . '</label>';
+			$html .= '<p class="lld-hint" id="' . esc_attr( $id . '_date' ) . '">' . esc_html( $since ) . '</p>';
+		}
+		$html .= '<p class="lld-hint">Switching health information off first shows what will be deleted. <a href="' . esc_url( home_url( '/members/withdraw/' ) ) . '">Withdraw health consent</a></p>';
+		return $html . '</fieldset>';
+	}
+
+	/**
+	 * @param int    $member_id Member number.
+	 * @param string $type      Consent type.
+	 * @return object|null Latest consent line of this type.
+	 */
+	private static function latest_consent( $member_id, $type ) {
+		global $wpdb;
+		return $wpdb->get_row( $wpdb->prepare( 'SELECT change_kind, document_version, occurred_at FROM ' . LLD_Members_Schema::table( 'consent' ) . ' WHERE member_id = %d AND consent_type = %s ORDER BY id DESC LIMIT 1', $member_id, $type ) );
+	}
+
+	/**
 	 * @param object $row Member row.
-	 * @return true|WP_Error
+	 * @return true|WP_Error|string "withdraw" when health consent was switched off and the warning comes next.
 	 */
 	private static function save_profile( $row ) {
 		$age = isset( $_POST['lld_age'] ) ? (int) $_POST['lld_age'] : (int) $row->age;
@@ -727,6 +827,19 @@ class LLD_Members_Account {
 				);
 			}
 		}
+		if ( ! empty( $_POST['lld_consents_shown'] ) ) {
+			$marketing = ! empty( $_POST['lld_consent_marketing'] );
+			if ( $marketing !== self::has_consent( $member_id, 'marketing' ) ) {
+				self::add_consent( $member_id, 'marketing', $marketing ? 'given' : 'withdrawn', '' );
+			}
+			$health = ! empty( $_POST['lld_consent_health'] );
+			$had    = self::has_consent( $member_id, 'health' );
+			if ( $health && ! $had ) {
+				self::add_consent( $member_id, 'health', 'given', '' );
+			} elseif ( ! $health && $had ) {
+				return 'withdraw';
+			}
+		}
 		return true;
 	}
 
@@ -794,7 +907,8 @@ class LLD_Members_Account {
 				wp_logout();
 				LLD_Members_Erasure::delete_account( $member_id, true );
 				if ( is_wp_error( $cancel ) ) {
-					LLD_Members_Mail::send_cancel_alert( (int) $row->id );
+					$refs = (array) $cancel->get_error_data();
+					LLD_Members_Mail::send_cancel_alert( (int) $row->id, isset( $refs['subscription'] ) ? (string) $refs['subscription'] : '', isset( $refs['customer'] ) ? (string) $refs['customer'] : '' );
 					$main = '<h1>Account closed</h1><p>Your account is closed. We\'re finishing cancelling your subscription with our payment provider and will email you when it\'s done.</p>';
 				} else {
 					$main = '<h1>Account closed</h1><p>Your account is closed. Your data will be removed within 24 hours.</p>';
@@ -847,6 +961,15 @@ class LLD_Members_Account {
 	}
 
 	/**
+	 * Send a members reset link. Used by WordPress's lost-password page too. Nothing is sent for an unknown email.
+	 *
+	 * @param string $email Email.
+	 */
+	public static function send_reset_link( $email ) {
+		self::request_reset( sanitize_email( $email ) );
+	}
+
+	/**
 	 * @param string $email Email.
 	 */
 	private static function request_reset( $email ) {
@@ -872,15 +995,18 @@ class LLD_Members_Account {
 		if ( is_wp_error( $result ) ) {
 			return $result;
 		}
-		$row = self::member_row( (int) $result['member_id'] );
-		if ( ! $row ) {
+		$row     = self::member_row( (int) $result['member_id'] );
+		$user_id = $row ? (int) $row->user_id : (int) $result['user_id'];
+		if ( $user_id < 1 || ! get_userdata( $user_id ) ) {
 			return new WP_Error( 'lld_reset', 'That link has expired.' );
 		}
-		wp_set_password( $pass, (int) $row->user_id );
-		$tokens = WP_Session_Tokens::get_instance( (int) $row->user_id );
+		wp_set_password( $pass, $user_id );
+		$tokens = WP_Session_Tokens::get_instance( $user_id );
 		$tokens->destroy_all();
-		global $wpdb;
-		$wpdb->query( $wpdb->prepare( 'UPDATE ' . LLD_Members_Schema::table( 'session' ) . ' SET ended_at = %s WHERE member_id = %d AND ended_at IS NULL', gmdate( 'Y-m-d H:i:s' ), $row->id ) );
+		if ( $row ) {
+			global $wpdb;
+			$wpdb->query( $wpdb->prepare( 'UPDATE ' . LLD_Members_Schema::table( 'session' ) . ' SET ended_at = %s WHERE member_id = %d AND ended_at IS NULL', gmdate( 'Y-m-d H:i:s' ), $row->id ) );
+		}
 		return true;
 	}
 
@@ -889,18 +1015,26 @@ class LLD_Members_Account {
 	 * @return true|WP_Error
 	 */
 	private static function resend_confirm( $email ) {
-		$user = get_user_by( 'email', $email );
-		if ( ! $user ) {
+		// The reply is the same for every address: registered or not, confirmed or not.
+		// The limit counts the typed address, so reaching it says nothing about an account either.
+		$key   = 'lld_resend_' . substr( hash( 'sha256', strtolower( trim( (string) $email ) ) ), 0, 40 );
+		$count = (int) get_transient( $key );
+		if ( $count >= 3 ) {
 			return new WP_Error( 'lld_confirm', 'Please wait a few minutes' );
+		}
+		set_transient( $key, $count + 1, 15 * MINUTE_IN_SECONDS );
+		$user = is_email( $email ) ? get_user_by( 'email', $email ) : false;
+		if ( ! $user ) {
+			return true;
 		}
 		global $wpdb;
-		$table = LLD_Members_Schema::table( 'security_code' );
-		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE user_id = %d AND kind = %s ORDER BY id DESC LIMIT 1", $user->ID, 'email_confirm' ) );
-		if ( $row && (int) $row->resend_count >= 3 ) {
-			return new WP_Error( 'lld_confirm', 'Please wait a few minutes' );
+		$member = $wpdb->get_row( $wpdb->prepare( 'SELECT id, email_confirmed_at FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE user_id = %d', $user->ID ) );
+		if ( ! $member || ! empty( $member->email_confirmed_at ) ) {
+			return true;
 		}
-		$member_id = $row ? (int) $row->member_id : 0;
-		self::issue_link( $user, $member_id, 'email_confirm', 24, '', $row ? (int) $row->resend_count + 1 : 1 );
+		$table = LLD_Members_Schema::table( 'security_code' );
+		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT resend_count FROM {$table} WHERE user_id = %d AND kind = %s ORDER BY id DESC LIMIT 1", $user->ID, 'email_confirm' ) );
+		self::issue_link( $user, (int) $member->id, 'email_confirm', 24, '', $row ? (int) $row->resend_count + 1 : 1 );
 		return true;
 	}
 
@@ -986,6 +1120,7 @@ class LLD_Members_Account {
 		}
 		return array(
 			'member_id' => (int) $row->member_id,
+			'user_id'   => (int) $row->user_id,
 			'new_email' => (string) $row->new_email,
 		);
 	}
@@ -1040,7 +1175,7 @@ class LLD_Members_Account {
 		$html  = '<fieldset class="lld-card"><legend>Email preferences</legend>';
 		$html .= '<label class="lld-check"><input type="checkbox" name="lld_welcome" value="1"' . ( $row && '1' === (string) $row->welcome ? ' checked' : '' ) . '> Welcome</label>';
 		$html .= '<label class="lld-check"><input type="checkbox" name="lld_reminder" value="1"' . ( $on ? ' checked' : '' ) . '> Daily reminder</label>';
-		$html .= lld_field( array( 'id' => 'lld_reminder_time', 'name' => 'lld_reminder_time', 'label' => 'Reminder time', 'value' => $row ? (string) $row->reminder_time : '07:30' ) );
+		$html .= lld_field( array( 'id' => 'lld_reminder_time', 'name' => 'lld_reminder_time', 'label' => 'Reminder time', 'value' => $row ? substr( (string) $row->reminder_time, 0, 5 ) : '07:30' ) );
 		$html .= '<label class="lld-check"><input type="checkbox" name="lld_weekly" value="1"' . ( $row && '1' === (string) $row->weekly_review ? ' checked' : '' ) . '> Weekly review</label>';
 		$html .= '<label class="lld-check"><input type="checkbox" name="lld_end" value="1"' . ( $row && '1' === (string) $row->end_of_track ? ' checked' : '' ) . '> End of track</label>';
 		$html .= '<label class="lld-check"><input type="checkbox" name="lld_nudges" value="1"' . ( $row && '1' === (string) $row->nudges ? ' checked' : '' ) . '> Nudges</label>';
@@ -1079,71 +1214,166 @@ class LLD_Members_Account {
 		if ( ! class_exists( 'ZipArchive' ) ) {
 			return new WP_Error( 'lld_zip', 'Try again' );
 		}
-		global $wpdb;
-		$dir = lld_members_private_dir() . '/downloads';
-		if ( ! is_dir( $dir ) ) {
-			mkdir( $dir, 0700, true );
+		$member_id = (int) $member_id;
+		$row       = self::member_row( $member_id );
+		if ( ! $row ) {
+			return new WP_Error( 'lld_zip', 'Try again' );
 		}
+		LLD_Members_Privacy::sweep_downloads();
+		$dir = LLD_Members_Privacy::download_dir();
+		if ( ! is_dir( $dir ) && ! mkdir( $dir, 0700, true ) ) {
+			return new WP_Error( 'lld_zip', 'Try again' );
+		}
+		// The member number in the name lets erasure remove a download nobody collected.
 		$token = bin2hex( random_bytes( 16 ) );
-		$path  = $dir . '/' . $token . '.zip';
+		$path  = $dir . '/m' . $member_id . '-' . $token . '.zip';
 		$zip   = new ZipArchive();
 		if ( true !== $zip->open( $path, ZipArchive::CREATE ) ) {
 			return new WP_Error( 'lld_zip', 'Try again' );
 		}
-		$data = array();
-		foreach ( LLD_Members_Schema::all_suffixes() as $suffix ) {
-			if ( in_array( $suffix, array( 'security_code', 'sign_in_lock', 'session', 'app_key', 'error_log' ), true ) ) {
-				continue;
-			}
-			$table   = LLD_Members_Schema::table( $suffix );
-			$columns = $wpdb->get_col( "SHOW COLUMNS FROM {$table}", 0 );
-			$column  = null;
-			foreach ( array( 'member_id', 'referrer_member_id', 'recipient_member_id', 'member_number' ) as $candidate ) {
-				if ( in_array( $candidate, $columns, true ) ) {
-					$column = $candidate;
-					break;
-				}
-			}
-			if ( ! $column ) {
-				continue;
-			}
-			$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM {$table} WHERE {$column} = %d", $member_id ), ARRAY_A );
-			if ( 'something_else' === $suffix && $rows ) {
-				foreach ( $rows as $index => $record ) {
-					try {
-						$rows[ $index ]['text'] = LLD_Members_Crypto::decrypt( (string) $record['text_ciphertext'], 'something_else:' . $record['id'] );
-					} catch ( RuntimeException $e ) {
-						$rows[ $index ]['text'] = '';
-					}
-					unset( $rows[ $index ]['text_ciphertext'] );
-				}
-			}
-			if ( 'diary_meal' === $suffix && $rows ) {
-				foreach ( $rows as $index => $record ) {
-					if ( ! empty( $record['description_ciphertext'] ) ) {
-						try {
-							$rows[ $index ]['description'] = LLD_Members_Crypto::decrypt( (string) $record['description_ciphertext'], 'diary_meal:' . $record['id'] );
-						} catch ( RuntimeException $e ) {
-							$rows[ $index ]['description'] = '';
-						}
-					}
-					unset( $rows[ $index ]['description_ciphertext'] );
-				}
-			}
-			$data[ $suffix ] = $rows ? $rows : array();
+		$tables = LLD_Members_Privacy::member_rows( $member_id, (string) $row->email, LLD_Members_Privacy::download_tables() );
+		foreach ( $tables as $suffix => $rows ) {
+			$tables[ $suffix ] = self::readable_rows( $suffix, $rows );
 		}
-		$zip->addFromString( 'summary.html', '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Your Lifeline Daily data</title></head><body><h1>Your data</h1><p>This file was made when you asked for it.</p></body></html>' );
-		$zip->addFromString( 'data.json', wp_json_encode( $data ) );
-		$row = self::member_row( $member_id );
-		if ( $row && $row->photo_path ) {
-			$file = LLD_Members_Photos::resolve( $row->photo_path );
-			if ( $file ) {
-				$zip->addFile( $file, 'photos/' . basename( $file ) );
-			}
+		$photos = array();
+		foreach ( LLD_Members_Photos::member_files( $member_id ) as $file ) {
+			$name = 'photos/' . basename( $file );
+			$zip->addFile( $file, $name );
+			$photos[] = $name;
 		}
-		$zip->close();
-		set_transient( 'lld_dl_' . $token, array( 'path' => $path, 'member_id' => $member_id ), 10 * MINUTE_IN_SECONDS );
+		$made = gmdate( 'Y-m-d H:i:s' );
+		$data = array(
+			'format'        => 'lifeline-daily-member-data',
+			'version'       => 1,
+			'made_at_utc'   => $made,
+			'member_number' => $member_id,
+			'photos'        => $photos,
+			'tables'        => $tables,
+		);
+		$zip->addFromString( 'summary.html', self::download_summary( $row, $tables, $photos, $made ) );
+		$zip->addFromString( 'data.json', (string) wp_json_encode( $data, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES ) );
+		if ( ! $zip->close() ) {
+			if ( file_exists( $path ) ) {
+				unlink( $path );
+			}
+			return new WP_Error( 'lld_zip', 'Try again' );
+		}
+		set_transient( 'lld_dl_' . $token, array( 'path' => $path, 'member_id' => $member_id ), LLD_Members_Privacy::DOWNLOAD_MINUTES * MINUTE_IN_SECONDS );
+		wp_schedule_single_event( time() + LLD_Members_Privacy::DOWNLOAD_MINUTES * MINUTE_IN_SECONDS + 60, 'lld_members_sweep_downloads', array( $token ) );
 		return $token;
+	}
+
+	/**
+	 * Decrypt the encrypted text for the download, and leave out the ciphertext.
+	 *
+	 * @param string $suffix Table suffix.
+	 * @param array  $rows   Rows.
+	 * @return array
+	 */
+	private static function readable_rows( $suffix, $rows ) {
+		$encrypted = array(
+			'something_else' => array( 'text_ciphertext', 'text' ),
+			'diary_meal'     => array( 'description_ciphertext', 'description' ),
+		);
+		if ( ! isset( $encrypted[ $suffix ] ) ) {
+			return $rows;
+		}
+		list( $column, $plain ) = $encrypted[ $suffix ];
+		foreach ( $rows as $index => $record ) {
+			$text = '';
+			if ( isset( $record[ $column ] ) && is_string( $record[ $column ] ) && '' !== $record[ $column ] ) {
+				try {
+					$text = LLD_Members_Crypto::decrypt( $record[ $column ], $suffix . ':' . $record['id'] );
+				} catch ( RuntimeException $e ) {
+					$text = '';
+				}
+			}
+			unset( $rows[ $index ][ $column ] );
+			$rows[ $index ][ $plain ] = $text;
+		}
+		return $rows;
+	}
+
+	/**
+	 * The readable summary in the download: a short web page, section by section.
+	 *
+	 * @param object $row    Member row.
+	 * @param array  $tables Rows by table.
+	 * @param array  $photos Photo names in the ZIP.
+	 * @param string $made   When it was made, UTC.
+	 */
+	private static function download_summary( $row, $tables, $photos, $made ) {
+		$labels = array(
+			'member'            => 'Your account',
+			'email_pref'        => 'Email preferences',
+			'consent'           => 'Consent history',
+			'goal_choice'       => 'Goals',
+			'something_else'    => '"Something else" requests',
+			'health_profile'    => 'Health profile',
+			'calculator_result' => 'Saved calculator results',
+			'enrolment'         => 'Tracks',
+			'enrolment_period'  => 'Track periods',
+			'challenge'         => 'Monthly challenges',
+			'workout'           => 'Workout plans',
+			'workout_change'    => 'Workout level changes',
+			'result'            => 'Activities done',
+			'check_in'          => 'Check-ins',
+			'reflection'        => 'Reflections',
+			'weekly_plan'       => 'Weekly plans',
+			'weekly_review'     => 'Weekly reviews',
+			'diary_meal'        => 'Food diary meals',
+			'diary_day'         => 'Food diary days',
+			'meal_plan'         => 'Meal plans',
+			'suggestion'        => 'Suggestions',
+			'badge'             => 'Badges',
+			'subscription'      => 'Subscription',
+			'order'             => 'Payments and refunds',
+			'referral'          => 'Referrals',
+			'reward'            => 'Referral rewards',
+			'contact_request'   => 'Email-list requests',
+			'support'           => 'Support messages',
+			'survey'            => 'Surveys and testimonials',
+		);
+		$name  = trim( (string) $row->first_name . ' ' . (string) $row->last_name );
+		$html  = '<!DOCTYPE html><html lang="en-GB"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Your Lifeline Daily data</title>';
+		$html .= '<style>body{font-family:system-ui,sans-serif;max-width:60rem;margin:1rem auto;padding:0 1rem;line-height:1.5}table{border-collapse:collapse;margin:0 0 1rem;font-size:.9rem}th,td{border:1px solid #999;padding:.25rem .5rem;text-align:left;vertical-align:top}</style></head><body>';
+		$html .= '<h1>Your data</h1>';
+		$html .= '<p>This is everything Lifeline Daily holds for ' . esc_html( '' !== $name ? $name : (string) $row->email ) . ', made on ' . esc_html( $made ) . ' UTC when you asked for it. ';
+		$html .= 'The same records are in data.json (format version 1), and your photos are in the photos folder. Passwords and security keys are never included.</p>';
+		$html .= '<h2>Photos</h2>';
+		if ( $photos ) {
+			$html .= '<ul>';
+			foreach ( $photos as $photo ) {
+				$html .= '<li>' . esc_html( $photo ) . '</li>';
+			}
+			$html .= '</ul>';
+		} else {
+			$html .= '<p>No photos.</p>';
+		}
+		foreach ( $tables as $suffix => $rows ) {
+			$label = isset( $labels[ $suffix ] ) ? $labels[ $suffix ] : $suffix;
+			$html .= '<h2>' . esc_html( $label ) . '</h2>';
+			if ( ! $rows ) {
+				$html .= '<p>Nothing recorded.</p>';
+				continue;
+			}
+			$html .= '<p>' . count( $rows ) . ' ' . ( 1 === count( $rows ) ? 'record' : 'records' ) . '.</p><table><thead><tr>';
+			$columns = array_keys( (array) reset( $rows ) );
+			foreach ( $columns as $column ) {
+				$html .= '<th scope="col">' . esc_html( ucfirst( str_replace( '_', ' ', (string) $column ) ) ) . '</th>';
+			}
+			$html .= '</tr></thead><tbody>';
+			foreach ( $rows as $record ) {
+				$html .= '<tr>';
+				foreach ( $columns as $column ) {
+					$value = isset( $record[ $column ] ) ? $record[ $column ] : '';
+					$html .= '<td>' . esc_html( is_scalar( $value ) ? (string) $value : (string) wp_json_encode( $value ) ) . '</td>';
+				}
+				$html .= '</tr>';
+			}
+			$html .= '</tbody></table>';
+		}
+		return $html . '</body></html>';
 	}
 
 	/**
