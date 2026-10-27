@@ -1,0 +1,43 @@
+# Oracle runner (docs/04 §1, §7; oracle-guard), approved by the owner on 27 Oct 2026: `expected` values in fixtures/** change
+# only in a commit by the oracle-runner bot or one signed by the clinical reviewer. This workflow is that bot: it runs one
+# oracle on a pull-request branch with the committed oracle code and inputs, and commits exactly what the oracle wrote, as
+# github-actions[bot], with the subject "ORC-0n: …" that oracle-guard accepts. Nobody types expected values by hand.
+# Never runs on staging or production. Start it with `gh workflow run oracle-run.yml -f branch=<branch> -f oracle=05`;
+# a push made with the workflow token does not start the PR checks again, so push any later commit (or re-run) afterwards.
+name: oracle-run
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Pull-request branch to run on (never staging or production)
+        required: true
+      oracle:
+        description: Oracle number, 02 to 05 (ORC-01 needs Docker and runs elsewhere)
+        required: true
+permissions:
+  contents: write
+concurrency:
+  group: oracle-run-${{ inputs.branch }}
+jobs:
+  run:
+    if: inputs.branch != 'staging' && inputs.branch != 'production'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: '${{ inputs.branch }}' }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Run the oracle
+        env: { ORC: '${{ inputs.oracle }}' }
+        run: |
+          case "$ORC" in 02|03|04|05) ;; *) echo "oracle must be 02, 03, 04 or 05"; exit 1;; esac
+          python -I oracles/run.py "$ORC"
+      - name: Commit what the oracle wrote
+        env: { ORC: '${{ inputs.oracle }}', BRANCH: '${{ inputs.branch }}' }
+        run: |
+          git add -A fixtures oracles
+          if git diff --cached --quiet; then echo "oracle output unchanged; nothing to commit"; exit 0; fi
+          git diff --cached --stat
+          git -c user.name='github-actions[bot]' -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+            commit -m "ORC-$ORC: oracle runner output (workflow run $GITHUB_RUN_ID)"
+          git push origin "HEAD:refs/heads/$BRANCH"
