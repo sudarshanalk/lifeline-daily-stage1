@@ -177,7 +177,7 @@ Logs in artefacts are scrubbed by the runner (regex for emails, numeric results,
 | Guard | Mechanism |
 |---|---|
 | Production boundary | No CI job holds a production credential; `fidelity-gate` writes staging `status.json` only and alerts ACT-04 (DEC-08) |
-| Frozen engine | `engine-freeze` job compares SHA-256 of extracted `ENGINE`, `BANDS`, `DIET_MULT`, `PREG_GKG`, `bandFor`, `idrs`, `whtr`, `computeProtein`, renal/emergency branches with manifest `engine_hashes`; fails unless PR references a DEC row with `status: ratified` and `ratify_at: HG-02` |
+| Frozen engine | `engine-freeze` job compares SHA-256 of extracted `ENGINE`, `bandFor`, `idrs`, `whtr`, the emergency branch, and the protein v2 objects `BANDS`, `CEILING`, `WHO_BASE`, `PREG_ADD`, `cutoffs`, `basisWeight`, `computeProtein` (DEC-86) with manifest `engine_hashes`; fails unless PR references a DEC row with `status: ratified` and `ratify_at: HG-02` |
 | Oracle integrity | `oracle-guard` fails any PR that changes `fixtures/**/expected` unless author is the oracle runner bot or commit is signed by the clinical reviewer key |
 | Weakened tests | `assertion-map` job checks that every AS/NEG id in the TC page appears as a test title and that the test file imports the fixture named |
 | Provenance | `provenance-check` compares staged tool hashes with approval records before any deploy job |

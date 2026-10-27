@@ -550,15 +550,18 @@
         "FR1-22"
       ],
       "components": [
-        "CMP-02"
+        "CMP-02",
+        "CMP-04",
+        "CMP-14"
       ],
       "must_not_touch": [
         "BANDS",
-        "DIET_MULT",
-        "PREG_GKG",
-        "computeProtein",
-        "clampMeal",
-        "cutoffs"
+        "CEILING",
+        "WHO_BASE",
+        "PREG_ADD",
+        "cutoffs",
+        "basisWeight",
+        "computeProtein"
       ],
       "use_cases": [
         "UC1-01"
@@ -585,19 +588,14 @@
       ],
       "decisions": [
         "DEC-03",
-        "DEC-44",
-        "DEC-45"
+        "DEC-45",
+        "DEC-86"
       ],
       "human_gate": "HG-02",
       "mutations": [
         "MUT-07"
       ],
-      "known_deviations": {
-        "DEC-44": [
-          "FX-PR-CAP-01",
-          "FX-PR-CAP-02"
-        ]
-      },
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-07/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -644,7 +642,8 @@
       ],
       "decisions": [
         "DEC-03",
-        "DEC-25"
+        "DEC-25",
+        "DEC-86"
       ],
       "human_gate": "HG-02",
       "mutations": [
@@ -671,7 +670,8 @@
         "CMP-02"
       ],
       "must_not_touch": [
-        "pregnancy early return"
+        "pregnancy early return",
+        "clinical stop"
       ],
       "use_cases": [
         "UC1-01"
@@ -691,11 +691,13 @@
       ],
       "decisions": [
         "DEC-03",
-        "DEC-25"
+        "DEC-25",
+        "DEC-86"
       ],
       "human_gate": "HG-02",
       "mutations": [
-        "MUT-03"
+        "MUT-03",
+        "MUT-15"
       ],
       "known_deviations": {},
       "evidence_dir": "evidence/FR1-09/",
@@ -795,7 +797,8 @@
       "decisions": [
         "DEC-09",
         "DEC-25",
-        "DEC-37"
+        "DEC-37",
+        "DEC-87"
       ],
       "human_gate": "HG-02",
       "mutations": [
@@ -1099,7 +1102,8 @@
         "DEC-25",
         "DEC-36",
         "DEC-37",
-        "DEC-43"
+        "DEC-43",
+        "DEC-87"
       ],
       "human_gate": "HG-02",
       "mutations": [],
@@ -2399,8 +2403,8 @@
       "id": "DEC-02",
       "question": "QDiabetes oracle",
       "selected": "CRAN QDiabetes (ORC-01)",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2408,8 +2412,8 @@
       "id": "DEC-03",
       "question": "Protein oracle",
       "selected": "Sealed Python reference (ORC-02)",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2417,8 +2421,8 @@
       "id": "DEC-04",
       "question": "Band thresholds",
       "selected": "5.6/10/20",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2426,8 +2430,8 @@
       "id": "DEC-05",
       "question": "IDRS tiers",
       "selected": "<30 / 30-59 / >=60",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2435,8 +2439,8 @@
       "id": "DEC-06",
       "question": "Secondary indicator",
       "selected": "Waist-to-height ratio 0.5/0.6",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2444,8 +2448,8 @@
       "id": "DEC-07",
       "question": "Townsend",
       "selected": "Fixed 0, disclosed",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2462,8 +2466,8 @@
       "id": "DEC-09",
       "question": "Email during emergency",
       "selected": "Allowed, emergency template without %",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2489,8 +2493,8 @@
       "id": "DEC-12",
       "question": "Five policies",
       "selected": "Privacy, Terms, About, Contact, Medical Disclaimer",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2606,8 +2610,8 @@
       "id": "DEC-25",
       "question": "Copy freeze",
       "selected": "MESSAGES/templates hashed in approvals",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2642,8 +2646,8 @@
       "id": "DEC-29",
       "question": "Diabetes age handling",
       "selected": "Band midpoints",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-20"
     },
@@ -2678,8 +2682,8 @@
       "id": "DEC-33",
       "question": "ORC-01 package source and input mapping",
       "selected": "CRAN Archive 1.0-2 tarball; gdm; fhdm=any; unrounded compare",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-22"
     },
@@ -2714,8 +2718,8 @@
       "id": "DEC-37",
       "question": "Urgent-care guidance non-UK",
       "selected": "999/111 then 1990, 112",
-      "status": "default",
-      "ratified_on": null,
+      "status": "overridden",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-22"
     },
@@ -2777,8 +2781,8 @@
       "id": "DEC-44",
       "question": "Protein cap vs diet multiplier order",
       "selected": "Preserve deployed: cap lo/hi then midpoint",
-      "status": "default",
-      "ratified_on": null,
+      "status": "overridden",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2786,8 +2790,8 @@
       "id": "DEC-45",
       "question": "Protein headline point of band",
       "selected": "Midpoint of winning band",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2804,8 +2808,8 @@
       "id": "DEC-47",
       "question": "Iframe listener location",
       "selected": "In lld-tools plugin; CMP-08 added to FR1-21",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2813,8 +2817,8 @@
       "id": "DEC-48",
       "question": "Provenance refresh set",
       "selected": "approvals/manifests/status/MUT-10 allowed on tool-page branches",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2822,8 +2826,8 @@
       "id": "DEC-49",
       "question": "Harness paths on every branch",
       "selected": "tests, evidence, Makefile, lockfile, registry status",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2831,8 +2835,8 @@
       "id": "DEC-50",
       "question": "TC-FR1-06-AS-03 timing",
       "selected": "Re-run after FR1-04",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2840,8 +2844,8 @@
       "id": "DEC-51",
       "question": "FR1-20 staging evidence",
       "selected": "Record after first deploy",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2849,8 +2853,8 @@
       "id": "DEC-52",
       "question": "TC-NFR1-09-AS-02 strictness",
       "selected": "Strict from NFR1-09 merge",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2858,8 +2862,8 @@
       "id": "DEC-53",
       "question": "ORC-02 scope",
       "selected": "INV rows included, noted",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2867,8 +2871,8 @@
       "id": "DEC-54",
       "question": "CSP frame-src site-wide",
       "selected": "htaccess site-wide; verify admin/embeds on staging",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2876,8 +2880,8 @@
       "id": "DEC-55",
       "question": "PR class for specification-only changes",
       "selected": "SPEC: title class; docs/registry/schemas/copy-fixtures only; test families skipped",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2885,8 +2889,8 @@
       "id": "DEC-56",
       "question": "Provenance refresh set includes copy deck",
       "selected": "approvals/copy.json + copy/inventory.json refreshed by refresh-approvals only",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2894,8 +2898,8 @@
       "id": "DEC-57",
       "question": "component-scope with stacked requirement branches",
       "selected": "exclude files identical to merged-in reviewed req/* parent",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2903,8 +2907,8 @@
       "id": "DEC-58",
       "question": "Platform-specific visual baselines",
       "selected": "Linux CI set is reference; other platforms skip with reason",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2912,8 +2916,8 @@
       "id": "DEC-59",
       "question": "Band screenshots before ORC-01",
       "selected": "FX-DM-QD-71/73 stand in for FX-DM-BAND-01/12",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2921,8 +2925,8 @@
       "id": "DEC-60",
       "question": "WordPress pages in copy deck",
       "selected": "extract via LLD_WP_URL from staging; pending until OI-1",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2930,8 +2934,8 @@
       "id": "DEC-61",
       "question": "Definition of gate G-02",
       "selected": "all Wave 2 merged >= verified, auto accepted, hybrid verified until HG-02",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2939,8 +2943,8 @@
       "id": "DEC-62",
       "question": "Real client IP behind hcdn",
       "selected": "X-Forwarded-For + LLD_TRUSTED_PROXIES; fail-closed until ranges known",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2948,8 +2952,8 @@
       "id": "DEC-63",
       "question": "Egress check for e-mail endpoints",
       "selected": "static scan now; container egress capture at OI-4",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2957,8 +2961,8 @@
       "id": "DEC-64",
       "question": "Home for request-side helpers",
       "selected": "api/log.php added to CMP-06",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2966,8 +2970,8 @@
       "id": "DEC-65",
       "question": "package.json as harness path",
       "selected": "yes; html-validate for NFR1-14-AS-03",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2975,8 +2979,8 @@
       "id": "DEC-66",
       "question": "Production mail provider facts",
       "selected": "Hostinger mail facts recorded; DMARC p=none until HG-03",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2984,8 +2988,8 @@
       "id": "DEC-67",
       "question": "NFR1-14 deliverability on real staging",
       "selected": "re-run AS-01 on staging before HG-02",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -2993,8 +2997,8 @@
       "id": "DEC-68",
       "question": "Tool-card content file scope",
       "selected": "content/tool-cards.json in FR1-04/UI1-02 scope",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3002,8 +3006,8 @@
       "id": "DEC-69",
       "question": "Where WordPress e2e runs",
       "selected": "local snapshot stack + staging; CI skips with reason until OI-1",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3011,8 +3015,8 @@
       "id": "DEC-70",
       "question": "Hub/landing content ownership",
       "selected": "plugin-owned via wp lld pages apply",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3020,8 +3024,8 @@
       "id": "DEC-71",
       "question": "Approved tool version hash",
       "selected": "SHA-256 with origin normalised to __LLD_ORIGIN__; no override",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3029,8 +3033,8 @@
       "id": "DEC-72",
       "question": "status.json message field",
       "selected": "copy key; approved text rendered from MESSAGES",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3038,8 +3042,8 @@
       "id": "DEC-73",
       "question": "Local WordPress stack concurrency",
       "selected": "shared singleton with cross-process lock",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3047,8 +3051,8 @@
       "id": "DEC-74",
       "question": "Homepage Tools/Learn rows",
       "selected": "plugin-owned via wp lld home apply/revert; hero desktop-only",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3056,8 +3060,8 @@
       "id": "DEC-75",
       "question": "Publishing role control under WP-CLI",
       "selected": "plugin guard under WP-CLI only",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3065,8 +3069,8 @@
       "id": "DEC-76",
       "question": "FR1-17 components",
       "selected": "CMP-09 + CMP-02, CMP-03, CMP-08",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3074,8 +3078,8 @@
       "id": "DEC-77",
       "question": "Implementer-produced visual baselines",
       "selected": "candidates until HG-02 signature; assertion deferred",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3083,8 +3087,8 @@
       "id": "DEC-78",
       "question": "Theme block titles (sidebar and footer template) that skip a heading level",
       "selected": "fix tagDiv template content after HG-02; deviation until then",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3092,8 +3096,8 @@
       "id": "DEC-79",
       "question": "Posts in categories the tidy-up deletes",
       "selected": "refuse while non-draft posts remain; drafts move to wellness only with --include-drafts",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3101,8 +3105,8 @@
       "id": "DEC-80",
       "question": "Home of clinical-gate job",
       "selected": "NFR1-02 components add CMP-13",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3110,8 +3114,8 @@
       "id": "DEC-81",
       "question": "MedicalWebPage structured data",
       "selected": "NFR1-07 components add CMP-08; Yoast filter",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3119,8 +3123,8 @@
       "id": "DEC-82",
       "question": "FR1-02 word-count rule on rebuilt pages",
       "selected": "exclude four rebuilt CMP-09 pages; deferred until ratified",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3128,8 +3132,8 @@
       "id": "DEC-83",
       "question": "Scope of performance baseline",
       "selected": "perf/** in CMP-12; NFR1-06 adds CMP-12",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3137,8 +3141,8 @@
       "id": "DEC-84",
       "question": "Simple-mode finish of Waves 5-6",
       "selected": "one integration PR; per-requirement review/mutation/evidence loop dropped; SHOULD items FR1-16, NFR1-06, NFR1-13 deferred to Stage 2",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
     },
@@ -3146,10 +3150,28 @@
       "id": "DEC-85",
       "question": "Landing page section order",
       "selected": "tool embed after What you will enter; Limitations, How it works, Privacy below the tool",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-23"
+    },
+    {
+      "id": "DEC-86",
+      "question": "Protein calculator v2 rules (HG-02)",
+      "selected": "v2 rules: referral stops, WHO pregnancy and breastfeeding, one sourced winning band, no diet multiplier, per meal = target / meals, continuous basis weight, NICE NG246 display cut-offs",
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-27"
+    },
+    {
+      "id": "DEC-87",
+      "question": "Urgent-care wording and diabetes limitation for a global audience (HG-02 Part F)",
+      "selected": "C1 local emergency number with 999/911/112/000 examples and NHS 111; C2 QDiabetes accuracy outside the UK not established",
+      "status": "ratified",
+      "ratified_on": "2026-10-27",
+      "ratify_at": "HG-02",
+      "decided_on": "2026-10-27"
     }
   ],
   "human_gates": [
@@ -3339,6 +3361,13 @@
       "must_redden": [
         "TC-NFR1-05-AS-03",
         "TC-UI1-05-AS-02"
+      ]
+    },
+    {
+      "id": "MUT-15",
+      "description": "Delete the clinical stop (liver disease, recovery, clinician plan) so a number is shown",
+      "must_redden": [
+        "TC-FR1-09-AS-02"
       ]
     }
   ],
