@@ -1,6 +1,6 @@
 {
   "notDiagnosis": "not a diagnosis",
-  "urgentCare": "same-day medical assessment",
+  "urgentCare": "local emergency number",
   "methodology": {
     "engine": "QDiabetes-2018 (Model A)",
     "calibration": "UK",

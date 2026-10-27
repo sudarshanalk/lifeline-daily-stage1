@@ -594,7 +594,7 @@ var MESSAGES = {
 
   method: [
     "This tool uses <strong>QDiabetes-2018 (Model A)</strong>, a risk equation developed and validated on 11.5 million people in English general practice. It uses no blood tests. Separate equations are used for men and women, and it carries coefficients calibrated for each ethnicity you can select.",
-    "<strong>Calibration:</strong> because it was built on UK data, the exact percentage is best calibrated for UK residents of any ethnicity. Elsewhere in the world the <em>ranking</em> stays valid (higher inputs mean higher risk), but the precise percentage is less certain — which is why we also show the cross-checks.",
+    "<strong>Calibration:</strong> QDiabetes was developed using UK health records. Its accuracy in other countries has not been established, which is why we also show the cross-checks.",
     "Where a value wasn't asked (a UK deprivation score), a neutral average is assumed, so it neither raises nor lowers your estimate.",
     "Symptoms are handled separately and are never mixed into the score. This tool screens for <strong>type 2 diabetes only</strong>, and is <strong>not a diagnosis</strong>.",
     "<span data-copy=\"method.attribution\"><strong>Attribution and licence:</strong> QDiabetes-2018 was developed by Julia Hippisley-Cox and Carol Coupland (BMJ 2017;359:j5019). The QDiabetes-2018 algorithm is &copy; ClinRisk Ltd and released under the LGPL-3.0 licence; this page is Lifeline Daily's own implementation of the published equations and is not endorsed by ClinRisk or the NHS. It is screening information, not a diagnosis.</span>"
@@ -621,7 +621,9 @@ var MESSAGES = {
     "This is not a diagnosis. Read our <a href=\"__LLD_ORIGIN__/medical-disclaimer/\" target=\"_top\">medical disclaimer</a> " +
     "and our <a href=\"__LLD_ORIGIN__/privacy-policy/\" target=\"_top\">privacy policy</a>.",
   urgentCare:
-    "If you feel very unwell, get a same-day medical assessment: call NHS 111, or 999 in an emergency. " +
+    "If you feel very unwell, get medical help today. <strong>In an emergency, call your local emergency number now</strong>, " +
+    "for example 999 in the UK, 911 in the US and Canada, 112 in the EU and India, or 000 in Australia. " +
+    "In the UK you can also call NHS 111 for urgent advice. " +
     "<a href=\"__LLD_ORIGIN__/medical-disclaimer/#urgent-care\" target=\"_top\">When to seek urgent care</a>.",
   disclaimer:
     "Lifeline Daily health tools are for general information and screening only. They do not " +

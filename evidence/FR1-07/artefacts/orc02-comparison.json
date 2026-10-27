@@ -75,13 +75,13 @@
     },
     {
       "fixture": "FX-PR-NRM-05",
-      "agree": false,
+      "agree": true,
       "js": {
-        "targetG": 146,
+        "targetG": 128,
         "lowG": 105,
-        "highG": 188,
-        "perMeal": 49,
-        "gPerKg": 1.95
+        "highG": 150,
+        "perMeal": 43,
+        "gPerKg": 1.7
       },
       "orc02": {
         "targetG": 128,
@@ -93,13 +93,13 @@
     },
     {
       "fixture": "FX-PR-NRM-06",
-      "agree": false,
+      "agree": true,
       "js": {
-        "targetG": 146,
+        "targetG": 128,
         "lowG": 105,
-        "highG": 188,
-        "perMeal": 49,
-        "gPerKg": 1.95
+        "highG": 150,
+        "perMeal": 43,
+        "gPerKg": 1.7
       },
       "orc02": {
         "targetG": 128,
@@ -111,13 +111,13 @@
     },
     {
       "fixture": "FX-PR-NRM-07",
-      "agree": false,
+      "agree": true,
       "js": {
-        "targetG": 146,
+        "targetG": 128,
         "lowG": 105,
-        "highG": 188,
-        "perMeal": 49,
-        "gPerKg": 1.95
+        "highG": 150,
+        "perMeal": 43,
+        "gPerKg": 1.7
       },
       "orc02": {
         "targetG": 128,
@@ -129,13 +129,13 @@
     },
     {
       "fixture": "FX-PR-NRM-08",
-      "agree": false,
+      "agree": true,
       "js": {
-        "targetG": 146,
+        "targetG": 128,
         "lowG": 105,
-        "highG": 188,
-        "perMeal": 49,
-        "gPerKg": 1.95
+        "highG": 150,
+        "perMeal": 43,
+        "gPerKg": 1.7
       },
       "orc02": {
         "targetG": 128,
@@ -165,13 +165,13 @@
     },
     {
       "fixture": "FX-PR-NRM-10",
-      "agree": false,
+      "agree": true,
       "js": {
-        "targetG": 146,
-        "lowG": 105,
-        "highG": 188,
-        "perMeal": 49,
-        "gPerKg": 1.95
+        "targetG": 135,
+        "lowG": 120,
+        "highG": 150,
+        "perMeal": 45,
+        "gPerKg": 1.8
       },
       "orc02": {
         "targetG": 135,
@@ -309,13 +309,13 @@
     },
     {
       "fixture": "FX-PR-AGE-04",
-      "agree": false,
+      "agree": true,
       "js": {
-        "targetG": 146,
+        "targetG": 128,
         "lowG": 105,
-        "highG": 188,
-        "perMeal": 49,
-        "gPerKg": 1.95
+        "highG": 150,
+        "perMeal": 43,
+        "gPerKg": 1.7
       },
       "orc02": {
         "targetG": 128,
@@ -417,13 +417,13 @@
     },
     {
       "fixture": "FX-PR-CAP-01",
-      "agree": false,
+      "agree": true,
       "js": {
-        "targetG": 146,
+        "targetG": 128,
         "lowG": 105,
-        "highG": 188,
-        "perMeal": 49,
-        "gPerKg": 1.95
+        "highG": 150,
+        "perMeal": 43,
+        "gPerKg": 1.7
       },
       "orc02": {
         "targetG": 128,
@@ -435,13 +435,13 @@
     },
     {
       "fixture": "FX-PR-CAP-02",
-      "agree": false,
+      "agree": true,
       "js": {
-        "targetG": 146,
+        "targetG": 128,
         "lowG": 105,
-        "highG": 188,
-        "perMeal": 49,
-        "gPerKg": 1.95
+        "highG": 150,
+        "perMeal": 43,
+        "gPerKg": 1.7
       },
       "orc02": {
         "targetG": 128,
@@ -453,13 +453,13 @@
     },
     {
       "fixture": "FX-PR-CAP-03",
-      "agree": false,
+      "agree": true,
       "js": {
-        "targetG": 146,
+        "targetG": 128,
         "lowG": 105,
-        "highG": 188,
-        "perMeal": 49,
-        "gPerKg": 1.95
+        "highG": 150,
+        "perMeal": 43,
+        "gPerKg": 1.7
       },
       "orc02": {
         "targetG": 128,
@@ -543,13 +543,13 @@
     },
     {
       "fixture": "FX-PR-MEAL-02",
-      "agree": false,
+      "agree": true,
       "js": {
-        "targetG": 163,
+        "targetG": 142,
         "lowG": 117,
-        "highG": 209,
-        "perMeal": 82,
-        "gPerKg": 1.95
+        "highG": 168,
+        "perMeal": 71,
+        "gPerKg": 1.7
       },
       "orc02": {
         "targetG": 142,
@@ -578,326 +578,5 @@
       }
     }
   ],
-  "disagreements": [
-    {
-      "fixture": "FX-PR-NRM-05",
-      "js": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 146,
-        "lowG": 105,
-        "highG": 188,
-        "gPerKg": 1.95,
-        "basisKg": 75,
-        "basisNote": "your current weight",
-        "perMeal": 49,
-        "sources": [
-          "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis"
-        ],
-        "capped": false,
-        "older": false,
-        "interpKey": "training",
-        "bmi": 24.49
-      },
-      "orc02": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 128,
-        "lowG": 105,
-        "highG": 150,
-        "gPerKg": 1.7,
-        "basisKg": 75,
-        "perMeal": 43,
-        "capped": false
-      }
-    },
-    {
-      "fixture": "FX-PR-NRM-06",
-      "js": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 146,
-        "lowG": 105,
-        "highG": 188,
-        "gPerKg": 1.95,
-        "basisKg": 75,
-        "basisNote": "your current weight",
-        "perMeal": 49,
-        "sources": [
-          "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis"
-        ],
-        "capped": false,
-        "older": false,
-        "interpKey": "training",
-        "bmi": 24.49
-      },
-      "orc02": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 128,
-        "lowG": 105,
-        "highG": 150,
-        "gPerKg": 1.7,
-        "basisKg": 75,
-        "perMeal": 43,
-        "capped": false
-      }
-    },
-    {
-      "fixture": "FX-PR-NRM-07",
-      "js": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 146,
-        "lowG": 105,
-        "highG": 188,
-        "gPerKg": 1.95,
-        "basisKg": 75,
-        "basisNote": "your current weight",
-        "perMeal": 49,
-        "sources": [
-          "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis"
-        ],
-        "capped": false,
-        "older": false,
-        "interpKey": "training",
-        "bmi": 24.49
-      },
-      "orc02": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 128,
-        "lowG": 105,
-        "highG": 150,
-        "gPerKg": 1.7,
-        "basisKg": 75,
-        "perMeal": 43,
-        "capped": false
-      }
-    },
-    {
-      "fixture": "FX-PR-NRM-08",
-      "js": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 146,
-        "lowG": 105,
-        "highG": 188,
-        "gPerKg": 1.95,
-        "basisKg": 75,
-        "basisNote": "your current weight",
-        "perMeal": 49,
-        "sources": [
-          "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis"
-        ],
-        "capped": false,
-        "older": false,
-        "interpKey": "training",
-        "bmi": 24.49
-      },
-      "orc02": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 128,
-        "lowG": 105,
-        "highG": 150,
-        "gPerKg": 1.7,
-        "basisKg": 75,
-        "perMeal": 43,
-        "capped": false
-      }
-    },
-    {
-      "fixture": "FX-PR-NRM-10",
-      "js": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 146,
-        "lowG": 105,
-        "highG": 188,
-        "gPerKg": 1.95,
-        "basisKg": 75,
-        "basisNote": "your current weight",
-        "perMeal": 49,
-        "sources": [
-          "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis"
-        ],
-        "capped": false,
-        "older": false,
-        "interpKey": "training",
-        "bmi": 24.49
-      },
-      "orc02": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 135,
-        "lowG": 120,
-        "highG": 150,
-        "gPerKg": 1.8,
-        "basisKg": 75,
-        "perMeal": 45,
-        "capped": false
-      }
-    },
-    {
-      "fixture": "FX-PR-AGE-04",
-      "js": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 146,
-        "lowG": 105,
-        "highG": 188,
-        "gPerKg": 1.95,
-        "basisKg": 75,
-        "basisNote": "your current weight",
-        "perMeal": 49,
-        "sources": [
-          "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis"
-        ],
-        "capped": false,
-        "older": true,
-        "interpKey": "training",
-        "bmi": 24.49
-      },
-      "orc02": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 128,
-        "lowG": 105,
-        "highG": 150,
-        "gPerKg": 1.7,
-        "basisKg": 75,
-        "perMeal": 43,
-        "capped": false
-      }
-    },
-    {
-      "fixture": "FX-PR-CAP-01",
-      "js": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 146,
-        "lowG": 105,
-        "highG": 188,
-        "gPerKg": 1.95,
-        "basisKg": 75,
-        "basisNote": "your current weight",
-        "perMeal": 49,
-        "sources": [
-          "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis"
-        ],
-        "capped": false,
-        "older": false,
-        "interpKey": "training",
-        "bmi": 24.49
-      },
-      "orc02": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 128,
-        "lowG": 105,
-        "highG": 150,
-        "gPerKg": 1.7,
-        "basisKg": 75,
-        "perMeal": 43,
-        "capped": false
-      }
-    },
-    {
-      "fixture": "FX-PR-CAP-02",
-      "js": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 146,
-        "lowG": 105,
-        "highG": 188,
-        "gPerKg": 1.95,
-        "basisKg": 75,
-        "basisNote": "your current weight",
-        "perMeal": 49,
-        "sources": [
-          "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis"
-        ],
-        "capped": false,
-        "older": false,
-        "interpKey": "training",
-        "bmi": 24.49
-      },
-      "orc02": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 128,
-        "lowG": 105,
-        "highG": 150,
-        "gPerKg": 1.7,
-        "basisKg": 75,
-        "perMeal": 43,
-        "capped": false
-      }
-    },
-    {
-      "fixture": "FX-PR-CAP-03",
-      "js": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 146,
-        "lowG": 105,
-        "highG": 188,
-        "gPerKg": 1.95,
-        "basisKg": 75,
-        "basisNote": "your current weight",
-        "perMeal": 49,
-        "sources": [
-          "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis"
-        ],
-        "capped": false,
-        "older": false,
-        "interpKey": "training",
-        "bmi": 24.49
-      },
-      "orc02": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 128,
-        "lowG": 105,
-        "highG": 150,
-        "gPerKg": 1.7,
-        "basisKg": 75,
-        "perMeal": 43,
-        "capped": false
-      }
-    },
-    {
-      "fixture": "FX-PR-MEAL-02",
-      "js": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 163,
-        "lowG": 117,
-        "highG": 209,
-        "gPerKg": 1.95,
-        "basisKg": 83.754,
-        "basisNote": "an adjusted body weight of 83.8 kg (used because applying g/kg to full body weight overstates the target when a larger share of that weight is fat mass)",
-        "perMeal": 82,
-        "sources": [
-          "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis"
-        ],
-        "capped": false,
-        "older": false,
-        "interpKey": "training",
-        "bmi": 31.02
-      },
-      "orc02": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 142,
-        "lowG": 117,
-        "highG": 168,
-        "gPerKg": 1.7,
-        "basisKg": 83.75375,
-        "perMeal": 71,
-        "capped": false
-      }
-    }
-  ]
+  "disagreements": []
 }

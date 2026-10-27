@@ -59,9 +59,7 @@
     "DEC-86",
     "DEC-87"
   ],
-  "deferred_items": [
-    "Urgent-care wording and diabetes limitation (DEC-87): FR1-11, FR1-17, UI1-05 and UI1-11 become accepted when the wording change and the refreshed copy hashes are merged."
-  ],
+  "deferred_items": [],
   "tag": null,
   "notes": "Owner instructions in chat, 27 Oct 2026: 'use these in the protein calculator', 'take this as the signed off the protein tool', 'the diabetes risk assessment tool I want to go as it is now', 'take part C, D, E and F as signed off', 'take stage 1 is signed off'. Parts A to F of the HG-02 review pack signed; Part D medical-device position confirmed (educational and screening information service, not a medical device); Part E as written; Part F C1 and C2 accepted (DEC-87). Overridden at HG-02: DEC-37, DEC-44 (by DEC-86 and DEC-87)."
 }

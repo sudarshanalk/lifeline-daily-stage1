@@ -762,7 +762,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "hybrid",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-01"
       ],
@@ -1072,7 +1072,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "hybrid",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-04"
       ],
@@ -2124,7 +2124,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "hybrid",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-08",
         "FR1-11"
@@ -2358,7 +2358,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "hybrid",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-06"
       ],
