@@ -54,7 +54,7 @@
         "sex": "male",
         "preg": "no",
         "heightCm": 175,
-        "weightKg": 95,
+        "weightKg": 96,
         "ethnicity": "White",
         "activity": "moderate",
         "resistance": "yes",
@@ -68,20 +68,20 @@
       "expected": {
         "suppressed": false,
         "branch": "standard",
-        "targetG": 142,
-        "lowG": 117,
+        "targetG": 143,
+        "lowG": 118,
         "highG": 168,
         "gPerKg": 1.7,
-        "basisKg": 83.754,
-        "basisNote": "an adjusted body weight of 83.8 kg (used because applying g/kg to full body weight overstates the target when a larger share of that weight is fat mass)",
-        "perMeal": 71,
+        "basisKg": 84.154,
+        "basisNote": "an adjusted body weight of 84.2 kg (used because applying g/kg to full body weight overstates the target when a larger share of that weight is fat mass)",
+        "perMeal": 72,
         "sources": [
           "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis"
         ],
         "capped": false,
         "older": false,
         "interpKey": "training",
-        "bmi": 31.02
+        "bmi": 31.347
       },
       "oracle": "characterisation",
       "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
