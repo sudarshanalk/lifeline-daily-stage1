@@ -1,25 +1,25 @@
 diff --git a/site/public_html/tools/protein-requirement-tool.html b/site/public_html/tools/protein-requirement-tool.html
-index 893acbb..6f51859 100644
 --- a/site/public_html/tools/protein-requirement-tool.html
 +++ b/site/public_html/tools/protein-requirement-tool.html
-@@ -500,20 +500,6 @@ function computeProtein(s){
-   if (s.kidney === 'yes') return { suppressed:true, reason:'renal', bmi };
+@@ -559,21 +559,6 @@
+   if (s.plan === 'yes')   return { suppressed:true, reason:'plan', bmi };
  
-   /* --- P1: PREGNANCY / LACTATION — own branch, never stacked ---------- */
+   /* --- P1: PREGNANCY / BREASTFEEDING — own branch, never combined ------ */
 -  if (s.preg === 'pregnant' || s.preg === 'breastfeeding'){
--    const g = PREG_GKG[s.preg];
--    const target = g * s.weightKg;                 // pre-pregnancy weight, actual
+-    const add = PREG_ADD[s.preg][s.preg === 'pregnant' ? s.trimester : s.babyAge];
+-    const target = WHO_BASE * basisKg + add;
 -    return {
 -      suppressed:false, branch:'pregnancy', bmi,
 -      lowG: Math.round(target), highG: Math.round(target), targetG: Math.round(target),
--      gPerKg: g, basisKg: s.weightKg, basisNote:'your pre-pregnancy weight',
--      perMeal: clampMeal(target / s.meals),
--      sources: [ s.preg==='pregnant'
--        ? 'IOM Dietary Reference Intakes — pregnancy RDA 1.1 g/kg/day'
--        : 'IOM Dietary Reference Intakes — lactation RDA 1.3 g/kg/day' ],
--      interpKey:'baseline', dietMult:1.0, capped:false
+-      gPerKg: +(target / basisKg).toFixed(2), basisKg,
+-      basisNote: adjusted ? 'an adjusted body weight of ' + basisKg.toFixed(1) + ' kg, from your pre-pregnancy weight' : 'your pre-pregnancy weight',
+-      perMeal: Math.round(target / s.meals),
+-      sources: [ 'WHO/FAO/UNU 2007: 0.83 g/kg plus ' + add + ' g a day ' +
+-        (s.preg === 'pregnant' ? 'in this trimester' : (s.babyAge === 'under6' ? 'while breastfeeding a baby under 6 months' : 'while breastfeeding a baby 6 months or older')) ],
+-      interpKey:'baseline', capped:false, older:false
 -    };
 -  }
- 
-   /* --- P3: NORMAL PATH — collect applicable bands --------------------- */
+-
+   /* --- P2: HEALTHY ADULTS — one winning band --------------------------- */
    const applicable = [];
+   const older = s.age >= 65;

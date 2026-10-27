@@ -95,6 +95,7 @@ describe('TC-FR1-20 cache control', () => {
       expect(statusTemplate.tools[slug].status).toBe('active');
       expect(statusTemplate.tools[slug].approved_version).toBe(manifest.versions.find((v) => v.is_live).version_hash);
     }
-    expect(statusTemplate.labels.map((l) => l.status)).toEqual(['label_only']);
+    // D54 (Stage 2): the planned chip is hidden for launch; any label left must still be label-only (never a link)
+    expect(statusTemplate.labels.every((l) => l.status === 'label_only')).toBe(true);
   });
 });

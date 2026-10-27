@@ -7,21 +7,23 @@
   "pages": {
     "medical-disclaimer": "47dcde223f6981f58b5ae9b62abb663289156bbbd23c82dbdbf9cdf34a8676e7"
   },
-  "reviewer": "pending (OI-8)",
-  "date": "2026-10-23",
-  "decision": "pending",
+  "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+  "date": "2026-10-27",
+  "decision": "approved",
   "messages": {
     "protein.resultHeading": "42e4f17623cc6d610a54a5b913b4ebdd92fd7c2abb805b43d62af33e2df8d075",
     "protein.disclaimerLinks": "6deb8cea513d461fcee8ffea8dbef0562cec69f951b4c311913169766c7232d5",
-    "protein.scope": "81280a8d8f62509b7fafdd1f087d6f7c444208b08c0631972b6073f3b888a6ae",
+    "protein.scope": "261806980937824048ec07d4b06e14947183d0e6f5608104393eeeb6129f5e98",
     "protein.renalStop.title": "6b76ab7eee4e4710ecfe6ad629b835aa10d7ee68a74a6e1dabaadde15520354f",
-    "protein.renalStop.body": "305b51554e53e26bfdd3adeac843ed46680d0445619d7842d95d7b563e70e1d1",
+    "protein.renalStop.body": "44da175ed798a3eb030b504d953e7fb2d9444a8b3600b36df4bb496d36ccd1ab",
     "protein.renalUnsure.title": "f60275c0997d1ec34f01d18e52e76fc9eeb52ebae4e9d88c3d37aebe8492da86",
     "protein.renalUnsure.body": "20b9af109315603941650b686c042d11f38143342407a2f9e5f522450e11317d",
+    "protein.clinicalStop.title": "6760eea79ec7023a14f32063dc0b775045d401df583394a563e9193c971f4164",
+    "protein.clinicalStop.body": "6e7f22b082fa0c5bcb712b44f01fd2b1df1138e8a35230100e580f6984cd70f8",
+    "protein.planStop.title": "158c0796153113fad45e40b1406e653e985b589a252247d6ac9d6f894578d271",
+    "protein.planStop.body": "d6cd46b7f73311399a79457cedeeeec9feee8b0ba92e3b367fa9a6446cf64c0f",
     "protein.pregnancy.title": "172678cef70f4c96441f7661c562349abdf60d41e726a6d1af75d09103f7b090",
-    "protein.pregnancy.body": "49a5cc0e3b275dea4b6685b8631c7783aac5a9af4491185ba4bd3140d285fc2d",
-    "protein.clinical.title": "7b7f922927c37f837b2a3b699dae2ed4e063f51b4c8637e92cf84661857f66f1",
-    "protein.clinical.body": "cfb21bdcde26eddacda6067ffcc6084c94dac8e05bdb3aa25d47a908bab4831f",
+    "protein.pregnancy.body": "3605ca983556d92e6046c1a2c656c325b02a958a1c2a6a1da85c06ee8a757014",
     "protein.underweight.title": "3c6dbacef553b34adc8ebb0275f371ec7b4a5eba69b3a16875d9ecd079d5f939",
     "protein.underweight.body": "7fa0968e3481031bcbdd2a245b37654bd2967d65d3cdd381cdee6f0b345e5bc1",
     "protein.eatingConcern": "3544b6d6d209f3849859064bb0bf5a2d58ddbb450cf5b0199f764b6d94969d30",
@@ -30,12 +32,12 @@
     "protein.interp.training": "4c7308fe59fcbfa6c8432e87650af350cc480e482714fe12ac35493dba30a68d",
     "protein.interp.fatloss": "a482645b3dff77364c17dd13bdf626149c39762df3832c8438963d376d085a42",
     "protein.interp.older": "69a620c6ece3c9d0693a11b8e340b99e458cd0006410c9a82ed5ac3ad8c34ebf",
-    "protein.interp.recovery": "ffc0ea223a83b3397d80918bc3ddce7f667514c07da71df2559fe14c621a8cdf",
-    "protein.advice.spread": "d8b49fc2c9e0687c5962deb63fef21641c63b3072858c71fd6b25d508a5045c0",
+    "protein.advice.spread": "89a7992d1181bb28104df5571e63af45dc2ebfcf28d6cf7b8ac17e5f3ca4c12d",
     "protein.advice.spreadOlder": "7913870f9b99067b5e40645fc9aace08e9f0df431dbf73ce1b8d93d8ace4440f",
     "protein.advice.quality": "d08bf020628ef66f70631b9b4c38aeaacaeb021bf662dc8568463645adbe268d",
-    "protein.advice.plant": "6c63bab6c0459bfdf5f8526dcdaec444b4a0763f172de460270735922822b111",
+    "protein.advice.plant": "3f0a221a2065197fabe12e18591c236ac1fac86234248897df06a8e62e3fee91",
     "protein.advice.training": "6286f0d973df8b5c8ddb2a43589db135b56b23b4479b3ef40077425a5e6f1682",
+    "protein.advice.perMealTraining": "470f73db0f5f017969323cc57299c4a98e464cdd98f1fb97db4d1b3efc21585d",
     "protein.advice.hydrate": "05a207bde36052f43b1f8023f9a23a99543ad4574b035f9c7aa43adbe4203bab",
     "protein.advice.food": "5aa2d13cc4498826c0ff6580394a20fa2e62ef45d3edddeb810d9aa9c55115d8",
     "protein.crossLink": "128ab15a0b559a4268af89f99b76d0122ab4fb698005391da7a028fefb8f9190",
@@ -86,7 +88,7 @@
     "diabetes.secondary.idrs.moderate": "5c42afc7a23018d32dcff346792b575bcdf63be118b98a61084b1afac32b93e9",
     "diabetes.secondary.idrs.high": "c4ebc6d4a5832cd9415f906ad03661110c705a72381c8b8b145761d02e2dd23a",
     "diabetes.secondary.needWaist": "76b60b7fabe51c222fc053c469da7365e8517df6e04ce733cbdcfcf4d13da767",
-    "diabetes.method": "8a6b32975b1dced4c5bd3625dc99b64587d8b1a381e37a4aa9bf9f51f5d3785c",
+    "diabetes.method": "45589c79f8f335e0926253f18f661702795fd42895f98e5d6d72307d6bdb4098",
     "diabetes.email.heading": "f25da8b361582351b52c7232234bbdc26e5385c590b00fb72c09f000864c60f9",
     "diabetes.email.intro": "b5dffa920961503df249a4f9fc4b7a685507d1a8bd8e5181a84faaa44d466057",
     "diabetes.email.consent": "13a1127f0b2ce965c0be2e48952cb65f49a277f73998c3c147b382ff51f73923",
@@ -100,7 +102,7 @@
     "diabetes.unavailable.checking": "68ea019296a778f2198660b50694721f1ef2a8c3b79d48e16abaf0fb29290905",
     "diabetes.unavailable.unknown": "7d9e28fe5a1a04e11dc2b446a3b6aeadf86dccbfa2940d701e97cd3a668b50d4",
     "diabetes.disclaimerLinks": "6deb8cea513d461fcee8ffea8dbef0562cec69f951b4c311913169766c7232d5",
-    "diabetes.urgentCare": "ca63a9c9006299c3313ebe46e3d5a9731d21be2ef51cc5524fa2e7ced6c71129",
+    "diabetes.urgentCare": "1bbd2c87d7e54858cb2c088d7364944e85a8ffd7d9f0f8034d9ee38eee62744a",
     "diabetes.disclaimer": "35156be01c5bba11cf30d1c5f88a0f71c64d63f9fa3402addab8d1e9af265ec2"
   },
   "templates": {
@@ -121,6 +123,6 @@
     "diabetes.symptomatic.subject": "5f3f7b1931eea5e907175bed50a842aee6ab15e502d3cc1786856723a3f1a71c",
     "diabetes.symptomatic.body": "2c096c16e27c50f63e8047ea2483ba98d88691abac86cae515b1339bf36ee180",
     "diabetes.emergency.subject": "141f225804ab4657200f84922f89549634352f2125a98deb5a4f0743de896ef7",
-    "diabetes.emergency.body": "e44786d2d291c6f0368ec9d83d73e439631f18a7e25cf43e4ce1548f03bb1803"
+    "diabetes.emergency.body": "0a28b1c964ddc19d9fa1e69c5e8ba010e2cb83ba025028b86063a3d950a9c8c0"
   }
 }

@@ -33,7 +33,7 @@ describe('TC-FR1-22 independent oracles', () => {
     // apart from run_at; ORC-01 needs the Docker daemon (known HG-01 deferral, OI-4) — see the separate ORC-01 step below.
     const clean = mkdtempSync(join(tmpdir(), 'lld-oracles-'));
     try {
-      for (const d of ['oracles', 'fixtures', 'schemas']) cpSync(resolve(ROOT, d), join(clean, d), { recursive: true });
+      for (const d of ['oracles', 'fixtures', 'schemas', 'tests/baseline']) cpSync(resolve(ROOT, d), join(clean, d), { recursive: true });
       for (const n of ['02', '03', '04']) {
         const before = JSON.parse(readFileSync(join(clean, 'oracles', ORACLE_DIR[`ORC-${n}`], 'results.json'), 'utf8'));
         const r = spawnSync(py(), ['-I', join(clean, 'oracles', 'run.py'), n], { cwd: clean, encoding: 'utf8' });

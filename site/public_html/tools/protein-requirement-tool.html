@@ -161,6 +161,16 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
     <div class="opts" id="preg" data-single role="group" aria-label="Are you currently pregnant or breastfeeding?"></div>
   </div>
 
+  <div class="field" id="trimWrap" style="display:none">
+    <label class="q">Which stage of pregnancy are you in?</label>
+    <div class="opts" id="trim" data-single role="group" aria-label="Which stage of pregnancy are you in?"></div>
+  </div>
+
+  <div class="field" id="babyWrap" style="display:none">
+    <label class="q">How old is your baby?</label>
+    <div class="opts" id="baby" data-single role="group" aria-label="How old is your baby?"></div>
+  </div>
+
   <div class="field">
     <label class="q" for="hVal">Height</label>
     <div class="row">
@@ -189,7 +199,7 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
   <div class="field">
     <label class="q">Ethnicity</label>
     <div class="opts" id="eth" data-single role="group" aria-label="Ethnicity"></div>
-    <div class="hint">Used only to select the correct healthy-weight bounds, which set the basis weight for your target.</div>
+    <div class="hint">Used only to show the healthy weight range for your background.</div>
   </div>
 </div>
 
@@ -203,8 +213,8 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
   </div>
 
   <div class="field">
-    <label class="q">Resistance training (weights, bodyweight, resistance bands)</label>
-    <div class="opts" id="res" data-single role="group" aria-label="Resistance training (weights, bodyweight, resistance bands)"></div>
+    <label class="q">Do you do strength training at least twice a week? (weights, bodyweight exercises or resistance bands)</label>
+    <div class="opts" id="res" data-single role="group" aria-label="Do you do strength training at least twice a week?"></div>
   </div>
 
   <div class="field">
@@ -215,7 +225,7 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
   <div class="field">
     <label class="q">How you eat</label>
     <div class="opts" id="diet" data-single role="group" aria-label="How you eat"></div>
-    <div class="hint">Plant proteins are less completely absorbed, so plant-based targets are adjusted upward.</div>
+    <div class="hint">Used to suggest protein foods that suit how you eat.</div>
   </div>
 
   <div class="field">
@@ -229,7 +239,7 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
 
 <div class="card">
   <h2>Health check</h2>
-  <div class="sub">Protein guidance changes direction in kidney disease. This question is not optional.</div>
+  <div class="sub">Some health conditions need a protein amount set by your own clinician. These questions are not optional.</div>
 
   <div class="field">
     <label class="q">Do you have kidney disease, reduced kidney function, or are you on dialysis?</label>
@@ -239,6 +249,11 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
   <div class="field">
     <label class="q">Do you have liver disease, or are you recovering from a serious illness, injury or surgery?</label>
     <div class="opts" id="liver" data-single role="group" aria-label="Do you have liver disease, or are you recovering from a serious illness, injury or surgery?"></div>
+  </div>
+
+  <div class="field">
+    <label class="q">Are you following a diet or protein plan from a doctor or dietitian?</label>
+    <div class="opts" id="plan" data-single role="group" aria-label="Are you following a diet or protein plan from a doctor or dietitian?"></div>
   </div>
 </div>
 
@@ -301,20 +316,22 @@ details .body td,details .body th{border:1px solid var(--line);padding:6px 8px;t
    LIFELINE DAILY — TOOL 3: DAILY PROTEIN REQUIREMENT
    Self-contained. All calculation is client-side. Nothing is stored.
 
-   EVIDENCE BASE — every g/kg figure below is traceable. Do not invent values.
-     IOM/DRI (2005)        RDA 0.8 g/kg; AMDR 10–35% energy
-     WHO/FAO/UNU (2007)    safe level 0.83 g/kg
-     PROT-AGE (Bauer 2013) older adults >=1.0–1.2 g/kg
-     ESPEN (Deutz 2014)    older healthy 1.0–1.2; illness/malnutrition 1.2–1.5
-     ISSN (Jager 2017)     exercising 1.4–2.0 g/kg; per-serving 0.25 g/kg or 20–40 g
-     ACSM/AND/DC (2016)    athletes 1.2–2.0 g/kg
-     IOM/DRI              pregnancy RDA 1.1 g/kg; lactation RDA 1.3 g/kg
-     KDOQI (2020)         CKD 3–5 not on dialysis: RESTRICT to 0.55–0.60 g/kg IBW
-                          (0.6–0.8 with diabetes) — opposite direction to this tool.
+   EVIDENCE BASE (v2, approved at HG-02 on 27 Oct 2026, DEC-86). Every band's range lies inside
+   the range of the source it cites (TC-FR1-07-AS-08). Do not invent values.
+     WHO/FAO/UNU (2007)    safe level 0.83 g/kg; pregnancy +1/+9/+31 g; breastfeeding +19/+12.5 g
+     IOM/DRI (2005)        RDA 0.8 g/kg
+     Bhasin 2018 (OPTIMen) 1.3 vs 0.8 g/kg without exercise: no gain (older men, double-blind)
+     Tagawa 2021           dose-response meta-analysis: lean mass rises steeply up to 1.3 g/kg
+     AND/DC/ACSM (2016)    athletes 1.2–2.0 g/kg
+     ISSN (Jager 2017)     exercising 1.4–2.0 g/kg; per meal 20–40 g
+     Morton 2018           strength-training gains plateau near 1.6 g/kg (1.0–2.2)
+     Leidy 2015            weight loss 1.2–1.6 g/kg; Wycherley 2012 meta-analysis
+     PROT-AGE 2013, ESPEN 2019  older adults 1.0–1.2 g/kg (at least 1.0)
+     ESPEN 2014, Nunes 2022     older adults who exercise 1.2–1.5 g/kg
+     KDIGO 2024, KDOQI 2020     kidney disease: amount set individually, never high — no number here
+     ESPEN liver guideline      liver disease varies by condition — no number here
 
-   CEILING: 2.0 g/kg. ISSN's 2.3–3.1 g/kg band exists only for resistance-trained
-   individuals in a deliberate energy deficit under supervision. A public tool
-   must not emit it. Do not raise this cap.
+   CEILING: 2.0 g/kg is the scope of this general tool, not a safety limit.
    ===================================================================== */
 
 
@@ -335,22 +352,21 @@ const MESSAGES = {
   scope:
     "This tool estimates your daily protein target for general health, using published " +
     "intake guidelines. It is an educational screening aid, not a prescription or a " +
-    "diagnosis. It is for adults aged 18 and over. If you have kidney or liver disease, " +
-    "your protein needs must be set by your clinical team — not by a calculator.",
+    "diagnosis. It is for adults aged 18 and over. If you have kidney or liver disease, are " +
+    "recovering from a serious illness, injury or surgery, or follow a plan from your doctor or " +
+    "dietitian, your protein needs must be set by your clinical team — not by a calculator.",
 
   /* --- P0: RENAL OVERRIDE. SAFETY-CRITICAL.
          MUST NOT display any g/day figure. MUST NOT suggest a target.
-         Guideline direction here is RESTRICTION, not increase (KDOQI 2020).
+         Kidney guidelines set the amount individually and advise against high intakes (KDIGO 2024).
          Do not soften this into "check with your doctor" while still showing a number. --- */
   renalStop: {
     title: "We can't give you a protein target",
-    body: "In kidney disease, protein guidance runs in the opposite direction to general " +
-          "advice — national kidney guidelines recommend a <strong>reduced</strong>, closely " +
-          "supervised protein intake, individually set against your kidney function. A " +
-          "general-population number could be actively harmful here, so this tool will not " +
-          "produce one for you. Please ask your kidney team or a renal dietitian for your " +
-          "personal target. That is the right answer for you, and it is not something a " +
-          "public calculator can safely replace."
+    body: "In kidney disease, protein guidance is different from general advice. Kidney " +
+          "guidelines advise against high protein intakes, and the right amount is set for " +
+          "you individually, against your kidney function and treatment. A general-population " +
+          "number could be harmful here, so this tool will not produce one for you. Please ask " +
+          "your kidney team or a renal dietitian for your personal target."
   },
 
   /* --- P0b: kidney status unknown --- */
@@ -362,22 +378,28 @@ const MESSAGES = {
           "disease. Please treat this as provisional until a simple blood test confirms."
   },
 
+  /* --- P0c: liver disease / recovery, and a clinician's plan. SAFETY-CRITICAL: no number. --- */
+  clinicalStop: {
+    title: "Your clinical team should set your protein target",
+    body: "You've told us about liver disease or a recovery from a serious illness, injury or " +
+          "surgery. Protein needs in these situations depend on the exact condition and how you " +
+          "are recovering, which a general calculator cannot see. Please ask your doctor or a " +
+          "registered dietitian for your personal target."
+  },
+  planStop: {
+    title: "Follow the plan your clinician gave you",
+    body: "You've told us you follow a diet or protein plan from a doctor or dietitian. Their " +
+          "target is set for you and should come first, so this tool will not give you a " +
+          "different number. If you have questions about your plan, ask them."
+  },
+
   /* --- P1: pregnancy / breastfeeding branch --- */
   pregnancy: {
     title: "Pregnancy and breastfeeding have their own requirement",
-    body: "Your target below is the published requirement for this stage, not a general " +
-          "fitness target — and it is a <strong>minimum</strong>, not a ceiling. Please " +
-          "confirm it with your midwife, obstetrician or dietitian, who can account for your " +
-          "individual pregnancy."
-  },
-
-  /* --- P1b: liver disease / recovery --- */
-  clinical: {
-    title: "Confirm this with your clinician",
-    body: "You've told us about a liver condition or a recovery from serious illness, injury " +
-          "or surgery. Both change protein needs in ways a general calculator can't capture — " +
-          "recovery often raises them, liver disease can complicate them. Take the number " +
-          "below to your clinical team rather than acting on it alone."
+    body: "Your target below follows the World Health Organization's figures for your stage, " +
+          "not a general fitness target, and it is a <strong>minimum</strong>, not a ceiling. " +
+          "Please confirm it with your midwife, obstetrician or dietitian, who can account for " +
+          "your individual pregnancy."
   },
 
   /* --- P2: underweight --- */
@@ -402,21 +424,22 @@ const MESSAGES = {
     fatloss:  "When you're eating less, protein is what protects your muscle while you lose fat. " +
               "This is the one situation where protein matters most — it is the last thing to cut.",
     older:    "From around 65, muscle responds less readily to protein — so the requirement goes " +
-              "up, not down. The old 0.8 g/kg figure was never designed for older adults.",
-    recovery: "Recovery and illness raise protein needs, sometimes substantially."
+              "up, not down. The old 0.8 g/kg figure was never designed for older adults."
   },
 
   advice: {
-    spread:  "Spread it out. Aim for roughly {{perMeal}} g at each of your {{meals}} meals — " +
+    spread:  "Spread it out. Aim for about {{perMeal}} g at each of your {{meals}} meals — " +
              "your body uses protein better in even portions than in one large evening dose.",
     spreadOlder: "Spread it out, and don't skip breakfast protein. Around {{perMeal}} g per meal " +
              "works better than one big serving — this matters more with age, not less.",
     quality: "Favour complete sources: eggs, dairy, fish, poultry, lean meat, soy.",
     plant:   "On a plant-based diet, combine sources across the day — legumes, soy, grains, nuts " +
              "and seeds — and lean on soy, tofu, tempeh and seitan, which come closest to " +
-             "complete. Your target has already been adjusted upward for this.",
+             "complete. Varied plant sources meet the same target.",
     training:"Protein does its work alongside resistance training. Without the training stimulus, " +
              "extra protein has little to build.",
+    perMealTraining: "If you train, 20–40 g of protein at a meal is the amount sports-nutrition " +
+             "research links with muscle building.",
     hydrate: "Higher protein intakes are safe for healthy kidneys, but drink to thirst.",
     food:    "As a rough guide: a palm-sized portion of chicken, fish or tofu is about 25–30 g; " +
              "two eggs about 12 g; a 170 g pot of Greek yoghurt about 17 g; a cup of cooked " +
@@ -482,138 +505,104 @@ function fromKg(kg, unit){
 }
 
 /* =====================================================================
-   SHARED MODULE 2 — ETHNICITY -> CUTOFFS
-   Only job here: pick the upper healthy-BMI bound, which sets basis weight.
+   SHARED MODULE 2 — ETHNICITY -> HEALTHY RANGE SHOWN (NICE NG246)
+   Only job here: the healthy-BMI range shown to the visitor. It does not change the target.
    ===================================================================== */
 const ETHNICITIES = [
   ['WhiteNA','White / not stated'], ['Indian','Indian'], ['Pakistani','Pakistani'],
   ['Bangladeshi','Bangladeshi'], ['OtherAsian','Other Asian'], ['Chinese','Chinese'],
-  ['BlackCaribbean','Black Caribbean'], ['BlackAfrican','Black African'], ['Other','Other']
+  ['MiddleEastern','Middle Eastern'], ['BlackCaribbean','Black Caribbean'], ['BlackAfrican','Black African'], ['Other','Other']
 ];
-const ASIAN_CUTOFFS = ['Indian','Pakistani','Bangladeshi','OtherAsian','Chinese'];
+const LOWER_CUTOFFS = ['Indian','Pakistani','Bangladeshi','OtherAsian','Chinese','MiddleEastern','BlackCaribbean','BlackAfrican'];
 function cutoffs(eth){
-  return ASIAN_CUTOFFS.includes(eth)
-    ? { healthyLow:18.5, healthyHigh:22.9, obese:27.5, asian:true }
-    : { healthyLow:18.5, healthyHigh:24.9, obese:30,   asian:false };
+  return LOWER_CUTOFFS.includes(eth)
+    ? { healthyLow:18.5, healthyHigh:22.9, obese:27.5, lower:true }
+    : { healthyLow:18.5, healthyHigh:24.9, obese:30,   lower:false };
 }
 
 /* =====================================================================
-   SHARED MODULE 3 — THE PROTEIN ENGINE
-   Rule: collect every applicable published band, take the highest, cap at 2.0.
+   SHARED MODULE 3 — THE PROTEIN ENGINE (v2, DEC-86)
+   Rule: referral stops first, then pregnancy and breastfeeding, then one winning band
+   (highest top, then highest bottom) for healthy adults, capped at 2.0.
    ===================================================================== */
 const BANDS = {
-  sedentary:   {lo:0.8, hi:1.0, src:'IOM RDA 0.8 g/kg (floor)',            key:'baseline'},
-  lightMod:    {lo:1.0, hi:1.4, src:'IOM AMDR / ISSN lower band',          key:'active'},
-  vigorous:    {lo:1.2, hi:1.6, src:'ACSM/AND/DC 2016 (1.2–2.0 g/kg)',     key:'active'},
-  resLow:      {lo:1.2, hi:1.6, src:'ISSN 2017 (1.4–2.0), lower end',      key:'training'},
-  resMid:      {lo:1.4, hi:2.0, src:'ISSN 2017 (1.4–2.0 g/kg)',            key:'training'},
-  resHigh:     {lo:1.6, hi:2.0, src:'ISSN 2017 (1.4–2.0 g/kg)',            key:'training'},
-  buildMuscle: {lo:1.6, hi:2.0, src:'ISSN 2017',                           key:'training'},
-  fatLossTrain:{lo:1.6, hi:2.0, src:'ISSN 2017 (lean-mass retention)',     key:'fatloss'},
-  fatLossOnly: {lo:1.2, hi:1.5, src:'ISSN 2017 (lean-mass retention)',     key:'fatloss'},
-  older:       {lo:1.0, hi:1.2, src:'PROT-AGE 2013 / ESPEN 2014',          key:'older'},
-  olderActive: {lo:1.2, hi:1.5, src:'ESPEN 2014',                          key:'older'},
-  recovery:    {lo:1.2, hi:1.5, src:'ESPEN 2014 (illness / malnutrition)', key:'recovery'}
+  base:        {lo:0.83, hi:1.0, src:'WHO/FAO/UNU 2007 (0.83 g/kg); IOM 2005 (0.8 g/kg); Bhasin 2018 OPTIMen trial', key:'baseline'},
+  moderate:    {lo:1.0,  hi:1.4, src:'Tagawa 2021, meta-analysis of randomised trials (benefit rises to 1.3 g/kg)', key:'active'},
+  vigorous:    {lo:1.2,  hi:1.6, src:'AND / Dietitians of Canada / ACSM joint position 2016 (1.2–2.0 g/kg)', key:'active'},
+  strength:    {lo:1.4,  hi:2.0, src:'ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis', key:'training'},
+  fatLoss:     {lo:1.2,  hi:1.6, src:'Leidy 2015 review (1.2–1.6 g/kg); Wycherley 2012 meta-analysis', key:'fatloss'},
+  fatLossTrain:{lo:1.6,  hi:2.0, src:'ISSN Position Stand 2017 (1.4–2.0 g/kg)', key:'fatloss'},
+  older:       {lo:1.0,  hi:1.2, src:'PROT-AGE 2013 (1.0–1.2 g/kg); ESPEN 2019 (at least 1.0 g/kg)', key:'older'},
+  olderActive: {lo:1.2,  hi:1.5, src:'ESPEN 2014 (1.2–1.5 g/kg); Nunes 2022 meta-analysis', key:'older'}
 };
-const CEILING = 2.0;                       // DO NOT RAISE. See header note.
-const DIET_MULT = { omnivore:1.0, vegetarian:1.1, vegan:1.2 };
-const PREG_GKG = { pregnant:1.1, breastfeeding:1.3 };   // IOM DRI
+const CEILING = 2.0;                       // the scope of this general tool (DEC-86)
+const WHO_BASE = 0.83;                     // WHO/FAO/UNU 2007 safe level, g/kg
+const PREG_ADD = { pregnant:{ '1':1, '2':9, '3':31 }, breastfeeding:{ under6:19, '6plus':12.5 } };   // WHO/FAO/UNU 2007, g/day
+
+/* Basis weight, the same for everyone: actual weight up to the weight at BMI 24.9; above it, that
+   weight + 0.4 x the excess. Continuous, so a higher weight never gives a lower target. */
+function basisWeight(heightCm, weightKg){
+  const hM = heightCm/100;
+  const topKg = 24.9 * hM * hM;
+  return weightKg > topKg ? topKg + 0.4*(weightKg - topKg) : weightKg;
+}
 
 function computeProtein(s){
   const hM  = s.heightCm/100;
   const bmi = s.weightKg / (hM*hM);
-  const co  = cutoffs(s.ethnicity);
+  const basisKg = basisWeight(s.heightCm, s.weightKg);
+  const adjusted = basisKg < s.weightKg;
 
-  /* --- basis weight ---------------------------------------------------
-     BMI < 30: actual weight.
-     BMI >= 30: adjusted body weight = upperHealthy + 0.4 x (actual - upperHealthy).
-     Rationale: g/kg applied to raw weight in obesity inflates the target, because
-     fat mass is not metabolically demanding tissue. Standard dietetic practice;
-     KDOQI itself specifies ideal body weight for the same reason.            */
-  const upperHealthyKg = co.healthyHigh * hM * hM;
-  let basisKg = s.weightKg, basisNote = 'your current weight';
-  if (bmi >= 30 && s.weightKg > upperHealthyKg){
-    basisKg = upperHealthyKg + 0.4*(s.weightKg - upperHealthyKg);
-    basisNote = 'an adjusted body weight of ' + basisKg.toFixed(1) +
-                ' kg (used because applying g/kg to full body weight overstates the target ' +
-                'when a larger share of that weight is fat mass)';
-  }
-
-  /* --- P0: RENAL OVERRIDE. Nothing else runs. ------------------------- */
+  /* --- P0: referral stops. Nothing else runs. ------------------------- */
   if (s.kidney === 'yes') return { suppressed:true, reason:'renal', bmi };
+  if (s.liver === 'yes')  return { suppressed:true, reason:'clinical', bmi };
+  if (s.plan === 'yes')   return { suppressed:true, reason:'plan', bmi };
 
-  /* --- P1: PREGNANCY / LACTATION — own branch, never stacked ---------- */
+  /* --- P1: PREGNANCY / BREASTFEEDING — own branch, never combined ------ */
   if (s.preg === 'pregnant' || s.preg === 'breastfeeding'){
-    const g = PREG_GKG[s.preg];
-    const target = g * s.weightKg;                 // pre-pregnancy weight, actual
+    const add = PREG_ADD[s.preg][s.preg === 'pregnant' ? s.trimester : s.babyAge];
+    const target = WHO_BASE * basisKg + add;
     return {
       suppressed:false, branch:'pregnancy', bmi,
       lowG: Math.round(target), highG: Math.round(target), targetG: Math.round(target),
-      gPerKg: g, basisKg: s.weightKg, basisNote:'your pre-pregnancy weight',
-      perMeal: clampMeal(target / s.meals),
-      sources: [ s.preg==='pregnant'
-        ? 'IOM Dietary Reference Intakes — pregnancy RDA 1.1 g/kg/day'
-        : 'IOM Dietary Reference Intakes — lactation RDA 1.3 g/kg/day' ],
-      interpKey:'baseline', dietMult:1.0, capped:false
+      gPerKg: +(target / basisKg).toFixed(2), basisKg,
+      basisNote: adjusted ? 'an adjusted body weight of ' + basisKg.toFixed(1) + ' kg, from your pre-pregnancy weight' : 'your pre-pregnancy weight',
+      perMeal: Math.round(target / s.meals),
+      sources: [ 'WHO/FAO/UNU 2007: 0.83 g/kg plus ' + add + ' g a day ' +
+        (s.preg === 'pregnant' ? 'in this trimester' : (s.babyAge === 'under6' ? 'while breastfeeding a baby under 6 months' : 'while breastfeeding a baby 6 months or older')) ],
+      interpKey:'baseline', capped:false, older:false
     };
   }
 
-  /* --- P3: NORMAL PATH — collect applicable bands --------------------- */
+  /* --- P2: HEALTHY ADULTS — one winning band --------------------------- */
   const applicable = [];
   const older = s.age >= 65;
+  const strength = s.resistance === 'yes';
+  const exercising = strength || s.activity === 'moderate' || s.activity === 'vigorous';
 
-  if (s.activity==='sedentary') applicable.push(BANDS.sedentary);
-  if (s.activity==='light' || s.activity==='moderate') applicable.push(BANDS.lightMod);
-  if (s.activity==='vigorous') applicable.push(BANDS.vigorous);
+  if (s.activity === 'moderate') applicable.push(BANDS.moderate);
+  else if (s.activity === 'vigorous') applicable.push(BANDS.vigorous);
+  else applicable.push(BANDS.base);
 
-  if (s.resistance==='1-2') applicable.push(BANDS.resLow);
-  if (s.resistance==='3-4') applicable.push(BANDS.resMid);
-  if (s.resistance==='5+')  applicable.push(BANDS.resHigh);
+  if (strength || s.goal === 'build') applicable.push(BANDS.strength);
+  if (s.goal === 'fatloss') applicable.push(strength ? BANDS.fatLossTrain : BANDS.fatLoss);
+  if (older) applicable.push(exercising ? BANDS.olderActive : BANDS.older);
 
-  const training = s.resistance !== '0' || s.activity === 'vigorous';
-  if (s.goal==='build')    applicable.push(BANDS.buildMuscle);
-  if (s.goal==='fatloss')  applicable.push(training ? BANDS.fatLossTrain : BANDS.fatLossOnly);
-  if (s.goal==='recovery') applicable.push(BANDS.recovery);
-  if (s.liver==='yes')     applicable.push(BANDS.recovery);
-  // 'Age well' does not by itself justify the ESPEN active/illness band (1.2-1.5).
-  // A sedentary healthy older adult belongs at PROT-AGE 1.0-1.2; only training lifts them.
-  if (s.goal==='ageing')   applicable.push(older ? (training ? BANDS.olderActive : BANDS.older) : BANDS.lightMod);
-
-  if (older) applicable.push(training ? BANDS.olderActive : BANDS.older);
-  if (!applicable.length) applicable.push(BANDS.sedentary);
-
-  // highest applicable band wins
-  let lo = Math.max(...applicable.map(b=>b.lo));
-  let hi = Math.max(...applicable.map(b=>b.hi));
-  if (lo > hi) lo = hi;
-
+  // highest top wins; on a tie, the higher bottom. Its own range is used, so every range is a published one.
   const winner = applicable.reduce((a,b)=> b.hi > a.hi ? b : (b.hi===a.hi && b.lo>a.lo ? b : a));
+  const capped = winner.hi > CEILING;
+  const lo = Math.min(winner.lo, CEILING), hi = Math.min(winner.hi, CEILING);
 
-  /* --- digestibility uplift (DIAAS-derived; flagged in methodology) ---- */
-  const mult = DIET_MULT[s.diet] || 1.0;
-  lo *= mult; hi *= mult;
-
-  /* --- ceiling -------------------------------------------------------- */
-  let capped = false;
-  if (hi > CEILING){ hi = CEILING; capped = true; }
-  if (lo > CEILING) lo = CEILING;
-
-  const lowG  = lo * basisKg;
-  const highG = hi * basisKg;
-  const targetG = (lowG + highG) / 2;
-
-  const sources = [...new Set(applicable.map(b=>b.src))];
-  if (mult !== 1.0) sources.push('Plant-protein digestibility uplift (x'+mult+') — DIAAS-derived, see note');
-
+  const targetG = (lo + hi) / 2 * basisKg;
   return {
     suppressed:false, branch:'standard', bmi,
-    lowG: Math.round(lowG), highG: Math.round(highG), targetG: Math.round(targetG),
-    gPerKg: +((lo+hi)/2).toFixed(2), basisKg, basisNote,
-    perMeal: clampMeal(targetG / s.meals),
-    sources, interpKey: winner.key, dietMult: mult, capped, older
+    lowG: Math.round(lo * basisKg), highG: Math.round(hi * basisKg), targetG: Math.round(targetG),
+    gPerKg: +((lo+hi)/2).toFixed(2), basisKg,
+    basisNote: adjusted ? 'an adjusted body weight of ' + basisKg.toFixed(1) + ' kg (used because applying g/kg to full body weight overstates the target when a larger share of that weight is fat mass)' : 'your current weight',
+    perMeal: Math.round(targetG / s.meals),
+    sources: [winner.src], interpKey: winner.key, capped, older
   };
 }
-function clampMeal(g){ return Math.round(Math.min(40, Math.max(20, g))); }   // ISSN: 20–40 g per serving
 
 
 /* =====================================================================
@@ -621,8 +610,8 @@ function clampMeal(g){ return Math.round(Math.min(40, Math.max(20, g))); }   // 
    ===================================================================== */
 const $ = id => document.getElementById(id);
 const state = {
-  sex:null, preg:'no', ethnicity:null, activity:null, resistance:null,
-  goal:null, diet:null, kidney:null, liver:null,
+  sex:null, preg:'no', trimester:null, babyAge:null, ethnicity:null, activity:null, resistance:null,
+  goal:null, diet:null, kidney:null, liver:null, plan:null,
   heightCm:0, weightKg:0, age:null, meals:3,
   hUnit:'cm', wUnit:'kg'
 };
@@ -647,22 +636,29 @@ function buildOpts(containerId, items, key, onPick){
 buildOpts('sex', [['male','Male'],['female','Female']], 'sex', v=>{
   $('pregWrap').style.display = v==='female' ? 'block' : 'none';
   $('pregWeightHint').style.display = v==='female' ? 'block' : 'none';
-  if(v!=='female') state.preg='no';
+  if(v!=='female'){ state.preg='no'; showStage('no'); }
 });
-buildOpts('preg', [['no','Neither'],['pregnant','Pregnant'],['breastfeeding','Breastfeeding']], 'preg');
+function showStage(v){
+  $('trimWrap').style.display = v==='pregnant' ? 'block' : 'none';
+  $('babyWrap').style.display = v==='breastfeeding' ? 'block' : 'none';
+}
+buildOpts('preg', [['no','Neither'],['pregnant','Pregnant'],['breastfeeding','Breastfeeding']], 'preg', showStage);
+buildOpts('trim', [['1','First (weeks 1–13)'],['2','Second (weeks 14–27)'],['3','Third (week 28 on)']], 'trimester');
+buildOpts('baby', [['under6','Under 6 months'],['6plus','6 months or older']], 'babyAge');
 buildOpts('eth', ETHNICITIES, 'ethnicity', updateDerived);
 buildOpts('act', [
   ['sedentary','Mostly sitting'], ['light','Lightly active'],
   ['moderate','Moderately active'], ['vigorous','Very active / endurance']
 ], 'activity');
-buildOpts('res', [['0','None'],['1-2','1–2 / week'],['3-4','3–4 / week'],['5+','5+ / week']], 'resistance');
+buildOpts('res', [['no','No'],['yes','Yes, twice a week or more']], 'resistance');
 buildOpts('goal', [
   ['maintain','Stay as I am'], ['fatloss','Lose fat'], ['build','Build muscle'],
-  ['ageing','Age well / keep strength'], ['recovery','Recover from illness or surgery']
+  ['ageing','Age well / keep strength']
 ], 'goal');
 buildOpts('diet', [['omnivore','I eat meat or fish'],['vegetarian','Vegetarian'],['vegan','Vegan']], 'diet');
 buildOpts('kidney', [['no','No'],['yes','Yes'],['unsure',"I'm not sure"]], 'kidney');
 buildOpts('liver', [['no','No'],['yes','Yes']], 'liver');
+buildOpts('plan', [['no','No'],['yes','Yes']], 'plan');
 
 /* FR1-15 / NFR1-10 / UI1-08: status gate (DEC-10). The tool renders only when tools/status.json says this tool is active;
    a failed or unreadable fetch fails closed with a retry control; a withdrawn tool shows the approved unavailable copy. */
@@ -760,13 +756,16 @@ function validate(){
   if(!state.sex) e.push('Select your sex.');
   if(state.heightCm<140 || state.heightCm>210) e.push('Enter a height between 140 cm and 210 cm (4ft 7in – 6ft 11in).');
   if(state.weightKg<35 || state.weightKg>250) e.push('Enter a weight between 35 kg and 250 kg (77 lb – 551 lb).');
-  if(!state.ethnicity) e.push('Select your ethnicity — it sets which healthy-weight bounds apply to you.');
+  if(state.preg==='pregnant' && !state.trimester) e.push('Select your stage of pregnancy.');
+  if(state.preg==='breastfeeding' && !state.babyAge) e.push("Select your baby's age.");
+  if(!state.ethnicity) e.push('Select your ethnicity — it sets the healthy weight range shown to you.');
   if(!state.activity) e.push('Select your activity level.');
-  if(!state.resistance) e.push('Select how often you do resistance training.');
+  if(!state.resistance) e.push('Answer the strength training question.');
   if(!state.goal) e.push('Select what you are aiming for.');
   if(!state.diet) e.push('Select how you eat.');
   if(!state.kidney) e.push('Answer the kidney disease question — protein guidance changes direction with kidney disease, so we cannot skip it.');
   if(!state.liver) e.push('Answer the liver disease / recovery question.');
+  if(!state.plan) e.push('Answer the question about a plan from your doctor or dietitian.');
   return e;
 }
 
@@ -800,9 +799,10 @@ function render(r){
   B.innerHTML=''; H.innerHTML=''; M.innerHTML='';
   $('interp').innerHTML=''; $('adviceBlock').innerHTML='';
 
-  /* ---- P0: renal suppression. No numbers. At all. ---- */
+  /* ---- P0: referral stops. No numbers. At all. ---- */
   if(r.suppressed){
-    B.innerHTML = `<div class="banner stop" role="alert" data-test="renal-stop"><h3>${MESSAGES.renalStop.title}</h3>${MESSAGES.renalStop.body}</div>`;
+    const stop = r.reason==='renal' ? ['renal-stop', MESSAGES.renalStop] : r.reason==='plan' ? ['plan-stop', MESSAGES.planStop] : ['clinical-stop', MESSAGES.clinicalStop];
+    B.innerHTML = `<div class="banner stop" role="alert" data-test="${stop[0]}"><h3>${stop[1].title}</h3>${stop[1].body}</div>`;
     $('metrics').innerHTML = '';
     $('methodology').innerHTML = methodologyHTML(r);
     $('emailCard').classList.add('hidden');
@@ -815,8 +815,6 @@ function render(r){
     B.innerHTML += `<div class="banner care" role="alert" data-test="renal-unsure"><h3>${MESSAGES.renalUnsure.title}</h3>${MESSAGES.renalUnsure.body}</div>`;
   if(r.branch==='pregnancy')
     B.innerHTML += `<div class="banner care" role="alert" data-test="banner-pregnancy" data-copy="pregnancy"><h3>${MESSAGES.pregnancy.title}</h3>${MESSAGES.pregnancy.body}</div>`;
-  if(state.liver==='yes' || state.goal==='recovery')   /* FR1-09: recovery goal adds the ESPEN band and the clinical banner (SRS FR1-09) */
-    B.innerHTML += `<div class="banner care" role="alert" data-test="banner-clinical" data-copy="clinical"><h3>${MESSAGES.clinical.title}</h3>${MESSAGES.clinical.body}</div>`;
   if(r.bmi < 18.5)
     B.innerHTML += `<div class="banner care" role="alert" data-test="banner-underweight" data-copy="underweight"><h3>${MESSAGES.underweight.title}</h3>${MESSAGES.underweight.body}</div>`;
 
@@ -825,8 +823,8 @@ function render(r){
   H.innerHTML = `
     <div class="headline">
       <h2 class="num">${r.targetG} g</h2>
-      <div class="unit">of protein per day${r.branch==='pregnancy' ? ' (minimum)' : ''}</div>
-      ${isRange ? `<div class="range">Target range ${r.lowG}–${r.highG} g per day</div>` : ''}
+      <div class="unit">of protein per day${r.branch==='pregnancy' ? ' (minimum)' : ', your starting target'}</div>
+      ${isRange ? `<div class="range">Your range ${r.lowG}–${r.highG} g per day</div>` : ''}
     </div>`;
 
   /* ---- metrics ---- */
@@ -836,15 +834,14 @@ function render(r){
     <div class="metric"><div class="k">Intensity</div><div class="v">${r.gPerKg} g/kg</div>
       <div class="n">applied to ${r.basisKg.toFixed(1)} kg</div></div>
     <div class="metric"><div class="k">Your BMI</div><div class="v">${r.bmi.toFixed(1)}</div>
-      <div class="n">${cutoffs(state.ethnicity).asian ? 'Asian cutoffs applied' : 'standard cutoffs applied'}</div></div>
+      <div class="n">${cutoffs(state.ethnicity).lower ? 'lower cut-offs for your background' : 'standard cut-offs'}</div></div>
     <div class="metric"><div class="k">Basis weight</div><div class="v">${fromKg(r.basisKg, state.wUnit)}</div>
       <div class="n">${r.basisKg < state.weightKg ? 'adjusted for body composition' : 'your current weight'}</div></div>`;
 
   /* ---- interpretation ---- */
   $('interp').innerHTML = `<p>${MESSAGES.interp[r.interpKey] || MESSAGES.interp.baseline}</p>` +
-    (r.capped ? `<p style="font-size:13.5px;color:#6b7280">Your target has been capped at ${CEILING} g/kg — the top of the
-       range published for exercising adults. Higher intakes exist in the literature, but only for trained individuals
-       in a deliberate calorie deficit, under supervision.</p>` : '');
+    (r.capped ? `<p style="font-size:13.5px;color:#6b7280">Your target stops at ${CEILING} g/kg, the top of the range this
+       general tool covers.</p>` : '');
 
   /* ---- advice ---- */
   const d = { perMeal:r.perMeal, meals:state.meals };
@@ -852,7 +849,8 @@ function render(r){
   bullets.push(fill(r.older ? MESSAGES.advice.spreadOlder : MESSAGES.advice.spread, d));
   bullets.push(state.diet==='omnivore' ? MESSAGES.advice.quality : MESSAGES.advice.plant);
   bullets.push(MESSAGES.advice.food);
-  if(r.interpKey==='training' || r.interpKey==='fatloss' || state.resistance!=='0') bullets.push(MESSAGES.advice.training);
+  if(r.interpKey==='training' || r.interpKey==='fatloss' || state.resistance==='yes') bullets.push(MESSAGES.advice.training);
+  if(state.resistance==='yes') bullets.push(MESSAGES.advice.perMealTraining);
   bullets.push(MESSAGES.advice.hydrate);
 
   $('adviceBlock').innerHTML = `
@@ -866,16 +864,21 @@ function render(r){
 }
 
 function methodologyHTML(r){
-  if(r.suppressed){
+  if(r.suppressed && r.reason==='renal'){
     return `<p>Because you told us you have kidney disease or reduced kidney function, this tool
       deliberately produced no number.</p>
-      <p>The 2020 KDOQI nutrition guideline recommends that adults with CKD stages 3–5 who are not on
-      dialysis and are metabolically stable <em>restrict</em> protein to roughly 0.55–0.60 g/kg of ideal
-      body weight per day (0.6–0.8 g/kg where diabetes is also present). That runs directly opposite to
-      the general-population guidance this tool is built on. People on dialysis, by contrast, typically
-      need <em>more</em> protein, around 1.0–1.2 g/kg.</p>
-      <p>Which of those applies to you depends on your kidney function, your stage, whether you're on
-      dialysis and whether you have diabetes — none of which a public calculator can see. So we don't guess.</p>`;
+      <p>Kidney guidelines set protein individually. The KDIGO 2024 guideline suggests around 0.8 g/kg
+      a day for adults with chronic kidney disease stages 3–5, and advises against more than 1.3 g/kg
+      where the disease could progress; the KDOQI 2020 guideline sets lower amounts under close
+      supervision. People on dialysis usually need more. Which applies to you depends on your stage,
+      treatment and other conditions, none of which a public calculator can see. So we don't guess.</p>`;
+  }
+  if(r.suppressed){
+    return `<p>Because of what you told us, this tool deliberately produced no number.</p>
+      <p>Protein needs in liver disease, in recovery from serious illness, injury or surgery, and on a
+      plan from your clinician depend on details a public calculator cannot see. ESPEN's liver
+      guideline, for example, gives different amounts for different liver conditions. Your clinical
+      team can set the right amount for you.</p>`;
   }
   const co = cutoffs(state.ethnicity);
   return `
@@ -884,34 +887,33 @@ function methodologyHTML(r){
       ${r.sources.map(s=>`<li>${s}</li>`).join('')}
     </ul>
     <p><strong>How the number was built</strong><br>
-      Applicable guideline bands were collected from your age, activity, resistance training and goal.
-      Where more than one applied, the highest was taken — guidelines describe minimums, so the most
-      demanding applicable band governs. The result was then multiplied by ${r.dietMult} for protein
-      digestibility, and capped at ${CEILING} g/kg.</p>
+      ${r.branch==='pregnancy'
+        ? `In pregnancy and breastfeeding the World Health Organization's figure is used on its own: 0.83 g/kg
+           plus a fixed amount for your stage. Activity, training and goal are not added.`
+        : `Every guideline range that matches your age, activity, strength training and goal was collected.
+           The one with the highest top was used, with its own range, because guidelines describe what a
+           person in that situation needs. Your starting target is the middle of that range. The tool stops
+           at ${CEILING} g/kg, the top of the range it covers.`}</p>
     <p><strong>Basis weight</strong><br>
-      The g/kg figure was applied to ${r.basisNote}. Your ethnicity selects the healthy-BMI bound used
-      for this (${co.healthyLow}–${co.healthyHigh}${co.asian ? ', Asian cutoffs' : ', standard cutoffs'}).
-      Ethnicity is used for nothing else in this tool.</p>
-    <p><strong>Per-meal split</strong><br>
-      The ISSN position stand suggests roughly 0.25 g/kg per serving, or 20–40 g in absolute terms; the
-      per-meal figure is bounded to that window.</p>
+      The g/kg figure was applied to ${r.basisNote}. Above the weight at a BMI of 24.9, only part of the
+      extra weight is counted, so the target never drops when weight goes up. Your background sets only
+      the healthy range shown to you (${co.healthyLow}–${co.healthyHigh}${co.lower ? ', lower cut-offs from NICE guidance' : ''}).</p>
+    <p><strong>Per meal</strong><br>
+      Your daily target divided by the number of meals you eat.</p>
     <p><strong>Where the numbers come from</strong></p>
     <table>
       <tr><th>Group</th><th>g/kg/day</th><th>Source</th></tr>
-      <tr><td>General adult (floor)</td><td>0.8</td><td>IOM Dietary Reference Intakes, 2005</td></tr>
-      <tr><td>Exercising adults</td><td>1.4–2.0</td><td>ISSN Position Stand, Jäger et al. 2017</td></tr>
-      <tr><td>Athletes</td><td>1.2–2.0</td><td>ACSM / AND / DC joint position, 2016</td></tr>
-      <tr><td>Healthy older adults</td><td>1.0–1.2</td><td>PROT-AGE (Bauer 2013), ESPEN (Deutz 2014)</td></tr>
-      <tr><td>Illness / recovery</td><td>1.2–1.5</td><td>ESPEN, 2014</td></tr>
-      <tr><td>Pregnancy</td><td>1.1</td><td>IOM DRI</td></tr>
-      <tr><td>Breastfeeding</td><td>1.3</td><td>IOM DRI</td></tr>
-      <tr><td>Kidney disease</td><td><em>restricted, clinician-set</em></td><td>KDOQI, 2020</td></tr>
+      <tr><td>Sitting most of the day or lightly active</td><td>0.83–1.0</td><td>WHO/FAO/UNU 2007; IOM 2005; OPTIMen trial, Bhasin 2018</td></tr>
+      <tr><td>Moderate exercise</td><td>1.0–1.4</td><td>Tagawa 2021, meta-analysis of randomised trials</td></tr>
+      <tr><td>Vigorous exercise</td><td>1.2–1.6</td><td>AND / Dietitians of Canada / ACSM joint position, 2016</td></tr>
+      <tr><td>Strength training or building muscle</td><td>1.4–2.0</td><td>ISSN Position Stand 2017; Morton 2018 meta-analysis</td></tr>
+      <tr><td>Losing fat</td><td>1.2–1.6 (1.6–2.0 with strength training)</td><td>Leidy 2015; Wycherley 2012; ISSN 2017</td></tr>
+      <tr><td>Adults 65 and over</td><td>1.0–1.2 (1.2–1.5 if exercising)</td><td>PROT-AGE 2013; ESPEN 2014 and 2019; Nunes 2022</td></tr>
+      <tr><td>Pregnancy</td><td>0.83 + 1, 9 or 31 g a day by trimester</td><td>WHO/FAO/UNU 2007</td></tr>
+      <tr><td>Breastfeeding</td><td>0.83 + 19 g a day (12.5 g after 6 months)</td><td>WHO/FAO/UNU 2007</td></tr>
+      <tr><td>Kidney or liver disease, recovery, clinician's plan</td><td><em>set by your clinician</em></td><td>KDIGO 2024; ESPEN</td></tr>
     </table>
-    <p style="margin-top:12px"><strong>One honest caveat.</strong> The plant-protein uplift
-      (×1.1 vegetarian, ×1.2 vegan) is derived from digestibility scoring (DIAAS), not lifted from a
-      position stand. It is the one adjustment in this tool without a guideline sentence directly behind
-      it, and we would rather say so than dress it up.</p>
-    <p><strong>Limits.</strong> This applies population guidelines to self-reported inputs. It cannot
+    <p><strong>Limits.</strong> This applies published guidelines to self-reported inputs. It cannot
       account for your bloods, medications, or medical history. It does not diagnose anything.</p>`;
 }
 

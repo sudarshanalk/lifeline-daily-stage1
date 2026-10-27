@@ -2,7 +2,7 @@
 
 **Who builds what, in what order, how work is handed over, reviewed and deployed — kept simple**
 
-**Approved by the owner on 25 October 2026.** Prepared 25 October 2026. Follows the approved Stage 2 Requirements, Screen Design Specification, Data Model and Test Criteria. Written in plain language.
+**Approved by the owner on 25 October 2026.** Prepared 25 October 2026. Follows the approved Stage 2 Requirements, Screen Design Specification, Data Model and Test Criteria. Written in plain language. Amended on 27 October 2026 for the Healthy Weight Check (requirements FR2-39, D53 and D54): lead packages L9a and L9, and section 4.1.
 
 ---
 
@@ -49,7 +49,19 @@ This is the light process agreed after Stage 1 (decision DEC-84). Specifically:
 | Stage 2 documents | **Claude**, after owner decisions | `docs/stage2/` (copied from `spec/stage2/`) |
 | Automated checks and deployment | **Claude** | `.github/workflows/`, `deploy/` |
 | Stage 1 calculators, their wording and approvals | **Nobody** without an owner decision | `site/public_html/tools/`, `approvals/`, `manifests/`, `copy/` |
+| **Healthy Weight Check** (FR2-39, packages L9a and L9) | **Claude**, by owner decisions D53 and D54 | Only the files in section 4.1 |
 | Content: tracks, lessons, activities, recipes, meal plans, workouts, challenges, safety matrix, guides, emails' wording | **Owner approves**; Claude drafts | Entered in WordPress on staging through the owner screens |
+
+### 4.1 Files opened to the Healthy Weight Check packages
+
+The automated scope check enforces this list. Every other protected file stays closed.
+
+| Package | May add | May change |
+|---|---|---|
+| **L9a** | — | `site/public_html/tools/status.json` (empty the planned list) |
+| **L9** | `site/public_html/tools/healthy-weight-tool.html`; `manifests/healthy-weight.json`; `approvals/healthy-weight.json`; `copy/healthy-weight-messages.json`; `fixtures/healthy-weight/`; `oracles/orc-05-healthy-weight/`; `tests/saf/saf-healthy-weight.test.mjs`; `tests/stage2/healthy-weight*` | `site/public_html/tools/status.json` (the new tool's entry); `site/public_html/tools/lld-members-link.js` (typed result and clear messages for all three tools); `approvals/copy.json` and `copy/inventory.json` (new keys only); in `lld-members`: `includes/class-plugin.php` (landing route), `includes/class-billing.php` (landing page and result listener), `includes/class-growth.php` (calculator-to-track map); the link-script include line in the two older tool pages, if the bridge needs it |
+
+**Never changed by L9:** anything inside the frozen blocks of the two older calculators, their wording, or the expected values of their fixtures. A scope test proves that L9 can add the new tool and that a change to an old engine, old wording or an old expected value still fails.
 
 ## 5. Cursor's work packages, in order
 
@@ -88,6 +100,8 @@ Titled `S2-Ln: <name>`. These run alongside Cursor's packages.
 | **L6** | Content drafting for owner approval: track content, recipes and meal plans, workouts, challenges, safety matrix wording, screening wording, starter guides, email wording, legal pages | FR2-08, FR2-31 to FR2-34, FR2-38, FR2-18 |
 | **L7** | Staging tests: payments with test clocks, crawl, performance, security scan, accessibility | Test Criteria section 3 |
 | **L8** | Launch: release checklist, production deploy, 24-hour check | Requirements section 9 |
+| **L9a** | Hide the "planned" Healthy Weight card for launch | D54 |
+| **L9** | Healthy Weight Check: calculator, reference calculation, tests, landing page, card and result link | FR2-39; SCR-45 |
 
 ## 7. Rules for Cursor
 

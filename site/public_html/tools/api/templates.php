@@ -96,6 +96,8 @@ return [
       '<p>You told us you feel very unwell right now — with symptoms such as vomiting, drowsiness, fast '.
       'or deep breathing, or stomach pain. These can signal a serious problem with blood sugar.</p>'.
       '<p><strong>Please seek a same-day medical assessment — urgent care or A&amp;E.</strong> We haven\'t included a risk '.
-      'estimate, because getting checked comes first.</p>',
+      'estimate, because getting checked comes first.</p>'.
+      '<p><strong>In an emergency, call your local emergency number now</strong>, for example 999 in the UK, 911 in the US '.
+      'and Canada, 112 in the EU and India, or 000 in Australia. In the UK you can also call NHS 111 for urgent advice.</p>',
   ],
 ];

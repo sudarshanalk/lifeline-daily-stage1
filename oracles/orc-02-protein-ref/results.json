@@ -1,31 +1,24 @@
 {
   "oracle_id": "ORC-02",
-  "implementation": "Sealed Python reference from Protein-Tool-Engine-Reference.docx §2–§5",
+  "implementation": "Sealed Python reference v2 from oracles/orc-02-protein-ref/rules-v2-DEC-86.md (DEC-86)",
   "versions": {
     "python": "3.14.6"
   },
-  "source_hash": "0b3d818c4134358e5dbb38d8084eed673bbe2e6436083f11cc92bf51fb18a39f",
-  "run_at": "2026-10-23T11:21:48Z",
+  "source_hash": "09b116ae17891c5e77484599eb87b27475af855e149ddbba9055c2c30862534a",
+  "run_at": "2026-10-27T15:56:56Z",
   "results": [
     {
       "fixture_id": "FX-PR-AGE-01",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
+        "branch": "standard",
         "targetG": 90,
         "lowG": 75,
         "highG": 105,
         "gPerKg": 1.2,
         "basisKg": 75.0,
         "perMeal": 30,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "capped": false
       },
       "notes": "age 18"
     },
@@ -33,21 +26,14 @@
       "fixture_id": "FX-PR-AGE-02",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
-        "targetG": 68,
-        "lowG": 60,
+        "branch": "standard",
+        "targetG": 69,
+        "lowG": 62,
         "highG": 75,
-        "gPerKg": 0.9,
+        "gPerKg": 0.92,
         "basisKg": 75.0,
         "perMeal": 23,
-        "capped": false,
-        "winningBand": "Activity: sedentary",
-        "sources": [
-          "IOM RDA (floor)"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "capped": false
       },
       "notes": "64 sedentary"
     },
@@ -55,22 +41,14 @@
       "fixture_id": "FX-PR-AGE-03",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
+        "branch": "standard",
         "targetG": 83,
         "lowG": 75,
         "highG": 90,
         "gPerKg": 1.1,
         "basisKg": 75.0,
         "perMeal": 28,
-        "capped": false,
-        "winningBand": "Age >=65, not training",
-        "sources": [
-          "IOM RDA (floor)",
-          "PROT-AGE / ESPEN"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "capped": false
       },
       "notes": "65 sedentary"
     },
@@ -78,46 +56,29 @@
       "fixture_id": "FX-PR-AGE-04",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
+        "branch": "standard",
         "targetG": 128,
         "lowG": 105,
         "highG": 150,
         "gPerKg": 1.7,
         "basisKg": 75.0,
-        "perMeal": 40,
-        "capped": false,
-        "winningBand": "Resistance 3-4/wk",
-        "sources": [
-          "IOM AMDR / ISSN lower",
-          "ISSN 2017",
-          "ESPEN"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "perMeal": 43,
+        "capped": false
       },
-      "notes": "65 resMid"
+      "notes": "65 with strength training: older active band vs strength band"
     },
     {
       "fixture_id": "FX-PR-AGE-05",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
-        "targetG": 90,
-        "lowG": 75,
-        "highG": 105,
-        "gPerKg": 1.2,
+        "branch": "standard",
+        "targetG": 101,
+        "lowG": 90,
+        "highG": 113,
+        "gPerKg": 1.35,
         "basisKg": 75.0,
-        "perMeal": 30,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower",
-          "PROT-AGE / ESPEN"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "perMeal": 34,
+        "capped": false
       },
       "notes": "age 99"
     },
@@ -125,158 +86,106 @@
       "fixture_id": "FX-PR-BMI-01",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
-        "targetG": 110,
-        "lowG": 92,
-        "highG": 128,
+        "branch": "standard",
+        "targetG": 98,
+        "lowG": 82,
+        "highG": 115,
         "gPerKg": 1.2,
-        "basisKg": 91.5,
-        "perMeal": 37,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "basisKg": 82.0,
+        "perMeal": 33,
+        "capped": false
       },
-      "notes": "BMI 29.9 actual"
+      "notes": "BMI 24 uses actual weight"
     },
     {
       "fixture_id": "FX-PR-BMI-02",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
+        "branch": "standard",
         "targetG": 99,
         "lowG": 83,
         "highG": 116,
         "gPerKg": 1.2,
-        "basisKg": 82.6,
+        "basisKg": 82.55375,
         "perMeal": 33,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "capped": false
       },
-      "notes": "BMI 30.04 adjusted 24.9"
+      "notes": "BMI 30.04 adjusted from the BMI 24.9 weight"
     },
     {
       "fixture_id": "FX-PR-BMI-03",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
-        "targetG": 95,
-        "lowG": 79,
-        "highG": 110,
+        "branch": "standard",
+        "targetG": 83,
+        "lowG": 69,
+        "highG": 97,
         "gPerKg": 1.2,
-        "basisKg": 78.9,
-        "perMeal": 32,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "basisKg": 69.0464,
+        "perMeal": 28,
+        "capped": false
       },
-      "notes": "adjusted 22.9"
+      "notes": "lower-cut-off background, same basis as BMI-04"
     },
     {
       "fixture_id": "FX-PR-BMI-04",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
-        "targetG": 79,
-        "lowG": 66,
-        "highG": 92,
+        "branch": "standard",
+        "targetG": 83,
+        "lowG": 69,
+        "highG": 97,
         "gPerKg": 1.2,
-        "basisKg": 66.0,
-        "perMeal": 26,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "basisKg": 69.0464,
+        "perMeal": 28,
+        "capped": false
       },
-      "notes": "adjusted second"
+      "notes": "standard background twin of BMI-03"
     },
     {
       "fixture_id": "FX-PR-CAP-01",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
-        "targetG": 150,
-        "lowG": 144,
+        "branch": "standard",
+        "targetG": 128,
+        "lowG": 105,
         "highG": 150,
-        "gPerKg": 2.0,
+        "gPerKg": 1.7,
         "basisKg": 75.0,
-        "perMeal": 40,
-        "capped": true,
-        "winningBand": "Resistance 5+/wk",
-        "sources": [
-          "IOM AMDR / ISSN lower",
-          "ISSN 2017"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "perMeal": 43,
+        "capped": false
       },
-      "notes": "vegan athlete capped"
+      "notes": "vegan, build and strength: top band at the 2.0 ceiling"
     },
     {
       "fixture_id": "FX-PR-CAP-02",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
-        "targetG": 140,
-        "lowG": 116,
+        "branch": "standard",
+        "targetG": 128,
+        "lowG": 105,
         "highG": 150,
-        "gPerKg": 1.87,
+        "gPerKg": 1.7,
         "basisKg": 75.0,
-        "perMeal": 40,
-        "capped": true,
-        "winningBand": "Resistance 3-4/wk",
-        "sources": [
-          "IOM AMDR / ISSN lower",
-          "ISSN 2017"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "perMeal": 43,
+        "capped": false
       },
-      "notes": "vegetarian resMid capped"
+      "notes": "vegetarian, strength band"
     },
     {
       "fixture_id": "FX-PR-CAP-03",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
-        "targetG": 135,
-        "lowG": 120,
+        "branch": "standard",
+        "targetG": 128,
+        "lowG": 105,
         "highG": 150,
-        "gPerKg": 1.8,
+        "gPerKg": 1.7,
         "basisKg": 75.0,
-        "perMeal": 40,
-        "capped": false,
-        "winningBand": "Resistance 5+/wk",
-        "sources": [
-          "IOM AMDR / ISSN lower",
-          "ISSN 2017"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "perMeal": 43,
+        "capped": false
       },
-      "notes": "exactly 2.0 uncapped"
+      "notes": "top band reaches exactly 2.0"
     },
     {
       "fixture_id": "FX-PR-INV-01",
@@ -337,524 +246,354 @@
     {
       "fixture_id": "FX-PR-LIV-01",
       "expected": {
-        "suppressed": false,
-        "branch": "normal",
-        "targetG": 101,
-        "lowG": 90,
-        "highG": 113,
-        "gPerKg": 1.35,
-        "basisKg": 75.0,
-        "perMeal": 34,
-        "capped": false,
-        "winningBand": "Goal: recovery, or liver=yes",
-        "sources": [
-          "IOM RDA (floor)",
-          "ESPEN (illness)"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": true
+        "suppressed": true,
+        "reason": "clinical"
       },
-      "notes": "liver yes sedentary"
+      "notes": "liver disease: no number"
     },
     {
       "fixture_id": "FX-PR-LIV-02",
       "expected": {
-        "suppressed": false,
-        "branch": "normal",
-        "targetG": 101,
-        "lowG": 90,
-        "highG": 113,
-        "gPerKg": 1.35,
-        "basisKg": 75.0,
-        "perMeal": 34,
-        "capped": false,
-        "winningBand": "Goal: recovery, or liver=yes",
-        "sources": [
-          "IOM AMDR / ISSN lower",
-          "ESPEN (illness)"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": true
+        "suppressed": true,
+        "reason": "plan"
       },
-      "notes": "goal recovery"
+      "notes": "clinician plan: no number"
     },
     {
       "fixture_id": "FX-PR-MEAL-01",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
-        "targetG": 54,
-        "lowG": 48,
+        "branch": "standard",
+        "targetG": 55,
+        "lowG": 50,
         "highG": 60,
-        "gPerKg": 0.9,
+        "gPerKg": 0.92,
         "basisKg": 60.0,
-        "perMeal": 20,
-        "capped": false,
-        "winningBand": "Activity: sedentary",
-        "sources": [
-          "IOM RDA (floor)"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "perMeal": 11,
+        "capped": false
       },
-      "notes": "clamp 20"
+      "notes": "5 meals: per meal = target / 5"
     },
     {
       "fixture_id": "FX-PR-MEAL-02",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
-        "targetG": 151,
-        "lowG": 134,
+        "branch": "standard",
+        "targetG": 143,
+        "lowG": 118,
         "highG": 168,
-        "gPerKg": 1.8,
-        "basisKg": 83.8,
-        "perMeal": 40,
-        "capped": false,
-        "winningBand": "Resistance 5+/wk",
-        "sources": [
-          "IOM AMDR / ISSN lower",
-          "ISSN 2017"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "gPerKg": 1.7,
+        "basisKg": 84.15375,
+        "perMeal": 72,
+        "capped": false
       },
-      "notes": "clamp 40"
+      "notes": "2 meals: per meal = target / 2"
     },
     {
       "fixture_id": "FX-PR-MEAL-03",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
+        "branch": "standard",
         "targetG": 90,
         "lowG": 75,
         "highG": 105,
         "gPerKg": 1.2,
         "basisKg": 75.0,
         "perMeal": 23,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "capped": false
       },
-      "notes": "meals 4"
+      "notes": "4 meals"
     },
     {
       "fixture_id": "FX-PR-NRM-01",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
+        "branch": "standard",
         "targetG": 90,
         "lowG": 75,
         "highG": 105,
         "gPerKg": 1.2,
         "basisKg": 75.0,
         "perMeal": 30,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "capped": false
       },
-      "notes": "baseline lightMod"
+      "notes": "moderate exercise band"
     },
     {
       "fixture_id": "FX-PR-NRM-02",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
-        "targetG": 68,
-        "lowG": 60,
+        "branch": "standard",
+        "targetG": 69,
+        "lowG": 62,
         "highG": 75,
-        "gPerKg": 0.9,
+        "gPerKg": 0.92,
         "basisKg": 75.0,
         "perMeal": 23,
-        "capped": false,
-        "winningBand": "Activity: sedentary",
-        "sources": [
-          "IOM RDA (floor)"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "capped": false
       },
-      "notes": "sedentary floor"
+      "notes": "sedentary, WHO floor band"
     },
     {
       "fixture_id": "FX-PR-NRM-03",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
-        "targetG": 90,
-        "lowG": 75,
-        "highG": 105,
-        "gPerKg": 1.2,
+        "branch": "standard",
+        "targetG": 69,
+        "lowG": 62,
+        "highG": 75,
+        "gPerKg": 0.92,
         "basisKg": 75.0,
-        "perMeal": 30,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "perMeal": 23,
+        "capped": false
       },
-      "notes": "light"
+      "notes": "light activity uses the floor band"
     },
     {
       "fixture_id": "FX-PR-NRM-04",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
+        "branch": "standard",
         "targetG": 105,
         "lowG": 90,
         "highG": 120,
         "gPerKg": 1.4,
         "basisKg": 75.0,
         "perMeal": 35,
-        "capped": false,
-        "winningBand": "Activity: very active/endurance",
-        "sources": [
-          "ACSM/AND/DC 2016"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "capped": false
       },
-      "notes": "vigorous"
+      "notes": "vigorous band"
     },
     {
       "fixture_id": "FX-PR-NRM-05",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
+        "branch": "standard",
+        "targetG": 128,
+        "lowG": 105,
+        "highG": 150,
+        "gPerKg": 1.7,
+        "basisKg": 75.0,
+        "perMeal": 43,
+        "capped": false
+      },
+      "notes": "strength training band"
+    },
+    {
+      "fixture_id": "FX-PR-NRM-06",
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 128,
+        "lowG": 105,
+        "highG": 150,
+        "gPerKg": 1.7,
+        "basisKg": 75.0,
+        "perMeal": 43,
+        "capped": false
+      },
+      "notes": "strength training band, moderate activity"
+    },
+    {
+      "fixture_id": "FX-PR-NRM-07",
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 128,
+        "lowG": 105,
+        "highG": 150,
+        "gPerKg": 1.7,
+        "basisKg": 75.0,
+        "perMeal": 43,
+        "capped": false
+      },
+      "notes": "strength training band, again"
+    },
+    {
+      "fixture_id": "FX-PR-NRM-08",
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 128,
+        "lowG": 105,
+        "highG": 150,
+        "gPerKg": 1.7,
+        "basisKg": 75.0,
+        "perMeal": 43,
+        "capped": false
+      },
+      "notes": "goal build uses the strength band without training"
+    },
+    {
+      "fixture_id": "FX-PR-NRM-09",
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
         "targetG": 105,
         "lowG": 90,
         "highG": 120,
         "gPerKg": 1.4,
         "basisKg": 75.0,
         "perMeal": 35,
-        "capped": false,
-        "winningBand": "Resistance 1-2/wk",
-        "sources": [
-          "IOM AMDR / ISSN lower",
-          "ISSN 2017 lower"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "capped": false
       },
-      "notes": "resLow"
-    },
-    {
-      "fixture_id": "FX-PR-NRM-06",
-      "expected": {
-        "suppressed": false,
-        "branch": "normal",
-        "targetG": 128,
-        "lowG": 105,
-        "highG": 150,
-        "gPerKg": 1.7,
-        "basisKg": 75.0,
-        "perMeal": 40,
-        "capped": false,
-        "winningBand": "Resistance 3-4/wk",
-        "sources": [
-          "IOM AMDR / ISSN lower",
-          "ISSN 2017"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
-      },
-      "notes": "resMid"
-    },
-    {
-      "fixture_id": "FX-PR-NRM-07",
-      "expected": {
-        "suppressed": false,
-        "branch": "normal",
-        "targetG": 135,
-        "lowG": 120,
-        "highG": 150,
-        "gPerKg": 1.8,
-        "basisKg": 75.0,
-        "perMeal": 40,
-        "capped": false,
-        "winningBand": "Resistance 5+/wk",
-        "sources": [
-          "IOM AMDR / ISSN lower",
-          "ISSN 2017"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
-      },
-      "notes": "resHigh"
-    },
-    {
-      "fixture_id": "FX-PR-NRM-08",
-      "expected": {
-        "suppressed": false,
-        "branch": "normal",
-        "targetG": 135,
-        "lowG": 120,
-        "highG": 150,
-        "gPerKg": 1.8,
-        "basisKg": 75.0,
-        "perMeal": 40,
-        "capped": false,
-        "winningBand": "Goal: build muscle",
-        "sources": [
-          "IOM AMDR / ISSN lower",
-          "ISSN 2017"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
-      },
-      "notes": "build"
-    },
-    {
-      "fixture_id": "FX-PR-NRM-09",
-      "expected": {
-        "suppressed": false,
-        "branch": "normal",
-        "targetG": 101,
-        "lowG": 90,
-        "highG": 113,
-        "gPerKg": 1.35,
-        "basisKg": 75.0,
-        "perMeal": 34,
-        "capped": false,
-        "winningBand": "Goal: fat loss, no training",
-        "sources": [
-          "IOM AMDR / ISSN lower",
-          "ISSN (lean-mass retention)"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
-      },
-      "notes": "fatloss no training"
+      "notes": "fat loss without strength training"
     },
     {
       "fixture_id": "FX-PR-NRM-10",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
+        "branch": "standard",
         "targetG": 135,
         "lowG": 120,
         "highG": 150,
         "gPerKg": 1.8,
         "basisKg": 75.0,
-        "perMeal": 40,
-        "capped": false,
-        "winningBand": "Goal: fat loss + training",
-        "sources": [
-          "IOM AMDR / ISSN lower",
-          "ISSN 2017",
-          "ISSN (lean-mass retention)"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "perMeal": 45,
+        "capped": false
       },
-      "notes": "fatloss training"
+      "notes": "fat loss with strength training"
     },
     {
       "fixture_id": "FX-PR-NRM-11",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
+        "branch": "standard",
         "targetG": 90,
         "lowG": 75,
         "highG": 105,
         "gPerKg": 1.2,
         "basisKg": 75.0,
         "perMeal": 30,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "capped": false
       },
-      "notes": "ageing goal"
+      "notes": "goal age well under 65 adds no band"
     },
     {
       "fixture_id": "FX-PR-NRM-12",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
-        "targetG": 99,
-        "lowG": 83,
-        "highG": 116,
-        "gPerKg": 1.32,
-        "basisKg": 75.0,
-        "perMeal": 33,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
-      },
-      "notes": "vegetarian"
-    },
-    {
-      "fixture_id": "FX-PR-NRM-13",
-      "expected": {
-        "suppressed": false,
-        "branch": "normal",
-        "targetG": 108,
-        "lowG": 90,
-        "highG": 126,
-        "gPerKg": 1.44,
-        "basisKg": 75.0,
-        "perMeal": 36,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
-      },
-      "notes": "vegan"
-    },
-    {
-      "fixture_id": "FX-PR-NRM-14",
-      "expected": {
-        "suppressed": false,
-        "branch": "normal",
+        "branch": "standard",
         "targetG": 90,
         "lowG": 75,
         "highG": 105,
         "gPerKg": 1.2,
         "basisKg": 75.0,
         "perMeal": 30,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "capped": false
       },
-      "notes": "female no preg"
+      "notes": "vegetarian: no multiplier"
+    },
+    {
+      "fixture_id": "FX-PR-NRM-13",
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 90,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.2,
+        "basisKg": 75.0,
+        "perMeal": 30,
+        "capped": false
+      },
+      "notes": "vegan: no multiplier"
+    },
+    {
+      "fixture_id": "FX-PR-NRM-14",
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 90,
+        "lowG": 75,
+        "highG": 105,
+        "gPerKg": 1.2,
+        "basisKg": 75.0,
+        "perMeal": 30,
+        "capped": false
+      },
+      "notes": "female, not pregnant"
     },
     {
       "fixture_id": "FX-PR-PRG-01",
       "expected": {
         "suppressed": false,
         "branch": "pregnancy",
-        "targetG": 83,
-        "lowG": 83,
-        "highG": 83,
-        "gPerKg": 1.1,
+        "targetG": 63,
+        "lowG": 63,
+        "highG": 63,
+        "gPerKg": 0.84,
         "basisKg": 75.0,
-        "perMeal": 28,
-        "capped": false,
-        "winningBand": "Pregnancy RDA",
-        "sources": [
-          "IOM / DRI (Pregnancy RDA)"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "perMeal": 21,
+        "capped": false
       },
-      "notes": "pregnant res5+"
+      "notes": "pregnant, first trimester, strength training entered"
     },
     {
       "fixture_id": "FX-PR-PRG-02",
       "expected": {
         "suppressed": false,
         "branch": "pregnancy",
-        "targetG": 83,
-        "lowG": 83,
-        "highG": 83,
-        "gPerKg": 1.1,
+        "targetG": 71,
+        "lowG": 71,
+        "highG": 71,
+        "gPerKg": 0.95,
         "basisKg": 75.0,
-        "perMeal": 28,
-        "capped": false,
-        "winningBand": "Pregnancy RDA",
-        "sources": [
-          "IOM / DRI (Pregnancy RDA)"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "perMeal": 24,
+        "capped": false
       },
-      "notes": "pregnant build vegan"
+      "notes": "pregnant, second trimester, goal build, vegan"
     },
     {
       "fixture_id": "FX-PR-PRG-03",
       "expected": {
         "suppressed": false,
         "branch": "pregnancy",
-        "targetG": 98,
-        "lowG": 98,
-        "highG": 98,
-        "gPerKg": 1.3,
+        "targetG": 93,
+        "lowG": 93,
+        "highG": 93,
+        "gPerKg": 1.24,
         "basisKg": 75.0,
-        "perMeal": 33,
-        "capped": false,
-        "winningBand": "Lactation RDA",
-        "sources": [
-          "IOM / DRI (Lactation RDA)"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "perMeal": 31,
+        "capped": false
       },
-      "notes": "breastfeeding vigorous"
+      "notes": "pregnant, third trimester, vigorous"
     },
     {
       "fixture_id": "FX-PR-PRG-04",
       "expected": {
         "suppressed": false,
         "branch": "pregnancy",
-        "targetG": 98,
-        "lowG": 98,
-        "highG": 98,
-        "gPerKg": 1.3,
+        "targetG": 81,
+        "lowG": 81,
+        "highG": 81,
+        "gPerKg": 1.08,
         "basisKg": 75.0,
-        "perMeal": 33,
-        "capped": false,
-        "winningBand": "Lactation RDA",
-        "sources": [
-          "IOM / DRI (Lactation RDA)"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "perMeal": 27,
+        "capped": false
       },
-      "notes": "breastfeeding fatloss res3-4"
+      "notes": "breastfeeding, baby under 6 months, fat loss and strength training"
+    },
+    {
+      "fixture_id": "FX-PR-PRG-05",
+      "expected": {
+        "suppressed": false,
+        "branch": "pregnancy",
+        "targetG": 75,
+        "lowG": 75,
+        "highG": 75,
+        "gPerKg": 1.0,
+        "basisKg": 75.0,
+        "perMeal": 25,
+        "capped": false
+      },
+      "notes": "breastfeeding, baby 6 months or older, goal build"
     },
     {
       "fixture_id": "FX-PR-REN-01",
       "expected": {
         "suppressed": true,
-        "branch": "renal"
+        "reason": "renal"
       },
       "notes": "kidney yes"
     },
@@ -862,7 +601,7 @@
       "fixture_id": "FX-PR-REN-02",
       "expected": {
         "suppressed": true,
-        "branch": "renal"
+        "reason": "renal"
       },
       "notes": "kidney yes athlete"
     },
@@ -870,7 +609,7 @@
       "fixture_id": "FX-PR-REN-03",
       "expected": {
         "suppressed": true,
-        "branch": "renal"
+        "reason": "renal"
       },
       "notes": "kidney yes pregnant"
     },
@@ -878,7 +617,7 @@
       "fixture_id": "FX-PR-REN-04",
       "expected": {
         "suppressed": true,
-        "branch": "renal"
+        "reason": "renal"
       },
       "notes": "kidney yes liver older"
     },
@@ -886,21 +625,14 @@
       "fixture_id": "FX-PR-UNIT-01",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
+        "branch": "standard",
         "targetG": 90,
         "lowG": 75,
         "highG": 105,
         "gPerKg": 1.2,
         "basisKg": 75.0,
         "perMeal": 30,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "capped": false
       },
       "notes": "imperial twin NRM-01"
     },
@@ -908,21 +640,14 @@
       "fixture_id": "FX-PR-UNIT-02",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
+        "branch": "standard",
         "targetG": 99,
         "lowG": 83,
         "highG": 116,
         "gPerKg": 1.2,
-        "basisKg": 82.6,
+        "basisKg": 82.55230050818399,
         "perMeal": 33,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "capped": false
       },
       "notes": "st/lb twin BMI-02"
     },
@@ -930,21 +655,14 @@
       "fixture_id": "FX-PR-UNIT-03",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
+        "branch": "standard",
         "targetG": 90,
         "lowG": 75,
         "highG": 105,
         "gPerKg": 1.2,
         "basisKg": 75.0,
         "perMeal": 30,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": false,
-        "underweight": false,
-        "clinical": false
+        "capped": false
       },
       "notes": "metres"
     },
@@ -952,21 +670,14 @@
       "fixture_id": "FX-PR-UNS-01",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
+        "branch": "standard",
         "targetG": 90,
         "lowG": 75,
         "highG": 105,
         "gPerKg": 1.2,
         "basisKg": 75.0,
         "perMeal": 30,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": true,
-        "underweight": false,
-        "clinical": false
+        "capped": false
       },
       "notes": "kidney unsure"
     },
@@ -974,21 +685,14 @@
       "fixture_id": "FX-PR-UWT-01",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
+        "branch": "standard",
         "targetG": 67,
         "lowG": 56,
         "highG": 78,
         "gPerKg": 1.2,
         "basisKg": 56.0,
         "perMeal": 22,
-        "capped": false,
-        "winningBand": "Activity: light/moderate",
-        "sources": [
-          "IOM AMDR / ISSN lower"
-        ],
-        "renalUnsure": false,
-        "underweight": true,
-        "clinical": false
+        "capped": false
       },
       "notes": "BMI 18.3"
     },
@@ -996,46 +700,36 @@
       "fixture_id": "FX-PR-UWT-02",
       "expected": {
         "suppressed": false,
-        "branch": "normal",
-        "targetG": 70,
+        "branch": "standard",
+        "targetG": 73,
         "lowG": 62,
-        "highG": 78,
-        "gPerKg": 1.35,
+        "highG": 83,
+        "gPerKg": 1.4,
         "basisKg": 52.0,
-        "perMeal": 23,
-        "capped": false,
-        "winningBand": "Goal: fat loss, no training",
-        "sources": [
-          "IOM AMDR / ISSN lower",
-          "ISSN (lean-mass retention)"
-        ],
-        "renalUnsure": false,
-        "underweight": true,
-        "clinical": false
+        "perMeal": 24,
+        "capped": false
       },
       "notes": "underweight fatloss"
     }
   ],
   "notes": [
-    "Target g/kg: the document says 'take the highest [band], apply the diet multiplier, cap at 2.0, then multiply by basis weight' but never says which point of the winning lo-hi band is the headline target. Chosen reading: gPerKg/targetG use the MIDPOINT of the winning band ((lo+hi)/2) x diet multiplier, capped at 2.0; lowG/highG use lo and hi x multiplier, each capped at 2.0.",
-    "Highest-band tie-break: the document says only 'take the highest'. Chosen reading: highest 'hi' wins; if 'hi' ties, highest 'lo' wins; if both tie, the first row in §4.2 table order wins (e.g. Resistance 5+/wk beats Goal: build muscle at 1.6-2.0).",
-    "'capped' flag: set true when any of lo, hi or midpoint x multiplier exceeds 2.0 g/kg (in practice when hi x multiplier > 2.0), i.e. the reported range was truncated by the ceiling, even if the midpoint target itself was not.",
-    "Diet multiplier on the pregnancy/lactation branch: §4.3 says the branch is 'computed as their own RDA ... and returned before the standard path runs' and 'never stacked'. Chosen reading: the multiplier is NOT applied; 1.1 / 1.3 g/kg x entered weight is returned as-is (PRG-02 vegan pregnant -> 1.1 g/kg).",
-    "Pregnancy branch basis weight: §4.3 says 'on pre-pregnancy weight'; the tool only has the entered weight. Chosen reading: entered weight, no BMI>=30 adjusted-body-weight substitution. basisKg reports the entered weight.",
-    "Pregnancy branch low/high: the RDA is 'a minimum floor'; no range is given. Chosen reading: lowG = highG = targetG, winningBand 'Pregnancy RDA' / 'Lactation RDA', capped=false.",
-    "Pregnancy branch gating: §3 lists the pregnancy input as 'if female'. Chosen reading: the branch is taken only when sex == female AND preg in {pregnant, breastfeeding}; a male fixture with preg != 'no' falls through to the normal path (no fixture exercises this).",
-    "Priority: renal (kidney=yes) is P0 and is evaluated BEFORE pregnancy (REN-03 pregnant + kidney yes -> suppressed). The suppressed result contains no numeric fields at all.",
-    "'Training' flag: defined here as resistance != '0' OR activity == 'vigorous' (document's 'training/active'). It drives both 'Goal: fat loss + training' vs 'no training' and 'Age >=65 training/active' vs 'not training'. So fat loss + vigorous activity with no resistance work counts as 'fat loss + training'. Light/moderate activity does NOT count as 'active' for the >=65 row.",
-    "Age >=65 band is ADDED to the collection alongside the activity/resistance/goal bands (not substituted for them); the normal highest-band rule then decides. AGE-03 (65 sedentary) therefore wins with 1.0-1.2 over 0.8-1.0.",
-    "Goal 'ageing' adds no band by itself (there is no such row in §4.2); the age >=65 rows are triggered by age only. Goal 'recovery' adds the ESPEN illness row 1.2-1.5, the same row as liver=yes.",
-    "Ethnicity -> upper-healthy BMI: Indian, Pakistani, Bangladeshi, Other Asian, Chinese -> 22.9; every other value including 'White', 'Black', 'Mixed', 'Other' and a missing/null ethnicity -> 24.9 (standard). Ethnicity is not treated as a required field.",
-    "Basis weight: adjusted body weight is used only when BMI >= 30.0 (unrounded BMI from canonical cm/kg) AND actual weight > Wupper. Wupper = upperBMI x (height_m)^2. The gram figures are computed from the UNROUNDED basis; basisKg is reported rounded to 1 dp.",
-    "Rounding: targetG, lowG, highG and perMeal use round-half-up (floor(x+0.5)), not banker's rounding; gPerKg is rounded to 2 dp after a 1e-9 nudge to avoid binary float artefacts (e.g. 1.2*1.1).",
-    "Per-meal split: target / meals is clamped to 20-40 g FIRST and then rounded (clamp then round). The document's order ('target / meals, bounded to 20-40 g') does not say whether the clamp precedes rounding; the two orders differ only at boundaries.",
-    "Underweight (BMI < 18.5): per the P2 priority row, the engine computes on actual weight with no numeric change; only the 'underweight' flag is set. A fat-loss goal is still honoured numerically (UWT-02 gets the fat-loss, no-training band).",
-    "'clinical' flag = liver == yes OR goal == recovery (the P1 CLINICAL row minus pregnancy, which has its own branch value). 'renalUnsure' = kidney == unsure; computation proceeds normally.",
-    "sources[]: the Source column of EVERY applicable band row (deduplicated, table order), not just the winning row, since the payload describes it as 'guidelines applied'. The plant-diet uplift is not listed as a source because the document labels it an extrapolation, not a guideline.",
-    "Validation: age outside 18-99, canonical height outside 140-210 cm, canonical weight outside 35-250 kg, meals outside 2-5, any required field null (age, sex, activity, resistance, goal, diet, meals, kidney, liver, height, weight) or any enumerated value outside its documented set -> {error: true}. 'preg' null is treated as 'no' rather than an error.",
-    "Unit conversion: imperial height = (ft*12 + in) * 2.54 cm; imperial weight = (st*14 + lb) * 0.45359237 kg; heightUnit 'm' -> heightM * 100. No intermediate rounding, so UNIT-02 (14 st 6.8 lb, 5 ft 8.9 in) lands at BMI 30.04 and takes the adjusted-weight path like BMI-02."
+    "Rounding: round half up implemented as floor(x + 0.5) on IEEE doubles, matching JavaScript Math.round for positive numbers. No decimal-exact correction is applied, so a value that is a binary hair below .5 rounds down, as it would in JavaScript.",
+    "gPerKg is rounded to 2 decimals (floor(x*100 + 0.5)/100) in both branches. In the pregnancy branch it is the UNROUNDED target divided by basisKg, then rounded to 2 decimals (the rules give the formula but not the rounding for that branch).",
+    "basisKg is reported unrounded, as computed (the rules do not state any rounding for it). Floating-point noise in its last digits is therefore possible; compare it with a small tolerance.",
+    "Pregnancy branch: targetG, lowG and highG are all the whole-gram rounding of 0.83 x basisKg + addition (lowG = highG = targetG). perMeal uses the same rule as the standard branch (unrounded target / meals, rounded to a whole gram) and capped is false, because the rules define perMeal and capped only under the standard outputs but the expected object lists them for every non-suppressed result.",
+    "Validation precedes the suppression rules: an invalid fixture yields {\"error\": true} even if kidney, liver or plan would otherwise suppress it.",
+    "Invalid-input ranges are inclusive (age 18-99, height 140-210 cm, weight 35-250 kg) and are applied after unit conversion, to the converted heightCm and weightKg, and also on the pregnancy branch (age is validated even though it is ignored there).",
+    "'sex missing' is read as sex not equal to 'male' or 'female' (null, absent, empty or any other value). 'kidney missing' is read as kidney null, absent or empty; any non-empty value other than 'yes' (including 'unsure') is not suppressed on the kidney rule, so 'unsure' proceeds to a number.",
+    "A missing or non-numeric age, height or weight (after conversion) is treated as invalid and gives {\"error\": true}.",
+    "Height conversion: if heightFt is present (not null), heightCm = heightFt x 30.48 + heightIn x 2.54 (heightIn absent = 0); else if heightM is present, heightCm = heightM x 100; else heightCm is used. Presence of these fields decides, regardless of the 'units' or 'heightUnit' fields, which are ignored. heightFt takes priority over heightM if both are present.",
+    "Weight conversion: if weightSt is present, weightKg = weightSt x 6.35029318 + weightLb x 0.45359237 (weightLb absent = 0), even when weightKg is also present. If weightSt is absent and weightKg is present, weightKg is used as given and weightLb is ignored (literal reading of 'only weightLb present and weightKg missing'); so FX-PR-UNIT-01 uses weightKg = 75, not 165.3 lb. weightLb alone is converted only when weightKg is missing.",
+    "'preg' values other than 'pregnant' or 'breastfeeding' (including absent) are treated as 'no' and go to the standard branch. Sex plays no part in the calculation other than the validity check, so a male with preg set is not rejected.",
+    "trimester and babyAge are compared as strings (so the number 3 equals '3'). A pregnant fixture whose trimester is not '1', '2' or '3', or a breastfeeding fixture whose babyAge is not 'under6' or '6plus', is treated as missing and gives {\"error\": true}.",
+    "Exercising (for the Older bands) = resistance 'yes', or activity 'moderate' or 'vigorous'. 'Older' (age >= 65, not exercising) and 'Older, exercising' (age >= 65, exercising) are therefore mutually exclusive.",
+    "Band selection: the winner is the applicable band with the highest top; a tie on top goes to the higher bottom; the winner's own bottom and top are used (no blending across bands). Goals 'maintain' and 'ageing' add no band. Diet and ethnicity are never used.",
+    "Ceiling: capped is true only if the winning band's top is above 2.0. No band in the table exceeds 2.0, so capped is false in every standard result; the code still clamps top (and bottom) to 2.0 defensively. A band at exactly 2.0 is not capped.",
+    "Suppressed results carry only {suppressed: true, reason}; they have no branch, numeric fields, basisKg or capped. Non-suppressed results carry suppressed: false and branch. Invalid results carry only {error: true}.",
+    "Suppression order is kidney 'yes' (renal), then liver 'yes' (clinical), then plan 'yes' (plan); the first that applies wins. Suppression comes before the pregnancy branch.",
+    "Each result's notes is the fixture's purpose string, as instructed. Every fixture of every file in the cases file is processed, in file order then fixture order."
   ]
 }

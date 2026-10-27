@@ -23,8 +23,8 @@ function replay(patterns, extra = () => {}) {
 
 describe('SAF protein', () => {
   test('SAF-PR-01', () => {
-    // Renal yes: FX-PR-REN-01…04 — suppressed, no numeric target anywhere in the result
-    replay(['FX-PR-REN-*'], (f, got) => {
+    // Renal yes (FX-PR-REN-01…04) and the clinical stops (FX-PR-LIV-01/02, DEC-86): suppressed, no numeric target anywhere
+    replay(['FX-PR-REN-*', 'FX-PR-LIV-*'], (f, got) => {
       expect(got.suppressed, f.id).toBe(true);
       for (const k of ['targetG', 'lowG', 'highG', 'gPerKg', 'perMeal']) expect(got[k], `${f.id} ${k}`).toBeUndefined();
     });
@@ -34,7 +34,7 @@ describe('SAF protein', () => {
     replay(['FX-PR-UNS-*'], (f, got) => { expect(got.suppressed, f.id).toBeFalsy(); expect(got.targetG, f.id).toBeGreaterThan(0); });
   });
   test('SAF-PR-03', () => {
-    // Pregnancy / lactation: FX-PR-PRG-01…04 — own-RDA branch, no stacking
+    // Pregnancy / breastfeeding: FX-PR-PRG-01…05 — own WHO branch, no stacking
     replay(['FX-PR-PRG-*'], (f, got) => { expect(got.branch, f.id).toMatch(/preg|lact|breast/i); });
   });
   test('SAF-PR-04', () => {
