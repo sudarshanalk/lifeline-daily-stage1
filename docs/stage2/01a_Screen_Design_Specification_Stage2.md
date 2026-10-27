@@ -2,7 +2,7 @@
 
 **What every Stage 2 screen must show, in what order, in which states, and how it must look and behave**
 
-**Approved by the owner on 25 October 2026.** Prepared 25 October 2026 as a companion to the approved Stage 2 Requirements, Data Model and Test Criteria. Revised the same day after an independent review. Written in plain language. It is the brief for designing the screens. The designs are made as clickable prototypes in the owner's design canvas and approved against this document.
+**Approved by the owner on 25 October 2026.** Prepared 25 October 2026 as a companion to the approved Stage 2 Requirements, Data Model and Test Criteria. Revised the same day after an independent review. Amended on 27 October 2026 to add SCR-45, the Healthy Weight Check (requirements FR2-39). Written in plain language. It is the brief for designing the screens. The designs are made as clickable prototypes in the owner's design canvas and approved against this document.
 
 ---
 
@@ -175,7 +175,7 @@ They look different, so a member always knows why.
 
 ## 6. Navigation map
 
-**Signed-out header:** Health Tools, Articles (categories), Programmes (the four tracks), Pricing, Sign in, Join free.
+**Signed-out header:** Health Tools (three calculators), Articles (categories), Programmes (the four tracks), Pricing, Sign in, Join free.
 
 **Member menu.** On a phone, a bottom bar with five items. On a desktop, the same items in the site header.
 
@@ -491,7 +491,8 @@ They look different, so a member always knows why.
   - the gentle link to the related track;
   - the starter-guide block (SCR-42).
 - **Rules:** the calculator and its result are not changed. No price or upsell appears in or beside the result.
-- **Requirements:** FR2-23, FR2-16, FR2-18.
+- **Applies to:** all three calculators. For the Healthy Weight Check, the save button appears only after an eligible result, and the track link and starter-guide block are hidden after a stop, an underweight result or the weight-loss banner, and for a member whose profile excludes the Healthy Weight track (SCR-45).
+- **Requirements:** FR2-23, FR2-16, FR2-18, FR2-39.
 
 ### SCR-24 Membership lock
 
@@ -644,6 +645,30 @@ One design, used for all four tracks.
 - **Content:** the category's main guide article, the article list, and the related track.
 - **Requirements:** FR2-26.
 
+### SCR-45 Healthy Weight Check
+
+- **Where:** the calculator page, embedded in its landing page `/health-tools/healthy-weight-check/`, with the SCR-23 additions below it. Its card on the Health Tools page replaces "Healthy weight (planned)".
+- **Form, in order:**
+  1. Age in years.
+  2. "Are you pregnant or breastfeeding?" Yes, No, Not sure.
+  3. "Do you have, or have you had, an eating disorder, or are you worried about your eating?" Yes, No, Prefer not to say, with one line on why it is asked.
+  4. Height and weight, each with its own unit choice and a switch-all-units button.
+  5. Waist, optional, with "How to measure your waist".
+  6. Family background, as tap buttons; "Mixed or other" opens one follow-up question.
+  7. "Have you lost weight in recent months without trying?" Yes, No.
+- **Result, in order:** any banner; the BMI and its category; the healthy weight range "a guide for your height, not a target"; the waist-to-height ratio and band, or the "add your waist" note, or the BMI-35 note; what it means; limits; method and sources with the version; disclaimer.
+- **States:**
+  - empty form; field errors with an error summary at the top;
+  - result, standard thresholds; result, lower thresholds;
+  - no waist; ratio below 0.40; BMI 35.0 or more;
+  - underweight, with the eating-support line;
+  - obesity class 3 note; age 65 or over note;
+  - weight-loss banner above the result;
+  - stop: under 18; stop: pregnancy or breastfeeding; stop: eating disorder (with findahelpline.com). A stop shows no numbers;
+  - unavailable (withdrawn), and could-not-check-status with a retry button.
+- **Rules:** category text never relies on colour alone. Never a calorie number, a weight-loss target, a price or an upsell.
+- **Requirements:** FR2-39, FR2-23.
+
 ## 11. Emails
 
 All emails are phone-friendly, at most 600 pixels wide, with the logo, short wording, one button and no tracking pixels. Non-transactional emails end with one-click unsubscribe (UI2-04). **No email contains health details.**
@@ -717,7 +742,7 @@ These sit inside the WordPress admin area, in its standard look, and must be usa
 |---|---|---|
 | **1. Joining and the core journey** | Sections 3 to 6 (shared components, states, navigation); SCR-01 to SCR-12, SCR-24 to SCR-26, SCR-32 | The owner approves |
 | **2. Premium features** | SCR-13 to SCR-23 | The owner approves |
-| **3. Account, public pages, emails and owner screens** | SCR-30, SCR-31, SCR-33 to SCR-37, SCR-40 to SCR-44, EM-01 to EM-21, AD-01 to AD-14 | The owner approves |
+| **3. Account, public pages, emails and owner screens** | SCR-30, SCR-31, SCR-33 to SCR-37, SCR-40 to SCR-45, EM-01 to EM-21, AD-01 to AD-14 | The owner approves |
 
 **Each batch is delivered as:**
 
@@ -767,6 +792,7 @@ These sit inside the WordPress admin area, in its standard look, and must be usa
 | FR2-36 | SCR-11, SCR-21; AD-14 |
 | FR2-37 | SCR-16 |
 | FR2-38 | SCR-08, SCR-25 |
+| FR2-39 | SCR-45, SCR-23 |
 | NFR2-01 | SCR-06, SCR-30, SCR-35, SCR-36; EM-16 |
 | NFR2-02 | SCR-04, SCR-30; EM-03 |
 | NFR2-03 | All screens (sections 2 and 3.4) |
