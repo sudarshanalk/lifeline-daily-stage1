@@ -131,7 +131,7 @@ test('TC-FR1-17-AS-03', async ({ page, request }) => {
     await expect(box, 'disclaimer content rendered').toHaveCount(1);
     await expect(box.locator('#urgent-care'), 'urgent-care anchor in the content').toHaveCount(1);
     const text = pageText(await box.innerHTML());
-    for (const n of ['999', '111', '1990', '112']) expect(text, `disclaimer content lists ${n}`).toMatch(new RegExp(`(^|\\D)${n}(\\D|$)`));
+    for (const n of ['999', '911', '112', '000', '111']) expect(text, `disclaimer content lists ${n} (DEC-87)`).toMatch(new RegExp(`(^|\\D)${n}(\\D|$)`));
     expect(text).toMatch(/local emergency number/);
   }
 });
