@@ -1,0 +1,37 @@
+{
+  "tool_slug": "healthy-weight",
+  "live_url": "https://lifelinedaily.com/tools/healthy-weight-tool.html",
+  "landing_url": "https://lifelinedaily.com/health-tools/healthy-weight-check/",
+  "endpoint": null,
+  "owner": "Lifeline Daily",
+  "versions": [
+    {
+      "version_hash": "9d2d73f9a82be97c4d621f060aff3046ca19bb554769c2abde719a8d1cb8fc87",
+      "captured_at": "2026-10-27T13:56:53Z",
+      "is_live": true,
+      "size_bytes": 40604,
+      "engine_hashes": {
+        "js:HW_ENGINE": "28374687a7e3d63895709c6f870fcddc1dc8d79e0d1c51ab3a45c9b08644448b"
+      },
+      "notes": "Shell change; frozen engine objects unchanged (engine-freeze)"
+    },
+    {
+      "version_hash": "67243bca7c5cded454222b8fe1383e1a4df0f623764bf9951cfb5ed3f4536fef",
+      "captured_at": "2026-10-27T13:49:07Z",
+      "is_live": false,
+      "size_bytes": 40433,
+      "engine_hashes": {
+        "js:HW_ENGINE": "28374687a7e3d63895709c6f870fcddc1dc8d79e0d1c51ab3a45c9b08644448b"
+      },
+      "notes": "Shell change; frozen engine objects unchanged (engine-freeze)"
+    },
+    {
+      "version_hash": "0000000000000000000000000000000000000000000000000000000000000000",
+      "captured_at": "2026-10-27T00:00:00Z",
+      "is_live": false,
+      "size_bytes": 0,
+      "engine_hashes": {},
+      "notes": "S2-L9 first version (FR2-39); awaiting the owner's clinical sign-off (AS-19)"
+    }
+  ]
+}

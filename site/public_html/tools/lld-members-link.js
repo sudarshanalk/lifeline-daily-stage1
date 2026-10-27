@@ -1,7 +1,13 @@
-/* Sends the finished calculator headline to the landing page. It reads only the result already on screen. */
+/* Sends the finished calculator headline to the landing page. It reads only the result already on screen, never the answers.
+ * Tool identity is explicit: <html data-lld-tool="…"> (the Healthy Weight Check); the two Stage 1 pages are told apart by
+ * their result markup, and a page that is neither sends nothing. Messages (FR2-23, FR2-39 AS-14 and AS-15):
+ *   { type: 'lld-calculator-result', calculator, headline, unit, band, version, onward }
+ *   { type: 'lld-calculator-cleared', calculator[, onward: false] }   when the result goes away (edit, stop, withdrawal)
+ * onward is false when the landing page must not offer the related track or guide (FR2-39). */
 (function () {
-  var protein = document.getElementById('headlineBlock');
-  var slug = protein ? 'protein' : 'diabetes';
+  var named = document.documentElement.getAttribute('data-lld-tool');
+  var slug = named || (document.getElementById('headlineBlock') ? 'protein' : (document.getElementById('headlineZone') ? 'diabetes' : ''));
+  if (!slug) return;
   var version = '';
   var last = '';
   var ready = false;
@@ -13,6 +19,12 @@
   }
 
   function result() {
+    if (slug === 'healthy-weight') {
+      var r = window.LLD_RESULT;
+      if (!r || window.LLD_STATUS === 'withdrawn') return { none: true, onward: true };
+      if (r.stop) return { none: true, onward: false };
+      return { headline: String(r.headline), unit: String(r.unit), band: String(r.band), onward: r.onward !== false };
+    }
     if (slug === 'protein') {
       var num = document.querySelector('#headlineBlock .num');
       var unit = document.querySelector('#headlineBlock .unit');
@@ -47,15 +59,22 @@
     var found = result();
     var parentOrigin = origin();
     if (!ready || !parentOrigin || window.parent === window) return;
-    if (!found) {
-      // The tool has withdrawn its number (for example kidney disease or the emergency box): the landing page must not keep it.
-      if (last !== '') {
-        last = '';
-        post({ type: 'lld-calculator-cleared', calculator: slug });
+    if (!found || found.none) {
+      // The tool has withdrawn its number (kidney disease, the emergency box, a safety stop or an edit): the landing page
+      // must not keep it.
+      var onward = !found || found.onward !== false;
+      var clearedKey = 'cleared|' + onward;
+      if (last !== '' && last !== clearedKey) {
+        last = clearedKey;
+        post(onward ? { type: 'lld-calculator-cleared', calculator: slug } : { type: 'lld-calculator-cleared', calculator: slug, onward: false });
+      } else if (last === '' && !onward) {
+        last = clearedKey;
+        post({ type: 'lld-calculator-cleared', calculator: slug, onward: false });
       }
       return;
     }
-    var key = found.headline + '|' + found.unit + '|' + found.band + '|' + version;
+    var onwardOk = found.onward !== false;
+    var key = found.headline + '|' + found.unit + '|' + found.band + '|' + version + '|' + onwardOk;
     if (key === last) return;
     last = key;
     post({
@@ -64,7 +83,8 @@
       headline: found.headline,
       unit: found.unit,
       band: found.band,
-      version: version
+      version: version,
+      onward: onwardOk
     });
   }
 
@@ -78,5 +98,6 @@
     send();
   }).catch(function () { ready = true; send(); });
 
+  document.addEventListener('lld-result-change', send);
   new MutationObserver(send).observe(document.body, { childList: true, subtree: true, characterData: true });
 })();

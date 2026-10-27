@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en" data-lld-tool="healthy-weight">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="canonical" href="__LLD_ORIGIN__/health-tools/healthy-weight-check/">
+<title>Healthy Weight Check — Lifeline Daily</title>
+<style>
+/* stylelint-disable color-no-hex */
+:root{
+  --charcoal:#1c1c1c;
+  --brand-green:#3fd07f;
+  --accent:#1f9d57; --accent-dark:#157a42;
+  --band-low:#157a42; --band-mod:#94600c; --band-high:#b5302f; --band-info:#3f4a44;   /* white text >= 4.5:1 on every band */
+  --ink:#161a17; --muted:#5b6862; --line:#e4eae6; --paper:#ffffff; --wash:#f2f7f4;
+  --mint:#eafaf0; --radius:18px;
+  --shadow:0 2px 6px rgba(20,40,30,.06),0 14px 34px rgba(20,40,30,.07);
+  --tone-232626:#232626; --tone-141616:#141616; --tone-cdeede:#cdeede; --tone-245b41:#245b41;
+  --tone-a9d8bd:#a9d8bd; --tone-9fe0bd:#9fe0bd; --tone-23b062:#23b062;
+  --tone-fdeceb:#fdeceb; --tone-e7a9a4:#e7a9a4; --tone-7d1f1c:#7d1f1c;
+  --tone-fdf4ea:#fdf4ea; --tone-e7c79a:#e7c79a; --tone-7a4c12:#7a4c12; --tone-333333:#333333; --tone-3f4a44:#3f4a44;
+}
+/* stylelint-enable color-no-hex */
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;color:var(--ink);line-height:1.5;background:var(--wash)}
+.wrap{max-width:780px;margin:0 auto;padding:0 16px 48px}
+header.hero{background:linear-gradient(160deg,var(--tone-232626),var(--tone-141616));color:var(--paper);padding:30px 20px 26px;text-align:center}
+header.hero h1{margin:0;font-size:1.9rem;font-weight:800;letter-spacing:-.02em}
+header.hero .tagline{margin:8px 0 0;color:var(--brand-green);font-weight:600;font-size:.95rem}
+.scope{background:var(--mint);border:1px solid var(--tone-cdeede);color:var(--tone-245b41);border-radius:var(--radius);padding:15px 17px;margin:18px 0;font-size:.92rem}
+.card,.panel{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin:16px 0;box-shadow:var(--shadow)}
+.card h2,.panel h2{margin:0 0 6px;font-size:1.12rem}
+.field{margin:16px 0}
+.field > label,.field > .q{display:block;font-weight:650;margin-bottom:8px;font-size:.95rem}
+.field .sub{display:block;font-weight:400;color:var(--muted);font-size:.84rem;margin-top:2px}
+.taps{display:flex;flex-wrap:wrap;gap:8px}
+.tap{border:1.5px solid var(--line);background:var(--paper);color:var(--ink);border-radius:12px;padding:10px 15px;font-size:.92rem;cursor:pointer;font-family:inherit;font-weight:550;min-height:44px}
+.tap:hover{border-color:var(--tone-a9d8bd)}
+.tap[aria-pressed="true"]{background:var(--accent-dark);border-color:transparent;color:var(--paper)}
+.tap:focus-visible,input:focus,select:focus,.cta:focus-visible,summary:focus-visible{outline:3px solid var(--tone-9fe0bd);outline-offset:2px}
+input[type=number],select{font-family:inherit;font-size:1rem;padding:11px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink);width:100%;min-height:44px}
+.measure{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center}
+.measure .split{display:flex;gap:6px}
+.measure .split input{min-width:0}
+.unit-sel{min-width:104px}
+.toggle-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+.toggle-row .lbl{font-size:.85rem;color:var(--muted)}
+details.how{margin-top:8px;font-size:.88rem;color:var(--tone-3f4a44)}
+details.how summary{cursor:pointer;color:var(--accent-dark);font-weight:600}
+.err{color:var(--band-high);font-size:.86rem;margin-top:6px}
+.err[hidden]{display:none}
+.summary{border:2px solid var(--band-high);background:var(--tone-fdeceb);color:var(--tone-7d1f1c);border-radius:14px;padding:12px 16px;margin:16px 0}
+.summary ul{margin:6px 0 0;padding-left:20px}
+.summary a{color:var(--tone-7d1f1c)}
+.cta{display:block;width:100%;background:var(--accent-dark);color:var(--paper);border:0;border-radius:14px;padding:15px;font-size:1.06rem;font-weight:750;cursor:pointer;font-family:inherit;margin-top:8px;min-height:48px}
+#results[hidden]{display:none}
+.banner{border-radius:var(--radius);padding:16px 18px;margin:16px 0;border:1.5px solid}
+.banner.alert{background:var(--tone-fdeceb);border-color:var(--tone-e7a9a4);color:var(--tone-7d1f1c)}
+.banner.care{background:var(--tone-fdf4ea);border-color:var(--tone-e7c79a);color:var(--tone-7a4c12)}
+.banner h3{margin:0 0 5px;font-size:1.05rem}
+.banner p{margin:0 0 6px;font-size:.93rem}
+.banner a{color:inherit}
+.headline{text-align:center}
+.headline .eyebrow{margin:0;color:var(--muted);font-size:.74rem;letter-spacing:.2em;text-transform:uppercase;font-weight:700}
+.big{font-size:3.2rem;font-weight:850;line-height:1.05;margin:4px 0;letter-spacing:-.03em}
+.pill{display:inline-block;padding:6px 16px;border-radius:999px;color:var(--paper);font-weight:750;font-size:.92rem}
+.pill.healthy{background:var(--band-low)} .pill.caution{background:var(--band-mod)} .pill.high{background:var(--band-high)} .pill.info{background:var(--band-info)}
+.note{font-size:.92rem;margin:10px 0 0}
+.muted{color:var(--muted);font-size:.88rem}
+details.method{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:0 20px;margin:16px 0}
+details.method summary{cursor:pointer;padding:16px 0;font-weight:750}
+details.method .body{padding-bottom:16px;font-size:.88rem;color:var(--tone-3f4a44)}
+footer.disc{color:var(--muted);font-size:.82rem;text-align:center;margin-top:22px;line-height:1.55}
+footer.disc a,.lld-policy-footer a{color:var(--accent-dark)}
+.lld-gate{border-radius:var(--radius);padding:14px 17px;margin:16px 0;background:var(--tone-fdf4ea);border:1.5px solid var(--tone-e7c79a);color:var(--tone-7a4c12);font-size:.92rem}
+.lld-gate button{margin-left:8px;padding:6px 12px;border-radius:6px;border:1px solid var(--tone-e7c79a);background:var(--paper);color:var(--tone-7a4c12);cursor:pointer}
+.lld-unavailable{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin:16px 0}
+.hidden{display:none !important}
+.lld-policy-footer{text-align:center;font-size:.8rem;color:var(--muted);padding:0 16px 24px}
+@media (max-width:520px){header.hero h1{font-size:1.5rem}.big{font-size:2.6rem}.measure{grid-template-columns:1fr}.unit-sel{min-width:0}}
+@media (prefers-reduced-motion:reduce){*{transition:none !important;animation:none !important}}
+</style>
+</head>
+<body>
+<header class="hero"><h1 id="toolTitle"></h1><p class="tagline" id="toolTagline"></p></header>
+<main class="wrap">
+  <p class="scope" id="scopeStatement" data-test="scope"></p>
+  <div class="lld-gate" id="lldGate" role="status" aria-live="polite" aria-busy="true" data-test="status-gate"></div>
+  <div class="lld-unavailable hidden" id="lldUnavailable" hidden data-test="unavailable"></div>
+
+  <form id="tool" class="hidden" hidden novalidate>
+    <div class="summary" id="errSummary" tabindex="-1" role="alert" hidden data-test="error-summary"></div>
+
+    <section class="card" aria-labelledby="secAbout">
+      <h2 id="secAbout"></h2>
+      <div class="field">
+        <label for="age" id="qAge"></label>
+        <input type="number" id="age" inputmode="numeric" min="1" max="120" step="1" aria-describedby="err-age" autocomplete="off">
+        <div class="err" id="err-age" data-err="age" hidden></div>
+      </div>
+      <div class="field" role="group" aria-labelledby="qPreg">
+        <span class="q" id="qPreg"></span>
+        <div class="taps" data-tap="preg" id="pregTaps"></div>
+        <div class="err" id="err-preg" data-err="preg" hidden></div>
+      </div>
+      <div class="field" role="group" aria-labelledby="qEat">
+        <span class="q" id="qEat"></span>
+        <div class="taps" data-tap="eat" id="eatTaps"></div>
+        <div class="err" id="err-eat" data-err="eat" hidden></div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="secMeasure">
+      <h2 id="secMeasure"></h2>
+      <div class="toggle-row"><span class="lbl" id="unitsLbl"></span>
+        <button type="button" class="tap" id="allMetric" aria-pressed="true"></button>
+        <button type="button" class="tap" id="allImperial" aria-pressed="false"></button>
+      </div>
+      <div class="field">
+        <label for="ht" id="qHt"></label>
+        <div class="measure"><div id="htInputs"></div>
+          <select class="unit-sel" id="htUnit" aria-label="Height unit"><option value="cm">cm</option><option value="ftin">ft + in</option></select></div>
+        <div class="err" id="err-ht" data-err="ht" hidden></div>
+      </div>
+      <div class="field">
+        <label for="wt" id="qWt"></label>
+        <div class="measure"><div id="wtInputs"></div>
+          <select class="unit-sel" id="wtUnit" aria-label="Weight unit"><option value="kg">kg</option><option value="stlb">st + lb</option><option value="lb">lb</option></select></div>
+        <div class="err" id="err-wt" data-err="wt" hidden></div>
+      </div>
+      <div class="field">
+        <label for="waist" id="qWaist"></label>
+        <div class="measure"><div id="waistInputs"></div>
+          <select class="unit-sel" id="waistUnit" aria-label="Waist unit"><option value="cm">cm</option><option value="in">inches</option></select></div>
+        <details class="how" data-test="waist-how"><summary id="howWaistTitle"></summary><p id="howWaistBody"></p></details>
+        <div class="err" id="err-waist" data-err="waist" hidden></div>
+      </div>
+    </section>
+
+    <section class="card" aria-labelledby="secBackground">
+      <h2 id="secBackground"></h2>
+      <div class="field" role="group" aria-labelledby="qBg">
+        <span class="q" id="qBg"></span>
+        <div class="taps" data-tap="bg" id="bgTaps"></div>
+        <div class="err" id="err-bg" data-err="bg" hidden></div>
+      </div>
+      <div class="field" role="group" aria-labelledby="qMixed" id="mixedField" hidden>
+        <span class="q" id="qMixed"></span>
+        <div class="taps" data-tap="mixed" id="mixedTaps"></div>
+        <div class="err" id="err-mixed" data-err="mixed" hidden></div>
+      </div>
+      <div class="field" role="group" aria-labelledby="qLoss">
+        <span class="q" id="qLoss"></span>
+        <div class="taps" data-tap="loss" id="lossTaps"></div>
+        <div class="err" id="err-loss" data-err="loss" hidden></div>
+      </div>
+    </section>
+
+    <button type="submit" class="cta" id="submitBtn"></button>
+  </form>
+
+  <section id="results" hidden aria-live="polite" tabindex="-1" data-test="results">
+    <div id="bannerZone" data-test="banners"></div>
+    <div class="panel headline" id="headlineZone" data-test="headline"></div>
+    <div class="panel" id="rangeZone" data-test="range"></div>
+    <div class="panel" id="waistZone" data-test="waist"></div>
+    <div class="panel" id="meaningZone" data-test="meaning"></div>
+    <details class="method" data-test="methodology"><summary id="methodTitle"></summary><div class="body" id="methodBody"></div></details>
+  </section>
+  <footer class="disc" id="discZone" data-test="disclaimer"></footer>
+</main>
+
+<script>
+/* ============================================================================
+ *  LIFELINE DAILY — HEALTHY WEIGHT CHECK  (self-contained, no external deps)
+ *  Requirements FR2-39 (Stage 2), decisions D49–D56.
+ *  (1) MESSAGES  (2) HW_ENGINE (frozen)  (3) STATE+UI  (4) RENDER
+ *  Answers stay in this page: nothing is stored or sent. The finished result is
+ *  offered to the landing page only through lld-members-link.js (FR2-23).
+ * ==========================================================================*/
+
+/* ============================================================================
+ * (1) MESSAGES — COPY LAYER (owner approval FR2-39 AS-19; fingerprinted)
+ * ==========================================================================*/
+var MESSAGES = {
+  title: "Healthy Weight Check",
+  tagline: "BMI, waist-to-height ratio and a healthy weight range for your height",
+  scope: "For adults aged 18 to 99. It works out your body mass index (BMI), your waist-to-height ratio if you add your waist, and a healthy weight range for your height, using the NICE NG246 (2025) guidance. It is a guide, not a diagnosis. Your answers stay on this page: nothing is stored or sent.",
+  sections: { about: "About you", measure: "Your measurements", background: "Background and recent changes" },
+  q: {
+    age: "Your age in years",
+    preg: "Are you pregnant or breastfeeding?",
+    eat: "Do you have, or have you had, an eating disorder, or are you worried about your eating?",
+    eatWhy: "We ask because numbers about weight are not helpful for everyone. Your answer stays on this page.",
+    height: "Height",
+    weight: "Weight",
+    waist: "Waist (optional)",
+    waistWhy: "Adding your waist gives a fuller picture of health risk.",
+    bg: "Your family background",
+    bgWhy: "Some backgrounds have higher health risks at a lower BMI, so the guidance uses lower thresholds for them.",
+    mixed: "Does your family background include any of the groups above?",
+    loss: "Have you lost weight in recent months without trying?",
+    units: "Units:", metric: "Metric", imperial: "Imperial",
+    submit: "See my result"
+  },
+  options: {
+    preg: [["yes","Yes"],["no","No"],["notsure","Not sure"]],
+    eat: [["yes","Yes"],["no","No"],["prefer","Prefer not to say"]],
+    bg: [["White","White"],["Indian","Indian"],["Pakistani","Pakistani"],["Bangladeshi","Bangladeshi"],["OtherSouthAsian","Other South Asian"],["Chinese","Chinese"],["OtherAsian","Other Asian"],["MiddleEastern","Middle Eastern"],["BlackAfrican","Black African"],["BlackCaribbean","Black Caribbean (African-Caribbean)"],["Mixed","Mixed or other"],["NotSay","Prefer not to say"]],
+    mixed: [["yes","Yes"],["no","No"],["notsure","Not sure"]],
+    loss: [["yes","Yes"],["no","No"]]
+  },
+  howWaist: {
+    title: "How to measure your waist",
+    body: "Stand up straight and breathe out normally. Find the point halfway between your lowest rib and the top of your hip bone, usually just above your belly button. Wrap a tape measure around your body at that level, keeping it level and snug but not tight, and read it without pulling your stomach in."
+  },
+  errors: {
+    summary: "Please check these answers:",
+    age: "Enter your age as a whole number of years, from 18 to 99.",
+    ageRange: "This check is for ages 18 to 99. Please enter an age in that range.",
+    preg: "Please choose an answer.",
+    eat: "Please choose an answer.",
+    ht: "Enter a height between 120 cm and 230 cm (3 ft 11 in to 7 ft 6 in).",
+    wt: "Enter a weight between 25 kg and 300 kg (3 st 13 lb to 47 st 3 lb).",
+    waist: "Enter a waist between 50 cm and 200 cm (19.7 in to 78.7 in), or leave it empty.",
+    bg: "Please choose your family background.",
+    mixed: "Please choose an answer.",
+    loss: "Please choose an answer."
+  },
+  stops: {
+    under18: { title: "This check is for adults", body: "BMI works differently for children and teenagers, who need age-based growth charts. Your doctor or school nurse can help you understand a healthy weight for your age." },
+    pregnancy: { title: "This check isn't suitable right now", body: "BMI and waist measures don't give a reliable picture during pregnancy or while breastfeeding. Your midwife or doctor can advise you about weight at this time." },
+    eating: { title: "Thank you for telling us", body: "Numbers like these aren't the most helpful thing to focus on, so we haven't shown any. Your doctor can help, and you can find free, confidential support near you at <a href=\"https://findahelpline.com\" target=\"_blank\" rel=\"noopener\">findahelpline.com</a>." }
+  },
+  weightLoss: { title: "Please see your doctor", body: "Losing weight without trying can have many causes, and some need checking. Please make an appointment with your doctor soon." },
+  categories: { underweight: "Underweight", healthy: "Healthy weight", overweight: "Overweight", obese1: "Obesity (class 1)", obese2: "Obesity (class 2)", obese3: "Obesity (class 3)" },
+  thresholds: { standard: "Standard thresholds used.", adjusted: "Lower thresholds used for your family background.", notSay: "Standard thresholds used. For some family backgrounds the guidance uses lower thresholds, so a healthy weight may be lower for you." },
+  headline: { eyebrow: "Your BMI", unit: "kg/m²" },
+  range: { title: "A healthy weight range for your height", note: "A guide for your height, not a target. Health is about more than one number." },
+  waist: {
+    title: "Your waist-to-height ratio",
+    bands: { healthy: "Healthy", increased: "Increased", high: "High" },
+    meaning: { healthy: "Your waist is less than half your height, which the guidance describes as healthy.", increased: "Your waist is half your height or more. The guidance links this with increased health risks, such as type 2 diabetes and heart disease.", high: "Your waist is well over half your height. The guidance links this with high health risks, such as type 2 diabetes and heart disease." },
+    below: "This is below the range the guidance describes. Your BMI result gives a better picture.",
+    needWaist: "Add your waist above for a fuller picture: keeping your waist to less than half your height is a simple, useful aim.",
+    bmi35: "At a BMI of 35 or more, your waist adds little to the picture, so the ratio isn't shown."
+  },
+  meaning: {
+    title: "What this means",
+    underweight: "Your BMI is below the healthy range. Being underweight can affect your energy, bones and immunity. It's worth talking to your doctor, who can check for any cause and help you look after your health.",
+    healthy: "Your BMI is in the healthy range for your height. Eating well, staying active and sleeping well all help you stay well.",
+    overweight: "Your BMI is above the healthy range. Small, steady changes to eating, activity and sleep can make a real difference to health, and your doctor can help if you'd like support.",
+    obese: "Your BMI is in the obesity range. This raises the risk of conditions such as type 2 diabetes, high blood pressure and joint problems. Your doctor can talk to you about support that suits you.",
+    eatingSupport: "If you're worried about eating, weight or body image, your doctor can help, and you can find support near you at <a href=\"https://findahelpline.com\" target=\"_blank\" rel=\"noopener\">findahelpline.com</a>.",
+    class3: "Your doctor can talk to you about support that suits you, including specialist services.",
+    older: "At 65 and over, BMI is a less reliable guide, and a slightly higher BMI may not carry the same risk. Keeping your muscle strength and staying active matter more than a number."
+  },
+  method: {
+    title: "How this works and important limits",
+    paras: [
+      "BMI is your weight in kilograms divided by your height in metres squared. It is rounded to one decimal place, and your category follows the number you see.",
+      "Categories follow NICE guideline NG246 (2025): under 18.5 underweight, 18.5 to 24.9 healthy, 25 to 29.9 overweight, and 30 or more obesity. For people with a South Asian, Chinese, other Asian, Middle Eastern, Black African or African-Caribbean family background, the guidance uses lower thresholds: 23 to 27.4 overweight and 27.5 or more obesity, because health risks start at a lower BMI. The obesity classes are lowered by the same 2.5.",
+      "Waist-to-height ratio is your waist divided by your height, rounded to two decimal places: 0.40 to 0.49 healthy, 0.50 to 0.59 increased, 0.60 or more high. It is used when BMI is under 35.",
+      "Limits: BMI is a screening measure, not a diagnosis. It is less reliable for older adults, very muscular people, people who have had a limb removed, and during pregnancy. Measurements you enter yourself may not be exact.",
+      "Our other tools: the Daily Protein Target uses lower BMI thresholds only for Asian backgrounds, and the Diabetes Risk Check bands waist-to-height ratio slightly differently. This check follows the newer NICE NG246 guidance.",
+      "Sources: NICE NG246, Overweight and obesity management (2025), recommendations 1.9.7 to 1.9.15; Ashwell M, Gibson S, BMJ Open 2016;6:e010159."
+    ]
+  },
+  unavailable: {
+    title: "This tool is temporarily unavailable",
+    body: "We have paused this tool while we check it. Please come back soon.",
+    checking: "Checking this tool is available…",
+    unknown: "We can't confirm this tool is available right now, so it has not been started. Please check your connection and try again."
+  },
+  disclaimer: "Lifeline Daily health tools are for general information only. They do not diagnose any condition and are not a substitute for professional medical advice. Always speak to a qualified clinician about your health.",
+  disclaimerLinks: "This is not a diagnosis. Read our <a href=\"__LLD_ORIGIN__/medical-disclaimer/\" target=\"_top\">medical disclaimer</a> and our <a href=\"__LLD_ORIGIN__/privacy-policy/\" target=\"_top\">privacy policy</a>.",
+  urgentCare: "If you feel very unwell, contact your local emergency number or get a same-day medical assessment. <a href=\"__LLD_ORIGIN__/medical-disclaimer/#urgent-care\" target=\"_top\">When to seek urgent care</a>."
+};
+
+/* ============================================================================
+ * (2) HW_ENGINE — FROZEN (engine-freeze, manifests/healthy-weight.json).
+ * Calculation, thresholds, rounding (D55) and the safety order (D52). Pure: no DOM.
+ * ==========================================================================*/
+var HW_ENGINE = (function(){
+  var ADJUSTED = ['Indian','Pakistani','Bangladeshi','OtherSouthAsian','Chinese','OtherAsian','MiddleEastern','BlackAfrican','BlackCaribbean'];
+  var CUTS = { standard:[18.5,25,30,35,40], adjusted:[18.5,23,27.5,32.5,37.5] };
+  var NAMES = ['underweight','healthy','overweight','obese1','obese2','obese3'];
+  var EPS = 1e-9;
+  function roundHalfUp(x, dp){ var f = Math.pow(10, dp); return Math.floor(x * f + 0.5 + EPS) / f; }
+  function adjusted(bg, mixed){ return ADJUSTED.indexOf(bg) >= 0 || (bg === 'Mixed' && mixed === 'yes'); }
+  function bmiOf(weightKg, heightCm){ return weightKg * 10000 / (heightCm * heightCm); }
+  function category(bmi1, adj){ var c = CUTS[adj ? 'adjusted' : 'standard'], i = 0; while (i < c.length && bmi1 >= c[i]) i++; return NAMES[i]; }
+  function waistBand(ratio2, bmi1){
+    if (bmi1 >= 35) return 'notShown';
+    if (ratio2 < 0.40) return 'below';
+    if (ratio2 < 0.50) return 'healthy';
+    if (ratio2 < 0.60) return 'increased';
+    return 'high';
+  }
+  /* every weight whose BMI, as shown, is healthy: from BMI 18.45 up to (not including) 24.95, or 22.95 adjusted;
+     ends rounded inwards to 0.1 kg or whole pounds, so each end is itself classed healthy */
+  function range(heightCm, adj){
+    var m2 = Math.pow(heightCm / 100, 2), lo = 18.45 * m2, hi = (adj ? 22.95 : 24.95) * m2, LB = 0.45359237;
+    return { lowKg: Math.ceil(lo * 10 - EPS) / 10, highKg: (Math.ceil(hi * 10 - EPS) - 1) / 10,
+             lowLb: Math.ceil(lo / LB - EPS), highLb: Math.ceil(hi / LB - EPS) - 1 };
+  }
+  /* i: { age, preg, eat, heightCm, weightKg, waistCm|null, bg, mixed, loss } — already validated except the stops */
+  function assess(i){
+    if (i.age < 18) return { stop: 'under18' };                                    /* stops first (D52), no numbers */
+    if (i.preg === 'yes' || i.preg === 'notsure') return { stop: 'pregnancy' };
+    if (i.eat === 'yes') return { stop: 'eating' };
+    var adj = adjusted(i.bg, i.mixed);
+    var bmi1 = roundHalfUp(bmiOf(i.weightKg, i.heightCm), 1);
+    var cat = category(bmi1, adj);
+    var out = { stop: null, bmi: bmi1, category: cat, adjusted: adj, range: range(i.heightCm, adj),
+                waist: null, weightLoss: i.loss === 'yes', notes: [] };
+    if (i.waistCm != null) { var r2 = roundHalfUp(i.waistCm / i.heightCm, 2); out.waist = { ratio: r2, band: waistBand(r2, bmi1) }; }
+    if (cat === 'underweight') out.notes.push('underweight');
+    if (cat === 'obese3') out.notes.push('class3');
+    if (i.age >= 65) out.notes.push('older');
+    out.onward = !out.weightLoss && cat !== 'underweight';                          /* FR2-39: no track offer after these */
+    return out;
+  }
+  return { assess: assess, roundHalfUp: roundHalfUp, bmiOf: bmiOf, category: category, waistBand: waistBand, range: range, adjusted: adjusted };
+})();
+
+/* ============================================================================
+ * (3) STATE + UI
+ * ==========================================================================*/
+var IN_CM = 2.54, FT_CM = 30.48, LB_KG = 0.45359237, ST_KG = 6.35029318;
+var S = { preg: null, eat: null, bg: null, mixed: null, loss: null };
+var LAST = null;
+var $ = function(s, r){ return (r || document).querySelector(s); };
+var $$ = function(s, r){ return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+function esc(t){ return String(t).replace(/[&<>"]/g, function(c){ return { '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]; }); }
+
+function fillCopy(){
+  var M = MESSAGES, Q = M.q;
+  $('#toolTitle').textContent = M.title; $('#toolTagline').textContent = M.tagline; $('#scopeStatement').textContent = M.scope;
+  $('#secAbout').textContent = M.sections.about; $('#secMeasure').textContent = M.sections.measure; $('#secBackground').textContent = M.sections.background;
+  $('#qAge').textContent = Q.age; $('#qPreg').textContent = Q.preg;
+  $('#qEat').innerHTML = esc(Q.eat) + '<span class="sub">' + esc(Q.eatWhy) + '</span>';
+  $('#qHt').textContent = Q.height; $('#qWt').textContent = Q.weight;
+  $('#qWaist').innerHTML = esc(Q.waist) + '<span class="sub">' + esc(Q.waistWhy) + '</span>';
+  $('#qBg').innerHTML = esc(Q.bg) + '<span class="sub">' + esc(Q.bgWhy) + '</span>';
+  $('#qMixed').textContent = Q.mixed; $('#qLoss').textContent = Q.loss;
+  $('#unitsLbl').textContent = Q.units; $('#allMetric').textContent = Q.metric; $('#allImperial').textContent = Q.imperial;
+  $('#submitBtn').textContent = Q.submit;
+  $('#howWaistTitle').textContent = M.howWaist.title; $('#howWaistBody').textContent = M.howWaist.body;
+  $('#methodTitle').textContent = M.method.title;
+  ['preg','eat','bg','mixed','loss'].forEach(function(k){
+    $('#' + k + 'Taps').innerHTML = M.options[k].map(function(o){ return '<button type="button" class="tap" aria-pressed="false" data-val="' + o[0] + '">' + esc(o[1]) + '</button>'; }).join('');
+  });
+  $('#discZone').innerHTML = '<p>' + esc(M.disclaimer) + '</p><p class="lld-disclaimer-links">' + M.disclaimerLinks + '</p><p class="lld-urgent" data-test="urgent-care">' + M.urgentCare + '</p>';
+}
+
+function lengthInputs(id, unit, label){
+  if (unit === 'ftin') return '<div class="split"><input type="number" id="' + id + '_a" inputmode="numeric" placeholder="ft" aria-label="' + label + ', feet"><input type="number" id="' + id + '_b" inputmode="decimal" placeholder="in" aria-label="' + label + ', inches"></div>';
+  return '<input type="number" id="' + id + '" inputmode="decimal" placeholder="' + (unit === 'in' ? 'e.g. 34' : (id === 'ht' ? 'e.g. 170' : 'e.g. 85')) + '" aria-describedby="err-' + id + '">';
+}
+function massInputs(id, unit){
+  if (unit === 'stlb') return '<div class="split"><input type="number" id="' + id + '_a" inputmode="numeric" placeholder="st" aria-label="Weight, stones"><input type="number" id="' + id + '_b" inputmode="decimal" placeholder="lb" aria-label="Weight, pounds"></div>';
+  return '<input type="number" id="' + id + '" inputmode="decimal" placeholder="' + (unit === 'lb' ? 'e.g. 165' : 'e.g. 70') + '" aria-describedby="err-' + id + '">';
+}
+function num(sel){ var el = $(sel); if (!el || el.value.trim() === '') return null; var v = Number(el.value); return isFinite(v) ? v : NaN; }
+function readLen(id, unit){
+  if (unit === 'ftin') { var a = num('#' + id + '_a'), b = num('#' + id + '_b'); if (a === null && b === null) return null; if (isNaN(a) || isNaN(b)) return NaN; return (a || 0) * FT_CM + (b || 0) * IN_CM; }
+  var v = num('#' + id); if (v === null || isNaN(v)) return v; return unit === 'in' ? v * IN_CM : v;
+}
+function readKg(id, unit){
+  if (unit === 'stlb') { var a = num('#' + id + '_a'), b = num('#' + id + '_b'); if (a === null && b === null) return null; if (isNaN(a) || isNaN(b)) return NaN; return (a || 0) * ST_KG + (b || 0) * LB_KG; }
+  var v = num('#' + id); if (v === null || isNaN(v)) return v; return unit === 'lb' ? v * LB_KG : v;
+}
+function renderMeasures(){
+  var keep = { ht: readLen('ht', $('#htUnit').dataset.prev || 'cm'), wt: readKg('wt', $('#wtUnit').dataset.prev || 'kg'), waist: readLen('waist', $('#waistUnit').dataset.prev || 'cm') };
+  $('#htInputs').innerHTML = lengthInputs('ht', $('#htUnit').value, 'Height');
+  $('#wtInputs').innerHTML = massInputs('wt', $('#wtUnit').value);
+  $('#waistInputs').innerHTML = lengthInputs('waist', $('#waistUnit').value === 'in' ? 'in' : 'cm', 'Waist');
+  if (keep.ht > 0) prefillLen('ht', $('#htUnit').value, keep.ht);
+  if (keep.wt > 0) prefillKg('wt', $('#wtUnit').value, keep.wt);
+  if (keep.waist > 0) prefillLen('waist', $('#waistUnit').value === 'in' ? 'in' : 'cm', keep.waist);
+  ['htUnit','wtUnit','waistUnit'].forEach(function(id){ $('#' + id).dataset.prev = $('#' + id).value; });
+}
+function prefillLen(id, unit, cm){
+  if (unit === 'ftin') { var t = cm / IN_CM, ft = Math.floor(t / 12); $('#' + id + '_a').value = ft; $('#' + id + '_b').value = +(t - ft * 12).toFixed(1); return; }
+  $('#' + id).value = +(unit === 'in' ? cm / IN_CM : cm).toFixed(1);
+}
+function prefillKg(id, unit, kg){
+  if (unit === 'stlb') { var t = kg / LB_KG, st = Math.floor(t / 14); $('#' + id + '_a').value = st; $('#' + id + '_b').value = +(t - st * 14).toFixed(1); return; }
+  $('#' + id).value = +(unit === 'lb' ? kg / LB_KG : kg).toFixed(1);
+}
+function setAll(metric){
+  $('#allMetric').setAttribute('aria-pressed', metric ? 'true' : 'false'); $('#allImperial').setAttribute('aria-pressed', metric ? 'false' : 'true');
+  $('#htUnit').value = metric ? 'cm' : 'ftin'; $('#wtUnit').value = metric ? 'kg' : 'stlb'; $('#waistUnit').value = metric ? 'cm' : 'in';
+  renderMeasures(); changed();
+}
+
+/* any change clears the result, so an old result can never be saved (FR2-39 AS-14) */
+function changed(){
+  if (!LAST) return;
+  LAST = null; window.LLD_RESULT = null;
+  $('#results').hidden = true; ['bannerZone','headlineZone','rangeZone','waistZone','meaningZone','methodBody'].forEach(function(id){ $('#' + id).innerHTML = ''; });
+  postHeight();
+}
+
+function showErr(key, text){ var el = $('#err-' + key); if (!el) return; el.textContent = text; el.hidden = !text; }
+
+/* (4a) read and validate; returns { input } or { errors: [[key, text]] } */
+function collect(){
+  var E = MESSAGES.errors, errors = [], ageRaw = num('#age');
+  var age = null;
+  if (ageRaw === null || isNaN(ageRaw) || ageRaw < 1 || Math.floor(ageRaw) !== ageRaw) errors.push(['age', E.age]);
+  else if (ageRaw > 99) errors.push(['age', E.ageRange]);
+  else age = ageRaw;
+  if (!S.preg) errors.push(['preg', E.preg]);
+  if (!S.eat) errors.push(['eat', E.eat]);
+  /* a stop needs no measurements: decide it as soon as its answers are valid */
+  if (age !== null && S.preg && S.eat && (age < 18 || S.preg !== 'no' || S.eat === 'yes')) return { input: { age: age, preg: S.preg, eat: S.eat } };
+  var ht = readLen('ht', $('#htUnit').value), wt = readKg('wt', $('#wtUnit').value), waist = readLen('waist', $('#waistUnit').value === 'in' ? 'in' : 'cm');
+  if (!(ht >= 120 && ht <= 230)) errors.push(['ht', E.ht]);
+  if (!(wt >= 25 && wt <= 300)) errors.push(['wt', E.wt]);
+  if (waist !== null && !(waist >= 50 && waist <= 200)) errors.push(['waist', E.waist]);
+  if (!S.bg) errors.push(['bg', E.bg]);
+  if (S.bg === 'Mixed' && !S.mixed) errors.push(['mixed', E.mixed]);
+  if (!S.loss) errors.push(['loss', E.loss]);
+  if (errors.length) return { errors: errors };
+  return { input: { age: age, preg: S.preg, eat: S.eat, heightCm: ht, weightKg: wt, waistCm: waist, bg: S.bg, mixed: S.bg === 'Mixed' ? S.mixed : null, loss: S.loss } };
+}
+
+/* ============================================================================
+ * (4b) RENDER
+ * ==========================================================================*/
+function banner(cls, t, role){ return '<div class="banner ' + cls + '"' + (role ? ' role="' + role + '"' : '') + '><h3>' + esc(t.title) + '</h3><p>' + t.body + '</p></div>'; }
+function pillClass(cat){ return cat === 'healthy' ? 'healthy' : (cat === 'overweight' || cat === 'underweight') ? 'caution' : 'high'; }
+function fmtSt(lb){ return Math.floor(lb / 14) + ' st ' + (lb % 14) + ' lb'; }
+
+function render(r, imperial){
+  var M = MESSAGES, z = function(id){ return $('#' + id); };
+  ['bannerZone','headlineZone','rangeZone','waistZone','meaningZone'].forEach(function(id){ z(id).innerHTML = ''; z(id).hidden = false; });
+  if (r.stop) {
+    z('bannerZone').innerHTML = banner('care', M.stops[r.stop], 'alert');
+    ['headlineZone','rangeZone','waistZone','meaningZone'].forEach(function(id){ z(id).hidden = true; });
+  } else {
+    if (r.weightLoss) z('bannerZone').innerHTML = banner('alert', M.weightLoss, 'alert');
+    z('headlineZone').innerHTML = '<p class="eyebrow">' + esc(M.headline.eyebrow) + '</p><p class="big" data-test="bmi">' + r.bmi.toFixed(1) +
+      ' <span class="muted">' + M.headline.unit + '</span></p><span class="pill ' + pillClass(r.category) + '" data-test="category">' + esc(M.categories[r.category]) + '</span>' +
+      '<p class="note muted" data-test="thresholds">' + esc(S.bg === 'NotSay' ? M.thresholds.notSay : (r.adjusted ? M.thresholds.adjusted : M.thresholds.standard)) + '</p>';
+    var rg = r.range, txt = imperial ? fmtSt(rg.lowLb) + ' to ' + fmtSt(rg.highLb) : rg.lowKg.toFixed(1) + ' kg to ' + rg.highKg.toFixed(1) + ' kg';
+    z('rangeZone').innerHTML = '<h2>' + esc(M.range.title) + '</h2><p class="big" style="font-size:1.6rem" data-test="range-value">' + txt + '</p><p class="note">' + esc(M.range.note) + '</p>';
+    var w = r.waist, wz = '<h2>' + esc(M.waist.title) + '</h2>';
+    if (!w) wz += '<p data-test="need-waist">' + esc(M.waist.needWaist) + '</p>';
+    else if (w.band === 'notShown') wz += '<p data-test="waist-bmi35">' + esc(M.waist.bmi35) + '</p>';
+    else if (w.band === 'below') wz += '<p class="big" style="font-size:1.6rem" data-test="whtr">' + w.ratio.toFixed(2) + '</p><p data-test="waist-below">' + esc(M.waist.below) + '</p>';
+    else wz += '<p class="big" style="font-size:1.6rem" data-test="whtr">' + w.ratio.toFixed(2) + '</p><span class="pill ' + (w.band === 'healthy' ? 'healthy' : w.band === 'increased' ? 'caution' : 'high') + '" data-test="waist-band">' + esc(M.waist.bands[w.band]) + '</span><p class="note">' + esc(M.waist.meaning[w.band]) + '</p>';
+    z('waistZone').innerHTML = wz;
+    var key = r.category.indexOf('obese') === 0 ? 'obese' : r.category, mz = '<h2>' + esc(M.meaning.title) + '</h2><p data-test="meaning-text">' + esc(M.meaning[key]) + '</p>';
+    r.notes.forEach(function(n){ mz += '<p class="note" data-test="note-' + n + '">' + (n === 'underweight' ? M.meaning.eatingSupport : esc(M.meaning[n])) + '</p>'; });
+    z('meaningZone').innerHTML = mz;
+  }
+  /* a stop shows no numbers at all, so the method (which quotes thresholds) is shown with results only */
+  z('methodBody').innerHTML = r.stop ? '' : M.method.paras.map(function(p){ return '<p>' + esc(p) + '</p>'; }).join('') +
+    '<p class="source" data-test="source-version">Source: NICE NG246 (2025) &middot; version <span data-lld-version data-lld-version-of="js:HW_ENGINE">healthy-weight</span></p>';
+  $('#results details.method').hidden = !!r.stop;
+  z('results').hidden = false;
+}
+
+/* (4c) the result offered to the landing page (lld-members-link.js reads window.LLD_RESULT); never the answers */
+function publish(r){
+  window.LLD_RESULT = r.stop ? { stop: true, onward: false }
+    : { headline: r.bmi.toFixed(1), unit: 'kg/m²', band: MESSAGES.categories[r.category], onward: r.onward };
+  document.dispatchEvent(new Event('lld-result-change'));
+}
+
+$('#tool').addEventListener('submit', function(e){
+  e.preventDefault();
+  ['age','preg','eat','ht','wt','waist','bg','mixed','loss'].forEach(function(k){ showErr(k, ''); });
+  var sum = $('#errSummary'), got = collect();
+  if (got.errors) {
+    LAST = null; window.LLD_RESULT = null; $('#results').hidden = true; document.dispatchEvent(new Event('lld-result-change'));
+    got.errors.forEach(function(x){ showErr(x[0], x[1]); });
+    sum.innerHTML = '<p>' + esc(MESSAGES.errors.summary) + '</p><ul>' + got.errors.map(function(x){ return '<li><a href="#err-' + x[0] + '">' + esc(x[1]) + '</a></li>'; }).join('') + '</ul>';
+    sum.hidden = false; sum.focus(); postHeight(); return;
+  }
+  sum.hidden = true;
+  LAST = HW_ENGINE.assess(got.input);
+  render(LAST, $('#wtUnit').value !== 'kg');
+  publish(LAST);
+  var res = $('#results'); if (res.focus) res.focus();
+  postHeight();
+});
+
+$$('[data-tap]').forEach(function(group){
+  var key = group.getAttribute('data-tap');
+  group.addEventListener('click', function(e){
+    var btn = e.target.closest('.tap'); if (!btn) return;
+    $$('.tap', group).forEach(function(b){ b.setAttribute('aria-pressed', 'false'); });
+    btn.setAttribute('aria-pressed', 'true');
+    S[key] = btn.getAttribute('data-val');
+    if (key === 'bg') { var mixed = S.bg === 'Mixed'; $('#mixedField').hidden = !mixed; if (!mixed) { S.mixed = null; $$('#mixedTaps .tap').forEach(function(b){ b.setAttribute('aria-pressed', 'false'); }); } }
+    showErr(key, ''); changed(); postHeight();
+  });
+});
+$('#tool').addEventListener('input', changed);
+['htUnit','wtUnit','waistUnit'].forEach(function(id){ $('#' + id).addEventListener('change', function(){ renderMeasures(); changed(); }); });
+$('#allMetric').onclick = function(){ setAll(true); };
+$('#allImperial').onclick = function(){ setAll(false); };
+
+/* iframe auto-resize: one message schema for every tool, posted only to the configured parent origin (FR1-21) */
+function postHeight(){ var h = Math.ceil(document.documentElement.getBoundingClientRect().height); if (window.parent !== window) { try { parent.postMessage({ type: 'lld-tool-height', height: h }, '__LLD_ORIGIN__'); } catch (e) {} } }
+window.addEventListener('load', postHeight);
+window.addEventListener('resize', postHeight);
+if (window.ResizeObserver) { new ResizeObserver(postHeight).observe(document.body); }
+
+fillCopy(); renderMeasures();
+
+/* status gate (FR1-15 pattern): the form shows only when tools/status.json says this tool is active; fails closed */
+(function(){
+  var slug = 'healthy-weight', gate = $('#lldGate'), un = $('#lldUnavailable'), form = $('#tool');
+  function show(el){ el.hidden = false; el.classList.remove('hidden'); } function hide(el){ el.hidden = true; el.classList.add('hidden'); if (el === gate) el.setAttribute('aria-busy', 'false'); }
+  function unavailable(){ hide(gate); un.innerHTML = '<h2>' + esc(MESSAGES.unavailable.title) + '</h2><p>' + esc(MESSAGES.unavailable.body) + '</p><p><a href="__LLD_ORIGIN__/health-tools/" target="_top">See all health tools</a></p>'; show(un); hide(form); changed(); window.LLD_STATUS = 'withdrawn'; document.dispatchEvent(new Event('lld-result-change')); }
+  function notice(){ gate.setAttribute('aria-busy', 'false'); gate.innerHTML = esc(MESSAGES.unavailable.unknown) + ' <button type="button" id="lldRetry" data-test="retry">Try again</button>'; $('#lldRetry').addEventListener('click', check); hide(form); window.LLD_STATUS = 'unknown'; }
+  function check(){ gate.setAttribute('aria-busy', 'true'); gate.textContent = MESSAGES.unavailable.checking; show(gate); hide(un);
+    if (typeof fetch !== 'function') { notice(); return; }
+    fetch('./status.json', { cache: 'no-store' }).then(function(r){ if (!r.ok) throw new Error('status ' + r.status); return r.json(); }).then(function(s){
+      var t = s && s.tools && s.tools[slug]; if (!t || t.status !== 'active') { unavailable(); return; }
+      hide(gate); show(form); window.LLD_STATUS = 'active'; postHeight();
+    }).catch(function(){ notice(); postHeight(); });
+  }
+  check();
+})();
+</script>
+<nav class="lld-policy-footer" data-test="tool-footer" aria-label="Site policies" data-copy="policyFooter"><a href="__LLD_ORIGIN__/about-us/" target="_top">About</a> · <a href="__LLD_ORIGIN__/contact-us/" target="_top">Contact</a> · <a href="__LLD_ORIGIN__/privacy-policy/" target="_top">Privacy Policy</a> · <a href="__LLD_ORIGIN__/terms-conditions/" target="_top">Terms &amp; Conditions</a> · <a href="__LLD_ORIGIN__/medical-disclaimer/" target="_top">Medical Disclaimer &amp; Urgent Care</a></nav>
+<script src="lld-members-link.js"></script>
+</body>
+</html>

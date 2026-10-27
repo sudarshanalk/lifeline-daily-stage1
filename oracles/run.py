@@ -1,4 +1,4 @@
-"""Oracle dispatcher — the body of `make oracle ORC=01|02|03|04` (docs/04, TC-FR1-22-AS-01).
+"""Oracle dispatcher — the body of `make oracle ORC=01|02|03|04|05` (docs/04, TC-FR1-22-AS-01).
 
   python -I oracles/run.py 03          run ORC-03 and refresh oracles/orc-03-idrs/results.json
   python -I oracles/run.py all         run every oracle that can run on this machine
@@ -17,6 +17,7 @@ ORACLES = {
     "02": ("orc-02-protein-ref", "protein_ref.py"),
     "03": ("orc-03-idrs", "idrs_ref.py"),
     "04": ("orc-04-whtr", "whtr_ref.py"),
+    "05": ("orc-05-healthy-weight", "hw_ref.py"),   # Stage 2 FR2-39; fills fixtures/healthy-weight expected values
 }
 
 

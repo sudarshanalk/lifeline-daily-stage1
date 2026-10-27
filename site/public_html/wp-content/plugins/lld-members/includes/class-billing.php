@@ -432,11 +432,18 @@ class LLD_Members_Billing {
 	/**
 	 * Calculator landing page. The track link sits below the tool, not inside its result.
 	 *
-	 * @param string $which protein or diabetes.
+	 * @param string $which protein, diabetes or healthy-weight.
 	 */
 	public static function landing( $which ) {
-		$which = 'diabetes' === $which ? 'diabetes' : 'protein';
-		if ( 'diabetes' === $which ) {
+		$which = in_array( $which, array( 'diabetes', 'healthy-weight' ), true ) ? $which : 'protein';
+		$guide = 'diabetes' === $which ? 'blood-sugar' : ( 'healthy-weight' === $which ? 'healthy-weight' : 'fitness' );
+		if ( 'healthy-weight' === $which ) {
+			$title = 'Healthy Weight Check';
+			$src   = home_url( '/tools/healthy-weight-tool.html' );
+			$href  = home_url( '/programmes/healthy-weight/' );
+			$label = 'Healthy Weight';
+			$desc  = 'Check your BMI, waist-to-height ratio and a healthy weight range for your height.';
+		} elseif ( 'diabetes' === $which ) {
 			$title = 'Diabetes Risk Check';
 			$src   = home_url( '/tools/diabetes-risk-tool.html' );
 			$href  = home_url( '/programmes/blood-sugar/' );
@@ -464,13 +471,24 @@ class LLD_Members_Billing {
 			$main .= '<input type="hidden" name="lld_version" value="">';
 			$main .= lld_button( array( 'label' => 'Save this result to my profile' ) );
 			$main .= '</form>';
-			$main .= '<script>(function(){var form=document.getElementById("lld-save-result");if(!form)return;window.addEventListener("message",function(event){if(event.origin!==location.origin)return;var data=event.data||{};if(data.type!=="lld-calculator-result"||data.calculator!==form.getAttribute("data-calculator"))return;form.querySelector("[name=lld_headline]").value=String(data.headline||"").slice(0,64);form.querySelector("[name=lld_unit]").value=String(data.unit||"").slice(0,64);form.querySelector("[name=lld_band]").value=String(data.band||"").slice(0,64);form.querySelector("[name=lld_version]").value=String(data.version||"").slice(0,64);form.hidden=false;});})();</script>';
 		}
-		$main .= '<p data-lld-track-link><a href="' . esc_url( $href ) . '">' . esc_html( $label ) . '</a></p>';
-		if ( class_exists( 'LLD_Members_Growth' ) ) {
-			$guide = 'diabetes' === $which ? 'blood-sugar' : 'fitness';
-			$main .= LLD_Members_Growth::guide_form( $guide, 'guide' );
+		// FR2-39 AS-15: no Healthy Weight track offer to a member whose saved profile excludes it (section 8.2)
+		$offer = ! ( 'healthy-weight' === $which && $member_id > 0 && class_exists( 'LLD_Members_Safety' ) && ! LLD_Members_Safety::track_allowed( $member_id, $label ) );
+		if ( $offer ) {
+			$main .= '<div data-lld-onward>';
+			$main .= '<p data-lld-track-link><a href="' . esc_url( $href ) . '">' . esc_html( $label ) . '</a></p>';
+			if ( class_exists( 'LLD_Members_Growth' ) ) {
+				$main .= LLD_Members_Growth::guide_form( $guide, 'guide' );
+			}
+			$main .= '</div>';
 		}
+		// FR2-23 / FR2-39 AS-14: only messages from this page's own calculator frame count; a cleared result hides the save,
+		// and a result or stop that allows no onward offer hides the track link and guide (answers never arrive here)
+		$main .= '<script>(function(){var frame=document.querySelector("iframe.lld-tool-frame");var form=document.getElementById("lld-save-result");var onward=document.querySelector("[data-lld-onward]");var which=' . wp_json_encode( $which ) . ';'
+			. 'function field(n,v){if(form)form.querySelector("[name="+n+"]").value=String(v||"").slice(0,64);}'
+			. 'window.addEventListener("message",function(event){if(event.origin!==location.origin||!frame||event.source!==frame.contentWindow)return;var data=event.data||{};if(data.calculator!==which)return;'
+			. 'if(data.type==="lld-calculator-result"){field("lld_headline",data.headline);field("lld_unit",data.unit);field("lld_band",data.band);field("lld_version",data.version);if(form)form.hidden=false;if(onward)onward.hidden=data.onward===false;}'
+			. 'else if(data.type==="lld-calculator-cleared"){["lld_headline","lld_unit","lld_band","lld_version"].forEach(function(n){field(n,"");});if(form)form.hidden=true;if(onward)onward.hidden=data.onward===false;}});})();</script>';
 		lld_members_layout(
 			array(
 				'title'       => $title,
@@ -485,7 +503,7 @@ class LLD_Members_Billing {
 	 * Store the headline, unit and band from the landing page. Answers are not posted.
 	 *
 	 * @param int    $member_id Member number.
-	 * @param string $which     protein or diabetes.
+	 * @param string $which     protein, diabetes or healthy-weight.
 	 */
 	private static function save_calculator_result( $member_id, $which ) {
 		if ( 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) || empty( $_POST['lld_result_nonce'] ) ) {
@@ -550,7 +568,7 @@ class LLD_Members_Billing {
 		header( 'Content-Type: application/xml; charset=utf-8' );
 		echo '<?xml version="1.0" encoding="UTF-8"?>';
 		echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-		$paths = array( '/pricing/', '/programmes/healthy-weight/', '/programmes/blood-sugar/', '/programmes/fitness/', '/programmes/sleep-stress/' );
+		$paths = array( '/pricing/', '/programmes/healthy-weight/', '/programmes/blood-sugar/', '/programmes/fitness/', '/programmes/sleep-stress/', '/health-tools/protein/', '/health-tools/diabetes-risk-check/', '/health-tools/healthy-weight-check/' );
 		foreach ( $paths as $path ) {
 			echo '<url><loc>' . esc_url( home_url( $path ) ) . '</loc></url>';
 		}

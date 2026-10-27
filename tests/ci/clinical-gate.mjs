@@ -10,7 +10,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ROOT } from '../lib/paths.mjs';
+import { ROOT, GUARDED_TOOLS } from '../lib/paths.mjs';
 
 const ISO = /^\d{4}-\d{2}-\d{2}$/;
 /** A real calendar date in YYYY-MM-DD (2026-99-99 is refused). */
@@ -21,7 +21,7 @@ const read = (root, rel, problems) => { try { return JSON.parse(readFileSync(res
 /** AS-01: the methodology approval records carry a named, dated `approved` clinical sign-off. */
 export function signoffProblems(root = ROOT) {
   const problems = [];
-  for (const slug of ['protein', 'diabetes']) {
+  for (const slug of GUARDED_TOOLS) {   // FR2-39 AS-13: the Healthy Weight Check needs its own named, dated sign-off
     const a = read(root, `approvals/${slug}.json`, problems); if (!a) continue;
     const s = a.clinical_signoff;
     if (!s || typeof s !== 'object') { problems.push(`${slug}: clinical_signoff missing`); continue; }

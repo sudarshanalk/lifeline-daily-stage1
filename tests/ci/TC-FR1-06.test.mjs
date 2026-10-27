@@ -12,9 +12,10 @@ import { withMutation } from '../lib/mutate.mjs';
 import { provenanceCheck } from './provenance-check.mjs';
 import { engineFreeze } from './engine-freeze.mjs';
 
-const TOOL_PATHS = ['site/public_html/tools/protein-requirement-tool.html', 'site/public_html/tools/diabetes-risk-tool.html'];
-const PROVENANCE_INPUTS = ['approvals/protein.json', 'approvals/diabetes.json', 'manifests/protein.json', 'manifests/diabetes.json', ...TOOL_PATHS];
-const FREEZE_INPUTS = ['manifests/protein.json', 'manifests/diabetes.json', 'registry/Stage1_Requirements_Registry_v1_2.json', ...TOOL_PATHS];
+// the guards cover every guarded tool (FR2-39 adds the Healthy Weight Check), so the mutation sandboxes carry all of them
+const TOOL_PATHS = ['site/public_html/tools/protein-requirement-tool.html', 'site/public_html/tools/diabetes-risk-tool.html', 'site/public_html/tools/healthy-weight-tool.html'];
+const PROVENANCE_INPUTS = ['approvals/protein.json', 'approvals/diabetes.json', 'approvals/healthy-weight.json', 'manifests/protein.json', 'manifests/diabetes.json', 'manifests/healthy-weight.json', ...TOOL_PATHS];
+const FREEZE_INPUTS = ['manifests/protein.json', 'manifests/diabetes.json', 'manifests/healthy-weight.json', 'registry/Stage1_Requirements_Registry_v1_2.json', ...TOOL_PATHS];
 
 describe('TC-FR1-06 clinical method provenance', () => {
   test('TC-FR1-06-AS-01', () => {
@@ -49,7 +50,7 @@ describe('TC-FR1-06 clinical method provenance', () => {
     // production requires an approved sign-off; pending is rejected there
     const prod = provenanceCheck({ root: ROOT, env: 'production' });
     expect(prod.ok).toBe(false);
-    expect(prod.problems.filter((p) => /not accepted for production/.test(p))).toHaveLength(2);
+    expect(prod.problems.filter((p) => /^(protein|diabetes): .*not accepted for production/.test(p))).toHaveLength(2);
   });
 
   test('TC-FR1-06-AS-04', async () => {

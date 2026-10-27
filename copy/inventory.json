@@ -3,7 +3,8 @@
   "sources": {
     "messages": [
       "site/public_html/tools/protein-requirement-tool.html#MESSAGES",
-      "site/public_html/tools/diabetes-risk-tool.html#MESSAGES"
+      "site/public_html/tools/diabetes-risk-tool.html#MESSAGES",
+      "site/public_html/tools/healthy-weight-tool.html#MESSAGES"
     ],
     "templates": [
       "site/public_html/tools/api/templates-protein.php",
@@ -563,6 +564,446 @@
       "key": "templates.diabetes.emergency.body",
       "source": "site/public_html/tools/api/templates.php",
       "locator": "emergency.body"
+    },
+    {
+      "key": "messages.healthy-weight.title",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.title"
+    },
+    {
+      "key": "messages.healthy-weight.tagline",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.tagline"
+    },
+    {
+      "key": "messages.healthy-weight.scope",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.scope"
+    },
+    {
+      "key": "messages.healthy-weight.sections.about",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.sections.about"
+    },
+    {
+      "key": "messages.healthy-weight.sections.measure",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.sections.measure"
+    },
+    {
+      "key": "messages.healthy-weight.sections.background",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.sections.background"
+    },
+    {
+      "key": "messages.healthy-weight.q.age",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.q.age"
+    },
+    {
+      "key": "messages.healthy-weight.q.preg",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.q.preg"
+    },
+    {
+      "key": "messages.healthy-weight.q.eat",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.q.eat"
+    },
+    {
+      "key": "messages.healthy-weight.q.eatWhy",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.q.eatWhy"
+    },
+    {
+      "key": "messages.healthy-weight.q.height",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.q.height"
+    },
+    {
+      "key": "messages.healthy-weight.q.weight",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.q.weight"
+    },
+    {
+      "key": "messages.healthy-weight.q.waist",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.q.waist"
+    },
+    {
+      "key": "messages.healthy-weight.q.waistWhy",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.q.waistWhy"
+    },
+    {
+      "key": "messages.healthy-weight.q.bg",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.q.bg"
+    },
+    {
+      "key": "messages.healthy-weight.q.bgWhy",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.q.bgWhy"
+    },
+    {
+      "key": "messages.healthy-weight.q.mixed",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.q.mixed"
+    },
+    {
+      "key": "messages.healthy-weight.q.loss",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.q.loss"
+    },
+    {
+      "key": "messages.healthy-weight.q.units",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.q.units"
+    },
+    {
+      "key": "messages.healthy-weight.q.metric",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.q.metric"
+    },
+    {
+      "key": "messages.healthy-weight.q.imperial",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.q.imperial"
+    },
+    {
+      "key": "messages.healthy-weight.q.submit",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.q.submit"
+    },
+    {
+      "key": "messages.healthy-weight.options.preg",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.options.preg"
+    },
+    {
+      "key": "messages.healthy-weight.options.eat",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.options.eat"
+    },
+    {
+      "key": "messages.healthy-weight.options.bg",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.options.bg"
+    },
+    {
+      "key": "messages.healthy-weight.options.mixed",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.options.mixed"
+    },
+    {
+      "key": "messages.healthy-weight.options.loss",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.options.loss"
+    },
+    {
+      "key": "messages.healthy-weight.howWaist.title",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.howWaist.title"
+    },
+    {
+      "key": "messages.healthy-weight.howWaist.body",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.howWaist.body"
+    },
+    {
+      "key": "messages.healthy-weight.errors.summary",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.errors.summary"
+    },
+    {
+      "key": "messages.healthy-weight.errors.age",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.errors.age"
+    },
+    {
+      "key": "messages.healthy-weight.errors.ageRange",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.errors.ageRange"
+    },
+    {
+      "key": "messages.healthy-weight.errors.preg",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.errors.preg"
+    },
+    {
+      "key": "messages.healthy-weight.errors.eat",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.errors.eat"
+    },
+    {
+      "key": "messages.healthy-weight.errors.ht",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.errors.ht"
+    },
+    {
+      "key": "messages.healthy-weight.errors.wt",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.errors.wt"
+    },
+    {
+      "key": "messages.healthy-weight.errors.waist",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.errors.waist"
+    },
+    {
+      "key": "messages.healthy-weight.errors.bg",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.errors.bg"
+    },
+    {
+      "key": "messages.healthy-weight.errors.mixed",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.errors.mixed"
+    },
+    {
+      "key": "messages.healthy-weight.errors.loss",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.errors.loss"
+    },
+    {
+      "key": "messages.healthy-weight.stops.under18.title",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.stops.under18.title"
+    },
+    {
+      "key": "messages.healthy-weight.stops.under18.body",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.stops.under18.body"
+    },
+    {
+      "key": "messages.healthy-weight.stops.pregnancy.title",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.stops.pregnancy.title"
+    },
+    {
+      "key": "messages.healthy-weight.stops.pregnancy.body",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.stops.pregnancy.body"
+    },
+    {
+      "key": "messages.healthy-weight.stops.eating.title",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.stops.eating.title"
+    },
+    {
+      "key": "messages.healthy-weight.stops.eating.body",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.stops.eating.body"
+    },
+    {
+      "key": "messages.healthy-weight.weightLoss.title",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.weightLoss.title"
+    },
+    {
+      "key": "messages.healthy-weight.weightLoss.body",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.weightLoss.body"
+    },
+    {
+      "key": "messages.healthy-weight.categories.underweight",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.categories.underweight"
+    },
+    {
+      "key": "messages.healthy-weight.categories.healthy",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.categories.healthy"
+    },
+    {
+      "key": "messages.healthy-weight.categories.overweight",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.categories.overweight"
+    },
+    {
+      "key": "messages.healthy-weight.categories.obese1",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.categories.obese1"
+    },
+    {
+      "key": "messages.healthy-weight.categories.obese2",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.categories.obese2"
+    },
+    {
+      "key": "messages.healthy-weight.categories.obese3",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.categories.obese3"
+    },
+    {
+      "key": "messages.healthy-weight.thresholds.standard",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.thresholds.standard"
+    },
+    {
+      "key": "messages.healthy-weight.thresholds.adjusted",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.thresholds.adjusted"
+    },
+    {
+      "key": "messages.healthy-weight.thresholds.notSay",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.thresholds.notSay"
+    },
+    {
+      "key": "messages.healthy-weight.headline.eyebrow",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.headline.eyebrow"
+    },
+    {
+      "key": "messages.healthy-weight.headline.unit",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.headline.unit"
+    },
+    {
+      "key": "messages.healthy-weight.range.title",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.range.title"
+    },
+    {
+      "key": "messages.healthy-weight.range.note",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.range.note"
+    },
+    {
+      "key": "messages.healthy-weight.waist.title",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.waist.title"
+    },
+    {
+      "key": "messages.healthy-weight.waist.bands.healthy",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.waist.bands.healthy"
+    },
+    {
+      "key": "messages.healthy-weight.waist.bands.increased",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.waist.bands.increased"
+    },
+    {
+      "key": "messages.healthy-weight.waist.bands.high",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.waist.bands.high"
+    },
+    {
+      "key": "messages.healthy-weight.waist.meaning.healthy",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.waist.meaning.healthy"
+    },
+    {
+      "key": "messages.healthy-weight.waist.meaning.increased",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.waist.meaning.increased"
+    },
+    {
+      "key": "messages.healthy-weight.waist.meaning.high",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.waist.meaning.high"
+    },
+    {
+      "key": "messages.healthy-weight.waist.below",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.waist.below"
+    },
+    {
+      "key": "messages.healthy-weight.waist.needWaist",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.waist.needWaist"
+    },
+    {
+      "key": "messages.healthy-weight.waist.bmi35",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.waist.bmi35"
+    },
+    {
+      "key": "messages.healthy-weight.meaning.title",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.meaning.title"
+    },
+    {
+      "key": "messages.healthy-weight.meaning.underweight",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.meaning.underweight"
+    },
+    {
+      "key": "messages.healthy-weight.meaning.healthy",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.meaning.healthy"
+    },
+    {
+      "key": "messages.healthy-weight.meaning.overweight",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.meaning.overweight"
+    },
+    {
+      "key": "messages.healthy-weight.meaning.obese",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.meaning.obese"
+    },
+    {
+      "key": "messages.healthy-weight.meaning.eatingSupport",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.meaning.eatingSupport"
+    },
+    {
+      "key": "messages.healthy-weight.meaning.class3",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.meaning.class3"
+    },
+    {
+      "key": "messages.healthy-weight.meaning.older",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.meaning.older"
+    },
+    {
+      "key": "messages.healthy-weight.method.title",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.method.title"
+    },
+    {
+      "key": "messages.healthy-weight.method.paras",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.method.paras"
+    },
+    {
+      "key": "messages.healthy-weight.unavailable.title",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.unavailable.title"
+    },
+    {
+      "key": "messages.healthy-weight.unavailable.body",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.unavailable.body"
+    },
+    {
+      "key": "messages.healthy-weight.unavailable.checking",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.unavailable.checking"
+    },
+    {
+      "key": "messages.healthy-weight.unavailable.unknown",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.unavailable.unknown"
+    },
+    {
+      "key": "messages.healthy-weight.disclaimer",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.disclaimer"
+    },
+    {
+      "key": "messages.healthy-weight.disclaimerLinks",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.disclaimerLinks"
+    },
+    {
+      "key": "messages.healthy-weight.urgentCare",
+      "source": "site/public_html/tools/healthy-weight-tool.html",
+      "locator": "MESSAGES.urgentCare"
     },
     {
       "key": "inline.protein.consent",

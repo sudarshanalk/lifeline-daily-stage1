@@ -804,7 +804,7 @@ class LLD_Members_Growth {
 			. 'function clean(href){var u=new URL(href,location.origin);var path=u.pathname.replace(/^\/members\/(record|photo|diary-photo)\/\d+/,"/members/$1/0");var q=[];["utm_source","utm_medium","utm_campaign"].forEach(function(key){var value=u.searchParams.get(key);if(value&&/^[A-Za-z0-9_-]{1,64}$/.test(value))q.push(key+"="+encodeURIComponent(value));});return u.origin+path+(q.length?"?"+q.join("&"):"");}'
 			. 'function send(name,props){if(!allow[name])return;var safe={},n=0;allow[name].forEach(function(key){var value=props?props[key]:null;if(typeof value==="string"&&/^[a-z0-9-]{1,32}$/.test(value)){safe[key]=value;n++;}});var body={name:name,url:clean(location.href),domain:cfg.domain};if(n)body.props=safe;try{fetch("' . self::PLAUSIBLE_EVENTS . '",{method:"POST",headers:{"Content-Type":"text/plain"},body:JSON.stringify(body),keepalive:true}).catch(function(){});}catch(e){}}'
 			. 'send("pageview",{});(cfg.events||[]).forEach(function(event){if(event&&event.name)send(event.name,event.props||{});});'
-			. 'var used={};window.addEventListener("message",function(event){if(event.origin!==location.origin)return;var data=event.data||{};if(data.type!=="lld-calculator-result")return;var which=data.calculator==="diabetes"?"diabetes":(data.calculator==="protein"?"protein":"");if(!which||used[which])return;used[which]=1;send("calculator_used",{calculator:which});});'
+			. 'var used={};window.addEventListener("message",function(event){if(event.origin!==location.origin)return;var data=event.data||{};if(data.type!=="lld-calculator-result")return;var which=["protein","diabetes","healthy-weight"].indexOf(data.calculator)>=0?data.calculator:"";if(!which||used[which])return;used[which]=1;send("calculator_used",{calculator:which});});'
 			. '})();';
 		return '<script id="lld-analytics" type="application/json">' . $config . '</script><script>' . $js . '</script>';
 	}
@@ -1241,6 +1241,9 @@ class LLD_Members_Growth {
 		if ( 'diabetes' === $which ) {
 			return 'blood-sugar';
 		}
+		if ( 'healthy-weight' === $which ) {
+			return 'healthy-weight';
+		}
 		return 'protein' === $which ? 'fitness' : '';
 	}
 
@@ -1258,6 +1261,9 @@ class LLD_Members_Growth {
 		}
 		if ( preg_match( '#^/health-tools/diabetes-risk-check/?$#', $path ) ) {
 			return self::calculator_track( 'diabetes' );
+		}
+		if ( preg_match( '#^/health-tools/healthy-weight-check/?$#', $path ) ) {
+			return self::calculator_track( 'healthy-weight' );
 		}
 		if ( $looked >= 200 || 0 === strpos( $path, '/members/' ) ) {
 			return '';

@@ -76,7 +76,9 @@ describe('TC-FR1-03 tools-first homepage — artefacts', () => {
     const html = renderHome(transform(TEMPLATE));
     expect(as05(html), 'rendered homepage: Tools row, h2 "Tools" before "Learn"').toBe(true);
     const tools = html.slice(html.indexOf('data-test="tools-row"'), html.indexOf('data-test="learn-row"'));
-    expect((tools.match(/data-tool-card/g) || []).length, 'exactly the two active cards').toBe(2);
+    // every active card (two in Stage 1; the Healthy Weight Check joins once installed, FR2-39 / D49)
+    const active = JSON.parse(readFileSync(resolve(PLUGIN, 'data', 'tool-cards.json'), 'utf8')).cards.filter((c) => status.tools[c.tool_slug]?.status === 'active').length;
+    expect((tools.match(/data-tool-card/g) || []).length, 'exactly the active cards').toBe(active);
     expect(tools).not.toContain('label_only');
     expect((html.slice(html.indexOf('data-test="learn-row"')).match(/<article /g) || []).length, 'Learn row lists the latest posts').toBe(6);
   });

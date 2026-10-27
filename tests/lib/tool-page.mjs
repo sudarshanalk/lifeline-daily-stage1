@@ -3,7 +3,7 @@
 // Used by: engine-freeze, SAF suite, copy-hash, unit tests. Never writes anything.
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
-import { toolPath, TOOL_FILES } from './paths.mjs';
+import { toolPath, ALL_TOOL_FILES } from './paths.mjs';
 import { sha256 } from './hash.mjs';
 
 export function loadPage(slug, { html, url } = {}) {
@@ -11,7 +11,7 @@ export function loadPage(slug, { html, url } = {}) {
   const dom = new JSDOM(source, {
     runScripts: 'dangerously',
     pretendToBeVisual: true,
-    url: url ?? 'https://lifelinedaily.com/tools/' + TOOL_FILES[slug],
+    url: url ?? 'https://lifelinedaily.com/tools/' + ALL_TOOL_FILES[slug],
   });
   dom.window.fetch = () => Promise.reject(new Error('network disabled in tests'));
   OPEN.add(dom.window);
@@ -42,6 +42,10 @@ export const FROZEN = {
     idrs: /function idrs\s*\([^)]*\)\s*\{/,
     whtr: /function whtr\s*\([^)]*\)\s*\{/,
     'render.priority': 'priority',
+  },
+  // FR2-39: calculation, thresholds, rounding and the safety order all live in one pure engine block
+  'healthy-weight': {
+    HW_ENGINE: /var HW_ENGINE\s*=\s*\(/,
   },
 };
 
@@ -176,6 +180,33 @@ export function diabetesRunner(html) {
     out.emergency = !!inp.emergency;
     if (out.emergency) out.scoreSuppressedOnScreen = true;
     return out;
+  };
+}
+
+/** Healthy Weight Check (FR2-39): drives the real form in jsdom (answers, units, submit) and reads what the page decided.
+ *  Returns { errors: [keys] } | { stop, shown } | { bmi, category, adjusted, range, waist, weightLoss, notes, onward, shown }. */
+export function healthyWeightRunner(html) {
+  const w = loadPage('healthy-weight', { html });
+  const d = w.document;
+  const setVal = (id, v) => { const el = d.getElementById(id); if (el) el.value = v == null ? '' : String(v); };
+  const tap = (group, val) => { if (val == null) return; const b = d.querySelector(`[data-tap="${group}"] [data-val="${val}"]`); if (!b) throw new Error(`no ${group} option ${val}`); b.click(); };
+  const unit = (id, v) => { const el = d.getElementById(id); el.value = v; el.dispatchEvent(new w.Event('change')); };
+  return (inp) => {
+    d.querySelectorAll('[data-tap] .tap[aria-pressed="true"]').forEach((b) => b.setAttribute('aria-pressed', 'false'));
+    w.eval('S.preg=S.eat=S.bg=S.mixed=S.loss=null; document.getElementById("mixedField").hidden=true');
+    unit('htUnit', inp.heightFt != null ? 'ftin' : 'cm'); unit('wtUnit', inp.weightSt != null ? 'stlb' : 'kg'); unit('waistUnit', inp.waistIn != null ? 'in' : 'cm');
+    setVal('age', inp.age);
+    if (inp.heightFt != null) { setVal('ht_a', inp.heightFt); setVal('ht_b', inp.heightIn ?? 0); } else setVal('ht', inp.heightCm);
+    if (inp.weightSt != null) { setVal('wt_a', inp.weightSt); setVal('wt_b', inp.weightLb ?? 0); } else setVal('wt', inp.weightKg);
+    setVal('waist', inp.waistIn ?? inp.waistCm);
+    tap('preg', inp.preg); tap('eat', inp.eat); tap('bg', inp.bg); tap('mixed', inp.mixed); tap('loss', inp.loss);
+    d.getElementById('tool').dispatchEvent(new w.Event('submit', { cancelable: true }));
+    const errs = [...d.querySelectorAll('.err:not([hidden])')].map((e) => e.getAttribute('data-err'));
+    if (errs.length) return { errors: errs };
+    const r = w.eval('LAST');
+    const shown = d.getElementById('results').textContent;
+    if (r.stop) return { stop: r.stop, shown };
+    return { ...JSON.parse(JSON.stringify(r)), shown };
   };
 }
 
