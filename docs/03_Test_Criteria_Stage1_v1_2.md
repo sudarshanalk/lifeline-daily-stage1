@@ -167,7 +167,7 @@ Each mutation is a patch in `tests/mutations/MUT-NN.patch`, applied by `make mut
 | MUT-04 | Change Female `s0` 0.98622727… → 0.980 | TC-FR1-10-AS-01 |
 | MUT-05 | Remove `suppress=true` in emergency branch | TC-FR1-11-AS-01 |
 | MUT-06 | `bandFor`: 5.6 → 6.0 | TC-FR1-12-AS-01, TC-FR1-12-AS-09 |
-| MUT-07 | Cap 2.0 → 2.5 | TC-FR1-07-AS-01/02 (FX-PR-CAP) |
+| MUT-07 | Cap 2.0 → 2.5 and the strength band top 2.0 → 2.5 | TC-FR1-07-AS-01/02 (FX-PR-CAP) |
 | MUT-08 | IDRS tier threshold 60 → 50 | TC-FR1-12-AS-02 (via FX-DM-IDRS-03, score 50) |
 | MUT-09 | WHtR 0.5 → 0.55 | TC-FR1-12-AS-03 |
 | MUT-10 | Alter `approvals/protein.json.version_hash` by one hex digit | TC-FR1-06-AS-02 |
