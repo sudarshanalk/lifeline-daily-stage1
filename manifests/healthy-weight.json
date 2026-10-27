@@ -2,7 +2,7 @@
   "tool_slug": "healthy-weight",
   "live_url": "https://lifelinedaily.com/tools/healthy-weight-tool.html",
   "landing_url": "https://lifelinedaily.com/health-tools/healthy-weight-check/",
-  "endpoint": null,
+  "endpoint": "none (no email, D51)",
   "owner": "Lifeline Daily",
   "versions": [
     {

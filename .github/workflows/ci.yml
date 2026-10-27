@@ -51,7 +51,7 @@ jobs:
           changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'fixtures/**/*.json' || true)
           [ -z "$changed" ] && { echo "no fixture changes"; exit 0; }
           # every commit in the PR that touches fixtures must be a baseline/oracle commit (the checked-out HEAD is GitHub's merge commit)
-          bad=$(git log --format='%s' origin/${{ github.base_ref }}..${{ github.event.pull_request.head.sha }} -- fixtures | grep -Ev '^(FR1-01|FR1-22|ORC-0[1-5]):' || true)
+          bad=$(git log --no-merges --format='%s' origin/${{ github.base_ref }}..${{ github.event.pull_request.head.sha }} -- fixtures | grep -Ev '^(FR1-01|FR1-22|ORC-0[1-5]):' || true)
           if [ -z "$bad" ]; then echo "fixture change by baseline/oracle commits: $changed"; exit 0; fi
           echo "oracle-guard: fixtures changed outside a baseline/oracle commit: $changed"; exit 1
 

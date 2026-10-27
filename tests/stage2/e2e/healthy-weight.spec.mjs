@@ -85,7 +85,7 @@ test('TC-FR2-39-AS-14', async ({ page, request }) => {
   await expect(save).toBeHidden();
   await page.evaluate(() => {
     const fake = document.createElement('iframe'); document.body.appendChild(fake);
-    fake.contentWindow.eval("parent.postMessage({type:'lld-calculator-result',calculator:'healthy-weight',headline:'99.9',unit:'kg/m²',band:'Healthy weight',version:'x',onward:true}, location.origin)");
+    fake.contentWindow.eval("parent.postMessage({type:'lld-calculator-result',calculator:'healthy-weight',headline:'99.9',unit:'kg/m²',band:'Healthy weight',version:'x',onward:true}, '*')");
   });
   await page.waitForTimeout(300);
   await expect(save).toBeHidden();
@@ -128,8 +128,8 @@ test('TC-FR2-39-AS-17', async ({ page }) => {
   await expect(page.locator('h1')).toHaveText('Healthy Weight Check');
   await expect(page.locator('iframe.lld-tool-frame')).toHaveCount(1);
   await expect(page.locator('iframe.lld-tool-frame')).toHaveAttribute('src', /\/tools\/healthy-weight-tool\.html$/);
-  const canonical = await page.locator('link[rel="canonical"]').getAttribute('href').catch(() => null);
-  if (canonical) expect(canonical).toContain(LANDING);
+  const canonical = page.locator('link[rel="canonical"]');
+  if (await canonical.count()) expect(await canonical.first().getAttribute('href')).toContain(LANDING);
   const description = await page.locator('meta[name="description"]').getAttribute('content');
   expect(description).toMatch(/BMI/);
   await expect(page.locator('a[href$="/programmes/healthy-weight/"]')).toHaveCount(1);
