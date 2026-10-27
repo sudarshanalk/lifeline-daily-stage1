@@ -14,7 +14,7 @@ You are working on Stage 1 of the Lifeline Daily revamp (SRS v1.2). Read these b
 ## Hard rules
 - Work on exactly one requirement ID per branch: `req/<ID>`; PR title `<ID>: <title>`.
 - Touch only files listed in that requirement's `components`. CI `component-scope` will fail otherwise.
-- Never modify these (CI `engine-freeze`): in `site/public_html/tools/protein-requirement-tool.html` → `BANDS`, `DIET_MULT`, `PREG_GKG`, `computeProtein`, `clampMeal`, `cutoffs`; in `site/public_html/tools/diabetes-risk-tool.html` → `ENGINE`, `bandFor`, `idrs`, `whtr`, the emergency/symptom priority block in `render*`. A change needs a DEC row with `status: ratified`, `ratify_at: HG-02`.
+- Never modify these (CI `engine-freeze`): in `site/public_html/tools/protein-requirement-tool.html` → `BANDS`, `CEILING`, `WHO_BASE`, `PREG_ADD`, `cutoffs`, `basisWeight`, `computeProtein` (v2, DEC-86); in `site/public_html/tools/diabetes-risk-tool.html` → `ENGINE`, `bandFor`, `idrs`, `whtr`, the emergency/symptom priority block in `render*`. A change needs a DEC row with `status: ratified`, `ratify_at: HG-02`.
 - Never edit `expected` in `fixtures/**` (CI `oracle-guard`). Never edit acceptance criteria or TC pages.
 - Test names must equal assertion IDs, e.g. `test('TC-FR1-08-AS-03', …)`. Import the fixture the TC names.
 - Red before green: for new behaviour, record the failing run id in your output JSON.
