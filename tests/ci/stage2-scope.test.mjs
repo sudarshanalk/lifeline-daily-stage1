@@ -10,12 +10,13 @@ const PLUGIN = 'site/public_html/wp-content/plugins/lld-members/lld-members.php'
 const PAGE = 'site/public_html/tools/diabetes-risk-tool.html';
 
 describe('stage2-scope', () => {
-  test('titles: S2-C1..C10 and S2-L0..L8 only', () => {
+  test('titles: S2-C1..C10 and S2-L0..L19 (optional letter) only', () => {
     expect(classify('S2-C1: Foundations')).toMatchObject({ kind: 'C', n: 1 });
     expect(classify('S2-C10: Quality')).toMatchObject({ kind: 'C', n: 10 });
     expect(classify('S2-L0: Phase 0')).toMatchObject({ kind: 'L', n: 0 });
+    expect(classify('S2-L9a: Hide the planned card')).toMatchObject({ kind: 'L', n: 9, id: 'S2-L9a' });
     expect(classify('S2-C2-C10: Packages')).toMatchObject({ kind: 'C', n: 2, to: 10 });
-    for (const t of ['S2-C0: x', 'S2-C11: x', 'S2-L9: x', 'S2-C1 x', 'FR2-01: x', 'S2-C1: ', 'S2-C5-C3: x', 'S2-C2-C11: x']) expect(classify(t), t).toBeNull();
+    for (const t of ['S2-C0: x', 'S2-C11: x', 'S2-L20: x', 'S2-L9A: x', 'S2-C1 x', 'FR2-01: x', 'S2-C1: ', 'S2-C5-C3: x', 'S2-C2-C11: x']) expect(classify(t), t).toBeNull();
   });
 
   test('Cursor packages stay in the plugin and tests/stage2', () => {
@@ -39,6 +40,13 @@ describe('stage2-scope', () => {
     for (const f of [PLUGIN, 'tests/stage2/tools/leak.mjs', PAGE, 'approvals/diabetes.json', 'copy/inventory.json', 'snapshot/x']) {
       expect(stage2Scope({ title: 'S2-L3: SEO', files: [f] }).ok, f).toBe(false);
     }
+  });
+
+  test('an owner decision opens named protected files to one lead package only (D54)', () => {
+    const status = 'site/public_html/tools/status.json';
+    expect(stage2Scope({ title: 'S2-L9a: Hide the planned card', files: [status, 'tests/e2e/TC-FR1-04.spec.mjs'] }).ok).toBe(true);
+    expect(stage2Scope({ title: 'S2-L9a: Hide the planned card', files: [PAGE] }).ok).toBe(false);
+    expect(stage2Scope({ title: 'S2-L3: SEO', files: [status] }).ok).toBe(false);
   });
 
   test('test ids under tests/stage2 must be checks in docs/stage2/03', () => {
