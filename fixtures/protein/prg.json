@@ -4,7 +4,7 @@
   "fixtures": [
     {
       "id": "FX-PR-PRG-01",
-      "purpose": "pregnant res5+",
+      "purpose": "pregnant, first trimester, strength training entered",
       "inputs": {
         "units": "metric",
         "age": 40,
@@ -14,39 +14,41 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "5+",
+        "resistance": "yes",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no",
+        "trimester": "1"
       },
       "expected": {
         "suppressed": false,
         "branch": "pregnancy",
-        "targetG": 83,
-        "lowG": 83,
-        "highG": 83,
-        "gPerKg": 1.1,
+        "targetG": 63,
+        "lowG": 63,
+        "highG": 63,
+        "gPerKg": 0.84,
         "basisKg": 75,
         "basisNote": "your pre-pregnancy weight",
-        "perMeal": 28,
+        "perMeal": 21,
         "sources": [
-          "IOM Dietary Reference Intakes — pregnancy RDA 1.1 g/kg/day"
+          "WHO/FAO/UNU 2007: 0.83 g/kg plus 1 g a day in this trimester"
         ],
         "capped": false,
-        "dietMult": 1,
+        "older": false,
         "interpKey": "baseline",
         "bmi": 24.49
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     },
     {
       "id": "FX-PR-PRG-02",
-      "purpose": "pregnant build vegan",
+      "purpose": "pregnant, second trimester, goal build, vegan",
       "inputs": {
         "units": "metric",
         "age": 40,
@@ -56,81 +58,85 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "build",
         "diet": "vegan",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no",
+        "trimester": "2"
       },
       "expected": {
         "suppressed": false,
         "branch": "pregnancy",
-        "targetG": 83,
-        "lowG": 83,
-        "highG": 83,
-        "gPerKg": 1.1,
+        "targetG": 71,
+        "lowG": 71,
+        "highG": 71,
+        "gPerKg": 0.95,
         "basisKg": 75,
         "basisNote": "your pre-pregnancy weight",
-        "perMeal": 28,
+        "perMeal": 24,
         "sources": [
-          "IOM Dietary Reference Intakes — pregnancy RDA 1.1 g/kg/day"
+          "WHO/FAO/UNU 2007: 0.83 g/kg plus 9 g a day in this trimester"
         ],
         "capped": false,
-        "dietMult": 1,
+        "older": false,
         "interpKey": "baseline",
         "bmi": 24.49
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     },
     {
       "id": "FX-PR-PRG-03",
-      "purpose": "breastfeeding vigorous",
+      "purpose": "pregnant, third trimester, vigorous",
       "inputs": {
         "units": "metric",
         "age": 40,
         "sex": "female",
-        "preg": "breastfeeding",
+        "preg": "pregnant",
         "heightCm": 175,
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "vigorous",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no",
+        "trimester": "3"
       },
       "expected": {
         "suppressed": false,
         "branch": "pregnancy",
-        "targetG": 98,
-        "lowG": 98,
-        "highG": 98,
-        "gPerKg": 1.3,
+        "targetG": 93,
+        "lowG": 93,
+        "highG": 93,
+        "gPerKg": 1.24,
         "basisKg": 75,
         "basisNote": "your pre-pregnancy weight",
-        "perMeal": 33,
+        "perMeal": 31,
         "sources": [
-          "IOM Dietary Reference Intakes — lactation RDA 1.3 g/kg/day"
+          "WHO/FAO/UNU 2007: 0.83 g/kg plus 31 g a day in this trimester"
         ],
         "capped": false,
-        "dietMult": 1,
+        "older": false,
         "interpKey": "baseline",
         "bmi": 24.49
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     },
     {
       "id": "FX-PR-PRG-04",
-      "purpose": "breastfeeding fatloss res3-4",
+      "purpose": "breastfeeding, baby under 6 months, fat loss and strength training",
       "inputs": {
         "units": "metric",
         "age": 40,
@@ -140,33 +146,79 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "3-4",
+        "resistance": "yes",
         "goal": "fatloss",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no",
+        "babyAge": "under6"
       },
       "expected": {
         "suppressed": false,
         "branch": "pregnancy",
-        "targetG": 98,
-        "lowG": 98,
-        "highG": 98,
-        "gPerKg": 1.3,
+        "targetG": 81,
+        "lowG": 81,
+        "highG": 81,
+        "gPerKg": 1.08,
         "basisKg": 75,
         "basisNote": "your pre-pregnancy weight",
-        "perMeal": 33,
+        "perMeal": 27,
         "sources": [
-          "IOM Dietary Reference Intakes — lactation RDA 1.3 g/kg/day"
+          "WHO/FAO/UNU 2007: 0.83 g/kg plus 19 g a day while breastfeeding a baby under 6 months"
         ],
         "capped": false,
-        "dietMult": 1,
+        "older": false,
         "interpKey": "baseline",
         "bmi": 24.49
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
+      "reviewer": null,
+      "status": "recorded"
+    },
+    {
+      "id": "FX-PR-PRG-05",
+      "purpose": "breastfeeding, baby 6 months or older, goal build",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": "female",
+        "preg": "breastfeeding",
+        "heightCm": 175,
+        "weightKg": 75,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "no",
+        "goal": "build",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no",
+        "plan": "no",
+        "babyAge": "6plus"
+      },
+      "expected": {
+        "suppressed": false,
+        "branch": "pregnancy",
+        "targetG": 75,
+        "lowG": 75,
+        "highG": 75,
+        "gPerKg": 1,
+        "basisKg": 75,
+        "basisNote": "your pre-pregnancy weight",
+        "perMeal": 25,
+        "sources": [
+          "WHO/FAO/UNU 2007: 0.83 g/kg plus 12.5 g a day while breastfeeding a baby 6 months or older"
+        ],
+        "capped": false,
+        "older": false,
+        "interpKey": "baseline",
+        "bmi": 24.49
+      },
+      "oracle": "characterisation",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     }
