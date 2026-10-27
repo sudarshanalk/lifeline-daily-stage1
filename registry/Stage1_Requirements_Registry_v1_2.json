@@ -552,6 +552,7 @@
       "components": [
         "CMP-02",
         "CMP-04",
+        "CMP-12",
         "CMP-14"
       ],
       "must_not_touch": [
