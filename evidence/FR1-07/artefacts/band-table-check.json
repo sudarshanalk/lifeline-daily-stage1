@@ -36,13 +36,13 @@
     {
       "key": "strength",
       "lo": 1.4,
-      "hi": 2.5,
+      "hi": 2,
       "src": "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis",
       "cited": [
         "ISSN",
         "Morton"
       ],
-      "derivable": false
+      "derivable": true
     },
     {
       "key": "fatLoss",

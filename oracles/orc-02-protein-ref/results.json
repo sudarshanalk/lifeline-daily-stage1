@@ -5,7 +5,7 @@
     "python": "3.14.6"
   },
   "source_hash": "09b116ae17891c5e77484599eb87b27475af855e149ddbba9055c2c30862534a",
-  "run_at": "2026-10-27T13:53:58Z",
+  "run_at": "2026-10-27T15:56:56Z",
   "results": [
     {
       "fixture_id": "FX-PR-AGE-01",
@@ -279,12 +279,12 @@
       "expected": {
         "suppressed": false,
         "branch": "standard",
-        "targetG": 142,
-        "lowG": 117,
+        "targetG": 143,
+        "lowG": 118,
         "highG": 168,
         "gPerKg": 1.7,
-        "basisKg": 83.75375,
-        "perMeal": 71,
+        "basisKg": 84.15375,
+        "perMeal": 72,
         "capped": false
       },
       "notes": "2 meals: per meal = target / 2"
