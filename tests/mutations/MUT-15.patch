@@ -1,0 +1,12 @@
+diff --git a/site/public_html/tools/protein-requirement-tool.html b/site/public_html/tools/protein-requirement-tool.html
+--- a/site/public_html/tools/protein-requirement-tool.html
++++ b/site/public_html/tools/protein-requirement-tool.html
+@@ -555,8 +555,6 @@
+ 
+   /* --- P0: referral stops. Nothing else runs. ------------------------- */
+   if (s.kidney === 'yes') return { suppressed:true, reason:'renal', bmi };
+-  if (s.liver === 'yes')  return { suppressed:true, reason:'clinical', bmi };
+-  if (s.plan === 'yes')   return { suppressed:true, reason:'plan', bmi };
+ 
+   /* --- P1: PREGNANCY / BREASTFEEDING — own branch, never combined ------ */
+   if (s.preg === 'pregnant' || s.preg === 'breastfeeding'){

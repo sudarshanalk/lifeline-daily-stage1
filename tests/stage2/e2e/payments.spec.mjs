@@ -1076,7 +1076,7 @@ test('TC-FR2-16-AS-01', async ({ page }) => {
 test('TC-FR2-16-AS-02', async ({ page }) => {
   await serveTools(page);
   const protein = {
-    units: 'metric', age: 40, sex: 'male', preg: 'no', heightCm: 175, weightKg: 75, ethnicity: 'White', activity: 'moderate', resistance: '0', goal: 'maintain', diet: 'omnivore', meals: 3, kidney: 'no', liver: 'no',
+    units: 'metric', age: 40, sex: 'male', preg: 'no', heightCm: 175, weightKg: 75, ethnicity: 'White', activity: 'moderate', resistance: 'no', goal: 'maintain', diet: 'omnivore', meals: 3, kidney: 'no', liver: 'no', plan: 'no',
   };
   const diabetes = {
     units: 'metric', sex: 'Male', ageBand: 27, heightCm: 170, weightKg: 75, ethn: 'Indian', smoke: 'Non', family: [], htn: 0, cvd: 0, gdm: 0, pcos: 0, learn: 0, psy: 0, ster: 0, stat: 0, apsy: 0, activity: 'moderate', hasSym: 'no', symptoms: [], emergency: false,

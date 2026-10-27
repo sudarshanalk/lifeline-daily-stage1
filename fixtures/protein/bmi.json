@@ -4,50 +4,50 @@
   "fixtures": [
     {
       "id": "FX-PR-BMI-01",
-      "purpose": "BMI 29.9 actual",
+      "purpose": "BMI 24 uses actual weight",
       "inputs": {
         "units": "metric",
         "age": 40,
         "sex": "male",
         "preg": "no",
-        "heightCm": 175,
-        "weightKg": 91.5,
+        "heightCm": 185,
+        "weightKg": 82,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "suppressed": false,
         "branch": "standard",
-        "targetG": 110,
-        "lowG": 92,
-        "highG": 128,
+        "targetG": 98,
+        "lowG": 82,
+        "highG": 115,
         "gPerKg": 1.2,
-        "basisKg": 91.5,
+        "basisKg": 82,
         "basisNote": "your current weight",
-        "perMeal": 37,
+        "perMeal": 33,
         "sources": [
-          "IOM AMDR / ISSN lower band"
+          "Tagawa 2021, meta-analysis of randomised trials (benefit rises to 1.3 g/kg)"
         ],
         "capped": false,
         "older": false,
-        "dietMult": 1,
         "interpKey": "active",
-        "bmi": 29.878
+        "bmi": 23.959
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     },
     {
       "id": "FX-PR-BMI-02",
-      "purpose": "BMI 30.04 adjusted 24.9",
+      "purpose": "BMI 30.04 adjusted from the BMI 24.9 weight",
       "inputs": {
         "units": "metric",
         "age": 40,
@@ -57,12 +57,13 @@
         "weightKg": 92,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "suppressed": false,
@@ -75,65 +76,21 @@
         "basisNote": "an adjusted body weight of 82.6 kg (used because applying g/kg to full body weight overstates the target when a larger share of that weight is fat mass)",
         "perMeal": 33,
         "sources": [
-          "IOM AMDR / ISSN lower band"
+          "Tagawa 2021, meta-analysis of randomised trials (benefit rises to 1.3 g/kg)"
         ],
         "capped": false,
         "older": false,
-        "dietMult": 1,
         "interpKey": "active",
         "bmi": 30.041
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     },
     {
       "id": "FX-PR-BMI-03",
-      "purpose": "adjusted 22.9",
-      "inputs": {
-        "units": "metric",
-        "age": 40,
-        "sex": "male",
-        "preg": "no",
-        "heightCm": 175,
-        "weightKg": 92,
-        "ethnicity": "Indian",
-        "activity": "moderate",
-        "resistance": "0",
-        "goal": "maintain",
-        "diet": "omnivore",
-        "meals": 3,
-        "kidney": "no",
-        "liver": "no"
-      },
-      "expected": {
-        "suppressed": false,
-        "branch": "standard",
-        "targetG": 95,
-        "lowG": 79,
-        "highG": 110,
-        "gPerKg": 1.2,
-        "basisKg": 78.879,
-        "basisNote": "an adjusted body weight of 78.9 kg (used because applying g/kg to full body weight overstates the target when a larger share of that weight is fat mass)",
-        "perMeal": 32,
-        "sources": [
-          "IOM AMDR / ISSN lower band"
-        ],
-        "capped": false,
-        "older": false,
-        "dietMult": 1,
-        "interpKey": "active",
-        "bmi": 30.041
-      },
-      "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
-      "reviewer": null,
-      "status": "recorded"
-    },
-    {
-      "id": "FX-PR-BMI-04",
-      "purpose": "adjusted second",
+      "purpose": "lower-cut-off background, same basis as BMI-04",
       "inputs": {
         "units": "metric",
         "age": 40,
@@ -143,34 +100,77 @@
         "weightKg": 77,
         "ethnicity": "Indian",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "suppressed": false,
         "branch": "standard",
-        "targetG": 79,
-        "lowG": 66,
-        "highG": 92,
+        "targetG": 83,
+        "lowG": 69,
+        "highG": 97,
         "gPerKg": 1.2,
-        "basisKg": 65.974,
-        "basisNote": "an adjusted body weight of 66.0 kg (used because applying g/kg to full body weight overstates the target when a larger share of that weight is fat mass)",
-        "perMeal": 26,
+        "basisKg": 69.046,
+        "basisNote": "an adjusted body weight of 69.0 kg (used because applying g/kg to full body weight overstates the target when a larger share of that weight is fat mass)",
+        "perMeal": 28,
         "sources": [
-          "IOM AMDR / ISSN lower band"
+          "Tagawa 2021, meta-analysis of randomised trials (benefit rises to 1.3 g/kg)"
         ],
         "capped": false,
         "older": false,
-        "dietMult": 1,
         "interpKey": "active",
         "bmi": 30.078
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
+      "reviewer": null,
+      "status": "recorded"
+    },
+    {
+      "id": "FX-PR-BMI-04",
+      "purpose": "standard background twin of BMI-03",
+      "inputs": {
+        "units": "metric",
+        "age": 40,
+        "sex": "male",
+        "preg": "no",
+        "heightCm": 160,
+        "weightKg": 77,
+        "ethnicity": "White",
+        "activity": "moderate",
+        "resistance": "no",
+        "goal": "maintain",
+        "diet": "omnivore",
+        "meals": 3,
+        "kidney": "no",
+        "liver": "no",
+        "plan": "no"
+      },
+      "expected": {
+        "suppressed": false,
+        "branch": "standard",
+        "targetG": 83,
+        "lowG": 69,
+        "highG": 97,
+        "gPerKg": 1.2,
+        "basisKg": 69.046,
+        "basisNote": "an adjusted body weight of 69.0 kg (used because applying g/kg to full body weight overstates the target when a larger share of that weight is fat mass)",
+        "perMeal": 28,
+        "sources": [
+          "Tagawa 2021, meta-analysis of randomised trials (benefit rises to 1.3 g/kg)"
+        ],
+        "capped": false,
+        "older": false,
+        "interpKey": "active",
+        "bmi": 30.078
+      },
+      "oracle": "characterisation",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     }

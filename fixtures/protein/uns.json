@@ -14,12 +14,13 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "unsure",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "suppressed": false,
@@ -32,16 +33,15 @@
         "basisNote": "your current weight",
         "perMeal": 30,
         "sources": [
-          "IOM AMDR / ISSN lower band"
+          "Tagawa 2021, meta-analysis of randomised trials (benefit rises to 1.3 g/kg)"
         ],
         "capped": false,
         "older": false,
-        "dietMult": 1,
         "interpKey": "active",
         "bmi": 24.49
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     }

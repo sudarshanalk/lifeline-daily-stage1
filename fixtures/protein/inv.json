@@ -14,12 +14,13 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "error": true
@@ -41,12 +42,13 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "error": true
@@ -68,12 +70,13 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "error": true
@@ -95,12 +98,13 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "error": true
@@ -122,12 +126,13 @@
         "weightKg": 20,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "error": true
@@ -149,12 +154,13 @@
         "weightKg": 400,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "error": true
@@ -176,12 +182,13 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "error": true
@@ -203,12 +210,13 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": null,
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "error": true

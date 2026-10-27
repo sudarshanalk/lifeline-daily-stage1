@@ -91,12 +91,13 @@ describe('TC-FR1-21 standalone tool page hardening', () => {
   });
 
   test('TC-FR1-21 shell change keeps the frozen engine and updates provenance in the same PR', () => {
-    // supporting check (not a TC id): the manifests' live version is the current file and the js:* hashes are unchanged from the baseline
+    // supporting check (not a TC id): the manifests' live version is the current file and the js:* hashes are unchanged from the
+    // baseline, or from the latest engine version approved at HG-02 (protein v2, DEC-86)
     const { createHash } = require('node:crypto');
     for (const [slug, manifest] of [['protein', manifestProtein], ['diabetes', manifestDiabetes]]) {
       const live = manifest.versions.find((v) => v.is_live);
       expect(live.version_hash).toBe(createHash('sha256').update(readFileSync(toolPath(slug))).digest('hex'));
-      const baseline = manifest.versions.find((v) => v.notes && /Baseline/.test(v.notes));
+      const baseline = manifest.versions.find((v) => v.notes && /Baseline|approved at HG-02/.test(v.notes));   // newest first
       for (const [k, h] of Object.entries(baseline.engine_hashes)) if (k.startsWith('js:')) expect(live.engine_hashes[k], `${slug} ${k}`).toBe(h);
     }
   });

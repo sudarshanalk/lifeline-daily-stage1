@@ -1,4 +1,4 @@
-// TC-FR1-09 e2e: AS-02 clinical banner visible for LIV-01/02; AS-03 underweight banner for UWT-01/02 and no forbidden
+// TC-FR1-09 e2e: AS-02 clinical and plan stops (no number) for LIV-01/02 (DEC-86); AS-03 underweight banner for UWT-01/02 and no forbidden
 // deficit language in the result; AS-05 pregnancy banner text hash equals approvals/protein.json.copy_hashes.pregnancy.
 import { test, expect } from '@playwright/test';
 import { createHash } from 'node:crypto';
@@ -25,13 +25,17 @@ async function run(page, fx) {
 }
 
 test('TC-FR1-09-AS-02', async ({ page }) => {
+  // LIV-01 (liver disease or recovery) → clinical stop; LIV-02 (clinician plan) → plan stop; no gram figure anywhere in the result
+  const STOP = { 'FX-PR-LIV-01': ['clinical-stop', 'clinicalStop'], 'FX-PR-LIV-02': ['plan-stop', 'planStop'] };
   for (const fx of LIV) {
     await run(page, fx);
-    const banner = page.locator('[data-test=banner-clinical]');
+    const [hook, key] = STOP[fx.id];
+    const banner = page.locator(`[data-test=${hook}]`);
     await expect(banner, fx.id).toBeVisible();
     await expect(banner).toHaveAttribute('role', 'alert');
-    expect(await banner.innerText()).toContain(await page.evaluate(() => MESSAGES.clinical.title));
-    expect(await page.locator('#methodology').evaluate((el) => el.textContent), `${fx.id}: ESPEN source listed`).toMatch(/ESPEN/); // inside a collapsed <details>
+    expect(await banner.innerText()).toContain(await page.evaluate((k) => MESSAGES[k].title, key));
+    expect(await page.locator('[data-test=result]').innerText(), `${fx.id}: no gram figure`).not.toMatch(/\d+(\.\d+)?\s?(g\b|gram|g\/kg)/i);
+    await expect(page.locator('#emailCard'), `${fx.id}: no email of a stop result`).toBeHidden();
   }
 });
 
@@ -57,6 +61,6 @@ test('TC-FR1-09-AS-05', async ({ page }) => {
     const authored = await page.evaluate(() => MESSAGES.pregnancy.title + '\n' + MESSAGES.pregnancy.body);
     expect(createHash('sha256').update(authored).digest('hex'), `${fx.id}: pregnancy copy hash`).toBe(approval.copy_hashes.pregnancy);
     expect(await banner.innerText(), `${fx.id}: banner shows the approved title`).toContain(await page.evaluate(() => MESSAGES.pregnancy.title));
-    expect(await page.locator('[data-test=result]').innerText(), `${fx.id}: RDA intensity shown`).toMatch(fx.inputs.preg === 'pregnant' ? /1\.1\s?g\/kg/ : /1\.3\s?g\/kg/);
+    expect(await page.locator('[data-test=headline]').innerText(), `${fx.id}: WHO figure shown`).toMatch(new RegExp(`\\b${fx.expected.targetG}\\s?g\\b`, 'i'));   // the headline is styled in capitals
   }
 });
