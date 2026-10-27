@@ -29,7 +29,7 @@ export const LEAD_EXTRA = {
   // D53 (Build Method 4.1): the Healthy Weight Check's own files plus the named shared ones; never the two older tool pages
   'S2-L9': ['site/public_html/tools/healthy-weight-tool.html', 'manifests/healthy-weight.json', 'approvals/healthy-weight.json',
     'copy/healthy-weight-messages.json', 'site/public_html/tools/status.json', 'site/public_html/tools/lld-members-link.js',
-    'approvals/copy.json', 'copy/inventory.json', 'tests/stage2/healthy-weight*', 'oracles/run.py', 'oracles/orc-05-healthy-weight/**',
+    'approvals/copy.json', 'copy/inventory.json', 'tests/stage2/healthy-weight*', 'tests/stage2/e2e/healthy-weight*', 'oracles/run.py', 'oracles/orc-05-healthy-weight/**',
     'site/public_html/wp-content/plugins/lld-members/includes/class-plugin.php',
     'site/public_html/wp-content/plugins/lld-members/includes/class-billing.php',
     'site/public_html/wp-content/plugins/lld-members/includes/class-growth.php'],
