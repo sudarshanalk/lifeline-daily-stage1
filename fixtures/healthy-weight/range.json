@@ -1,0 +1,320 @@
+{
+  "group": "RANGE",
+  "tool": "healthy-weight",
+  "fixtures": [
+    {
+      "id": "FX-HW-RANGE-01",
+      "purpose": "range at 150 cm, White",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 150,
+        "weightKg": 70,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 31.1,
+        "category": "obese1",
+        "adjusted": false,
+        "range": {
+          "lowKg": 41.6,
+          "highKg": 56.1,
+          "lowLb": 92,
+          "highLb": 123
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-RANGE-02",
+      "purpose": "range at 150 cm, BlackAfrican",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 150,
+        "weightKg": 70,
+        "bg": "BlackAfrican",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 31.1,
+        "category": "obese1",
+        "adjusted": true,
+        "range": {
+          "lowKg": 41.6,
+          "highKg": 51.6,
+          "lowLb": 92,
+          "highLb": 113
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-RANGE-03",
+      "purpose": "range at 162.5 cm, White",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 162.5,
+        "weightKg": 70,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 26.5,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 48.8,
+          "highKg": 65.8,
+          "lowLb": 108,
+          "highLb": 145
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-RANGE-04",
+      "purpose": "range at 162.5 cm, BlackAfrican",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 162.5,
+        "weightKg": 70,
+        "bg": "BlackAfrican",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 26.5,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 48.8,
+          "highKg": 60.6,
+          "lowLb": 108,
+          "highLb": 133
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-RANGE-05",
+      "purpose": "range at 170 cm, White",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 170,
+        "weightKg": 70,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.2,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 53.4,
+          "highKg": 72.1,
+          "lowLb": 118,
+          "highLb": 158
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-RANGE-06",
+      "purpose": "range at 170 cm, BlackAfrican",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 170,
+        "weightKg": 70,
+        "bg": "BlackAfrican",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.2,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 53.4,
+          "highKg": 66.3,
+          "lowLb": 118,
+          "highLb": 146
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-RANGE-07",
+      "purpose": "range at 185 cm, White",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 185,
+        "weightKg": 70,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 20.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 63.2,
+          "highKg": 85.3,
+          "lowLb": 140,
+          "highLb": 188
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-RANGE-08",
+      "purpose": "range at 185 cm, BlackAfrican",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 185,
+        "weightKg": 70,
+        "bg": "BlackAfrican",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 20.5,
+        "category": "healthy",
+        "adjusted": true,
+        "range": {
+          "lowKg": 63.2,
+          "highKg": 78.5,
+          "lowLb": 140,
+          "highLb": 173
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-RANGE-09",
+      "purpose": "range at 201.3 cm, White",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 201.3,
+        "weightKg": 70,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 17.3,
+        "category": "underweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 74.8,
+          "highKg": 101.1,
+          "lowLb": 165,
+          "highLb": 222
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "underweight"
+        ],
+        "onward": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-RANGE-10",
+      "purpose": "range at 201.3 cm, BlackAfrican",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 201.3,
+        "weightKg": 70,
+        "bg": "BlackAfrican",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 17.3,
+        "category": "underweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 74.8,
+          "highKg": 92.9,
+          "lowLb": 165,
+          "highLb": 205
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "underweight"
+        ],
+        "onward": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    }
+  ]
+}

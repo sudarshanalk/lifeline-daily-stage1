@@ -1,0 +1,2052 @@
+{
+  "oracle_id": "ORC-05",
+  "implementation": "Python decimal reference for the Healthy Weight Check (FR2-39): NICE NG246 BMI categories with lower thresholds for listed family backgrounds, waist-to-height ratio bands, healthy weight range, rounding (D55) and the safety order (D52)",
+  "versions": {
+    "python": "3.12.15"
+  },
+  "source_hash": "7e6ee8a44a9113b3c2f4aaf2aae1d43c20b8dcc75bd75448e1e7f136b98d1dc9",
+  "run_at": "2026-10-27T15:38:43Z",
+  "results": [
+    {
+      "fixture_id": "FX-HW-BMI-01",
+      "expected": {
+        "stop": null,
+        "bmi": 18.4,
+        "category": "underweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "underweight"
+        ],
+        "onward": false
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-02",
+      "expected": {
+        "stop": null,
+        "bmi": 18.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-03",
+      "expected": {
+        "stop": null,
+        "bmi": 24.9,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-04",
+      "expected": {
+        "stop": null,
+        "bmi": 25.0,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-05",
+      "expected": {
+        "stop": null,
+        "bmi": 29.9,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-06",
+      "expected": {
+        "stop": null,
+        "bmi": 30.0,
+        "category": "obese1",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-07",
+      "expected": {
+        "stop": null,
+        "bmi": 34.9,
+        "category": "obese1",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-08",
+      "expected": {
+        "stop": null,
+        "bmi": 35.0,
+        "category": "obese2",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-09",
+      "expected": {
+        "stop": null,
+        "bmi": 39.9,
+        "category": "obese2",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-10",
+      "expected": {
+        "stop": null,
+        "bmi": 40.0,
+        "category": "obese3",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "class3"
+        ],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-11",
+      "expected": {
+        "stop": null,
+        "bmi": 18.4,
+        "category": "underweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "underweight"
+        ],
+        "onward": false
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-12",
+      "expected": {
+        "stop": null,
+        "bmi": 18.5,
+        "category": "healthy",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-13",
+      "expected": {
+        "stop": null,
+        "bmi": 22.9,
+        "category": "healthy",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-14",
+      "expected": {
+        "stop": null,
+        "bmi": 23.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-15",
+      "expected": {
+        "stop": null,
+        "bmi": 27.4,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-16",
+      "expected": {
+        "stop": null,
+        "bmi": 27.5,
+        "category": "obese1",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-17",
+      "expected": {
+        "stop": null,
+        "bmi": 32.4,
+        "category": "obese1",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-18",
+      "expected": {
+        "stop": null,
+        "bmi": 32.5,
+        "category": "obese2",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-19",
+      "expected": {
+        "stop": null,
+        "bmi": 37.4,
+        "category": "obese2",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-20",
+      "expected": {
+        "stop": null,
+        "bmi": 37.5,
+        "category": "obese3",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "class3"
+        ],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-21",
+      "expected": {
+        "stop": null,
+        "bmi": 18.4,
+        "category": "underweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "underweight"
+        ],
+        "onward": false
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-22",
+      "expected": {
+        "stop": null,
+        "bmi": 18.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-23",
+      "expected": {
+        "stop": null,
+        "bmi": 24.9,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-24",
+      "expected": {
+        "stop": null,
+        "bmi": 25.0,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-25",
+      "expected": {
+        "stop": null,
+        "bmi": 23.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-26",
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-27",
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-28",
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-29",
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-30",
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-31",
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-32",
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-33",
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-34",
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-35",
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-36",
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-37",
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-38",
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-39",
+      "expected": {
+        "stop": null,
+        "bmi": 25.1,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 50.3,
+          "highKg": 62.4,
+          "lowLb": 111,
+          "highLb": 137
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-BMI-40",
+      "expected": {
+        "stop": null,
+        "bmi": 31.5,
+        "category": "obese1",
+        "adjusted": false,
+        "range": {
+          "lowKg": 61.2,
+          "highKg": 82.6,
+          "lowLb": 135,
+          "highLb": 182
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "older"
+        ],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-01",
+      "expected": {
+        "stop": "under18"
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-02",
+      "expected": {
+        "errors": [
+          "age"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-03",
+      "expected": {
+        "errors": [
+          "age"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-04",
+      "expected": {
+        "errors": [
+          "age"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-05",
+      "expected": {
+        "errors": [
+          "ht"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-06",
+      "expected": {
+        "errors": [
+          "ht"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-07",
+      "expected": {
+        "errors": [
+          "wt"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-08",
+      "expected": {
+        "errors": [
+          "wt"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-09",
+      "expected": {
+        "errors": [
+          "wt"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-10",
+      "expected": {
+        "errors": [
+          "ht"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-11",
+      "expected": {
+        "errors": [
+          "waist"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-12",
+      "expected": {
+        "errors": [
+          "waist"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-13",
+      "expected": {
+        "errors": [
+          "bg"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-14",
+      "expected": {
+        "errors": [
+          "mixed"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-15",
+      "expected": {
+        "errors": [
+          "loss"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-16",
+      "expected": {
+        "errors": [
+          "preg",
+          "eat"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-17",
+      "expected": {
+        "errors": [
+          "ht",
+          "wt"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-18",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-19",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "older"
+        ],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-20",
+      "expected": {
+        "stop": null,
+        "bmi": 17.4,
+        "category": "underweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 26.6,
+          "highKg": 35.9,
+          "lowLb": 59,
+          "highLb": 79
+        },
+        "waist": {
+          "ratio": 0.42,
+          "band": "healthy"
+        },
+        "weightLoss": false,
+        "notes": [
+          "underweight"
+        ],
+        "onward": false
+      }
+    },
+    {
+      "fixture_id": "FX-HW-INV-21",
+      "expected": {
+        "stop": null,
+        "bmi": 56.7,
+        "category": "obese3",
+        "adjusted": false,
+        "range": {
+          "lowKg": 97.7,
+          "highKg": 131.9,
+          "lowLb": 216,
+          "highLb": 290
+        },
+        "waist": {
+          "ratio": 0.87,
+          "band": "notShown"
+        },
+        "weightLoss": false,
+        "notes": [
+          "class3"
+        ],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-RANGE-01",
+      "expected": {
+        "stop": null,
+        "bmi": 31.1,
+        "category": "obese1",
+        "adjusted": false,
+        "range": {
+          "lowKg": 41.6,
+          "highKg": 56.1,
+          "lowLb": 92,
+          "highLb": 123
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-RANGE-02",
+      "expected": {
+        "stop": null,
+        "bmi": 31.1,
+        "category": "obese1",
+        "adjusted": true,
+        "range": {
+          "lowKg": 41.6,
+          "highKg": 51.6,
+          "lowLb": 92,
+          "highLb": 113
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-RANGE-03",
+      "expected": {
+        "stop": null,
+        "bmi": 26.5,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 48.8,
+          "highKg": 65.8,
+          "lowLb": 108,
+          "highLb": 145
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-RANGE-04",
+      "expected": {
+        "stop": null,
+        "bmi": 26.5,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 48.8,
+          "highKg": 60.6,
+          "lowLb": 108,
+          "highLb": 133
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-RANGE-05",
+      "expected": {
+        "stop": null,
+        "bmi": 24.2,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 53.4,
+          "highKg": 72.1,
+          "lowLb": 118,
+          "highLb": 158
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-RANGE-06",
+      "expected": {
+        "stop": null,
+        "bmi": 24.2,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 53.4,
+          "highKg": 66.3,
+          "lowLb": 118,
+          "highLb": 146
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-RANGE-07",
+      "expected": {
+        "stop": null,
+        "bmi": 20.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 63.2,
+          "highKg": 85.3,
+          "lowLb": 140,
+          "highLb": 188
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-RANGE-08",
+      "expected": {
+        "stop": null,
+        "bmi": 20.5,
+        "category": "healthy",
+        "adjusted": true,
+        "range": {
+          "lowKg": 63.2,
+          "highKg": 78.5,
+          "lowLb": 140,
+          "highLb": 173
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-RANGE-09",
+      "expected": {
+        "stop": null,
+        "bmi": 17.3,
+        "category": "underweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 74.8,
+          "highKg": 101.1,
+          "lowLb": 165,
+          "highLb": 222
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "underweight"
+        ],
+        "onward": false
+      }
+    },
+    {
+      "fixture_id": "FX-HW-RANGE-10",
+      "expected": {
+        "stop": null,
+        "bmi": 17.3,
+        "category": "underweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 74.8,
+          "highKg": 92.9,
+          "lowLb": 165,
+          "highLb": 205
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "underweight"
+        ],
+        "onward": false
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-01",
+      "expected": {
+        "stop": "pregnancy"
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-02",
+      "expected": {
+        "stop": "pregnancy"
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-03",
+      "expected": {
+        "stop": "pregnancy"
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-04",
+      "expected": {
+        "stop": "pregnancy"
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-05",
+      "expected": {
+        "stop": "pregnancy"
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-06",
+      "expected": {
+        "stop": "pregnancy"
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-07",
+      "expected": {
+        "stop": "eating"
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-08",
+      "expected": {
+        "stop": "eating"
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-09",
+      "expected": {
+        "stop": "eating"
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-10",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-11",
+      "expected": {
+        "stop": "under18"
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-12",
+      "expected": {
+        "stop": "pregnancy"
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-13",
+      "expected": {
+        "stop": "eating"
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-14",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": true,
+        "notes": [],
+        "onward": false
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-15",
+      "expected": {
+        "stop": "eating"
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-16",
+      "expected": {
+        "stop": null,
+        "bmi": 17.5,
+        "category": "underweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "underweight"
+        ],
+        "onward": false
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-17",
+      "expected": {
+        "stop": null,
+        "bmi": 41.0,
+        "category": "obese3",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "class3"
+        ],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-18",
+      "expected": {
+        "stop": null,
+        "bmi": 38.0,
+        "category": "obese3",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "class3"
+        ],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-19",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "older"
+        ],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-SAF-20",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-UNIT-01",
+      "expected": {
+        "stop": null,
+        "bmi": 24.9,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 53.5,
+          "highKg": 72.2,
+          "lowLb": 118,
+          "highLb": 159
+        },
+        "waist": {
+          "ratio": 0.51,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-UNIT-02",
+      "expected": {
+        "stop": null,
+        "bmi": 27.7,
+        "category": "obese1",
+        "adjusted": true,
+        "range": {
+          "lowKg": 63.5,
+          "highKg": 78.9,
+          "lowLb": 140,
+          "highLb": 173
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-UNIT-03",
+      "expected": {
+        "stop": null,
+        "bmi": 21.0,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 46.5,
+          "highKg": 62.8,
+          "lowLb": 103,
+          "highLb": 138
+        },
+        "waist": {
+          "ratio": 0.44,
+          "band": "healthy"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-UNIT-04",
+      "expected": {
+        "stop": null,
+        "bmi": 26.4,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 53.4,
+          "highKg": 72.1,
+          "lowLb": 118,
+          "highLb": 158
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-01",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.39,
+          "band": "below"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-02",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.4,
+          "band": "healthy"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-03",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.4,
+          "band": "healthy"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-04",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.4,
+          "band": "healthy"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-05",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.49,
+          "band": "healthy"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-06",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.5,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-07",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.5,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-08",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.5,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-09",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.5,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-10",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.59,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-11",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.6,
+          "band": "high"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-12",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.6,
+          "band": "high"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-13",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.6,
+          "band": "high"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-14",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.6,
+          "band": "high"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-15",
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.83,
+          "band": "high"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-16",
+      "expected": {
+        "stop": null,
+        "bmi": 34.9,
+        "category": "obese1",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.55,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-17",
+      "expected": {
+        "stop": null,
+        "bmi": 35.0,
+        "category": "obese2",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.55,
+          "band": "notShown"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-18",
+      "expected": {
+        "stop": null,
+        "bmi": 35.1,
+        "category": "obese2",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.55,
+          "band": "notShown"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-19",
+      "expected": {
+        "stop": null,
+        "bmi": 34.9,
+        "category": "obese2",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": {
+          "ratio": 0.55,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-20",
+      "expected": {
+        "stop": null,
+        "bmi": 35.0,
+        "category": "obese2",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": {
+          "ratio": 0.55,
+          "band": "notShown"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-21",
+      "expected": {
+        "stop": null,
+        "bmi": 35.1,
+        "category": "obese2",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": {
+          "ratio": 0.55,
+          "band": "notShown"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-22",
+      "expected": {
+        "stop": null,
+        "bmi": 26.0,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 53.4,
+          "highKg": 72.1,
+          "lowLb": 118,
+          "highLb": 158
+        },
+        "waist": {
+          "ratio": 0.49,
+          "band": "healthy"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-23",
+      "expected": {
+        "stop": null,
+        "bmi": 26.0,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 53.4,
+          "highKg": 72.1,
+          "lowLb": 118,
+          "highLb": 158
+        },
+        "waist": {
+          "ratio": 0.5,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-24",
+      "expected": {
+        "stop": null,
+        "bmi": 26.0,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 53.4,
+          "highKg": 72.1,
+          "lowLb": 118,
+          "highLb": 158
+        },
+        "waist": {
+          "ratio": 0.6,
+          "band": "high"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    },
+    {
+      "fixture_id": "FX-HW-WHTR-25",
+      "expected": {
+        "stop": null,
+        "bmi": 26.0,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 53.4,
+          "highKg": 72.1,
+          "lowLb": 118,
+          "highLb": 158
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      }
+    }
+  ],
+  "notes": [
+    "Written from requirements FR2-39, not from the calculator's code; exact decimal arithmetic with half-up rounding."
+  ]
+}
