@@ -2,8 +2,9 @@
 // stage2-scope (Stage 2 Build Method §2, §4, §7): pull-request classes and file ownership for Stage 2.
 //   S2-Cn: <name>  Cursor package n (1-10): only the membership plugin and its tests; C9 also the calculator link script,
 //                  its include in the two tool pages and the provenance refresh that a tool-page change needs.
-//   S2-Ln: <name>  Lead (Claude) package n (0-8; L0 = Phase 0 set-up): everything Claude owns, never Cursor's paths and
-//                  never the Stage 1 calculators, approvals, manifests or copy deck (those need an owner decision).
+//   S2-Ln: <name>  Lead (Claude) package n (0-19, optional letter, e.g. L9a; L0 = Phase 0 set-up): everything Claude owns,
+//                  never Cursor's paths and never the Stage 1 calculators, approvals, manifests or copy deck (those need an
+//                  owner decision). LEAD_EXTRA lists the files an owner decision opened to one lead package.
 // Also checks that every Stage 2 test id used under tests/stage2 (TC-FR2/NFR2/UI2-nn-AS-nn) exists in docs/stage2/03.
 // Usage: node tests/ci/stage2-scope.mjs --title "S2-C1: Foundations" [--base origin/staging] [--head HEAD]
 //        node tests/ci/stage2-scope.mjs --names
@@ -14,7 +15,7 @@ import { ROOT } from '../lib/paths.mjs';
 import { globToRegex, changedFiles } from './component-scope.mjs';
 
 // S2-Cn, a range of Cursor packages S2-Cn-Cm (one integration PR for stacked packages), or S2-Ln
-export const TITLE_RE = /^S2-(C(?:[1-9]|10)(?:-C(?:[1-9]|10))?|L[0-8]): \S/;
+export const TITLE_RE = /^S2-(C(?:[1-9]|10)(?:-C(?:[1-9]|10))?|L(?:1?[0-9])[a-z]?): \S/;
 const matches = (file, globs) => globs.some((g) => globToRegex(g).test(file));
 
 const CURSOR = ['site/public_html/wp-content/plugins/lld-members/**', 'tests/stage2/**'];
@@ -22,6 +23,10 @@ const TOOL_PAGES = ['site/public_html/tools/protein-requirement-tool.html', 'sit
 // C9 (FR2-23): one additive script plus its include; a tool-page change must refresh hashes in the same PR (FR1-06 rule)
 const C9_EXTRA = [...TOOL_PAGES, 'site/public_html/tools/lld-members-link.js', 'site/public_html/tools/status.json', 'approvals/protein.json', 'approvals/diabetes.json', 'approvals/copy.json', 'copy/inventory.json', 'manifests/protein.json', 'manifests/diabetes.json', 'tests/mutations/MUT-10.patch'];
 const PROTECTED = ['site/public_html/tools/**', 'approvals/**', 'manifests/**', 'copy/**'];
+// Owner decisions that open named protected files to one lead package (Build Method §4, Requirements D53/D54)
+export const LEAD_EXTRA = {
+  'S2-L9a': ['site/public_html/tools/status.json'],   // D54: hide the planned Healthy Weight chip for launch
+};
 const LEAD = ['.github/**', 'deploy/**', 'docs/**', '.cursor/**', 'site/public_html/wp-content/mu-plugins/lld-tools/**', 'site/public_html/wp-content/mu-plugins/lld-tools-loader.php',
   'tests/**', 'tools/**', 'content/**', 'reports/**', 'registry/**', 'schemas/**', 'fixtures/**', 'design/**', 'Makefile', 'package.json', 'package-lock.json', 'README.md', 'CLAUDE.md', '.gitignore', '.gitattributes'];
 
@@ -29,20 +34,21 @@ export function classify(title = '') {
   const m = title.match(TITLE_RE);
   if (!m) return null;
   const [a, b] = m[1].split('-');
-  const n = Number(a.slice(1)), to = b ? Number(b.slice(1)) : n;
+  const n = parseInt(a.slice(1), 10), to = b ? parseInt(b.slice(1), 10) : n;
   if (to < n) return null;
   return { kind: a[0], n, to, id: `S2-${m[1]}` };
 }
 
 export function stage2Scope({ title, files }) {
   const c = classify(title);
-  if (!c) return { ok: false, problems: [`title "${title}" is not S2-Cn: (n 1-10) or S2-Ln: (n 0-8)`] };
+  if (!c) return { ok: false, problems: [`title "${title}" is not S2-Cn: (n 1-10) or S2-Ln: (n 0-19, optional letter)`] };
   const problems = [];
   for (const f of files) {
     if (c.kind === 'C') {
       if (matches(f, CURSOR) || (c.n <= 9 && 9 <= c.to && C9_EXTRA.includes(f))) continue;
       problems.push(`${f} is outside Cursor's files for ${c.id} (Build Method §4)`);
     } else {
+      if (matches(f, LEAD_EXTRA[c.id] || [])) continue;
       if (matches(f, CURSOR)) { problems.push(`${f} belongs to Cursor (Build Method §4); ask in the pull request instead`); continue; }
       if (matches(f, PROTECTED)) { problems.push(`${f} is a Stage 1 calculator, approval, manifest or copy file: owner decision needed`); continue; }
       if (!matches(f, LEAD)) problems.push(`${f} is outside the lead's files (Build Method §4)`);

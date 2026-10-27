@@ -2,7 +2,7 @@
 
 **What information Stage 2 keeps, where it is kept, who can see it, and when it is deleted**
 
-**Approved by the owner on 25 October 2026, with decisions DM-1 to DM-16.** Amended by the owner the same day: the billing email is kept on orders for tax records (DM-10, P3), and the test clock record F9 is added for test and staging sites. Prepared 25 October 2026 from the final Stage 2 Requirements, including the amendments made that day (decisions D36 to D47). Revised the same day after an independent review. Written in plain language, with a technical appendix (Appendix T) for the build. Requirement numbers such as FR2-09, and decision numbers such as D40, refer to the requirements document.
+**Approved by the owner on 25 October 2026, with decisions DM-1 to DM-16.** Amended by the owner the same day: the billing email is kept on orders for tax records (DM-10, P3), and the test clock record F9 is added for test and staging sites. Prepared 25 October 2026 from the final Stage 2 Requirements, including the amendments made that day (decisions D36 to D47). Revised the same day after an independent review. Written in plain language, with a technical appendix (Appendix T) for the build. Requirement numbers such as FR2-09, and decision numbers such as D40, refer to the requirements document. Amended on 27 October 2026 for the Healthy Weight Check (requirements FR2-39, D51): a third calculator value in C4 and its answers added to C17.
 
 ---
 
@@ -337,7 +337,7 @@ At most one per member.
 | Height, weight, waist | Centimetres and kilograms; weight and waist are the latest values | 165, 72.4, 84 |
 | Activity level | Low, some, active or very active | some |
 | Diet type | Everything, vegetarian, vegan or other | vegetarian |
-| Ethnicity | Same list as the diabetes calculator | Indian |
+| Ethnicity | Same list as the diabetes calculator. The Healthy Weight Check uses its own longer list; its answers are never copied into the profile | Indian |
 | Conditions answered | "Not answered", "none declared", or "conditions declared". "None" can't be combined with a condition | conditions declared |
 | Conditions | Any of: type 2 diabetes, prediabetes, high blood pressure, high cholesterol, kidney disease, pregnancy or breastfeeding, eating disorder now or in the past | prediabetes |
 | Last updated on, reminder sent on | Dates | 2026-11-02 |
@@ -349,8 +349,8 @@ At most one per member.
 
 | Field | What it holds | Example |
 |---|---|---|
-| Member, calculator, saved on | Which result | 10482, diabetes, 2026-11-02 |
-| Headline result, unit, band | As the calculator showed them | 7.2, % 10-year risk, Moderate |
+| Member, calculator, saved on | Which result. Calculator is protein, diabetes or healthy-weight | 10482, diabetes, 2026-11-02 |
+| Headline result, unit, band | As the calculator showed them. For the Healthy Weight Check: the BMI, kg/m² and the BMI category | 7.2, % 10-year risk, Moderate |
 | Calculator version | Which approved version produced it | 2fb5571e |
 
 The answers entered into a calculator are **never** stored.
@@ -501,7 +501,7 @@ One per member per week.
 ### C17. Never stored
 
 - the Sleep and Stress screening answers (FR2-38);
-- the answers typed into either calculator;
+- the answers typed into any calculator, including the Healthy Weight Check's pregnancy, eating and weight-loss answers, which stay in the browser;
 - BMI, waist-to-height ratio, the current programme day, weekly summaries and shopping lists, which are always worked out fresh.
 
 ## 7. Area P — Payments and referrals

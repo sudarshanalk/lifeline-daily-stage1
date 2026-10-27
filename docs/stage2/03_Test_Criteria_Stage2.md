@@ -2,7 +2,7 @@
 
 **How every Stage 2 check is proven: the test type, the test data, the steps and when it runs**
 
-**Approved by the owner on 25 October 2026.** Prepared 25 October 2026 from the final Stage 2 Requirements (209 numbered checks) and the approved Stage 2 Data Model. Written in plain language. The wording of each check is copied from the requirements, and this document adds how it is tested. If the two ever differ, the requirements win, and this document is corrected.
+**Approved by the owner on 25 October 2026.** Prepared 25 October 2026 from the final Stage 2 Requirements (209 numbered checks; 229 after the Healthy Weight Check was added on 27 October 2026) and the approved Stage 2 Data Model. Written in plain language. The wording of each check is copied from the requirements, and this document adds how it is tested. If the two ever differ, the requirements win, and this document is corrected.
 
 ---
 
@@ -494,7 +494,7 @@ Each table lists the requirement's checks, copied from the requirements. For eac
 | TC-FR2-22-AS-03 [A] | Publishing an article sends an IndexNow notice, recorded in a log. | I | — | Publish a test article on staging: an IndexNow notice is logged. |
 | TC-FR2-22-AS-04 [A] | The monthly reminder email is sent. | M | TM-20 | On the first Monday of the month, the checklist reminder reaches the owner. |
 
-### Protecting what is already built
+### The calculators
 
 #### FR2-23 — Existing calculators unchanged (Must).
 
@@ -503,6 +503,33 @@ Each table lists the requirement's checks, copied from the requirements. For eac
 | TC-FR2-23-AS-01 [A] | The Stage 1 calculation and wording checks pass on every change, and a deliberate calculation change fails the build. | U, I | Stage 1 tests | The Stage 1 calculation and wording checks pass on every change. A deliberate one-character change to a calculation fails the build. |
 | TC-FR2-23-AS-02 [A] | The save button appears only for signed-in members with health consent, and saves only the headline result and band. | E | TM-02, TM-03 | After a result, the save button appears for TM-03 and not for TM-02 or a signed-out visitor. The saved record holds only the headline result and band. |
 | TC-FR2-23-AS-03 [A] | Signed out, each calculator behaves exactly as before, checked by the Stage 1 safety suite. | E | Stage 1 safety suite | The Stage 1 safety suite passes, signed out, against Stage 2 staging. |
+
+#### FR2-39 — Healthy Weight Check (Must, free, no account).
+
+Test data: fixtures in `fixtures/healthy-weight/` (FX-HW-BMI, WHTR, RANGE, UNIT, INV, SAF), with expected values from ORC-05, an independent Python reference written from the requirement, not from the calculator's code, using the same whole-number half-up rounding.
+
+| Check | What must be true | Kind | Data | How it is tested |
+|---|---|---|---|---|
+| TC-FR2-39-AS-01 [A] | BMI and its category are correct for both threshold sets at every boundary and rounding transition, and agree with the independent reference on every case. | U | FX-HW-BMI, ORC-05 | Every category boundary for both threshold sets (18.4/18.5, 24.9/25.0, 29.9/30.0, 34.9/35.0, 39.9/40.0; 22.9/23.0, 27.4/27.5, 32.4/32.5, 37.4/37.5), plus rounding transitions such as unrounded 18.449, 24.94 and 24.95, give the expected BMI and category. ORC-05 agrees on 100 % of cases. |
+| TC-FR2-39-AS-02 [A] | The waist-to-height ratio and its band are correct, no ratio is shown at a BMI of 35.0 or more, and the band agrees with the Diabetes Risk Check across their shared range. | U | FX-HW-WHTR, ORC-05 | Ratios 0.399/0.400, 0.494/0.495/0.499/0.500/0.501 and 0.594/0.595/0.599/0.600/0.601 give the expected band; BMI 34.9/35.0/35.1 with each threshold set shows the ratio only below 35.0. For ratios 0.40 to 0.49, and 0.50 and above away from the rounding gap, the band matches the Diabetes Risk Check. |
+| TC-FR2-39-AS-03 [A] | The healthy weight range for the height is correct, rounded inwards, and every weight at its ends is classed as healthy. | U | FX-HW-RANGE | Worked examples in kilograms and in stones and pounds match exactly, for both threshold sets. Feeding each end of the range back in gives "healthy". |
+| TC-FR2-39-AS-04 [A] | Imperial entries give the same result as their metric twins. | U | FX-HW-UNIT | Each fixture entered in feet and inches, stones and pounds, and inches of waist gives the same BMI, ratio, category and band as its metric twin. |
+| TC-FR2-39-AS-05 [A] | Missing or invalid values show the field error and an error summary, and no result. A missing waist shows the "add your waist" note; an invalid waist is an error. | E | FX-HW-INV | Empty, zero, negative, non-numeric and out-of-range height, weight and waist, and a fractional age, each show the field error with its range in both unit systems, focus moves to the summary, and no result appears. |
+| TC-FR2-39-AS-06 [A] | An age of 17 or 100 shows its message and no result. | E | FX-HW-INV | Age 17 shows the adults-only message; age 100 shows the range message. Neither shows a number. |
+| TC-FR2-39-AS-07 [A] | Pregnant or breastfeeding, answered yes or not sure, stops with the midwife message and no numbers. The question is asked of everyone, and there is no sex question. | E | FX-HW-SAF | Yes and Not sure each show the stop and no BMI, ratio or range. The form has no sex field and always shows the pregnancy question. |
+| TC-FR2-39-AS-08 [A] | An eating-disorder answer of yes stops with the support message and findahelpline.com, and no numbers, at any BMI. | E | FX-HW-SAF | With inputs giving a low, a middle and a high BMI, Yes shows the support message and the findahelpline.com link, and no number appears. |
+| TC-FR2-39-AS-09 [A] | Unintended weight loss shows the see-your-doctor banner as an alert above the result, and every stop takes priority over every banner. | E | FX-HW-SAF | Weight loss Yes shows the banner with role=alert before the result. Every combination of the stop answers with the weight-loss answer shows the stop only. |
+| TC-FR2-39-AS-10 [A] | Underweight, obesity class 3 and age 65 or over each show their required note, and the underweight wording has no weight-loss words. | E | FX-HW-SAF | Each case shows its owner-approved message. The underweight result passes the forbidden-terms check (lose weight, deficit, burn, cut calories). |
+| TC-FR2-39-AS-11 [A] | No result shows a calorie number, a weight-loss target, a price, an upsell or diagnosis wording, and every result shows its method, sources, version, limits, disclaimer and waist instructions. | E, C | All FX-HW | Every result state is scanned for forbidden content, and checked for each required piece of text. |
+| TC-FR2-39-AS-12 [A] | The calculator and its wording are frozen. Deliberate changes to arithmetic, a threshold, a safety rule or a safety message each fail the build, and the two older calculators' protections still fail on their own deliberate changes. | U | Manifest, copy fingerprints | Engine-freeze and wording checks cover the new tool. Mutations to the BMI formula, a threshold, the stop order and a safety message each turn a test red; the existing protein and diabetes mutations still turn their tests red. |
+| TC-FR2-39-AS-13 [A] | When withdrawn, the hub card, landing page and direct address show the unavailable state with no usable form, saving is refused, and production deploy fails without the owner's sign-off of the exact version. | E, I | TM-01, TM-03 | Set the tool withdrawn: all three places show "unavailable" and no form, and a save is refused. A failed status fetch shows the retry state. The release gate fails when approvals/healthy-weight.json is missing, pending or for another version. |
+| TC-FR2-39-AS-14 [A] | Saving stores only the headline, unit, band and version, is offered only to signed-in members with health consent after an eligible result, is cleared by any edit, ignores messages from any other frame, and no request, address or log carries an answer. | E, S | TM-01, TM-02, TM-03, sentinel values | TM-03 saves after a result; TM-02 and TM-01 see no save. After a stop or an edit, no save is offered. A message from another frame is ignored. The leak scanner finds no sentinel answer in any request, address or log. Member B cannot read member A's saved result. Export, deletion and consent withdrawal include the new calculator value. |
+| TC-FR2-39-AS-15 [A] | The track link and starter guide below the calculator are hidden after every stop, an underweight result and the weight-loss banner, and for a member whose profile excludes the Healthy Weight track; otherwise they are shown. | E | TM-01, TM-03, TM-06, TM-07 | Each listed result hides both; a healthy result shows both. TM-06 and TM-07 never see the track link. |
+| TC-FR2-39-AS-16 [A] | The Health Tools page shows three live calculator cards and no "planned" card. | E | TM-01 | The hub lists protein, diabetes and healthy-weight as available, with no label-only card. |
+| TC-FR2-39-AS-17 [A] | The landing page has its own title, description and canonical address, is in the sitemap, embeds one calculator with valid structured data and a working related-article link, and the calculator still works with the membership plugin switched off. | C, E | TM-01 | The crawler checks title, description, canonical, sitemap, one iframe and structured data. With lld-members switched off the calculator still gives a result. |
+| TC-FR2-39-AS-18 [A] | The tool is part of the phone and accessibility journeys: keyboard-only use, focus on errors and results, 320-pixel reflow, 360/768/1280-pixel screens, WebKit and Chromium, and no serious accessibility findings. | E, X | TM-01 | Added to the NFR2-03 and NFR2-04 journeys and run with them. |
+| TC-FR2-39-AS-19 [O] | The owner approves the thresholds, the background mapping (including the mixed-background question) and all clinical wording, recorded with the NICE NG246 version and the date it was read. | O | — | Recorded in approvals/healthy-weight.json; production is blocked until it is present for the exact version. |
+| TC-FR2-39-AS-20 [O] | A screen-reader run of the tool on one phone and one computer is completed and recorded. | O, X | — | Part of the NFR2-04 owner check. |
 
 #### FR2-24 — Stage 1 sign-off and release (Must).
 
@@ -634,22 +661,22 @@ Each table lists the requirement's checks, copied from the requirements. For eac
 
 ## 7. Coverage
 
-Every one of the **209 checks** in the final requirements has exactly one test in section 6. The generator that builds this document stops with an error if a check has no test, or a test has no check.
+Every one of the **229 checks** in the final requirements has exactly one test in section 6. The generator that builds this document stops with an error if a check has no test, or a test has no check.
 
 Number of checks using each kind of test (a check can use more than one):
 
 | Kind | Checks |
 |---|---|
-| U, Unit | 10 |
-| I, Integration | 37 |
-| E, End-to-end | 91 |
+| U, Unit | 15 |
+| I, Integration | 38 |
+| E, End-to-end | 104 |
 | P, Payments | 23 |
 | M, Email | 25 |
-| C, Content and crawl | 25 |
-| S, Security and privacy | 31 |
+| C, Content and crawl | 27 |
+| S, Security and privacy | 32 |
 | F, Performance | 4 |
-| X, Accessibility | 2 |
-| O, Owner check | 23 |
+| X, Accessibility | 4 |
+| O, Owner check | 25 |
 
 ## 8. Records kept from testing
 

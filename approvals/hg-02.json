@@ -60,7 +60,10 @@
     "DEC-87"
   ],
   "deferred_items": [
-    "Urgent-care wording and diabetes limitation (DEC-87): FR1-11, FR1-17, UI1-05 and UI1-11 become accepted when the wording change and the refreshed copy hashes are merged."
+    "Protein calculator v2 (DEC-86): approved in principle at HG-02; FR1-07, FR1-08 and FR1-09 become accepted when the v2 engine, its re-baselined fixtures and ORC-02 v2 are merged, and approvals/protein.json is signed with the new version hash.",
+    "Urgent-care wording and diabetes limitation (DEC-87): FR1-11, FR1-17, UI1-05 and UI1-11 become accepted when the wording change and the refreshed copy hashes are merged.",
+    "FR1-06 becomes accepted with the protein approval record.",
+    "The three HG-02 approval records (approvals/protein.json, diabetes.json, copy.json) are signed together in one PR once the protein v2 engine and the DEC-87 wording are merged, because the governance tests require all three to carry the same decision (TC-NFR1-02)."
   ],
   "tag": null,
   "notes": "Owner instructions in chat, 27 Oct 2026: 'use these in the protein calculator', 'take this as the signed off the protein tool', 'the diabetes risk assessment tool I want to go as it is now', 'take part C, D, E and F as signed off', 'take stage 1 is signed off'. Parts A to F of the HG-02 review pack signed; Part D medical-device position confirmed (educational and screening information service, not a medical device); Part E as written; Part F C1 and C2 accepted (DEC-87). Overridden at HG-02: DEC-37, DEC-44 (by DEC-86 and DEC-87)."

@@ -14,11 +14,5 @@
       "since": null
     }
   },
-  "labels": [
-    {
-      "slug": "healthy-weight",
-      "label": "Healthy weight (planned)",
-      "status": "label_only"
-    }
-  ]
+  "labels": []
 }
