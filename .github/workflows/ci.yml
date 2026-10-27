@@ -45,13 +45,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      # Same check as ci-guards oracle-guard-expected: every commit that changes fixtures/**/expected must be the oracle
+      # runner's (github-actions[bot], FR1-01:/FR1-22:/ORC-0n: subject) or reviewer-signed. The previous inline step read
+      # the subject of the PR merge ref, which is never a baseline commit, so no PR could change a fixture at all.
       - name: Fixture expected values may change only via the oracle/baseline runner
-        run: |
-          git fetch origin ${{ github.base_ref }} --depth=1
-          changed=$(git diff --name-only origin/${{ github.base_ref }}...HEAD -- 'fixtures/**/*.json' || true)
-          [ -z "$changed" ] && { echo "no fixture changes"; exit 0; }
-          if git log -1 --format=%s | grep -Eq '^(FR1-01|FR1-22|ORC-0[1-4]):'; then echo "fixture change by baseline/oracle commit: $changed"; exit 0; fi
-          echo "oracle-guard: fixtures changed outside a baseline/oracle commit: $changed"; exit 1
+        run: node tests/ci/oracle-guard.mjs --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }}
 
   deploy-dry-run:
     runs-on: ubuntu-24.04
