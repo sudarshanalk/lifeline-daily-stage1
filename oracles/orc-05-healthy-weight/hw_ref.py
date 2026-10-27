@@ -12,7 +12,9 @@ not from the calculator's code. Exact decimal arithmetic, so rounding ties are d
   Order    : validation of age, pregnancy and eating answers; stops (under 18, pregnancy yes/not sure, eating yes);
              then validation of the measurements and remaining answers; then the result.
 
-Fills `expected` in fixtures/healthy-weight/*.json (oracle "clinical") and writes oracles/orc-05-healthy-weight/results.json.
+Reads the hand-written test inputs in oracles/orc-05-healthy-weight/cases.json, writes fixtures/healthy-weight/<group>.json
+with the expected values (oracle "clinical") and oracles/orc-05-healthy-weight/results.json. Only the oracle runner commits
+the fixture files (oracle-guard).
 Run: python -I oracles/orc-05-healthy-weight/hw_ref.py [repo-root]
 """
 from __future__ import annotations
@@ -87,15 +89,18 @@ def assess(i: dict) -> dict:
 
 
 def main(root: Path) -> int:
-    results = []
-    for f in sorted((root / "fixtures" / "healthy-weight").glob("*.json")):
-        doc = json.loads(f.read_text(encoding="utf-8"))
-        for fx in doc["fixtures"]:
-            fx["expected"] = assess(fx["inputs"])
-            fx["oracle"], fx["status"] = "clinical", "recorded"
-            results.append({"fixture_id": fx["id"], "expected": fx["expected"]})
-        f.write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
     me = Path(__file__).resolve()
+    cases = json.loads((me.parent / "cases.json").read_text(encoding="utf-8"))["cases"]
+    out_dir = root / "fixtures" / "healthy-weight"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    results = []
+    for group, items in cases.items():
+        doc = {"group": group, "tool": "healthy-weight", "fixtures": []}
+        for c in items:
+            expected = assess(c["inputs"])
+            doc["fixtures"].append({"id": c["id"], "purpose": c["purpose"], "inputs": c["inputs"], "expected": expected, "oracle": "clinical", "status": "recorded"})
+            results.append({"fixture_id": c["id"], "expected": expected})
+        (out_dir / f"{group.lower()}.json").write_text(json.dumps(doc, indent=2) + "\n", encoding="utf-8")
     out = {
         "oracle_id": "ORC-05",
         "implementation": "Python decimal reference for the Healthy Weight Check (FR2-39): NICE NG246 BMI categories with lower thresholds for listed family backgrounds, waist-to-height ratio bands, healthy weight range, rounding (D55) and the safety order (D52)",

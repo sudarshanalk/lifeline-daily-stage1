@@ -1,0 +1,1609 @@
+{
+  "_note": "FR2-39 test inputs, written by hand. ORC-05 (hw_ref.py, run by the oracle runner) turns them into fixtures/healthy-weight/<group>.json with expected values; never edit those fixture files by hand.",
+  "cases": {
+    "BMI": [
+      {
+        "id": "FX-HW-BMI-01",
+        "purpose": "White BMI 18.4 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 73.6,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-02",
+        "purpose": "White BMI 18.5 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 74.0,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-03",
+        "purpose": "White BMI 24.9 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 99.6,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-04",
+        "purpose": "White BMI 25.0 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 100.0,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-05",
+        "purpose": "White BMI 29.9 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 119.6,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-06",
+        "purpose": "White BMI 30.0 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 120.0,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-07",
+        "purpose": "White BMI 34.9 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 139.6,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-08",
+        "purpose": "White BMI 35.0 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 140.0,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-09",
+        "purpose": "White BMI 39.9 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 159.6,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-10",
+        "purpose": "White BMI 40.0 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 160.0,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-11",
+        "purpose": "Indian BMI 18.4 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 73.6,
+          "bg": "Indian",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-12",
+        "purpose": "Indian BMI 18.5 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 74.0,
+          "bg": "Indian",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-13",
+        "purpose": "Indian BMI 22.9 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 91.6,
+          "bg": "Indian",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-14",
+        "purpose": "Indian BMI 23.0 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 92.0,
+          "bg": "Indian",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-15",
+        "purpose": "Indian BMI 27.4 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 109.6,
+          "bg": "Indian",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-16",
+        "purpose": "Indian BMI 27.5 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 110.0,
+          "bg": "Indian",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-17",
+        "purpose": "Indian BMI 32.4 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 129.6,
+          "bg": "Indian",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-18",
+        "purpose": "Indian BMI 32.5 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 130.0,
+          "bg": "Indian",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-19",
+        "purpose": "Indian BMI 37.4 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 149.6,
+          "bg": "Indian",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-20",
+        "purpose": "Indian BMI 37.5 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 150.0,
+          "bg": "Indian",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-21",
+        "purpose": "unrounded 18.449 -> 18.4",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 73.796,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-22",
+        "purpose": "unrounded 18.45 -> 18.5",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 73.8,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-23",
+        "purpose": "unrounded 24.94 -> 24.9",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 99.76,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-24",
+        "purpose": "unrounded 24.95 -> 25.0",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 99.8,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-25",
+        "purpose": "unrounded 22.95 -> 23.0 adjusted",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 91.8,
+          "bg": "Chinese",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-26",
+        "purpose": "Pakistani: BMI 24.0 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 96,
+          "bg": "Pakistani",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-27",
+        "purpose": "Bangladeshi: BMI 24.0 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 96,
+          "bg": "Bangladeshi",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-28",
+        "purpose": "OtherSouthAsian: BMI 24.0 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 96,
+          "bg": "OtherSouthAsian",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-29",
+        "purpose": "Chinese: BMI 24.0 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 96,
+          "bg": "Chinese",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-30",
+        "purpose": "OtherAsian: BMI 24.0 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 96,
+          "bg": "OtherAsian",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-31",
+        "purpose": "MiddleEastern: BMI 24.0 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 96,
+          "bg": "MiddleEastern",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-32",
+        "purpose": "BlackAfrican: BMI 24.0 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 96,
+          "bg": "BlackAfrican",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-33",
+        "purpose": "BlackCaribbean: BMI 24.0 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 96,
+          "bg": "BlackCaribbean",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-34",
+        "purpose": "White: BMI 24.0 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 96,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-35",
+        "purpose": "NotSay: BMI 24.0 at 200 cm",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 96,
+          "bg": "NotSay",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-36",
+        "purpose": "Mixed, follow-up yes: BMI 24.0",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 96,
+          "bg": "Mixed",
+          "loss": "no",
+          "mixed": "yes"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-37",
+        "purpose": "Mixed, follow-up no: BMI 24.0",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 96,
+          "bg": "Mixed",
+          "loss": "no",
+          "mixed": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-38",
+        "purpose": "Mixed, follow-up notsure: BMI 24.0",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 96,
+          "bg": "Mixed",
+          "loss": "no",
+          "mixed": "notsure"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-39",
+        "purpose": "realistic: 165 cm, 68.4 kg, Indian",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 165,
+          "weightKg": 68.4,
+          "bg": "Indian",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-BMI-40",
+        "purpose": "realistic: 182 cm, 104.5 kg, White, age 70",
+        "inputs": {
+          "age": 70,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 182,
+          "weightKg": 104.5,
+          "bg": "White",
+          "loss": "no"
+        }
+      }
+    ],
+    "INV": [
+      {
+        "id": "FX-HW-INV-01",
+        "purpose": "age 17 -> under-18 stop",
+        "inputs": {
+          "age": 17,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-INV-02",
+        "purpose": "age 100 -> range error",
+        "inputs": {
+          "age": 100,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-INV-03",
+        "purpose": "fractional age",
+        "inputs": {
+          "age": 40.5,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-INV-04",
+        "purpose": "no age",
+        "inputs": {
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-INV-05",
+        "purpose": "height 119",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 119,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-INV-06",
+        "purpose": "height 231",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 231,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-INV-07",
+        "purpose": "weight 24.9",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 24.9,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-INV-08",
+        "purpose": "weight 300.1",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 300.1,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-INV-09",
+        "purpose": "weight 0",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 0,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-INV-10",
+        "purpose": "negative height",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": -170,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-INV-11",
+        "purpose": "waist 49",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 49
+        }
+      },
+      {
+        "id": "FX-HW-INV-12",
+        "purpose": "waist 201",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 201
+        }
+      },
+      {
+        "id": "FX-HW-INV-13",
+        "purpose": "no background",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-INV-14",
+        "purpose": "Mixed without the follow-up",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "Mixed",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-INV-15",
+        "purpose": "no weight-loss answer",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White"
+        }
+      },
+      {
+        "id": "FX-HW-INV-16",
+        "purpose": "no pregnancy or eating answer",
+        "inputs": {
+          "age": 40,
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-INV-17",
+        "purpose": "height and weight empty",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-INV-18",
+        "purpose": "age 18 is accepted",
+        "inputs": {
+          "age": 18,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-INV-19",
+        "purpose": "age 99 is accepted",
+        "inputs": {
+          "age": 99,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-INV-20",
+        "purpose": "edges accepted: 120 cm, 25 kg, waist 50",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 120,
+          "weightKg": 25,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 50
+        }
+      },
+      {
+        "id": "FX-HW-INV-21",
+        "purpose": "edges accepted: 230 cm, 300 kg, waist 200",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 230,
+          "weightKg": 300,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 200
+        }
+      }
+    ],
+    "RANGE": [
+      {
+        "id": "FX-HW-RANGE-01",
+        "purpose": "range at 150 cm, White",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 150,
+          "weightKg": 70,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-RANGE-02",
+        "purpose": "range at 150 cm, BlackAfrican",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 150,
+          "weightKg": 70,
+          "bg": "BlackAfrican",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-RANGE-03",
+        "purpose": "range at 162.5 cm, White",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 162.5,
+          "weightKg": 70,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-RANGE-04",
+        "purpose": "range at 162.5 cm, BlackAfrican",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 162.5,
+          "weightKg": 70,
+          "bg": "BlackAfrican",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-RANGE-05",
+        "purpose": "range at 170 cm, White",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 170,
+          "weightKg": 70,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-RANGE-06",
+        "purpose": "range at 170 cm, BlackAfrican",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 170,
+          "weightKg": 70,
+          "bg": "BlackAfrican",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-RANGE-07",
+        "purpose": "range at 185 cm, White",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 185,
+          "weightKg": 70,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-RANGE-08",
+        "purpose": "range at 185 cm, BlackAfrican",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 185,
+          "weightKg": 70,
+          "bg": "BlackAfrican",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-RANGE-09",
+        "purpose": "range at 201.3 cm, White",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 201.3,
+          "weightKg": 70,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-RANGE-10",
+        "purpose": "range at 201.3 cm, BlackAfrican",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 201.3,
+          "weightKg": 70,
+          "bg": "BlackAfrican",
+          "loss": "no"
+        }
+      }
+    ],
+    "SAF": [
+      {
+        "id": "FX-HW-SAF-01",
+        "purpose": "pregnancy yes, low BMI",
+        "inputs": {
+          "age": 40,
+          "preg": "yes",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 60,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-02",
+        "purpose": "pregnancy yes, middle BMI",
+        "inputs": {
+          "age": 40,
+          "preg": "yes",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-03",
+        "purpose": "pregnancy yes, high BMI",
+        "inputs": {
+          "age": 40,
+          "preg": "yes",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 170,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-04",
+        "purpose": "pregnancy notsure, low BMI",
+        "inputs": {
+          "age": 40,
+          "preg": "notsure",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 60,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-05",
+        "purpose": "pregnancy notsure, middle BMI",
+        "inputs": {
+          "age": 40,
+          "preg": "notsure",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-06",
+        "purpose": "pregnancy notsure, high BMI",
+        "inputs": {
+          "age": 40,
+          "preg": "notsure",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 170,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-07",
+        "purpose": "eating disorder yes, low BMI",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "yes",
+          "heightCm": 200,
+          "weightKg": 60,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-08",
+        "purpose": "eating disorder yes, middle BMI",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "yes",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-09",
+        "purpose": "eating disorder yes, high BMI",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "yes",
+          "heightCm": 200,
+          "weightKg": 170,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-10",
+        "purpose": "eating prefer not to say -> result",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "prefer",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-11",
+        "purpose": "under 18 with pregnancy yes -> under-18 stop first",
+        "inputs": {
+          "age": 16,
+          "preg": "yes",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-12",
+        "purpose": "pregnancy yes and eating yes -> pregnancy stop",
+        "inputs": {
+          "age": 40,
+          "preg": "yes",
+          "eat": "yes",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-13",
+        "purpose": "stop with bad measurements still stops",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "yes",
+          "heightCm": 10,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-14",
+        "purpose": "weight loss yes -> banner, no onward",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "yes"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-15",
+        "purpose": "weight loss yes with eating yes -> stop only",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "yes",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "yes"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-16",
+        "purpose": "underweight -> note, no onward",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 70,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-17",
+        "purpose": "obesity class 3 standard",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 164,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-18",
+        "purpose": "obesity class 3 adjusted",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 152,
+          "bg": "BlackCaribbean",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-19",
+        "purpose": "age 65 -> older note",
+        "inputs": {
+          "age": 65,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      },
+      {
+        "id": "FX-HW-SAF-20",
+        "purpose": "age 64 -> no older note",
+        "inputs": {
+          "age": 64,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no"
+        }
+      }
+    ],
+    "UNIT": [
+      {
+        "id": "FX-HW-UNIT-01",
+        "purpose": "5 ft 7 in, 11 st 5 lb, waist 34 in",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "bg": "White",
+          "loss": "no",
+          "heightFt": 5,
+          "heightIn": 7,
+          "weightSt": 11,
+          "weightLb": 5,
+          "waistIn": 34
+        }
+      },
+      {
+        "id": "FX-HW-UNIT-02",
+        "purpose": "6 ft 1 in, 15 st 0 lb, Indian",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "bg": "Indian",
+          "loss": "no",
+          "heightFt": 6,
+          "heightIn": 1,
+          "weightSt": 15,
+          "weightLb": 0
+        }
+      },
+      {
+        "id": "FX-HW-UNIT-03",
+        "purpose": "5 ft 2.5 in, 8 st 4.5 lb, waist 27.5 in",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "bg": "White",
+          "loss": "no",
+          "heightFt": 5,
+          "heightIn": 2.5,
+          "weightSt": 8,
+          "weightLb": 4.5,
+          "waistIn": 27.5
+        }
+      },
+      {
+        "id": "FX-HW-UNIT-04",
+        "purpose": "metric height with stones and pounds",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 170,
+          "bg": "White",
+          "loss": "no",
+          "weightSt": 12,
+          "weightLb": 0
+        }
+      }
+    ],
+    "WHTR": [
+      {
+        "id": "FX-HW-WHTR-01",
+        "purpose": "ratio 0.394 -> 0.39 below",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 78.8
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-02",
+        "purpose": "ratio 0.395 -> 0.40",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 79.0
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-03",
+        "purpose": "ratio 0.399 -> 0.40",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 79.8
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-04",
+        "purpose": "ratio 0.400",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 80.0
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-05",
+        "purpose": "ratio 0.494 -> 0.49",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 98.8
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-06",
+        "purpose": "ratio 0.495 -> 0.50",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 99.0
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-07",
+        "purpose": "ratio 0.499 -> 0.50",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 99.8
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-08",
+        "purpose": "ratio 0.500",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 100.0
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-09",
+        "purpose": "ratio 0.501 -> 0.50",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 100.2
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-10",
+        "purpose": "ratio 0.594 -> 0.59",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 118.8
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-11",
+        "purpose": "ratio 0.595 -> 0.60",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 119.0
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-12",
+        "purpose": "ratio 0.599 -> 0.60",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 119.8
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-13",
+        "purpose": "ratio 0.600",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 120.0
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-14",
+        "purpose": "ratio 0.601 -> 0.60",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 120.2
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-15",
+        "purpose": "ratio 0.83 high",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 90,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 166.0
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-16",
+        "purpose": "White: BMI 34.9, waist 110",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 139.6,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 110
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-17",
+        "purpose": "White: BMI 35.0, waist 110",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 140.0,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 110
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-18",
+        "purpose": "White: BMI 35.1, waist 110",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 140.4,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 110
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-19",
+        "purpose": "Indian: BMI 34.9, waist 110",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 139.6,
+          "bg": "Indian",
+          "loss": "no",
+          "waistCm": 110
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-20",
+        "purpose": "Indian: BMI 35.0, waist 110",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 140.0,
+          "bg": "Indian",
+          "loss": "no",
+          "waistCm": 110
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-21",
+        "purpose": "Indian: BMI 35.1, waist 110",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 200,
+          "weightKg": 140.4,
+          "bg": "Indian",
+          "loss": "no",
+          "waistCm": 110
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-22",
+        "purpose": "realistic: 170 cm, waist 83 (as FX-DM-WHTR-01)",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 170,
+          "weightKg": 75,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 83
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-23",
+        "purpose": "realistic: 170 cm, waist 85 (as FX-DM-WHTR-02)",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 170,
+          "weightKg": 75,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 85
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-24",
+        "purpose": "realistic: 170 cm, waist 102 (as FX-DM-WHTR-04)",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 170,
+          "weightKg": 75,
+          "bg": "White",
+          "loss": "no",
+          "waistCm": 102
+        }
+      },
+      {
+        "id": "FX-HW-WHTR-25",
+        "purpose": "no waist",
+        "inputs": {
+          "age": 40,
+          "preg": "no",
+          "eat": "no",
+          "heightCm": 170,
+          "weightKg": 75,
+          "bg": "White",
+          "loss": "no"
+        }
+      }
+    ]
+  }
+}
