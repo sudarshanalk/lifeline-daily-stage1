@@ -1,0 +1,1281 @@
+{
+  "tool": "protein",
+  "note": "Inputs for the protein characterisation fixtures (v2 engine, DEC-86). tests/baseline/rebaseline.mjs records expected values from the engine; only the oracle-runner workflow commits the result to fixtures/protein (oracle-guard).",
+  "files": {
+    "age.json": {
+      "group": "AGE",
+      "tool": "protein",
+      "fixtures": [
+        {
+          "id": "FX-PR-AGE-01",
+          "purpose": "age 18",
+          "inputs": {
+            "units": "metric",
+            "age": 18,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-AGE-02",
+          "purpose": "64 sedentary",
+          "inputs": {
+            "units": "metric",
+            "age": 64,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "sedentary",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-AGE-03",
+          "purpose": "65 sedentary",
+          "inputs": {
+            "units": "metric",
+            "age": 65,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "sedentary",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-AGE-04",
+          "purpose": "65 with strength training: older active band vs strength band",
+          "inputs": {
+            "units": "metric",
+            "age": 65,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "yes",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-AGE-05",
+          "purpose": "age 99",
+          "inputs": {
+            "units": "metric",
+            "age": 99,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        }
+      ]
+    },
+    "bmi.json": {
+      "group": "BMI",
+      "tool": "protein",
+      "fixtures": [
+        {
+          "id": "FX-PR-BMI-01",
+          "purpose": "BMI 24 uses actual weight",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 185,
+            "weightKg": 82,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-BMI-02",
+          "purpose": "BMI 30.04 adjusted from the BMI 24.9 weight",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 92,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-BMI-03",
+          "purpose": "lower-cut-off background, same basis as BMI-04",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 160,
+            "weightKg": 77,
+            "ethnicity": "Indian",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-BMI-04",
+          "purpose": "standard background twin of BMI-03",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 160,
+            "weightKg": 77,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        }
+      ]
+    },
+    "cap.json": {
+      "group": "CAP",
+      "tool": "protein",
+      "fixtures": [
+        {
+          "id": "FX-PR-CAP-01",
+          "purpose": "vegan, build and strength: top band at the 2.0 ceiling",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "yes",
+            "goal": "build",
+            "diet": "vegan",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-CAP-02",
+          "purpose": "vegetarian, strength band",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "yes",
+            "goal": "maintain",
+            "diet": "vegetarian",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-CAP-03",
+          "purpose": "top band reaches exactly 2.0",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "yes",
+            "goal": "build",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        }
+      ]
+    },
+    "inv.json": {
+      "group": "INV",
+      "tool": "protein",
+      "fixtures": [
+        {
+          "id": "FX-PR-INV-01",
+          "purpose": "age 17",
+          "inputs": {
+            "units": "metric",
+            "age": 17,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "none"
+        },
+        {
+          "id": "FX-PR-INV-02",
+          "purpose": "age 100",
+          "inputs": {
+            "units": "metric",
+            "age": 100,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "none"
+        },
+        {
+          "id": "FX-PR-INV-03",
+          "purpose": "height 139",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 139,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "none"
+        },
+        {
+          "id": "FX-PR-INV-04",
+          "purpose": "height 211",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 211,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "none"
+        },
+        {
+          "id": "FX-PR-INV-05",
+          "purpose": "weight below min",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 20,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "none"
+        },
+        {
+          "id": "FX-PR-INV-06",
+          "purpose": "weight above max",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 400,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "none"
+        },
+        {
+          "id": "FX-PR-INV-07",
+          "purpose": "sex missing",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": null,
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "none"
+        },
+        {
+          "id": "FX-PR-INV-08",
+          "purpose": "kidney missing",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": null,
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "none"
+        }
+      ]
+    },
+    "liv.json": {
+      "group": "LIV",
+      "tool": "protein",
+      "fixtures": [
+        {
+          "id": "FX-PR-LIV-01",
+          "purpose": "liver disease: no number",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "sedentary",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "yes",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-LIV-02",
+          "purpose": "clinician plan: no number",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "yes"
+          },
+          "oracle": "characterisation"
+        }
+      ]
+    },
+    "meal.json": {
+      "group": "MEAL",
+      "tool": "protein",
+      "fixtures": [
+        {
+          "id": "FX-PR-MEAL-01",
+          "purpose": "5 meals: per meal = target / 5",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "female",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 60,
+            "ethnicity": "White",
+            "activity": "sedentary",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 5,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-MEAL-02",
+          "purpose": "2 meals: per meal = target / 2",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 95,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "yes",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 2,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-MEAL-03",
+          "purpose": "4 meals",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 4,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        }
+      ]
+    },
+    "nrm.json": {
+      "group": "NRM",
+      "tool": "protein",
+      "fixtures": [
+        {
+          "id": "FX-PR-NRM-01",
+          "purpose": "moderate exercise band",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-NRM-02",
+          "purpose": "sedentary, WHO floor band",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "sedentary",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-NRM-03",
+          "purpose": "light activity uses the floor band",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "light",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-NRM-04",
+          "purpose": "vigorous band",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "vigorous",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-NRM-05",
+          "purpose": "strength training band",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "yes",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-NRM-06",
+          "purpose": "strength training band, moderate activity",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "yes",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-NRM-07",
+          "purpose": "strength training band, again",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "yes",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-NRM-08",
+          "purpose": "goal build uses the strength band without training",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "build",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-NRM-09",
+          "purpose": "fat loss without strength training",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "fatloss",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-NRM-10",
+          "purpose": "fat loss with strength training",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "yes",
+            "goal": "fatloss",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-NRM-11",
+          "purpose": "goal age well under 65 adds no band",
+          "inputs": {
+            "units": "metric",
+            "age": 50,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "ageing",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-NRM-12",
+          "purpose": "vegetarian: no multiplier",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "vegetarian",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-NRM-13",
+          "purpose": "vegan: no multiplier",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "vegan",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-NRM-14",
+          "purpose": "female, not pregnant",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "female",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        }
+      ]
+    },
+    "prg.json": {
+      "group": "PRG",
+      "tool": "protein",
+      "fixtures": [
+        {
+          "id": "FX-PR-PRG-01",
+          "purpose": "pregnant, first trimester, strength training entered",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "female",
+            "preg": "pregnant",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "yes",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no",
+            "trimester": "1"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-PRG-02",
+          "purpose": "pregnant, second trimester, goal build, vegan",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "female",
+            "preg": "pregnant",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "build",
+            "diet": "vegan",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no",
+            "trimester": "2"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-PRG-03",
+          "purpose": "pregnant, third trimester, vigorous",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "female",
+            "preg": "pregnant",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "vigorous",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no",
+            "trimester": "3"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-PRG-04",
+          "purpose": "breastfeeding, baby under 6 months, fat loss and strength training",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "female",
+            "preg": "breastfeeding",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "yes",
+            "goal": "fatloss",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no",
+            "babyAge": "under6"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-PRG-05",
+          "purpose": "breastfeeding, baby 6 months or older, goal build",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "female",
+            "preg": "breastfeeding",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "build",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no",
+            "babyAge": "6plus"
+          },
+          "oracle": "characterisation"
+        }
+      ]
+    },
+    "ren.json": {
+      "group": "REN",
+      "tool": "protein",
+      "fixtures": [
+        {
+          "id": "FX-PR-REN-01",
+          "purpose": "kidney yes",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "yes",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-REN-02",
+          "purpose": "kidney yes athlete",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "yes",
+            "goal": "build",
+            "diet": "vegan",
+            "meals": 3,
+            "kidney": "yes",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-REN-03",
+          "purpose": "kidney yes pregnant",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "female",
+            "preg": "pregnant",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "yes",
+            "liver": "no",
+            "plan": "no",
+            "trimester": "2"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-REN-04",
+          "purpose": "kidney yes liver older",
+          "inputs": {
+            "units": "metric",
+            "age": 70,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "yes",
+            "liver": "yes",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        }
+      ]
+    },
+    "unit.json": {
+      "group": "UNIT",
+      "tool": "protein",
+      "fixtures": [
+        {
+          "id": "FX-PR-UNIT-01",
+          "purpose": "imperial twin NRM-01",
+          "inputs": {
+            "units": "imperial",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "heightFt": 5,
+            "heightIn": 8.9,
+            "weightLb": 165.3,
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-UNIT-02",
+          "purpose": "st/lb twin BMI-02",
+          "inputs": {
+            "units": "imperial",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "heightFt": 5,
+            "heightIn": 8.9,
+            "weightSt": 14,
+            "weightLb": 6.8,
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-UNIT-03",
+          "purpose": "metres",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "heightUnit": "m",
+            "heightM": 1.75,
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        }
+      ]
+    },
+    "uns.json": {
+      "group": "UNS",
+      "tool": "protein",
+      "fixtures": [
+        {
+          "id": "FX-PR-UNS-01",
+          "purpose": "kidney unsure",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 75,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "unsure",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        }
+      ]
+    },
+    "uwt.json": {
+      "group": "UWT",
+      "tool": "protein",
+      "fixtures": [
+        {
+          "id": "FX-PR-UWT-01",
+          "purpose": "BMI 18.3",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 56,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "maintain",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        },
+        {
+          "id": "FX-PR-UWT-02",
+          "purpose": "underweight fatloss",
+          "inputs": {
+            "units": "metric",
+            "age": 40,
+            "sex": "male",
+            "preg": "no",
+            "heightCm": 175,
+            "weightKg": 52,
+            "ethnicity": "White",
+            "activity": "moderate",
+            "resistance": "no",
+            "goal": "fatloss",
+            "diet": "omnivore",
+            "meals": 3,
+            "kidney": "no",
+            "liver": "no",
+            "plan": "no"
+          },
+          "oracle": "characterisation"
+        }
+      ]
+    }
+  }
+}

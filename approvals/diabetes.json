@@ -21,7 +21,7 @@
     "Self-reported height, weight and waist; no laboratory values (HbA1c, fasting glucose) — Model A only.",
     "The independent R oracle (ORC-01, CRAN QDiabetes 1.0-2) has not yet been run on this machine (Docker/WSL 2 pending, OI-4); fidelity is currently evidenced by characterisation fixtures only, which prove 'unchanged', not 'correct'."
   ],
-  "regulatory_statement": "Pending clinical review (HG-02). Working position: the tool reproduces a published, openly licensed risk algorithm for general health information and screening encouragement; it does not diagnose, treat or recommend treatment, and every result screen and email states that the output is not a diagnosis and names urgent-care routes (UK 999 / NHS 111, Sri Lanka 1990, India 112 — DEC-37). It is operated as an educational/screening information service and not placed on the market as a medical device. The clinical reviewer confirms or amends this position at HG-02.",
+  "regulatory_statement": "Confirmed by the clinical reviewer at HG-02 (27 Oct 2026, Part D). The tool reproduces a published, openly licensed risk algorithm for general health information and screening encouragement; it does not diagnose, treat or recommend treatment, and every result screen and email states that the output is not a diagnosis and directs people to urgent care through their local emergency number (DEC-87). It is operated as an educational and screening information service and is not placed on the market as a medical device.",
   "licence": "QDiabetes-2018 algorithm © ClinRisk Ltd, released under LGPL-3.0; the deployed JavaScript port is Lifeline Daily's own implementation of the published equations. IDRS and WHtR are published, unlicensed scoring rules. R oracle package QDiabetes 1.0-2 is AGPL-3 (research-use disclaimer recorded in ORC-01).",
   "copy_hashes": {
     "messages.diabetes": "9de28b65faf94b024bc83458eb0aeea7a39fbf4ebfe3da232212f611078ecf91",
@@ -30,13 +30,23 @@
     "symptomatic": "0e4e4a6221261edad261aa6970095975fb30858685dab94519a4b373cb6ee586"
   },
   "oracle_report": "oracles/orc-01-qdiabetes-r/results.json (pending Docker, OI-4); oracles/orc-03-idrs/results.json; oracles/orc-04-whtr/results.json",
-  "decisions_ratified": [],
+  "decisions_ratified": [
+    "DEC-02",
+    "DEC-04",
+    "DEC-05",
+    "DEC-06",
+    "DEC-07",
+    "DEC-09",
+    "DEC-29",
+    "DEC-33",
+    "DEC-87"
+  ],
   "clinical_signoff": {
-    "name": "pending — named clinical reviewer to be appointed (OI-8)",
-    "date": "2026-10-23",
-    "decision": "pending",
-    "notes": "Record created in Wave 1 (FR1-06) with decision pending. Signed at HG-02 after Wave 6 together with approvals/copy.json, the ORC-01 report and DEC-02…07, 09, 29, 33."
+    "name": "Product owner (sudarshanalk), acting as clinical reviewer",
+    "date": "2026-10-27",
+    "decision": "approved",
+    "notes": "HG-02 signed 27 Oct 2026 (approvals/hg-02.json): the calculation is approved as deployed. Urgent-care wording and the method limitation change under DEC-87."
   },
-  "review_date": "2026-10-23",
-  "next_review_date": "2027-10-23"
+  "review_date": "2026-10-27",
+  "next_review_date": "2027-10-27"
 }

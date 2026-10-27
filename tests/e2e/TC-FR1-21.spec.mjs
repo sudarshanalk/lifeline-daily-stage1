@@ -53,12 +53,13 @@ test('TC-FR1-21-AS-03', async ({ page }) => {
     await frame.locator('#wVal').fill('60');
     await frame.locator('#eth button[data-val="WhiteNA"]').click();
     await frame.locator('#act button[data-val="moderate"]').click();
-    await frame.locator('#res button[data-val="0"]').click();
+    await frame.locator('#res button[data-val="no"]').click();
     await frame.locator('#goal button[data-val="maintain"]').click();
     await frame.locator('#diet button[data-val="omnivore"]').click();
     await frame.locator('#meals').selectOption('3');
     await frame.locator('#kidney button[data-val="no"]').click();
     await frame.locator('#liver button[data-val="no"]').click();
+    await frame.locator('#plan button[data-val="no"]').click();
     await frame.locator('#form button.cta').click();
     await expect(frame.locator('#results')).toBeVisible();
     // let the resize message propagate

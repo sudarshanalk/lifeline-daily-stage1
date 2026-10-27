@@ -2,138 +2,90 @@
   "ceiling": 2,
   "rows": [
     {
-      "key": "sedentary",
-      "lo": 0.8,
+      "key": "base",
+      "lo": 0.83,
       "hi": 1,
-      "src": "IOM RDA 0.8 g/kg (floor)",
+      "src": "WHO/FAO/UNU 2007 (0.83 g/kg); IOM 2005 (0.8 g/kg); Bhasin 2018 OPTIMen trial",
       "cited": [
-        "IOM"
+        "WHO",
+        "IOM",
+        "OPTIMen"
       ],
-      "derivable": false,
-      "note": "figures not derivable from the cited primary source(s) — for HG-02 (DEC-03)"
+      "derivable": true
     },
     {
-      "key": "lightMod",
+      "key": "moderate",
       "lo": 1,
       "hi": 1.4,
-      "src": "IOM AMDR / ISSN lower band",
+      "src": "Tagawa 2021, meta-analysis of randomised trials (benefit rises to 1.3 g/kg)",
       "cited": [
-        "IOM",
-        "ISSN"
+        "Tagawa"
       ],
-      "derivable": false,
-      "note": "figures not derivable from the cited primary source(s) — for HG-02 (DEC-03)"
+      "derivable": true
     },
     {
       "key": "vigorous",
       "lo": 1.2,
       "hi": 1.6,
-      "src": "ACSM/AND/DC 2016 (1.2–2.0 g/kg)",
+      "src": "AND / Dietitians of Canada / ACSM joint position 2016 (1.2–2.0 g/kg)",
       "cited": [
         "ACSM"
       ],
-      "derivable": true,
-      "note": null
+      "derivable": true
     },
     {
-      "key": "resLow",
+      "key": "strength",
+      "lo": 1.4,
+      "hi": 2.5,
+      "src": "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis",
+      "cited": [
+        "ISSN",
+        "Morton"
+      ],
+      "derivable": false
+    },
+    {
+      "key": "fatLoss",
       "lo": 1.2,
       "hi": 1.6,
-      "src": "ISSN 2017 (1.4–2.0), lower end",
+      "src": "Leidy 2015 review (1.2–1.6 g/kg); Wycherley 2012 meta-analysis",
       "cited": [
-        "ISSN"
+        "Leidy",
+        "Wycherley"
       ],
-      "derivable": false,
-      "note": "figures not derivable from the cited primary source(s) — for HG-02 (DEC-03)"
-    },
-    {
-      "key": "resMid",
-      "lo": 1.4,
-      "hi": 2,
-      "src": "ISSN 2017 (1.4–2.0 g/kg)",
-      "cited": [
-        "ISSN"
-      ],
-      "derivable": true,
-      "note": null
-    },
-    {
-      "key": "resHigh",
-      "lo": 1.6,
-      "hi": 2,
-      "src": "ISSN 2017 (1.4–2.0 g/kg)",
-      "cited": [
-        "ISSN"
-      ],
-      "derivable": true,
-      "note": null
-    },
-    {
-      "key": "buildMuscle",
-      "lo": 1.6,
-      "hi": 2,
-      "src": "ISSN 2017",
-      "cited": [
-        "ISSN"
-      ],
-      "derivable": true,
-      "note": null
+      "derivable": true
     },
     {
       "key": "fatLossTrain",
       "lo": 1.6,
       "hi": 2,
-      "src": "ISSN 2017 (lean-mass retention)",
+      "src": "ISSN Position Stand 2017 (1.4–2.0 g/kg)",
       "cited": [
         "ISSN"
       ],
-      "derivable": true,
-      "note": null
-    },
-    {
-      "key": "fatLossOnly",
-      "lo": 1.2,
-      "hi": 1.5,
-      "src": "ISSN 2017 (lean-mass retention)",
-      "cited": [
-        "ISSN"
-      ],
-      "derivable": false,
-      "note": "figures not derivable from the cited primary source(s) — for HG-02 (DEC-03)"
+      "derivable": true
     },
     {
       "key": "older",
       "lo": 1,
       "hi": 1.2,
-      "src": "PROT-AGE 2013 / ESPEN 2014",
+      "src": "PROT-AGE 2013 (1.0–1.2 g/kg); ESPEN 2019 (at least 1.0 g/kg)",
       "cited": [
         "PROT-AGE",
         "ESPEN"
       ],
-      "derivable": true,
-      "note": null
+      "derivable": true
     },
     {
       "key": "olderActive",
       "lo": 1.2,
       "hi": 1.5,
-      "src": "ESPEN 2014",
+      "src": "ESPEN 2014 (1.2–1.5 g/kg); Nunes 2022 meta-analysis",
       "cited": [
-        "ESPEN"
+        "ESPEN",
+        "Nunes"
       ],
-      "derivable": true,
-      "note": null
-    },
-    {
-      "key": "recovery",
-      "lo": 1.2,
-      "hi": 1.5,
-      "src": "ESPEN 2014 (illness / malnutrition)",
-      "cited": [
-        "ESPEN"
-      ],
-      "derivable": true,
-      "note": null
+      "derivable": true
     }
   ]
 }
