@@ -163,6 +163,7 @@ Each mutation is a patch in `tests/mutations/MUT-NN.patch`, applied by `make mut
 | MUT-01 | Delete `if (s.kidney === 'yes') return {suppressed:true…}` | TC-FR1-08-AS-01/02/03 |
 | MUT-02 | `submit-protein.php`: always select `protein_standard` | TC-FR1-08-AS-04, TC-FR1-14-AS-07 |
 | MUT-03 | Remove pregnancy early return | TC-FR1-09-AS-01 |
+| MUT-15 | Delete the clinical stop (liver disease, recovery, clinician plan) | TC-FR1-09-AS-02 |
 | MUT-04 | Change Female `s0` 0.98622727… → 0.980 | TC-FR1-10-AS-01 |
 | MUT-05 | Remove `suppress=true` in emergency branch | TC-FR1-11-AS-01 |
 | MUT-06 | `bandFor`: 5.6 → 6.0 | TC-FR1-12-AS-01, TC-FR1-12-AS-09 |
@@ -256,20 +257,20 @@ Family: artefact, ci. Fixtures: `approvals/*.json`, manifests. Mutation: MUT-10.
 | TC-FR1-06-AS-04 | `engine-freeze` job passes on the current tree and fails on MUT-04/06/07 | ci |
 Human gate: HG-02 (`clinical_signoff.decision: approved`).
 
-### TC-FR1-07 Protein engine preservation and verification
-Engine output keys confirmed by the baseline run (23 Oct 2026): `suppressed, reason, branch, targetG, lowG, highG, gPerKg, basisKg, basisNote, perMeal, sources, capped, older, dietMult, interpKey, bmi`; assertions use only these.
+### TC-FR1-07 Protein engine (v2, DEC-86) and verification
+Engine output keys (v2): `suppressed, reason, branch, targetG, lowG, highG, gPerKg, basisKg, basisNote, perMeal, sources, capped, older, interpKey, bmi`; assertions use only these.
 Family: unit, e2e, oracle. Fixtures: FX-PR-NRM, AGE, BMI, CAP, UNIT, MEAL, INV. Mutation: MUT-07.
 
 | ID | Assertion | Method |
 |---|---|---|
-| TC-FR1-07-AS-01 | for each fixture: engine output equals characterisation `expected` (targetG, lowG, highG, gPerKg, perMeal, basisKg, capped, sources) | unit |
-| TC-FR1-07-AS-02 | for each fixture: engine output within ORC-02 tolerance; any disagreement → blocker + DEC row | oracle |
+| TC-FR1-07-AS-01 | for each fixture: engine output equals characterisation `expected` recorded from the v2 engine by the oracle-runner workflow (targetG, lowG, highG, gPerKg, perMeal, basisKg, capped, sources) | unit |
+| TC-FR1-07-AS-02 | for each fixture: engine output within ORC-02 tolerance (ORC-02 re-written from DEC-86 alone); any disagreement → blocker + DEC row | oracle |
 | TC-FR1-07-AS-03 | FX-PR-INV-01…08 → `#err` visible with specific message; `#results` hidden | e2e |
 | TC-FR1-07-AS-04 | UNIT-01 = NRM-01, UNIT-02 = BMI-02, UNIT-03 = NRM-01 on all numeric outputs | unit |
 | TC-FR1-07-AS-05 | frozen object hashes equal manifest `engine_hashes` | ci |
-| TC-FR1-07-AS-06 | BMI-01 basisKg = 91.5; BMI-02 basisKg = 76.3 + 0.4×15.7 ± 0.1; BMI-03 uses 22.9 bound | unit |
-| TC-FR1-07-AS-07 | MEAL-01 perMeal = 20; MEAL-02 perMeal = 40 | unit |
-| TC-FR1-07-AS-08 | every `BANDS` row (lo, hi, src) matches an entry in `oracles/orc-02-protein-ref/primary-sources.json` transcribed from reference §2 (IOM 0.8; WHO 0.83; PROT-AGE 1.0–1.2; ESPEN 1.0–1.2 / 1.2–1.5; ISSN 1.4–2.0; ACSM 1.2–2.0; pregnancy 1.1; lactation 1.3); any row whose figures are not derivable from a listed source is reported for HG-02 (DEC-03) | static + artefact |
+| TC-FR1-07-AS-06 | BMI-01 (BMI ≤ 24.9) basisKg = actual weight; BMI-02 basisKg = W + 0.4 × (actual − W) ± 0.1 with W = 24.9 × height²; BMI-03 (lower-cut-off background) has the same basisKg as its standard twin BMI-04; for heights 150, 170 and 190 cm and weights 40–200 kg in 0.5 kg steps, targetG never decreases as weight rises | unit |
+| TC-FR1-07-AS-07 | MEAL-01…03 perMeal = round(targetG ÷ meals) | unit |
+| TC-FR1-07-AS-08 | every `BANDS` row (lo, hi, src) lies inside the range of an entry in `oracles/orc-02-protein-ref/primary-sources.json` for a source it cites; a row that is not inside a cited source fails | static + artefact |
 Human gate: HG-02 signs ORC-02 report.
 
 ### TC-FR1-08 Protein renal suppression
@@ -286,15 +287,15 @@ Family: unit, e2e, php, network. Fixtures: FX-PR-REN-01…04, FX-PR-UNS-01, FX-M
 | TC-FR1-08-AS-07 | log lines for the run contain no numeric result and no email | php log scan |
 Human gate: HG-02 (copy hashes of `renalStop`, `renalUnsure`).
 
-### TC-FR1-09 Protein life-stage and safety branches
-Family: unit, e2e, oracle. Fixtures: FX-PR-PRG-01…04, LIV-01/02, UWT-01/02. Mutation: MUT-03.
+### TC-FR1-09 Protein life-stage and clinical branches
+Family: unit, e2e, oracle. Fixtures: FX-PR-PRG-01…05, LIV-01/02, UWT-01/02. Mutations: MUT-03, MUT-15.
 
 | ID | Assertion | Method |
 |---|---|---|
-| TC-FR1-09-AS-01 | PRG-01/02 gPerKg = 1.1; PRG-03/04 = 1.3; `branch: 'pregnancy'`; `dietMult: 1.0`; `capped: false`; sources length 1 | unit |
-| TC-FR1-09-AS-02 | LIV-01/02: sources include "ESPEN"; e2e `clinical` banner visible | unit + e2e |
+| TC-FR1-09-AS-01 | PRG-01/02/03 (pregnant, trimester 1/2/3) → targetG = round(0.83 × basisKg + 1 / 9 / 31); PRG-04/05 (breastfeeding, baby under 6 months / 6 months or older) → + 19 / + 12.5; `branch: 'pregnancy'`; lowG = highG = targetG; sources cite WHO/FAO/UNU 2007; no activity, training or goal band applied | unit |
+| TC-FR1-09-AS-02 | LIV-01 (liver disease or recovery = yes) and LIV-02 (clinician plan = yes) → `suppressed === true`, reason `clinical` / `plan`, no `targetG/lowG/highG/gPerKg/perMeal` keys; e2e: the matching stop message visible and the result text has no gram figure | unit + e2e |
 | TC-FR1-09-AS-03 | UWT-01/02: `underweight` banner visible; result innerText contains none of forbidden-terms.underweight | e2e |
-| TC-FR1-09-AS-04 | all PRG/LIV/UWT within ORC-02 tolerance | oracle |
+| TC-FR1-09-AS-04 | all PRG within ORC-02 tolerance | oracle |
 | TC-FR1-09-AS-05 | PRG fixtures: SHA-256 of the extracted `pregnancy` banner text equals the approved hash in `approvals/protein.json.copy_hashes.pregnancy` | e2e |
 Human gate: HG-02 (copy).
 
@@ -394,7 +395,7 @@ Family: e2e, crawl, artefact. Fixtures: FX-DM-EMG-01, FX-PR-NRM-01.
 |---|---|---|
 | TC-FR1-17-AS-01 | five DEC-12 URLs → 200; from each landing page and each tool result zone, Tab traversal reaches a link to each; footer anchors equal baseline set (About, Contact, Privacy Policy, Terms & Conditions) and contain no disclaimer link (DEC-43) | e2e |
 | TC-FR1-17-AS-02 | both tools' `[data-test=disclaimer]` contain required-phrases.notDiagnosis and a link to `/medical-disclaimer/` | e2e |
-| TC-FR1-17-AS-03 | EMG-01 result contains required-phrases.urgentCare and link to `/medical-disclaimer/#urgent-care`; disclaimer page lists 999, 111, 1990 and 112 (DEC-37) | e2e |
+| TC-FR1-17-AS-03 | EMG-01 result contains required-phrases.urgentCare and link to `/medical-disclaimer/#urgent-care`; disclaimer page tells visitors to call their local emergency number and lists 999, 911, 112, 000 and NHS 111 (DEC-87) | e2e |
 | TC-FR1-17-AS-04 | hash of `/medical-disclaimer/` main content equals `approvals/copy.json.pages.medical-disclaimer` | artefact |
 Human gate: HG-02 (disclaimer copy).
 
