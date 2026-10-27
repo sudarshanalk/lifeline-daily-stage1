@@ -88,7 +88,7 @@
     "diabetes.secondary.idrs.moderate": "5c42afc7a23018d32dcff346792b575bcdf63be118b98a61084b1afac32b93e9",
     "diabetes.secondary.idrs.high": "c4ebc6d4a5832cd9415f906ad03661110c705a72381c8b8b145761d02e2dd23a",
     "diabetes.secondary.needWaist": "76b60b7fabe51c222fc053c469da7365e8517df6e04ce733cbdcfcf4d13da767",
-    "diabetes.method": "8a6b32975b1dced4c5bd3625dc99b64587d8b1a381e37a4aa9bf9f51f5d3785c",
+    "diabetes.method": "45589c79f8f335e0926253f18f661702795fd42895f98e5d6d72307d6bdb4098",
     "diabetes.email.heading": "f25da8b361582351b52c7232234bbdc26e5385c590b00fb72c09f000864c60f9",
     "diabetes.email.intro": "b5dffa920961503df249a4f9fc4b7a685507d1a8bd8e5181a84faaa44d466057",
     "diabetes.email.consent": "13a1127f0b2ce965c0be2e48952cb65f49a277f73998c3c147b382ff51f73923",
@@ -102,7 +102,7 @@
     "diabetes.unavailable.checking": "68ea019296a778f2198660b50694721f1ef2a8c3b79d48e16abaf0fb29290905",
     "diabetes.unavailable.unknown": "7d9e28fe5a1a04e11dc2b446a3b6aeadf86dccbfa2940d701e97cd3a668b50d4",
     "diabetes.disclaimerLinks": "6deb8cea513d461fcee8ffea8dbef0562cec69f951b4c311913169766c7232d5",
-    "diabetes.urgentCare": "ca63a9c9006299c3313ebe46e3d5a9731d21be2ef51cc5524fa2e7ced6c71129",
+    "diabetes.urgentCare": "1bbd2c87d7e54858cb2c088d7364944e85a8ffd7d9f0f8034d9ee38eee62744a",
     "diabetes.disclaimer": "35156be01c5bba11cf30d1c5f88a0f71c64d63f9fa3402addab8d1e9af265ec2"
   },
   "templates": {
@@ -123,6 +123,6 @@
     "diabetes.symptomatic.subject": "5f3f7b1931eea5e907175bed50a842aee6ab15e502d3cc1786856723a3f1a71c",
     "diabetes.symptomatic.body": "2c096c16e27c50f63e8047ea2483ba98d88691abac86cae515b1339bf36ee180",
     "diabetes.emergency.subject": "141f225804ab4657200f84922f89549634352f2125a98deb5a4f0743de896ef7",
-    "diabetes.emergency.body": "e44786d2d291c6f0368ec9d83d73e439631f18a7e25cf43e4ce1548f03bb1803"
+    "diabetes.emergency.body": "0a28b1c964ddc19d9fa1e69c5e8ba010e2cb83ba025028b86063a3d950a9c8c0"
   }
 }
