@@ -377,20 +377,24 @@ class LLD_Members_Billing {
 	 */
 	public static function pricing() {
 		$prices = self::prices();
+		// SCR-01: yearly first, then monthly; the price, what's included and how to cancel sit in the top block (UI2-03).
 		$main   = '<h1>Pricing</h1>';
-		$main  .= '<article data-lld-plan="yearly"><p>best value</p><p>' . esc_html( self::money( $prices['yearly'], 'usd' ) ) . ' a year</p><p>tax included</p>';
-		$main  .= '<p>What\'s included: weeks 2 to 4, meal plans, workouts and the food diary.</p>';
-		$main  .= '<p>How to cancel: cancel from My subscription. Access continues to the end of the paid period.</p>';
-		$main  .= '<p>That is US$5 a month, a saving of 37 %.</p>';
+		$main  .= '<div class="lld-plans"><article class="lld-card lld-plan is-yearly" data-lld-plan="yearly"><p class="lld-plan-best">best value</p>';
+		$main  .= '<p class="lld-plan-name">Yearly</p><p class="lld-plan-price">' . esc_html( self::money( $prices['yearly'], 'usd' ) . ' a year' ) . '</p><p class="lld-plan-tax">tax included. That is US$5 a month, a saving of 37 %.</p>';
+		$main  .= '<p class="lld-plan-line">What\'s included: weeks 2 to 4, meal plans, workouts and the food diary.</p>';
+		$main  .= '<p class="lld-plan-line lld-plan-cancel">How to cancel: cancel in 3 clicks from My subscription. Access continues to the end of the paid period.</p>';
 		$main  .= lld_button( array( 'label' => 'Choose yearly', 'href' => home_url( '/members/checkout/?plan=yearly' ) ) ) . '</article>';
-		$main  .= '<article data-lld-plan="monthly"><p>' . esc_html( self::money( $prices['monthly'], 'usd' ) ) . ' a month</p><p>tax included</p>';
-		$main  .= lld_button( array( 'label' => 'Choose monthly', 'href' => home_url( '/members/checkout/?plan=monthly' ) ) ) . '</article>';
+		$main  .= '<article class="lld-card lld-plan" data-lld-plan="monthly"><p class="lld-plan-name">Monthly</p><p class="lld-plan-price">' . esc_html( self::money( $prices['monthly'], 'usd' ) . ' a month' ) . '</p><p class="lld-plan-tax">tax included</p>';
+		$main  .= '<p class="lld-plan-line">The same Premium content, month by month. Cancel in 3 clicks from My subscription.</p>';
+		$main  .= lld_button( array( 'label' => 'Choose monthly', 'href' => home_url( '/members/checkout/?plan=monthly' ), 'variant' => 'secondary' ) ) . '</article></div>';
+		$main  .= '<p class="lld-plan-intro">Week 1 of every track is free. Premium opens the rest.</p>';
 		$main  .= '<p data-lld-sale-terms><a href="' . esc_url( self::terms_of_sale_url() ) . '">Terms of sale</a>: price, plans, renewal, cancellation, refunds, discounts and referral rewards.</p>';
 		lld_members_layout(
 			array(
 				'title'       => 'Pricing',
 				'description' => 'Premium is US$59.99 a year or US$7.99 a month, tax included.',
 				'main'        => $main,
+				'wide'        => true,
 			)
 		);
 	}
@@ -783,17 +787,17 @@ class LLD_Members_Billing {
 			if ( '' !== $refuse ) {
 				$main .= '<div class="lld-fail" role="alert"><p>' . esc_html( $refuse ) . '</p></div>';
 			}
-			$main .= '<form method="post">';
+			$main .= '<form method="post" class="lld-card lld-form-card">';
 			$main .= wp_nonce_field( 'lld_checkout', 'lld_checkout_nonce', true, false );
 			$main .= '<input type="hidden" name="lld_ref" value="' . esc_attr( $ref ) . '">';
-			$main .= '<fieldset><legend>Plan</legend>';
-			$main .= '<label><input type="radio" name="lld_plan" value="yearly"' . checked( $plan, 'yearly', false ) . '> Yearly</label> ';
+			$main .= '<fieldset class="lld-options"><legend>Plan</legend><div class="lld-choice">';
+			$main .= '<label><input type="radio" name="lld_plan" value="yearly"' . checked( $plan, 'yearly', false ) . '> Yearly</label>';
 			$main .= '<label><input type="radio" name="lld_plan" value="monthly"' . checked( $plan, 'monthly', false ) . '> Monthly</label>';
-			$main .= '</fieldset>';
-			$main .= '<label for="lld_country">Country</label> <select id="lld_country" name="lld_country">';
-			$main .= '<option value="US">United States</option><option value="GB">United Kingdom</option><option value="DE">Germany</option></select>';
-			$main .= '<label for="lld_code">Discount code</label> <input id="lld_code" name="lld_code" value="' . esc_attr( $code ) . '">';
-			$main .= '<label class="lld-check" data-lld-sale-terms><input type="checkbox" id="lld_sale_terms" name="lld_sale_terms" value="1" required> I accept the <a href="' . esc_url( self::terms_of_sale_url() ) . '">terms of sale</a></label>';
+			$main .= '</div></fieldset>';
+			$main .= '<div class="lld-field"><label for="lld_country">Country</label> <select id="lld_country" name="lld_country">';
+			$main .= '<option value="US">United States</option><option value="GB">United Kingdom</option><option value="DE">Germany</option></select></div>';
+			$main .= '<div class="lld-field"><label for="lld_code">Discount code</label> <input id="lld_code" name="lld_code" type="text" value="' . esc_attr( $code ) . '"></div>';
+			$main .= '<label class="lld-check" data-lld-sale-terms><input type="checkbox" id="lld_sale_terms" name="lld_sale_terms" value="1" required> <span>I accept the <a href="' . esc_url( self::terms_of_sale_url() ) . '">terms of sale</a></span></label>';
 			$main .= lld_button( array( 'label' => 'Show the price' ) );
 			$main .= '</form>';
 		}

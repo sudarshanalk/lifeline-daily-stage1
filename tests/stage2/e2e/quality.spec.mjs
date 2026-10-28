@@ -437,6 +437,28 @@ test('TC-UI2-01-AS-01', async ({ page, request }) => {
     'Suggestions',
     'Membership',
   ]);
+  // The approved Interface Pack look (Screen Design 2.2 and 3.1, owner decision 28 Oct 2026): the uniform dark
+  // header, the off-white canvas, Plus Jakarta Sans headings over Inter copy, 16 px cards and 44 px buttons. The font
+  // files live in the lld-tools theme layer, which this throwaway site does not carry, so only the declared families
+  // are checked here.
+  const look = await page.evaluate(() => {
+    const css = (selector, property) => getComputedStyle(document.querySelector(selector))[property];
+    const button = document.querySelector('.lld-button');
+    return {
+      header: css('.lld-header', 'backgroundColor'),
+      canvas: css('body', 'backgroundColor'),
+      heading: css('main h1', 'fontFamily'),
+      copy: css('body', 'fontFamily'),
+      card: css('[data-lld-section="greeting"]', 'borderRadius'),
+      button: button ? button.getBoundingClientRect().height : 44,
+    };
+  });
+  expect(look.header).toBe('rgb(26, 26, 26)');
+  expect(look.canvas).toBe('rgb(248, 250, 249)');
+  expect(look.heading).toMatch(/Plus Jakarta Sans/);
+  expect(look.copy).toMatch(/^"?Inter"?,/);
+  expect(look.card).toBe('16px');
+  expect(look.button).toBeGreaterThanOrEqual(44);
   await page.goto('/pricing/');
   await expect(page.getByRole('heading')).toHaveText(['Pricing']);
 });

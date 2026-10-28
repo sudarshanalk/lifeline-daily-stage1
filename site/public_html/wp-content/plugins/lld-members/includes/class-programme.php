@@ -1969,6 +1969,104 @@ class LLD_Members_Programme {
 	}
 
 	/**
+	 * The greeting card's track badge: "Healthy Weight track, day 10 of 28" while a track is running (SCR-09).
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function track_badge( $member_id ) {
+		$row = self::active( $member_id );
+		if ( ! $row ) {
+			return '';
+		}
+		$day = self::current_day( $member_id, (int) $row->id );
+		if ( $day < 1 ) {
+			return self::track_title( (string) $row->track_key ) . ' track starts ' . self::nice_date( self::day_date( self::periods( (int) $row->id ), 1 ) );
+		}
+		return self::track_title( (string) $row->track_key ) . ' track, day ' . $day . ' of ' . self::DAYS;
+	}
+
+	/**
+	 * Today's activity on the dashboard (SCR-09 item 2, package 6 of the prototype): the activity's name and
+	 * "Mark as done" and "Skip", which post to the day page exactly as its own Done and Skip do. Nothing is shown when
+	 * the day is shut, already marked, late or part of Premium; the lines from today_html say why.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function today_card_html( $member_id ) {
+		$row = self::active( $member_id );
+		if ( ! $row ) {
+			return '';
+		}
+		$day = self::current_day( $member_id, (int) $row->id );
+		if ( $day < 1 || '' !== self::mark_problem( $member_id, $row, $day ) ) {
+			return '';
+		}
+		$found = self::day_items( $member_id, $row, $day );
+		if ( ! $found['items'] ) {
+			return '';
+		}
+		$item    = $found['items'][0];
+		$parent  = (int) $item['parent_id'];
+		$results = self::results( $member_id, (int) $row->id );
+		$html    = '<p class="lld-today-title">' . esc_html( (string) $item['title'] ) . '</p>';
+		if ( isset( $results[ $day ][ $parent ] ) ) {
+			return $html . '<p class="lld-hint">' . esc_html( 'Marked ' . ( 'done' === $results[ $day ][ $parent ] ? 'done' : 'skipped' ) . ' today.' ) . '</p>';
+		}
+		$html .= '<form method="post" action="' . esc_url( home_url( '/members/track/?day=' . $day ) ) . '" class="lld-row">';
+		$html .= wp_nonce_field( 'lld_mark', 'lld_mark_nonce', true, false );
+		$html .= '<input type="hidden" name="lld_day" value="' . $day . '"><input type="hidden" name="lld_item" value="' . $parent . '">';
+		$html .= '<button class="lld-button" type="submit" name="lld_result" value="done">Mark as done</button>';
+		$html .= '<button class="lld-button lld-button-secondary" type="submit" name="lld_result" value="skipped">Skip for today</button></form>';
+		return $html;
+	}
+
+	/**
+	 * Days in a row, counting back from the latest open day, with an activity marked done.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function streak( $member_id ) {
+		$row = self::current( $member_id );
+		if ( ! $row ) {
+			return 0;
+		}
+		$results = self::results( $member_id, (int) $row->id );
+		$day     = self::current_day( $member_id, (int) $row->id );
+		$streak  = 0;
+		for ( $at = $day; $at >= 1; $at-- ) {
+			if ( empty( $results[ $at ] ) || ! in_array( 'done', $results[ $at ], true ) ) {
+				if ( $at === $day ) {
+					continue; // today may not be marked yet
+				}
+				break;
+			}
+			$streak++;
+		}
+		return $streak;
+	}
+
+	/**
+	 * The four week labels under the dashboard progress bar: done, active or ahead.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function week_labels_html( $member_id ) {
+		$row  = self::current( $member_id );
+		$day  = $row ? self::current_day( $member_id, (int) $row->id ) : 0;
+		$html = '<ul class="lld-progress-weeks" aria-label="Weeks">';
+		for ( $week = 1; $week <= 4; $week++ ) {
+			if ( $week * 7 <= $day ) {
+				$html .= '<li class="is-done">Week ' . $week . ' done</li>';
+			} elseif ( ( $week - 1 ) * 7 < $day ) {
+				$html .= '<li class="is-active">Week ' . $week . ' active</li>';
+			} else {
+				$html .= '<li>Week ' . $week . '</li>';
+			}
+		}
+		return $html . '</ul>';
+	}
+
+	/**
 	 * The dashboard's "Today's activity" line (SCR-09 states).
 	 *
 	 * @param int $member_id Member number.
@@ -2129,30 +2227,97 @@ class LLD_Members_Programme {
 		if ( 'active' === $status && self::premium_ended( $member_id ) && $row->last_open_day ) {
 			$main .= '<p>' . esc_html( 'Your current week stays open until ' . self::nice_date( (string) $row->last_open_day ) . '. Later weeks need Premium.' ) . '</p>';
 		}
-		$main .= lld_progress( self::done_count( $member_id ), self::DAYS );
-		$main .= '<ol class="lld-weeks">';
+		$main .= '<div class="lld-card">' . lld_progress( self::done_count( $member_id ), self::DAYS ) . '</div>';
+		$main .= self::weeks_html( $member_id, $row, $track, $reached, $limit, $periods );
+		if ( 'active' === $status && $reached > 0 ) {
+			$main .= '<p><a href="' . esc_url( home_url( '/members/track/?day=' . $reached ) ) . '">Open today</a></p>';
+		}
+		$main .= '<div class="lld-card"><p><a href="' . esc_url( home_url( '/members/check-in/' ) ) . '">Weekly check-in</a></p>';
+		$main .= '<p><a href="' . esc_url( home_url( '/members/plan/' ) ) . '">Weekly plan</a></p>';
+		$main .= '<p><a href="' . esc_url( home_url( '/members/review/' ) ) . '">Weekly review</a></p>';
+		$main .= '<p><a href="' . esc_url( home_url( '/members/tracks/' ) ) . '">Start, switch or resume a track</a></p></div>';
+		LLD_Members_Personal::render( 'Your track', $main, 200, true );
+	}
+
+	/**
+	 * The four-week timeline (SCR-10, package 6 of the prototype): each week done, open, not open yet or locked, with
+	 * its theme; the open week lists its seven days as done, skipped, today or upcoming; a locked week says when it
+	 * opens, or that it is part of Premium.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param object $row       Enrolment.
+	 * @param int    $track     Track post.
+	 * @param int    $reached   Programme day reached.
+	 * @param int    $limit     Last day open to this member.
+	 * @param array  $periods   Active periods.
+	 */
+	private static function weeks_html( $member_id, $row, $track, $reached, $limit, $periods ) {
+		$results = self::results( $member_id, (int) $row->id );
+		$html    = '<ol class="lld-weeks">';
 		for ( $week = 1; $week <= 4; $week++ ) {
 			$theme = self::week_item( 'lld_week', $track, $week, $member_id );
+			$first = ( $week - 1 ) * 7 + 1;
 			if ( $week * 7 <= $reached ) {
 				$state = 'done';
-			} elseif ( ( $week - 1 ) * 7 + 1 > $limit ) {
+			} elseif ( $first > $limit ) {
 				$state = 'locked';
-			} elseif ( ( $week - 1 ) * 7 < $reached ) {
+			} elseif ( $first <= $reached ) {
 				$state = 'open';
 			} else {
 				$state = 'not open yet';
 			}
-			$main .= '<li>' . esc_html( 'Week ' . $week . ( $theme ? ': ' . (string) $theme['title'] : '' ) . ' (' . $state . ')' ) . '</li>';
+			$class = array( 'done' => 'is-done', 'locked' => 'is-locked', 'open' => 'is-open', 'not open yet' => 'is-ahead' );
+			$label = array( 'done' => 'Completed', 'locked' => 'Locked', 'open' => 'In progress', 'not open yet' => 'Not open yet' );
+			$note  = '';
+			if ( 'done' === $state ) {
+				$done = 0;
+				for ( $day = $first; $day < $first + 7; $day++ ) {
+					if ( ! empty( $results[ $day ] ) && in_array( 'done', $results[ $day ], true ) ) {
+						$done++;
+					}
+				}
+				$note = $done . ' of 7 days done';
+			} elseif ( 'open' === $state ) {
+				$note = 'Day ' . min( $reached, $week * 7 ) . ' of ' . self::DAYS;
+			} elseif ( 'locked' === $state ) {
+				$note = $first > self::access_limit( $member_id, $row ) && ! self::premium_open( $member_id ) ? 'Part of Premium' : 'Opens ' . self::nice_date( self::day_date( $periods, $first ) );
+			} else {
+				$note = 'Opens ' . self::nice_date( self::day_date( $periods, $first ) );
+			}
+			$html .= '<li class="lld-week ' . $class[ $state ] . '"><div class="lld-week-head"><div>';
+			$html .= '<span class="lld-week-num" aria-hidden="true">' . ( 'done' === $state ? '&#10003;' : $week ) . '</span>';
+			$html .= '<div><h3>' . esc_html( 'Week ' . $week . ( $theme ? ': ' . (string) $theme['title'] : '' ) ) . '</h3>';
+			$html .= '<p class="lld-hint">' . esc_html( $note ) . '</p></div></div>';
+			$html .= '<span class="lld-week-state">' . esc_html( $label[ $state ] ) . '<span class="lld-sr"> (' . esc_html( $state ) . ')</span></span></div>';
+			if ( 'open' === $state ) {
+				$html .= '<ul class="lld-days">';
+				for ( $day = $first; $day < $first + 7; $day++ ) {
+					$items = self::activities( $track, $day, $member_id );
+					$name  = $items ? (string) $items[0]['title'] : '';
+					if ( $day === $reached ) {
+						$tile  = 'is-today';
+						$mark  = 'Today';
+					} elseif ( $day > $reached ) {
+						$tile = 'is-ahead';
+						$mark = 'Upcoming';
+					} elseif ( ! empty( $results[ $day ] ) && in_array( 'done', $results[ $day ], true ) ) {
+						$tile = 'is-done';
+						$mark = 'Done';
+					} elseif ( ! empty( $results[ $day ] ) ) {
+						$tile = 'is-skipped';
+						$mark = 'Skipped';
+					} else {
+						$tile = 'is-missed';
+						$mark = 'Not marked';
+					}
+					$inner = '<small>' . esc_html( 'Day ' . $day ) . '</small><strong>' . esc_html( $mark ) . '</strong>' . ( '' !== $name ? '<span class="lld-sr">, </span><span class="lld-day-name">' . esc_html( $name ) . '</span>' : '' );
+					$html .= '<li class="lld-day ' . $tile . '">' . ( $day <= $reached ? '<a href="' . esc_url( home_url( '/members/track/?day=' . $day ) ) . '">' . $inner . '</a>' : $inner ) . '</li>';
+				}
+				$html .= '</ul>';
+			}
+			$html .= '</li>';
 		}
-		$main .= '</ol>';
-		if ( 'active' === $status && $reached > 0 ) {
-			$main .= '<p><a href="' . esc_url( home_url( '/members/track/?day=' . $reached ) ) . '">Open today</a></p>';
-		}
-		$main .= '<p><a href="' . esc_url( home_url( '/members/check-in/' ) ) . '">Weekly check-in</a></p>';
-		$main .= '<p><a href="' . esc_url( home_url( '/members/plan/' ) ) . '">Weekly plan</a></p>';
-		$main .= '<p><a href="' . esc_url( home_url( '/members/review/' ) ) . '">Weekly review</a></p>';
-		$main .= '<p><a href="' . esc_url( home_url( '/members/tracks/' ) ) . '">Start, switch or resume a track</a></p>';
-		LLD_Members_Personal::render( 'Your track', $main );
+		return $html . '</ol>';
 	}
 
 	/**
