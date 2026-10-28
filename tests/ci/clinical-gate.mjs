@@ -19,9 +19,9 @@ const named = (n) => typeof n === 'string' && n.trim().length > 0 && !/^pending\
 const read = (root, rel, problems) => { try { return JSON.parse(readFileSync(resolve(root, rel), 'utf8')); } catch (e) { problems.push(`${rel} unreadable (${e.message})`); return null; } };
 
 /** AS-01: the methodology approval records carry a named, dated `approved` clinical sign-off. */
-export function signoffProblems(root = ROOT) {
+export function signoffProblems(root = ROOT, tools = GUARDED_TOOLS) {
   const problems = [];
-  for (const slug of GUARDED_TOOLS) {   // FR2-39 AS-13: the Healthy Weight Check needs its own named, dated sign-off
+  for (const slug of tools) {   // FR2-39 AS-13: the Healthy Weight Check needs its own named, dated sign-off
     const a = read(root, `approvals/${slug}.json`, problems); if (!a) continue;
     const s = a.clinical_signoff;
     if (!s || typeof s !== 'object') { problems.push(`${slug}: clinical_signoff missing`); continue; }
@@ -56,14 +56,15 @@ export function gateHeld(root = ROOT) {
   return p.length > 0 || decisions.some((d) => d !== 'pending');
 }
 
-export function clinicalGate({ root = ROOT } = {}) {
-  const problems = [...signoffProblems(root), ...ratificationProblems(root)];
+export function clinicalGate({ root = ROOT, tools = GUARDED_TOOLS } = {}) {
+  const problems = [...signoffProblems(root, tools), ...ratificationProblems(root)];
   return { ok: problems.length === 0, problems };
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  const i = process.argv.indexOf('--root');
-  const res = clinicalGate({ root: i > 0 ? resolve(process.argv[i + 1]) : ROOT });
+  const i = process.argv.indexOf('--root'), t = process.argv.indexOf('--tools');
+  // --tools a,b limits the sign-off check to named tools (the Stage 1 HG-02 test); the release gates always check every tool
+  const res = clinicalGate({ root: i > 0 ? resolve(process.argv[i + 1]) : ROOT, tools: t > 0 ? process.argv[t + 1].split(',') : GUARDED_TOOLS });
   if (res.ok) console.log('clinical-gate: HG-02 artefacts approved; all HG-02 DEC rows ratified or overridden');
   else { console.error(`clinical-gate: not satisfied (${res.problems.length})`); for (const p of res.problems) console.error(`  - ${p}`); }
   process.exit(res.ok ? 0 : 1);
