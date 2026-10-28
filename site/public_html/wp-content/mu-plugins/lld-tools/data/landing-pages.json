@@ -40,6 +40,25 @@
       "headings": {
         "try": "Check your Diabetes Risk"
       }
+    },
+    "healthy-weight": {
+      "slug": "health-tools/healthy-weight-check",
+      "title": "Healthy Weight Check",
+      "tool_file": "healthy-weight-tool.html",
+      "engine": "NICE NG246 BMI and waist-to-height ratio",
+      "sections": {
+        "purpose": "<p>The Healthy Weight Check works out your body mass index (BMI), your waist-to-height ratio if you add your waist, and a healthy weight range for your height, with plain guidance on what they mean. It does not diagnose any condition, set a weight target or give calorie advice.</p>",
+        "who": "<p>Adults aged 18 to 99. It is not for children or teenagers, during pregnancy or while breastfeeding, or for anyone with an eating disorder; in those cases it explains why and shows no numbers. If you have lost weight without trying, it asks you to see your doctor.</p>",
+        "enter": "<ul><li>Your age</li><li>Whether you are pregnant or breastfeeding</li><li>Whether you have, or have had, an eating disorder or worries about eating</li><li>Height and weight (metric or imperial)</li><li>Waist (optional), with how to measure it</li><li>Your family background, which sets the BMI thresholds</li><li>Whether you have lost weight without trying</li></ul>",
+        "try": "[lld_tool slug=\"healthy-weight\"]",
+        "limitations": "<ul><li>BMI is a screening measure, not a diagnosis. It is less reliable for older adults, very muscular people and people who have had a limb removed.</li><li>Measurements you enter yourself may not be exact.</li><li>At a BMI of 35 or more, waist-to-height ratio is not used.</li></ul><p>Read the <a href=\"/medical-disclaimer/\">medical disclaimer and when to seek urgent care</a>.</p>",
+        "how": "<p>BMI categories follow NICE guideline NG246 (2025), with lower thresholds for people of South Asian, Chinese, other Asian, Middle Eastern, Black African or African-Caribbean family background. Waist-to-height ratio bands follow the same guidance: 0.40 to 0.49 healthy, 0.50 to 0.59 increased, 0.60 or more high. Deployed version [lld_tool_version slug=\"healthy-weight\"].</p>",
+        "privacy": "<p>The check runs in your browser. Nothing you enter is stored or sent. If you have an account with health consent, you can choose to save just your BMI and its category to your profile.</p>",
+        "related": "[lld_tool_related slug=\"healthy-weight\"]"
+      },
+      "headings": {
+        "try": "Check your Healthy Weight"
+      }
     }
   },
   "headings": [
