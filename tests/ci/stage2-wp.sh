@@ -29,6 +29,9 @@ unzip -q -o "$DIR/../pmpro.zip" -d "$DIR/../pmpro"
 mv "$DIR/../pmpro/paid-memberships-pro-$PMPRO_VERSION" "$DIR/wp-content/plugins/paid-memberships-pro"
 wp plugin activate paid-memberships-pro --path="$DIR" --quiet
 cp -R "$REPO/site/public_html/wp-content/plugins/lld-members" "$DIR/wp-content/plugins/lld-members"
+# the member layout points its @font-face rules at lld-tools' self-hosted fonts (S2-L1): copy them so CI matches staging
+mkdir -p "$DIR/wp-content/mu-plugins/lld-tools/assets"
+cp -R "$REPO/site/public_html/wp-content/mu-plugins/lld-tools/assets/fonts" "$DIR/wp-content/mu-plugins/lld-tools/assets/fonts"
 wp plugin activate lld-members --path="$DIR" --quiet
 wp lld-members db-update --path="$DIR"
 # Router: without one, PHP's built-in server answers 404 itself for any missing path with a dot (/sitemap.xml)
