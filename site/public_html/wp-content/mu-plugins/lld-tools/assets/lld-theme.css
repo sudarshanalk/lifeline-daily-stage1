@@ -32,6 +32,13 @@
   --lld-t-footer-text:#9aa3ae;
   --lld-t-footer-line:#1f2937;
   --lld-t-focus:#157a42;
+  /* tool cards: one accent per calculator (Interface Pack homepage tools row); white text on each button is 5.2:1 or more */
+  --lld-t-card-line:#e2e8f0; --lld-t-card-rule:#f1f5f9; --lld-t-card-copy:#475569; --lld-t-card-note:#64748b;
+  --lld-t-protein:#157a42; --lld-t-protein-hover:#0f5c31; --lld-t-protein-tile:#ecfdf5; --lld-t-protein-pill:#d1fae5; --lld-t-protein-pill-text:#065f46; --lld-t-protein-tick:#059669;
+  --lld-t-diabetes:#0369a1; --lld-t-diabetes-hover:#075985; --lld-t-diabetes-tile:#f0f9ff; --lld-t-diabetes-pill:#e0f2fe; --lld-t-diabetes-pill-text:#075985; --lld-t-diabetes-tick:#0284c7;
+  --lld-t-weight:#c2410c; --lld-t-weight-hover:#9a3412; --lld-t-weight-tile:#fff7ed; --lld-t-weight-pill:#ffedd5; --lld-t-weight-pill-text:#9a3412; --lld-t-weight-tick:#ea580c;
+  /* per-card accent slots (defaults: protein); each card sets its own in section 3b */
+  --tc-accent:var(--lld-t-protein); --tc-accent-hover:var(--lld-t-protein-hover); --tc-tile:var(--lld-t-protein-tile); --tc-pill:var(--lld-t-protein-pill); --tc-pill-text:var(--lld-t-protein-pill-text); --tc-tick:var(--lld-t-protein-tick);
   --lld-t-track:#1a251e;            /* SCR-44 track banner: dark green card (prototype package 3) */
   --lld-t-track-2:#121c15;
   --lld-t-track-line:#1f3a2a;
@@ -152,6 +159,45 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 /* the theme hero row keeps its own background: its blocks (ad-spot labels, cards) carry theme colours (TC-NFR1-05) */
 /* the theme's ad-spot labels are #767676, which reads 4.54:1 on white but under 4.5:1 on the canvas: give them the muted ink (TC-NFR1-05) */
 .td-adspot-title, .td-a-rec .td-adspot-title { color: var(--lld-t-muted) !important; }
+
+/* ---- 3b. Tool cards: the exact Interface Pack card (icon tile, time pill, check line, full-width coloured button) ---- */
+.lld-tools-hub__list { gap: 24px; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.lld-tool-card { --tc-accent: var(--lld-t-protein); --tc-accent-hover: var(--lld-t-protein-hover); --tc-tile: var(--lld-t-protein-tile); --tc-pill: var(--lld-t-protein-pill); --tc-pill-text: var(--lld-t-protein-pill-text); --tc-tick: var(--lld-t-protein-tick);
+  display: flex; flex-direction: column; padding: 24px; border: 1px solid var(--lld-t-card-line); border-radius: var(--lld-t-radius); background: var(--lld-t-card); box-shadow: var(--lld-t-shadow); }
+.lld-tool-card[data-tool="diabetes"] { --tc-accent: var(--lld-t-diabetes); --tc-accent-hover: var(--lld-t-diabetes-hover); --tc-tile: var(--lld-t-diabetes-tile); --tc-pill: var(--lld-t-diabetes-pill); --tc-pill-text: var(--lld-t-diabetes-pill-text); --tc-tick: var(--lld-t-diabetes-tick); }
+.lld-tool-card[data-tool="healthy-weight"] { --tc-accent: var(--lld-t-weight); --tc-accent-hover: var(--lld-t-weight-hover); --tc-tile: var(--lld-t-weight-tile); --tc-pill: var(--lld-t-weight-pill); --tc-pill-text: var(--lld-t-weight-pill-text); --tc-tick: var(--lld-t-weight-tick); }
+.lld-tool-card:hover { box-shadow: var(--lld-t-shadow-hover); border-color: var(--lld-t-card-line); }
+.lld-tool-card__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 14px; }
+.lld-tool-card__icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 12px; background: var(--tc-tile); font-size: 18px; line-height: 1; }
+.lld-tool-card__pill { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 999px; background: var(--tc-pill); color: var(--tc-pill-text); font-family: var(--lld-t-font-body); font-size: 11px; font-weight: 600; white-space: nowrap; }
+.lld-tool-card .lld-tool-card__name { margin: 0 0 10px; font-family: var(--lld-t-font-display); font-size: 1.25rem; font-weight: 700; line-height: 1.3; color: var(--lld-t-ink); }
+.lld-tool-card__purpose { margin: 0 0 16px; font-family: var(--lld-t-font-body); font-size: 0.875rem; line-height: 1.6; color: var(--lld-t-card-copy); }
+/* an active card needs no visible status (the pill and button say it); the words stay for screen readers. Paused or unavailable tools still show theirs. */
+.lld-tool-card .lld-tool-card__status { text-transform: none; letter-spacing: 0; }
+.lld-tool-card--active .lld-tool-card__status { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.lld-tool-card:not(.lld-tool-card--active) .lld-tool-card__status { display: inline-flex; align-self: flex-start; margin: 0 0 12px; padding: 4px 10px; border-radius: 999px; background: var(--lld-t-amber-bg); color: var(--lld-t-amber); text-transform: none; letter-spacing: 0; }
+/* on the hub the pill shows the time, so the spoken line is kept for screen readers only */
+.lld-tool-card__time { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+.lld-tool-card__inputs, .lld-tool-card__eligibility { font-family: var(--lld-t-font-body); font-size: 0.8rem; line-height: 1.55; color: var(--lld-t-card-note); }
+.lld-tool-card__inputs { margin: 0 0 10px; padding-left: 18px; }
+.lld-tool-card__eligibility { margin: 0 0 12px; }
+.lld-tool-card__check { display: flex; align-items: center; gap: 6px; margin: auto 0 0; padding: 14px 0 12px; border-top: 1px solid var(--lld-t-card-rule); font-family: var(--lld-t-font-body); font-size: 0.75rem; font-weight: 500; color: var(--lld-t-card-note); }
+.lld-tool-card__check svg { flex: none; color: var(--tc-tick); }
+.lld-tool-card .lld-tool-card__cta { display: flex; width: 100%; min-height: 44px; margin: 0; padding: 10px 16px; border-radius: 12px; background: var(--tc-accent); color: var(--lld-t-card); font-family: var(--lld-t-font-body); font-size: 0.9rem; font-weight: 600; box-shadow: 0 1px 2px rgba(22, 26, 23, 0.08); }
+.lld-tool-card .lld-tool-card__cta::after { content: "\2192"; margin-left: 4px; }
+.lld-tool-card .lld-tool-card__cta:hover, .lld-tool-card .lld-tool-card__cta:focus-visible { background: var(--tc-accent-hover); color: var(--lld-t-card); }
+/* WordPress swaps emoji for 1em images (wp-emoji): size them for the tile */
+.lld-tool-card__icon img.emoji, .lld-tool-card__icon img { width: 20px !important; height: 20px !important; margin: 0 !important; }
+/* the theme's page-content paragraph and list sizes would win otherwise: the card keeps its own scale */
+.lld-tools-hub .lld-tool-card p.lld-tool-card__purpose { font-size: 0.875rem !important; line-height: 1.6 !important; color: var(--lld-t-card-copy) !important; margin: 0 0 16px !important; }
+.lld-tools-hub .lld-tool-card .lld-tool-card__inputs li, .lld-tools-hub .lld-tool-card p.lld-tool-card__eligibility { font-size: 0.8rem !important; line-height: 1.55 !important; color: var(--lld-t-card-note) !important; margin-bottom: 2px; }
+.lld-tools-hub .lld-tool-card p.lld-tool-card__check { font-size: 0.75rem !important; line-height: 1.4 !important; color: var(--lld-t-card-note) !important; }
+.lld-tools-hub .lld-tool-card p.lld-tool-card__related { font-size: 0.8rem !important; }
+.lld-tool-card__related { margin: 12px 0 0; font-family: var(--lld-t-font-body); font-size: 0.8rem; line-height: 1.5; }
+.lld-tool-card__related a { color: var(--tc-accent); text-decoration: underline; text-underline-offset: 2px; }
+.lld-home-tools .lld-home-row__title { margin-bottom: 24px; }
+@media (max-width: 767px) { .lld-tools-hub__list { grid-template-columns: 1fr; gap: 16px; } .lld-tool-card { padding: 20px; } }
+@media (prefers-reduced-motion: reduce) { .lld-tool-card { transition: none; } }
 
 /* ---- 4. Single article reading template (handover section 5.1, SCR-43) ------------------------------------------ */
 body.single-post .td-main-content-wrap .tdb-title-text, body.single-post .td-post-title .entry-title { font-size: clamp(1.9rem, 1.3rem + 2.2vw, 2.625rem); font-weight: 800; line-height: 1.18; letter-spacing: -0.02em; color: var(--lld-t-ink); }
