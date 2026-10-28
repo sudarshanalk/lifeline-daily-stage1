@@ -2,13 +2,13 @@
 /**
  * Plugin Name: Lifeline Daily Tools
  * Description: Must-use plugin (DEC-22) for the Stage 1 health tools: hub cards and landing-page embeds driven by tools/status.json (FR1-04), with `wp lld` commands. Theme untouched.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Lifeline Daily
  */
 if (!defined('ABSPATH')) exit;
 
 define('LLD_TOOLS_DIR', __DIR__);
-define('LLD_TOOLS_VERSION', '1.0.0');
+define('LLD_TOOLS_VERSION', '1.1.0');
 
 /* The document root that serves /tools/*: ABSPATH in production; the test harness overlays the repository's site/public_html
  * (LLD_TOOLS_DOCROOT defined by tests/lib/wp-router.php and wp-cli-env.php). */

@@ -110,7 +110,7 @@ if (defined('WP_CLI') && WP_CLI) {
     $live = lld_menu_signature_live($menu_id);
 
     if ($sub === 'verify') {
-      if ($live === $sig) WP_CLI::success("menu {$menu->name} ($menu_id) matches data/menu.json (" . count($sig) . ' items)');
+      if ($live === $sig) { WP_CLI::success("menu {$menu->name} ($menu_id) matches data/menu.json (" . count($sig) . ' items)'); return; }
       foreach (array_diff($sig, $live) as $s) WP_CLI::log("missing: $s");
       foreach (array_diff($live, $sig) as $s) WP_CLI::log("unexpected: $s");
       WP_CLI::error("menu {$menu->name} differs from data/menu.json");
