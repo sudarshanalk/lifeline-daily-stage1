@@ -1,5 +1,6 @@
-// Stage 1 pages stay visible (FR2-23): the plugin's own landing and disclaimer screens are only the fallback
-// for a site without the real WordPress pages. PHP CLI with small WordPress stubs; no WordPress or database.
+// Stage 1 pages stay visible (FR2-23, FR2-16): the plugin's own landing and disclaimer screens are only the fallback
+// for a site without the real WordPress pages, and its sitemap leaves /sitemap.xml to Yoast SEO when Yoast's
+// sitemaps are on. PHP CLI with small WordPress stubs; no WordPress or database.
 import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -37,6 +38,38 @@ function php(before, body) {
   ].join(' ');
   return JSON.parse(execFileSync('php', ['-r', code], { encoding: 'utf8' }));
 }
+
+const YOAST = "define('WPSEO_VERSION', '26.0'); class WPSEO_Options { public static $on = true; public static function get( $key, $default = null ) { return 'enable_xml_sitemap' === $key ? self::$on : $default; } }";
+const RULES = 'LLD_Members_Plugin::rewrites(); echo json_encode( array( "rules" => $GLOBALS["rules"], "flushed" => $GLOBALS["flushed"], "version" => get_option( "lld_members_rewrites" ), "index" => LLD_Members_Plugin::yoast_index_entry( "" ) ) );';
+
+test('TC-FR2-16-AS-03 with Yoast sitemaps on, /sitemap.xml is left to Yoast and the plugin sitemap is listed in its index', () => {
+  const on = php(YOAST, `$GLOBALS["options"]["lld_members_rewrites"] = "9"; ${RULES}`);
+  expect(Object.keys(on.rules)).not.toContain('^sitemap\\.xml$');
+  expect(on.rules['^sitemap-lld-members\\.xml$']).toBe('index.php?lld_screen=sitemap');
+  // Yoast's own rule for its sitemaps must not match the plugin's address.
+  expect(/([^/]+?)-sitemap([0-9]+)?\.xml$/.test('sitemap-lld-members.xml')).toBe(false);
+  expect(on.index).toBe('<sitemap><loc>https://lld.test/sitemap-lld-members.xml</loc></sitemap>\n');
+  // Rules from the earlier set (version 9 claimed /sitemap.xml) are flushed once, and not again.
+  expect(on.flushed).toBe(1);
+  const again = php(YOAST, `$GLOBALS["options"]["lld_members_rewrites"] = "${on.version}"; ${RULES}`);
+  expect(again.flushed).toBe(0);
+
+  // Yoast active with its sitemaps switched off, or no Yoast (the CI site): the plugin serves /sitemap.xml as before.
+  const off = php(YOAST, `WPSEO_Options::$on = false; $GLOBALS["options"]["lld_members_rewrites"] = "${on.version}"; ${RULES}`);
+  expect(off.rules['^sitemap\\.xml$']).toBe('index.php?lld_screen=sitemap');
+  expect(off.index).toBe('');
+  expect(off.flushed).toBe(1);
+  const none = php('', RULES);
+  expect(none.rules['^sitemap\\.xml$']).toBe('index.php?lld_screen=sitemap');
+  expect(none.rules['^sitemap-lld-members\\.xml$']).toBe('index.php?lld_screen=sitemap');
+  expect(none.index).toBe('');
+
+  // The index filter is hooked, and activation clears the stored version so the next request flushes the rules.
+  const source = readFileSync(resolve(includes, 'class-plugin.php'), 'utf8');
+  expect(source).toMatch(/add_filter\(\s*'wpseo_sitemap_index',\s*array\(\s*__CLASS__,\s*'yoast_index_entry'\s*\)\s*\)/);
+  const activate = source.slice(source.indexOf('public static function activate()'), source.indexOf('public static function rewrites()'));
+  expect(activate).toContain("delete_option( 'lld_members_rewrites' )");
+});
 
 test('TC-FR2-23-AS-02 a published Stage 1 page at a calculator or disclaimer address is served instead of the plugin screen', () => {
   const route = (pages, vars) => php('', `${pages} echo json_encode( LLD_Members_Plugin::stage1_pages( json_decode( '${JSON.stringify(vars)}', true ) ) );`);
