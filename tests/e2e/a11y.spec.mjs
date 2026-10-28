@@ -24,9 +24,9 @@ test('SUPPORT-NFR1-09-A11Y-01 protein tool: form and result states have no axe v
   await page.goto(`${srv.url}/tools/protein-requirement-tool.html`);
   await scan(page, 'protein form');
   await page.fill('#age', '35'); await page.click('#sex button[data-val="female"]'); await page.fill('#hVal', '165'); await page.fill('#wVal', '60');
-  await page.click('#eth button[data-val="WhiteNA"]'); await page.click('#act button[data-val="moderate"]'); await page.click('#res button[data-val="0"]');
+  await page.click('#eth button[data-val="WhiteNA"]'); await page.click('#act button[data-val="moderate"]'); await page.click('#res button[data-val="no"]');
   await page.click('#goal button[data-val="maintain"]'); await page.click('#diet button[data-val="omnivore"]'); await page.selectOption('#meals', '3');
-  await page.click('#kidney button[data-val="no"]'); await page.click('#liver button[data-val="no"]'); await page.click('#form button.cta');
+  await page.click('#kidney button[data-val="no"]'); await page.click('#liver button[data-val="no"]'); await page.click('#plan button[data-val="no"]'); await page.click('#form button.cta');
   await expect(page.locator('#results')).toBeVisible();
   await scan(page, 'protein result');
 });

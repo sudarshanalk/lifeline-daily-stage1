@@ -27,14 +27,14 @@ export function closeAll() { for (const w of OPEN) { try { w.close(); } catch {}
  * Extraction is string/comment aware so braces inside copy strings do not confuse it.
  * ------------------------------------------------------------------------------------- */
 export const FROZEN = {
-  protein: {
+  protein: {   // v2 engine (DEC-86)
     BANDS: /const BANDS\s*=\s*\{/,
     CEILING: /const CEILING\s*=.*?;/,
-    DIET_MULT: /const DIET_MULT\s*=\s*\{/,
-    PREG_GKG: /const PREG_GKG\s*=\s*\{/,
+    WHO_BASE: /const WHO_BASE\s*=.*?;/,
+    PREG_ADD: /const PREG_ADD\s*=\s*\{/,
     cutoffs: /function cutoffs\s*\([^)]*\)\s*\{/,
+    basisWeight: /function basisWeight\s*\([^)]*\)\s*\{/,
     computeProtein: /function computeProtein\s*\([^)]*\)\s*\{/,
-    clampMeal: /function clampMeal\s*\([^)]*\)\s*\{/,
   },
   diabetes: {
     ENGINE: /var ENGINE\s*=\s*\(/,
@@ -145,12 +145,14 @@ export function proteinRunner(html) {
     if (inp.heightFt != null) heightCm = inp.heightFt * 30.48 + (inp.heightIn || 0) * CONV.IN_CM;
     if (inp.weightSt != null) weightKg = inp.weightSt * CONV.ST_KG + (inp.weightLb || 0) * CONV.LB_KG;
     else if (inp.weightLb != null && inp.weightKg == null) weightKg = inp.weightLb * CONV.LB_KG;
-    const invalid = !(inp.age >= 18 && inp.age <= 99) || !(heightCm >= 140 && heightCm <= 210) || !(weightKg >= 35 && weightKg <= 250) || !inp.sex || !inp.kidney;
+    const preg = inp.preg || 'no';
+    const invalid = !(inp.age >= 18 && inp.age <= 99) || !(heightCm >= 140 && heightCm <= 210) || !(weightKg >= 35 && weightKg <= 250) || !inp.sex || !inp.kidney
+      || (preg === 'pregnant' && !inp.trimester) || (preg === 'breastfeeding' && !inp.babyAge);
     if (invalid) return { error: true };
-    const ethMap = { White: 'White', Indian: 'Indian', Pakistani: 'Pakistani', Bangladeshi: 'Bangladeshi', 'Other Asian': 'OtherAsian', Chinese: 'Chinese', 'Black Caribbean': 'BlackCaribbean', 'Black African': 'BlackAfrican', Other: 'Other' };
-    const r = compute({ age: inp.age, sex: inp.sex, preg: inp.preg || 'no', heightCm, weightKg, ethnicity: ethMap[inp.ethnicity] || inp.ethnicity, activity: inp.activity, resistance: String(inp.resistance), goal: inp.goal, diet: inp.diet, meals: Number(inp.meals), kidney: inp.kidney, liver: inp.liver || 'no' });
+    const ethMap = { White: 'White', Indian: 'Indian', Pakistani: 'Pakistani', Bangladeshi: 'Bangladeshi', 'Other Asian': 'OtherAsian', Chinese: 'Chinese', 'Middle Eastern': 'MiddleEastern', 'Black Caribbean': 'BlackCaribbean', 'Black African': 'BlackAfrican', Other: 'Other' };
+    const r = compute({ age: inp.age, sex: inp.sex, preg, trimester: inp.trimester ?? null, babyAge: inp.babyAge ?? null, heightCm, weightKg, ethnicity: ethMap[inp.ethnicity] || inp.ethnicity, activity: inp.activity, resistance: String(inp.resistance), goal: inp.goal, diet: inp.diet, meals: Number(inp.meals), kidney: inp.kidney, liver: inp.liver || 'no', plan: inp.plan || 'no' });
     const out = {};
-    for (const k of ['suppressed', 'reason', 'branch', 'targetG', 'lowG', 'highG', 'gPerKg', 'basisKg', 'basisNote', 'perMeal', 'sources', 'capped', 'older', 'dietMult', 'interpKey', 'bmi']) if (r[k] !== undefined) out[k] = typeof r[k] === 'number' ? +r[k].toFixed(3) : r[k];
+    for (const k of ['suppressed', 'reason', 'branch', 'targetG', 'lowG', 'highG', 'gPerKg', 'basisKg', 'basisNote', 'perMeal', 'sources', 'capped', 'older', 'interpKey', 'bmi']) if (r[k] !== undefined) out[k] = typeof r[k] === 'number' ? +r[k].toFixed(3) : r[k];
     return out;
   };
 }

@@ -506,7 +506,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "hybrid",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-01"
       ],
@@ -544,7 +544,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "hybrid",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-01",
         "FR1-22"
@@ -596,12 +596,7 @@
       "mutations": [
         "MUT-07"
       ],
-      "known_deviations": {
-        "DEC-44": [
-          "FX-PR-CAP-01",
-          "FX-PR-CAP-02"
-        ]
-      },
+      "known_deviations": {},
       "evidence_dir": "evidence/FR1-07/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
@@ -613,7 +608,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "hybrid",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-01"
       ],
@@ -668,7 +663,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "hybrid",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-07"
       ],
@@ -768,7 +763,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "hybrid",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-01"
       ],
@@ -1078,7 +1073,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "hybrid",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-04"
       ],
@@ -2130,7 +2125,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "hybrid",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-08",
         "FR1-11"
@@ -2364,7 +2359,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "hybrid",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-06"
       ],

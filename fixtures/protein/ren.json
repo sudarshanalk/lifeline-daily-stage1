@@ -14,12 +14,13 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "yes",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "suppressed": true,
@@ -27,7 +28,7 @@
         "bmi": 24.49
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     },
@@ -43,12 +44,13 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "5+",
+        "resistance": "yes",
         "goal": "build",
         "diet": "vegan",
         "meals": 3,
         "kidney": "yes",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "suppressed": true,
@@ -56,7 +58,7 @@
         "bmi": 24.49
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     },
@@ -72,12 +74,14 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "yes",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no",
+        "trimester": "2"
       },
       "expected": {
         "suppressed": true,
@@ -85,7 +89,7 @@
         "bmi": 24.49
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     },
@@ -101,12 +105,13 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "yes",
-        "liver": "yes"
+        "liver": "yes",
+        "plan": "no"
       },
       "expected": {
         "suppressed": true,
@@ -114,7 +119,7 @@
         "bmi": 24.49
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     }

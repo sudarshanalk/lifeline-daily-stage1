@@ -1,6 +1,7 @@
 // TC-FR1-06 Clinical method provenance — families artefact + ci. Fixtures: approvals/*.json, manifests. Mutation: MUT-10.
 // AS-03 (landing-page methodology deployed_version) is an e2e assertion: tests/e2e/TC-FR1-06.spec.mjs.
 import { describe, expect, test } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import approvalProtein from '../../approvals/protein.json' with { type: 'json' };
 import approvalDiabetes from '../../approvals/diabetes.json' with { type: 'json' };
@@ -47,10 +48,12 @@ describe('TC-FR1-06 clinical method provenance', () => {
       expect(r.ok).toBe(false);
       expect(r.problems.some((p) => /^protein: staged hash .* != approved version_hash/.test(p))).toBe(true);
     }, PROVENANCE_INPUTS);
-    // production requires an approved sign-off; pending is rejected there
+    // production requires an approved sign-off: pending is rejected there, approved (HG-02, 27 Oct 2026) is accepted
     const prod = provenanceCheck({ root: ROOT, env: 'production' });
-    expect(prod.ok).toBe(false);
-    expect(prod.problems.filter((p) => /^(protein|diabetes): .*not accepted for production/.test(p))).toHaveLength(2);
+    // every guarded tool (the Healthy Weight Check included, FR2-39) needs its own approved sign-off for production
+    const pending = ['protein', 'diabetes', 'healthy-weight'].filter((slug) => JSON.parse(readFileSync(resolve(ROOT, 'approvals', `${slug}.json`), 'utf8')).clinical_signoff.decision !== 'approved');
+    expect(prod.problems.filter((p) => /not accepted for production/.test(p))).toHaveLength(pending.length);
+    expect(prod.ok).toBe(pending.length === 0);
   });
 
   test('TC-FR1-06-AS-04', async () => {
@@ -58,7 +61,7 @@ describe('TC-FR1-06 clinical method provenance', () => {
     const clean = engineFreeze({ root: ROOT });
     expect(clean.problems).toEqual([]);
     expect(clean.ok).toBe(true);
-    expect(Object.keys(clean.compared.protein)).toEqual(expect.arrayContaining(['js:BANDS', 'js:DIET_MULT', 'js:PREG_GKG', 'js:computeProtein', 'js:clampMeal', 'js:cutoffs']));
+    expect(Object.keys(clean.compared.protein)).toEqual(expect.arrayContaining(['js:BANDS', 'js:CEILING', 'js:WHO_BASE', 'js:PREG_ADD', 'js:cutoffs', 'js:basisWeight', 'js:computeProtein']));
     expect(Object.keys(clean.compared.diabetes)).toEqual(expect.arrayContaining(['js:ENGINE', 'js:bandFor', 'js:idrs', 'js:whtr', 'js:render.priority']));
     // … and fails on MUT-04 (Female s0), MUT-06 (bandFor 5.6→6.0) and MUT-07 (cap 2.0→2.5)
     const expected = { 'MUT-04': 'diabetes: js:ENGINE changed', 'MUT-06': 'diabetes: js:bandFor changed', 'MUT-07': 'protein: js:CEILING changed' };
