@@ -1,0 +1,877 @@
+{
+  "group": "WHTR",
+  "tool": "healthy-weight",
+  "fixtures": [
+    {
+      "id": "FX-HW-WHTR-01",
+      "purpose": "ratio 0.394 -> 0.39 below",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 78.8
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.39,
+          "band": "below"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-02",
+      "purpose": "ratio 0.395 -> 0.40",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 79.0
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.4,
+          "band": "healthy"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-03",
+      "purpose": "ratio 0.399 -> 0.40",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 79.8
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.4,
+          "band": "healthy"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-04",
+      "purpose": "ratio 0.400",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 80.0
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.4,
+          "band": "healthy"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-05",
+      "purpose": "ratio 0.494 -> 0.49",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 98.8
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.49,
+          "band": "healthy"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-06",
+      "purpose": "ratio 0.495 -> 0.50",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 99.0
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.5,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-07",
+      "purpose": "ratio 0.499 -> 0.50",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 99.8
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.5,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-08",
+      "purpose": "ratio 0.500",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 100.0
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.5,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-09",
+      "purpose": "ratio 0.501 -> 0.50",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 100.2
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.5,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-10",
+      "purpose": "ratio 0.594 -> 0.59",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 118.8
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.59,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-11",
+      "purpose": "ratio 0.595 -> 0.60",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 119.0
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.6,
+          "band": "high"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-12",
+      "purpose": "ratio 0.599 -> 0.60",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 119.8
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.6,
+          "band": "high"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-13",
+      "purpose": "ratio 0.600",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 120.0
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.6,
+          "band": "high"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-14",
+      "purpose": "ratio 0.601 -> 0.60",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 120.2
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.6,
+          "band": "high"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-15",
+      "purpose": "ratio 0.83 high",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 166.0
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.83,
+          "band": "high"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-16",
+      "purpose": "White: BMI 34.9, waist 110",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 139.6,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 110
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 34.9,
+        "category": "obese1",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.55,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-17",
+      "purpose": "White: BMI 35.0, waist 110",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 140.0,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 110
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 35.0,
+        "category": "obese2",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.55,
+          "band": "notShown"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-18",
+      "purpose": "White: BMI 35.1, waist 110",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 140.4,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 110
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 35.1,
+        "category": "obese2",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": {
+          "ratio": 0.55,
+          "band": "notShown"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-19",
+      "purpose": "Indian: BMI 34.9, waist 110",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 139.6,
+        "bg": "Indian",
+        "loss": "no",
+        "waistCm": 110
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 34.9,
+        "category": "obese2",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": {
+          "ratio": 0.55,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-20",
+      "purpose": "Indian: BMI 35.0, waist 110",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 140.0,
+        "bg": "Indian",
+        "loss": "no",
+        "waistCm": 110
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 35.0,
+        "category": "obese2",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": {
+          "ratio": 0.55,
+          "band": "notShown"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-21",
+      "purpose": "Indian: BMI 35.1, waist 110",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 140.4,
+        "bg": "Indian",
+        "loss": "no",
+        "waistCm": 110
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 35.1,
+        "category": "obese2",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": {
+          "ratio": 0.55,
+          "band": "notShown"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-22",
+      "purpose": "realistic: 170 cm, waist 83 (as FX-DM-WHTR-01)",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 170,
+        "weightKg": 75,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 83
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 26.0,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 53.4,
+          "highKg": 72.1,
+          "lowLb": 118,
+          "highLb": 158
+        },
+        "waist": {
+          "ratio": 0.49,
+          "band": "healthy"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-23",
+      "purpose": "realistic: 170 cm, waist 85 (as FX-DM-WHTR-02)",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 170,
+        "weightKg": 75,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 85
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 26.0,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 53.4,
+          "highKg": 72.1,
+          "lowLb": 118,
+          "highLb": 158
+        },
+        "waist": {
+          "ratio": 0.5,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-24",
+      "purpose": "realistic: 170 cm, waist 102 (as FX-DM-WHTR-04)",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 170,
+        "weightKg": 75,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 102
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 26.0,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 53.4,
+          "highKg": 72.1,
+          "lowLb": 118,
+          "highLb": 158
+        },
+        "waist": {
+          "ratio": 0.6,
+          "band": "high"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-WHTR-25",
+      "purpose": "no waist",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 170,
+        "weightKg": 75,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 26.0,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 53.4,
+          "highKg": 72.1,
+          "lowLb": 118,
+          "highLb": 158
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    }
+  ]
+}

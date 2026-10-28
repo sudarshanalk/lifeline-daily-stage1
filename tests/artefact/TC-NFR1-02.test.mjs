@@ -15,6 +15,9 @@ import { ROOT } from '../lib/paths.mjs';
 import { signoffProblems, ratificationProblems, gateHeld } from '../ci/clinical-gate.mjs';
 
 const strict = process.env.LLD_STRICT_GATES === '1' || gateHeld(ROOT);
+// HG-02 covers the two Stage 1 tools; the Healthy Weight Check (FR2-39) has its own sign-off, required by the release gate
+// itself (FR2-39 AS-13) and not by this Stage 1 governance check
+const STAGE1 = ['protein', 'diabetes'];
 const PENDING = 'HG-02 not yet held: approvals/{protein,diabetes,copy}.json decisions are pending (OI-8 reviewer to be appointed)';
 const workflows = () => readdirSync(resolve(ROOT, '.github', 'workflows')).filter((f) => /\.ya?ml$/.test(f)).map((f) => ({ f, src: readFileSync(resolve(ROOT, '.github', 'workflows', f), 'utf8') }));
 /** the `clinical-gate:` job block of a workflow, or null */
@@ -22,7 +25,7 @@ const jobBlock = (src) => { const m = src.match(/^ {2}clinical-gate:\s*\n((?: {4
 
 describe('TC-NFR1-02 clinical governance', () => {
   test('TC-NFR1-02-AS-01', (ctx) => {
-    const problems = signoffProblems(ROOT);
+    const problems = signoffProblems(ROOT, STAGE1);
     if (!strict) {
       // the check is not vacuous: today's placeholder records are refused for the right reasons
       for (const slug of ['protein', 'diabetes']) {
@@ -49,7 +52,7 @@ describe('TC-NFR1-02 clinical governance', () => {
   });
 
   test('TC-NFR1-02-AS-03', (ctx) => {
-    const run = spawnSync(process.execPath, [resolve(ROOT, 'tests', 'ci', 'clinical-gate.mjs')], { cwd: ROOT, encoding: 'utf8' });
+    const run = spawnSync(process.execPath, [resolve(ROOT, 'tests', 'ci', 'clinical-gate.mjs'), '--tools', STAGE1.join(',')], { cwd: ROOT, encoding: 'utf8' });
     const jobs = workflows().map((w) => ({ ...w, block: jobBlock(w.src) })).filter((w) => w.block);
     // the job definition is checked on every run; only its green result waits for HG-02
     expect(jobs.map((j) => j.f), 'exactly one clinical-gate job is defined').toHaveLength(1);

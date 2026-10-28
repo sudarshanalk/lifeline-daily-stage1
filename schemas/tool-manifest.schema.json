@@ -9,7 +9,8 @@
       "type": "string",
       "enum": [
         "protein",
-        "diabetes"
+        "diabetes",
+        "healthy-weight"
       ]
     },
     "live_url": {

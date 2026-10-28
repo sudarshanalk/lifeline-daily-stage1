@@ -8,7 +8,7 @@
     "cards": {
       "type": "array",
       "minItems": 2,
-      "maxItems": 2,
+      "maxItems": 3,
       "items": {
         "type": "object",
         "required": [
@@ -27,7 +27,8 @@
             "type": "string",
             "enum": [
               "protein",
-              "diabetes"
+              "diabetes",
+              "healthy-weight"
             ]
           },
           "name": {

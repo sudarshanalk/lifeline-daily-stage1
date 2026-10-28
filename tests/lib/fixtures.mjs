@@ -3,7 +3,7 @@ import { readFileSync, readdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { ROOT } from './paths.mjs';
 
-const DIRS = { PR: 'protein', DM: 'diabetes', WP: 'site', MAIL: 'mail' };
+const DIRS = { PR: 'protein', DM: 'diabetes', HW: 'healthy-weight', WP: 'site', MAIL: 'mail' };
 let cache = null;
 
 function all() {

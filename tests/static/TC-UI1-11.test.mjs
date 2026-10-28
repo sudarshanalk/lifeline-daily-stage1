@@ -27,7 +27,7 @@ describe('TC-UI1-11 copy deck freeze', () => {
     const deck = await extractDeck({ pages: {} });
     const inventory = read('copy/inventory.json');
     expect(Object.keys(inventory.sources).sort(), 'every source class enumerated').toEqual(['inline', 'messages', 'pages', 'templates']);
-    expect(inventory.sources.messages).toHaveLength(2);
+    expect(inventory.sources.messages).toHaveLength(3);   // two Stage 1 tools and the Healthy Weight Check (FR2-39)
     expect(inventory.sources.templates).toHaveLength(2);
     expect(inventory.sources.pages, 'landing pages and the disclaimer page are listed').toHaveLength(Object.keys(PAGES).length);
     const keys = new Set(inventory.entries.map((e) => e.key));

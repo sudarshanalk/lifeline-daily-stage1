@@ -6,7 +6,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ROOT } from '../lib/paths.mjs';
+import { ROOT, GUARDED_TOOLS } from '../lib/paths.mjs';
 import { extractCopy } from '../lib/copy.mjs';
 import { closeAll } from '../lib/tool-page.mjs';
 
@@ -22,7 +22,7 @@ export function copyHash({ root = ROOT } = {}) {
       else if (want[k] !== got[k]) problems.push(`${group}.${k}: text changed (hash ${got[k].slice(0, 12)} != approved ${want[k].slice(0, 12)})`);
     }
   }
-  for (const slug of ['protein', 'diabetes']) {
+  for (const slug of GUARDED_TOOLS) {
     const approval = JSON.parse(readFileSync(resolve(root, 'approvals', `${slug}.json`), 'utf8'));
     for (const [k, v] of Object.entries(copy.aggregate[slug])) if (approval.copy_hashes[k] !== v) problems.push(`approvals/${slug}.json copy_hashes.${k} != extracted`);
   }

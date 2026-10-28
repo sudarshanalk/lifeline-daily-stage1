@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // engine-freeze (docs/04 §1, §7; CLAUDE.md hard rules; FR1-06 AS-04).
-// Extracts every frozen engine object from the two tool pages (tests/lib/tool-page.mjs FROZEN list),
+// Extracts every frozen engine object from the guarded tool pages (the two Stage 1 tools and the Healthy Weight Check) (tests/lib/tool-page.mjs FROZEN list),
 // hashes its source text and compares with manifests/<slug>.json → versions[is_live].engine_hashes["js:<name>"].
 // A mismatch fails unless the PR references a DEC row that is `ratified` with `ratify_at: HG-02`
 // (passed as --dec DEC-nn; the registry is the source of truth, DEC-38).
@@ -8,18 +8,18 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ROOT, TOOL_FILES } from '../lib/paths.mjs';
+import { ROOT, ALL_TOOL_FILES, GUARDED_TOOLS } from '../lib/paths.mjs';
 import { frozenHashes } from '../lib/tool-page.mjs';
 
 export function engineFreeze({ root = ROOT, dec = null } = {}) {
   const problems = [];
   const compared = {};
-  for (const slug of ['protein', 'diabetes']) {
+  for (const slug of GUARDED_TOOLS) {
     const manifest = JSON.parse(readFileSync(resolve(root, 'manifests', `${slug}.json`), 'utf8'));
     const live = (manifest.versions || []).find((v) => v.is_live);
     const want = Object.fromEntries(Object.entries(live?.engine_hashes || {}).filter(([k]) => k.startsWith('js:')));
     if (!Object.keys(want).length) { problems.push(`${slug}: manifest records no js:* engine hashes`); continue; }
-    const html = readFileSync(resolve(root, 'site', 'public_html', 'tools', TOOL_FILES[slug]), 'utf8');
+    const html = readFileSync(resolve(root, 'site', 'public_html', 'tools', ALL_TOOL_FILES[slug]), 'utf8');
     let got;
     try { got = frozenHashes(slug, html); } catch (e) { problems.push(`${slug}: extraction failed: ${e.message}`); continue; }
     compared[slug] = got;
