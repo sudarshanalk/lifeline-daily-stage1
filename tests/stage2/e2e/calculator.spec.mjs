@@ -125,3 +125,111 @@ test('TC-FR2-23-AS-03', async ({ page }) => {
   await expect(frame.locator('.risk-band')).toContainText('Low');
   await expect(page.getByRole('button', { name: 'Save this result to my profile' })).toHaveCount(0);
 });
+
+// Staging and production have real WordPress pages at both calculator addresses and at /medical-disclaimer/ (Stage 1,
+// signed off clinically). WordPress serves those pages; the plugin only adds the save form, the track link and the
+// starter guide below the calculator page's own content, and nothing to the disclaimer. Its own screens are the
+// fallback for a site without the pages, as checked above.
+test('TC-FR2-23-AS-02 the Stage 1 calculator pages and disclaimer keep their own content, with the extras below the calculators', async ({ page, request }) => {
+  test.setTimeout(240000);
+  await serveTools(page);
+  const stamp = `s1${randomBytes(3).toString('hex')}`;
+  const fixture = (mode) => request.post('/wp-json/lld-members/v1/test/fixture', { data: { kind: 'stage1-pages', stamp, mode } });
+  const made = await fixture('create');
+  expect(made.ok(), await made.text()).toBeTruthy();
+  const pages = await made.json();
+  const save = page.getByRole('button', { name: 'Save this result to my profile' });
+  // The page's own content comes first, then the extras, in document order.
+  const below = (first, second) => page.evaluate(([a, b]) => {
+    const x = document.querySelector(a);
+    const y = document.querySelector(b);
+    return !!x && !!y && !!(x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING);
+  }, [first, second]);
+  const landings = [
+    ['protein', '/health-tools/protein/', 'Fitness and Strength'],
+    ['diabetes', '/health-tools/diabetes-risk-check/', 'Blood Sugar Balance'],
+  ];
+  try {
+    // Signed out: each calculator page shows its own content and its tool, with the track link and guide below.
+    for (const [key, path, track] of landings) {
+      await page.goto(path);
+      const marker = page.locator(`[data-lld-stage1-marker="${key}"]`);
+      await expect(marker, key).toHaveText(pages[key].marker);
+      await expect(page.locator('iframe.lld-tool-frame'), key).toHaveCount(1);
+      await expect(page.locator('[data-lld-track-link]'), key).toContainText(track);
+      await expect(page.locator('[data-lld-guide]'), key).toBeVisible();
+      expect(await below(`[data-lld-stage1-marker="${key}"]`, 'iframe.lld-tool-frame'), key).toBe(true);
+      expect(await below('iframe.lld-tool-frame', '[data-lld-track-link]'), key).toBe(true);
+      expect(await below('[data-lld-track-link]', '[data-lld-guide]'), key).toBe(true);
+      await expect(page.locator('#lld-save-result'), key).toHaveCount(0);
+    }
+    await page.goto('/health-tools/protein/');
+    await proteinResult(page);
+    await expect(save).toHaveCount(0);
+
+    // The disclaimer page is the real page, with nothing added.
+    await page.goto('/medical-disclaimer/');
+    await expect(page.locator('[data-lld-stage1-marker="disclaimer"]')).toHaveText(pages.disclaimer.marker);
+    await expect(page.getByText('Lifeline Daily is general information, not a diagnosis')).toHaveCount(0);
+    await expect(page.locator('[data-lld-track-link], [data-lld-guide], #lld-save-result')).toHaveCount(0);
+
+    // A member without health consent sees no save form.
+    const without = emailFor('s1nocon');
+    await createMember(request, { email: without, password, first_name: 'Pat', role: 'member', consents: ['terms'] });
+    await signIn(page, without, password);
+    await page.goto('/health-tools/protein/');
+    await expect(page.locator('[data-lld-stage1-marker="protein"]')).toHaveText(pages.protein.marker);
+    await proteinResult(page);
+    await expect(save).toHaveCount(0);
+
+    // A member with health consent saves from the real page: only the headline, unit, band and version are kept.
+    const withConsent = emailFor('s1consent');
+    await createMember(request, { email: withConsent, password, first_name: 'Pat', role: 'member', consents: ['terms', 'health'] });
+    await signIn(page, withConsent, password);
+    await page.goto('/health-tools/protein/');
+    await expect(page.locator('[data-lld-stage1-marker="protein"]')).toHaveText(pages.protein.marker);
+    await proteinResult(page);
+    await expect(save).toBeVisible();
+    expect(await below('[data-lld-stage1-marker="protein"]', '#lld-save-result')).toBe(true);
+    expect(await below('#lld-save-result', '[data-lld-track-link]')).toBe(true);
+    await save.click();
+    await expect(page.getByText('Saved', { exact: true })).toBeVisible();
+    await expect(page.locator('[data-lld-stage1-marker="protein"]')).toHaveText(pages.protein.marker);
+    const stored = await page.request.post('/wp-json/lld-members/v1/test/calculator', { data: { email: withConsent } });
+    expect(stored.ok(), await stored.text()).toBeTruthy();
+    const row = await stored.json();
+    expect(Object.keys(row).sort()).toEqual(['band', 'calculator', 'calculator_version', 'headline', 'unit']);
+    expect(row.calculator).toBe('protein');
+    expect(row.headline).toBe(`${protein.expected.targetG} g`);
+    expect(row.band).toContain(String(protein.expected.lowG));
+    expect(row.band).toContain(String(protein.expected.highG));
+    expect(row.calculator_version).toHaveLength(64);
+    expect(JSON.stringify(row)).not.toContain(withConsent);
+
+    // The diabetes page saves too.
+    await page.goto('/health-tools/diabetes-risk-check/');
+    await expect(page.locator('[data-lld-stage1-marker="diabetes"]')).toHaveText(pages.diabetes.marker);
+    const frame = page.frameLocator('.lld-tool-frame');
+    await frame.locator('#ht').waitFor();
+    await fillDiabetesForm(frame, diabetes.inputs);
+    await submitDiabetes(frame);
+    await expect(frame.locator('#riskNum')).toHaveText(`${diabetes.expected.pctDisplay}%`);
+    await expect(save).toBeVisible();
+    await save.click();
+    await expect(page.getByText('Saved', { exact: true })).toBeVisible();
+    const kept = await (await page.request.post('/wp-json/lld-members/v1/test/calculator', { data: { email: withConsent } })).json();
+    expect(kept.calculator).toBe('diabetes');
+    expect(kept.headline).toBe(`${diabetes.expected.pctDisplay}%`);
+    expect(kept.band).toBe('Low');
+  } finally {
+    const removed = await fixture('remove');
+    expect(removed.ok(), await removed.text()).toBeTruthy();
+  }
+  // With the pages gone, the plugin's own screens answer again.
+  await page.goto('/health-tools/protein/');
+  await expect(page.getByRole('heading', { name: 'Daily Protein Target', level: 1 })).toBeVisible();
+  await expect(page.locator('[data-lld-stage1-marker]')).toHaveCount(0);
+  await expect(page.locator('[data-lld-track-link]')).toContainText('Fitness and Strength');
+  await page.goto('/medical-disclaimer/');
+  await expect(page.getByText('Lifeline Daily is general information, not a diagnosis')).toBeVisible();
+});

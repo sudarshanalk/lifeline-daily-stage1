@@ -73,6 +73,9 @@ class LLD_Members_Fixtures {
 		if ( 'linked' === $kind ) {
 			return self::linked( $stamp );
 		}
+		if ( 'stage1-pages' === $kind ) {
+			return self::stage1_pages( $stamp, isset( $args['mode'] ) ? sanitize_key( (string) $args['mode'] ) : 'create' );
+		}
 		return new WP_Error( 'lld_fixture', 'Unknown fixture.' );
 	}
 
@@ -865,5 +868,88 @@ class LLD_Members_Fixtures {
 			'exercise'  => 'Squat to chair',
 			'qa'        => '2026-11-04',
 		);
+	}
+
+	const STAGE1_META = '_lld_test_stage1_page';
+
+	/**
+	 * Real WordPress pages at the Stage 1 calculator and disclaimer addresses, as on staging and production, where
+	 * the lld-tools plugin embeds the calculator in an lld-tool-frame iframe. mode remove deletes every page this
+	 * fixture made, so the plugin's own fallback screens answer at those addresses again.
+	 *
+	 * @param string $stamp Stamp.
+	 * @param string $mode  create or remove.
+	 * @return array<string,mixed>
+	 */
+	private static function stage1_pages( $stamp, $mode ) {
+		$made = get_posts(
+			array(
+				'post_type'      => 'page',
+				'post_status'    => 'any',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+				'meta_key'       => self::STAGE1_META, // phpcs:ignore WordPress.DB.SlowDBQuery
+			)
+		);
+		// Children first, so no page is left pointing at a deleted parent.
+		usort(
+			$made,
+			static function ( $a, $b ) {
+				return (int) wp_get_post_parent_id( $b ) <=> (int) wp_get_post_parent_id( $a );
+			}
+		);
+		foreach ( $made as $id ) {
+			wp_delete_post( (int) $id, true );
+		}
+		if ( 'remove' === $mode ) {
+			return array( 'removed' => count( $made ) );
+		}
+		// The page bodies hold an iframe, which the content filter strips for a request without a user.
+		kses_remove_filters();
+		$parent = get_page_by_path( 'health-tools', OBJECT, 'page' );
+		$parent = $parent ? (int) $parent->ID : self::stage1_page( 'health-tools', 'Health tools', '<p>Health tools ' . esc_html( $stamp ) . '</p>', 0, $stamp );
+		$pages  = array( 'parent' => $parent );
+		$tools  = array(
+			'protein'  => array( 'protein', 'Daily Protein Target', 'protein-requirement-tool.html' ),
+			'diabetes' => array( 'diabetes-risk-check', 'Diabetes Risk Check', 'diabetes-risk-tool.html' ),
+		);
+		foreach ( $tools as $key => $tool ) {
+			$marker        = 'Stage 1 ' . $key . ' landing page ' . $stamp;
+			$body          = '<p data-lld-stage1-marker="' . esc_attr( $key ) . '">' . esc_html( $marker ) . '</p>' . "\n";
+			$body         .= '<iframe class="lld-tool-frame" id="lld-tool-frame" title="' . esc_attr( $tool[1] ) . '" src="' . esc_url( home_url( '/tools/' . $tool[2] ) ) . '" loading="eager" style="width:100%;height:900px;border:0"></iframe>';
+			$pages[ $key ] = array(
+				'id'     => self::stage1_page( $tool[0], $tool[1], $body, $parent, $stamp ),
+				'marker' => $marker,
+			);
+		}
+		$marker              = 'Stage 1 medical disclaimer page ' . $stamp;
+		$pages['disclaimer'] = array(
+			'id'     => self::stage1_page( 'medical-disclaimer', 'Medical Disclaimer & Urgent Care', '<p data-lld-stage1-marker="disclaimer">' . esc_html( $marker ) . '</p>', 0, $stamp ),
+			'marker' => $marker,
+		);
+		kses_init();
+		return $pages;
+	}
+
+	/**
+	 * @param string $slug    Slug.
+	 * @param string $title   Title.
+	 * @param string $body    Content.
+	 * @param int    $parent  Parent page.
+	 * @param string $stamp   Stamp.
+	 */
+	private static function stage1_page( $slug, $title, $body, $parent, $stamp ) {
+		$id = (int) wp_insert_post(
+			array(
+				'post_type'    => 'page',
+				'post_status'  => 'publish',
+				'post_title'   => $title,
+				'post_name'    => $slug,
+				'post_parent'  => (int) $parent,
+				'post_content' => $body,
+			)
+		);
+		update_post_meta( $id, self::STAGE1_META, $stamp );
+		return $id;
 	}
 }

@@ -26,6 +26,7 @@ class LLD_Members_Plugin {
 		add_action( 'init', array( 'LLD_Members_Account', 'expire_sessions' ), 20 );
 		add_action( 'profile_update', array( 'LLD_Members_Account', 'sync_email' ) );
 		add_filter( 'query_vars', array( __CLASS__, 'query_vars' ) );
+		add_filter( 'request', array( __CLASS__, 'stage1_pages' ) );
 		add_filter( 'redirect_canonical', array( __CLASS__, 'keep_sitemap_url' ), 10, 2 );
 		add_action( 'template_redirect', array( 'LLD_Members_Screens', 'dispatch' ) );
 		add_action( 'rest_api_init', array( 'LLD_Members_Rest', 'register' ) );
@@ -72,6 +73,27 @@ class LLD_Members_Plugin {
 			flush_rewrite_rules( false );
 			update_option( 'lld_members_rewrites', '9', true );
 		}
+	}
+
+	/**
+	 * A published Stage 1 page at the calculator or disclaimer address wins over the plugin's own screen:
+	 * WordPress serves the page, and the plugin adds its extras through the_content. The plugin's screen is
+	 * the fallback for a site without the page (the CI test site).
+	 *
+	 * @param array<string,mixed> $vars Query vars from the matched rule.
+	 * @return array<string,mixed>
+	 */
+	public static function stage1_pages( $vars ) {
+		if ( ! is_array( $vars ) || empty( $vars['lld_screen'] ) ) {
+			return $vars;
+		}
+		$path = LLD_Members_Billing::stage1_path( (string) $vars['lld_screen'], isset( $vars['lld_track'] ) ? (string) $vars['lld_track'] : '' );
+		if ( '' === $path || ! LLD_Members_Billing::stage1_page( $path ) ) {
+			return $vars;
+		}
+		unset( $vars['lld_screen'], $vars['lld_track'] );
+		$vars['pagename'] = $path;
+		return $vars;
 	}
 
 	/**
