@@ -1,0 +1,464 @@
+{
+  "group": "SAF",
+  "tool": "healthy-weight",
+  "fixtures": [
+    {
+      "id": "FX-HW-SAF-01",
+      "purpose": "pregnancy yes, low BMI",
+      "inputs": {
+        "age": 40,
+        "preg": "yes",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 60,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": "pregnancy"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-02",
+      "purpose": "pregnancy yes, middle BMI",
+      "inputs": {
+        "age": 40,
+        "preg": "yes",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": "pregnancy"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-03",
+      "purpose": "pregnancy yes, high BMI",
+      "inputs": {
+        "age": 40,
+        "preg": "yes",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 170,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": "pregnancy"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-04",
+      "purpose": "pregnancy notsure, low BMI",
+      "inputs": {
+        "age": 40,
+        "preg": "notsure",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 60,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": "pregnancy"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-05",
+      "purpose": "pregnancy notsure, middle BMI",
+      "inputs": {
+        "age": 40,
+        "preg": "notsure",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": "pregnancy"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-06",
+      "purpose": "pregnancy notsure, high BMI",
+      "inputs": {
+        "age": 40,
+        "preg": "notsure",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 170,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": "pregnancy"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-07",
+      "purpose": "eating disorder yes, low BMI",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "yes",
+        "heightCm": 200,
+        "weightKg": 60,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": "eating"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-08",
+      "purpose": "eating disorder yes, middle BMI",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "yes",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": "eating"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-09",
+      "purpose": "eating disorder yes, high BMI",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "yes",
+        "heightCm": 200,
+        "weightKg": 170,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": "eating"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-10",
+      "purpose": "eating prefer not to say -> result",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "prefer",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-11",
+      "purpose": "under 18 with pregnancy yes -> under-18 stop first",
+      "inputs": {
+        "age": 16,
+        "preg": "yes",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": "under18"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-12",
+      "purpose": "pregnancy yes and eating yes -> pregnancy stop",
+      "inputs": {
+        "age": 40,
+        "preg": "yes",
+        "eat": "yes",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": "pregnancy"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-13",
+      "purpose": "stop with bad measurements still stops",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "yes",
+        "heightCm": 10,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": "eating"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-14",
+      "purpose": "weight loss yes -> banner, no onward",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "yes"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": true,
+        "notes": [],
+        "onward": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-15",
+      "purpose": "weight loss yes with eating yes -> stop only",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "yes",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "yes"
+      },
+      "expected": {
+        "stop": "eating"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-16",
+      "purpose": "underweight -> note, no onward",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 70,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 17.5,
+        "category": "underweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "underweight"
+        ],
+        "onward": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-17",
+      "purpose": "obesity class 3 standard",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 164,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 41.0,
+        "category": "obese3",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "class3"
+        ],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-18",
+      "purpose": "obesity class 3 adjusted",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 152,
+        "bg": "BlackCaribbean",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 38.0,
+        "category": "obese3",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "class3"
+        ],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-19",
+      "purpose": "age 65 -> older note",
+      "inputs": {
+        "age": 65,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "older"
+        ],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-SAF-20",
+      "purpose": "age 64 -> no older note",
+      "inputs": {
+        "age": 64,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    }
+  ]
+}
