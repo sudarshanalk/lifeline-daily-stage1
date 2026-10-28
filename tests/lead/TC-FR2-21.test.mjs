@@ -37,8 +37,27 @@ describe('TC-FR2-21 AEO and GEO', () => {
     expect(txt).toContain('[Diabetes Risk Check](https://lifelinedaily.com/health-tools/diabetes-risk-check/)');
     expect(txt).toContain('## Gut Health\n\n- [Gut (health) basics](https://lifelinedaily.com/gut/): Fibre and you');
     expect(txt).toContain('## About this site\n\n- [About Us](https://lifelinedaily.com/about-us/)');
+    // the site describes itself with its official profiles (owner, 28 Oct 2026, O-4)
+    expect(txt).toContain('## Official profiles\n\n- [Facebook](https://www.facebook.com/lifelineofhealth)\n- [X](https://x.com/LifelineDaily)\n'
+      + '- [Pinterest](https://uk.pinterest.com/lifelinedaily7/)\n- [YouTube](https://www.youtube.com/@LifelineDaily)\n'
+      + '- [Instagram](https://www.instagram.com/life.l.daily/)\n');
     // never an email address: the generated file it replaces listed theme lead records
     expect(txt).not.toMatch(/[a-z0-9._-]+@[a-z0-9-]+\.[a-z]{2,}/i);
+
+    // Yoast describes the same site identity: an organisation with those profiles; the logo is left alone
+    const before = { titles: { company_or_person: 'person', company_name: 'Lifeline Daily', company_logo_id: 2719, website_name: 'Lifeline Daily' },
+      social: { facebook_site: '', twitter_site: '', other_social_urls: [], opengraph: true } };
+    const plan = call('lld_search_identity_plan', SEARCH_CFG, before.titles, before.social);
+    expect(plan.titles).toMatchObject({ company_or_person: 'company', company_name: 'Lifeline Daily', company_logo_id: 2719, website_name: 'Lifeline Daily' });
+    expect(plan.social).toMatchObject({ facebook_site: 'https://www.facebook.com/lifelineofhealth', twitter_site: 'LifelineDaily', opengraph: true });
+    expect(plan.social.other_social_urls).toEqual(['https://uk.pinterest.com/lifelinedaily7/', 'https://www.youtube.com/@LifelineDaily', 'https://www.instagram.com/life.l.daily/']);
+    expect(plan.changes).toContain('wpseo_titles.company_or_person -> company');
+    // a second run changes nothing
+    expect(call('lld_search_identity_plan', SEARCH_CFG, plan.titles, plan.social).changes).toEqual([]);
+    // an address that is not https, or that would break markdown, is never used
+    const bad = { ...SEARCH_CFG, identity: { organisation: 'Lifeline Daily', profiles: [{ name: 'A', url: 'http://example.com/a' }, { name: 'B', url: 'https://example.com/b)(c' }] } };
+    expect(call('lld_search_identity_plan', bad, before.titles, before.social).social.other_social_urls).toEqual([]);
+    expect(call('lld_search_llms_text', bad, { name: 'Lifeline Daily', url: 'https://lifelinedaily.com/' }, [], [])).not.toContain('## Official profiles');
   });
 
   test('TC-FR2-21-AS-04', () => {
