@@ -40,9 +40,8 @@ def sha256_file(p):
 
 
 def fixed_root(env, root):
-    expected = Path.home() / 'domains/lifelinedaily.com/public_html'
-    if env == 'staging':
-        expected = expected / 'stg'
+    # staging is its own Hostinger website from 28 Oct 2026 (before: the stg folder inside the production site), as deploy/remote.py
+    expected = Path.home() / ('domains/stg.lifelinedaily.com/public_html' if env == 'staging' else 'domains/lifelinedaily.com/public_html')
     if env not in ('staging', 'production') or root != expected or root.resolve() != expected:
         raise ValueError('Document root does not match fixed LLD destination')
     if not (root / 'wp-config.php').is_file():

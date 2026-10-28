@@ -20,7 +20,8 @@ import { fileURLToPath } from 'node:url';
 
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..', '..');
 const ENVS = {
-  staging: { docroot: 'domains/lifelinedaily.com/public_html/stg', url: 'https://stg.lifelinedaily.com' },
+  staging: { docroot: 'domains/stg.lifelinedaily.com/public_html',   // its own Hostinger website from 28 Oct 2026 (PR #131)
+    url: 'https://stg.lifelinedaily.com' },
   production: { docroot: 'domains/lifelinedaily.com/public_html', url: 'https://lifelinedaily.com' },
 };
 const PAGES = ['/', '/health-tools/', '/health-tools/protein/', '/health-tools/diabetes-risk-check/', '/tools/protein-requirement-tool.html', '/tools/diabetes-risk-tool.html', '/members/join/', '/pricing/'];
