@@ -23,7 +23,7 @@ class Safety(unittest.TestCase):
             self.assertFalse(r.owned(name),name)
     def test_members_plugin_backed_up_and_db_update_only_when_active(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(Path,'home',return_value=Path(tmp)):
-            root=Path(tmp)/'domains/lifelinedaily.com/public_html/stg';plug=root/'wp-content/plugins/lld-members'
+            root=Path(tmp)/'domains/stg.lifelinedaily.com/public_html';plug=root/'wp-content/plugins/lld-members'
             plug.mkdir(parents=True);(root/'wp-config.php').write_text('x');(plug/'lld-members.php').write_text('v1')
             (root/'wp-content/plugins/other.php').write_text('not ours')
             self.assertEqual([p.relative_to(root).as_posix() for p in r.files(root)],['wp-content/plugins/lld-members/lld-members.php'])
@@ -40,7 +40,7 @@ class Safety(unittest.TestCase):
             r.run('staging',root,'unlock',stamp)
     def test_backup_restore_preserves_runtime_and_removes_new_overlay_file(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(Path,'home',return_value=Path(tmp)):
-            root=Path(tmp)/'domains/lifelinedaily.com/public_html/stg';root.mkdir(parents=True)
+            root=Path(tmp)/'domains/stg.lifelinedaily.com/public_html';root.mkdir(parents=True)
             (root/'wp-config.php').write_text('private config')
             (root/'tools/api').mkdir(parents=True)
             (root/'tools/a.html').write_text('before')

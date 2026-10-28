@@ -1,0 +1,275 @@
+{
+ "kind": "restore-drill",
+ "req": "NFR1-08",
+ "env": "staging",
+ "backup_id": "full-20261028T061121Z",
+ "commit": "a74d77fcbebf4818d9fb1ebe5f5f2cb35001663b",
+ "started_at": "2026-10-28T06:11:21Z",
+ "finished_at": "2026-10-28T06:14:07Z",
+ "restore_duration_s": 97,
+ "rto_hours": 4,
+ "backup": {
+  "created_at": "2026-10-28T06:11:21Z",
+  "duration_s": 53.3,
+  "contents": {
+   "database": "db.sql.gz",
+   "inventory": "inventory.json.gz",
+   "public_html/tools": "tools.tgz",
+   "wp-content": "wp-content.tgz"
+  },
+  "archives": {
+   "db.sql.gz": {
+    "bytes": 10290240,
+    "sha256": "579fd66901e806586a75589aa9da49f13c1c777c2b07e95ba635d102ba0ac910"
+   },
+   "inventory.json.gz": {
+    "bytes": 1112240,
+    "sha256": "8ce59c113b755cefd2dae3eb71f77c18ccd37840dba5317f4fb7913a89f45183"
+   },
+   "tools.tgz": {
+    "bytes": 120211,
+    "sha256": "ea52fabcedd6bb38ac10b12fa0a4bd61032fd4651fcdc2ba0c1e06916809c1b3"
+   },
+   "wp-content.tgz": {
+    "bytes": 743480736,
+    "sha256": "57fffc0662175b455719772b1f502fd3032dddce55ce2f629f0f5d240b3823ea"
+   }
+  },
+  "excluded": [
+   "wp-content/ai1wm-backups",
+   "wp-config.php (credentials stay server-owned)"
+  ],
+  "inventory": {
+   "files": 23902,
+   "sha256": "36cbd2abd7535b417250888a85a5fd5d3141537ec8722fe85bdc96f4459919b7"
+  },
+  "database_tables": 142,
+  "tool_hashes": {
+   "diabetes": "19930c95bb10ef86bb46742afbce51c601a829c7fe9d2bc4088ce5dccdd41bde",
+   "protein": "eae265a1220316e69c8f844e79ab95c0f1a075e8e4c657fa698a708e3fc2dd65"
+  },
+  "site": {
+   "lld_members_schema_version": "3",
+   "siteurl": "https://stg.lifelinedaily.com"
+  },
+  "verified": true,
+  "retention": {
+   "kept": [
+    "full-20261028T061121Z"
+   ],
+   "removed": [
+    "full-20261028T060711Z"
+   ]
+  }
+ },
+ "drift_before_restore": {
+  "tables": [
+   "wp_actionscheduler_actions",
+   "wp_actionscheduler_logs",
+   "wp_options"
+  ],
+  "non_volatile": [],
+  "files": {
+   "added": {
+    "count": 0,
+    "sample": [],
+    "volatile_cache_count": 0
+   },
+   "changed": {
+    "count": 0,
+    "sample": [],
+    "volatile_cache_count": 0
+   },
+   "equal": true,
+   "missing": {
+    "count": 0,
+    "sample": [],
+    "volatile_cache_count": 0
+   }
+  }
+ },
+ "restore": {
+  "backup_id": "full-20261028T061121Z",
+  "pre_restore_copy": "lld-backups/staging/full/full-20261028T061121Z/pre-restore",
+  "purge_ok": true,
+  "restored_at": "2026-10-28T06:13:26Z",
+  "site": {
+   "lld_members_schema_version": "3",
+   "siteurl": "https://stg.lifelinedaily.com"
+  },
+  "timings": {
+   "archives_checked_s": 0.5,
+   "database_imported_s": 6,
+   "downtime_s": 8.7,
+   "extracted_and_checked_s": 46.9,
+   "files_swapped_s": 6,
+   "total_s": 55.6
+  }
+ },
+ "after_restore": {
+  "database_equal_to_backup": false,
+  "database_differences": [
+   "wp_actionscheduler_actions",
+   "wp_actionscheduler_logs",
+   "wp_litespeed_url_file",
+   "wp_options"
+  ],
+  "files": {
+   "added": {
+    "count": 0,
+    "sample": [],
+    "volatile_cache_count": 0
+   },
+   "changed": {
+    "count": 0,
+    "sample": [],
+    "volatile_cache_count": 2
+   },
+   "equal": true,
+   "missing": {
+    "count": 0,
+    "sample": [],
+    "volatile_cache_count": 3
+   }
+  },
+  "tool_hashes": {
+   "diabetes": "19930c95bb10ef86bb46742afbce51c601a829c7fe9d2bc4088ce5dccdd41bde",
+   "protein": "eae265a1220316e69c8f844e79ab95c0f1a075e8e4c657fa698a708e3fc2dd65"
+  },
+  "site": {
+   "lld_members_schema_version": "3",
+   "siteurl": "https://stg.lifelinedaily.com"
+  }
+ },
+ "checks": {
+  "tool_hashes_equal_manifest": true,
+  "served_tool_hashes_equal_manifest": true,
+  "posts": [
+   {
+    "url": "/health-conditions-guide/",
+    "status": 200
+   },
+   {
+    "url": "/sex-and-relationships-guide/",
+    "status": 200
+   },
+   {
+    "url": "/low-libido-causes/",
+    "status": 200
+   },
+   {
+    "url": "/lifestyle-and-testosterone/",
+    "status": 200
+   },
+   {
+    "url": "/cellular-ageing/",
+    "status": 200
+   },
+   {
+    "url": "/how-to-live-longer-lifestyle-factors/",
+    "status": 200
+   },
+   {
+    "url": "/heart-health-guide/",
+    "status": 200
+   },
+   {
+    "url": "/gut-health-diet-plan-4-week/",
+    "status": 200
+   },
+   {
+    "url": "/gut-brain-axis-how-your-gut-and-mind-talk/",
+    "status": 200
+   },
+   {
+    "url": "/strength-training-at-home/",
+    "status": 200
+   }
+  ],
+  "posts_ok": true,
+  "pages": [
+   {
+    "path": "/",
+    "status": 200
+   },
+   {
+    "path": "/health-tools/",
+    "status": 200
+   },
+   {
+    "path": "/health-tools/protein/",
+    "status": 200
+   },
+   {
+    "path": "/health-tools/diabetes-risk-check/",
+    "status": 200
+   },
+   {
+    "path": "/tools/protein-requirement-tool.html",
+    "status": 200
+   },
+   {
+    "path": "/tools/diabetes-risk-tool.html",
+    "status": 200
+   },
+   {
+    "path": "/members/join/",
+    "status": 200
+   },
+   {
+    "path": "/pricing/",
+    "status": 200
+   }
+  ],
+  "pages_ok": true,
+  "browser": {
+   "ok": true,
+   "tests": [
+    {
+     "title": "TC-NFR1-08-AS-02",
+     "status": "passed"
+    }
+   ],
+   "exit": 0,
+   "output_tail": [
+    "Running 1 test using 1 worker",
+    "",
+    "  ok 1 [chromium] › tests\\e2e\\TC-NFR1-08.spec.mjs:8:1 › TC-NFR1-08-AS-02 (4.8s)",
+    "",
+    "  1 passed (6.3s)"
+   ]
+  },
+  "mail": {
+   "fixture": "FX-MAIL-01",
+   "endpoint": "/tools/submit-protein.php",
+   "status": 200,
+   "response": {
+    "status": "ok"
+   },
+   "sink": "tools mailer log transport (outbox outside the web root), the Mailpit stand-in",
+   "messages": 1,
+   "delivered": true,
+   "config_restored": true,
+   "config_sha256_prefix": "549cde6c401b"
+  },
+  "smoke": {
+   "ok": true,
+   "duration_s": 3.3,
+   "output": [
+    "ok 200 /health-tools/",
+    "ok 200 /health-tools/protein/",
+    "ok 200 /health-tools/diabetes-risk-check/",
+    "ok 200 /tools/health-tools-hub.html",
+    "ok 200 /tools/protein-requirement-tool.html",
+    "ok 200 /tools/diabetes-risk-tool.html",
+    "ok 200 /tools/healthy-weight-tool.html",
+    "ok 403 /tools/api/config.php",
+    "ok 403 /tools/api/mailer.php",
+    "ok hash protein-requirement-tool.html",
+    "ok hash diabetes-risk-tool.html",
+    "ok hash healthy-weight-tool.html"
+   ]
+  },
+  "members_schema_version": "3"
+ }
+}

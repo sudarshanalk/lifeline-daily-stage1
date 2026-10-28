@@ -657,5 +657,7 @@ if (defined('WP_CLI') && WP_CLI) {
 /* Stage 2 search and AI-assistant additions (S2-L4). */
 require_once __DIR__ . '/search.php';
 require_once __DIR__ . '/categories.php';
+/* Header menu (owner, 28 Oct 2026; screen specification section 6): wp lld menu apply | verify | restore. */
+require_once __DIR__ . '/menu.php';
 /* Staging mail catcher (P0-4): inert unless LLD_ENV is 'staging'. */
 require_once __DIR__ . '/staging-mail.php';
