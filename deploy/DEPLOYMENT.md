@@ -8,7 +8,7 @@ GitHub Free private repositories cannot rely on protected environment reviewers.
 
 STAGING_DEPLOY_ENABLED and PROD_DEPLOY_ENABLED repository variables default to false. Enable staging only after dedicated LLD SSH access, verified host keys, server-owned config/status and a successful rehearsal are ready. Enable production only after signed release approvals, verified production configuration, a successful staging release and owner authorization. Missing/false variables skip delivery, not validation.
 
-Secrets per prefix STAGING / PROD: SSH_HOST, SSH_PORT, SSH_USER, SSH_KEY, SSH_KNOWN_HOSTS, DOCROOT (for example STAGING_SSH_KEY). Staging URL is fixed to https://stg.lifelinedaily.com; production to https://lifelinedaily.com. Document roots are fixed relative to the SSH home: domains/lifelinedaily.com/public_html/stg and domains/lifelinedaily.com/public_html. No cross-project credential reuse. SSH_KNOWN_HOSTS must contain an independently verified host-key line; deployments use StrictHostKeyChecking=yes.
+Secrets per prefix STAGING / PROD: SSH_HOST, SSH_PORT, SSH_USER, SSH_KEY, SSH_KNOWN_HOSTS, DOCROOT (for example STAGING_SSH_KEY). Staging URL is fixed to https://stg.lifelinedaily.com; production to https://lifelinedaily.com. Document roots are fixed relative to the SSH home: domains/stg.lifelinedaily.com/public_html and domains/lifelinedaily.com/public_html. No cross-project credential reuse. SSH_KNOWN_HOSTS must contain an independently verified host-key line; deployments use StrictHostKeyChecking=yes.
 
 ## Safeguards
 
