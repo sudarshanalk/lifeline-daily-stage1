@@ -162,7 +162,12 @@ function lld_hub_track_view(string $key): ?array {
 function lld_hub_render(array $atts = []): string {
   $atts = shortcode_atts(['category' => ''], $atts, 'lld_category_hub');
   if ($atts['category'] !== '') $term = get_term_by('slug', $atts['category'], 'category');
-  else { if (!is_category() || is_paged()) return ''; $term = get_queried_object(); }
+  else {
+    // the Cloud Library renders its template inside its own query, so read the archive from the main query itself
+    $q = ($GLOBALS['wp_the_query'] ?? null) instanceof WP_Query ? $GLOBALS['wp_the_query'] : ($GLOBALS['wp_query'] ?? null);
+    if (!$q || !$q->is_category() || $q->is_paged()) return '';
+    $term = $q->get_queried_object();
+  }
   if (!$term || is_wp_error($term) || empty($term->term_id)) return '';
   $hub = lld_hub_entry(lld_categories_doc(), (string)$term->slug);
   if (!$hub) return '';   // not a category of the agreed tree (hidden display categories, retired terms)
