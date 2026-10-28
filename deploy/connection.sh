@@ -2,7 +2,7 @@
 # Shared by deploy and rollback; inputs are validated before shell interpolation.
 set -euo pipefail
 case "$ENV_NAME" in
- staging) EXPECTED_PATH=domains/lifelinedaily.com/public_html/stg; EXPECTED_URL=https://stg.lifelinedaily.com ;;
+ staging) EXPECTED_PATH=domains/stg.lifelinedaily.com/public_html; EXPECTED_URL=https://stg.lifelinedaily.com ;;
  production) EXPECTED_PATH=domains/lifelinedaily.com/public_html; EXPECTED_URL=https://lifelinedaily.com ;;
  *) echo 'Unknown environment' >&2; exit 2 ;;
 esac

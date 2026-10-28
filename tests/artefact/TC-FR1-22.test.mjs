@@ -1,6 +1,6 @@
 // TC-FR1-22 Independent oracles — families ci + artefact. Fixtures: FX-PR-*, FX-DM-* (scope per registry oracles[]).
 import { describe, expect, test } from 'vitest';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, mkdtempSync, cpSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { resolve, join } from 'node:path';
@@ -15,6 +15,13 @@ import hg01 from '../../approvals/hg-01.json' with { type: 'json' };
 const py = () => ['python3', 'python'].find((c) => spawnSync(c, ['--version'], { encoding: 'utf8' }).status === 0);
 const ORACLE_DIR = { 'ORC-01': 'orc-01-qdiabetes-r', 'ORC-02': 'orc-02-protein-ref', 'ORC-03': 'orc-03-idrs', 'ORC-04': 'orc-04-whtr' };
 const resultsPath = (id) => resolve(ROOT, 'oracles', ORACLE_DIR[id], 'results.json');
+// Long-running child (the ORC-01 container build takes about a minute): run it asynchronously so the vitest worker can
+// keep answering its RPC calls; a synchronous spawn starves it ("Timeout calling onTaskUpdate").
+const runAsync = (cmd, args, opts) => new Promise((done) => {
+  const c = spawn(cmd, args, opts); let out = '';
+  c.stdout.on('data', (d) => { out += d; }); c.stderr.on('data', (d) => { out += d; });
+  c.on('close', (status) => done({ status, out }));
+});
 const dockerReady = () => spawnSync('docker', ['info'], { encoding: 'utf8', timeout: 20000 }).status === 0;
 
 /** Expand a registry scope entry ("FX-DM-QD-*", "FX-PR-* except INV") to fixture ids. */
@@ -45,7 +52,7 @@ describe('TC-FR1-22 independent oracles', () => {
     } finally { rmSync(clean, { recursive: true, force: true }); }
   });
 
-  test('TC-FR1-22-AS-01 ORC-01 container', (ctx) => {
+  test('TC-FR1-22-AS-01 ORC-01 container', async (ctx) => {
     if (!dockerReady()) {
       // the dispatcher must say so explicitly (exit 3), and the deferral must be the one HG-01 signed
       const r = spawnSync(py(), ['-I', resolve(ROOT, 'oracles', 'run.py'), '01'], { cwd: ROOT, encoding: 'utf8' });
@@ -55,10 +62,10 @@ describe('TC-FR1-22 independent oracles', () => {
     }
     const pins = JSON.parse(readFileSync(resolve(ROOT, 'oracles', 'orc-01-qdiabetes-r', 'pins.json'), 'utf8'));
     if (!pins.tarball_sha256) return ctx.skip('Docker available but ORC-01 pins not yet recorded (first-run checklist in oracles/orc-01-qdiabetes-r/README.md)');
-    const r = spawnSync('bash', [resolve(ROOT, 'oracles', 'orc-01-qdiabetes-r', 'run.sh'), ROOT], { cwd: ROOT, encoding: 'utf8', timeout: 900000 });
-    expect(r.status, r.stdout + r.stderr).toBe(0);
+    const r = await runAsync('bash', [resolve(ROOT, 'oracles', 'orc-01-qdiabetes-r', 'run.sh'), ROOT], { cwd: ROOT });
+    expect(r.status, r.out).toBe(0);
     expect(existsSync(resultsPath('ORC-01'))).toBe(true);
-  });
+  }, 900000);
 
   test('TC-FR1-22-AS-02', () => {
     // the sealed ORC-02 session log lists every file read; none may be *.html or *.js

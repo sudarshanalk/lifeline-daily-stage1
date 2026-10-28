@@ -2,9 +2,9 @@
   "package": "QDiabetes",
   "version": "1.0-2",
   "source": "https://cran.r-project.org/src/contrib/Archive/QDiabetes/QDiabetes_1.0-2.tar.gz",
-  "tarball_sha256": null,
+  "tarball_sha256": "2cacd8ffdc319250f0016019ecdf300e15a3b0911ff0948b23fec0afc65b3964",
   "image": "rocker/r-ver:4.4.1",
   "image_digest": null,
   "licence": "AGPL-3",
-  "status": "pending — first build and run require Docker (WSL 2) on the build machine (OI-4); deferred to HG-02 per approvals/hg-01.json. Record tarball_sha256 and image_digest at the first successful run (RECORD_PIN=1 bash install.sh prints the tarball hash)."
+  "status": "first run 25 Oct 2026 on a GitHub Actions Linux runner (runs 40189500226 and 40189863760); tarball pinned; image digest not yet recorded (rocker image built locally on the runner). Re-runs refuse on a tarball mismatch."
 }

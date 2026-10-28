@@ -68,9 +68,9 @@ class LLD_Members_Plugin {
 
 	public static function rewrites() {
 		self::register_rewrites();
-		if ( '9' !== get_option( 'lld_members_rewrites' ) ) {
+		if ( '10' !== get_option( 'lld_members_rewrites' ) ) {
 			flush_rewrite_rules( false );
-			update_option( 'lld_members_rewrites', '9', true );
+			update_option( 'lld_members_rewrites', '10', true );
 		}
 	}
 
@@ -175,6 +175,7 @@ class LLD_Members_Plugin {
 		add_rewrite_rule( '^programmes/(healthy-weight|blood-sugar|fitness|sleep-stress)/?$', 'index.php?lld_screen=sales&lld_track=$matches[1]', 'top' );
 		add_rewrite_rule( '^health-tools/protein/?$', 'index.php?lld_screen=landing&lld_track=protein', 'top' );
 		add_rewrite_rule( '^health-tools/diabetes-risk-check/?$', 'index.php?lld_screen=landing&lld_track=diabetes', 'top' );
+		add_rewrite_rule( '^health-tools/healthy-weight-check/?$', 'index.php?lld_screen=landing&lld_track=healthy-weight', 'top' );
 		add_rewrite_rule( '^safety/?$', 'index.php?lld_screen=safety', 'top' );
 		add_rewrite_rule( '^medical-disclaimer/?$', 'index.php?lld_screen=disclaimer', 'top' );
 		add_rewrite_rule( '^sitemap\\.xml$', 'index.php?lld_screen=sitemap', 'top' );

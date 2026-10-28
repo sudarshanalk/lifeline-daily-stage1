@@ -80,5 +80,7 @@ describe('TC-FR2-21 AEO and GEO', () => {
     expect(dated).toMatchObject({ sources: 2, sources_dated: 2, sources_ok: true });
     expect(call('lld_search_aeo_row', '[lld_sources][lld_source title="Undated" url="https://example.org/"][/lld_sources]').sources_ok).toBe(false);
     expect(call('lld_search_aeo_row', '<p>No sources.</p>').sources_ok).toBe(false);
+    // each source link opens in a new tab, like every other link in an article
+    expect(call('lld_search_source_link', 'https://www.who.int/', 'Protein')).toBe('<a href="https://www.who.int/" target="_blank" rel="noopener">Protein</a>');
   });
 });

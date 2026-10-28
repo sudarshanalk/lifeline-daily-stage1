@@ -27,7 +27,7 @@ export function oracleGuard({ root = ROOT, base = 'origin/staging', head = 'HEAD
   const commits = git(`log --format=%H%x1f%an%x1f%ae%x1f%s ${base}..${head} -- fixtures`, root).trim().split('\n').filter(Boolean).map((l) => { const [sha, an, ae, s] = l.split('\x1f'); return { sha, an, ae, s }; });
   const botRe = new RegExp(botPattern, 'i');
   const signedByReviewer = (sha) => { try { git(`verify-commit ${sha}`, root); return true; } catch { return false; } };
-  const privileged = commits.every((c) => ((/^(FR1-01|FR1-22|ORC-0[1-4]):/.test(c.s)) && (botRe.test(c.an) || botRe.test(c.ae))) || signedByReviewer(c.sha));
+  const privileged = commits.every((c) => ((/^(FR1-01|FR1-22|ORC-0[1-5]):/.test(c.s)) && (botRe.test(c.an) || botRe.test(c.ae))) || signedByReviewer(c.sha));
   for (const f of files) {
     const changed = expectedChanged(base, head, f, root);
     if (changed === true || (Array.isArray(changed) && changed.length)) {

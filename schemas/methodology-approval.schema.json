@@ -12,7 +12,8 @@
       "type": "string",
       "enum": [
         "protein",
-        "diabetes"
+        "diabetes",
+        "healthy-weight"
       ]
     },
     "version_hash": {

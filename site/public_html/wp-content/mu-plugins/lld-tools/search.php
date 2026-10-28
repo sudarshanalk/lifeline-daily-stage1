@@ -134,6 +134,11 @@ function lld_search_aeo_row(string $content): array {
           'faq_questions' => (int)$faq, 'sources' => $sources, 'sources_dated' => $dated, 'sources_ok' => $sources > 0 && $dated === $sources];
 }
 
+/** A [lld_source] link from an escaped address and title: every link opens in a new tab, like the in-text links. */
+function lld_search_source_link(string $href, string $title): string {
+  return '<a href="' . $href . '" target="_blank" rel="noopener">' . $title . '</a>';
+}
+
 /** FAQPage JSON-LD for the questions shown on a page (FR2-21 AS-02). */
 function lld_search_faq_jsonld(array $pairs, string $url): array {
   return ['@context' => 'https://schema.org', '@type' => 'FAQPage', '@id' => $url . '#faq',
@@ -237,7 +242,7 @@ add_shortcode('lld_sources', function ($atts, $content = '') {
 });
 add_shortcode('lld_source', function ($atts) {
   $a = shortcode_atts(['title' => '', 'url' => '', 'publisher' => '', 'published' => '', 'checked' => ''], $atts, 'lld_source');
-  $t = $a['url'] !== '' ? '<a href="' . esc_url($a['url']) . '" rel="noopener">' . esc_html($a['title']) . '</a>' : esc_html($a['title']);
+  $t = $a['url'] !== '' ? lld_search_source_link(esc_url($a['url']), esc_html($a['title'])) : esc_html($a['title']);
   $bits = array_filter([$a['publisher'] !== '' ? esc_html($a['publisher']) : '', $a['published'] !== '' ? 'published <time datetime="' . esc_attr($a['published']) . '">' . esc_html($a['published']) . '</time>' : '', $a['checked'] !== '' ? 'checked <time datetime="' . esc_attr($a['checked']) . '">' . esc_html($a['checked']) . '</time>' : '']);
   return '<li>' . $t . ($bits ? '. ' . implode(', ', $bits) . '.' : '') . '</li>';
 });

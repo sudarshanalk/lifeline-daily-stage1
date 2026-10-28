@@ -80,6 +80,38 @@
               "format": "date-time"
             }
           }
+        },
+        "healthy-weight": {
+          "type": "object",
+          "required": [
+            "status",
+            "approved_version"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "active",
+                "withdrawn"
+              ]
+            },
+            "approved_version": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "message": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "since": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "format": "date-time"
+            }
+          }
         }
       }
     },

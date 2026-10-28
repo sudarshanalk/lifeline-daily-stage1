@@ -10,7 +10,8 @@ import { messages } from './tool-page.mjs';
 export const TEMPLATE_FILES = { protein: 'api/templates-protein.php', diabetes: 'api/templates.php' };
 
 /** Flattened template texts: { "protein_standard.subject": "...", "protein_standard.body": "..." }. */
-export function templates(slug, file = resolve(TOOLS_DIR, TEMPLATE_FILES[slug])) {
+export function templates(slug, file = TEMPLATE_FILES[slug] && resolve(TOOLS_DIR, TEMPLATE_FILES[slug])) {
+  if (!file) return {};   // the Healthy Weight Check sends no email, so it has no templates (D51)
   const r = spawnSync('php', ['-r', 'echo json_encode(require $argv[1]);', file], { encoding: 'utf8' });
   if (r.status !== 0) throw new Error('php failed: ' + r.stderr);
   const obj = JSON.parse(r.stdout);
@@ -26,14 +27,15 @@ const hashEach = (flat, prefix) => Object.fromEntries(Object.entries(flat).map((
 
 /** Everything the copy-hash job compares: per-key hashes grouped as SCH-16 expects, plus aggregates. */
 export function extractCopy({ html = {}, templateFiles = {} } = {}) {
-  const msg = { protein: messages('protein', html.protein), diabetes: messages('diabetes', html.diabetes) };
-  const tpl = { protein: templates('protein', templateFiles.protein), diabetes: templates('diabetes', templateFiles.diabetes) };
+  const msg = { protein: messages('protein', html.protein), diabetes: messages('diabetes', html.diabetes), 'healthy-weight': messages('healthy-weight', html['healthy-weight']) };
+  const tpl = { protein: templates('protein', templateFiles.protein), diabetes: templates('diabetes', templateFiles.diabetes), 'healthy-weight': {} };
   return {
-    messages: { ...hashEach(msg.protein, 'protein'), ...hashEach(msg.diabetes, 'diabetes') },
+    messages: { ...hashEach(msg.protein, 'protein'), ...hashEach(msg.diabetes, 'diabetes'), ...hashEach(msg['healthy-weight'], 'healthy-weight') },
     templates: { ...hashEach(tpl.protein, 'protein'), ...hashEach(tpl.diabetes, 'diabetes') },
     aggregate: {
       protein: { 'messages.protein': sha256(canonical(msg.protein)), 'templates.protein': sha256(canonical(tpl.protein)) },
       diabetes: { 'messages.diabetes': sha256(canonical(msg.diabetes)), 'templates.diabetes': sha256(canonical(tpl.diabetes)) },
+      'healthy-weight': { 'messages.healthy-weight': sha256(canonical(msg['healthy-weight'])) },
     },
     texts: { messages: msg, templates: tpl },
   };
