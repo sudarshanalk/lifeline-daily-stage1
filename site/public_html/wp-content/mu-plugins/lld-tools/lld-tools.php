@@ -256,6 +256,12 @@ function lld_tools_legacy_redirect(): void {
 }
 // priority 11: after WordPress core's own old-slug redirect (wp_old_slug_redirect, priority 10) has had its chance
 if (function_exists('add_action')) add_action('template_redirect', 'lld_tools_legacy_redirect', 11);
+// a listed address skips core's 404 guess (redirect_canonical, priority 10), which would otherwise send it to a binned
+// merge source whose slug now ends in __trashed (?p=<id>, itself a 404) before the listed redirect runs
+if (function_exists('add_filter')) add_filter('do_redirect_guess_404_permalink', function ($guess) {
+  $path = trailingslashit((string)wp_parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH));
+  return isset(lld_tools_redirects_doc()['redirects'][$path]) ? false : $guess;
+});
 /** Tag slugs whose archive the owner marked 410 (Gone) in Yoast SEO Premium's redirect list. */
 function lld_tools_gone_tags(): array {
   static $g = null; if ($g !== null) return $g;
