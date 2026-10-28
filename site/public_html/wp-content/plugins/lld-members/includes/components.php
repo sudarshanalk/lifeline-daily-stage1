@@ -12,7 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Page shell: header, main, member menu and footer.
  *
- * @param array $args title, main, signed_in, status.
+ * @param array $args title, main, signed_in, status, wide (the 64rem column for the dashboard, track, meals, diary and pricing).
  */
 function lld_members_layout( $args ) {
 	$status = isset( $args['status'] ) ? (int) $args['status'] : 200;
@@ -35,11 +35,12 @@ function lld_members_layout( $args ) {
 		echo '<meta name="description" content="' . esc_attr( (string) $args['description'] ) . '">';
 	}
 	echo '<link rel="stylesheet" href="' . esc_url( $css ) . '?ver=' . esc_attr( LLD_MEMBERS_VERSION ) . '">';
-	echo '</head><body class="' . ( $in ? 'lld-signed-in' : 'lld-signed-out' ) . '">';
+	echo lld_members_font_faces();
+	echo '</head><body class="lld-members-body ' . ( $in ? 'lld-signed-in' : 'lld-signed-out' ) . '">';
 	echo '<a class="lld-skip" href="#lld-main">Skip to content</a>';
 	echo class_exists( 'LLD_Members_Quality' ) ? LLD_Members_Quality::preview_banner() : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
 	echo lld_members_header( $in );
-	echo '<main id="lld-main" class="lld-main" tabindex="-1">';
+	echo '<main id="lld-main" class="lld-main' . ( ! empty( $args['wide'] ) ? ' lld-wide' : '' ) . '" tabindex="-1">';
 	echo '<div class="lld-banner" id="lld-offline" hidden>You\'re offline</div>';
 	echo $main;
 	echo '</main>';
@@ -56,7 +57,9 @@ function lld_members_layout( $args ) {
 }
 
 /**
- * Signed-out header, or the desktop member links.
+ * The uniform dark header (Interface Pack, handover section 4): logo with the mint cross and tagline, the public
+ * links, then Sign in and Join free for a visitor or the member chip for a member. On a desktop a member also gets
+ * the five member items in a second row (Screen Design section 6); phones keep the bottom bar.
  *
  * @param bool $signed_in Whether a member is signed in.
  */
@@ -66,21 +69,111 @@ function lld_members_header( $signed_in ) {
 		'Articles'     => home_url( '/articles/' ),
 		'Programmes'   => home_url( '/programmes/' ),
 		'Pricing'      => home_url( '/pricing/' ),
-		'Sign in'      => home_url( '/members/sign-in/' ),
-		'Join free'    => home_url( '/members/join/' ),
 	);
-	$html  = '<header class="lld-header"><div class="lld-header-inner">';
-	$html .= '<a class="lld-logo" href="' . esc_url( home_url( '/' ) ) . '">Lifeline Daily</a><nav aria-label="Site">';
-	if ( $signed_in ) {
-		$html .= lld_members_menu_links( 'lld-desktop-nav' );
-	} else {
-		$html .= '<ul class="lld-public-nav">';
-		foreach ( $public as $label => $url ) {
-			$html .= '<li><a href="' . esc_url( $url ) . '">' . esc_html( $label ) . '</a></li>';
-		}
-		$html .= '</ul>';
+	$visitor = array(
+		'Sign in'   => home_url( '/members/sign-in/' ),
+		'Join free' => home_url( '/members/join/' ),
+	);
+	$links = '';
+	foreach ( $public as $label => $url ) {
+		$links .= '<li><a href="' . esc_url( $url ) . '"' . lld_members_current( $url ) . '>' . esc_html( $label ) . '</a></li>';
 	}
-	$html .= '</nav></div></header>';
+	if ( ! $signed_in ) {
+		$links .= '<li class="lld-nav-signin"><a href="' . esc_url( $visitor['Sign in'] ) . '">Sign in</a></li>';
+		$links .= '<li class="lld-nav-cta"><a href="' . esc_url( $visitor['Join free'] ) . '">Join free</a></li>';
+	}
+	$html  = '<header class="lld-header"><div class="lld-header-inner">';
+	$html .= '<a class="lld-logo" href="' . esc_url( home_url( '/' ) ) . '">' . lld_members_logo_mark();
+	$html .= '<span><span class="lld-logo-name">Lifeline Daily</span><span class="lld-logo-tagline" aria-hidden="true">Start Small, Change Big</span></span></a>';
+	$html .= '<nav aria-label="Site"><ul class="lld-public-nav">' . $links . '</ul>';
+	if ( $signed_in ) {
+		$html .= lld_members_chip();
+	}
+	$html .= '<details class="lld-burger"><summary aria-label="Menu">' . lld_members_icon( 'menu' ) . '</summary><ul class="lld-burger-panel">' . $links . '</ul></details>';
+	$html .= '</nav></div>';
+	if ( $signed_in ) {
+		$html .= '<div class="lld-member-nav">' . lld_members_menu_links( 'lld-member-nav-list' ) . '</div>';
+	}
+	$html .= '</header>';
+	return $html;
+}
+
+/**
+ * The pack's two self-hosted fonts (Plus Jakarta Sans for headings, Inter for copy), served from the lld-tools theme
+ * layer (S2-L1) with font-display: swap. Declared only when both files are present: a missing file would cost a full
+ * WordPress 404 on every page view, and the stylesheet already falls back to the system font (FR2-27).
+ */
+function lld_members_font_faces() {
+	$dir   = WP_CONTENT_DIR . '/mu-plugins/lld-tools/assets/fonts/';
+	$files = array(
+		'Plus Jakarta Sans' => array( 'plus-jakarta-sans-latin-var.woff2', '400 800' ),
+		'Inter'             => array( 'inter-latin-var.woff2', '400 700' ),
+	);
+	$css = '';
+	foreach ( $files as $family => $font ) {
+		if ( ! is_file( $dir . $font[0] ) ) {
+			return '';
+		}
+		$url  = content_url( 'mu-plugins/lld-tools/assets/fonts/' . $font[0] );
+		$css .= '@font-face{font-family:"' . $family . '";font-style:normal;font-weight:' . $font[1] . ';font-display:swap;src:url("' . esc_url( $url ) . '") format("woff2")}';
+	}
+	return '<style>' . $css . '</style>';
+}
+
+/**
+ * aria-current for the link that matches the page being shown.
+ *
+ * @param string $url Link address.
+ */
+function lld_members_current( $url ) {
+	$path = (string) wp_parse_url( (string) $url, PHP_URL_PATH );
+	$here = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_parse_url( (string) wp_unslash( $_SERVER['REQUEST_URI'] ), PHP_URL_PATH ) : '';
+	return '' !== $path && untrailingslashit( $path ) === untrailingslashit( $here ) ? ' aria-current="page"' : '';
+}
+
+/**
+ * The logo mark: a mint cross in a soft square.
+ */
+function lld_members_logo_mark() {
+	return '<span class="lld-logo-mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2cc8b3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M4 12h16"/></svg></span>';
+}
+
+/**
+ * @param string $name Icon name.
+ */
+function lld_members_icon( $name ) {
+	if ( 'menu' === $name ) {
+		return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+	}
+	return '';
+}
+
+/**
+ * The member chip: initial, first name and the PREMIUM or FREE badge. The badge follows the confirmed access state
+ * (and the owner's preview), never a payment that Stripe has not confirmed (Screen Design principle 10).
+ */
+function lld_members_chip() {
+	$member_id = LLD_Members_Access::current_member_id();
+	if ( $member_id < 1 ) {
+		return '';
+	}
+	global $wpdb;
+	$row   = $wpdb->get_row( $wpdb->prepare( 'SELECT first_name, display_name FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+	$name  = $row && '' !== trim( (string) $row->first_name ) ? trim( (string) $row->first_name ) : ( $row && '' !== trim( (string) $row->display_name ) ? trim( (string) $row->display_name ) : 'Member' );
+	$state = strtolower( LLD_Members_Access::access_state( $member_id ) );
+	if ( 'free' === $state ) {
+		$premium = false;
+	} elseif ( 0 === strpos( $state, 'premium' ) && false === strpos( $state, 'ended' ) ) {
+		$premium = true;
+	} else {
+		$premium = class_exists( 'LLD_Members_Billing' ) && LLD_Members_Billing::has_premium( $member_id );
+	}
+	$initial = function_exists( 'mb_substr' ) ? mb_substr( $name, 0, 1 ) : substr( $name, 0, 1 );
+	$html    = '<a class="lld-chip" href="' . esc_url( home_url( '/members/settings/' ) ) . '">';
+	$html   .= '<span class="lld-chip-initial" aria-hidden="true">' . esc_html( strtoupper( $initial ) ) . '</span>';
+	$html   .= '<span class="lld-chip-name">' . esc_html( $name ) . '</span>';
+	$html   .= '<span class="lld-chip-badge' . ( $premium ? '' : ' is-free' ) . '">' . ( $premium ? 'PREMIUM' : 'FREE' ) . '</span>';
+	$html   .= '<span class="lld-sr">, profile and settings</span></a>';
 	return $html;
 }
 
@@ -97,7 +190,7 @@ function lld_members_menu_links( $class ) {
 	);
 	$html  = '<ul class="' . esc_attr( $class ) . '">';
 	foreach ( $items as $label => $url ) {
-		$html .= '<li><a href="' . esc_url( $url ) . '">' . esc_html( $label ) . '</a></li>';
+		$html .= '<li><a href="' . esc_url( $url ) . '"' . lld_members_current( $url ) . '>' . esc_html( $label ) . '</a></li>';
 	}
 	$html .= '</ul>';
 	return $html;
@@ -111,7 +204,11 @@ function lld_members_menu() {
 }
 
 function lld_members_footer() {
-	return '<footer class="lld-footer"><p>Lifeline Daily</p></footer>';
+	$html  = '<footer class="lld-footer"><div class="lld-footer-inner"><p>&copy; ' . esc_html( gmdate( 'Y' ) ) . ' Lifeline Daily. Health information, not medical advice.</p>';
+	$html .= '<ul><li><a href="' . esc_url( home_url( '/medical-disclaimer/' ) ) . '">Medical disclaimer</a></li>';
+	$html .= '<li><a href="' . esc_url( home_url( '/privacy/' ) ) . '">Privacy policy</a></li>';
+	$html .= '<li><a href="' . esc_url( home_url( '/terms/' ) ) . '">Terms of membership</a></li></ul></div></footer>';
+	return $html;
 }
 
 /**
@@ -193,10 +290,10 @@ function lld_card( $title, $line, $action ) {
  */
 function lld_suggestion_card( $args ) {
 	$html  = '<article class="lld-card lld-suggestion">';
-	$html .= '<p class="lld-kicker">' . esc_html( $args['label'] ) . '</p>';
+	$html .= '<div class="lld-suggestion-meta"><p class="lld-kicker">' . esc_html( $args['label'] ) . '</p>';
+	$html .= '<p class="lld-hint">Reviewed by ' . esc_html( $args['reviewer'] ) . ' on ' . esc_html( $args['date'] ) . '</p></div>';
 	$html .= '<h2>' . esc_html( $args['title'] ) . '</h2>';
-	$html .= '<p>' . esc_html( $args['reason'] ) . '</p>';
-	$html .= '<p class="lld-hint">Reviewed by ' . esc_html( $args['reviewer'] ) . ' on ' . esc_html( $args['date'] ) . '</p>';
+	$html .= '<p class="lld-reason">' . esc_html( $args['reason'] ) . '</p>';
 	$html .= '<div class="lld-row">' . lld_button( array( 'label' => $args['action_label'], 'href' => $args['action_href'], 'type' => 'button' ) );
 	$html .= lld_button( array( 'label' => 'Not for me', 'variant' => 'secondary', 'type' => 'button' ) ) . '</div></article>';
 	return $html;

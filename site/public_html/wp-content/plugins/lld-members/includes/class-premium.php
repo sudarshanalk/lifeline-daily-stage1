@@ -123,32 +123,40 @@ class LLD_Members_Premium {
 		}
 		self::take_swap( $member_id );
 		$plan = self::meal_view( $member_id );
-		$main = '<h1>Meal plan</h1>';
+		$main = '<h1>Meal plan</h1><div class="lld-card"><div class="lld-card-head"><div>';
 		if ( ! LLD_Members_Account::has_consent( $member_id, 'health' ) ) {
-			$main .= '<p>General plan</p>';
+			$main .= '<p class="lld-kicker">General plan</p>';
 		}
-		$main .= '<p data-lld-week="' . esc_attr( $plan['week']['starting'] ) . '">Week ' . (int) $plan['week']['week'] . ', starting ' . esc_html( ( new DateTimeImmutable( $plan['week']['starting'] ) )->format( 'l j F' ) ) . '</p>';
+		$main .= '<p data-lld-week="' . esc_attr( $plan['week']['starting'] ) . '">Week ' . (int) $plan['week']['week'] . ', starting ' . esc_html( ( new DateTimeImmutable( $plan['week']['starting'] ) )->format( 'l j F' ) ) . '</p></div>';
+		if ( $plan['days'] ) {
+			$main .= '<a class="lld-button lld-button-secondary" href="#lld-shopping">Shopping list</a>';
+		}
+		$main .= '</div>';
 		if ( ! $plan['days'] ) {
-			$main .= '<p>' . esc_html( LLD_Members_Safety::empty_line( $member_id ) ) . '</p><p>Contact support if you need a plan that fits you.</p>';
-			self::page( 'Meal plan', $main );
+			$main .= '<p>' . esc_html( LLD_Members_Safety::empty_line( $member_id ) ) . '</p><p>Contact support if you need a plan that fits you.</p></div>';
+			self::page( 'Meal plan', $main, 200, true );
 			return;
 		}
 		$consent = LLD_Members_Account::has_consent( $member_id, 'health' );
 		foreach ( LLD_Members_Safety::notes( $member_id ) as $note ) {
 			$main .= '<p class="lld-hint">' . esc_html( $note ) . '</p>';
 		}
+		$main .= '<p class="lld-hint">Each meal can be swapped for a safe alternative.</p></div>';
 		$nonce = $consent ? wp_create_nonce( 'lld_swap' ) : '';
 		$first = new DateTimeImmutable( $plan['week']['starting'] );
 		foreach ( $plan['days'] as $day => $meals ) {
 			$date  = $first->modify( '+' . ( (int) $day - 1 ) . ' days' );
-			$main .= '<section data-lld-day="' . (int) $day . '" data-lld-date="' . esc_attr( $date->format( 'Y-m-d' ) ) . '"><h2>Day ' . (int) $day . ', ' . esc_html( $date->format( 'l j F' ) ) . '</h2>';
+			$main .= '<section data-lld-day="' . (int) $day . '" data-lld-date="' . esc_attr( $date->format( 'Y-m-d' ) ) . '"><h2>Day ' . (int) $day . ', ' . esc_html( $date->format( 'l j F' ) ) . '</h2><div class="lld-recipes">';
 			foreach ( $meals as $slot => $recipe ) {
 				$key   = (int) $day . '-' . $slot;
-				$main .= '<div class="lld-meal" data-lld-meal="' . esc_attr( $key ) . '">';
-				$main .= '<p>' . esc_html( ucfirst( (string) $slot ) ) . ': ' . esc_html( $recipe['title'] ) . '</p>';
+				$badge = '' !== trim( (string) $recipe['diet'] ) ? (string) $recipe['diet'] : ( '' !== trim( (string) $recipe['servings'] ) ? (string) $recipe['servings'] . ' servings' : '' );
+				$main .= '<article class="lld-meal lld-recipe" data-lld-meal="' . esc_attr( $key ) . '">';
+				$main .= '<div class="lld-recipe-top"><span class="lld-recipe-slot">' . esc_html( ucfirst( (string) $slot ) ) . '</span>' . ( '' !== $badge ? '<span class="lld-recipe-badge">' . esc_html( $badge ) . '</span>' : '' ) . '</div>';
+				$main .= '<div class="lld-recipe-body"><p><span class="lld-sr">' . esc_html( ucfirst( (string) $slot ) ) . ': </span>' . esc_html( $recipe['title'] ) . '</p></div>';
+				$main .= '<div class="lld-recipe-actions"><a href="' . esc_url( home_url( '/members/library/' . (int) $recipe['id'] . '/' ) ) . '">View recipe<span class="lld-sr">: ' . esc_html( $recipe['title'] ) . '</span></a></div>';
 				if ( $consent && $recipe['options'] ) {
 					$field = 'lld_recipe_' . (int) $day . '_' . $slot;
-					$main .= '<form method="post" class="lld-form" data-lld-swap="' . esc_attr( $key ) . '">';
+					$main .= '<form method="post" class="lld-form lld-recipe-swap" data-lld-swap="' . esc_attr( $key ) . '">';
 					$main .= '<input type="hidden" name="lld_swap_nonce" value="' . esc_attr( $nonce ) . '">';
 					$main .= '<input type="hidden" name="lld_slot" value="' . esc_attr( $key ) . '">';
 					$main .= '<p><label for="' . esc_attr( $field ) . '">Swap Day ' . (int) $day . ' ' . esc_html( $slot ) . '</label> <select id="' . esc_attr( $field ) . '" name="lld_recipe">';
@@ -156,16 +164,16 @@ class LLD_Members_Premium {
 						$main .= '<option value="' . (int) $option['id'] . '">' . esc_html( $option['title'] ) . '</option>';
 					}
 					$main .= '</select></p>';
-					$main .= lld_button( array( 'label' => 'Swap' ) );
+					$main .= lld_button( array( 'label' => 'Swap', 'variant' => 'secondary' ) );
 					$main .= '</form>';
 				} elseif ( $consent ) {
 					$main .= '<p class="lld-hint">No safe swap for this meal.</p>';
 				}
-				$main .= '</div>';
+				$main .= '</article>';
 			}
-			$main .= '</section>';
+			$main .= '</div></section>';
 		}
-		$main .= '<h2>Shopping list</h2><p class="lld-hint">Ticks are kept on this device only.</p><div data-lld-shopping data-lld-shop-week="' . esc_attr( $plan['week']['starting'] ) . '">';
+		$main .= '<section class="lld-card" id="lld-shopping"><div class="lld-card-head"><h2>Shopping list</h2><p class="lld-hint">Ticks are kept on this device only.</p></div><div data-lld-shopping data-lld-shop-week="' . esc_attr( $plan['week']['starting'] ) . '">';
 		foreach ( $plan['aisles'] as $aisle => $lines ) {
 			$main .= '<section data-lld-aisle="' . esc_attr( $aisle ) . '"><h3>' . esc_html( $aisle ) . '</h3><ul class="lld-ticks">';
 			foreach ( $lines as $line ) {
@@ -174,9 +182,9 @@ class LLD_Members_Premium {
 			$main .= '</ul></section>';
 		}
 		$main .= '</div>';
-		$main .= '<p><button type="button" onclick="window.print()">Print</button> ';
-		$main .= '<a href="' . esc_url( home_url( '/members/meals/?pdf=1' ) ) . '">Download PDF</a></p>';
-		self::page( 'Meal plan', $main );
+		$main .= '<p class="lld-shopping-actions"><button type="button" class="lld-button lld-button-secondary" onclick="window.print()">Print</button> ';
+		$main .= '<a class="lld-button" href="' . esc_url( home_url( '/members/meals/?pdf=1' ) ) . '">Download PDF</a></p></section>';
+		self::page( 'Meal plan', $main, 200, true );
 	}
 
 	public static function workout() {
@@ -458,23 +466,27 @@ class LLD_Members_Premium {
 		}
 		$main = '<h1>Food diary</h1>';
 		if ( '' !== $error ) {
-			$main .= '<p>' . esc_html( $error ) . '</p>';
+			$main .= '<p class="lld-error">' . esc_html( $error ) . '</p>';
 		}
-		$main .= $writable ? '<p>You can add meals.</p>' : '<p>This diary is read-only.</p>';
-		$main .= self::diary_list( $member_id, $writable );
-		$main .= self::day_html( $member_id, $writable );
+		$main .= '<p class="lld-hint">' . ( $writable ? 'You can add meals.' : 'This diary is read-only.' ) . ' Portion size and three quality checks, no numbers to count.</p>';
+		$main .= '<div class="lld-diary-entries">' . self::diary_list( $member_id, $writable ) . '</div>';
+		$main .= '<section class="lld-card">' . self::day_html( $member_id, $writable ) . '</section>';
 		$summary = self::summary_line( $member_id );
-		if ( '' !== $summary ) {
-			$main .= '<p data-lld-summary>' . esc_html( $summary ) . '</p>';
-		}
-		$focus = self::focus_line( $member_id );
-		if ( '' !== $focus ) {
-			$main .= '<p>' . esc_html( $focus ) . '</p>';
+		$focus   = self::focus_line( $member_id );
+		if ( '' !== $summary || '' !== $focus ) {
+			$main .= '<section class="lld-card"><h2>This week</h2>';
+			if ( '' !== $summary ) {
+				$main .= '<p data-lld-summary>' . esc_html( $summary ) . '</p>';
+			}
+			if ( '' !== $focus ) {
+				$main .= '<p>' . esc_html( $focus ) . '</p>';
+			}
+			$main .= '</section>';
 		}
 		if ( $writable ) {
-			$main .= self::diary_form( $member_id );
+			$main .= '<section class="lld-card lld-form-card"><h2>Log a meal</h2>' . self::diary_form( $member_id ) . '</section>';
 		}
-		self::page( 'Food diary', $main );
+		self::page( 'Food diary', $main, 200, true );
 	}
 
 	public static function group() {
@@ -776,15 +788,65 @@ class LLD_Members_Premium {
 	 * @param string $main   HTML.
 	 * @param int    $status Status.
 	 */
-	private static function page( $title, $main, $status = 200 ) {
+	private static function page( $title, $main, $status = 200, $wide = false ) {
 		lld_members_layout(
 			array(
 				'title'     => $title,
 				'main'      => $main,
 				'signed_in' => true,
 				'status'    => $status,
+				'wide'      => $wide,
 			)
 		);
+	}
+
+	/**
+	 * The dashboard's diary shortcut (SCR-09 item 5, SCR-16): the water-glass counter with plus and minus, and the
+	 * one-tap "I ate the planned meal" for a Premium member. Both post to the diary page exactly as its own forms do.
+	 * Never a calorie number (FR2-37).
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function dashboard_diary_html( $member_id ) {
+		if ( ! LLD_Members_Account::has_consent( $member_id, 'health' ) || ! LLD_Members_Billing::diary_writable( $member_id ) ) {
+			return '';
+		}
+		global $wpdb;
+		$today = LLD_Members_Programme::local_today( $member_id );
+		$water = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT water_glasses FROM ' . LLD_Members_Schema::table( 'diary_day' ) . ' WHERE member_id = %d AND local_date = %s', $member_id, $today ) );
+		$nonce = wp_create_nonce( 'lld_diary' );
+		$diary = home_url( '/members/diary/' );
+		$step  = static function ( $value, $class, $label, $sign ) use ( $nonce, $diary ) {
+			return '<form method="post" action="' . esc_url( $diary ) . '"><input type="hidden" name="lld_diary_nonce" value="' . esc_attr( $nonce ) . '"><input type="hidden" name="lld_day_save" value="1">'
+				. '<input type="hidden" name="lld_water" value="' . (int) $value . '"><button class="lld-step ' . $class . '" type="submit" aria-label="' . esc_attr( $label ) . '">' . $sign . '</button></form>';
+		};
+		$html  = '<div class="lld-water"><p><strong>Water today</strong><span class="lld-hint">' . esc_html( $water . ( 1 === $water ? ' glass' : ' glasses' ) . ' logged' ) . '</span></p>';
+		$html .= '<div class="lld-water-count">' . ( $water > 0 ? $step( $water - 1, 'lld-step-down', 'One glass of water fewer', '&minus;' ) : '' );
+		$html .= '<output aria-live="polite">' . $water . '</output>' . ( $water < 40 ? $step( $water + 1, 'lld-step-up', 'One more glass of water', '+' ) : '' ) . '</div></div>';
+		if ( LLD_Members_Billing::paid_open( $member_id ) ) {
+			$slot  = self::next_slot( $member_id, $today );
+			$html .= '<form method="post" action="' . esc_url( $diary ) . '" class="lld-one-tap"><input type="hidden" name="lld_diary_nonce" value="' . esc_attr( $nonce ) . '">';
+			$html .= '<input type="hidden" name="lld_meal" value="' . esc_attr( $slot ) . '"><button class="lld-button" type="submit" name="lld_planned" value="1">I ate the planned meal<span class="lld-sr"> for ' . esc_html( $slot ) . '</span></button>';
+			$html .= '<p class="lld-hint">Logs ' . esc_html( $slot ) . ' in one tap. Portion size and the three quality checks are in the diary.</p></form>';
+		}
+		return $html;
+	}
+
+	/**
+	 * The first meal slot of the day without an entry.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $today     Local date.
+	 */
+	private static function next_slot( $member_id, $today ) {
+		global $wpdb;
+		$logged = $wpdb->get_col( $wpdb->prepare( 'SELECT meal FROM ' . LLD_Members_Schema::table( 'diary_meal' ) . ' WHERE member_id = %d AND local_date = %s', $member_id, $today ) );
+		foreach ( self::MEAL_SLOTS as $slot ) {
+			if ( ! in_array( $slot, (array) $logged, true ) ) {
+				return $slot;
+			}
+		}
+		return 'snack';
 	}
 
 	/**
@@ -1277,6 +1339,8 @@ class LLD_Members_Premium {
 			'title'       => (string) $snap['title'],
 			'ingredients' => $lines,
 			'aisles'      => $aisles,
+			'servings'    => (string) ( $fields['servings'] ?? '' ),
+			'diet'        => (string) ( $fields['diet'] ?? '' ),
 		);
 	}
 
@@ -2640,11 +2704,16 @@ class LLD_Members_Premium {
 		}
 		$html .= '<p><label for="lld_description">Description</label><textarea id="lld_description" name="lld_description" rows="2"></textarea></p>';
 		$html .= '<p><label for="lld_photo">Photo</label><input id="lld_photo" name="lld_photo" type="file" accept=".jpg,.jpeg,.png,.heic"></p>';
-		$html .= '<p><label class="lld-check"><input type="checkbox" name="lld_vegetables" value="1"> Vegetables</label></p>';
-		$html .= '<p><label class="lld-check"><input type="checkbox" name="lld_protein" value="1"> Protein source</label></p>';
-		$html .= '<p><label class="lld-check"><input type="checkbox" name="lld_sugary" value="1"> Sugary drink</label></p>';
+		$html .= '<fieldset class="lld-options"><legend>Quality checks</legend><div class="lld-diary-checks">';
+		$html .= '<label class="lld-tile-check"><input type="checkbox" name="lld_vegetables" value="1"> Vegetables</label>';
+		$html .= '<label class="lld-tile-check"><input type="checkbox" name="lld_protein" value="1"> Protein source</label>';
+		$html .= '<label class="lld-tile-check"><input type="checkbox" name="lld_sugary" value="1"> Sugary drink</label></div></fieldset>';
 		if ( ! $hide ) {
-			$html .= '<p><label for="lld_portion">Portion</label> <select id="lld_portion" name="lld_portion"><option value=""> </option><option>small</option><option>normal</option><option>large</option></select></p>';
+			$html .= '<fieldset class="lld-options" id="lld_portion"><legend>Portion size</legend><div class="lld-choice">';
+			foreach ( array( 'small' => 'Small', 'normal' => 'Normal', 'large' => 'Large' ) as $value => $label ) {
+				$html .= '<label><input type="radio" name="lld_portion" value="' . $value . '"> ' . $label . '</label>';
+			}
+			$html .= '</div></fieldset>';
 		}
 		$html .= lld_button( array( 'label' => 'Save meal' ) );
 		$html .= '</form>';

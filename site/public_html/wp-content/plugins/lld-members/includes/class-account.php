@@ -328,17 +328,19 @@ class LLD_Members_Account {
 				exit;
 			}
 		}
-		$main  = '<p class="lld-steps">Account, Email, Agreements, Goals</p><h1>Create account</h1>';
+		$main  = lld_steps( array( 'Account', 'Email', 'Agreements', 'Goals' ), 0 ) . '<h1>Create account</h1>';
 		$main .= self::error_box( $error );
-		$main .= '<form method="post" class="lld-form">';
+		$main .= '<form method="post" class="lld-form lld-card lld-form-card">';
 		$main .= wp_nonce_field( 'lld_join', 'lld_join_nonce', true, false );
 		$keep  = 'POST' === $_SERVER['REQUEST_METHOD'];
+		$main .= '<div class="lld-field-row">';
 		$main .= lld_field( array( 'id' => 'lld_first', 'name' => 'lld_first', 'label' => 'First name', 'value' => $keep && isset( $_POST['lld_first'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_first'] ) ) : '' ) );
 		$main .= lld_field( array( 'id' => 'lld_last', 'name' => 'lld_last', 'label' => 'Last name', 'value' => $keep && isset( $_POST['lld_last'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_last'] ) ) : '' ) );
+		$main .= '</div>';
 		$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email', 'value' => $keep && isset( $_POST['lld_email'] ) ? sanitize_email( wp_unslash( $_POST['lld_email'] ) ) : '' ) );
 		$main .= lld_password_field( array( 'id' => 'lld_password', 'name' => 'lld_password', 'label' => 'Password', 'hint' => 'At least 10 characters.' ) );
 		$main .= lld_field( array( 'id' => 'lld_age', 'name' => 'lld_age', 'label' => 'Age in years', 'type' => 'number', 'value' => $keep && isset( $_POST['lld_age'] ) ? (string) (int) $_POST['lld_age'] : '' ) );
-		$main .= '<p>Lifeline Daily relies on the age you give us. Content and results are based on it.</p>';
+		$main .= '<p class="lld-note">Lifeline Daily relies on the age you give us. Content and results are based on it. Membership is for adults aged 18 and over.</p>';
 		$main .= '<p><a href="' . esc_url( home_url( '/terms/' ) ) . '">Terms</a> and <a href="' . esc_url( home_url( '/privacy/' ) ) . '">privacy policy</a></p>';
 		$main .= lld_button( array( 'label' => 'Create account' ) );
 		$main .= '</form><p>Already a member? <a href="' . esc_url( home_url( '/members/sign-in/' ) ) . '">Sign in</a>.</p>';
@@ -561,16 +563,17 @@ class LLD_Members_Account {
 				exit;
 			}
 		}
-		$main  = '<p class="lld-steps">Account, Email, Agreements, Goals</p><h1>Agreements</h1>';
+		$main  = lld_steps( array( 'Account', 'Email', 'Agreements', 'Goals' ), 2 ) . '<h1>Agreements</h1>';
 		$main .= self::error_box( $error );
 		$main .= '<form method="post" class="lld-form">';
 		$main .= wp_nonce_field( 'lld_agree', 'lld_agree_nonce', true, false );
-		$main .= '<label class="lld-check"><input type="checkbox" name="lld_terms" value="1"> I accept the <a href="' . esc_url( home_url( '/terms/' ) ) . '">terms</a> and <a href="' . esc_url( home_url( '/privacy/' ) ) . '">privacy policy</a></label>';
+		// Nothing here is pre-ticked (Screen Design principle 8); the health box is the explicit consent of GDPR Article 9.
+		$main .= '<div class="lld-card"><label class="lld-check"><input type="checkbox" name="lld_terms" value="1"> <span>I accept the <a href="' . esc_url( home_url( '/terms/' ) ) . '">terms</a> and <a href="' . esc_url( home_url( '/privacy/' ) ) . '">privacy policy</a></span></label></div>';
 		$main .= '<fieldset class="lld-card"><legend>Health information</legend>';
 		$main .= '<p>This allows goals, tracks, a health profile, a food diary and check-ins. Without it you can still use the calculators, read articles and manage a membership.</p>';
-		$main .= '<label class="lld-check"><input type="checkbox" name="lld_health" value="1"> Allow Lifeline Daily to store my health information</label></fieldset>';
+		$main .= '<label class="lld-check"><input type="checkbox" name="lld_health" value="1"> <span>Allow Lifeline Daily to store my health information</span></label></fieldset>';
 		$main .= '<fieldset class="lld-card"><legend>Marketing emails</legend>';
-		$main .= '<label class="lld-check"><input type="checkbox" name="lld_marketing" value="1"> Send me marketing emails</label></fieldset>';
+		$main .= '<label class="lld-check"><input type="checkbox" name="lld_marketing" value="1"> <span>Send me marketing emails</span></label></fieldset>';
 		$main .= lld_button( array( 'label' => 'Continue' ) );
 		$main .= '</form>';
 		self::layout( 'Agreements', $main, true );

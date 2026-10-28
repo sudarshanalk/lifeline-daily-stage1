@@ -1341,6 +1341,7 @@ class LLD_Members_Content {
 				'title' => $title,
 				'key'   => sanitize_title( $title ),
 				'kind'  => $ready['kind'],
+				'line'  => wp_trim_words( wp_strip_all_tags( (string) ( $snap['body'] ?? '' ) ), 16, '...' ),
 			);
 		}
 		return $out;

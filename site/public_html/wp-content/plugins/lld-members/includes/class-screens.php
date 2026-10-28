@@ -158,7 +158,7 @@ class LLD_Members_Screens {
 			}
 		}
 		$main  = '<h1>Sign in</h1>';
-		$main .= '<form method="post" class="lld-form" novalidate>';
+		$main .= '<form method="post" class="lld-form lld-card lld-form-card" novalidate>';
 		$main .= wp_nonce_field( 'lld_sign_in', 'lld_sign_in_nonce', true, false );
 		if ( isset( $_GET['redirect_to'] ) ) {
 			$main .= '<input type="hidden" name="redirect_to" value="' . esc_attr( esc_url_raw( wp_unslash( $_GET['redirect_to'] ) ) ) . '">';
@@ -169,7 +169,7 @@ class LLD_Members_Screens {
 		$kept_email = ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['lld_email'] ) ) ? sanitize_email( wp_unslash( $_POST['lld_email'] ) ) : '';
 		$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email', 'value' => $kept_email ) );
 		$main .= lld_password_field( array( 'id' => 'lld_password', 'name' => 'lld_password', 'label' => 'Password' ) );
-		$main .= '<label class="lld-check"><input type="checkbox" name="lld_remember" value="1"> Remember me for 30 days</label>';
+		$main .= '<label class="lld-check"><input type="checkbox" name="lld_remember" value="1"> <span>Remember me for 30 days</span></label>';
 		$main .= lld_button( array( 'label' => 'Sign in' ) );
 		$main .= '</form>';
 		$main .= '<p><a href="' . esc_url( home_url( '/members/reset/' ) ) . '">Forgot password?</a></p>';

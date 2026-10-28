@@ -30,8 +30,8 @@ class LLD_Members_Personal {
 	 * @param string $main   Main HTML.
 	 * @param int    $status HTTP status.
 	 */
-	public static function render( $title, $main, $status = 200 ) {
-		self::layout( $title, $main, $status );
+	public static function render( $title, $main, $status = 200, $wide = false ) {
+		self::layout( $title, $main, $status, $wide );
 	}
 
 	/**
@@ -104,17 +104,22 @@ class LLD_Members_Personal {
 			self::layout( 'Goals', '<h1>Goals</h1>' . lld_health_consent_notice() );
 			return;
 		}
-		$main  = '<h1>Choose up to 3 goals</h1>' . self::fail( $error );
-		$main .= '<form method="post" class="lld-form">';
+		$main  = lld_steps( array( 'Account', 'Email', 'Agreements', 'Goals' ), 3 ) . '<h1>Choose up to 3 goals</h1>' . self::fail( $error );
+		$main .= '<form method="post" class="lld-form lld-card lld-form-card">';
 		$main .= wp_nonce_field( 'lld_goal', 'lld_goal_nonce', true, false );
-		$main .= '<fieldset><legend>Goals</legend>';
+		$main .= '<fieldset class="lld-options"><legend>Goals</legend>';
 		foreach ( LLD_Members_Content::member_goals( $member_id ) as $goal ) {
-			$main .= '<label class="lld-check"><input type="checkbox" data-lld-goal name="lld_goals[]" value="' . esc_attr( $goal['key'] ) . '"> ' . esc_html( $goal['title'] ) . '</label>';
+			// The label keeps its original shape (input, then the title) so the safety-matrix check can read it.
+			$main .= '<div class="lld-option"><label><input type="checkbox" data-lld-goal name="lld_goals[]" value="' . esc_attr( $goal['key'] ) . '"> ' . esc_html( $goal['title'] ) . '</label>';
+			if ( ! empty( $goal['line'] ) && (string) $goal['line'] !== (string) $goal['title'] ) {
+				$main .= '<small>' . esc_html( (string) $goal['line'] ) . '</small>';
+			}
+			$main .= '</div>';
 		}
-		$main .= '<p id="lld-goal-limit" hidden>You can choose up to 3</p></fieldset>';
-		$main .= '<p><label for="lld_else">Something else</label><textarea id="lld_else" name="lld_else" rows="3"></textarea></p>';
-		$main .= '<p><button class="lld-button" type="submit" name="lld_save" value="1">Save goals</button> ';
-		$main .= '<button class="lld-button" type="submit" name="lld_skip" value="1">Skip for now</button></p>';
+		$main .= '<p id="lld-goal-limit" class="lld-hint" hidden>You can choose up to 3</p></fieldset>';
+		$main .= '<div class="lld-field"><label for="lld_else">Something else</label><textarea id="lld_else" name="lld_else" rows="3"></textarea></div>';
+		$main .= '<div class="lld-row"><button class="lld-button" type="submit" name="lld_save" value="1">Save goals</button> ';
+		$main .= '<button class="lld-button lld-button-secondary" type="submit" name="lld_skip" value="1">Skip for now</button></div>';
 		$main .= '</form>';
 		self::layout( 'Goals', $main );
 	}
@@ -127,32 +132,57 @@ class LLD_Members_Personal {
 		$state     = LLD_Members_Access::access_state( $member_id );
 		$label     = 'free' === $state ? 'Free' : $state;
 		$name      = $row && '' !== (string) $row->display_name ? (string) $row->display_name : ( $row ? (string) $row->first_name : '' );
-		$main      = '<h1>Today</h1><div class="lld-dash">';
-		$main     .= '<section data-lld-section="greeting"><h2>Hello ' . esc_html( $name ) . '</h2>';
+		$programme = class_exists( 'LLD_Members_Programme' );
+		$today     = $programme ? LLD_Members_Programme::local_today( $member_id ) : gmdate( 'Y-m-d' );
+		$date      = DateTimeImmutable::createFromFormat( '!Y-m-d', $today, new DateTimeZone( 'UTC' ) );
+		// SCR-09, fixed order (FR2-07): greeting, today's activity, this week's plan, meals, diary, progress, suggestions, membership.
+		$main  = '<h1>Today</h1><div class="lld-dash">';
+		$main .= '<section data-lld-section="greeting" class="lld-card lld-greeting"><div class="lld-greeting-row">';
 		if ( $row && $row->photo_path ) {
-			$main .= '<img alt="" width="64" height="64" src="' . esc_url( home_url( '/members/photo/' . $member_id . '/' ) ) . '">';
+			$main .= '<img alt="" width="56" height="56" src="' . esc_url( home_url( '/members/photo/' . $member_id . '/' ) ) . '">';
 		} else {
-			$main .= '<svg class="lld-avatar" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Profile photo"><circle cx="32" cy="24" r="12" fill="#d9e4df"/><circle cx="32" cy="78" r="28" fill="#d9e4df"/></svg>';
+			$main .= '<svg class="lld-avatar" viewBox="0 0 64 64" width="56" height="56" role="img" aria-label="Profile photo"><circle cx="32" cy="24" r="12" fill="#cfe8db"/><circle cx="32" cy="78" r="28" fill="#cfe8db"/></svg>';
+		}
+		$main .= '<div><p class="lld-kicker">' . esc_html( $date ? $date->format( 'l j F' ) : $today ) . '</p><h2>Hello ' . esc_html( $name ) . '</h2></div></div>';
+		$badge = $programme ? LLD_Members_Programme::track_badge( $member_id ) : '';
+		if ( '' !== $badge ) {
+			$main .= '<p class="lld-pill">' . esc_html( $badge ) . '</p>';
 		}
 		$main .= '</section>';
-		$main .= '<section data-lld-section="today"><h2>Activity</h2><p>Today\'s activity</p>' . self::today_line( $member_id ) . '</section>';
-		$main .= '<section data-lld-section="plan"><h2>This week\'s plan</h2>' . ( class_exists( 'LLD_Members_Programme' ) ? LLD_Members_Programme::dashboard_plan_html( $member_id ) : '' ) . '</section>';
-		$main .= '<section data-lld-section="meals"><h2>Meals</h2><p>Today\'s meals</p>' . self::title_list( self::safe_titles( $member_id, array( 'lld_meal', 'lld_recipe' ), 3 ), 3 ) . '</section>';
-		$main .= '<section data-lld-section="diary"><h2>Food diary</h2><p><a href="' . esc_url( home_url( '/members/diary/' ) ) . '">Open food diary</a></p>';
+		$main .= '<section data-lld-section="today" class="lld-card lld-today"><h2>Activity</h2><p class="lld-kicker">Today\'s activity</p>';
+		$main .= ( $programme ? LLD_Members_Programme::today_card_html( $member_id ) : '' ) . self::today_line( $member_id ) . '</section>';
+		$main .= '<section data-lld-section="plan" class="lld-card"><h2>This week\'s plan</h2>' . ( $programme ? LLD_Members_Programme::dashboard_plan_html( $member_id ) : '' ) . '</section>';
+		$main .= '<div class="lld-dash-pair">';
+		$main .= '<section data-lld-section="meals" class="lld-card"><div class="lld-card-head"><h2>Meals</h2><p class="lld-hint">Today\'s meals</p></div>';
+		$main .= self::meal_list( self::safe_titles( $member_id, array( 'lld_meal', 'lld_recipe' ), 3 ) );
+		$main .= '<p><a href="' . esc_url( home_url( '/members/meals/' ) ) . '">View the week\'s meal plan and shopping list</a></p></section>';
+		$main .= '<section data-lld-section="diary" class="lld-card"><div class="lld-card-head"><h2>Food diary</h2><p class="lld-hint">No numbers to count</p></div>';
+		if ( class_exists( 'LLD_Members_Premium' ) ) {
+			$main .= LLD_Members_Premium::dashboard_diary_html( $member_id );
+		}
+		$main .= '<p><a href="' . esc_url( home_url( '/members/diary/' ) ) . '">Open food diary</a></p>';
 		if ( class_exists( 'LLD_Members_Premium' ) ) {
 			$summary = LLD_Members_Premium::summary_line( $member_id );
 			if ( '' !== $summary ) {
 				$main .= '<p data-lld-summary>' . esc_html( $summary ) . '</p>';
 			}
 		}
+		$main .= '</section></div>';
+		$done   = $programme ? LLD_Members_Programme::done_count( $member_id ) : 0;
+		$streak = $programme ? LLD_Members_Programme::streak( $member_id ) : 0;
+		$main  .= '<section data-lld-section="progress" class="lld-card"><div class="lld-card-head"><h2>Progress</h2>';
+		if ( $streak > 1 ) {
+			$main .= '<p class="lld-streak">' . esc_html( $streak . '-day streak' ) . '</p>';
+		}
+		$main .= '</div>' . lld_progress( $done, 28 );
+		$main .= $programme ? LLD_Members_Programme::week_labels_html( $member_id ) : '';
 		$main .= '</section>';
-		$done  = class_exists( 'LLD_Members_Programme' ) ? LLD_Members_Programme::done_count( $member_id ) : 0;
-		$main .= '<section data-lld-section="progress"><h2>Progress</h2><p>' . (int) $done . ' of 28 done</p></section>';
 		if ( 'free' === $state ) {
-			$main .= '<aside class="lld-premium-adds"><h2>what Premium adds</h2><p>Meal plans, the full tracks and extra tools.</p></aside>';
+			$main .= '<aside class="lld-premium-adds"><p class="lld-kicker">Free member</p><h2>what Premium adds</h2><p>Meal plans, the full tracks and extra tools.</p>';
+			$main .= lld_button( array( 'label' => 'See Premium', 'href' => home_url( '/pricing/' ) ) ) . '</aside>';
 		}
 		$main .= '<section data-lld-section="suggestions"><h2>Suggestions</h2>' . self::suggestion_block( $member_id ) . '<p><a href="' . esc_url( home_url( '/members/suggestions/' ) ) . '">See more</a></p></section>';
-		$main .= '<section data-lld-section="membership"><h2>Membership</h2><p class="lld-membership">Your membership is ' . esc_html( $label ) . '.</p>';
+		$main .= '<section data-lld-section="membership" class="lld-card"><h2>Membership</h2><p class="lld-membership">Your membership is ' . esc_html( $label ) . '.</p>';
 		if ( self::show_yearly( $member_id, $state ) ) {
 			$main .= '<p>Switch to yearly</p>';
 		}
@@ -167,7 +197,23 @@ class LLD_Members_Personal {
 			$main .= LLD_Members_Premium::qa_paragraph( $member_id );
 		}
 		$main .= '</section></div>';
-		self::layout( 'Today', $main );
+		self::layout( 'Today', $main, 200, true );
+	}
+
+	/**
+	 * Today's meals as rows, each with its own "Swap" link into the meal plan (SCR-09 item 4).
+	 *
+	 * @param string[] $titles Meal titles.
+	 */
+	private static function meal_list( $titles ) {
+		if ( ! $titles ) {
+			return '';
+		}
+		$html = '<ul class="lld-meal-list">';
+		foreach ( $titles as $title ) {
+			$html .= '<li class="lld-meal-row"><span>' . esc_html( $title ) . '</span><a href="' . esc_url( home_url( '/members/meals/' ) ) . '">Swap<span class="lld-sr"> ' . esc_html( $title ) . '</span></a></li>';
+		}
+		return $html . '</ul>';
 	}
 
 	private static function health() {
@@ -1245,7 +1291,11 @@ class LLD_Members_Personal {
 			return $html . LLD_Members_Safety::empty_html( $member_id );
 		}
 		foreach ( $items as $item ) {
-			$html .= '<article class="lld-suggestion"><h3><a href="' . esc_url( $item['href'] ) . '">' . esc_html( $item['title'] ) . '</a></h3>';
+			$html .= '<article class="lld-suggestion"><div class="lld-suggestion-meta"><p class="lld-kicker">Suggestion for you</p>';
+			if ( ! empty( $item['approved_on'] ) ) {
+				$html .= '<p class="lld-hint">' . esc_html( 'Reviewed by ' . self::reviewer_name( (int) ( $item['approved_by'] ?? 0 ) ) . ' on ' . self::nice_day( (string) $item['approved_on'] ) ) . '</p>';
+			}
+			$html .= '</div><h3><a href="' . esc_url( $item['href'] ) . '">' . esc_html( $item['title'] ) . '</a></h3>';
 			$html .= '<p class="lld-reason">' . esc_html( $item['reason'] ) . '</p>';
 			// "Not for me" is remembered in the suggestion history (C15), which needs health consent.
 			if ( $consent ) {
@@ -1344,6 +1394,8 @@ class LLD_Members_Personal {
 				'tags'   => $tags,
 				'type'   => (string) ( $shown['type'] ?? '' ),
 				'fields' => isset( $shown['fields'] ) && is_array( $shown['fields'] ) ? $shown['fields'] : array(),
+				'approved_on' => (string) ( $shown['approved_on'] ?? '' ),
+				'approved_by' => (int) ( $shown['approved_by'] ?? 0 ),
 			);
 		}
 		$articles = get_posts(
@@ -1780,6 +1832,24 @@ class LLD_Members_Personal {
 	/**
 	 * @param string $text Error text.
 	 */
+	/**
+	 * The clinical reviewer named on a suggestion card (UI2-02): the approving account, or the site.
+	 *
+	 * @param int $user_id Approving user.
+	 */
+	private static function reviewer_name( $user_id ) {
+		$user = $user_id > 0 ? get_userdata( $user_id ) : false;
+		return $user && '' !== (string) $user->display_name ? (string) $user->display_name : 'the Lifeline Daily reviewer';
+	}
+
+	/**
+	 * @param string $date Y-m-d.
+	 */
+	private static function nice_day( $date ) {
+		$at = DateTimeImmutable::createFromFormat( '!Y-m-d', (string) $date, new DateTimeZone( 'UTC' ) );
+		return $at ? $at->format( 'j F Y' ) : (string) $date;
+	}
+
 	private static function fail( $text ) {
 		if ( '' === $text ) {
 			return '';
@@ -1791,13 +1861,14 @@ class LLD_Members_Personal {
 	 * @param string $title Page title.
 	 * @param string $main  Main HTML.
 	 */
-	private static function layout( $title, $main, $status = 200 ) {
+	private static function layout( $title, $main, $status = 200, $wide = false ) {
 		lld_members_layout(
 			array(
 				'title'     => $title,
 				'main'      => $main,
 				'signed_in' => true,
 				'status'    => $status,
+				'wide'      => $wide,
 			)
 		);
 	}
