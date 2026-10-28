@@ -194,7 +194,8 @@ class LLD_Members_Screens {
 			if ( is_wp_error( $result ) ) {
 				$error = $result->get_error_message();
 			} else {
-				wp_safe_redirect( home_url( '/members/home/' ) );
+				// An administrator has no member home (often no member record): wp-admin, or wp-login.php's redirect_to.
+				wp_safe_redirect( LLD_Members_Auth::after_code_destination() );
 				exit;
 			}
 		}

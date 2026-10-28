@@ -26,6 +26,8 @@ class LLD_Members_Plugin {
 		add_action( 'init', array( 'LLD_Members_Account', 'expire_sessions' ), 20 );
 		add_action( 'profile_update', array( 'LLD_Members_Account', 'sync_email' ) );
 		add_filter( 'query_vars', array( __CLASS__, 'query_vars' ) );
+		add_filter( 'request', array( __CLASS__, 'stage1_pages' ) );
+		add_filter( 'wpseo_sitemap_index', array( __CLASS__, 'yoast_index_entry' ) );
 		add_filter( 'redirect_canonical', array( __CLASS__, 'keep_sitemap_url' ), 10, 2 );
 		add_action( 'template_redirect', array( 'LLD_Members_Screens', 'dispatch' ) );
 		add_action( 'rest_api_init', array( 'LLD_Members_Rest', 'register' ) );
@@ -66,12 +68,76 @@ class LLD_Members_Plugin {
 		delete_option( 'lld_members_rewrites' );
 	}
 
+	/**
+	 * The plugin's sitemap address while Yoast SEO serves /sitemap.xml. Yoast's own rule
+	 * ([^/]+?)-sitemap([0-9]+)?\.xml$ would claim a name ending in -sitemap.xml, so this one starts with sitemap-.
+	 */
+	const SITEMAP_PATH = '/sitemap-lld-members.xml';
+
 	public static function rewrites() {
 		self::register_rewrites();
-		if ( '10' !== get_option( 'lld_members_rewrites' ) ) {
+		// The rules depend on Yoast's sitemaps being on or off, so a change either way flushes them again
+		// (on the next request, a db-update run or activation).
+		$version = self::rewrite_version();
+		if ( get_option( 'lld_members_rewrites' ) !== $version ) {
 			flush_rewrite_rules( false );
-			update_option( 'lld_members_rewrites', '10', true );
+			update_option( 'lld_members_rewrites', $version, true );
 		}
+	}
+
+	/**
+	 * Version of the rule set: bumped when rules change, and different with Yoast's sitemaps on or off.
+	 */
+	public static function rewrite_version() {
+		return '11-' . ( self::yoast_sitemaps() ? 'yoast' : 'own' );
+	}
+
+	/**
+	 * True when Yoast SEO is active with its XML sitemaps on. Yoast then answers /sitemap.xml (it sends it to
+	 * /sitemap_index.xml), and the plugin's sitemap is listed in Yoast's index instead.
+	 */
+	public static function yoast_sitemaps() {
+		if ( ! defined( 'WPSEO_VERSION' ) ) {
+			return false;
+		}
+		if ( class_exists( 'WPSEO_Options' ) && is_callable( array( 'WPSEO_Options', 'get' ) ) ) {
+			return (bool) WPSEO_Options::get( 'enable_xml_sitemap', true );
+		}
+		return true;
+	}
+
+	/**
+	 * Add the plugin's sitemap to Yoast's sitemap index (wpseo_sitemap_index).
+	 *
+	 * @param string $xml Extra index entries so far.
+	 * @return string
+	 */
+	public static function yoast_index_entry( $xml ) {
+		if ( ! self::yoast_sitemaps() ) {
+			return $xml;
+		}
+		return (string) $xml . '<sitemap><loc>' . esc_url( home_url( self::SITEMAP_PATH ) ) . '</loc></sitemap>' . "\n";
+	}
+
+	/**
+	 * A published Stage 1 page at the calculator or disclaimer address wins over the plugin's own screen:
+	 * WordPress serves the page, and the plugin adds its extras through the_content. The plugin's screen is
+	 * the fallback for a site without the page (the CI test site).
+	 *
+	 * @param array<string,mixed> $vars Query vars from the matched rule.
+	 * @return array<string,mixed>
+	 */
+	public static function stage1_pages( $vars ) {
+		if ( ! is_array( $vars ) || empty( $vars['lld_screen'] ) ) {
+			return $vars;
+		}
+		$path = LLD_Members_Billing::stage1_path( (string) $vars['lld_screen'], isset( $vars['lld_track'] ) ? (string) $vars['lld_track'] : '' );
+		if ( '' === $path || ! LLD_Members_Billing::stage1_page( $path ) ) {
+			return $vars;
+		}
+		unset( $vars['lld_screen'], $vars['lld_track'] );
+		$vars['pagename'] = $path;
+		return $vars;
 	}
 
 	/**
@@ -87,8 +153,8 @@ class LLD_Members_Plugin {
 	}
 
 	/**
-	 * Keep /sitemap.xml as it is. WordPress would add a trailing slash (redirect_canonical), and /sitemap.xml/
-	 * no longer matches the plugin's sitemap rule, so the sitemap answered 404 after the redirect.
+	 * Keep the plugin's sitemap address as it is. WordPress would add a trailing slash (redirect_canonical), and
+	 * /sitemap.xml/ no longer matches the plugin's sitemap rule, so the sitemap answered 404 after the redirect.
 	 *
 	 * @param string|false $redirect_url  Canonical URL WordPress wants.
 	 * @param string       $requested_url Requested URL.
@@ -178,7 +244,10 @@ class LLD_Members_Plugin {
 		add_rewrite_rule( '^health-tools/healthy-weight-check/?$', 'index.php?lld_screen=landing&lld_track=healthy-weight', 'top' );
 		add_rewrite_rule( '^safety/?$', 'index.php?lld_screen=safety', 'top' );
 		add_rewrite_rule( '^medical-disclaimer/?$', 'index.php?lld_screen=disclaimer', 'top' );
-		add_rewrite_rule( '^sitemap\\.xml$', 'index.php?lld_screen=sitemap', 'top' );
+		add_rewrite_rule( '^sitemap-lld-members\\.xml$', 'index.php?lld_screen=sitemap', 'top' );
+		if ( ! self::yoast_sitemaps() ) {
+			add_rewrite_rule( '^sitemap\\.xml$', 'index.php?lld_screen=sitemap', 'top' );
+		}
 		add_rewrite_rule( '^members/foundations/?$', 'index.php?lld_screen=foundations', 'top' );
 		add_rewrite_rule( '^members/record/([0-9]+)/?$', 'index.php?lld_screen=record&lld_member=$matches[1]', 'top' );
 		add_rewrite_rule( '^members/photo/([0-9]+)/?$', 'index.php?lld_screen=photo&lld_member=$matches[1]', 'top' );
