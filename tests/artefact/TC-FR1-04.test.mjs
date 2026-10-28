@@ -49,7 +49,7 @@ describe('TC-FR1-04 tools hub and landing pages — artefacts', () => {
       for (const text of [c.name, c.purpose, c.eligibility, c.cta_label, c.landing_url, ...c.inputs]) expect(html, `${c.tool_slug}: ${text.slice(0, 30)}`).toContain(text.replace(/&/g, '&amp;'));
       expect(html).toContain(`About ${c.time_minutes} minutes`);
     }
-    expect((html.match(/data-status="active"/g) || []).length).toBe(2);
+    expect((html.match(/data-status="active"/g) || []).length).toBe(cards.cards.length);   // every card active (FR2-39 adds the third)
     expect((html.match(/data-status="label_only"/g) || []).length).toBe(status.labels.filter((l) => l.status === 'label_only').length);
     expect(html).not.toMatch(/data-status="label_only"[^]*?<a /);
   });
@@ -64,13 +64,13 @@ describe('TC-FR1-04 tools hub and landing pages — artefacts', () => {
 
   test('TC-FR1-04-AS-05', () => {
     for (const [slug, p] of Object.entries(landing.pages)) {
-      expect(p.sections.how, `${slug}: engine named`).toMatch(slug === 'diabetes' ? /QDiabetes-2018 \(Model A\)/ : /Daily Protein Target engine/);
+      expect(p.sections.how, `${slug}: engine named`).toMatch({ diabetes: /QDiabetes-2018 \(Model A\)/, protein: /Daily Protein Target engine/, 'healthy-weight': /NICE guideline NG246/ }[slug]);
       expect(p.sections.how, `${slug}: deployed version shortcode`).toContain(`[lld_tool_version slug="${slug}"]`);
     }
   });
 
   test('NEG-01', () => {
-    // sandbox: a third active card → three active cards rendered (AS-01's "exactly 2" fails)
+    // sandbox: one more active card than the data holds → one more active card rendered (AS-01's exact count fails)
     const sandbox = mkdtempSync(join(tmpdir(), 'lld-plugin-'));
     try {
       cpSync(PLUGIN, join(sandbox, 'lld-tools'), { recursive: true });
@@ -78,7 +78,7 @@ describe('TC-FR1-04 tools hub and landing pages — artefacts', () => {
       data.cards.push({ ...data.cards[0], tool_slug: 'weight', name: 'Healthy Weight Check', landing_url: '/health-tools/weight/' });
       writeFileSync(join(sandbox, 'lld-tools', 'data', 'tool-cards.json'), JSON.stringify(data));
       const html = renderHub(join(sandbox, 'lld-tools'), { ...status, tools: { ...status.tools, weight: { status: 'active' } } });
-      expect((html.match(/data-status="active"/g) || []).length).toBe(3);
+      expect((html.match(/data-status="active"/g) || []).length).toBe(data.cards.length);
     } finally { rmSync(sandbox, { recursive: true, force: true }); }
   });
 });

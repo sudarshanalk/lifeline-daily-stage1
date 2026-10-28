@@ -65,8 +65,8 @@ jobs:
       - run: npm ci
       - name: Frozen engine objects hash-equal the manifests (whole file and per object)
         run: |
-          for slug in protein diabetes; do
-            f=$([ $slug = protein ] && echo protein-requirement-tool.html || echo diabetes-risk-tool.html)
+          for slug in protein diabetes healthy-weight; do
+            f=$(case $slug in protein) echo protein-requirement-tool.html;; diabetes) echo diabetes-risk-tool.html;; *) echo $slug-tool.html;; esac)
             want=$(python3 -c "import json;print([v for v in json.load(open('manifests/$slug.json'))['versions'] if v['is_live']][0]['version_hash'])")
             got=$(sha256sum site/public_html/tools/$f | cut -d' ' -f1)
             [ "$want" = "$got" ] && echo "ok file $f" || { echo "engine-freeze: $f hash $got != manifest live $want (refresh approvals: node tests/ci/refresh-approvals.mjs)"; exit 1; }
@@ -298,6 +298,8 @@ jobs:
         run: npx vitest run -c tests/vitest.config.mjs tests/saf/saf-protein.test.mjs
       - name: saf-diabetes
         run: npx vitest run -c tests/vitest.config.mjs tests/saf/saf-diabetes.test.mjs
+      - name: saf-healthy-weight
+        run: npx vitest run -c tests/vitest.config.mjs tests/saf/saf-healthy-weight.test.mjs
 
   sentinel:
     if: "!startsWith(github.event.pull_request.title || '', 'SPEC: ')"   # SPEC PRs (DEC-55) carry no code or tests

@@ -1,0 +1,145 @@
+{
+  "group": "UNIT",
+  "tool": "healthy-weight",
+  "fixtures": [
+    {
+      "id": "FX-HW-UNIT-01",
+      "purpose": "5 ft 7 in, 11 st 5 lb, waist 34 in",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "bg": "White",
+        "loss": "no",
+        "heightFt": 5,
+        "heightIn": 7,
+        "weightSt": 11,
+        "weightLb": 5,
+        "waistIn": 34
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.9,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 53.5,
+          "highKg": 72.2,
+          "lowLb": 118,
+          "highLb": 159
+        },
+        "waist": {
+          "ratio": 0.51,
+          "band": "increased"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-UNIT-02",
+      "purpose": "6 ft 1 in, 15 st 0 lb, Indian",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "bg": "Indian",
+        "loss": "no",
+        "heightFt": 6,
+        "heightIn": 1,
+        "weightSt": 15,
+        "weightLb": 0
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 27.7,
+        "category": "obese1",
+        "adjusted": true,
+        "range": {
+          "lowKg": 63.5,
+          "highKg": 78.9,
+          "lowLb": 140,
+          "highLb": 173
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-UNIT-03",
+      "purpose": "5 ft 2.5 in, 8 st 4.5 lb, waist 27.5 in",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "bg": "White",
+        "loss": "no",
+        "heightFt": 5,
+        "heightIn": 2.5,
+        "weightSt": 8,
+        "weightLb": 4.5,
+        "waistIn": 27.5
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 21.0,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 46.5,
+          "highKg": 62.8,
+          "lowLb": 103,
+          "highLb": 138
+        },
+        "waist": {
+          "ratio": 0.44,
+          "band": "healthy"
+        },
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-UNIT-04",
+      "purpose": "metric height with stones and pounds",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 170,
+        "bg": "White",
+        "loss": "no",
+        "weightSt": 12,
+        "weightLb": 0
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 26.4,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 53.4,
+          "highKg": 72.1,
+          "lowLb": 118,
+          "highLb": 158
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    }
+  ]
+}

@@ -10,13 +10,13 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { sha256File } from '../lib/hash.mjs';
-import { ROOT, TOOL_FILES } from '../lib/paths.mjs';
+import { ROOT, ALL_TOOL_FILES, GUARDED_TOOLS } from '../lib/paths.mjs';
 
 export function provenanceCheck({ root = ROOT, env = process.env.LLD_ENV || 'staging' } = {}) {
   const problems = [];
   if (!['staging', 'production'].includes(env)) return { ok: false, problems: [`unknown environment '${env}' (staging|production)`], env };
   const accepted = env === 'production' ? ['approved'] : ['pending', 'approved'];
-  for (const slug of ['protein', 'diabetes']) {
+  for (const slug of GUARDED_TOOLS) {
     let approval, manifest;
     try { approval = JSON.parse(readFileSync(resolve(root, 'approvals', `${slug}.json`), 'utf8')); }
     catch (e) { problems.push(`${slug}: approvals/${slug}.json unreadable (${e.message})`); continue; }
@@ -24,7 +24,7 @@ export function provenanceCheck({ root = ROOT, env = process.env.LLD_ENV || 'sta
     catch (e) { problems.push(`${slug}: manifests/${slug}.json unreadable (${e.message})`); continue; }
     if (approval.tool_slug !== slug) problems.push(`${slug}: approvals/${slug}.json has tool_slug '${approval.tool_slug}'`);
     if (manifest.tool_slug !== slug) problems.push(`${slug}: manifests/${slug}.json has tool_slug '${manifest.tool_slug}'`);
-    const staged = sha256File(resolve(root, 'site', 'public_html', 'tools', TOOL_FILES[slug]));
+    const staged = sha256File(resolve(root, 'site', 'public_html', 'tools', ALL_TOOL_FILES[slug]));
     if (staged !== approval.version_hash) problems.push(`${slug}: staged hash ${staged} != approved version_hash ${approval.version_hash}`);
     const live = (manifest.versions || []).find((v) => v.is_live);
     if (!live) problems.push(`${slug}: manifest has no is_live version`);

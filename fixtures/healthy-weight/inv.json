@@ -1,0 +1,479 @@
+{
+  "group": "INV",
+  "tool": "healthy-weight",
+  "fixtures": [
+    {
+      "id": "FX-HW-INV-01",
+      "purpose": "age 17 -> under-18 stop",
+      "inputs": {
+        "age": 17,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": "under18"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-02",
+      "purpose": "age 100 -> range error",
+      "inputs": {
+        "age": 100,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "errors": [
+          "age"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-03",
+      "purpose": "fractional age",
+      "inputs": {
+        "age": 40.5,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "errors": [
+          "age"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-04",
+      "purpose": "no age",
+      "inputs": {
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "errors": [
+          "age"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-05",
+      "purpose": "height 119",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 119,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "errors": [
+          "ht"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-06",
+      "purpose": "height 231",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 231,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "errors": [
+          "ht"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-07",
+      "purpose": "weight 24.9",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 24.9,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "errors": [
+          "wt"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-08",
+      "purpose": "weight 300.1",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 300.1,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "errors": [
+          "wt"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-09",
+      "purpose": "weight 0",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 0,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "errors": [
+          "wt"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-10",
+      "purpose": "negative height",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": -170,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "errors": [
+          "ht"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-11",
+      "purpose": "waist 49",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 49
+      },
+      "expected": {
+        "errors": [
+          "waist"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-12",
+      "purpose": "waist 201",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 201
+      },
+      "expected": {
+        "errors": [
+          "waist"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-13",
+      "purpose": "no background",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "loss": "no"
+      },
+      "expected": {
+        "errors": [
+          "bg"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-14",
+      "purpose": "Mixed without the follow-up",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "Mixed",
+        "loss": "no"
+      },
+      "expected": {
+        "errors": [
+          "mixed"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-15",
+      "purpose": "no weight-loss answer",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White"
+      },
+      "expected": {
+        "errors": [
+          "loss"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-16",
+      "purpose": "no pregnancy or eating answer",
+      "inputs": {
+        "age": 40,
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "errors": [
+          "preg",
+          "eat"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-17",
+      "purpose": "height and weight empty",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "errors": [
+          "ht",
+          "wt"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-18",
+      "purpose": "age 18 is accepted",
+      "inputs": {
+        "age": 18,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-19",
+      "purpose": "age 99 is accepted",
+      "inputs": {
+        "age": 99,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 90,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "older"
+        ],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-20",
+      "purpose": "edges accepted: 120 cm, 25 kg, waist 50",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 120,
+        "weightKg": 25,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 50
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 17.4,
+        "category": "underweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 26.6,
+          "highKg": 35.9,
+          "lowLb": 59,
+          "highLb": 79
+        },
+        "waist": {
+          "ratio": 0.42,
+          "band": "healthy"
+        },
+        "weightLoss": false,
+        "notes": [
+          "underweight"
+        ],
+        "onward": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-INV-21",
+      "purpose": "edges accepted: 230 cm, 300 kg, waist 200",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 230,
+        "weightKg": 300,
+        "bg": "White",
+        "loss": "no",
+        "waistCm": 200
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 56.7,
+        "category": "obese3",
+        "adjusted": false,
+        "range": {
+          "lowKg": 97.7,
+          "highKg": 131.9,
+          "lowLb": 216,
+          "highLb": 290
+        },
+        "waist": {
+          "ratio": 0.87,
+          "band": "notShown"
+        },
+        "weightLoss": false,
+        "notes": [
+          "class3"
+        ],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    }
+  ]
+}

@@ -12,7 +12,7 @@ import { startWpStack, available } from '../lib/wp-stack.mjs';
 const here = resolve(fileURLToPath(new URL('.', import.meta.url)));
 const ROOT = resolve(here, '..', '..');
 const cards = JSON.parse(readFileSync(resolve(ROOT, 'content', 'tool-cards.json'), 'utf8')).cards;
-const TRY_HEADING = { diabetes: 'Check your Diabetes Risk', protein: 'Calculate My Protein Need' };   // DEC-85: per-page wording of the tool section
+const TRY_HEADING = { diabetes: 'Check your Diabetes Risk', protein: 'Calculate My Protein Need', 'healthy-weight': 'Check your Healthy Weight' };   // DEC-85: per-page wording of the tool section
 const HEADINGS = ['Purpose', 'Who it is for', 'What you will enter', 'Try the tool', 'Limitations', 'How it works', 'Privacy', 'Related reading'];
 const ENGINE = { protein: /Daily Protein Target engine/i, diabetes: /QDiabetes-2018/ };
 let stack; const original = {};

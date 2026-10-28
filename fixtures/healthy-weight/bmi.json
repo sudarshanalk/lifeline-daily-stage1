@@ -1,0 +1,1261 @@
+{
+  "group": "BMI",
+  "tool": "healthy-weight",
+  "fixtures": [
+    {
+      "id": "FX-HW-BMI-01",
+      "purpose": "White BMI 18.4 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 73.6,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 18.4,
+        "category": "underweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "underweight"
+        ],
+        "onward": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-02",
+      "purpose": "White BMI 18.5 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 74.0,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 18.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-03",
+      "purpose": "White BMI 24.9 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 99.6,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.9,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-04",
+      "purpose": "White BMI 25.0 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 100.0,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 25.0,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-05",
+      "purpose": "White BMI 29.9 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 119.6,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 29.9,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-06",
+      "purpose": "White BMI 30.0 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 120.0,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 30.0,
+        "category": "obese1",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-07",
+      "purpose": "White BMI 34.9 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 139.6,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 34.9,
+        "category": "obese1",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-08",
+      "purpose": "White BMI 35.0 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 140.0,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 35.0,
+        "category": "obese2",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-09",
+      "purpose": "White BMI 39.9 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 159.6,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 39.9,
+        "category": "obese2",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-10",
+      "purpose": "White BMI 40.0 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 160.0,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 40.0,
+        "category": "obese3",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "class3"
+        ],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-11",
+      "purpose": "Indian BMI 18.4 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 73.6,
+        "bg": "Indian",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 18.4,
+        "category": "underweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "underweight"
+        ],
+        "onward": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-12",
+      "purpose": "Indian BMI 18.5 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 74.0,
+        "bg": "Indian",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 18.5,
+        "category": "healthy",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-13",
+      "purpose": "Indian BMI 22.9 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 91.6,
+        "bg": "Indian",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 22.9,
+        "category": "healthy",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-14",
+      "purpose": "Indian BMI 23.0 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 92.0,
+        "bg": "Indian",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 23.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-15",
+      "purpose": "Indian BMI 27.4 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 109.6,
+        "bg": "Indian",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 27.4,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-16",
+      "purpose": "Indian BMI 27.5 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 110.0,
+        "bg": "Indian",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 27.5,
+        "category": "obese1",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-17",
+      "purpose": "Indian BMI 32.4 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 129.6,
+        "bg": "Indian",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 32.4,
+        "category": "obese1",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-18",
+      "purpose": "Indian BMI 32.5 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 130.0,
+        "bg": "Indian",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 32.5,
+        "category": "obese2",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-19",
+      "purpose": "Indian BMI 37.4 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 149.6,
+        "bg": "Indian",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 37.4,
+        "category": "obese2",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-20",
+      "purpose": "Indian BMI 37.5 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 150.0,
+        "bg": "Indian",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 37.5,
+        "category": "obese3",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "class3"
+        ],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-21",
+      "purpose": "unrounded 18.449 -> 18.4",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 73.796,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 18.4,
+        "category": "underweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "underweight"
+        ],
+        "onward": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-22",
+      "purpose": "unrounded 18.45 -> 18.5",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 73.8,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 18.5,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-23",
+      "purpose": "unrounded 24.94 -> 24.9",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 99.76,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.9,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-24",
+      "purpose": "unrounded 24.95 -> 25.0",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 99.8,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 25.0,
+        "category": "overweight",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-25",
+      "purpose": "unrounded 22.95 -> 23.0 adjusted",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 91.8,
+        "bg": "Chinese",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 23.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-26",
+      "purpose": "Pakistani: BMI 24.0 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 96,
+        "bg": "Pakistani",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-27",
+      "purpose": "Bangladeshi: BMI 24.0 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 96,
+        "bg": "Bangladeshi",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-28",
+      "purpose": "OtherSouthAsian: BMI 24.0 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 96,
+        "bg": "OtherSouthAsian",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-29",
+      "purpose": "Chinese: BMI 24.0 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 96,
+        "bg": "Chinese",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-30",
+      "purpose": "OtherAsian: BMI 24.0 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 96,
+        "bg": "OtherAsian",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-31",
+      "purpose": "MiddleEastern: BMI 24.0 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 96,
+        "bg": "MiddleEastern",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-32",
+      "purpose": "BlackAfrican: BMI 24.0 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 96,
+        "bg": "BlackAfrican",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-33",
+      "purpose": "BlackCaribbean: BMI 24.0 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 96,
+        "bg": "BlackCaribbean",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-34",
+      "purpose": "White: BMI 24.0 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 96,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-35",
+      "purpose": "NotSay: BMI 24.0 at 200 cm",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 96,
+        "bg": "NotSay",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-36",
+      "purpose": "Mixed, follow-up yes: BMI 24.0",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 96,
+        "bg": "Mixed",
+        "loss": "no",
+        "mixed": "yes"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 91.7,
+          "lowLb": 163,
+          "highLb": 202
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-37",
+      "purpose": "Mixed, follow-up no: BMI 24.0",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 96,
+        "bg": "Mixed",
+        "loss": "no",
+        "mixed": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-38",
+      "purpose": "Mixed, follow-up notsure: BMI 24.0",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 200,
+        "weightKg": 96,
+        "bg": "Mixed",
+        "loss": "no",
+        "mixed": "notsure"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 24.0,
+        "category": "healthy",
+        "adjusted": false,
+        "range": {
+          "lowKg": 73.8,
+          "highKg": 99.7,
+          "lowLb": 163,
+          "highLb": 220
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-39",
+      "purpose": "realistic: 165 cm, 68.4 kg, Indian",
+      "inputs": {
+        "age": 40,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 165,
+        "weightKg": 68.4,
+        "bg": "Indian",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 25.1,
+        "category": "overweight",
+        "adjusted": true,
+        "range": {
+          "lowKg": 50.3,
+          "highKg": 62.4,
+          "lowLb": 111,
+          "highLb": 137
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HW-BMI-40",
+      "purpose": "realistic: 182 cm, 104.5 kg, White, age 70",
+      "inputs": {
+        "age": 70,
+        "preg": "no",
+        "eat": "no",
+        "heightCm": 182,
+        "weightKg": 104.5,
+        "bg": "White",
+        "loss": "no"
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 31.5,
+        "category": "obese1",
+        "adjusted": false,
+        "range": {
+          "lowKg": 61.2,
+          "highKg": 82.6,
+          "lowLb": 135,
+          "highLb": 182
+        },
+        "waist": null,
+        "weightLoss": false,
+        "notes": [
+          "older"
+        ],
+        "onward": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    }
+  ]
+}
