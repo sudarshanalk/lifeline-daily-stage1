@@ -5,8 +5,8 @@ diff --git a/approvals/protein.json b/approvals/protein.json
  {
    "approval_id": "APR-PROTEIN-2026-10-27",
    "tool_slug": "protein",
--  "version_hash": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
-+  "version_hash": "03482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
+-  "version_hash": "48696de472ee353094542f8cc7ee3dfe5f851bafc6c1bfc0d325fd67997ba365",
++  "version_hash": "08696de472ee353094542f8cc7ee3dfe5f851bafc6c1bfc0d325fd67997ba365",
    "engine_name": "Lifeline Daily Protein Target engine v2 (DEC-86): referral stops (kidney, liver or recovery, clinician plan), WHO pregnancy and breastfeeding branch, one sourced winning band for healthy adults, 2.0 g/kg ceiling, continuous basis weight",
    "intended_use": "Educational screening aid that estimates a daily protein intake target (grams per day, g/kg and per meal) for healthy adults from published guidelines and trials. It is not a prescription, not a diagnosis and not individualised clinical nutrition advice.",
    "eligibility": "Adults aged 18 to 99. No number is given, and the visitor is referred to their clinician, for kidney disease or dialysis, liver disease or recovery from a serious illness, injury or surgery, or a diet or protein plan from a doctor or dietitian. Pregnancy and breastfeeding use their own WHO branch. Kidney function \"not sure\" gives a number with a caution. Not for children.",
