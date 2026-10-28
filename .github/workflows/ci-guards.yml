@@ -24,7 +24,8 @@ jobs:
       - name: "PR title is '<ID>: <title>' and the body links an evidence bundle (TC-NFR1-09-AS-01)"
         run: |
           if echo "$PR_TITLE" | grep -Eq '^SPEC: '; then echo "pr-title: SPEC PR (specification/registry/schema change, DEC-55) - no evidence bundle required"; exit 0; fi
-          echo "$PR_TITLE" | grep -Eq '^(FR1|NFR1|UI1)-[0-9]{2}: ' || { echo "pr-title: title must match ^(FR1|NFR1|UI1)-\d{2}: <title> (or ^SPEC: for specification PRs)"; exit 1; }
+          if echo "$PR_TITLE" | grep -Eq '^S2-(C([1-9]|10)(-C([1-9]|10))?|L1?[0-9][a-z]?): '; then echo "pr-title: Stage 2 package PR (Build Method §2) - no evidence bundle required"; exit 0; fi
+          echo "$PR_TITLE" | grep -Eq '^(FR1|NFR1|UI1)-[0-9]{2}: ' || { echo "pr-title: title must match ^(FR1|NFR1|UI1)-\d{2}: <title>, ^S2-Cn: / ^S2-Ln: for Stage 2 packages, or ^SPEC: for specification PRs"; exit 1; }
           echo "$PR_BODY" | grep -q 'evidence/' || { echo "pr-title: body must contain the evidence/ path of the run"; exit 1; }
           echo "pr-title: OK"
 
@@ -83,10 +84,10 @@ jobs:
         with: { node-version: '24' }
       - run: npm ci
       - name: fixtures/**/expected changes only by the oracle runner or a reviewer-signed commit
-        run: node tests/ci/oracle-guard.mjs --base origin/${{ github.base_ref }} --head HEAD
+        run: node tests/ci/oracle-guard.mjs --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }}
 
   assertion-map:
-    if: "github.event_name == 'pull_request' && !startsWith(github.event.pull_request.title, 'SPEC: ')"
+    if: "github.event_name == 'pull_request' && !startsWith(github.event.pull_request.title, 'SPEC: ') && !startsWith(github.event.pull_request.title, 'S2-')"   # Stage 1 registry map; Stage 2 test names are checked by stage2-tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -106,9 +107,12 @@ jobs:
         with: { node-version: '24' }
       - run: npm ci
       - name: Diff touches only the requirement's component paths (+ harness, + provenance refresh set)
+        # The PR head, not HEAD: on GitHub HEAD is the merge ref, whose second parent is the PR head itself, so every
+        # changed file looked like it came in through a merge and the check saw nothing
         run: |
-          if echo "$PR_TITLE" | grep -Eq '^SPEC: '; then node tests/ci/component-scope.mjs --spec --base origin/${{ github.base_ref }} --head HEAD;
-          else node tests/ci/component-scope.mjs --req "$(echo "$PR_TITLE" | grep -oE '^(FR1|NFR1|UI1)-[0-9]{2}')" --base origin/${{ github.base_ref }} --head HEAD; fi
+          if echo "$PR_TITLE" | grep -Eq '^SPEC: '; then node tests/ci/component-scope.mjs --spec --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }};
+          elif echo "$PR_TITLE" | grep -Eq '^S2-'; then node tests/ci/stage2-scope.mjs --title "$PR_TITLE" --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }};
+          else node tests/ci/component-scope.mjs --req "$(echo "$PR_TITLE" | grep -oE '^(FR1|NFR1|UI1)-[0-9]{2}')" --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }}; fi
 
   copy-hash:
     runs-on: ubuntu-latest
@@ -142,7 +146,7 @@ jobs:
       - name: unit, ci, http, static, artefact families (vitest)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}   # lets TC-NFR1-09-AS-02 inspect the last merged PR's check-runs in Actions
-        run: npx vitest run -c tests/vitest.config.mjs tests/unit tests/ci tests/http tests/static tests/artefact
+        run: npx vitest run -c tests/vitest.config.mjs tests/unit tests/ci tests/http tests/static tests/artefact tests/lead
 
   php-integration:
     if: "!startsWith(github.event.pull_request.title || '', 'SPEC: ')"   # SPEC PRs (DEC-55) carry no code or tests
@@ -172,6 +176,115 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: failure()
         with: { name: playwright-traces, path: test-results/, if-no-files-found: ignore }
+
+  # stage2-tests (Build Method §2, §7; Test Criteria §3): Stage 2 test ids must be checks in docs/stage2/03, then the
+  # Stage 2 unit and integration tests (Vitest, tests/stage2). Browser journeys against WordPress run in stage2-e2e.
+  stage2-tests:
+    if: "!startsWith(github.event.pull_request.title || '', 'SPEC: ')"   # SPEC PRs (DEC-55) carry no code or tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.1' }
+      - run: npm ci
+      - name: Stage 2 test names are checks in docs/stage2/03
+        run: node tests/ci/stage2-scope.mjs --names
+      - name: Stage 2 Vitest suites (tests/stage2)
+        run: npx vitest run -c tests/vitest.config.mjs tests/stage2 --passWithNoTests
+
+  # stage2-e2e: a throwaway WordPress with Paid Memberships Pro and the lld-members plugin, then the Stage 2 Playwright
+  # journeys in both browser engines (Test Criteria §3, "E core journeys"). Runs once Cursor adds
+  # tests/stage2/e2e/playwright.config.mjs; until then it reports that and succeeds. No secrets: Stripe is not called here.
+  stage2-e2e:
+    if: "!startsWith(github.event.pull_request.title || '', 'SPEC: ')"   # SPEC PRs (DEC-55) carry no code or tests
+    name: "stage2-e2e (${{ matrix.browser }}${{ matrix.parts > 1 && format(' {0} of {1}', matrix.part, matrix.parts) || '' }})"
+    runs-on: ubuntu-latest
+    # one job per browser engine, run side by side: the full Stage 2 suite outgrew one 30-minute job for both engines.
+    # WebKit is slower (about 38 of its 40 minutes on PR #84), so it runs as two Playwright shards, each on its own
+    # throwaway WordPress; Chromium (about 21 minutes) stays one job.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { browser: chromium, part: 1, parts: 1 }
+          - { browser: webkit, part: 1, parts: 2 }
+          - { browser: webkit, part: 2, parts: 2 }
+    timeout-minutes: 40   # a hung browser once held this job for over two hours; a normal run per engine is well under this
+    services:
+      db:
+        image: mariadb:11
+        env: { MARIADB_ROOT_PASSWORD: ci-only, MARIADB_DATABASE: wp }
+        ports: ['3306:3306']
+        options: --health-cmd="healthcheck.sh --connect" --health-interval=5s --health-retries=20
+      mailpit:
+        image: axllent/mailpit:v1.20
+        ports: ['1025:1025', '8025:8025']
+      # Stripe's official API mock: real Stripe API request shapes without keys or network access (C6 integration in CI).
+      # Real Stripe test mode, test clocks and CLI-replayed notices run on staging (Test Criteria section 3, L7).
+      stripe:
+        image: stripe/stripe-mock:v0.206.0
+        ports: ['12111:12111']
+    env:
+      LLD_WP_URL: http://127.0.0.1:8090
+      MAILPIT_URL: http://127.0.0.1:8025
+      LLD_TEST_CLOCK: '1'
+      LLD_STRIPE_API_BASE: http://127.0.0.1:12111
+      LLD_STRIPE_SECRET: sk_test_123
+    steps:
+      - uses: actions/checkout@v4
+      - id: has
+        run: |
+          if [ -f tests/stage2/e2e/playwright.config.mjs ]; then echo "e2e=true" >> "$GITHUB_OUTPUT"; else echo "stage2-e2e: no tests/stage2/e2e/playwright.config.mjs yet (arrives with S2-C1)"; fi
+      - uses: actions/setup-node@v4
+        if: steps.has.outputs.e2e == 'true'
+        with: { node-version: '24' }
+      # Photos (FR2-02, FR2-37): staging and production have Imagick with HEIC, EXIF and large uploads; CI matches them
+      # The runner's Ubuntu mirror sometimes serves these 27 MB at about 37 kB/s (12 minutes on PR #84), so the
+      # downloaded packages are cached. A run on staging saves the cache; pull requests restore it. Playwright's own
+      # --with-deps install uses the same apt cache (the browser's system libraries hit the same slow mirror).
+      - name: Cached image library packages
+        if: steps.has.outputs.e2e == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/apt-archives
+          key: apt-${{ matrix.browser }}-${{ runner.os }}-v2
+      - name: Image libraries with HEIC support
+        if: steps.has.outputs.e2e == 'true'
+        # The runner's man-db trigger and recommended packages also cost minutes, so both are off
+        run: |
+          echo 'set man-db/auto-update false' | sudo debconf-communicate >/dev/null 2>&1 || true
+          sudo rm -f /var/lib/man-db/auto-update
+          mkdir -p ~/apt-archives/partial
+          echo "Dir::Cache::Archives \"$HOME/apt-archives\";" | sudo tee /etc/apt/apt.conf.d/99lld-cache >/dev/null
+          echo 'APT::Keep-Downloaded-Packages "true";' | sudo tee -a /etc/apt/apt.conf.d/99lld-cache >/dev/null
+          echo 'Acquire::Retries "3";' | sudo tee -a /etc/apt/apt.conf.d/99lld-cache >/dev/null
+          sudo apt-get update -q
+          sudo apt-get install -y -q --no-install-recommends libmagickwand-dev libheif-dev libheif-plugin-libde265 libmagickcore-6.q16-7-extra
+      - uses: shivammathur/setup-php@v2
+        if: steps.has.outputs.e2e == 'true'
+        with:
+          php-version: '8.1'
+          extensions: mysqli, gd, zip, exif, imagick
+          ini-values: upload_max_filesize=32M, post_max_size=32M, memory_limit=512M
+          tools: wp-cli
+      - name: Image support check (HEIC must be listed)
+        if: steps.has.outputs.e2e == 'true'
+        run: |
+          php -r 'echo "imagick ", extension_loaded("imagick") ? "yes" : "no", ", exif ", extension_loaded("exif") ? "yes" : "no", ", HEIC formats: ", class_exists("Imagick") ? implode(",", Imagick::queryFormats("HEI*")) : "-", ", upload ", ini_get("upload_max_filesize"), PHP_EOL;'
+      - name: Throwaway WordPress with Paid Memberships Pro and lld-members
+        if: steps.has.outputs.e2e == 'true'
+        run: bash tests/ci/stage2-wp.sh "$RUNNER_TEMP/wp"
+      - name: Playwright Stage 2 journeys (${{ matrix.browser }}, part ${{ matrix.part }} of ${{ matrix.parts }})
+        if: steps.has.outputs.e2e == 'true'
+        run: |
+          npm ci && npx playwright install --with-deps ${{ matrix.browser }}
+          sudo chown -R "$USER" ~/apt-archives && rm -rf ~/apt-archives/partial ~/apt-archives/lock && du -sh ~/apt-archives
+          npx playwright test -c tests/stage2/e2e/playwright.config.mjs --project=${{ matrix.browser }} --shard=${{ matrix.part }}/${{ matrix.parts }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: 'stage2-playwright-traces-${{ matrix.browser }}-${{ matrix.part }}', path: test-results/, if-no-files-found: ignore }
 
   saf:
     if: "!startsWith(github.event.pull_request.title || '', 'SPEC: ')"   # SPEC PRs (DEC-55) carry no code or tests

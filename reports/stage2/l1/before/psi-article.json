@@ -1,0 +1,246 @@
+{
+ "note": "Slimmed Lighthouse result captured from the pagespeed.web.dev UI (public PSI API daily quota was exhausted). Performance category only; screenshots, non-performance categories, audit descriptions and details of passed audits removed; item lists capped at 8.",
+ "requestedUrl": "https://lifelinedaily.com/exercise-for-depression/",
+ "finalUrl": "https://lifelinedaily.com/exercise-for-depression/",
+ "fetchTime": "2026-10-25T16:32:15.972Z",
+ "lighthouseVersion": "13.5.0",
+ "userAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Mobile Safari/537.36",
+ "configSettings": {
+  "formFactor": "mobile",
+  "throttlingMethod": "simulate",
+  "throttling": {
+   "rttMs": 150,
+   "throughputKbps": 1638.4,
+   "requestLatencyMs": 562.5,
+   "downloadThroughputKbps": 1474.5600000000002,
+   "uploadThroughputKbps": 675,
+   "cpuSlowdownMultiplier": 1.2
+  },
+  "screenEmulation": {
+   "width": 412,
+   "height": 823,
+   "deviceScaleFactor": 1.75,
+   "mobile": true
+  }
+ },
+ "runWarnings": [],
+ "categories": {
+  "performance": {
+   "score": 0.99
+  }
+ },
+ "audits": {
+  "bootup-time": {
+   "id": "bootup-time",
+   "title": "JavaScript execution time",
+   "score": 1,
+   "displayValue": "0.0 s",
+   "numericValue": 23.83
+  },
+  "cumulative-layout-shift": {
+   "id": "cumulative-layout-shift",
+   "title": "Cumulative Layout Shift",
+   "score": 1,
+   "displayValue": "0",
+   "numericValue": 0
+  },
+  "diagnostics": {
+   "id": "diagnostics",
+   "details": {
+    "type": "debugdata",
+    "items": [
+     {
+      "mainDocumentTransferSize": 142661,
+      "maxServerLatency": 11,
+      "numFonts": 1,
+      "numRequests": 14,
+      "numScripts": 0,
+      "numStylesheets": 1,
+      "numTasks": 732,
+      "numTasksOver50ms": 2,
+      "totalByteWeight": 265445,
+      "totalTaskTime": 399.33
+     }
+    ]
+   }
+  },
+  "dom-size-insight": {
+   "id": "dom-size-insight",
+   "title": "Optimize DOM size",
+   "score": 1,
+   "numericValue": 1418,
+   "numericUnit": "element"
+  },
+  "first-contentful-paint": {
+   "id": "first-contentful-paint",
+   "title": "First Contentful Paint",
+   "score": 0.95,
+   "displayValue": "1.6 s",
+   "numericValue": 1550
+  },
+  "forced-reflow-insight": {
+   "id": "forced-reflow-insight",
+   "title": "Forced reflow",
+   "score": 0,
+   "details": {
+    "items": [
+     {
+      "reflowTime": 30.236,
+      "source": "[unattributed]"
+     }
+    ]
+   }
+  },
+  "interactive": {
+   "id": "interactive",
+   "title": "Time to Interactive",
+   "score": 1,
+   "displayValue": "1.6 s",
+   "numericValue": 1553.85
+  },
+  "largest-contentful-paint": {
+   "id": "largest-contentful-paint",
+   "title": "Largest Contentful Paint",
+   "score": 0.99,
+   "displayValue": "1.6 s",
+   "numericValue": 1553.5
+  },
+  "lcp-breakdown-insight": {
+   "id": "lcp-breakdown-insight",
+   "title": "LCP breakdown",
+   "details": {
+    "items": [
+     {
+      "timeToFirstByte": 255.152,
+      "elementRenderDelay": 457.754
+     },
+     {
+      "nodeLabel": "What Exercise Does to Your Brain When You’re Feeling Low",
+      "selector": "div.wpb_wrapper > div.td_block_wrap > div.tdb-block-inner > h1.tdb-title-text",
+      "snippet": "<h1 class=\"tdb-title-text\">"
+     }
+    ]
+   }
+  },
+  "max-potential-fid": {
+   "id": "max-potential-fid",
+   "score": 1,
+   "displayValue": "40 ms",
+   "numericValue": 41
+  },
+  "metrics": {
+   "id": "metrics",
+   "details": {
+    "items": [
+     {
+      "cumulativeLayoutShift": 0,
+      "firstContentfulPaint": 1550,
+      "interactive": 1554,
+      "largestContentfulPaint": 1554,
+      "maxPotentialFID": 41,
+      "observedDomContentLoaded": 790,
+      "observedFirstContentfulPaint": 713,
+      "observedLargestContentfulPaint": 713,
+      "observedLoad": 1136,
+      "observedSpeedIndex": 718,
+      "speedIndex": 1656,
+      "timeToFirstByte": 611,
+      "totalBlockingTime": 0
+     },
+     {
+      "lcpInvalidated": false
+     }
+    ]
+   }
+  },
+  "network-dependency-tree-insight": {
+   "id": "network-dependency-tree-insight",
+   "title": "Network dependency tree",
+   "score": 0,
+   "details": {
+    "longestChain": [
+     "https://lifelinedaily.com/exercise-for-depression/ (142661 B, 650 ms)",
+     "https://lifelinedaily.com/wp-content/plugins/litespeed-cache/guest.vary.php (562 B, 1236 ms)"
+    ],
+    "preconnected": "none"
+   }
+  },
+  "non-composited-animations": {
+   "id": "non-composited-animations",
+   "score": 1,
+   "displayValue": "23 animated elements found"
+  },
+  "resource-summary": {
+   "id": "resource-summary",
+   "details": {
+    "items": [
+     {
+      "resourceType": "total",
+      "requestCount": 8,
+      "transferSize": 265445
+     },
+     {
+      "resourceType": "document",
+      "requestCount": 1,
+      "transferSize": 142661
+     },
+     {
+      "resourceType": "image",
+      "requestCount": 4,
+      "transferSize": 93584
+     },
+     {
+      "resourceType": "font",
+      "requestCount": 1,
+      "transferSize": 23164
+     },
+     {
+      "resourceType": "stylesheet",
+      "requestCount": 1,
+      "transferSize": 5474
+     },
+     {
+      "resourceType": "other",
+      "requestCount": 1,
+      "transferSize": 562
+     },
+     {
+      "resourceType": "script",
+      "requestCount": 0,
+      "transferSize": 0
+     }
+    ]
+   }
+  },
+  "server-response-time": {
+   "id": "server-response-time",
+   "score": 1,
+   "displayValue": "Root document took 260 ms",
+   "numericValue": 255
+  },
+  "speed-index": {
+   "id": "speed-index",
+   "title": "Speed Index",
+   "score": 1,
+   "displayValue": "1.7 s",
+   "numericValue": 1655.86
+  },
+  "total-blocking-time": {
+   "id": "total-blocking-time",
+   "title": "Total Blocking Time",
+   "score": 1,
+   "displayValue": "0 ms",
+   "numericValue": 0
+  },
+  "total-byte-weight": {
+   "id": "total-byte-weight",
+   "score": 1,
+   "displayValue": "Total size was 259 KiB",
+   "numericValue": 265445
+  },
+  "all-other-performance-audits": "passed (score 1) or not applicable: cache-insight, cls-culprits-insight, document-latency-insight, duplicated-javascript-insight, font-display-insight, image-delivery-insight, legacy-javascript-insight, render-blocking-insight, third-parties-insight, unminified-css, unminified-javascript, unsized-images, unused-css-rules, unused-javascript, redirects, viewport-insight; inp-breakdown/layout-shifts/long-tasks/lcp-discovery not applicable"
+ },
+ "loadingExperience_ui": "No Data (Chrome UX Report has no real-user data for this URL or origin)",
+ "reportUrl": "https://pagespeed.web.dev/analysis/https-lifelinedaily-com-exercise-for-depression/3ltcv3azym?form_factor=mobile",
+ "psi-api-error": "GET runPagespeed (keyless) on 2026-10-25 returned 429: Queries per day quota exceeded"
+}

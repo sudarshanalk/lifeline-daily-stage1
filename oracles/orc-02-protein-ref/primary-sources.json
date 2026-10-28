@@ -1,105 +1,134 @@
 {
   "oracle_id": "ORC-02",
-  "source_document": "Daily Protein Target - Engine Logic & Technical Reference (Protein-Tool-Engine-Reference.docx), section 2 'Evidence Base', documented 16 July 2026",
-  "transcribed_from": "C:\\Users\\wickr\\AppData\\Local\\Temp\\claude\\lld\\protein_ref.txt",
-  "purpose": "Transcription of the section 2 evidence table for TC-FR1-07-AS-08; lo/hi are null where the figure is not a numeric g/kg range",
+  "version": "v2 (DEC-86)",
+  "source_document": "Protein-Tool-Evidence-Review (owner, health-tools folder) and DEC-86, approved at HG-02 on 27 Oct 2026",
+  "purpose": "The primary-source table for TC-FR1-07-AS-08: every BANDS row must lie inside the range of a source it cites (key appears in the row source text). lo/hi are null where the source gives no numeric g/kg range.",
   "ceiling_g_per_kg": 2.0,
-  "ceiling_rationale": "ISSN references 2.3-3.1 g/kg only for resistance-trained individuals in a deliberate calorie deficit under supervision; the engine caps every output at 2.0 g/kg",
+  "ceiling_rationale": "The scope of this general tool (DEC-86), not a safety limit; ISSN 2017 allows 2.3-3.1 g/kg only for trained people losing fat.",
   "sources": [
     {
-      "guideline": "IOM / DRI (2005)",
-      "population": "General adults 18+",
-      "figure": "RDA 0.8 g/kg; AMDR 10-35% energy",
-      "g_per_kg_lo": 0.8,
-      "g_per_kg_hi": 0.8,
-      "note": "Single RDA figure; the AMDR is an energy percentage, not g/kg"
-    },
-    {
       "guideline": "WHO/FAO/UNU (2007)",
-      "population": "General adults",
-      "figure": "Safe level 0.83 g/kg",
+      "key": "WHO",
+      "population": "Healthy adults, all ages",
+      "figure": "Safe level 0.83 g/kg; pregnancy +1/+9/+31 g a day by trimester; breastfeeding +19 g (first 6 months), +12.5 g after",
       "g_per_kg_lo": 0.83,
-      "g_per_kg_hi": 0.83,
-      "note": "Single safe-level figure; not used by any section 4.2 band row"
+      "g_per_kg_hi": 0.83
     },
     {
-      "guideline": "PROT-AGE (Bauer 2013)",
-      "population": "Healthy older adults",
-      "figure": ">=1.0-1.2 g/kg",
+      "guideline": "IOM / DRI (2005)",
+      "key": "IOM",
+      "population": "Adults 18+",
+      "figure": "RDA 0.8 g/kg",
+      "g_per_kg_lo": 0.8,
+      "g_per_kg_hi": 0.8
+    },
+    {
+      "guideline": "Bhasin et al. 2018, OPTIMen (randomised, double-blind)",
+      "key": "OPTIMen",
+      "population": "Men 65+ with functional limitation, no exercise",
+      "figure": "1.3 vs 0.8 g/kg for 6 months: no gain in lean mass, strength or function",
+      "g_per_kg_lo": 0.8,
+      "g_per_kg_hi": 1.3
+    },
+    {
+      "guideline": "Tagawa et al. 2021, dose-response meta-analysis of randomised trials",
+      "key": "Tagawa",
+      "population": "Adults, with or without resistance training",
+      "figure": "Lean mass rises steeply up to a breakpoint of 1.3 g/kg, then more slowly; the band 1.0-1.4 spans the breakpoint",
       "g_per_kg_lo": 1.0,
-      "g_per_kg_hi": 1.2,
-      "note": null
+      "g_per_kg_hi": 1.4
     },
     {
-      "guideline": "ESPEN (Deutz 2014)",
-      "population": "Older; illness/recovery",
-      "figure": "1.0-1.2 healthy; 1.2-1.5 illness",
-      "g_per_kg_lo": 1.0,
-      "g_per_kg_hi": 1.5,
-      "note": "Two sub-ranges: healthy older 1.0-1.2; illness/recovery 1.2-1.5",
-      "sub_ranges": [
-        {"label": "healthy older", "g_per_kg_lo": 1.0, "g_per_kg_hi": 1.2},
-        {"label": "illness / recovery", "g_per_kg_lo": 1.2, "g_per_kg_hi": 1.5}
-      ]
-    },
-    {
-      "guideline": "ISSN (Jager 2017)",
-      "population": "Exercising adults",
-      "figure": "1.4-2.0 g/kg; 0.25 g/kg or 20-40 g per meal",
-      "g_per_kg_lo": 1.4,
-      "g_per_kg_hi": 2.0,
-      "note": "Also the per-meal window: 0.25 g/kg or 20-40 g per meal",
-      "per_meal_g_lo": 20,
-      "per_meal_g_hi": 40,
-      "per_meal_g_per_kg": 0.25
-    },
-    {
-      "guideline": "ACSM/AND/DC (2016)",
+      "guideline": "AND / Dietitians of Canada / ACSM joint position (2016)",
+      "key": "ACSM",
       "population": "Athletes",
       "figure": "1.2-2.0 g/kg",
       "g_per_kg_lo": 1.2,
-      "g_per_kg_hi": 2.0,
-      "note": null
+      "g_per_kg_hi": 2.0
     },
     {
-      "guideline": "IOM / DRI",
-      "population": "Pregnancy",
-      "figure": "RDA 1.1 g/kg (own branch)",
-      "g_per_kg_lo": 1.1,
-      "g_per_kg_hi": 1.1,
-      "note": "Own branch (section 4.3); never stacked with other bands"
+      "guideline": "ISSN Position Stand (Jager 2017)",
+      "key": "ISSN",
+      "population": "Most exercising individuals",
+      "figure": "1.4-2.0 g/kg; 20-40 g per meal",
+      "g_per_kg_lo": 1.4,
+      "g_per_kg_hi": 2.0
     },
     {
-      "guideline": "IOM / DRI",
-      "population": "Lactation",
-      "figure": "RDA 1.3 g/kg (own branch)",
-      "g_per_kg_lo": 1.3,
-      "g_per_kg_hi": 1.3,
-      "note": "Own branch (section 4.3); never stacked with other bands"
+      "guideline": "Morton et al. 2018, meta-analysis of 49 randomised trials",
+      "key": "Morton",
+      "population": "Adults doing resistance training",
+      "figure": "Gains plateau at 1.62 g/kg (95% CI 1.03-2.20)",
+      "g_per_kg_lo": 1.03,
+      "g_per_kg_hi": 2.2
     },
     {
-      "guideline": "KDOQI (2020)",
-      "population": "CKD 3-5, not on dialysis",
-      "figure": "RESTRICT 0.55-0.60 g/kg IBW - see section 5",
-      "g_per_kg_lo": 0.55,
-      "g_per_kg_hi": 0.6,
-      "note": "Restriction, on ideal body weight; 0.6-0.8 with diabetes (section 5). Never emitted by the engine: kidney=yes suppresses all numeric output"
+      "guideline": "Leidy et al. 2015 review",
+      "key": "Leidy",
+      "population": "Adults losing weight",
+      "figure": "1.2-1.6 g/kg",
+      "g_per_kg_lo": 1.2,
+      "g_per_kg_hi": 1.6
+    },
+    {
+      "guideline": "Wycherley et al. 2012, meta-analysis of 24 randomised trials",
+      "key": "Wycherley",
+      "population": "Adults on energy-restricted diets",
+      "figure": "About 1.25 vs 0.72 g/kg: more fat lost and lean mass kept",
+      "g_per_kg_lo": 1.2,
+      "g_per_kg_hi": 1.6
+    },
+    {
+      "guideline": "PROT-AGE (Bauer 2013)",
+      "key": "PROT-AGE",
+      "population": "Adults 65+",
+      "figure": "1.0-1.2 g/kg",
+      "g_per_kg_lo": 1.0,
+      "g_per_kg_hi": 1.2
+    },
+    {
+      "guideline": "ESPEN (Deutz 2014)",
+      "key": "ESPEN",
+      "population": "Older adults",
+      "figure": "1.0-1.2 healthy; 1.2-1.5 when active, ill or malnourished",
+      "g_per_kg_lo": 1.0,
+      "g_per_kg_hi": 1.5,
+      "sub_ranges": [
+        {
+          "label": "healthy older",
+          "g_per_kg_lo": 1.0,
+          "g_per_kg_hi": 1.2
+        },
+        {
+          "label": "active, illness or recovery",
+          "g_per_kg_lo": 1.2,
+          "g_per_kg_hi": 1.5
+        }
+      ]
+    },
+    {
+      "guideline": "ESPEN geriatrics guideline (Volkert 2019)",
+      "key": "ESPEN",
+      "population": "Older adults",
+      "figure": "At least 1.0 g/kg, adjusted individually",
+      "g_per_kg_lo": 1.0,
+      "g_per_kg_hi": 1.2
+    },
+    {
+      "guideline": "Nunes et al. 2022, meta-analysis of 74 randomised trials",
+      "key": "Nunes",
+      "population": "Adults; 65+ with resistance training",
+      "figure": "Lean-mass benefit at 1.2-1.59 g/kg in over-65s who strength-train; 1.6+ under 65",
+      "g_per_kg_lo": 1.2,
+      "g_per_kg_hi": 1.59
+    },
+    {
+      "guideline": "KDIGO 2024; KDOQI 2020",
+      "key": "KDIGO",
+      "population": "Chronic kidney disease",
+      "figure": "Set individually; about 0.8 g/kg in stages 3-5, not more than 1.3 if progressive (KDIGO); 0.55-0.6 under supervision (KDOQI). The tool gives no number.",
+      "g_per_kg_lo": null,
+      "g_per_kg_hi": null
     }
-  ],
-  "band_table_section_4_2": [
-    {"trigger": "Activity: sedentary", "lo": 0.8, "hi": 1.0, "source": "IOM RDA (floor)"},
-    {"trigger": "Activity: light/moderate", "lo": 1.0, "hi": 1.4, "source": "IOM AMDR / ISSN lower"},
-    {"trigger": "Activity: very active/endurance", "lo": 1.2, "hi": 1.6, "source": "ACSM/AND/DC 2016"},
-    {"trigger": "Resistance 1-2/wk", "lo": 1.2, "hi": 1.6, "source": "ISSN 2017 lower"},
-    {"trigger": "Resistance 3-4/wk", "lo": 1.4, "hi": 2.0, "source": "ISSN 2017"},
-    {"trigger": "Resistance 5+/wk", "lo": 1.6, "hi": 2.0, "source": "ISSN 2017"},
-    {"trigger": "Goal: build muscle", "lo": 1.6, "hi": 2.0, "source": "ISSN 2017"},
-    {"trigger": "Goal: fat loss + training", "lo": 1.6, "hi": 2.0, "source": "ISSN (lean-mass retention)"},
-    {"trigger": "Goal: fat loss, no training", "lo": 1.2, "hi": 1.5, "source": "ISSN (lean-mass retention)"},
-    {"trigger": "Age >=65, not training", "lo": 1.0, "hi": 1.2, "source": "PROT-AGE / ESPEN"},
-    {"trigger": "Age >=65, training/active", "lo": 1.2, "hi": 1.5, "source": "ESPEN"},
-    {"trigger": "Goal: recovery, or liver=yes", "lo": 1.2, "hi": 1.5, "source": "ESPEN (illness)"}
-  ],
-  "diet_multiplier": {"omnivore": 1.0, "vegetarian": 1.1, "vegan": 1.2, "note": "Labelled in the document as an extrapolation, not a guideline figure"},
-  "healthy_bmi_upper_bound": {"asian": 22.9, "standard": 24.9}
+  ]
 }

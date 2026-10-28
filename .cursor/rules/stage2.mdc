@@ -1,0 +1,38 @@
+---
+description: Lifeline Daily Stage 2 build rules for Cursor (always apply)
+alwaysApply: true
+---
+
+# Lifeline Daily — Stage 2 rules for Cursor
+
+You are the **builder** for Stage 2. Claude is the lead: it reviews and merges your pull requests and deploys to staging. The owner decides.
+
+## Read before any work
+Start with `docs/stage2/Cursor_Instructions_Stage2.md`: the one-page brief, including the local environment (`tools/local/stage2-local.ps1`, http://localhost:8090). Then:
+1. `docs/stage2/04_Build_Method_Stage2.md` — your work packages (C1–C10), file ownership and rules.
+2. `docs/stage2/01_Requirements_Stage2.md` — what to build. **It wins over everything else.**
+3. `docs/stage2/01a_Screen_Design_Specification_Stage2.md` — every screen, state, colour and rule.
+4. `docs/stage2/02_Data_Model_Stage2.md` — every table and field, plus Appendix T (integrity, versions, timing, Stripe mapping, app permissions, restore).
+5. `docs/stage2/03_Test_Criteria_Stage2.md` — one test per check, how each is tested, test data.
+
+Ignore the Stage 1 agent loop in `CLAUDE.md` and `docs/04_AI_Development_Loop_v1_2.md` (no evidence bundles, mutation proofs or review agents in Stage 2).
+
+## Hard rules
+- One package per branch `s2/c<n>-<short-name>`; PR into `staging` titled `S2-Cn: <name>`; use the PR template in the build method §7.
+- Write only in: `site/public_html/wp-content/plugins/lld-members/`, `tests/stage2/`. Package C9 only: one small additive script plus its include in the two tool pages.
+- Never edit: anything else in `site/public_html/tools/` (calculation, wording, frozen blocks), `site/public_html/wp-content/mu-plugins/lld-tools/`, `deploy/`, `.github/workflows/`, `docs/`, `approvals/`, `manifests/`, `copy/`, `fixtures/` expected values.
+- Tests are named after checks, e.g. `TC-FR2-01-AS-03`, and are never weaker than the check's wording.
+- Data only as the Data Model defines it: metric units, UTC event times plus member-local dates, money with currency in smallest units, health data only with health consent, nothing health-related in emails, logs or analytics.
+- Safety matrix before access before matching — everywhere, including direct links, swaps and downloads. "Not suitable for you" never shows a preview or an upgrade button.
+- Payments only via Paid Memberships Pro + Stripe test mode; access follows Stripe's confirmed state, never a return URL.
+- PHP 8.1, WordPress coding standards, plain JS/CSS (no build step, no framework), Playwright + Vitest. No new dependency without asking.
+- No secrets, no real personal or health data. Test members TM-01…TM-21, contacts EC-01…EC-04, content CF-01…CF-10, sentinel values only.
+- Unsure? Do not guess. Ask under "Questions for the lead" in the PR and continue with the rest. Never change a requirement or weaken a test to make it pass.
+
+## Contracts with the lead's CI and deploy (Phase 0)
+- **Database update command (C1):** the plugin provides `wp lld-members db-update`. It creates or upgrades every table to the current schema version, is safe to run any number of times, and exits 0 when already up to date. The staging deploy runs it after each deploy once the plugin is active; CI runs it after activation.
+- **Environment constants the plugin reads** (set in `wp-config.php`, never hard-coded): `LLD_ENV` (`ci`, `local`, `staging` or `production`), `LLD_TEST_CLOCK` (true only outside production), `LLD_SMTP_HOST` and `LLD_SMTP_PORT` (Mailpit outside production). Stripe keys come from the environment through Paid Memberships Pro's settings.
+- **Where tests go:** Vitest unit and integration tests as `tests/stage2/**/*.test.mjs` (CI job `stage2-tests`). Playwright journeys as `tests/stage2/e2e/**/*.spec.mjs` with the config at `tests/stage2/e2e/playwright.config.mjs`, projects for chromium and webkit, base URL from `LLD_WP_URL` and Mailpit from `MAILPIT_URL` (CI job `stage2-e2e`, which builds a throwaway WordPress with Paid Memberships Pro using `tests/ci/stage2-wp.sh`). Every `TC-FR2/NFR2/UI2-…-AS-…` id you use must exist in `docs/stage2/03`, or CI fails.
+- **Member addresses (robots.txt contract, FR2-21 AS-04):** every member page lives under `/members/` (Paid Memberships Pro's own pages keep their `/membership-…/` addresses), member data addresses under `/wp-json/lld-members/`, and member files under `/wp-content/uploads/lld-members/`. The lead's `lld-tools` robots.txt excludes exactly these (`data/search.json` `member_paths`); a new prefix needs a lead change first.
+- **C9 calculator link script:** `site/public_html/tools/lld-members-link.js`. That file, its include in the two tool pages and the hash refresh (`node tests/ci/refresh-approvals.mjs`) are the only extra paths C9 may touch.
+- **File scope is enforced** by CI `component-scope` through `tests/ci/stage2-scope.mjs`.

@@ -11,3 +11,6 @@ playwright-report/
 
 deploy/log/
 __pycache__/
+
+# Stage 2 content drafts and article inventory: unpublished, kept outside Git (local/content-stage2)
+content/stage2/

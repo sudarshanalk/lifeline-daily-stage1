@@ -1,0 +1,48 @@
+{
+  "_note": "Stage 2 search and AI-assistant settings (S2-L4 FR2-21, S2-L5 FR2-22). Read by lld-tools/search.php. member_paths is the contract with the lld-members plugin: every member page, member data address and member file lives under one of these prefixes, and robots.txt excludes them. Notices (IndexNow, reminder email) are sent only when the site is public and its host is in live_hosts; anywhere else they are logged as skipped.",
+  "live_hosts": ["lifelinedaily.com", "www.lifelinedaily.com"],
+  "member_paths": [
+    "/members/",
+    "/membership-account/",
+    "/membership-billing/",
+    "/membership-cancel/",
+    "/membership-checkout/",
+    "/membership-confirmation/",
+    "/membership-invoice/",
+    "/wp-json/lld-members/",
+    "/wp-content/uploads/lld-members/"
+  ],
+  "ai_agents": ["GPTBot", "OAI-SearchBot", "ChatGPT-User", "ClaudeBot", "Claude-User", "Claude-SearchBot", "PerplexityBot", "Perplexity-User", "Google-Extended", "Applebot-Extended", "bingbot"],
+  "llms": {
+    "title": "Lifeline Daily",
+    "summary": "Practical health articles and free health calculators for adults worldwide: healthy eating and weight, blood sugar, fitness and strength, sleep and stress. Start small. Change big. Live healthier.",
+    "notes": [
+      "Articles are general health information, not medical advice. Readers should talk to a doctor about their own health.",
+      "Member pages, member data and member files need a sign-in and are not for crawling."
+    ],
+    "tools": [
+      { "title": "Daily Protein Target", "path": "/health-tools/protein/", "description": "Free calculator: a daily protein target in grams from weight, age, activity level and diet, with how to spread it over meals." },
+      { "title": "Diabetes Risk Check", "path": "/health-tools/diabetes-risk-check/", "description": "Free calculator: estimated 10-year risk of type 2 diabetes from the QDiabetes-2018 model, with what the result means and when to see a doctor." },
+      { "title": "All health tools", "path": "/health-tools/", "description": "The health tools hub." }
+    ],
+    "pages": ["about-us", "contact-us", "privacy-policy", "terms-conditions"],
+    "max_articles": 500
+  },
+  "indexnow": {
+    "endpoint": "https://api.indexnow.org/indexnow",
+    "post_types": ["post", "page"],
+    "log_size": 300
+  },
+  "checklist": {
+    "subject": "Lifeline Daily: monthly search check (under 30 minutes)",
+    "items": [
+      { "task": "Google Search Console, Pages report: note any new 'Not indexed' reasons or errors since last month.", "minutes": 5 },
+      { "task": "Google Search Console, Core Web Vitals and HTTPS reports: confirm mobile pages are still 'Good'.", "minutes": 3 },
+      { "task": "Bing Webmaster Tools, Site Explorer and SEO reports: note any new issues.", "minutes": 5 },
+      { "task": "IndexNow log (WP-CLI: wp lld indexnow log): every article published or updated this month has a 'sent' line.", "minutes": 2 },
+      { "task": "Broken links: open the latest crawl summary and confirm there are no broken internal links.", "minutes": 5 },
+      { "task": "Search queries: list two or three new questions people searched for, for next month's articles.", "minutes": 5 },
+      { "task": "Open /robots.txt and /llms.txt and confirm both load.", "minutes": 2 }
+    ]
+  }
+}

@@ -236,7 +236,7 @@ function lld_tools_render_cta(array $atts = []): string {
   $c = lld_tools_card($atts['slug']); if (!$c) return '';
   $href = $c['landing_url'];
   if ((int)$atts['post_id'] > 0) $href .= '?' . http_build_query(array_merge(lld_tools_links_doc()['utm'] ?? ['utm_source' => 'article'], ['utm_content' => (int)$atts['post_id']]));
-  return '<p class="lld-tool-cta" data-test="tool-cta" data-tool="' . esc_attr($atts['slug']) . '"><a href="' . esc_url($href) . '">' . esc_html($c['cta_label']) . ': ' . esc_html($c['name']) . '</a></p>';
+  return '<p class="lld-tool-cta" data-test="tool-cta" data-tool="' . esc_attr($atts['slug']) . '"><a href="' . esc_url($href) . '" target="_blank" rel="noopener">' . esc_html($c['cta_label']) . ': ' . esc_html($c['name']) . '</a></p>';
 }
 add_shortcode('lld_tool_cta', 'lld_tools_render_cta');
 
@@ -342,6 +342,26 @@ if (function_exists('add_filter')) add_filter('the_content', function ($content)
   $i = stripos($content, '</h2>');
   return $i === false ? $content . $cta : substr($content, 0, $i + 5) . $cta . substr($content, $i + 5);
 }, 15);
+/** S2-L3 (FR2-20): the article's top-level category of the S2-L2 tree (Yoast primary first), or null. */
+function lld_tools_hub_term($post) {
+  $tops = array_map(fn($t) => (string)$t['slug'], (array)(json_decode((string)@file_get_contents(LLD_TOOLS_DIR . '/data/categories.json'), true)['tree'] ?? []));
+  $ids = array_map('intval', (array)wp_get_post_terms($post->ID, 'category', ['fields' => 'ids']));
+  $primary = (int)get_post_meta($post->ID, '_yoast_wpseo_primary_category', true);
+  if ($primary && in_array($primary, $ids, true)) array_unshift($ids, $primary);
+  foreach ($ids as $id) {
+    $t = get_term($id, 'category');
+    while ($t && !is_wp_error($t) && $t->parent) $t = get_term($t->parent, 'category');
+    if ($t && !is_wp_error($t) && in_array($t->slug, $tops, true)) return $t;
+  }
+  return null;
+}
+/** Link to the category hub at the end of qualifying published posts (hub_link in data/links.json); article text untouched. */
+if (function_exists('add_filter')) add_filter('the_content', function ($content) {
+  if (empty(lld_tools_links_doc()['hub_link']) || !function_exists('is_singular') || !is_singular('post') || !in_the_loop() || !is_main_query()) return $content;
+  $post = get_post(); if (!$post || $post->post_status !== 'publish') return $content;
+  $t = lld_tools_hub_term($post); if (!$t) return $content;
+  return $content . '<p class="lld-hub-link" data-test="hub-link">More articles on this topic: <a href="' . esc_url(get_term_link($t)) . '" target="_blank" rel="noopener">' . esc_html($t->name) . '</a></p>';
+}, 16);
 
 /* ---------------------------------------------------------------- homepage (FR1-03, DEC-23): Composer template transform */
 function lld_tools_home_doc(): array { return json_decode((string)file_get_contents(LLD_TOOLS_DIR . '/data/home.json'), true) ?: []; }
@@ -375,6 +395,20 @@ function lld_tools_home_revert(string $content): string {
   $content = preg_replace('/(\[vc_row\b[^\]]*\bel_class="[^"]*?) lld-home-hero"/', '$1"', $content, 1);   // class appended to an existing one
   return preg_replace('/\[vc_row el_class=""/', '[vc_row', $content, 1);
 }
+
+/* ---------------------------------------------------------------- one H1 per page (S2-L3, FR2-20) ------------------ */
+/** The theme prints the header logo as an H1 in every header copy (desktop, mobile, sticky) on some templates. Keep the
+ *  first as the page's H1 and turn the other logo H1s into divs (class lld-logo-h1, styled like the theme's logo H1). */
+function lld_tools_single_logo_h1(string $html): string {
+  $n = 0;
+  return (string)preg_replace_callback('#<h1>(<span class="tdb-logo-(?:svg|text|img)-wrap">.*?)</h1>#s', function ($m) use (&$n) {
+    return ++$n === 1 ? $m[0] : '<div class="lld-logo-h1">' . $m[1] . '</div>';
+  }, $html);
+}
+if (function_exists('add_action')) add_action('template_redirect', function () {
+  if (is_admin() || wp_doing_ajax() || is_feed() || (defined('REST_REQUEST') && REST_REQUEST)) return;
+  ob_start('lld_tools_single_logo_h1');
+}, 20);
 
 /* ---------------------------------------------------------------- category tidy-up (FR1-23, DEC-39…43) ------------ */
 function lld_tools_tidy_doc(): array { static $d = null; return $d ?? ($d = json_decode((string)file_get_contents(LLD_TOOLS_DIR . '/data/tidy.json'), true) ?: []); }
@@ -600,3 +634,9 @@ if (defined('WP_CLI') && WP_CLI) {
   });
   WP_CLI::add_command('lld', 'LLD_Tools_CLI');
 }
+
+/* Stage 2 search and AI-assistant additions (S2-L4). */
+require_once __DIR__ . '/search.php';
+require_once __DIR__ . '/categories.php';
+/* Staging mail catcher (P0-4): inert unless LLD_ENV is 'staging'. */
+require_once __DIR__ . '/staging-mail.php';

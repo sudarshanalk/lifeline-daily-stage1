@@ -55,6 +55,26 @@
       "locator": "MESSAGES.renalUnsure.body"
     },
     {
+      "key": "messages.protein.clinicalStop.title",
+      "source": "site/public_html/tools/protein-requirement-tool.html",
+      "locator": "MESSAGES.clinicalStop.title"
+    },
+    {
+      "key": "messages.protein.clinicalStop.body",
+      "source": "site/public_html/tools/protein-requirement-tool.html",
+      "locator": "MESSAGES.clinicalStop.body"
+    },
+    {
+      "key": "messages.protein.planStop.title",
+      "source": "site/public_html/tools/protein-requirement-tool.html",
+      "locator": "MESSAGES.planStop.title"
+    },
+    {
+      "key": "messages.protein.planStop.body",
+      "source": "site/public_html/tools/protein-requirement-tool.html",
+      "locator": "MESSAGES.planStop.body"
+    },
+    {
       "key": "messages.protein.pregnancy.title",
       "source": "site/public_html/tools/protein-requirement-tool.html",
       "locator": "MESSAGES.pregnancy.title"
@@ -63,16 +83,6 @@
       "key": "messages.protein.pregnancy.body",
       "source": "site/public_html/tools/protein-requirement-tool.html",
       "locator": "MESSAGES.pregnancy.body"
-    },
-    {
-      "key": "messages.protein.clinical.title",
-      "source": "site/public_html/tools/protein-requirement-tool.html",
-      "locator": "MESSAGES.clinical.title"
-    },
-    {
-      "key": "messages.protein.clinical.body",
-      "source": "site/public_html/tools/protein-requirement-tool.html",
-      "locator": "MESSAGES.clinical.body"
     },
     {
       "key": "messages.protein.underweight.title",
@@ -115,11 +125,6 @@
       "locator": "MESSAGES.interp.older"
     },
     {
-      "key": "messages.protein.interp.recovery",
-      "source": "site/public_html/tools/protein-requirement-tool.html",
-      "locator": "MESSAGES.interp.recovery"
-    },
-    {
       "key": "messages.protein.advice.spread",
       "source": "site/public_html/tools/protein-requirement-tool.html",
       "locator": "MESSAGES.advice.spread"
@@ -143,6 +148,11 @@
       "key": "messages.protein.advice.training",
       "source": "site/public_html/tools/protein-requirement-tool.html",
       "locator": "MESSAGES.advice.training"
+    },
+    {
+      "key": "messages.protein.advice.perMealTraining",
+      "source": "site/public_html/tools/protein-requirement-tool.html",
+      "locator": "MESSAGES.advice.perMealTraining"
     },
     {
       "key": "messages.protein.advice.hydrate",

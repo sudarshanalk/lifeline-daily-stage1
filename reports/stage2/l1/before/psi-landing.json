@@ -1,0 +1,178 @@
+{
+ "note": "Condensed Lighthouse (performance) result captured from the pagespeed.web.dev UI because the public PSI API daily quota was exhausted (see psi-api-error). Full report: reportUrl.",
+ "requestedUrl": "https://lifelinedaily.com/health-tools/protein/",
+ "finalUrl": "https://lifelinedaily.com/health-tools/protein/",
+ "fetchTime": "2026-10-25T16:38:21.759Z",
+ "lighthouseVersion": "13.5.0",
+ "formFactor": "mobile",
+ "throttling": {
+  "rttMs": 150,
+  "throughputKbps": 1638.4,
+  "requestLatencyMs": 562.5,
+  "downloadThroughputKbps": 1474.5600000000002,
+  "uploadThroughputKbps": 675,
+  "cpuSlowdownMultiplier": 1.2
+ },
+ "emulatedUserAgent": "Mozilla/5.0 (Linux; Android 11; moto g power (2022)) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Mobile Safari/537.36",
+ "performanceScore": 1,
+ "metrics": {
+  "FCP": {
+   "score": 0.98,
+   "displayValue": "1.3 s",
+   "numericValue": 1330
+  },
+  "LCP": {
+   "score": 1,
+   "displayValue": "1.3 s",
+   "numericValue": 1330
+  },
+  "TBT": {
+   "score": 1,
+   "displayValue": "0 ms",
+   "numericValue": 0
+  },
+  "CLS": {
+   "score": 1,
+   "displayValue": "0",
+   "numericValue": 0
+  },
+  "SpeedIndex": {
+   "score": 1,
+   "displayValue": "1.6 s",
+   "numericValue": 1585.697
+  },
+  "TTI": {
+   "score": 1,
+   "displayValue": "1.4 s",
+   "numericValue": 1363.8
+  }
+ },
+ "diagnostics": {
+  "numRequests": 5,
+  "numScripts": 0,
+  "numStylesheets": 1,
+  "numFonts": 1,
+  "mainDocumentTransferSize": 85175,
+  "totalByteWeight": 162841,
+  "numTasksOver50ms": 2
+ },
+ "resourceSummary": [
+  {
+   "type": "total",
+   "requests": 5,
+   "bytes": 162841
+  },
+  {
+   "type": "document",
+   "requests": 1,
+   "bytes": 85175
+  },
+  {
+   "type": "image",
+   "requests": 1,
+   "bytes": 49038
+  },
+  {
+   "type": "font",
+   "requests": 1,
+   "bytes": 23164
+  },
+  {
+   "type": "stylesheet",
+   "requests": 1,
+   "bytes": 4902
+  },
+  {
+   "type": "other",
+   "requests": 1,
+   "bytes": 562
+  },
+  {
+   "type": "media",
+   "requests": 0,
+   "bytes": 0
+  },
+  {
+   "type": "script",
+   "requests": 0,
+   "bytes": 0
+  },
+  {
+   "type": "third-party",
+   "requests": 0,
+   "bytes": 0
+  }
+ ],
+ "auditsNeedingAttention": {
+  "lcp-breakdown-insight": {
+   "title": "LCP breakdown",
+   "score": 1,
+   "metricSavings": {
+    "LCP": 0
+   },
+   "items": [
+    {
+     "duration": 225,
+     "label": "Time to first byte",
+     "subpart": "timeToFirstByte"
+    },
+    {
+     "duration": 477,
+     "label": "Element render delay",
+     "subpart": "elementRenderDelay"
+    },
+    {
+     "nodeLabel": "Lifeline Daily",
+     "selector": "div.tdb-block-inner > a.tdb-logo-a > span.tdb-logo-text-wrap > span.tdb-logo-text-title"
+    }
+   ]
+  },
+  "network-dependency-tree-insight": {
+   "title": "Network dependency tree",
+   "score": 0,
+   "metricSavings": {
+    "LCP": 0
+   },
+   "items": []
+  }
+ },
+ "auditsPassed": [
+  "cache-insight",
+  "cls-culprits-insight",
+  "document-latency-insight",
+  "dom-size-insight",
+  "duplicated-javascript-insight",
+  "font-display-insight",
+  "forced-reflow-insight",
+  "image-delivery-insight",
+  "legacy-javascript-insight",
+  "render-blocking-insight",
+  "third-parties-insight",
+  "viewport-insight",
+  "unminified-css",
+  "unminified-javascript",
+  "unused-css-rules",
+  "unused-javascript",
+  "total-byte-weight",
+  "bootup-time",
+  "mainthread-work-breakdown",
+  "long-tasks",
+  "non-composited-animations",
+  "unsized-images",
+  "network-requests",
+  "network-rtt",
+  "network-server-latency",
+  "main-thread-tasks",
+  "diagnostics",
+  "metrics",
+  "screenshot-thumbnails",
+  "final-screenshot",
+  "script-treemap-data",
+  "resource-summary",
+  "redirects",
+  "server-response-time"
+ ],
+ "fieldData_ui": "No Data",
+ "reportUrl": "https://pagespeed.web.dev/analysis/https-lifelinedaily-com-health-tools-protein/9x23jeum3n?form_factor=mobile",
+ "psi-api-error": "GET runPagespeed (keyless) on 2026-10-25 returned 429: Queries per day quota exceeded"
+}

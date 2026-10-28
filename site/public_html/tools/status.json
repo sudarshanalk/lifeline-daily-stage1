@@ -3,22 +3,16 @@
   "tools": {
     "protein": {
       "status": "active",
-      "approved_version": "6249b515fb8c3dc780d596088f21abfc114973a5cb42cc1744c503adfd85fc0b",
+      "approved_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "message": null,
       "since": null
     },
     "diabetes": {
       "status": "active",
-      "approved_version": "2fb5571efb6b218da3ed52cbe2dc27baaf1bd418f31d3070d56cc673717babb5",
+      "approved_version": "339cec858f3db3f4f62dbf6bdea79e31a9b99c73e44da48e9cd64c30c776e2ba",
       "message": null,
       "since": null
     }
   },
-  "labels": [
-    {
-      "slug": "healthy-weight",
-      "label": "Healthy weight (planned)",
-      "status": "label_only"
-    }
-  ]
+  "labels": []
 }

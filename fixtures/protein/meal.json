@@ -4,7 +4,7 @@
   "fixtures": [
     {
       "id": "FX-PR-MEAL-01",
-      "purpose": "clamp 20",
+      "purpose": "5 meals: per meal = target / 5",
       "inputs": {
         "units": "metric",
         "age": 40,
@@ -14,84 +14,83 @@
         "weightKg": 60,
         "ethnicity": "White",
         "activity": "sedentary",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 5,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "suppressed": false,
         "branch": "standard",
-        "targetG": 54,
-        "lowG": 48,
+        "targetG": 55,
+        "lowG": 50,
         "highG": 60,
-        "gPerKg": 0.9,
+        "gPerKg": 0.92,
         "basisKg": 60,
         "basisNote": "your current weight",
-        "perMeal": 20,
+        "perMeal": 11,
         "sources": [
-          "IOM RDA 0.8 g/kg (floor)"
+          "WHO/FAO/UNU 2007 (0.83 g/kg); IOM 2005 (0.8 g/kg); Bhasin 2018 OPTIMen trial"
         ],
         "capped": false,
         "older": false,
-        "dietMult": 1,
         "interpKey": "baseline",
         "bmi": 19.592
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     },
     {
       "id": "FX-PR-MEAL-02",
-      "purpose": "clamp 40",
+      "purpose": "2 meals: per meal = target / 2",
       "inputs": {
         "units": "metric",
         "age": 40,
         "sex": "male",
         "preg": "no",
         "heightCm": 175,
-        "weightKg": 95,
+        "weightKg": 96,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "5+",
+        "resistance": "yes",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 2,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "suppressed": false,
         "branch": "standard",
-        "targetG": 151,
-        "lowG": 134,
+        "targetG": 143,
+        "lowG": 118,
         "highG": 168,
-        "gPerKg": 1.8,
-        "basisKg": 83.754,
-        "basisNote": "an adjusted body weight of 83.8 kg (used because applying g/kg to full body weight overstates the target when a larger share of that weight is fat mass)",
-        "perMeal": 40,
+        "gPerKg": 1.7,
+        "basisKg": 84.154,
+        "basisNote": "an adjusted body weight of 84.2 kg (used because applying g/kg to full body weight overstates the target when a larger share of that weight is fat mass)",
+        "perMeal": 72,
         "sources": [
-          "IOM AMDR / ISSN lower band",
-          "ISSN 2017 (1.4–2.0 g/kg)"
+          "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis"
         ],
         "capped": false,
         "older": false,
-        "dietMult": 1,
         "interpKey": "training",
-        "bmi": 31.02
+        "bmi": 31.347
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     },
     {
       "id": "FX-PR-MEAL-03",
-      "purpose": "meals 4",
+      "purpose": "4 meals",
       "inputs": {
         "units": "metric",
         "age": 40,
@@ -101,12 +100,13 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "0",
+        "resistance": "no",
         "goal": "maintain",
         "diet": "omnivore",
         "meals": 4,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "suppressed": false,
@@ -119,16 +119,15 @@
         "basisNote": "your current weight",
         "perMeal": 23,
         "sources": [
-          "IOM AMDR / ISSN lower band"
+          "Tagawa 2021, meta-analysis of randomised trials (benefit rises to 1.3 g/kg)"
         ],
         "capped": false,
         "older": false,
-        "dietMult": 1,
         "interpKey": "active",
         "bmi": 24.49
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     }

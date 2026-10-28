@@ -32,7 +32,8 @@ describe('TC-NFR1-09 reproducible AI development', () => {
     expect(job).toMatch(/exit 1/);
     // the convention holds on the PR under test when GitHub gives us a title (CI), otherwise on the last merged PR titles
     const title = process.env.PR_TITLE;
-    if (title) expect(title).toMatch(/^(FR1|NFR1|UI1)-\d{2}: /);
+    // Stage 2 package PRs (S2-Cn / S2-Ln, Stage 2 Build Method §2) are the Stage 2 class
+    if (title) expect(title).toMatch(/^((FR1|NFR1|UI1)-\d{2}|S2-(C([1-9]|10)(-C([1-9]|10))?|L1?[0-9][a-z]?)): /);
     // every requirement PR merged since HG-01 (#2 onward; #1 was the repository skeleton) came from a req/<ID> branch
     const merged = execSync('git log --merges --format=%s -n 20 origin/staging', { cwd: ROOT, encoding: 'utf8' }).split('\n').filter((l) => /^Merge pull request #(?!1\b)\d+ from sudarshanalk\/req\//.test(l));
     expect(merged.length).toBeGreaterThan(0);
@@ -63,7 +64,7 @@ describe('TC-NFR1-09 reproducible AI development', () => {
     const head = pr.head; const prs = [pr];
     // make sure the merged PR's head commit is available locally (CI checkouts may be shallow / lack the branch)
     if (spawnSync('git', ['cat-file', '-e', head], { cwd: ROOT }).status !== 0) spawnSync('git', ['fetch', '-q', 'origin', head], { cwd: ROOT });
-    const declared = new Set(); const specSkipped = new Set();
+    const declared = new Set(); const specSkipped = new Set(); const s2Skipped = new Set();
     for (const f of ['ci.yml', 'ci-guards.yml']) {
       const text = spawnSync('git', ['show', `${head}:.github/workflows/${f}`], { cwd: ROOT, encoding: 'utf8' });
       if (text.status !== 0) continue; // workflow did not exist at that commit
@@ -72,20 +73,26 @@ describe('TC-NFR1-09 reproducible AI development', () => {
         declared.add(m[1]);
         // a job whose `if:` excludes SPEC PRs (DEC-55) is skipped by design when the merged PR is a SPEC PR
         if (/^\s+if:.*SPEC: /m.test(block)) specSkipped.add(m[1]);
+        // a job whose `if:` excludes Stage 2 package PRs (S2-…, e.g. the Stage 1 assertion-map) is skipped by design for them
+        if (/^\s+if:.*'S2-'/m.test(block)) s2Skipped.add(m[1]);
       }
     }
-    const isSpec = /^SPEC: /.test(pr.title || '');
+    const isSpec = /^SPEC: /.test(pr.title || ''); const isS2 = /^S2-/.test(pr.title || '');
     expect(declared.size, `workflow files of ${head} readable`).toBeGreaterThan(0);
     const api = ghApi(`repos/${repo}/commits/${head}/check-runs?per_page=100`, '.check_runs[] | [.name, .conclusion] | @tsv');
     expect(api.status, api.stderr).toBe(0);
     const byName = Object.fromEntries(api.stdout.split(/\r?\n/).filter(Boolean).map((l) => l.split('\t')));
-    const mustHaveRun = required.filter((j) => declared.has(j));
+    // `unit` runs this very test, so it cannot certify itself: if a merged PR's `unit` ever fails here (for example because
+    // it was merged while its own checks were still running), every later `unit` would fail on it and no PR could merge
+    // green again. `unit` is therefore judged on the PR under test only; every other job of the last merged PR stays strict.
+    const mustHaveRun = required.filter((j) => declared.has(j) && j !== 'unit');
     const notDeclared = required.filter((j) => !declared.has(j));
     if (notDeclared.length) console.info(`last merged PR #${prs[0].number} (${head.slice(0, 7)}) did not yet declare: ${notDeclared.join(', ')}`);
     expect(mustHaveRun.length).toBeGreaterThan(0);
     for (const j of mustHaveRun) {
       // SPEC PRs (DEC-55) legitimately skip the test-family and requirement-scope jobs; every other job must have succeeded
       if (isSpec && specSkipped.has(j)) { expect(byName[j], `SPEC PR #${prs[0].number}: job ${j}`).toMatch(/^(success|skipped)$/); continue; }
+      if (isS2 && s2Skipped.has(j)) { expect(byName[j], `S2 PR #${prs[0].number}: job ${j}`).toMatch(/^(success|skipped)$/); continue; }
       expect(byName[j], `last merged PR #${prs[0].number}: job ${j}`).toBe('success');
     }
   });

@@ -4,7 +4,7 @@
   "fixtures": [
     {
       "id": "FX-PR-CAP-01",
-      "purpose": "vegan athlete capped",
+      "purpose": "vegan, build and strength: top band at the 2.0 ceiling",
       "inputs": {
         "units": "metric",
         "age": 40,
@@ -14,43 +14,40 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "5+",
+        "resistance": "yes",
         "goal": "build",
         "diet": "vegan",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "suppressed": false,
         "branch": "standard",
-        "targetG": 147,
-        "lowG": 144,
+        "targetG": 128,
+        "lowG": 105,
         "highG": 150,
-        "gPerKg": 1.96,
+        "gPerKg": 1.7,
         "basisKg": 75,
         "basisNote": "your current weight",
-        "perMeal": 40,
+        "perMeal": 43,
         "sources": [
-          "IOM AMDR / ISSN lower band",
-          "ISSN 2017 (1.4–2.0 g/kg)",
-          "ISSN 2017",
-          "Plant-protein digestibility uplift (x1.2) — DIAAS-derived, see note"
+          "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis"
         ],
-        "capped": true,
+        "capped": false,
         "older": false,
-        "dietMult": 1.2,
         "interpKey": "training",
         "bmi": 24.49
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     },
     {
       "id": "FX-PR-CAP-02",
-      "purpose": "vegetarian resMid capped",
+      "purpose": "vegetarian, strength band",
       "inputs": {
         "units": "metric",
         "age": 40,
@@ -60,42 +57,40 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "3-4",
+        "resistance": "yes",
         "goal": "maintain",
         "diet": "vegetarian",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "suppressed": false,
         "branch": "standard",
-        "targetG": 133,
-        "lowG": 116,
+        "targetG": 128,
+        "lowG": 105,
         "highG": 150,
-        "gPerKg": 1.77,
+        "gPerKg": 1.7,
         "basisKg": 75,
         "basisNote": "your current weight",
-        "perMeal": 40,
+        "perMeal": 43,
         "sources": [
-          "IOM AMDR / ISSN lower band",
-          "ISSN 2017 (1.4–2.0 g/kg)",
-          "Plant-protein digestibility uplift (x1.1) — DIAAS-derived, see note"
+          "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis"
         ],
-        "capped": true,
+        "capped": false,
         "older": false,
-        "dietMult": 1.1,
         "interpKey": "training",
         "bmi": 24.49
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     },
     {
       "id": "FX-PR-CAP-03",
-      "purpose": "exactly 2.0 uncapped",
+      "purpose": "top band reaches exactly 2.0",
       "inputs": {
         "units": "metric",
         "age": 40,
@@ -105,36 +100,34 @@
         "weightKg": 75,
         "ethnicity": "White",
         "activity": "moderate",
-        "resistance": "5+",
+        "resistance": "yes",
         "goal": "build",
         "diet": "omnivore",
         "meals": 3,
         "kidney": "no",
-        "liver": "no"
+        "liver": "no",
+        "plan": "no"
       },
       "expected": {
         "suppressed": false,
         "branch": "standard",
-        "targetG": 135,
-        "lowG": 120,
+        "targetG": 128,
+        "lowG": 105,
         "highG": 150,
-        "gPerKg": 1.8,
+        "gPerKg": 1.7,
         "basisKg": 75,
         "basisNote": "your current weight",
-        "perMeal": 40,
+        "perMeal": 43,
         "sources": [
-          "IOM AMDR / ISSN lower band",
-          "ISSN 2017 (1.4–2.0 g/kg)",
-          "ISSN 2017"
+          "ISSN Position Stand 2017 (1.4–2.0 g/kg); Morton 2018 meta-analysis"
         ],
         "capped": false,
         "older": false,
-        "dietMult": 1,
         "interpKey": "training",
         "bmi": 24.49
       },
       "oracle": "characterisation",
-      "source_version": "a10d21b0e1c16bea5bf6e4fe8591b5b7ccb5c3bf273b733aa1f889059b1275ca",
+      "source_version": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
       "reviewer": null,
       "status": "recorded"
     }

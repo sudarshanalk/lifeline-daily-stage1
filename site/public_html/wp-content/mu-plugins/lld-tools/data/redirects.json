@@ -13,7 +13,34 @@
     "/healthy-weight/": {
       "to": "/health-tools/",
       "status": 302
-    }
+    },
+    "/omega-3-foods-heart-brain-health/": "/omega-3-foods-heart-brain-joint-health/",
+    "/dash-diet-for-blood-pressure-your-practical-guide/": "/dash-diet-for-blood-pressure-guide/",
+    "/atkins-diet-guide/": "/atkins-diet-how-it-works-guide/",
+    "/the-top-7-health-benefits-of-cycling/": "/health-benefits-of-cycling/",
+    "/the-hidden-dangers-of-artificial-food-colouring/": "/ultra-processed-foods-daily-health-effects/",
+    "/boost-immunity-naturally/": "/gut-health-and-immunity-connected/",
+    "/unveiling-the-power-of-exercise-for-better-sleep/": "/how-to-sleep-better-naturally/",
+    "/eating-healthy-with-diabetes/": "/foods-that-control-blood-sugar-naturally/",
+    "/sleep-health-101-exploring-the-vital-connection-between-sleep-and-wellness/": "/benefits-of-sleep-what-happens-while-you-sleep/",
+    "/the-role-of-nutrition-in-effective-weight-management/": "/10-powerful-weight-loss-strategies-that-truly-work/",
+    "/insulin-101-guide/": "/insulin-resistance-what-it-is-and-why-it-matters-2/",
+    "/10-surprising-ways-stress-is-harming-your-health/": "/effects-of-chronic-stress-on-your-body/",
+    "/mastering-stress-prevention-your-self-care-plan-for-everyday-resilience/": "/how-to-manage-stress-small-habits/",
+    "/relieve-stress-10-proven-methods-backed-by-science/": "/how-to-manage-stress-small-habits/",
+    "/morning-workout-benefits/": "/benefits-of-regular-exercise/",
+    "/10-daily-self-care-practices-to-boost-your-mental-health/": "/lifestyle-changes-for-anxiety-that-actually-work/",
+    "/4-time-saving-self-care-tips-improve-your-well-being-in-just-10-minutes/": "/lifestyle-changes-for-anxiety-that-actually-work/",
+    "/improve-gut-microbiome-eight-simple-ways/": "/how-to-improve-gut-health/",
+    "/gut-microbiome-101-a-guide-to-understanding-and-nurturing-bodys-hidden-ecosystem/": "/how-to-improve-gut-health/",
+    "/boost-your-gut-power-7-actionable-steps-to-supercharge-your-microbiome-today/": "/how-to-improve-gut-health/",
+    "/8-tips-to-improve-your-lipid-profile-and-reduce-high-cholesterol/": "/high-cholesterol-causes-symptoms-treatment/",
+    "/sip-for-your-heart-how-tea-helps-lower-blood-pressure/": "/natural-ways-to-lower-high-blood-pressure/",
+    "/gut-boosting-foods-gut-microbiome/": "/fermented-foods-gut-health-benefits/",
+    "/optimising-gut-health-a-natural-path-to-weight-loss/": "/gut-health-weight-loss-more-than-calories/",
+    "/the-mind-blowing-connection-between-gut-health-and-immunity/": "/gut-health-and-immunity-connected/",
+    "/anti-inflammatory-gut-bacteria/": "/anti-inflammatory-gut-bacteria-2/",
+    "/gut-health-and-mental-health/": "/gut-brain-axis-how-your-gut-and-mind-talk/"
   },
   "hide_gone_tags": true
 }

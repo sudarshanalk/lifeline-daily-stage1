@@ -27,3 +27,15 @@ body:has(.lld-tools-hub, [data-lld-section]) .entry-crumbs, body:has(.lld-tools-
 body:has(.lld-tools-hub, [data-lld-section]) .td-bred-no-url-last, body:has(.lld-tools-hub, [data-lld-section]) .entry-crumbs a { color: var(--lld-6b6b6b); }  /* theme default was 1.76:1; 5.33:1 */
 h2[data-lld-section] ~ p a, h2[data-lld-section] ~ ul a { text-decoration: underline; }  /* links in landing copy must not rely on colour alone */
 body.home .td-post-category { display: inline-block; min-height: 24px; line-height: 24px; padding-top: 0; padding-bottom: 0; }  /* target size >= 24px (was 17px) */
+/* SCR-43 article additions (S2-L4, FR2-21): direct answer, frequently asked questions, dated sources */
+.lld-answer { border-left: 4px solid var(--lld-1a6b3c); padding: 12px 16px; margin: 0 0 24px; background: var(--lld-ffffff); }
+.lld-answer p { margin: 0; font-size: 1.05rem; line-height: 1.55; }
+.lld-faq { margin: 32px 0; }
+.lld-faq__item { border-top: 1px solid var(--lld-dddddd); padding: 12px 0; }
+.lld-faq__q { font-size: 1.05rem; margin: 0 0 6px; }
+.lld-faq__a p { margin: 0 0 8px; }
+.lld-sources { margin: 32px 0 16px; font-size: 0.9rem; color: var(--lld-555555); }
+.lld-sources ol { padding-left: 1.25rem; }
+.lld-sources li { margin: 0 0 6px; overflow-wrap: anywhere; }
+.tdb_header_logo .lld-logo-h1 { display: flex; flex-direction: row; align-items: center; justify-content: flex-start; margin: 0; line-height: 0; pointer-events: auto; }
+.lld-hub-link, .lld-read-next { margin: 24px 0 8px; font-weight: 600; }

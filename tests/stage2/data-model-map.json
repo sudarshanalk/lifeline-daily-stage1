@@ -1,0 +1,611 @@
+{
+  "_about": "Every Lifeline Daily table and file store, each column tied to the Data Model (docs/stage2/02_Data_Model_Stage2.md) section and a phrase from that section. Used by TC-NFR2-01-AS-01 and tests/stage2/data-model-map.test.mjs.",
+  "idPhrase": {
+    "section": "T1",
+    "phrase": "permanent internal number"
+  },
+  "linkPhrase": {
+    "section": "T1",
+    "phrase": "links between records use these numbers"
+  },
+  "nonPersonal": {
+    "security_code.resend_count": "How many times a link or code was resent, for the resend limit (SCR-03, SCR-04). A counter, not about the person. Not named in the Data Model: owner question.",
+    "admin_log.created_at": "When the log line was written, for the 2-year retention in F2. Not named as a field: owner question."
+  },
+  "stores": {
+    "photos": {
+      "section": "S2",
+      "phrase": "stored in a folder the web server will not serve directly"
+    },
+    "data.key": {
+      "section": "S3",
+      "phrase": "key kept outside the database"
+    },
+    "downloads": {
+      "section": "11",
+      "phrase": "not kept on the server"
+    }
+  },
+  "tables": {
+    "member": {
+      "section": "A1",
+      "columns": {
+        "id": "member number",
+        "user_id": "WordPress's own user account",
+        "email": "email",
+        "first_name": "first name",
+        "last_name": "last name",
+        "display_name": "display name",
+        "photo_path": "profile photo",
+        "age": "age",
+        "age_entered_on": "age entered on",
+        "timezone": "time zone",
+        "units": "units",
+        "role": "role",
+        "arrived_from": "arrived from",
+        "email_confirmed_at": "email confirmed on",
+        "joined_on": "joined on",
+        "last_signed_in_at": "last signed in on",
+        "two_step": "two-step sign-in"
+      }
+    },
+    "consent": {
+      "section": "A2",
+      "columns": {
+        "id": "#id",
+        "member_id": "member",
+        "consent_type": "consent type",
+        "change_kind": "given or withdrawn",
+        "document_version": "document version",
+        "occurred_at": "date and time"
+      }
+    },
+    "email_pref": {
+      "section": "A3",
+      "columns": {
+        "member_id": "#link",
+        "welcome": "welcome",
+        "daily_reminder": "daily reminder",
+        "reminder_time": "reminder time",
+        "weekly_review": "weekly-review-ready",
+        "end_of_track": "end-of-track",
+        "nudges": "nudges",
+        "nudges_sent": "nudges sent since last sign-in",
+        "last_nudge_on": "last nudge sent on"
+      }
+    },
+    "unsubscribe_code": {
+      "section": "A3",
+      "columns": {
+        "id": "#id",
+        "member_id": "#link",
+        "code_hash": "unsubscribe codes",
+        "purpose": "behind each unsubscribe link",
+        "expires_at": {
+          "section": "A4",
+          "phrase": "when they expire"
+        },
+        "used_at": "single-use codes"
+      }
+    },
+    "security_code": {
+      "section": "A4",
+      "columns": {
+        "id": "#id",
+        "member_id": "#link",
+        "kind": "email confirmation code",
+        "code_hash": "scrambled code",
+        "new_email": "new address",
+        "pending_token_hash": "scrambled code",
+        "remember": "remember me",
+        "attempts": "failed sign-ins",
+        "resend_count": "#nonpersonal",
+        "user_id": {
+          "section": "A1",
+          "phrase": "WordPress's own user account"
+        },
+        "expires_at": "expiry",
+        "used_at": "when they expire or are used"
+      }
+    },
+    "sign_in_lock": {
+      "section": "A4",
+      "columns": {
+        "email": "per account",
+        "fail_count": "count",
+        "lock_until": "lock-until time"
+      }
+    },
+    "session": {
+      "section": "A4",
+      "columns": {
+        "id": "#id",
+        "member_id": "#link",
+        "token_hash": "website sessions",
+        "remember": "remember me",
+        "expires_at": "lasts 30 days",
+        "ended_at": "all end when the password is reset"
+      }
+    },
+    "app_key": {
+      "section": "A4",
+      "columns": {
+        "id": "#id",
+        "member_id": "#link",
+        "key_hash": "app keys",
+        "created_at": "created on",
+        "expires_at": "expires on",
+        "withdrawn_at": "withdrawn on"
+      }
+    },
+    "goal_choice": {
+      "section": "C1",
+      "columns": {
+        "id": "#id",
+        "member_id": "member",
+        "goal_key": "goal",
+        "sort_order": "order",
+        "chosen_on": "chosen on"
+      }
+    },
+    "something_else": {
+      "section": "C2",
+      "columns": {
+        "id": "#id",
+        "member_id": "member",
+        "written_at": "written on",
+        "text_ciphertext": "encrypted",
+        "theme": "theme",
+        "told_when_live": "told when live"
+      }
+    },
+    "health_profile": {
+      "section": "C3",
+      "columns": {
+        "member_id": "member",
+        "sex": "sex",
+        "height_cm": "height",
+        "weight_kg": "weight",
+        "waist_cm": "waist",
+        "activity_level": "activity level",
+        "diet_type": "diet type",
+        "ethnicity": "ethnicity",
+        "conditions_answered": "conditions answered",
+        "conditions": "conditions",
+        "updated_on": "last updated on",
+        "reminder_sent_on": "reminder sent on"
+      }
+    },
+    "calculator_result": {
+      "section": "C4",
+      "columns": {
+        "id": "#id",
+        "member_id": "member",
+        "calculator": "calculator",
+        "saved_at": "saved on",
+        "headline": "headline result",
+        "unit": "unit",
+        "band": "band",
+        "calculator_version": "calculator version"
+      }
+    },
+    "enrolment": {
+      "section": "C5",
+      "columns": {
+        "id": "enrolment number",
+        "member_id": "member",
+        "track_key": "track",
+        "attempt": "attempt",
+        "status": "status",
+        "free_week_used": "free week used",
+        "last_open_day": "last open day",
+        "finished_on": "finished on",
+        "active_member": {
+          "section": "T1",
+          "phrase": "at most one active enrolment per member"
+        },
+        "stopped_why": "why stopped",
+        "notice_shown": "stop notice shown"
+      }
+    },
+    "enrolment_period": {
+      "section": "C5",
+      "columns": {
+        "id": "#id",
+        "enrolment_id": "enrolment number",
+        "first_on": "first and last local dates",
+        "last_on": "first and last local dates"
+      }
+    },
+    "challenge": {
+      "section": "C6",
+      "columns": {
+        "id": "#id",
+        "member_id": "member",
+        "challenge_version": "challenge version",
+        "joined_on": "joined on",
+        "finished_on": "finished on"
+      }
+    },
+    "workout": {
+      "section": "C7",
+      "columns": {
+        "id": "#id",
+        "member_id": "member",
+        "level": "level",
+        "version_key": "version",
+        "started_on": "started on",
+        "current_week": "current week",
+        "active": "at most one active workout plan",
+        "active_member": {
+          "section": "T1",
+          "phrase": "at most one active workout plan per member"
+        }
+      }
+    },
+    "workout_change": {
+      "section": "C7",
+      "columns": {
+        "id": "#id",
+        "workout_id": "#link",
+        "level": "each level change",
+        "changed_on": "with its date"
+      }
+    },
+    "result": {
+      "section": "C8",
+      "columns": {
+        "id": "#id",
+        "member_id": "member",
+        "item_version": "the exact version of an activity",
+        "context_type": "part of",
+        "context_id": "part of",
+        "programme_day": "programme day",
+        "local_date": "for local date",
+        "result": "result",
+        "recorded_at": "recorded at"
+      }
+    },
+    "check_in": {
+      "section": "C9",
+      "columns": {
+        "id": "#id",
+        "member_id": "member",
+        "enrolment_id": "enrolment week",
+        "week_number": "enrolment week",
+        "month_key": "month",
+        "local_date": "local date",
+        "measures": "measures used",
+        "weight_kg": "weight",
+        "waist_cm": "waist",
+        "activity_minutes": "activity minutes",
+        "chair_stands": "chair stands",
+        "push_ups": "push-ups",
+        "strength_sessions": "strength sessions",
+        "sleep_hours": "average sleep",
+        "sleep_quality": "sleep quality",
+        "stress_level": "stress level",
+        "tests_skipped": "tests skipped"
+      }
+    },
+    "reflection": {
+      "section": "C10",
+      "columns": {
+        "id": "#id",
+        "member_id": "member",
+        "enrolment_id": "enrolment",
+        "when_key": "when",
+        "answers": "answers"
+      }
+    },
+    "weekly_plan": {
+      "section": "C11",
+      "columns": {
+        "id": "#id",
+        "member_id": "member",
+        "enrolment_id": "enrolment",
+        "week_number": "week",
+        "actions": "actions",
+        "level": "level",
+        "completion_done": "activities done",
+        "completion_available": "activities available",
+        "completion_pct": "the percentage",
+        "rule_version": "rule version",
+        "swapped": "swapped",
+        "created_on": "created on"
+      }
+    },
+    "weekly_review": {
+      "section": "C12",
+      "columns": {
+        "id": "#id",
+        "member_id": "member",
+        "enrolment_id": "enrolment",
+        "week_number": "week",
+        "ready_on": "ready on",
+        "next_steps": "next steps"
+      }
+    },
+    "diary_meal": {
+      "section": "C13",
+      "columns": {
+        "id": "#id",
+        "member_id": "member",
+        "local_date": "local date",
+        "meal": "meal",
+        "entry_type": "entry type",
+        "recipe_version": "planned recipe",
+        "description_ciphertext": "description",
+        "photo_path": "photo",
+        "vegetables": "vegetables",
+        "protein_source": "protein source",
+        "sugary_drink": "sugary drink",
+        "portion": "portion",
+        "recorded_at": "recorded at"
+      }
+    },
+    "diary_day": {
+      "section": "C13",
+      "columns": {
+        "member_id": "one per member per local date",
+        "local_date": "local date",
+        "water_glasses": "water",
+        "hunger": "hunger",
+        "energy": "energy"
+      }
+    },
+    "meal_plan": {
+      "section": "C14",
+      "columns": {
+        "id": "#id",
+        "member_id": "member",
+        "week_starting": "week starting",
+        "template_version": "template version",
+        "swaps": "swaps"
+      }
+    },
+    "suggestion": {
+      "section": "C15",
+      "columns": {
+        "id": "#id",
+        "member_id": "member",
+        "item_key": "item",
+        "last_opened_on": "last opened on",
+        "hidden_on": "hidden on"
+      }
+    },
+    "badge": {
+      "section": "C16",
+      "columns": {
+        "id": "#id",
+        "member_id": "member",
+        "badge_key": "badge",
+        "challenge_key": "once per challenge",
+        "earned_on": "earned on"
+      }
+    },
+    "subscription": {
+      "section": "P2",
+      "columns": {
+        "id": "#id",
+        "member_id": "member",
+        "plan": "plan",
+        "access_state": "website access state",
+        "stripe_state": "stripe state",
+        "started_on": "started on",
+        "period_ends_on": "current period ends on",
+        "locked_amount": "locked price",
+        "locked_currency": "amount and currency",
+        "pending_yearly_on": "pending switch to yearly",
+        "premium_ended_on": "premium ended on",
+        "premium_ended_why": "and why",
+        "renewal_reminder_on": "renewal reminder sent on",
+        "stripe_customer": "stripe customer",
+        "stripe_subscription": "subscription references"
+      }
+    },
+    "order": {
+      "section": "P3",
+      "columns": {
+        "id": "order number",
+        "member_id": "member",
+        "ordered_at": "date",
+        "kind": "kind",
+        "related_order_id": "related payment",
+        "catalogue_amount": "catalogue price",
+        "catalogue_currency": "in usd",
+        "charged_amount": "amount charged",
+        "charged_currency": "amount and currency actually charged",
+        "tax_amount": "tax included",
+        "tax_currency": "amount and currency of the tax part",
+        "discount_code": "discount applied",
+        "discount_amount": "with the amount and currency",
+        "discount_currency": "with the amount and currency",
+        "status": "status",
+        "stripe_payment": "stripe payment",
+        "stripe_invoice": "invoice references",
+        "billing_name": "billing name",
+        "billing_email": "email",
+        "billing_country": "country"
+      }
+    },
+    "referral": {
+      "section": "P5",
+      "columns": {
+        "id": "referral number",
+        "referrer_member_id": "referrer",
+        "code": "code",
+        "friend_member_id": "friend",
+        "friend_order_id": "friend's first payment",
+        "status": "status",
+        "self_referral": "self-referral check"
+      }
+    },
+    "reward": {
+      "section": "P5",
+      "columns": {
+        "id": "reward number",
+        "referral_id": "referral",
+        "recipient_member_id": "recipient",
+        "form": "form",
+        "operation_key": "operation key",
+        "status": "status",
+        "stripe_discount": "stripe discount reference",
+        "used_on_order_id": "used on order",
+        "withdrawn_on": "withdrawn on",
+        "withdrawn_why": "and why"
+      }
+    },
+    "stripe_notice": {
+      "section": "P6",
+      "columns": {
+        "id": "#id",
+        "notice_ref": "notice reference",
+        "notice_type": "type",
+        "received_at": "received at",
+        "processing_state": "processing state",
+        "attempts": "number of attempts",
+        "last_error": "last error"
+      }
+    },
+    "contact": {
+      "section": "E1",
+      "columns": {
+        "id": "contact number",
+        "email": "email",
+        "first_name": "first name",
+        "source": "source"
+      }
+    },
+    "contact_consent": {
+      "section": "E1",
+      "columns": {
+        "id": "#id",
+        "contact_id": "#link",
+        "action": "each confirmation and unsubscribe",
+        "occurred_at": "with dates"
+      }
+    },
+    "contact_request": {
+      "section": "E2",
+      "columns": {
+        "id": "#id",
+        "contact_id": "contact",
+        "kind": "kind",
+        "track_key": "track",
+        "requested_on": "requested on"
+      }
+    },
+    "erasure": {
+      "section": "F1",
+      "columns": {
+        "id": "#id",
+        "member_number": "member number",
+        "email_hash": "scrambled email",
+        "what_erased": "what was erased",
+        "erased_at": "date",
+        "emailed_on": "emailed to the owner"
+      }
+    },
+    "admin_log": {
+      "section": "F2",
+      "columns": {
+        "id": "#id",
+        "action": "approvals, article fates, refunds",
+        "member_number": "member number",
+        "member_name": "name",
+        "member_email": "email",
+        "detail": "rewards withdrawn, price changes",
+        "money_related": "money actions",
+        "created_at": "#nonpersonal"
+      }
+    },
+    "support": {
+      "section": "F3",
+      "columns": {
+        "id": "#id",
+        "member_id": "#link",
+        "person_name": "name",
+        "email": "email",
+        "message": "message",
+        "plan": "plan",
+        "created_at": "date"
+      }
+    },
+    "survey": {
+      "section": "F4",
+      "columns": {
+        "id": "#id",
+        "member_id": "#link",
+        "week_number": "week 1 and week 4",
+        "answers": "answers",
+        "what_changed": "what changed for you",
+        "quote_text": "quote text",
+        "permission": "permission to quote",
+        "approved_on": "owner approval date",
+        "display_name": "display name as first name",
+        "country": "country"
+      }
+    },
+    "theme_count": {
+      "section": "F5",
+      "columns": {
+        "id": "#id",
+        "theme": "themes",
+        "item_count": "counts",
+        "period_key": "monthly"
+      }
+    },
+    "weekly_report": {
+      "section": "F6",
+      "columns": {
+        "id": "#id",
+        "week_starting": "weekly report",
+        "totals": "totals only"
+      }
+    },
+    "fb_removal": {
+      "section": "F7",
+      "columns": {
+        "id": "#id",
+        "member_number": "member number",
+        "premium_ended_on": "date premium ended",
+        "removed_on": "date removed",
+        "late": "flagged"
+      }
+    },
+    "error_log": {
+      "section": "F8",
+      "columns": {
+        "id": "#id",
+        "message": "technical errors",
+        "created_at": "30 days"
+      }
+    },
+    "test_clock": {
+      "section": "F9",
+      "columns": {
+        "member_id": "per test member",
+        "frozen_at": "\"today\" setting"
+      }
+    },
+    "zone_change": {
+      "section": "A1",
+      "columns": {
+        "member_id": "#link",
+        "zone_now": "time zone",
+        "zone_before": "time zone before a change",
+        "changed_on": "local date of the change"
+      }
+    },
+    "mail_sent": {
+      "section": "A3",
+      "columns": {
+        "id": "#id",
+        "member_id": "#link",
+        "claim_key": "the kind",
+        "sent_on": "local date it was sent"
+      }
+    }
+  }
+}
