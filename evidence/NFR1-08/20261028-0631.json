@@ -1,0 +1,53 @@
+{
+  "ev_id": "EV-NFR1-08-20261028-0631",
+  "req_id": "NFR1-08",
+  "tc_id": "TC-NFR1-08",
+  "commit": "f4a361fc5a74e7f2c1684e64de8fca0177459b5a",
+  "tool_hashes": {
+    "protein": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
+    "diabetes": "339cec858f3db3f4f62dbf6bdea79e31a9b99c73e44da48e9cd64c30c776e2ba"
+  },
+  "fixtures": [
+    "FX-PR-NRM-01",
+    "FX-DM-QD-01",
+    "FX-MAIL-01"
+  ],
+  "results": [
+    {
+      "assertion": "TC-NFR1-08-AS-01",
+      "outcome": "pass",
+      "artefact": "evidence/NFR1-08/artefacts/drill-full-20261028T061800Z.json (backup manifest)",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-08-AS-02",
+      "outcome": "pass",
+      "artefact": "evidence/NFR1-08/artefacts/drill-full-20261028T061800Z.json (clean restore on staging; tests/e2e/TC-NFR1-08.spec.mjs passed inside the drill; FX-MAIL-01 to the log-transport sink)",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-08-AS-03",
+      "outcome": "pass",
+      "artefact": "evidence/NFR1-08/artefacts/drill-full-20261028T061800Z.json (restore 100 s, downtime 8.7 s; RTO 4 h)",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-08-AS-04",
+      "outcome": "pass",
+      "artefact": "tools/release/backup-policy.json and backup.py POLICY = DEC-19; prune rule tested (artefacts/vitest.json)",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-08-AS-05",
+      "outcome": "skipped",
+      "artefact": "RPO window needs seven days of daily backups from 28 Oct 2026 (evidence/NFR1-08/artefacts/backup-history-staging-20261028T062730Z.json); production schedule is an owner decision (registry known_deviations)",
+      "oracle": "characterisation"
+    }
+  ],
+  "mutations": [],
+  "red_run": "local-20261028-0627",
+  "green_run": "local-20261028-0631",
+  "human_gate": null,
+  "started_at": "2026-10-28T06:07:11Z",
+  "finished_at": "2026-10-28T06:31:13Z"
+}

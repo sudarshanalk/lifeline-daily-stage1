@@ -11,7 +11,7 @@ REQ ?=
 ORC ?= all
 MUT ?=
 
-.PHONY: help up test unit php e2e saf oracle mutate unmutate evidence validate ci-checks sentinel copy-extract
+.PHONY: help up test unit php e2e saf oracle mutate unmutate evidence validate ci-checks sentinel copy-extract backup restore rollback-drill release-smoke backup-history
 
 help:
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t/'
@@ -56,3 +56,21 @@ sentinel: ## privacy leak scan with fixtures/sentinel-values.json
 
 copy-extract: ## regenerate the copy deck copy/*.json + inventory (UI1-11, DEC-25); CHECK=1 only verifies
 	node tests/ci/copy-extract.mjs $(if $(CHECK),--check,)
+
+# NFR1-08 / FR1-19 (tools/release/drill.mjs). Connection from the deploy/connection.sh variables (DEPLOY_HOST, DEPLOY_PORT,
+# DEPLOY_USER, DEPLOY_KEY_FILE, DEPLOY_KNOWN_HOSTS_FILE). ENV=staging|production; restore and rollback drills are staging-only.
+ENV ?= staging
+backup: ## full backup (database, wp-content, public_html/tools, SHA-256 manifest; DEC-19 retention): make backup ENV=production
+	node tools/release/drill.mjs backup $(ENV)
+
+restore: ## restore drill on staging: backup, clean restore, checks; record in evidence/NFR1-08/artefacts/
+	node tools/release/drill.mjs restore staging
+
+rollback-drill: ## rollback drill on staging (FR1-19 AS-04): previous release via deploy/rollback.sh, smoke, roll forward
+	node tools/release/drill.mjs rollback staging
+
+release-smoke: ## release smoke (FR1-19 AS-03): make release-smoke ENV=production LABEL=+1h
+	node tools/release/drill.mjs smoke $(ENV) $(if $(LABEL),--label $(LABEL),)
+
+backup-history: ## backup timestamps for the RPO check (NFR1-08 AS-05)
+	node tools/release/drill.mjs history $(ENV)

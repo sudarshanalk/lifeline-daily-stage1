@@ -1650,7 +1650,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "auto",
-      "status": "draft",
+      "status": "verified",
       "depends_on": [
         "FR1-01"
       ],
@@ -1679,7 +1679,9 @@
       ],
       "human_gate": null,
       "mutations": [],
-      "known_deviations": {},
+      "known_deviations": {
+        "TC-NFR1-08-AS-05": "the 7-day RPO window (DEC-19: no gap > 24 h) is observable only after seven days of scheduled daily backups; the first full backup is 28 Oct 2026 (drill), the test skips until the history covers seven days and the item stays verified, not accepted, until then; where the daily production backups run (cron on the host with tools/release/backup.py, or Hostinger daily backups with a restore drill from one of them) is an owner decision"
+      },
       "evidence_dir": "evidence/NFR1-08/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"

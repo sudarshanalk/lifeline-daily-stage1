@@ -1,0 +1,10 @@
+{
+  "decision": "DEC-19",
+  "rpo_hours": 24,
+  "rto_hours": 4,
+  "retain": { "daily": 14, "weekly": 8 },
+  "storage": "~/lld-backups/<env>/full/<backup-id>/ on the hosting account, mode 0700",
+  "contents": ["database dump (db.sql.gz)", "wp-content (wp-content.tgz)", "public_html/tools (tools.tgz)", "per-file SHA-256 inventory (inventory.json.gz)", "manifest.json"],
+  "excluded": ["wp-content/ai1wm-backups", "wp-config.php"],
+  "enforced_by": "tools/release/backup.py prune(), run after every successful backup"
+}
