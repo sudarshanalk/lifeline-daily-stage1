@@ -8,7 +8,7 @@
 if (!defined('ABSPATH')) exit;
 
 define('LLD_TOOLS_DIR', __DIR__);
-define('LLD_TOOLS_VERSION', '1.1.0');
+define('LLD_TOOLS_VERSION', '1.2.0');
 
 /* The document root that serves /tools/*: ABSPATH in production; the test harness overlays the repository's site/public_html
  * (LLD_TOOLS_DOCROOT defined by tests/lib/wp-router.php and wp-cli-env.php). */
@@ -326,7 +326,15 @@ function lld_tools_render_learn_row(array $atts = []): string {
 add_shortcode('lld_learn_row', 'lld_tools_render_learn_row');
 if (function_exists('add_action')) add_action('wp_enqueue_scripts', function () {
   wp_enqueue_style('lld-tools', plugins_url('assets/lld-tools.css', __FILE__), [], LLD_TOOLS_VERSION);
+  // S2-L1: the Interface Pack theme layer (owner-approved 28 Oct 2026). Presentation over the Newspaper templates; theme untouched (DEC-22).
+  wp_enqueue_style('lld-theme', plugins_url('assets/lld-theme.css', __FILE__), ['lld-tools'], LLD_TOOLS_VERSION);
 });
+/* S2-L1: preload the two self-hosted fonts so the swap happens before first paint (FR2-27). */
+if (function_exists('add_action')) add_action('wp_head', function () {
+  foreach (['inter-latin-var', 'plus-jakarta-sans-latin-var'] as $f) {
+    echo '<link rel="preload" as="font" type="font/woff2" crossorigin href="' . esc_url(plugins_url('assets/fonts/' . $f . '.woff2', __FILE__)) . '">' . "\n";
+  }
+}, 2);
 
 /* ---------------------------------------------------------------- article ↔ tool links (FR1-05, DEC-13) ------------ */
 function lld_tools_links_doc(): array { static $d = null; return $d ?? ($d = json_decode((string)file_get_contents(LLD_TOOLS_DIR . '/data/links.json'), true) ?: []); }

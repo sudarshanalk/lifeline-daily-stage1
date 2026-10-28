@@ -23,3 +23,17 @@ exclude the tool iframes in LiteSpeed Cache → Page Optimization → Lazy Load 
 to `__LLD_ORIGIN__`, substituted per environment at deploy time, never `'*'`.
 
 Test double of the landing page: `tests/e2e/harness/landing.html`; unit test of the listener: `tests/static/TC-FR1-21.test.mjs`.
+
+## Theme layer (S2-L1, Interface Pack) — 28 Oct 2026
+
+`assets/lld-theme.css` restyles the Newspaper Cloud Library templates and the plugin's own blocks to the owner-approved
+Interface Pack (`handover/HANDOVER_TO_CLAUDE_INTERFACE_PACK.md`, prototype `handover/interface_pack_hub.html`): dark
+`#1a1a1a` header with the mint tagline, `#f8faf9` canvas, 16 px cards, the 780 px reading column at 17 px / 1.75, the
+emerald direct-answer box, card-style article lists, pills for sub-topics, the dark footer. Presentation only: the theme
+files stay untouched (DEC-22), the calculator pages stay byte-frozen (only the page around the iframe is styled), and the
+member screens keep their own shell in `lld-members` until Cursor aligns them.
+
+- Tokens live in the file's single `:root` block and in `design/tokens.json` → `theme`; TC-UI1-09 lints the file.
+- Fonts are self-hosted in `assets/fonts/` (latin variable woff2 for Plus Jakarta Sans and Inter, `font-display: swap`,
+  preloaded from `wp_head`), so no request goes to Google Fonts.
+- Loaded after `lld-tools.css` on every front-end page. To switch it off for a check, dequeue the `lld-theme` handle.
