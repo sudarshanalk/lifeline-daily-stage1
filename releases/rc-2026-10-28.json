@@ -1,0 +1,288 @@
+{
+  "release_id": "REL-rc-2026-10-28",
+  "tag": "rc-2026-10-28",
+  "commit": "d9060b1fc072cd57f9f5444030e906372e6fcc70",
+  "created_at": "2026-10-28T06:45:03Z",
+  "tool_hashes": {
+    "protein": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
+    "diabetes": "339cec858f3db3f4f62dbf6bdea79e31a9b99c73e44da48e9cd64c30c776e2ba"
+  },
+  "approval_ids": [
+    "approvals/hg-01.json",
+    "approvals/hg-02.json",
+    "approvals/hg-03.json",
+    "approvals/protein.json",
+    "approvals/diabetes.json",
+    "approvals/copy.json"
+  ],
+  "evidence_ids": [
+    "EV-FR1-03-20261024-0037",
+    "EV-FR1-04-20261023-2335",
+    "EV-FR1-05-20261024-0143",
+    "EV-FR1-06-20261023-1315",
+    "EV-FR1-07-20261023-1457",
+    "EV-FR1-08-20261023-1512",
+    "EV-FR1-09-20261023-1545",
+    "EV-FR1-10-20261023-1452",
+    "EV-FR1-11-20261023-1538",
+    "EV-FR1-12-20261023-1550",
+    "EV-FR1-13-20261023-1541",
+    "EV-FR1-14-20261023-1935",
+    "EV-FR1-15-20261024-0010",
+    "EV-FR1-18-20261024-0129",
+    "EV-FR1-19-20261028-0633",
+    "EV-FR1-20-20261023-1326",
+    "EV-FR1-21-20261023-1351",
+    "EV-FR1-22-20261023-1354",
+    "EV-NFR1-03-20261023-2210",
+    "EV-NFR1-04-20261023-2145",
+    "EV-NFR1-08-20261028-0631",
+    "EV-NFR1-09-20261023-1840",
+    "EV-NFR1-10-20261023-2203",
+    "EV-NFR1-11-20261023-2318",
+    "EV-NFR1-12-20261024-0232",
+    "EV-NFR1-14-20261023-2112",
+    "EV-NFR1-15-20261023-1405",
+    "EV-NFR1-16-20261023-2048",
+    "EV-UI1-01-20261024-0621",
+    "EV-UI1-02-20261023-2158",
+    "EV-UI1-04-20261023-1706",
+    "EV-UI1-05-20261023-1745",
+    "EV-UI1-06-20261023-1958",
+    "EV-UI1-08-20261023-2225",
+    "EV-UI1-10-20261023-2255",
+    "EV-UI1-11-20261023-1815"
+  ],
+  "requirements_released": [
+    "FR1-01",
+    "FR1-02",
+    "FR1-03",
+    "FR1-04",
+    "FR1-05",
+    "FR1-06",
+    "FR1-07",
+    "FR1-08",
+    "FR1-09",
+    "FR1-10",
+    "FR1-11",
+    "FR1-12",
+    "FR1-13",
+    "FR1-14",
+    "FR1-15",
+    "FR1-17",
+    "FR1-18",
+    "FR1-19",
+    "FR1-20",
+    "FR1-21",
+    "FR1-22",
+    "FR1-23",
+    "NFR1-01",
+    "NFR1-02",
+    "NFR1-03",
+    "NFR1-04",
+    "NFR1-05",
+    "NFR1-07",
+    "NFR1-08",
+    "NFR1-09",
+    "NFR1-10",
+    "NFR1-11",
+    "NFR1-12",
+    "NFR1-14",
+    "NFR1-15",
+    "NFR1-16",
+    "UI1-01",
+    "UI1-02",
+    "UI1-03",
+    "UI1-04",
+    "UI1-05",
+    "UI1-06",
+    "UI1-07",
+    "UI1-08",
+    "UI1-09",
+    "UI1-10",
+    "UI1-11"
+  ],
+  "backup_id": "full-20261028T061800Z",
+  "deploy_command": "git push origin rc-2026-10-28 (deploy-production: validate = deploy/tests + RELEASE_TAG preflight + clinical gate + a successful staging deploy of the tagged commit; the deploy job runs only when PROD_DEPLOY_ENABLED=true). Local equivalent from a clean checkout of the tag, with the deploy/environments/production.env.example variables: RELEASE_TAG=rc-2026-10-28 bash deploy/deploy.sh production --dry-run, then RELEASE_TAG=rc-2026-10-28 bash deploy/deploy.sh production",
+  "rollback_command": "bash deploy/rollback.sh production <backup id printed by the deploy (\"Deployment passed; rollback backup: <id>\", also in deploy/log/production.jsonl)>; overlay files only, the database is not touched; deploy/runbooks/runbook-rollback.md",
+  "restore_drill": {
+    "record": "evidence/NFR1-08/artefacts/drill-full-20261028T061800Z.json",
+    "env": "staging",
+    "backup_id": "full-20261028T061800Z",
+    "finished_at": "2026-10-28T06:20:44Z",
+    "restore_duration_s": 100,
+    "downtime_s": 8.7,
+    "rto_hours": 4,
+    "evidence": "evidence/NFR1-08/20261028-0631.json",
+    "full_backup_command": "node tools/release/drill.mjs backup <staging|production> (tools/release/backup.py over SSH; DEC-19 retention)"
+  },
+  "signoffs": {
+    "hg_03": "approvals/hg-03.json",
+    "release_owner": "Product owner (sudarshanalk)",
+    "privacy_reviewer": "Product owner (sudarshanalk)",
+    "rollback_drill": "evidence/FR1-19/artefacts/rollback-drill-20261028T062309Z.json",
+    "staging_release_smoke": "evidence/FR1-19/artefacts/smoke-staging-0h-20261028T063259Z.json",
+    "production_smoke": "node tools/release/drill.mjs smoke production --label +0h | +1h | +24h, with both result mails confirmed in the seeded inbox by the release owner (TC-FR1-19-AS-03)",
+    "production_status_template": "tools.protein and tools.diabetes from site/public_html/tools/status.json at the release commit (approved versions = approvals/{protein,diabetes}.json version_hash); no healthy-weight entry until the owner signs FR2-39 AS-19; labels []",
+    "evidence_exceptions": {
+      "FR1-01": {
+        "gap": "no evidence bundle",
+        "reason": "Wave 0 baseline (P-A0): characterisation fixtures, manifests and the AS-IS report were accepted at HG-01 before the evidence harness existed",
+        "basis": [
+          "HG-01"
+        ]
+      },
+      "FR1-02": {
+        "gap": "no evidence bundle",
+        "reason": "Simple-mode finish (owner, 24 Oct 2026): merged in integration PR #50 with evidence bundles and the independent review waived; the tool-protecting jobs passed; the word-count rule on rebuilt pages is DEC-82, ratified at HG-02",
+        "basis": [
+          "DEC-84",
+          "DEC-82",
+          "HG-02"
+        ]
+      },
+      "FR1-06": {
+        "gap": "TC-FR1-06-AS-03 skipped",
+        "reason": "TC-FR1-06-AS-03 not met: run against staging on 28 Oct 2026 the protein landing page has no [data-lld-deployed-version] marker in its methodology section (the plugin renders the 8-character prefix, the spec expects the full hash). Open item for the release owner: restore the marker on the landing pages or accept the gap",
+        "basis": [
+          "HG-03"
+        ]
+      },
+      "FR1-10": {
+        "gap": "TC-FR1-10-AS-01 skipped; TC-FR1-10-AS-05 skipped",
+        "reason": "TC-FR1-10-AS-01/AS-05 waited for the ORC-01 container run; ORC-01 ran 78/78 agree (PR #56, oracles/orc-01-qdiabetes-r) and HG-02 approved the diabetes calculation as deployed",
+        "basis": [
+          "DEC-02",
+          "HG-02"
+        ]
+      },
+      "FR1-12": {
+        "gap": "TC-FR1-12-AS-01 skipped",
+        "reason": "TC-FR1-12-AS-01 band fixtures come from the ORC-01 weight search; DEC-59 lets FX-DM-QD-71/73 stand in, ratified at HG-02",
+        "basis": [
+          "DEC-59",
+          "HG-02"
+        ]
+      },
+      "FR1-15": {
+        "gap": "TC-FR1-15-AS-06 skipped; no reviewer PASS",
+        "reason": "TC-FR1-15-AS-06 dated staging withdrawal drill not yet recorded (toggle, purge and 4-hour SLA are asserted); bundle predates the reviewer step. Open item for the release owner: run the withdrawal drill on staging (deploy/runbooks/runbook-withdrawal.md)",
+        "basis": [
+          "HG-03"
+        ]
+      },
+      "FR1-17": {
+        "gap": "no evidence bundle",
+        "reason": "Simple-mode finish (owner, 24 Oct 2026): merged in integration PR #50 with evidence bundles and the independent review waived; the tool-protecting jobs passed",
+        "basis": [
+          "DEC-84"
+        ]
+      },
+      "FR1-19": {
+        "gap": "TC-FR1-19-AS-01 skipped; TC-FR1-19-AS-02 skipped; TC-FR1-19-AS-03 skipped; no reviewer PASS",
+        "reason": "No independent review in simple mode; AS-01/AS-02 run on this record; TC-FR1-19-AS-03 production smoke at +0 h, +1 h, +24 h runs after the deploy (registry known_deviations)",
+        "basis": [
+          "DEC-84",
+          "HG-03"
+        ]
+      },
+      "FR1-22": {
+        "gap": "TC-FR1-22-AS-01 skipped",
+        "reason": "TC-FR1-22-AS-01: ORC-02/03/04 reproduce; ORC-01 ran 78/78 agree in PR #56 after the bundle; deferral recorded at HG-01 and closed at HG-02",
+        "basis": [
+          "HG-01",
+          "HG-02"
+        ]
+      },
+      "FR1-23": {
+        "gap": "no evidence bundle",
+        "reason": "Simple-mode finish (owner, 24 Oct 2026): merged in integration PR #50 with evidence bundles and the independent review waived; the tool-protecting jobs passed",
+        "basis": [
+          "DEC-84"
+        ]
+      },
+      "NFR1-01": {
+        "gap": "no evidence bundle",
+        "reason": "Simple-mode finish (owner, 24 Oct 2026): merged in integration PR #50 with evidence bundles and the independent review waived; the tool-protecting jobs passed; privacy checklist signed at HG-03",
+        "basis": [
+          "DEC-84",
+          "HG-03"
+        ]
+      },
+      "NFR1-02": {
+        "gap": "no evidence bundle",
+        "reason": "Simple-mode finish (owner, 24 Oct 2026): merged in integration PR #50 with evidence bundles and the independent review waived; the tool-protecting jobs passed; the clinical gate itself is HG-02, signed 27 Oct 2026",
+        "basis": [
+          "DEC-84",
+          "HG-02"
+        ]
+      },
+      "NFR1-03": {
+        "gap": "TC-NFR1-03-AS-02 skipped; TC-NFR1-03-AS-03 skipped",
+        "reason": "TC-NFR1-03-AS-02 (OWASP ZAP baseline) and AS-03 (WPScan) need the Docker stack (OI-4) and a scan of staging; not run. Open item accepted for this release at HG-03",
+        "basis": [
+          "HG-03"
+        ]
+      },
+      "NFR1-05": {
+        "gap": "no evidence bundle",
+        "reason": "Simple-mode finish (owner, 24 Oct 2026): merged in integration PR #50 with evidence bundles and the independent review waived; the tool-protecting jobs passed",
+        "basis": [
+          "DEC-84"
+        ]
+      },
+      "NFR1-07": {
+        "gap": "no evidence bundle",
+        "reason": "Simple-mode finish (owner, 24 Oct 2026): merged in integration PR #50 with evidence bundles and the independent review waived; the tool-protecting jobs passed; MedicalWebPage structured data is DEC-81",
+        "basis": [
+          "DEC-84",
+          "DEC-81"
+        ]
+      },
+      "NFR1-08": {
+        "gap": "TC-NFR1-08-AS-05 skipped; no reviewer PASS",
+        "reason": "No independent review in simple mode; TC-NFR1-08-AS-05 (7-day RPO window) needs seven days of daily backups from 28 Oct 2026 (registry known_deviations)",
+        "basis": [
+          "DEC-84",
+          "HG-03"
+        ]
+      },
+      "NFR1-09": {
+        "gap": "no reviewer PASS",
+        "reason": "Wave 0/1 CI skeleton bundle predates the reviewer step; process-only job, waived in simple mode",
+        "basis": [
+          "DEC-84"
+        ]
+      },
+      "NFR1-16": {
+        "gap": "TC-NFR1-16-AS-02 skipped",
+        "reason": "TC-NFR1-16-AS-02 retention artefact privacy/log-retention.json waits for the hosting log-rotation decision; open item accepted for this release at HG-03",
+        "basis": [
+          "HG-03"
+        ]
+      },
+      "UI1-01": {
+        "gap": "TC-UI1-01-AS-03 skipped",
+        "reason": "TC-UI1-01-AS-03 signed visual baseline: the candidate baselines passed and their signature was an HG-02 item (DEC-77)",
+        "basis": [
+          "DEC-77",
+          "HG-02"
+        ]
+      },
+      "UI1-03": {
+        "gap": "no evidence bundle",
+        "reason": "Simple-mode finish (owner, 24 Oct 2026): merged in integration PR #50 with evidence bundles and the independent review waived; the tool-protecting jobs passed",
+        "basis": [
+          "DEC-84"
+        ]
+      },
+      "UI1-07": {
+        "gap": "no evidence bundle",
+        "reason": "Simple-mode finish (owner, 24 Oct 2026): merged in integration PR #50 with evidence bundles and the independent review waived; the tool-protecting jobs passed",
+        "basis": [
+          "DEC-84"
+        ]
+      }
+    }
+  }
+}
