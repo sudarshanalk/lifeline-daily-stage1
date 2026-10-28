@@ -1,0 +1,666 @@
+{
+  "oracle_id": "ORC-01",
+  "implementation": "R QDiabetes::QDR2018A (CRAN Archive 1.0-2, AGPL-3; research-use disclaimer applies) in a pinned rocker/r-ver container",
+  "versions": {
+    "R": "4.4.1",
+    "QDiabetes": "1.0-2",
+    "tarball_sha256": "2cacd8ffdc319250f0016019ecdf300e15a3b0911ff0948b23fec0afc65b3964",
+    "image": "rocker/r-ver:4.4.1",
+    "image_digest": null,
+    "licence": "AGPL-3 + file LICENSE"
+  },
+  "source_hash": "4aed3e15e89598725a8c9fc58ffd7aa41efb1dc64fd510f80c6d92d342716f81",
+  "run_at": "2026-10-25T11:41:39Z",
+  "results": [
+    {
+      "fixture_id": "FX-DM-BAND-01",
+      "expected": {
+        "pct": null
+      },
+      "notes": "inputs not numeric (BAND fixture pending weight search)"
+    },
+    {
+      "fixture_id": "FX-DM-BAND-02",
+      "expected": {
+        "pct": null
+      },
+      "notes": "inputs not numeric (BAND fixture pending weight search)"
+    },
+    {
+      "fixture_id": "FX-DM-BAND-03",
+      "expected": {
+        "pct": null
+      },
+      "notes": "inputs not numeric (BAND fixture pending weight search)"
+    },
+    {
+      "fixture_id": "FX-DM-BAND-04",
+      "expected": {
+        "pct": null
+      },
+      "notes": "inputs not numeric (BAND fixture pending weight search)"
+    },
+    {
+      "fixture_id": "FX-DM-BAND-05",
+      "expected": {
+        "pct": null
+      },
+      "notes": "inputs not numeric (BAND fixture pending weight search)"
+    },
+    {
+      "fixture_id": "FX-DM-BAND-06",
+      "expected": {
+        "pct": null
+      },
+      "notes": "inputs not numeric (BAND fixture pending weight search)"
+    },
+    {
+      "fixture_id": "FX-DM-BAND-07",
+      "expected": {
+        "pct": null
+      },
+      "notes": "inputs not numeric (BAND fixture pending weight search)"
+    },
+    {
+      "fixture_id": "FX-DM-BAND-08",
+      "expected": {
+        "pct": null
+      },
+      "notes": "inputs not numeric (BAND fixture pending weight search)"
+    },
+    {
+      "fixture_id": "FX-DM-BAND-09",
+      "expected": {
+        "pct": null
+      },
+      "notes": "inputs not numeric (BAND fixture pending weight search)"
+    },
+    {
+      "fixture_id": "FX-DM-BAND-10",
+      "expected": {
+        "pct": null
+      },
+      "notes": "inputs not numeric (BAND fixture pending weight search)"
+    },
+    {
+      "fixture_id": "FX-DM-BAND-11",
+      "expected": {
+        "pct": null
+      },
+      "notes": "inputs not numeric (BAND fixture pending weight search)"
+    },
+    {
+      "fixture_id": "FX-DM-BAND-12",
+      "expected": {
+        "pct": null
+      },
+      "notes": "inputs not numeric (BAND fixture pending weight search)"
+    },
+    {
+      "fixture_id": "FX-DM-QD-CLAMP-01",
+      "expected": {
+        "pct": 2.10212706308943
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-CLAMP-02",
+      "expected": {
+        "pct": 1.31945287293459
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-CLAMP-03",
+      "expected": {
+        "pct": 44.256060908295
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-CLAMP-04",
+      "expected": {
+        "pct": 26.6429311055259
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-CONC-01",
+      "expected": {
+        "pct": 0.318344558660111
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-CONC-02",
+      "expected": {
+        "pct": 0.127447466970732
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-01",
+      "expected": {
+        "pct": 0.861606891006617
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-02",
+      "expected": {
+        "pct": 0.738697547250022
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-03",
+      "expected": {
+        "pct": 1.73623427879777
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-04",
+      "expected": {
+        "pct": 1.29937344303742
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-05",
+      "expected": {
+        "pct": 3.06585037573543
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-06",
+      "expected": {
+        "pct": 2.12523799724617
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-07",
+      "expected": {
+        "pct": 4.8633590228836
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-08",
+      "expected": {
+        "pct": 3.25000574515074
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-09",
+      "expected": {
+        "pct": 7.04127183717025
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-10",
+      "expected": {
+        "pct": 4.66087123931792
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-11",
+      "expected": {
+        "pct": 9.405549651245
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-12",
+      "expected": {
+        "pct": 6.27845593981911
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-13",
+      "expected": {
+        "pct": 11.6815968179042
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-14",
+      "expected": {
+        "pct": 7.95073086084561
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-15",
+      "expected": {
+        "pct": 13.5665531553157
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-16",
+      "expected": {
+        "pct": 9.46882201578059
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-17",
+      "expected": {
+        "pct": 14.7913671339048
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-18",
+      "expected": {
+        "pct": 10.6048051944107
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-19",
+      "expected": {
+        "pct": 15.175038102573
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-20",
+      "expected": {
+        "pct": 11.1625140295156
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-21",
+      "expected": {
+        "pct": 14.6600647810962
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-22",
+      "expected": {
+        "pct": 11.027136692064
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-23",
+      "expected": {
+        "pct": 13.3248739211481
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-24",
+      "expected": {
+        "pct": 10.1994727045629
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-25",
+      "expected": {
+        "pct": 0.287625638136613
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-26",
+      "expected": {
+        "pct": 0.254102016286484
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-27",
+      "expected": {
+        "pct": 0.581308609095166
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-28",
+      "expected": {
+        "pct": 0.447797362815539
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-29",
+      "expected": {
+        "pct": 1.03112735634527
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-30",
+      "expected": {
+        "pct": 0.73442755969324
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-31",
+      "expected": {
+        "pct": 1.64582958588642
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-32",
+      "expected": {
+        "pct": 1.12736378176814
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-33",
+      "expected": {
+        "pct": 2.40109184217302
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-34",
+      "expected": {
+        "pct": 1.62451373245853
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-35",
+      "expected": {
+        "pct": 3.23446750538978
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-36",
+      "expected": {
+        "pct": 2.20048872966337
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-37",
+      "expected": {
+        "pct": 4.05056499223275
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-38",
+      "expected": {
+        "pct": 2.80284374110308
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-39",
+      "expected": {
+        "pct": 4.7371216628829
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-40",
+      "expected": {
+        "pct": 3.35591792007562
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-41",
+      "expected": {
+        "pct": 5.18860560007006
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-42",
+      "expected": {
+        "pct": 3.77377938557178
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-43",
+      "expected": {
+        "pct": 5.33092213496404
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-44",
+      "expected": {
+        "pct": 3.98020499606478
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-45",
+      "expected": {
+        "pct": 5.13999931934597
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-46",
+      "expected": {
+        "pct": 3.93001951974138
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-47",
+      "expected": {
+        "pct": 4.64854024627586
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-48",
+      "expected": {
+        "pct": 3.62428328049428
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-49",
+      "expected": {
+        "pct": 8.453643916772
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-50",
+      "expected": {
+        "pct": 12.1584468656374
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-51",
+      "expected": {
+        "pct": 7.31800834222726
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-52",
+      "expected": {
+        "pct": 3.80741896106451
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-53",
+      "expected": {
+        "pct": 4.77196937610336
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-54",
+      "expected": {
+        "pct": 4.72738086059835
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-55",
+      "expected": {
+        "pct": 3.62149306952043
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-56",
+      "expected": {
+        "pct": 8.2420437378178
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-57",
+      "expected": {
+        "pct": 9.55254758095391
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-58",
+      "expected": {
+        "pct": 9.58491122362937
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-59",
+      "expected": {
+        "pct": 10.8250226120085
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-60",
+      "expected": {
+        "pct": 9.69225794782539
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-61",
+      "expected": {
+        "pct": 8.55394606756532
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-62",
+      "expected": {
+        "pct": 19.6919946523499
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-63",
+      "expected": {
+        "pct": 6.48977397814529
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-64",
+      "expected": {
+        "pct": 8.49633552028439
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-65",
+      "expected": {
+        "pct": 8.76078918145776
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-66",
+      "expected": {
+        "pct": 8.71182646466528
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-67",
+      "expected": {
+        "pct": 11.5073933244202
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-68",
+      "expected": {
+        "pct": 10.048353959549
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-69",
+      "expected": {
+        "pct": 12.7453859423577
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-70",
+      "expected": {
+        "pct": 12.7453859423577
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-71",
+      "expected": {
+        "pct": 2.10212706308943
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-72",
+      "expected": {
+        "pct": 14.7056119048005
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-73",
+      "expected": {
+        "pct": 44.0325686627614
+      },
+      "notes": "unrounded QDR2018A percentage"
+    },
+    {
+      "fixture_id": "FX-DM-QD-74",
+      "expected": {
+        "pct": 44.256060908295
+      },
+      "notes": "unrounded QDR2018A percentage"
+    }
+  ],
+  "notes": [
+    "Comparison: abs(js - r) <= 0.05 pp on unrounded values (DEC-02).",
+    "BAND fixtures without a numeric weight are reported with pct null; search-weight.R fills them (TC-FR1-12-AS-01 inputs).",
+    "source_hash is the sha256 of this script (openssl inside the container).",
+    "Run 25 Oct 2026 on a GitHub Actions ubuntu-latest runner (run 40189863760) because Docker is unavailable on the build machine (OI-4); the tarball was verified against the pinned sha256. fidelity-gate: 78 FX-DM-QD fixtures compared, maximum |js - r| = 0.000000 pp."
+  ]
+}

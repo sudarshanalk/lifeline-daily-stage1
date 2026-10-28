@@ -11,7 +11,7 @@
 // Usage: node tests/ci/refresh-approvals.mjs [--check]   (--check: exit 1 if anything would change)
 import { readFileSync, writeFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { ROOT, TOOL_FILES, toolPath } from '../lib/paths.mjs';
+import { ROOT, GUARDED_TOOLS, toolPath } from '../lib/paths.mjs';
 import { sha256, sha256File } from '../lib/hash.mjs';
 import { frozenHashes, closeAll } from '../lib/tool-page.mjs';
 import { extractCopy } from '../lib/copy.mjs';
@@ -30,11 +30,11 @@ function write(rel, obj) {
 }
 
 const copy = extractCopy();
-for (const slug of ['protein', 'diabetes']) {
+for (const slug of GUARDED_TOOLS) {
   const approval = read(`approvals/${slug}.json`);
   approval.version_hash = sha256File(toolPath(slug));
   // aggregate per source + the per-banner hashes the TC pages compare against (e.g. TC-FR1-09-AS-05 copy_hashes.pregnancy)
-  const BANNERS = { protein: ['pregnancy', 'renalStop', 'renalUnsure', 'clinical', 'underweight'], diabetes: ['emergency', 'symptomatic'] };
+  const BANNERS = { protein: ['pregnancy', 'renalStop', 'renalUnsure', 'clinical', 'underweight'], diabetes: ['emergency', 'symptomatic'], 'healthy-weight': ['stops.under18', 'stops.pregnancy', 'stops.eating', 'weightLoss'] };
   const texts = copy.texts.messages[slug];
   approval.copy_hashes = { ...copy.aggregate[slug], ...Object.fromEntries(BANNERS[slug].filter((k) => texts[`${k}.title`] !== undefined).map((k) => [k, sha256(`${texts[`${k}.title`]}\n${texts[`${k}.body`]}`)])) };
   write(`approvals/${slug}.json`, approval);

@@ -12,6 +12,12 @@
       "approved_version": "339cec858f3db3f4f62dbf6bdea79e31a9b99c73e44da48e9cd64c30c776e2ba",
       "message": null,
       "since": null
+    },
+    "healthy-weight": {
+      "status": "active",
+      "approved_version": "9d2d73f9a82be97c4d621f060aff3046ca19bb554769c2abde719a8d1cb8fc87",
+      "message": null,
+      "since": null
     }
   },
   "labels": []

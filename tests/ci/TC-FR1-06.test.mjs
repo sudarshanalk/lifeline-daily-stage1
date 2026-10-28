@@ -1,6 +1,7 @@
 // TC-FR1-06 Clinical method provenance — families artefact + ci. Fixtures: approvals/*.json, manifests. Mutation: MUT-10.
 // AS-03 (landing-page methodology deployed_version) is an e2e assertion: tests/e2e/TC-FR1-06.spec.mjs.
 import { describe, expect, test } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import approvalProtein from '../../approvals/protein.json' with { type: 'json' };
 import approvalDiabetes from '../../approvals/diabetes.json' with { type: 'json' };
@@ -12,9 +13,10 @@ import { withMutation } from '../lib/mutate.mjs';
 import { provenanceCheck } from './provenance-check.mjs';
 import { engineFreeze } from './engine-freeze.mjs';
 
-const TOOL_PATHS = ['site/public_html/tools/protein-requirement-tool.html', 'site/public_html/tools/diabetes-risk-tool.html'];
-const PROVENANCE_INPUTS = ['approvals/protein.json', 'approvals/diabetes.json', 'manifests/protein.json', 'manifests/diabetes.json', ...TOOL_PATHS];
-const FREEZE_INPUTS = ['manifests/protein.json', 'manifests/diabetes.json', 'registry/Stage1_Requirements_Registry_v1_2.json', ...TOOL_PATHS];
+// the guards cover every guarded tool (FR2-39 adds the Healthy Weight Check), so the mutation sandboxes carry all of them
+const TOOL_PATHS = ['site/public_html/tools/protein-requirement-tool.html', 'site/public_html/tools/diabetes-risk-tool.html', 'site/public_html/tools/healthy-weight-tool.html'];
+const PROVENANCE_INPUTS = ['approvals/protein.json', 'approvals/diabetes.json', 'approvals/healthy-weight.json', 'manifests/protein.json', 'manifests/diabetes.json', 'manifests/healthy-weight.json', ...TOOL_PATHS];
+const FREEZE_INPUTS = ['manifests/protein.json', 'manifests/diabetes.json', 'manifests/healthy-weight.json', 'registry/Stage1_Requirements_Registry_v1_2.json', ...TOOL_PATHS];
 
 describe('TC-FR1-06 clinical method provenance', () => {
   test('TC-FR1-06-AS-01', () => {
@@ -48,7 +50,8 @@ describe('TC-FR1-06 clinical method provenance', () => {
     }, PROVENANCE_INPUTS);
     // production requires an approved sign-off: pending is rejected there, approved (HG-02, 27 Oct 2026) is accepted
     const prod = provenanceCheck({ root: ROOT, env: 'production' });
-    const pending = [approvalProtein, approvalDiabetes].filter((a) => a.clinical_signoff.decision !== 'approved');
+    // every guarded tool (the Healthy Weight Check included, FR2-39) needs its own approved sign-off for production
+    const pending = ['protein', 'diabetes', 'healthy-weight'].filter((slug) => JSON.parse(readFileSync(resolve(ROOT, 'approvals', `${slug}.json`), 'utf8')).clinical_signoff.decision !== 'approved');
     expect(prod.problems.filter((p) => /not accepted for production/.test(p))).toHaveLength(pending.length);
     expect(prod.ok).toBe(pending.length === 0);
   });

@@ -873,9 +873,9 @@ class LLD_Members_Fixtures {
 	const STAGE1_META = '_lld_test_stage1_page';
 
 	/**
-	 * Real WordPress pages at the Stage 1 calculator and disclaimer addresses, as on staging and production, where
-	 * the lld-tools plugin embeds the calculator in an lld-tool-frame iframe. mode remove deletes every page this
-	 * fixture made, so the plugin's own fallback screens answer at those addresses again.
+	 * Real WordPress pages at the calculator landing (protein, diabetes, healthy weight) and disclaimer addresses, as on
+	 * staging and production, where the lld-tools plugin embeds the calculator in an lld-tool-frame iframe. mode remove
+	 * deletes every page this fixture made, so the plugin's own fallback screens answer at those addresses again.
 	 *
 	 * @param string $stamp Stamp.
 	 * @param string $mode  create or remove.
@@ -910,8 +910,9 @@ class LLD_Members_Fixtures {
 		$parent = $parent ? (int) $parent->ID : self::stage1_page( 'health-tools', 'Health tools', '<p>Health tools ' . esc_html( $stamp ) . '</p>', 0, $stamp );
 		$pages  = array( 'parent' => $parent );
 		$tools  = array(
-			'protein'  => array( 'protein', 'Daily Protein Target', 'protein-requirement-tool.html' ),
-			'diabetes' => array( 'diabetes-risk-check', 'Diabetes Risk Check', 'diabetes-risk-tool.html' ),
+			'protein'        => array( 'protein', 'Daily Protein Target', 'protein-requirement-tool.html' ),
+			'diabetes'       => array( 'diabetes-risk-check', 'Diabetes Risk Check', 'diabetes-risk-tool.html' ),
+			'healthy-weight' => array( 'healthy-weight-check', 'Healthy Weight Check', 'healthy-weight-tool.html' ),
 		);
 		foreach ( $tools as $key => $tool ) {
 			$marker        = 'Stage 1 ' . $key . ' landing page ' . $stamp;

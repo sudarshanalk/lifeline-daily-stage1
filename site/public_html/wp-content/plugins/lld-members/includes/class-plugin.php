@@ -89,7 +89,7 @@ class LLD_Members_Plugin {
 	 * Version of the rule set: bumped when rules change, and different with Yoast's sitemaps on or off.
 	 */
 	public static function rewrite_version() {
-		return '10-' . ( self::yoast_sitemaps() ? 'yoast' : 'own' );
+		return '11-' . ( self::yoast_sitemaps() ? 'yoast' : 'own' );
 	}
 
 	/**
@@ -241,6 +241,7 @@ class LLD_Members_Plugin {
 		add_rewrite_rule( '^programmes/(healthy-weight|blood-sugar|fitness|sleep-stress)/?$', 'index.php?lld_screen=sales&lld_track=$matches[1]', 'top' );
 		add_rewrite_rule( '^health-tools/protein/?$', 'index.php?lld_screen=landing&lld_track=protein', 'top' );
 		add_rewrite_rule( '^health-tools/diabetes-risk-check/?$', 'index.php?lld_screen=landing&lld_track=diabetes', 'top' );
+		add_rewrite_rule( '^health-tools/healthy-weight-check/?$', 'index.php?lld_screen=landing&lld_track=healthy-weight', 'top' );
 		add_rewrite_rule( '^safety/?$', 'index.php?lld_screen=safety', 'top' );
 		add_rewrite_rule( '^medical-disclaimer/?$', 'index.php?lld_screen=disclaimer', 'top' );
 		add_rewrite_rule( '^sitemap-lld-members\\.xml$', 'index.php?lld_screen=sitemap', 'top' );

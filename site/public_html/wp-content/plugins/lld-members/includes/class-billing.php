@@ -433,11 +433,13 @@ class LLD_Members_Billing {
 	}
 
 	/**
-	 * The two calculator landing pages, by their Stage 1 WordPress page path.
+	 * The calculator landing pages, by their Stage 1 WordPress page path (the Healthy Weight Check's page is created by
+	 * `wp lld pages apply` under the same hub, FR2-39).
 	 */
 	const LANDING_PATHS = array(
-		'protein'  => 'health-tools/protein',
-		'diabetes' => 'health-tools/diabetes-risk-check',
+		'protein'        => 'health-tools/protein',
+		'diabetes'       => 'health-tools/diabetes-risk-check',
+		'healthy-weight' => 'health-tools/healthy-weight-check',
 	);
 
 	/**
@@ -451,7 +453,7 @@ class LLD_Members_Billing {
 			return 'medical-disclaimer';
 		}
 		if ( 'landing' === $screen ) {
-			return self::LANDING_PATHS[ 'diabetes' === $track ? 'diabetes' : 'protein' ];
+			return self::LANDING_PATHS[ isset( self::LANDING_PATHS[ $track ] ) ? $track : 'protein' ];
 		}
 		return '';
 	}
@@ -468,7 +470,7 @@ class LLD_Members_Billing {
 	}
 
 	/**
-	 * protein or diabetes when the main query is a Stage 1 calculator landing page, otherwise an empty string.
+	 * protein, diabetes or healthy-weight when the main query is a Stage 1 calculator landing page, otherwise ''.
 	 */
 	private static function stage1_landing() {
 		if ( ! is_page() ) {
@@ -514,23 +516,27 @@ class LLD_Members_Billing {
 			return $content;
 		}
 		$which = self::stage1_landing();
-		if ( '' === $which || (int) get_the_ID() !== (int) get_queried_object_id() || false !== strpos( (string) $content, 'data-lld-track-link' ) ) {
+		if ( '' === $which || (int) get_the_ID() !== (int) get_queried_object_id() || false !== strpos( (string) $content, 'id="lld-landing-extras"' ) ) {
 			return $content;
 		}
 		$member_id = LLD_Members_Access::current_member_id();
 		$can_save  = $member_id > 0 && LLD_Members_Account::has_consent( $member_id, 'health' );
-		return $content . self::landing_extras( $which, $can_save, self::$stage1_saved );
+		return $content . self::landing_extras( $which, $member_id, $can_save, self::$stage1_saved );
 	}
 
 	/**
 	 * Calculator landing page for a site with no Stage 1 page at the address (the CI test site).
 	 * The track link sits below the tool, not inside its result.
 	 *
-	 * @param string $which protein or diabetes.
+	 * @param string $which protein, diabetes or healthy-weight.
 	 */
 	public static function landing( $which ) {
-		$which = 'diabetes' === $which ? 'diabetes' : 'protein';
-		if ( 'diabetes' === $which ) {
+		$which = in_array( $which, array( 'diabetes', 'healthy-weight' ), true ) ? $which : 'protein';
+		if ( 'healthy-weight' === $which ) {
+			$title = 'Healthy Weight Check';
+			$src   = home_url( '/tools/healthy-weight-tool.html' );
+			$desc  = 'Check your BMI, waist-to-height ratio and a healthy weight range for your height.';
+		} elseif ( 'diabetes' === $which ) {
 			$title = 'Diabetes Risk Check';
 			$src   = home_url( '/tools/diabetes-risk-tool.html' );
 			$desc  = 'Check diabetes risk, then look at the Blood Sugar Balance track.';
@@ -544,7 +550,7 @@ class LLD_Members_Billing {
 		$saved     = $can_save && self::save_calculator_result( $member_id, $which );
 		$main      = '<h1>' . esc_html( $title ) . '</h1>';
 		$main     .= '<iframe class="lld-tool-frame" title="' . esc_attr( $title ) . '" src="' . esc_url( $src ) . '" style="width:100%;height:900px;border:0"></iframe>';
-		$main     .= self::landing_extras( $which, $can_save, $saved );
+		$main     .= self::landing_extras( $which, $member_id, $can_save, $saved );
 		lld_members_layout(
 			array(
 				'title'       => $title,
@@ -556,23 +562,28 @@ class LLD_Members_Billing {
 	}
 
 	/**
-	 * What Stage 2 adds below a calculator: the save form for a member with health consent, the track link
-	 * and the starter guide.
+	 * What Stage 2 adds below a calculator, on the Stage 1 page or the fallback screen: the save form for a member with
+	 * health consent, the track link and the starter guide, and the listener for the calculator's messages.
 	 *
-	 * @param string $which    protein or diabetes.
-	 * @param bool   $can_save Signed-in member with health consent.
-	 * @param bool   $saved    The result was saved in this request.
+	 * @param string $which     protein, diabetes or healthy-weight.
+	 * @param int    $member_id Signed-in member, or 0.
+	 * @param bool   $can_save  Signed-in member with health consent.
+	 * @param bool   $saved     The result was saved in this request.
 	 * @return string
 	 */
-	private static function landing_extras( $which, $can_save, $saved ) {
-		if ( 'diabetes' === $which ) {
+	private static function landing_extras( $which, $member_id, $can_save, $saved ) {
+		$guide = 'diabetes' === $which ? 'blood-sugar' : ( 'healthy-weight' === $which ? 'healthy-weight' : 'fitness' );
+		if ( 'healthy-weight' === $which ) {
+			$href  = home_url( '/programmes/healthy-weight/' );
+			$label = 'Healthy Weight';
+		} elseif ( 'diabetes' === $which ) {
 			$href  = home_url( '/programmes/blood-sugar/' );
 			$label = 'Blood Sugar Balance';
 		} else {
 			$href  = home_url( '/programmes/fitness/' );
 			$label = 'Fitness and Strength';
 		}
-		$html = '';
+		$html = '<div id="lld-landing-extras">';
 		if ( $can_save ) {
 			$html .= $saved ? '<p>Saved</p>' : '';
 			$html .= '<form method="post" id="lld-save-result" data-calculator="' . esc_attr( $which ) . '" hidden>';
@@ -583,12 +594,29 @@ class LLD_Members_Billing {
 			$html .= '<input type="hidden" name="lld_version" value="">';
 			$html .= lld_button( array( 'label' => 'Save this result to my profile' ) );
 			$html .= '</form>';
-			$html .= '<script src="' . esc_url( plugins_url( 'assets/lld-save-result.js', LLD_MEMBERS_FILE ) . '?ver=' . LLD_MEMBERS_VERSION ) . '"></script>';
 		}
-		$html .= '<p data-lld-track-link><a href="' . esc_url( $href ) . '">' . esc_html( $label ) . '</a></p>';
-		if ( class_exists( 'LLD_Members_Growth' ) ) {
-			$html .= LLD_Members_Growth::guide_form( 'diabetes' === $which ? 'blood-sugar' : 'fitness', 'guide' );
+		// FR2-39 AS-15: no Healthy Weight track offer to a member whose saved profile excludes it (section 8.2)
+		$offer = ! ( 'healthy-weight' === $which && $member_id > 0 && class_exists( 'LLD_Members_Safety' ) && ! LLD_Members_Safety::track_allowed( $member_id, $label ) );
+		if ( $offer ) {
+			$html .= '<div data-lld-onward>';
+			$html .= '<p data-lld-track-link><a href="' . esc_url( $href ) . '">' . esc_html( $label ) . '</a></p>';
+			if ( class_exists( 'LLD_Members_Growth' ) ) {
+				$html .= LLD_Members_Growth::guide_form( $guide, 'guide' );
+			}
+			$html .= '</div>';
 		}
+		$html .= '</div>';
+		// FR2-23 / FR2-39 AS-14: only messages from this page's own calculator frame count, from the address the frame was
+		// loaded from (the Stage 1 page embeds it from lld_tools_settings.tools_origin; iframe_origin is the configured one)
+		// or this page's own. A cleared result hides the save, and a result or stop that allows no onward offer hides the
+		// track link and guide (answers never arrive here).
+		$html .= '<script>(function(){var frame=document.querySelector("iframe.lld-tool-frame");var form=document.getElementById("lld-save-result");var onward=document.querySelector("[data-lld-onward]");var which=' . wp_json_encode( $which ) . ';'
+			. 'var cfg=window.lld_tools_settings||{};var from="";try{from=frame?new URL(frame.getAttribute("src")||"",location.href).origin:"";}catch(e){}'
+			. 'function trusted(o){return o===location.origin||(from!==""&&o===from)||(!!cfg.iframe_origin&&o===cfg.iframe_origin);}'
+			. 'function field(n,v){if(form)form.querySelector("[name="+n+"]").value=String(v||"").slice(0,64);}'
+			. 'window.addEventListener("message",function(event){if(!trusted(event.origin)||!frame||event.source!==frame.contentWindow)return;var data=event.data||{};if(data.calculator!==which)return;'
+			. 'if(data.type==="lld-calculator-result"){field("lld_headline",data.headline);field("lld_unit",data.unit);field("lld_band",data.band);field("lld_version",data.version);if(form)form.hidden=false;if(onward)onward.hidden=data.onward===false;}'
+			. 'else if(data.type==="lld-calculator-cleared"){["lld_headline","lld_unit","lld_band","lld_version"].forEach(function(n){field(n,"");});if(form)form.hidden=true;if(onward)onward.hidden=data.onward===false;}});})();</script>';
 		return $html;
 	}
 
@@ -596,7 +624,7 @@ class LLD_Members_Billing {
 	 * Store the headline, unit and band from the landing page. Answers are not posted.
 	 *
 	 * @param int    $member_id Member number.
-	 * @param string $which     protein or diabetes.
+	 * @param string $which     protein, diabetes or healthy-weight.
 	 */
 	private static function save_calculator_result( $member_id, $which ) {
 		if ( 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) || empty( $_POST['lld_result_nonce'] ) ) {
@@ -661,7 +689,7 @@ class LLD_Members_Billing {
 		header( 'Content-Type: application/xml; charset=utf-8' );
 		echo '<?xml version="1.0" encoding="UTF-8"?>';
 		echo '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
-		$paths = array( '/pricing/', '/programmes/healthy-weight/', '/programmes/blood-sugar/', '/programmes/fitness/', '/programmes/sleep-stress/' );
+		$paths = array( '/pricing/', '/programmes/healthy-weight/', '/programmes/blood-sugar/', '/programmes/fitness/', '/programmes/sleep-stress/', '/health-tools/protein/', '/health-tools/diabetes-risk-check/', '/health-tools/healthy-weight-check/' );
 		foreach ( $paths as $path ) {
 			echo '<url><loc>' . esc_url( home_url( $path ) ) . '</loc></url>';
 		}

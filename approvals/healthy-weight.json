@@ -1,0 +1,37 @@
+{
+  "approval_id": "APR-HEALTHY-WEIGHT-2026-10-27",
+  "tool_slug": "healthy-weight",
+  "version_hash": "9d2d73f9a82be97c4d621f060aff3046ca19bb554769c2abde719a8d1cb8fc87",
+  "engine_name": "Healthy Weight Check: BMI with NICE NG246 categories (lower thresholds for South Asian, Chinese, other Asian, Middle Eastern, Black African and African-Caribbean family backgrounds), waist-to-height ratio bands, healthy weight range for height, and a safety layer that stops before any number for under-18s, pregnancy or breastfeeding and eating disorders",
+  "intended_use": "Free educational check for adults that shows BMI, waist-to-height ratio and a healthy weight range for height, with plain guidance. It does not diagnose any condition, set a weight target or give calorie advice.",
+  "eligibility": "Adults aged 18 to 99. Stops with an owner-approved message and no numbers for under-18s, pregnancy or breastfeeding (including 'not sure') and a current, past or suspected eating disorder (D52). Unintended weight loss shows a see-your-doctor banner above the result.",
+  "sources": [
+    "NICE guideline NG246 (2025), Overweight and obesity management, recommendations 1.9.7 to 1.9.15: BMI categories, lower thresholds for listed family backgrounds, waist-to-height ratio 0.4-0.49 / 0.5-0.59 / 0.6 or more for BMI under 35. https://www.nice.org.uk/guidance/ng246",
+    "Ashwell M, Gibson S. Waist-to-height ratio as an indicator of early health risk. BMJ Open 2016;6:e010159."
+  ],
+  "limitations": [
+    "BMI is a screening measure; less reliable for older adults, very muscular people, after limb loss and in pregnancy (not used).",
+    "Category and band follow the rounded value shown (D55); the obesity class 2 and 3 thresholds for adjusted backgrounds use NICE's 2.5 reduction.",
+    "Self-reported measurements.",
+    "The Daily Protein Target and the Diabetes Risk Check keep their frozen, older cut-offs (D56); the difference is explained in this tool's method section."
+  ],
+  "regulatory_statement": "Pending the owner's clinical sign-off (FR2-39 AS-19). General health information, not a diagnosis or a medical device.",
+  "licence": "Lifeline Daily's own implementation of published NICE thresholds.",
+  "copy_hashes": {
+    "messages.healthy-weight": "4d35387fb5894548e000cce7fb1663ff484e8a105071bf2db74855b662cabeb0",
+    "stops.under18": "a73e8168909b5ec2a2853c8814ba661cdef02795fc7c4aafc2990d93b5e04b25",
+    "stops.pregnancy": "6c0f6b08f6cd3f5daff116e52987ba663881e82c2815652747611dc93fe54773",
+    "stops.eating": "8e8de5730e0c6c0bca6ea45be2d6e6cadddf4dae6ccca513647ff048ea00d3c5",
+    "weightLoss": "2601d5f64e04619c75867fc6c54192201976220509cf666e11d735bd9e66caa4"
+  },
+  "oracle_report": "oracles/orc-05-healthy-weight/results.json",
+  "decisions_ratified": [],
+  "clinical_signoff": {
+    "name": "pending — the owner as clinical reviewer (FR2-39 AS-19)",
+    "date": "2026-10-27",
+    "decision": "pending",
+    "notes": "Production is blocked until this records the owner's approval of the thresholds, the background mapping and all wording for this exact version, with the NICE NG246 version and the date it was read."
+  },
+  "review_date": "2026-10-27",
+  "next_review_date": "2027-10-27"
+}

@@ -89,7 +89,7 @@ describe('TC-FR1-20 cache control', () => {
 
   test('SUPPORT-FR1-20-01 status.json template validates SCH-08 and names the live versions', () => {
     // supporting check (not a TC id): the Git template is the one installed by hand on a fresh server
-    expect(Object.keys(statusTemplate.tools).sort()).toEqual(['diabetes', 'protein']);
+    expect(Object.keys(statusTemplate.tools).sort()).toEqual(['diabetes', 'healthy-weight', 'protein']);   // FR2-39 adds the third tool
     for (const slug of ['protein', 'diabetes']) {
       const manifest = JSON.parse(readFileSync(new URL(`../../manifests/${slug}.json`, import.meta.url), 'utf8'));
       expect(statusTemplate.tools[slug].status).toBe('active');

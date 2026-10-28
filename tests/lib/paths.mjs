@@ -9,4 +9,8 @@ export const TOOL_FILES = {
   protein: 'protein-requirement-tool.html',
   diabetes: 'diabetes-risk-tool.html',
 };
-export const toolPath = (slug) => resolve(TOOLS_DIR, TOOL_FILES[slug]);
+// Stage 2 (FR2-39, D53): the Healthy Weight Check is guarded like the two Stage 1 tools (freeze, wording, provenance,
+// sign-off) but is not a Stage 1 tool, so the Stage 1 requirement tests keep iterating TOOL_FILES only.
+export const ALL_TOOL_FILES = { ...TOOL_FILES, 'healthy-weight': 'healthy-weight-tool.html' };
+export const GUARDED_TOOLS = Object.keys(ALL_TOOL_FILES);
+export const toolPath = (slug) => resolve(TOOLS_DIR, ALL_TOOL_FILES[slug]);
