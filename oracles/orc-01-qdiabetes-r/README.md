@@ -1,6 +1,6 @@
 # ORC-01 — QDiabetes-2018 Model A oracle (R, CRAN `QDiabetes` 1.0-2)
 
-Status: **scaffolded, pending execution.** The build machine has the Docker CLI but no daemon (WSL 2 not installed, owner
+Status: **first run 25 Oct 2026 on a GitHub Actions Linux runner: 78/78 fixtures agree with the deployed engine (fidelity-gate).** Earlier note: The build machine has the Docker CLI but no daemon (WSL 2 not installed, owner
 input OI-4). HG-01 (`approvals/hg-01.json`) explicitly deferred the ORC-01 run and the FX-DM-BAND inputs to HG-02.
 
 What is here (DEC-02, DEC-33):

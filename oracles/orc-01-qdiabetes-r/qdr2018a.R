@@ -40,7 +40,7 @@ pins <- fromJSON(file.path(root, "oracles", "orc-01-qdiabetes-r", "pins.json"))
 out <- list(
   oracle_id = "ORC-01",
   implementation = "R QDiabetes::QDR2018A (CRAN Archive 1.0-2, AGPL-3; research-use disclaimer applies) in a pinned rocker/r-ver container",
-  versions = list(R = paste(R.version$major, R.version$minor, sep = "."), QDiabetes = as.character(packageVersion("QDiabetes")),
+  versions = list(R = paste(R.version$major, R.version$minor, sep = "."), QDiabetes = packageDescription("QDiabetes")$Version,
                   tarball_sha256 = pins$tarball_sha256, image = pins$image, image_digest = pins$image_digest, licence = packageDescription("QDiabetes")$License),
   source_hash = trimws(sub(".*= ", "", system2("openssl", c("dgst", "-sha256", file.path(root, "oracles", "orc-01-qdiabetes-r", "qdr2018a.R")), stdout = TRUE))),
   run_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%SZ", tz = "UTC"),

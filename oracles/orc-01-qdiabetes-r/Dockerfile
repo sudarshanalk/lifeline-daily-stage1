@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends ca-certificates
 RUN install2.r --error jsonlite
 WORKDIR /oracle
 COPY pins.json install.sh qdr2018a.R ./
-RUN bash install.sh
+# RECORD_PIN=1 only on the first build, to print the tarball hash for pins.json
+ARG RECORD_PIN=0
+RUN RECORD_PIN=${RECORD_PIN} bash install.sh
 # run.sh mounts the repository at /repo (read-write); results are written to /repo/oracles/orc-01-qdiabetes-r/results.json
 ENTRYPOINT ["Rscript", "/oracle/qdr2018a.R", "/repo"]
