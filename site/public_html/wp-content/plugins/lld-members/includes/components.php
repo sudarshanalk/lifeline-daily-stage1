@@ -35,6 +35,7 @@ function lld_members_layout( $args ) {
 		echo '<meta name="description" content="' . esc_attr( (string) $args['description'] ) . '">';
 	}
 	echo '<link rel="stylesheet" href="' . esc_url( $css ) . '?ver=' . esc_attr( LLD_MEMBERS_VERSION ) . '">';
+	echo lld_members_font_faces();
 	echo '</head><body class="lld-members-body ' . ( $in ? 'lld-signed-in' : 'lld-signed-out' ) . '">';
 	echo '<a class="lld-skip" href="#lld-main">Skip to content</a>';
 	echo class_exists( 'LLD_Members_Quality' ) ? LLD_Members_Quality::preview_banner() : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
@@ -83,7 +84,7 @@ function lld_members_header( $signed_in ) {
 	}
 	$html  = '<header class="lld-header"><div class="lld-header-inner">';
 	$html .= '<a class="lld-logo" href="' . esc_url( home_url( '/' ) ) . '">' . lld_members_logo_mark();
-	$html .= '<span><span class="lld-logo-name">Lifeline Daily</span><span class="lld-logo-tagline">Start Small, Change Big</span></span></a>';
+	$html .= '<span><span class="lld-logo-name">Lifeline Daily</span><span class="lld-logo-tagline" aria-hidden="true">Start Small, Change Big</span></span></a>';
 	$html .= '<nav aria-label="Site"><ul class="lld-public-nav">' . $links . '</ul>';
 	if ( $signed_in ) {
 		$html .= lld_members_chip();
@@ -95,6 +96,28 @@ function lld_members_header( $signed_in ) {
 	}
 	$html .= '</header>';
 	return $html;
+}
+
+/**
+ * The pack's two self-hosted fonts (Plus Jakarta Sans for headings, Inter for copy), served from the lld-tools theme
+ * layer (S2-L1) with font-display: swap. Declared only when both files are present: a missing file would cost a full
+ * WordPress 404 on every page view, and the stylesheet already falls back to the system font (FR2-27).
+ */
+function lld_members_font_faces() {
+	$dir   = WP_CONTENT_DIR . '/mu-plugins/lld-tools/assets/fonts/';
+	$files = array(
+		'Plus Jakarta Sans' => array( 'plus-jakarta-sans-latin-var.woff2', '400 800' ),
+		'Inter'             => array( 'inter-latin-var.woff2', '400 700' ),
+	);
+	$css = '';
+	foreach ( $files as $family => $font ) {
+		if ( ! is_file( $dir . $font[0] ) ) {
+			return '';
+		}
+		$url  = content_url( 'mu-plugins/lld-tools/assets/fonts/' . $font[0] );
+		$css .= '@font-face{font-family:"' . $family . '";font-style:normal;font-weight:' . $font[1] . ';font-display:swap;src:url("' . esc_url( $url ) . '") format("woff2")}';
+	}
+	return '<style>' . $css . '</style>';
 }
 
 /**

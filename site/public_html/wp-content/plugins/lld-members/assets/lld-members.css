@@ -51,22 +51,8 @@
   --lld-space: 8px;
 }
 
-/* Self-hosted variable fonts from the public theme layer (lld-tools, S2-L1), never copied and never from Google. */
-@font-face {
-  font-family: "Plus Jakarta Sans";
-  font-style: normal;
-  font-weight: 400 800;
-  font-display: swap;
-  src: url("/wp-content/mu-plugins/lld-tools/assets/fonts/plus-jakarta-sans-latin-var.woff2") format("woff2");
-}
-
-@font-face {
-  font-family: "Inter";
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url("/wp-content/mu-plugins/lld-tools/assets/fonts/inter-latin-var.woff2") format("woff2");
-}
+/* The two self-hosted fonts (lld-tools, S2-L1) are declared by lld_members_layout() only when their files exist, so a
+   site without them never requests them (every missing file would otherwise cost a full WordPress 404). */
 
 * { box-sizing: border-box; }
 

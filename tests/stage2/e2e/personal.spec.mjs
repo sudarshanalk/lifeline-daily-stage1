@@ -239,7 +239,7 @@ test('TC-FR2-25-AS-05', async ({ page }) => {
   await startSlug(page, made.track);
   const surfaces = ['/members/home/', '/members/suggestions/', '/members/plan/', '/members/meals/', '/members/meals/?pdf=1', '/members/workout/', '/members/challenge/', '/members/badges/', '/members/library/', '/members/data/', '/members/tracks/', '/members/goals/'];
   const token = (tag) => `${tag} ${mark}`;
-  const hwGoal = 'value="healthy-weight"> Healthy Weight</label>';
+  const hwGoal = 'value="healthy-weight"> <span>Healthy Weight<';
   for (const row of matrixRows) {
     if (row.profile) {
       await saveHealth(page, created.member_id, { kind: 'profile', confirmed: true, ...row.profile, conditions: JSON.stringify(row.profile.conditions || '') });
