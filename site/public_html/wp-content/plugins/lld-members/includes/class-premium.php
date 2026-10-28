@@ -141,7 +141,7 @@ class LLD_Members_Premium {
 		foreach ( LLD_Members_Safety::notes( $member_id ) as $note ) {
 			$main .= '<p class="lld-hint">' . esc_html( $note ) . '</p>';
 		}
-		$main .= '<p class="lld-hint">Recipes carry no calorie numbers. Each meal can be swapped for a safe alternative.</p></div>';
+		$main .= '<p class="lld-hint">Each meal can be swapped for a safe alternative.</p></div>';
 		$nonce = $consent ? wp_create_nonce( 'lld_swap' ) : '';
 		$first = new DateTimeImmutable( $plan['week']['starting'] );
 		foreach ( $plan['days'] as $day => $meals ) {
@@ -468,7 +468,7 @@ class LLD_Members_Premium {
 		if ( '' !== $error ) {
 			$main .= '<p class="lld-error">' . esc_html( $error ) . '</p>';
 		}
-		$main .= '<p class="lld-hint">' . ( $writable ? 'You can add meals.' : 'This diary is read-only.' ) . ' No calorie counting: portion size and three quality checks.</p>';
+		$main .= '<p class="lld-hint">' . ( $writable ? 'You can add meals.' : 'This diary is read-only.' ) . ' Portion size and three quality checks, no numbers to count.</p>';
 		$main .= '<div class="lld-diary-entries">' . self::diary_list( $member_id, $writable ) . '</div>';
 		$main .= '<section class="lld-card">' . self::day_html( $member_id, $writable ) . '</section>';
 		$summary = self::summary_line( $member_id );

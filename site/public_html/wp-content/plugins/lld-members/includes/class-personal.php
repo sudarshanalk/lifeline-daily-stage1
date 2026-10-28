@@ -155,7 +155,7 @@ class LLD_Members_Personal {
 		$main .= '<section data-lld-section="meals" class="lld-card"><div class="lld-card-head"><h2>Meals</h2><p class="lld-hint">Today\'s meals</p></div>';
 		$main .= self::meal_list( self::safe_titles( $member_id, array( 'lld_meal', 'lld_recipe' ), 3 ) );
 		$main .= '<p><a href="' . esc_url( home_url( '/members/meals/' ) ) . '">View the week\'s meal plan and shopping list</a></p></section>';
-		$main .= '<section data-lld-section="diary" class="lld-card"><div class="lld-card-head"><h2>Food diary</h2><p class="lld-hint">No calorie counting</p></div>';
+		$main .= '<section data-lld-section="diary" class="lld-card"><div class="lld-card-head"><h2>Food diary</h2><p class="lld-hint">No numbers to count</p></div>';
 		if ( class_exists( 'LLD_Members_Premium' ) ) {
 			$main .= LLD_Members_Premium::dashboard_diary_html( $member_id );
 		}
