@@ -140,7 +140,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .lld-home-learn__item a:hover h3 { color: var(--lld-t-green); }
 .lld-home-row { padding: 32px 0; }
 .lld-home-row__title { font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2rem); font-weight: 800; margin: 0 0 18px; }
-.lld-home-hero { background: linear-gradient(180deg, var(--lld-t-header) 0%, var(--lld-t-header) 55%, var(--lld-t-canvas) 100%); }
+/* the theme hero row keeps its own background: its blocks (ad-spot labels, cards) carry theme colours (TC-NFR1-05) */
 
 /* ---- 4. Single article reading template (handover section 5.1, SCR-43) ------------------------------------------ */
 body.single-post .td-main-content-wrap .tdb-title-text, body.single-post .td-post-title .entry-title { font-size: clamp(1.9rem, 1.3rem + 2.2vw, 2.625rem); font-weight: 800; line-height: 1.18; letter-spacing: -0.02em; color: var(--lld-t-ink); }
