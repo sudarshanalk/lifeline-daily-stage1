@@ -1,9 +1,15 @@
 {
-  "_note": "Category restructure (S2-L2, FR2-26), applied by `wp lld categories apply [--dry-run] [--assign-posts]`. tree is the agreed category list exactly (AS-01). terms: adopt = an existing term becomes a tree term (keeps its ID and posts); merge = its posts move into a tree term, then it is deleted; delete = removed (refused while it still has posts). redirects: old category addresses 301 to the new ones when WordPress would answer 404 (AS-02). posts: proposed category per post from the L2 inventory; applied only with --assign-posts. hidden: display categories kept, noindex, out of llms.txt (AS-06).",
+  "_note": "Category restructure (S2-L2, FR2-26), applied by `wp lld categories apply [--dry-run] [--assign-posts]`. tree is the agreed category list exactly (AS-01). terms: adopt = an existing term becomes a tree term (keeps its ID and posts); merge = its posts move into a tree term, then it is deleted; delete = removed (refused while it still has posts). redirects: old category addresses 301 to the new ones when WordPress would answer 404 (AS-02). posts: proposed category per post from the L2 inventory; applied only with --assign-posts. hidden: display categories kept, noindex, out of llms.txt (AS-06). hub (S2-L4, SCR-44, owner question 36): per top category, the [lld_category_hub] block's flagship (post id or slug; null = the newest medically reviewed article), trending (post ids; empty = the next two newest), tool (a data/tool-cards.json slug) and track (a tracks key). tracks mirrors the lld-members track titles for the banner.",
   "tree": [
     {
       "name": "Weight & Healthy Eating",
       "slug": "weight-healthy-eating",
+      "hub": {
+        "flagship": null,
+        "trending": [],
+        "tool": "protein",
+        "track": "healthy-weight"
+      },
       "children": [
         {
           "name": "Healthy Eating",
@@ -22,6 +28,12 @@
     {
       "name": "Blood Sugar & Metabolic Health",
       "slug": "blood-sugar-metabolic-health",
+      "hub": {
+        "flagship": null,
+        "trending": [],
+        "tool": "diabetes",
+        "track": "blood-sugar"
+      },
       "children": [
         {
           "name": "Diabetes Prevention",
@@ -36,6 +48,12 @@
     {
       "name": "Fitness & Strength",
       "slug": "fitness-strength",
+      "hub": {
+        "flagship": null,
+        "trending": [],
+        "tool": "protein",
+        "track": "fitness"
+      },
       "children": [
         {
           "name": "Exercise",
@@ -54,6 +72,12 @@
     {
       "name": "Sleep & Stress",
       "slug": "sleep-stress",
+      "hub": {
+        "flagship": null,
+        "trending": [],
+        "tool": "diabetes",
+        "track": "sleep-stress"
+      },
       "children": [
         {
           "name": "Sleep",
@@ -72,6 +96,12 @@
     {
       "name": "Heart Health",
       "slug": "heart-health",
+      "hub": {
+        "flagship": null,
+        "trending": [],
+        "tool": "diabetes",
+        "track": "fitness"
+      },
       "children": [
         {
           "name": "Blood Pressure",
@@ -86,11 +116,23 @@
     {
       "name": "Gut Health",
       "slug": "gut-health",
+      "hub": {
+        "flagship": null,
+        "trending": [],
+        "tool": "protein",
+        "track": "healthy-weight"
+      },
       "children": []
     },
     {
       "name": "Healthy Ageing",
       "slug": "healthy-ageing",
+      "hub": {
+        "flagship": null,
+        "trending": [],
+        "tool": "protein",
+        "track": "fitness"
+      },
       "children": [
         {
           "name": "Longevity",
@@ -101,11 +143,23 @@
     {
       "name": "Sex & Relationships",
       "slug": "sex-relationships",
+      "hub": {
+        "flagship": null,
+        "trending": [],
+        "tool": "diabetes",
+        "track": "sleep-stress"
+      },
       "children": []
     },
     {
       "name": "Health Conditions",
       "slug": "health-conditions",
+      "hub": {
+        "flagship": null,
+        "trending": [],
+        "tool": "diabetes",
+        "track": "blood-sugar"
+      },
       "children": [
         {
           "name": "Other conditions",
@@ -114,6 +168,12 @@
       ]
     }
   ],
+  "tracks": {
+    "healthy-weight": "Healthy Weight",
+    "blood-sugar": "Blood Sugar Balance",
+    "fitness": "Fitness and Strength",
+    "sleep-stress": "Sleep and Stress"
+  },
   "default_category": "health-conditions",
   "terms": [
     {
