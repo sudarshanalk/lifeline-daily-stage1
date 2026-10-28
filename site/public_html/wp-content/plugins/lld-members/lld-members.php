@@ -2,7 +2,7 @@
 /**
  * Plugin Name: Lifeline Daily Members
  * Description: Stage 2 membership plugin: accounts, health journey, payments records, and member screens.
- * Version: 0.1.0
+ * Version: 0.2.0
  * Requires PHP: 8.1
  * Author: Lifeline Daily
  * Text Domain: lld-members
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'LLD_MEMBERS_VERSION', '0.1.0' );
+define( 'LLD_MEMBERS_VERSION', '0.2.0' );   // bumped with the Interface Pack look so browsers fetch the new stylesheet and script
 define( 'LLD_MEMBERS_FILE', __FILE__ );
 define( 'LLD_MEMBERS_DIR', plugin_dir_path( __FILE__ ) );
 

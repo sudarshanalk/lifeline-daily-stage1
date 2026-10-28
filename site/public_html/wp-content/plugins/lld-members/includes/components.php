@@ -65,9 +65,9 @@ function lld_members_layout( $args ) {
  */
 function lld_members_header( $signed_in ) {
 	$public = array(
-		'Health Tools' => home_url( '/tools/' ),
-		'Articles'     => home_url( '/articles/' ),
-		'Programmes'   => home_url( '/programmes/' ),
+		'Health Tools' => home_url( '/health-tools/' ),
+		'Articles'     => home_url( '/?post_type=post' ),   // every article, newest first: the site has no posts page (owner question 39)
+		'Programmes'   => home_url( '/pricing/' ),         // no programmes index page yet; pricing lists the four tracks (owner question 39)
 		'Pricing'      => home_url( '/pricing/' ),
 	);
 	$visitor = array(
