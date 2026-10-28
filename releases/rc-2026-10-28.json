@@ -1,8 +1,8 @@
 {
   "release_id": "REL-rc-2026-10-28",
   "tag": "rc-2026-10-28",
-  "commit": "d9060b1fc072cd57f9f5444030e906372e6fcc70",
-  "created_at": "2026-10-28T06:45:03Z",
+  "commit": "d16ed46e51f0c62cabf06d867297e2b8d2606aaa",
+  "created_at": "2026-10-28T07:36:33Z",
   "tool_hashes": {
     "protein": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
     "diabetes": "339cec858f3db3f4f62dbf6bdea79e31a9b99c73e44da48e9cd64c30c776e2ba"
