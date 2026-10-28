@@ -109,11 +109,12 @@ class LLD_Members_Personal {
 		$main .= wp_nonce_field( 'lld_goal', 'lld_goal_nonce', true, false );
 		$main .= '<fieldset class="lld-options"><legend>Goals</legend>';
 		foreach ( LLD_Members_Content::member_goals( $member_id ) as $goal ) {
-			$main .= '<label class="lld-option"><input type="checkbox" data-lld-goal name="lld_goals[]" value="' . esc_attr( $goal['key'] ) . '"> <span>' . esc_html( $goal['title'] );
-			if ( ! empty( $goal['line'] ) ) {
+			// The label keeps its original shape (input, then the title) so the safety-matrix check can read it.
+			$main .= '<div class="lld-option"><label><input type="checkbox" data-lld-goal name="lld_goals[]" value="' . esc_attr( $goal['key'] ) . '"> ' . esc_html( $goal['title'] ) . '</label>';
+			if ( ! empty( $goal['line'] ) && (string) $goal['line'] !== (string) $goal['title'] ) {
 				$main .= '<small>' . esc_html( (string) $goal['line'] ) . '</small>';
 			}
-			$main .= '</span></label>';
+			$main .= '</div>';
 		}
 		$main .= '<p id="lld-goal-limit" class="lld-hint" hidden>You can choose up to 3</p></fieldset>';
 		$main .= '<div class="lld-field"><label for="lld_else">Something else</label><textarea id="lld_else" name="lld_else" rows="3"></textarea></div>';

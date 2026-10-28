@@ -135,7 +135,7 @@ function lld_members_current( $url ) {
  * The logo mark: a mint cross in a soft square.
  */
 function lld_members_logo_mark() {
-	return '<span class="lld-logo-mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#2cc8b3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M4 12h16"/></svg></span>';
+	return '<span class="lld-logo-mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2cc8b3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M4 12h16"/></svg></span>';
 }
 
 /**
@@ -143,7 +143,7 @@ function lld_members_logo_mark() {
  */
 function lld_members_icon( $name ) {
 	if ( 'menu' === $name ) {
-		return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+		return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 	}
 	return '';
 }

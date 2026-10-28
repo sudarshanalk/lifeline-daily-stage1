@@ -602,8 +602,9 @@ p.lld-steps { display: block; }
 
 .lld-option, .lld-tile-check {
   display: flex;
+  flex-wrap: wrap;
   align-items: flex-start;
-  gap: 12px;
+  gap: 4px 12px;
   background: var(--lld-card);
   border: 1.5px solid var(--lld-border);
   border-radius: var(--lld-radius-sm);
@@ -616,7 +617,8 @@ p.lld-steps { display: block; }
 }
 
 .lld-option:has(input:checked), .lld-tile-check:has(input:checked) { border-color: var(--lld-green); background: var(--lld-mint-soft); }
-.lld-option small, .lld-tile-check small { display: block; font-size: 14px; font-weight: 400; color: var(--lld-muted); }
+.lld-option > label { display: flex; align-items: flex-start; gap: 12px; width: 100%; min-height: 24px; cursor: pointer; }
+.lld-option small, .lld-tile-check small { display: block; width: 100%; padding-left: 32px; font-size: 14px; font-weight: 400; color: var(--lld-muted); }
 
 .lld-options { border: 0; padding: 0; margin: 0 0 16px; }
 .lld-options legend { font-weight: 600; color: var(--lld-ink); padding: 0; margin-bottom: 8px; }
