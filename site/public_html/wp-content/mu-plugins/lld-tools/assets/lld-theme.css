@@ -249,8 +249,8 @@ body.author .tdb_author_description .tdb-block-inner { max-width: 760px; font-fa
 .lld-hub__chip--dark { background: rgba(52, 211, 153, 0.18); border: 1px solid rgba(52, 211, 153, 0.35); color: var(--lld-t-mint-bright); border-radius: 999px; padding: 0 12px; min-height: 24px; letter-spacing: 0.06em; text-transform: uppercase; font-size: 10px; font-weight: 700; }
 .lld-hub__topic { color: var(--lld-t-green-hover); font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
 .lld-hub__title { margin: 0 0 10px; font-family: var(--lld-t-font-display); font-size: clamp(1.1rem, 0.95rem + 0.6vw, 1.35rem); font-weight: 700; line-height: 1.3; }
-.lld-hub__title a, .lld-hub__trend-title a { color: var(--lld-t-ink); text-decoration: none; }
-.lld-hub__flagship:hover .lld-hub__title a, .lld-hub__trend:hover .lld-hub__trend-title a { color: var(--lld-t-green); }
+.td-main-content-wrap .lld-hub .lld-hub__title a, .td-main-content-wrap .lld-hub .lld-hub__trend-title a, .lld-hub .lld-hub__title a, .lld-hub .lld-hub__trend-title a { color: var(--lld-t-ink); text-decoration: none; }
+.td-main-content-wrap .lld-hub .lld-hub__flagship:hover .lld-hub__title a, .td-main-content-wrap .lld-hub .lld-hub__trend:hover .lld-hub__trend-title a, .lld-hub .lld-hub__flagship:hover .lld-hub__title a, .lld-hub .lld-hub__trend:hover .lld-hub__trend-title a { color: var(--lld-t-green); }
 .lld-hub__excerpt { margin: 0; font-size: 0.875rem; line-height: 1.6; color: var(--lld-t-body-2); display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
 .lld-hub__trend .lld-hub__excerpt { font-size: 0.8rem; -webkit-line-clamp: 2; }
 .lld-hub__more { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--lld-t-line); font-size: 12px; font-weight: 600; }
