@@ -193,7 +193,7 @@ add_shortcode('lld_sources', function ($atts, $content = '') {
 });
 add_shortcode('lld_source', function ($atts) {
   $a = shortcode_atts(['title' => '', 'url' => '', 'publisher' => '', 'published' => '', 'checked' => ''], $atts, 'lld_source');
-  $t = $a['url'] !== '' ? '<a href="' . esc_url($a['url']) . '" rel="noopener">' . esc_html($a['title']) . '</a>' : esc_html($a['title']);
+  $t = $a['url'] !== '' ? '<a href="' . esc_url($a['url']) . '" target="_blank" rel="noopener">' . esc_html($a['title']) . '</a>' : esc_html($a['title']);
   $bits = array_filter([$a['publisher'] !== '' ? esc_html($a['publisher']) : '', $a['published'] !== '' ? 'published <time datetime="' . esc_attr($a['published']) . '">' . esc_html($a['published']) . '</time>' : '', $a['checked'] !== '' ? 'checked <time datetime="' . esc_attr($a['checked']) . '">' . esc_html($a['checked']) . '</time>' : '']);
   return '<li>' . $t . ($bits ? '. ' . implode(', ', $bits) . '.' : '') . '</li>';
 });
