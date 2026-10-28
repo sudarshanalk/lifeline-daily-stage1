@@ -194,6 +194,13 @@ body.archive .tdb-category-description, body.archive .tdb_category_description .
 }
 .tdb_category_sibling_categories .tdb-block-inner a:hover, .tdb-category-siblings a:hover { background: var(--lld-t-mint-soft); border-color: var(--lld-t-mint-line); color: var(--lld-t-green-hover) !important; }
 .tdb_category_sibling_categories .tdb-block-inner a.tdb-cat-sibling-current, .tdb-category-siblings a.tdb-current { background: var(--lld-t-green); border-color: var(--lld-t-green); color: var(--lld-t-card) !important; }
+/* the theme draws each sibling pill with an absolutely placed .tdb-sibling-cat-bg span (black by default): give the span the card
+   colours and the link the pill's size, so the pills read white with a line, green when current */
+.tdb_category_sibling_categories .td-category .entry-category a { position: relative; min-height: 36px !important; padding: 0 14px !important; font-size: 0.8rem !important; line-height: 34px !important; border: 0 !important; margin: 0 6px 8px 0 !important; }
+.tdb_category_sibling_categories .tdb-sibling-cat-bg { background-color: var(--lld-t-card) !important; border: 1px solid var(--lld-t-line); border-radius: 999px; opacity: 1 !important; transition: background-color 0.15s ease, border-color 0.15s ease; }
+.tdb_category_sibling_categories .entry-category a:hover .tdb-sibling-cat-bg { background-color: var(--lld-t-mint-soft) !important; border-color: var(--lld-t-mint-line); }
+.tdb_category_sibling_categories .entry-category.tdb-current-category a .tdb-sibling-cat-bg, .tdb_category_sibling_categories .entry-category a.tdb-sibling-cat-current .tdb-sibling-cat-bg, .tdb_category_sibling_categories .entry-category.current-cat a .tdb-sibling-cat-bg { background-color: var(--lld-t-green) !important; border-color: var(--lld-t-green); }
+.tdb_category_sibling_categories .entry-category.tdb-current-category a, .tdb_category_sibling_categories .entry-category a.tdb-sibling-cat-current, .tdb_category_sibling_categories .entry-category.current-cat a { color: var(--lld-t-card) !important; }
 /* article cards in loops: white card, rounded 1:1-friendly thumb, bold title, muted meta */
 .td-main-content-wrap .td_module_flex { padding: 0 0 16px; overflow: hidden; }
 .td-main-content-wrap .td_module_flex .td-module-thumb { margin: 0 0 12px; }
