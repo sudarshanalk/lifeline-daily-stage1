@@ -1,0 +1,31 @@
+{
+  "_note": "The header menu (owner, 28 Oct 2026; Stage 2 screen design specification section 6, navigation map). Read by lld-tools/menu.php. `wp lld menu apply` rebuilds the menu named here in place, because the Newspaper header template pins its menu by ID. The Articles dropdown lists the top-level categories of data/categories.json in order, so it always follows FR2-26. Items with the class lld-menu-members link to membership pages and stay hidden while the lld-members plugin is inactive (the live site until the Stage 2 launch). lld-menu-signed-out and lld-menu-signed-in follow sign-in; lld-menu-cta is styled as a button. A page that is missing or unpublished is skipped with a warning.",
+  "menu": "header_menu",
+  "items": [
+    {
+      "title": "Health Tools",
+      "page": "health-tools",
+      "children": [
+        { "title": "Daily Protein Target", "page": "health-tools/protein" },
+        { "title": "Diabetes Risk Check", "page": "health-tools/diabetes-risk-check" },
+        { "title": "Healthy Weight Check", "page": "health-tools/healthy-weight-check" }
+      ]
+    },
+    { "title": "Articles", "url": "#", "children_from": "categories" },
+    {
+      "title": "Programmes",
+      "url": "#",
+      "classes": ["lld-menu-members"],
+      "children": [
+        { "title": "Healthy Weight", "url": "/programmes/healthy-weight/" },
+        { "title": "Blood Sugar Balance", "url": "/programmes/blood-sugar/" },
+        { "title": "Fitness and Strength", "url": "/programmes/fitness/" },
+        { "title": "Sleep and Stress", "url": "/programmes/sleep-stress/" }
+      ]
+    },
+    { "title": "Pricing", "url": "/pricing/", "classes": ["lld-menu-members"] },
+    { "title": "Sign in", "url": "/members/sign-in/", "classes": ["lld-menu-members", "lld-menu-signed-out"] },
+    { "title": "Join free", "url": "/members/join/", "classes": ["lld-menu-members", "lld-menu-signed-out", "lld-menu-cta"] },
+    { "title": "My account", "url": "/members/home/", "classes": ["lld-menu-members", "lld-menu-signed-in", "lld-menu-cta"] }
+  ]
+}
