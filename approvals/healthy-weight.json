@@ -1,7 +1,7 @@
 {
   "approval_id": "APR-HEALTHY-WEIGHT-2026-10-27",
   "tool_slug": "healthy-weight",
-  "version_hash": "9d2d73f9a82be97c4d621f060aff3046ca19bb554769c2abde719a8d1cb8fc87",
+  "version_hash": "df2e6cab65eba52eddff036755d998ef6543fe606699a47a4e77e656cf043476",
   "engine_name": "Healthy Weight Check: BMI with NICE NG246 categories (lower thresholds for South Asian, Chinese, other Asian, Middle Eastern, Black African and African-Caribbean family backgrounds), waist-to-height ratio bands, healthy weight range for height, and a safety layer that stops before any number for under-18s, pregnancy or breastfeeding and eating disorders",
   "intended_use": "Free educational check for adults that shows BMI, waist-to-height ratio and a healthy weight range for height, with plain guidance. It does not diagnose any condition, set a weight target or give calorie advice.",
   "eligibility": "Adults aged 18 to 99. Stops with an owner-approved message and no numbers for under-18s, pregnancy or breastfeeding (including 'not sure') and a current, past or suspected eating disorder (D52). Unintended weight loss shows a see-your-doctor banner above the result.",
