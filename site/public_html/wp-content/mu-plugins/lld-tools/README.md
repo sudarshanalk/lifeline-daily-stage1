@@ -37,3 +37,25 @@ member screens keep their own shell in `lld-members` until Cursor aligns them.
 - Fonts are self-hosted in `assets/fonts/` (latin variable woff2 for Plus Jakarta Sans and Inter, `font-display: swap`,
   preloaded from `wp_head`), so no request goes to Google Fonts.
 - Loaded after `lld-tools.css` on every front-end page. To switch it off for a check, dequeue the `lld-theme` handle.
+
+## Category hub block (S2-L4, SCR-44) — 28 Oct 2026
+
+`category-hub.php` renders `[lld_category_hub]` for the category being viewed (handover section 5.2, prototype package 3):
+the magazine hero (flagship guide with its 1:1 featured image, "Medically reviewed" chip, excerpt and "Read full guide";
+two trending articles with 96 px square thumbnails), the topic tool callout (a `data/tool-cards.json` card) and the Stage 2
+track banner ("Start 7-day trial" to `/members/join/`, shown only while `lld-members` is active). Styles are section 5b of
+`assets/lld-theme.css`.
+
+- Choices per top category live in `data/categories.json` → `tree[].hub` (`flagship` post id or slug, `trending` ids,
+  `tool`, `track`); a child category uses its parent's tool and track. Defaults (owner question 36): flagship = the newest
+  article whose review byline says it is medically reviewed (else the newest), trending = the next two newest.
+- **Placement:** `wp lld hub apply [--dry-run] [--template=<id>] [--backup-dir=<dir>]` edits the Newspaper Cloud Library
+  category template (the theme's `tdb_category_template` setting; post 4139 on staging): the template content is plain
+  Composer shortcode text, so a `[vc_row … el_class="lld-hub-row"][vc_column][lld_category_hub][/vc_column][/vc_row]` row is
+  inserted directly above the row that holds `[tdb_loop]`, in `post_content` and the Composer's `tdc_content` copy alike,
+  after saving both to `~/lld-backups/<env>/hub-template-<id>-<time>.json`. The row is hidden on page 2 onwards
+  (`row_hide_on_pagination`) and the shortcode also returns nothing when paged. `wp lld hub revert` restores the saved
+  original. Editing the template was chosen over the output-buffer hook because the Composer row keeps the block inside the
+  theme's own grid and spacing; the hook stays reserved for the logo H1 fix.
+- Pure builders (`lld_hub_entry`, `lld_hub_pick`, `lld_hub_markup`, `lld_hub_template_insert` / `_revert`) are tested in
+  PHP CLI without WordPress: `tests/lead/TC-FR2-26-hub.test.mjs`.
