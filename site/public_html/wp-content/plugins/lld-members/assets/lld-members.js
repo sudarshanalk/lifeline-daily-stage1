@@ -81,8 +81,22 @@
   function keyboard(on) {
     document.body.classList.toggle("lld-keyboard", on);
   }
+  // NFR2-04: the focused item is shown whole. WebKit leaves a field that is only partly on screen where it is when
+  // Tab reaches it (for example a textarea at the bottom edge), so it is brought fully into view.
+  function keepInView(el) {
+    if (!el || el === document.body || typeof el.getBoundingClientRect !== "function" || typeof el.scrollIntoView !== "function") return;
+    var box = el.getBoundingClientRect();
+    var tall = window.innerHeight || document.documentElement.clientHeight;
+    if (box.top >= 0 && box.bottom <= tall) return;
+    try {
+      el.scrollIntoView({ block: "nearest", inline: "nearest" });
+    } catch (e) {
+      el.scrollIntoView(false);
+    }
+  }
   document.addEventListener("focusin", function (event) {
     if (event.target.matches("input, textarea, select")) keyboard(true);
+    keepInView(event.target);
   });
   document.addEventListener("focusout", function () {
     window.setTimeout(function () {
