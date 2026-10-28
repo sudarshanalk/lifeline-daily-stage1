@@ -1162,7 +1162,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "hybrid",
-      "status": "draft",
+      "status": "verified",
       "depends_on": [
         "*MUST*"
       ],
@@ -1184,7 +1184,10 @@
       "decisions": [],
       "human_gate": "HG-03",
       "mutations": [],
-      "known_deviations": {},
+      "known_deviations": {
+        "TC-FR1-19-AS-03": "the staging release smoke is recorded before the tag; the production runs at +0 h, +1 h and +24 h can exist only after the deploy (node tools/release/drill.mjs smoke production --label ..., with both mails confirmed in the seeded inbox by the release owner); the test skips until all three are recorded and FR1-19 moves to accepted after the +24 h run",
+        "TC-FR1-19-AS-01": "read per requirement: a bundle's own TC-<ID> assertions must pass with reviewer PASS; requirements where that is not so are listed with their basis (DEC-84 simple mode, HG-01/HG-02/HG-03) in the release record's signoffs.evidence_exceptions, and the test requires that list to equal the computed gaps"
+      },
       "evidence_dir": "evidence/FR1-19/",
       "spec": "01_SRS_Stage1_v1_2.md",
       "tests": "03_Test_Criteria_Stage1_v1_2.md"
