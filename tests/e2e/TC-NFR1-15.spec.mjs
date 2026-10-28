@@ -34,12 +34,13 @@ test('TC-NFR1-15-AS-03', async ({ page }) => {
     await pf.locator('#hVal').fill('165'); await pf.locator('#wVal').fill('60');
     await pf.locator('#eth button[data-val="WhiteNA"]').click();
     await pf.locator('#act button[data-val="moderate"]').click();
-    await pf.locator('#res button[data-val="0"]').click();
+    await pf.locator('#res button[data-val="no"]').click();
     await pf.locator('#goal button[data-val="maintain"]').click();
     await pf.locator('#diet button[data-val="omnivore"]').click();
     await pf.locator('#meals').selectOption('3');
     await pf.locator('#kidney button[data-val="no"]').click();
     await pf.locator('#liver button[data-val="no"]').click();
+    await pf.locator('#plan button[data-val="no"]').click();
     await pf.locator('#form button.cta').click();
     await expect(pf.locator('#results')).toBeVisible();
     await pf.locator('#email').fill('zq7sentinel@example.test');

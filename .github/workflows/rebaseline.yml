@@ -1,0 +1,46 @@
+# rebaseline: the oracle runner for an HG-02-approved engine change. Re-records one tool's characterisation fixtures
+# from the engine on the dispatched branch and commits them as github-actions[bot] with an `FR1-01:` subject, the only
+# non-reviewer path oracle-guard accepts for a change to fixtures/**/expected. It refuses unless the named DEC row is
+# ratified at HG-02 in the branch's registry. Run it on the PR branch: gh workflow run rebaseline.yml --ref <branch>
+# -f tool=protein -f dec=DEC-86. The bot's push does not start CI; push the next commit (or re-run) to test it.
+name: rebaseline
+on:
+  workflow_dispatch:
+    inputs:
+      tool:
+        description: Tool whose fixtures are re-recorded
+        required: true
+        default: protein
+      dec:
+        description: The ratified HG-02 DEC row that approved the engine change
+        required: true
+permissions:
+  contents: write
+jobs:
+  rebaseline:
+    runs-on: ubuntu-latest
+    env:
+      TOOL: ${{ inputs.tool }}
+      DEC: ${{ inputs.dec }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - run: npm ci
+      - name: The DEC row is ratified at HG-02
+        run: |
+          node -e '
+            const r = require("./registry/Stage1_Requirements_Registry_v1_2.json");
+            const d = r.decisions.find((x) => x.id === process.env.DEC);
+            if (!d || d.status !== "ratified" || d.ratify_at !== "HG-02") { console.error(`${process.env.DEC} is not ratified at HG-02`); process.exit(1); }
+            console.log(`${d.id} ratified ${d.ratified_on}: ${d.question}`);'
+      - name: Re-record the fixtures from the engine
+        run: node tests/baseline/rebaseline.mjs --tool "$TOOL"
+      - name: Commit as the oracle runner
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add "fixtures/$TOOL"
+          if git diff --cached --quiet; then echo "rebaseline: fixtures already match the engine"; exit 0; fi
+          git commit -m "FR1-01: $TOOL characterisation baseline re-recorded from the engine approved by $DEC"
+          git push

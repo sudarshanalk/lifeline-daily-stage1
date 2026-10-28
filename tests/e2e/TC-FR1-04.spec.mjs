@@ -55,7 +55,9 @@ test('TC-FR1-04-AS-02', async ({ page, request }) => {
 test('TC-FR1-04-AS-03', async ({ page }) => {
   await page.goto(hub());
   expect(await page.locator('[data-status=label_only] a').count(), 'no anchor inside a label-only chip').toBe(0);
-  expect(await page.locator('[data-status=label_only]').count(), 'the planned chip from status.json labels[]').toBeGreaterThanOrEqual(1);
+  // D54 (Stage 2, 27 Oct 2026): the planned Healthy Weight chip is hidden for launch, so labels[] may be empty; count follows it
+  const planned = JSON.parse(readFileSync(resolve(ROOT, 'site', 'public_html', 'tools', 'status.json'), 'utf8')).labels.filter((l) => l.status === 'label_only').length;
+  expect(await page.locator('[data-status=label_only]').count(), 'one chip per label_only entry in status.json labels[]').toBe(planned);
 });
 
 test('TC-FR1-04-AS-04', async ({ page }) => {

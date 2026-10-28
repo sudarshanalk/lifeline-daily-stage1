@@ -24,7 +24,7 @@ jobs:
       - name: "PR title is '<ID>: <title>' and the body links an evidence bundle (TC-NFR1-09-AS-01)"
         run: |
           if echo "$PR_TITLE" | grep -Eq '^SPEC: '; then echo "pr-title: SPEC PR (specification/registry/schema change, DEC-55) - no evidence bundle required"; exit 0; fi
-          if echo "$PR_TITLE" | grep -Eq '^S2-(C([1-9]|10)(-C([1-9]|10))?|L[0-8]): '; then echo "pr-title: Stage 2 package PR (Build Method §2) - no evidence bundle required"; exit 0; fi
+          if echo "$PR_TITLE" | grep -Eq '^S2-(C([1-9]|10)(-C([1-9]|10))?|L1?[0-9][a-z]?): '; then echo "pr-title: Stage 2 package PR (Build Method §2) - no evidence bundle required"; exit 0; fi
           echo "$PR_TITLE" | grep -Eq '^(FR1|NFR1|UI1)-[0-9]{2}: ' || { echo "pr-title: title must match ^(FR1|NFR1|UI1)-\d{2}: <title>, ^S2-Cn: / ^S2-Ln: for Stage 2 packages, or ^SPEC: for specification PRs"; exit 1; }
           echo "$PR_BODY" | grep -q 'evidence/' || { echo "pr-title: body must contain the evidence/ path of the run"; exit 1; }
           echo "pr-title: OK"

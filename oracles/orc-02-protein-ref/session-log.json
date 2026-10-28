@@ -1,29 +1,18 @@
 {
   "oracle_id": "ORC-02",
-  "role": "ACT-07 sealed oracle author (prompt P-O2)",
-  "sealing_rule": "No .html, .js or .php file was opened, read, grepped or searched; lifeline-daily-local and build/public_html were not opened.",
+  "version": "v2 (DEC-86)",
+  "role": "ACT-07 sealed oracle author",
+  "sealing_rule": "Opened only oracles/orc-02-protein-ref/rules-v2-DEC-86.md, tests/baseline/protein-cases.json and schemas/oracle-result.schema.json. Did not open, read, grep or search any .html/.js/.mjs/.php file, anything under fixtures/, tests/ (other than the one cases file), site/ or evidence/, nor the previous protein_ref.py or results.json; the repository was not searched. One directory listing of oracles/orc-02-protein-ref showed file names only (no other file was opened). Output files written by this session (protein_ref.py, results.json) were read back for checking only.",
   "files_read": [
-    "C:\\Users\\wickr\\AppData\\Local\\Temp\\claude\\lld\\protein_ref.txt",
-    "C:\\MyProjects\\lifeline-daily\\build\\schemas\\oracle-result.schema.json",
-    "C:\\MyProjects\\lifeline-daily\\build\\fixtures\\protein\\age.json",
-    "C:\\MyProjects\\lifeline-daily\\build\\fixtures\\protein\\bmi.json",
-    "C:\\MyProjects\\lifeline-daily\\build\\fixtures\\protein\\cap.json",
-    "C:\\MyProjects\\lifeline-daily\\build\\fixtures\\protein\\inv.json",
-    "C:\\MyProjects\\lifeline-daily\\build\\fixtures\\protein\\liv.json",
-    "C:\\MyProjects\\lifeline-daily\\build\\fixtures\\protein\\meal.json",
-    "C:\\MyProjects\\lifeline-daily\\build\\fixtures\\protein\\nrm.json",
-    "C:\\MyProjects\\lifeline-daily\\build\\fixtures\\protein\\prg.json",
-    "C:\\MyProjects\\lifeline-daily\\build\\fixtures\\protein\\ren.json",
-    "C:\\MyProjects\\lifeline-daily\\build\\fixtures\\protein\\unit.json",
-    "C:\\MyProjects\\lifeline-daily\\build\\fixtures\\protein\\uns.json",
-    "C:\\MyProjects\\lifeline-daily\\build\\fixtures\\protein\\uwt.json"
+    "oracles/orc-02-protein-ref/rules-v2-DEC-86.md",
+    "tests/baseline/protein-cases.json",
+    "schemas/oracle-result.schema.json"
   ],
   "files_written": [
-    "C:\\MyProjects\\lifeline-daily\\build\\oracles\\orc-02-protein-ref\\protein_ref.py",
-    "C:\\MyProjects\\lifeline-daily\\build\\oracles\\orc-02-protein-ref\\results.json",
-    "C:\\MyProjects\\lifeline-daily\\build\\oracles\\orc-02-protein-ref\\primary-sources.json",
-    "C:\\MyProjects\\lifeline-daily\\build\\oracles\\orc-02-protein-ref\\session-log.json"
+    "oracles/orc-02-protein-ref/protein_ref.py",
+    "oracles/orc-02-protein-ref/results.json",
+    "oracles/orc-02-protein-ref/session-log.json"
   ],
-  "directory_listing": "Glob fixtures/protein/*.json under C:\\MyProjects\\lifeline-daily\\build (file names only)",
+  "run_at": "2026-10-27T13:54:31Z",
   "fixture_expected_values_ignored": true
 }

@@ -3,7 +3,6 @@
   "record": [
     {
       "fixture": "FX-PR-NRM-01",
-      "oracle": "clinical",
       "agree": true,
       "js": {
         "targetG": 90,
@@ -22,45 +21,42 @@
     },
     {
       "fixture": "FX-PR-NRM-02",
-      "oracle": "clinical",
       "agree": true,
       "js": {
-        "targetG": 68,
-        "lowG": 60,
+        "targetG": 69,
+        "lowG": 62,
         "highG": 75,
         "perMeal": 23,
-        "gPerKg": 0.9
+        "gPerKg": 0.92
       },
       "orc02": {
-        "targetG": 68,
-        "lowG": 60,
+        "targetG": 69,
+        "lowG": 62,
         "highG": 75,
         "perMeal": 23,
-        "gPerKg": 0.9
+        "gPerKg": 0.92
       }
     },
     {
       "fixture": "FX-PR-NRM-03",
-      "oracle": "clinical",
       "agree": true,
       "js": {
-        "targetG": 90,
-        "lowG": 75,
-        "highG": 105,
-        "perMeal": 30,
-        "gPerKg": 1.2
+        "targetG": 69,
+        "lowG": 62,
+        "highG": 75,
+        "perMeal": 23,
+        "gPerKg": 0.92
       },
       "orc02": {
-        "targetG": 90,
-        "lowG": 75,
-        "highG": 105,
-        "perMeal": 30,
-        "gPerKg": 1.2
+        "targetG": 69,
+        "lowG": 62,
+        "highG": 75,
+        "perMeal": 23,
+        "gPerKg": 0.92
       }
     },
     {
       "fixture": "FX-PR-NRM-04",
-      "oracle": "clinical",
       "agree": true,
       "js": {
         "targetG": 105,
@@ -79,121 +75,114 @@
     },
     {
       "fixture": "FX-PR-NRM-05",
-      "oracle": "clinical",
-      "agree": true,
-      "js": {
-        "targetG": 105,
-        "lowG": 90,
-        "highG": 120,
-        "perMeal": 35,
-        "gPerKg": 1.4
-      },
-      "orc02": {
-        "targetG": 105,
-        "lowG": 90,
-        "highG": 120,
-        "perMeal": 35,
-        "gPerKg": 1.4
-      }
-    },
-    {
-      "fixture": "FX-PR-NRM-06",
-      "oracle": "clinical",
       "agree": true,
       "js": {
         "targetG": 128,
         "lowG": 105,
         "highG": 150,
-        "perMeal": 40,
+        "perMeal": 43,
         "gPerKg": 1.7
       },
       "orc02": {
         "targetG": 128,
         "lowG": 105,
         "highG": 150,
-        "perMeal": 40,
+        "perMeal": 43,
+        "gPerKg": 1.7
+      }
+    },
+    {
+      "fixture": "FX-PR-NRM-06",
+      "agree": true,
+      "js": {
+        "targetG": 128,
+        "lowG": 105,
+        "highG": 150,
+        "perMeal": 43,
+        "gPerKg": 1.7
+      },
+      "orc02": {
+        "targetG": 128,
+        "lowG": 105,
+        "highG": 150,
+        "perMeal": 43,
         "gPerKg": 1.7
       }
     },
     {
       "fixture": "FX-PR-NRM-07",
-      "oracle": "clinical",
       "agree": true,
       "js": {
-        "targetG": 135,
-        "lowG": 120,
+        "targetG": 128,
+        "lowG": 105,
         "highG": 150,
-        "perMeal": 40,
-        "gPerKg": 1.8
+        "perMeal": 43,
+        "gPerKg": 1.7
       },
       "orc02": {
-        "targetG": 135,
-        "lowG": 120,
+        "targetG": 128,
+        "lowG": 105,
         "highG": 150,
-        "perMeal": 40,
-        "gPerKg": 1.8
+        "perMeal": 43,
+        "gPerKg": 1.7
       }
     },
     {
       "fixture": "FX-PR-NRM-08",
-      "oracle": "clinical",
       "agree": true,
       "js": {
-        "targetG": 135,
-        "lowG": 120,
+        "targetG": 128,
+        "lowG": 105,
         "highG": 150,
-        "perMeal": 40,
-        "gPerKg": 1.8
+        "perMeal": 43,
+        "gPerKg": 1.7
       },
       "orc02": {
-        "targetG": 135,
-        "lowG": 120,
+        "targetG": 128,
+        "lowG": 105,
         "highG": 150,
-        "perMeal": 40,
-        "gPerKg": 1.8
+        "perMeal": 43,
+        "gPerKg": 1.7
       }
     },
     {
       "fixture": "FX-PR-NRM-09",
-      "oracle": "clinical",
       "agree": true,
       "js": {
-        "targetG": 101,
+        "targetG": 105,
         "lowG": 90,
-        "highG": 113,
-        "perMeal": 34,
-        "gPerKg": 1.35
+        "highG": 120,
+        "perMeal": 35,
+        "gPerKg": 1.4
       },
       "orc02": {
-        "targetG": 101,
+        "targetG": 105,
         "lowG": 90,
-        "highG": 113,
-        "perMeal": 34,
-        "gPerKg": 1.35
+        "highG": 120,
+        "perMeal": 35,
+        "gPerKg": 1.4
       }
     },
     {
       "fixture": "FX-PR-NRM-10",
-      "oracle": "clinical",
       "agree": true,
       "js": {
         "targetG": 135,
         "lowG": 120,
         "highG": 150,
-        "perMeal": 40,
+        "perMeal": 45,
         "gPerKg": 1.8
       },
       "orc02": {
         "targetG": 135,
         "lowG": 120,
         "highG": 150,
-        "perMeal": 40,
+        "perMeal": 45,
         "gPerKg": 1.8
       }
     },
     {
       "fixture": "FX-PR-NRM-11",
-      "oracle": "clinical",
       "agree": true,
       "js": {
         "targetG": 90,
@@ -212,45 +201,42 @@
     },
     {
       "fixture": "FX-PR-NRM-12",
-      "oracle": "clinical",
       "agree": true,
       "js": {
-        "targetG": 99,
-        "lowG": 83,
-        "highG": 116,
-        "perMeal": 33,
-        "gPerKg": 1.32
+        "targetG": 90,
+        "lowG": 75,
+        "highG": 105,
+        "perMeal": 30,
+        "gPerKg": 1.2
       },
       "orc02": {
-        "targetG": 99,
-        "lowG": 83,
-        "highG": 116,
-        "perMeal": 33,
-        "gPerKg": 1.32
+        "targetG": 90,
+        "lowG": 75,
+        "highG": 105,
+        "perMeal": 30,
+        "gPerKg": 1.2
       }
     },
     {
       "fixture": "FX-PR-NRM-13",
-      "oracle": "clinical",
       "agree": true,
       "js": {
-        "targetG": 108,
-        "lowG": 90,
-        "highG": 126,
-        "perMeal": 36,
-        "gPerKg": 1.44
+        "targetG": 90,
+        "lowG": 75,
+        "highG": 105,
+        "perMeal": 30,
+        "gPerKg": 1.2
       },
       "orc02": {
-        "targetG": 108,
-        "lowG": 90,
-        "highG": 126,
-        "perMeal": 36,
-        "gPerKg": 1.44
+        "targetG": 90,
+        "lowG": 75,
+        "highG": 105,
+        "perMeal": 30,
+        "gPerKg": 1.2
       }
     },
     {
       "fixture": "FX-PR-NRM-14",
-      "oracle": "clinical",
       "agree": true,
       "js": {
         "targetG": 90,
@@ -269,7 +255,6 @@
     },
     {
       "fixture": "FX-PR-AGE-01",
-      "oracle": "clinical",
       "agree": true,
       "js": {
         "targetG": 90,
@@ -288,26 +273,24 @@
     },
     {
       "fixture": "FX-PR-AGE-02",
-      "oracle": "clinical",
       "agree": true,
       "js": {
-        "targetG": 68,
-        "lowG": 60,
+        "targetG": 69,
+        "lowG": 62,
         "highG": 75,
         "perMeal": 23,
-        "gPerKg": 0.9
+        "gPerKg": 0.92
       },
       "orc02": {
-        "targetG": 68,
-        "lowG": 60,
+        "targetG": 69,
+        "lowG": 62,
         "highG": 75,
         "perMeal": 23,
-        "gPerKg": 0.9
+        "gPerKg": 0.92
       }
     },
     {
       "fixture": "FX-PR-AGE-03",
-      "oracle": "clinical",
       "agree": true,
       "js": {
         "targetG": 83,
@@ -326,64 +309,60 @@
     },
     {
       "fixture": "FX-PR-AGE-04",
-      "oracle": "clinical",
       "agree": true,
       "js": {
         "targetG": 128,
         "lowG": 105,
         "highG": 150,
-        "perMeal": 40,
+        "perMeal": 43,
         "gPerKg": 1.7
       },
       "orc02": {
         "targetG": 128,
         "lowG": 105,
         "highG": 150,
-        "perMeal": 40,
+        "perMeal": 43,
         "gPerKg": 1.7
       }
     },
     {
       "fixture": "FX-PR-AGE-05",
-      "oracle": "clinical",
       "agree": true,
       "js": {
-        "targetG": 90,
-        "lowG": 75,
-        "highG": 105,
-        "perMeal": 30,
-        "gPerKg": 1.2
+        "targetG": 101,
+        "lowG": 90,
+        "highG": 113,
+        "perMeal": 34,
+        "gPerKg": 1.35
       },
       "orc02": {
-        "targetG": 90,
-        "lowG": 75,
-        "highG": 105,
-        "perMeal": 30,
-        "gPerKg": 1.2
+        "targetG": 101,
+        "lowG": 90,
+        "highG": 113,
+        "perMeal": 34,
+        "gPerKg": 1.35
       }
     },
     {
       "fixture": "FX-PR-BMI-01",
-      "oracle": "clinical",
       "agree": true,
       "js": {
-        "targetG": 110,
-        "lowG": 92,
-        "highG": 128,
-        "perMeal": 37,
+        "targetG": 98,
+        "lowG": 82,
+        "highG": 115,
+        "perMeal": 33,
         "gPerKg": 1.2
       },
       "orc02": {
-        "targetG": 110,
-        "lowG": 92,
-        "highG": 128,
-        "perMeal": 37,
+        "targetG": 98,
+        "lowG": 82,
+        "highG": 115,
+        "perMeal": 33,
         "gPerKg": 1.2
       }
     },
     {
       "fixture": "FX-PR-BMI-02",
-      "oracle": "clinical",
       "agree": true,
       "js": {
         "targetG": 99,
@@ -402,90 +381,96 @@
     },
     {
       "fixture": "FX-PR-BMI-03",
-      "oracle": "clinical",
       "agree": true,
       "js": {
-        "targetG": 95,
-        "lowG": 79,
-        "highG": 110,
-        "perMeal": 32,
+        "targetG": 83,
+        "lowG": 69,
+        "highG": 97,
+        "perMeal": 28,
         "gPerKg": 1.2
       },
       "orc02": {
-        "targetG": 95,
-        "lowG": 79,
-        "highG": 110,
-        "perMeal": 32,
+        "targetG": 83,
+        "lowG": 69,
+        "highG": 97,
+        "perMeal": 28,
         "gPerKg": 1.2
       }
     },
     {
       "fixture": "FX-PR-BMI-04",
-      "oracle": "clinical",
       "agree": true,
       "js": {
-        "targetG": 79,
-        "lowG": 66,
-        "highG": 92,
-        "perMeal": 26,
+        "targetG": 83,
+        "lowG": 69,
+        "highG": 97,
+        "perMeal": 28,
         "gPerKg": 1.2
       },
       "orc02": {
-        "targetG": 79,
-        "lowG": 66,
-        "highG": 92,
-        "perMeal": 26,
+        "targetG": 83,
+        "lowG": 69,
+        "highG": 97,
+        "perMeal": 28,
         "gPerKg": 1.2
       }
     },
     {
       "fixture": "FX-PR-CAP-01",
-      "oracle": "characterisation",
-      "known_deviation": "DEC-44",
-      "orc02": {
-        "targetG": 150,
-        "gPerKg": 2
-      },
+      "agree": true,
       "js": {
-        "targetG": 147,
-        "gPerKg": 1.96
+        "targetG": 128,
+        "lowG": 105,
+        "highG": 150,
+        "perMeal": 43,
+        "gPerKg": 1.7
+      },
+      "orc02": {
+        "targetG": 128,
+        "lowG": 105,
+        "highG": 150,
+        "perMeal": 43,
+        "gPerKg": 1.7
       }
     },
     {
       "fixture": "FX-PR-CAP-02",
-      "oracle": "characterisation",
-      "known_deviation": "DEC-44",
-      "orc02": {
-        "targetG": 140,
-        "gPerKg": 1.87
-      },
+      "agree": true,
       "js": {
-        "targetG": 133,
-        "gPerKg": 1.77
+        "targetG": 128,
+        "lowG": 105,
+        "highG": 150,
+        "perMeal": 43,
+        "gPerKg": 1.7
+      },
+      "orc02": {
+        "targetG": 128,
+        "lowG": 105,
+        "highG": 150,
+        "perMeal": 43,
+        "gPerKg": 1.7
       }
     },
     {
       "fixture": "FX-PR-CAP-03",
-      "oracle": "clinical",
       "agree": true,
       "js": {
-        "targetG": 135,
-        "lowG": 120,
+        "targetG": 128,
+        "lowG": 105,
         "highG": 150,
-        "perMeal": 40,
-        "gPerKg": 1.8
+        "perMeal": 43,
+        "gPerKg": 1.7
       },
       "orc02": {
-        "targetG": 135,
-        "lowG": 120,
+        "targetG": 128,
+        "lowG": 105,
         "highG": 150,
-        "perMeal": 40,
-        "gPerKg": 1.8
+        "perMeal": 43,
+        "gPerKg": 1.7
       }
     },
     {
       "fixture": "FX-PR-UNIT-01",
-      "oracle": "clinical",
       "agree": true,
       "js": {
         "targetG": 90,
@@ -504,7 +489,6 @@
     },
     {
       "fixture": "FX-PR-UNIT-02",
-      "oracle": "clinical",
       "agree": true,
       "js": {
         "targetG": 99,
@@ -523,7 +507,6 @@
     },
     {
       "fixture": "FX-PR-UNIT-03",
-      "oracle": "clinical",
       "agree": true,
       "js": {
         "targetG": 90,
@@ -542,45 +525,42 @@
     },
     {
       "fixture": "FX-PR-MEAL-01",
-      "oracle": "clinical",
       "agree": true,
       "js": {
-        "targetG": 54,
-        "lowG": 48,
+        "targetG": 55,
+        "lowG": 50,
         "highG": 60,
-        "perMeal": 20,
-        "gPerKg": 0.9
+        "perMeal": 11,
+        "gPerKg": 0.92
       },
       "orc02": {
-        "targetG": 54,
-        "lowG": 48,
+        "targetG": 55,
+        "lowG": 50,
         "highG": 60,
-        "perMeal": 20,
-        "gPerKg": 0.9
+        "perMeal": 11,
+        "gPerKg": 0.92
       }
     },
     {
       "fixture": "FX-PR-MEAL-02",
-      "oracle": "clinical",
       "agree": true,
       "js": {
-        "targetG": 151,
-        "lowG": 134,
+        "targetG": 143,
+        "lowG": 118,
         "highG": 168,
-        "perMeal": 40,
-        "gPerKg": 1.8
+        "perMeal": 72,
+        "gPerKg": 1.7
       },
       "orc02": {
-        "targetG": 151,
-        "lowG": 134,
+        "targetG": 143,
+        "lowG": 118,
         "highG": 168,
-        "perMeal": 40,
-        "gPerKg": 1.8
+        "perMeal": 72,
+        "gPerKg": 1.7
       }
     },
     {
       "fixture": "FX-PR-MEAL-03",
-      "oracle": "clinical",
       "agree": true,
       "js": {
         "targetG": 90,
