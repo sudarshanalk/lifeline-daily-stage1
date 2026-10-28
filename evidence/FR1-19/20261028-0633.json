@@ -1,0 +1,47 @@
+{
+  "ev_id": "EV-FR1-19-20261028-0633",
+  "req_id": "FR1-19",
+  "tc_id": "TC-FR1-19",
+  "commit": "9bc324d8a9d4d12e62c58e8f6902eda0b79772ce",
+  "tool_hashes": {
+    "protein": "53482fa99b27c94145e2c1e19ce95d768826b98cdbb55380eb3c8999a0171dd0",
+    "diabetes": "339cec858f3db3f4f62dbf6bdea79e31a9b99c73e44da48e9cd64c30c776e2ba"
+  },
+  "fixtures": [],
+  "results": [
+    {
+      "assertion": "TC-FR1-19-AS-01",
+      "outcome": "skipped",
+      "artefact": "runs on the release record releases/rc-2026-10-28.json, added by the release-record PR (CMP-12)",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-19-AS-02",
+      "outcome": "skipped",
+      "artefact": "restore drill evidence/NFR1-08/artefacts/drill-full-20261028T061800Z.json passed; its age against the tag is checked with the release record",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-19-AS-03",
+      "outcome": "skipped",
+      "artefact": "staging release smoke green (evidence/FR1-19/artefacts/smoke-staging-0h-20261028T063259Z.json, both mails to the sink); production +0 h, +1 h, +24 h run after the deploy",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-19-AS-04",
+      "outcome": "pass",
+      "artefact": "evidence/FR1-19/artefacts/rollback-drill-20261028T062309Z.json (bash deploy/rollback.sh staging 20261028T060817Z-a74d77fcbebf, 16 s, smoke and both tools green, rolled forward)",
+      "oracle": "none"
+    }
+  ],
+  "mutations": [],
+  "red_run": "local-20261028-0629",
+  "green_run": "local-20261028-0633",
+  "human_gate": {
+    "id": "HG-03",
+    "artefact": "approvals/hg-03.json",
+    "status": "pending"
+  },
+  "started_at": "2026-10-28T06:23:09Z",
+  "finished_at": "2026-10-28T06:34:13Z"
+}
