@@ -127,6 +127,16 @@ function lld_tools_card(string $slug): ?array { return lld_tools_cards()[$slug] 
 function lld_tools_file(string $slug): string { return ['diabetes' => 'diabetes-risk-tool.html', 'healthy-weight' => 'healthy-weight-tool.html'][$slug] ?? 'protein-requirement-tool.html'; }
 
 /* ---------------------------------------------------------------- [lld_tools_hub] --------------------------------- */
+/** Interface Pack card look per tool (S2-L1): the icon, and one factual line about what the result includes. Colours live in
+ *  lld-theme.css (.lld-tool-card[data-tool=…]); the card copy stays in data/tool-cards.json. */
+function lld_tools_card_look(string $slug): array {
+  $looks = [
+    'protein'        => ['icon' => '&#129385;', 'check' => 'Includes a per-meal guide'],
+    'diabetes'       => ['icon' => '&#129658;', 'check' => 'Shows the factors behind your risk'],
+    'healthy-weight' => ['icon' => '&#9878;&#65039;', 'check' => 'Follows NICE NG246 (2025) guidance'],
+  ];
+  return $looks[$slug] ?? ['icon' => '&#10010;', 'check' => 'Free, and nothing you enter is stored'];
+}
 function lld_tools_render_hub(array $atts = []): string {
   $atts = shortcode_atts(['compact' => '0'], $atts, 'lld_tools_hub');
   $compact = $atts['compact'] === '1';
@@ -140,6 +150,11 @@ function lld_tools_render_hub(array $atts = []): string {
     $status = lld_tools_tool_status($slug);
     $out .= '<li class="lld-tool-card lld-tool-card--' . esc_attr($status) . '" data-tool-card data-tool="' . esc_attr($slug) . '" data-status="' . esc_attr($status) . '">';
     $h = $compact ? 'h3' : 'h2';   // NFR1-05 AS-06: on the hub the cards follow the page h1; on the homepage they sit under the h2 "Tools"
+    $look = lld_tools_card_look($slug);
+    // Interface Pack card head (owner-approved style, 28 Oct 2026): icon tile and time pill. On the hub the pill repeats the
+    // spoken "About N minutes" line, so it is hidden from screen readers there.
+    $out .= '<div class="lld-tool-card__head"><span class="lld-tool-card__icon" aria-hidden="true">' . $look['icon'] . '</span>';
+    $out .= '<span class="lld-tool-card__pill"' . ($compact ? '' : ' aria-hidden="true"') . '>&#9201; ' . (int)$c['time_minutes'] . ' min check</span></div>';
     $out .= '<' . $h . ' class="lld-tool-card__name" data-test="card-name">' . esc_html($c['name']) . '</' . $h . '>';
     $out .= '<p class="lld-tool-card__purpose" data-test="card-purpose">' . esc_html($c['purpose']) . '</p>';
     $out .= '<span class="lld-tool-card__status" data-test="status-label">' . esc_html(lld_tools_status_label($status)) . '</span>';
@@ -150,6 +165,7 @@ function lld_tools_render_hub(array $atts = []): string {
       $out .= '</ul>';
       $out .= '<p class="lld-tool-card__eligibility" data-test="card-eligibility">' . esc_html($c['eligibility']) . '</p>';
     }
+    $out .= '<p class="lld-tool-card__check"><svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>' . esc_html($look['check']) . '</p>';
     $out .= '<a class="lld-tool-card__cta" data-test="cta" href="' . esc_url($c['landing_url']) . '">' . esc_html($c['cta_label']) . '</a>';
     $post = get_post((int)$c['related_post_id']);
     if ($post && $post->post_status === 'publish') $out .= '<p class="lld-tool-card__related" data-test="card-related"><a href="' . esc_url(get_permalink($post)) . '">' . esc_html(get_the_title($post)) . '</a></p>';
