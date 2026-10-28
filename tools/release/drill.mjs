@@ -117,15 +117,17 @@ PY`;
       let body = {}; try { body = JSON.parse(r.body.toString()); } catch {}
       post.push({ fixture: id, endpoint: ENDPOINT[id], status: r.status, response: body });
     }
-    outbox = ssh(env, `python3 - <<'PY'
-import glob, json, os, time
+    const to = fx('mail', 'mail.json', ids[0]).inputs.email;   // the fixtures' synthetic recipient (never written into this file: sentinel scan)
+    if (!/^[A-Za-z0-9._+-]+@[A-Za-z0-9.-]+$/.test(to)) throw new Error('unexpected fixture recipient');
+    outbox = ssh(env, `python3 - '${to}' <<'PY'
+import glob, json, os, sys, time
 d = os.path.expanduser('~/lld-staging-runtime/outbox')
 files = sorted(glob.glob(d + '/*'), key=os.path.getmtime)
 new = [f for f in files if time.time() - os.path.getmtime(f) < 120]
 out = []
 for f in new:
     t = open(f, encoding='utf-8', errors='replace').read()
-    out.append({'file': os.path.basename(f), 'to_sentinel': 'TO: zq7sentinel@example.test' in t, 'bytes': len(t)})
+    out.append({'file': os.path.basename(f), 'to_sentinel': ('TO: ' + sys.argv[1]) in t, 'bytes': len(t)})
     os.unlink(f)   # sentinel-only test message, removed once read
 print(json.dumps(out))
 PY`);
