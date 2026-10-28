@@ -124,7 +124,7 @@ function lld_tools_cards(): array {
   return $cards;
 }
 function lld_tools_card(string $slug): ?array { return lld_tools_cards()[$slug] ?? null; }
-function lld_tools_file(string $slug): string { return $slug === 'diabetes' ? 'diabetes-risk-tool.html' : 'protein-requirement-tool.html'; }
+function lld_tools_file(string $slug): string { return ['diabetes' => 'diabetes-risk-tool.html', 'healthy-weight' => 'healthy-weight-tool.html'][$slug] ?? 'protein-requirement-tool.html'; }
 
 /* ---------------------------------------------------------------- [lld_tools_hub] --------------------------------- */
 function lld_tools_render_hub(array $atts = []): string {
@@ -132,7 +132,11 @@ function lld_tools_render_hub(array $atts = []): string {
   $compact = $atts['compact'] === '1';
   $out = '<section class="lld-tools-hub' . ($compact ? ' lld-tools-hub--compact' : '') . '" data-test="tools-hub"><ul class="lld-tools-hub__list">';
   if ($compact) $out = '<section class="lld-home-row lld-home-tools" data-test="tools-row"><h2 class="lld-home-row__title">Tools</h2>' . $out;
+  $installed = lld_tools_status()['tools'] ?? [];
   foreach (lld_tools_cards() as $slug => $c) {
+    // a tool added after Stage 1 (FR2-39 Healthy Weight Check) is listed only once its server status entry is installed
+    // (`wp lld status set <slug> active --version=…`, after the owner's sign-off on production); until then it is not shown
+    if (!in_array($slug, ['protein', 'diabetes'], true) && !isset($installed[$slug])) continue;
     $status = lld_tools_tool_status($slug);
     $out .= '<li class="lld-tool-card lld-tool-card--' . esc_attr($status) . '" data-tool-card data-tool="' . esc_attr($slug) . '" data-status="' . esc_attr($status) . '">';
     $h = $compact ? 'h3' : 'h2';   // NFR1-05 AS-06: on the hub the cards follow the page h1; on the homepage they sit under the h2 "Tools"
@@ -154,6 +158,7 @@ function lld_tools_render_hub(array $atts = []): string {
   // planned tools: label-only chips, never a link (DEC-24, DEC-26); the compact homepage row shows the two active cards only
   foreach (($compact ? [] : (lld_tools_status()['labels'] ?? [])) as $l) {
     if (($l['status'] ?? '') !== 'label_only') continue;
+    if (lld_tools_card((string)($l['slug'] ?? ''))) continue;   // D54: a planned chip disappears once its tool has a card
     $out .= '<li class="lld-tool-card lld-tool-card--label_only" data-tool-card data-tool="' . esc_attr($l['slug'] ?? '') . '" data-status="label_only">';
     $out .= '<h2 class="lld-tool-card__name" data-test="card-name">' . esc_html($l['label'] ?? '') . '</h2>';   // planned chips appear on the hub only
     $out .= '<span class="lld-tool-card__status" data-test="status-label">' . esc_html(lld_tools_status_label('label_only')) . '</span></li>';
@@ -256,6 +261,12 @@ function lld_tools_legacy_redirect(): void {
 }
 // priority 11: after WordPress core's own old-slug redirect (wp_old_slug_redirect, priority 10) has had its chance
 if (function_exists('add_action')) add_action('template_redirect', 'lld_tools_legacy_redirect', 11);
+// a listed address skips core's 404 guess (redirect_canonical, priority 10), which would otherwise send it to a binned
+// merge source whose slug now ends in __trashed (?p=<id>, itself a 404) before the listed redirect runs
+if (function_exists('add_filter')) add_filter('do_redirect_guess_404_permalink', function ($guess) {
+  $path = trailingslashit((string)wp_parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH));
+  return isset(lld_tools_redirects_doc()['redirects'][$path]) ? false : $guess;
+});
 /** Tag slugs whose archive the owner marked 410 (Gone) in Yoast SEO Premium's redirect list. */
 function lld_tools_gone_tags(): array {
   static $g = null; if ($g !== null) return $g;
@@ -291,7 +302,7 @@ if (function_exists('add_filter')) {
 function lld_tools_schema_webpage($piece) {
   if (!is_array($piece) || !function_exists('is_page') || !is_page()) return $piece;
   $slug = (string)get_post_meta((int)get_queried_object_id(), 'lld_tool_slug', true);
-  if (!in_array($slug, ['protein', 'diabetes'], true)) return $piece;
+  if (!in_array($slug, ['protein', 'diabetes', 'healthy-weight'], true)) return $piece;
   $types = array_values(array_filter((array)($piece['@type'] ?? 'WebPage')));
   if (!in_array('MedicalWebPage', $types, true)) $types[] = 'MedicalWebPage';
   $piece['@type'] = $types;
@@ -465,6 +476,14 @@ if (defined('WP_CLI') && WP_CLI) {
           WP_CLI::log("{$dp['slug']}: created (post $id)");
         }
         $targets[] = [$dp['slug'], $dp['content']];
+      }
+      // a landing page added after Stage 1 (FR2-39: the Healthy Weight Check) is created under the hub when missing
+      $hub = get_page_by_path($doc['hub']['slug'], OBJECT, 'page');
+      foreach ($doc['pages'] as $slug => $p) {
+        if (get_page_by_path($p['slug'], OBJECT, 'page') || !empty($assoc['dry-run']) || empty($p['title']) || !$hub) continue;
+        $id = wp_insert_post(wp_slash(['post_type' => 'page', 'post_status' => 'publish', 'post_title' => $p['title'], 'post_name' => basename($p['slug']), 'post_parent' => $hub->ID, 'post_content' => '']), true);
+        if (is_wp_error($id)) WP_CLI::error("{$p['slug']}: " . $id->get_error_message());
+        WP_CLI::log("{$p['slug']}: created (post $id)");
       }
       foreach ($targets as [$pageSlug, $content]) {
         $page = get_page_by_path($pageSlug, OBJECT, 'page');

@@ -21,6 +21,17 @@
       "cta_label": "Check my risk",
       "landing_url": "/health-tools/diabetes-risk-check/",
       "related_post_id": 1869
+    },
+    {
+      "tool_slug": "healthy-weight",
+      "name": "Healthy Weight Check",
+      "purpose": "Work out your BMI and waist-to-height ratio, and see a healthy weight range for your height.",
+      "time_minutes": 2,
+      "inputs": ["Age", "Height and weight", "Waist (optional)", "Family background", "Pregnancy, eating and recent weight change"],
+      "eligibility": "Adults aged 18 to 99. Not for pregnancy or breastfeeding. Not a diagnosis.",
+      "cta_label": "Check my weight",
+      "landing_url": "/health-tools/healthy-weight-check/",
+      "related_post_id": 4936
     }
   ]
 }
