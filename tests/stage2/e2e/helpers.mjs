@@ -32,7 +32,7 @@ export async function asOwner(page) {
 export const ADMIN = { waitUntil: 'domcontentloaded' };
 const lean = new WeakSet();
 
-async function leanAdmin(page) {
+export async function leanAdmin(page) {
   if (lean.has(page)) return;
   lean.add(page);
   await page.route('**/*', (route) => {

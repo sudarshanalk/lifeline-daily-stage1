@@ -45,8 +45,51 @@ class LLD_Members_Auth {
 		if ( ! self::needs_two_step( $user ) ) {
 			return $user;
 		}
-		self::issue_code( $user, false );
+		self::issue_code( $user, false, 0, self::login_redirect() );
 		return new WP_Error( 'lld_two_step', 'Enter the 6-digit code we emailed you.' );
+	}
+
+	/**
+	 * Where the sign-in started from wp-login.php wanted to go (its redirect_to), when that address is safe.
+	 */
+	private static function login_redirect() {
+		if ( 'wp-login.php' !== ( $GLOBALS['pagenow'] ?? '' ) || empty( $_REQUEST['redirect_to'] ) ) {
+			return '';
+		}
+		return (string) wp_validate_redirect( esc_url_raw( wp_unslash( (string) $_REQUEST['redirect_to'] ) ), '' );
+	}
+
+	/**
+	 * The redirect_to kept for a pending code, under the hash of its pending token (never the token itself).
+	 *
+	 * @param string $token Pending token from the lld_2fa cookie.
+	 */
+	private static function redirect_key( $token ) {
+		return 'lld_2fa_to_' . substr( hash( 'sha256', (string) $token ), 0, 40 );
+	}
+
+	/**
+	 * The redirect_to of the sign-in that complete_code() just finished, already checked.
+	 *
+	 * @var string
+	 */
+	private static $code_redirect = '';
+
+	/**
+	 * Where to go after a correct code. An administrator goes to wp-admin, or to the safe redirect_to that
+	 * wp-login.php carried. A member goes to Today, or to a safe redirect_to outside wp-admin and wp-login.php.
+	 * An administrator may have no member record, so Today would only send them back to sign-in.
+	 */
+	public static function after_code_destination() {
+		$home = home_url( '/members/home/' );
+		$to   = self::$code_redirect;
+		if ( current_user_can( 'manage_options' ) ) {
+			return '' !== $to ? (string) wp_validate_redirect( $to, admin_url() ) : admin_url();
+		}
+		if ( '' === $to || 0 === strpos( $to, admin_url() ) || false !== strpos( $to, 'wp-login.php' ) ) {
+			return $home;
+		}
+		return (string) wp_validate_redirect( $to, $home );
 	}
 
 	/**
@@ -253,10 +296,12 @@ class LLD_Members_Auth {
 	/**
 	 * Create a 6-digit code, store its hash, and email the code.
 	 *
-	 * @param WP_User $user     User.
-	 * @param bool    $remember Remember me through the code step.
+	 * @param WP_User $user         User.
+	 * @param bool    $remember     Remember me through the code step.
+	 * @param int     $resend_count Codes already sent for this sign-in.
+	 * @param string  $redirect     Safe redirect_to from wp-login.php, kept until the code is entered.
 	 */
-	public static function issue_code( $user, $remember, $resend_count = 0 ) {
+	public static function issue_code( $user, $remember, $resend_count = 0, $redirect = '' ) {
 		global $wpdb;
 		$member_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE user_id = %d', $user->ID ) );
 		$code      = str_pad( (string) random_int( 0, 999999 ), 6, '0', STR_PAD_LEFT );
@@ -289,6 +334,9 @@ class LLD_Members_Auth {
 		}
 		setcookie( 'lld_2fa', $token, $cookie );
 		$_COOKIE['lld_2fa'] = $token;
+		if ( '' !== (string) $redirect ) {
+			set_transient( self::redirect_key( $token ), (string) $redirect, self::CODE_MINUTES * MINUTE_IN_SECONDS );
+		}
 		if ( $user->user_email ) {
 			LLD_Members_Mail::send_sign_in_code( $user->user_email, $code );
 		}
@@ -332,7 +380,9 @@ class LLD_Members_Auth {
 		if ( ! $user ) {
 			return new WP_Error( 'lld_code', 'That code has expired. Sign in again to get a new one.' );
 		}
-		self::issue_code( $user, (bool) $row->remember, (int) $row->resend_count + 1 );
+		$redirect = (string) get_transient( self::redirect_key( $token ) );
+		delete_transient( self::redirect_key( $token ) );
+		self::issue_code( $user, (bool) $row->remember, (int) $row->resend_count + 1, $redirect );
 		return true;
 	}
 
@@ -386,6 +436,9 @@ class LLD_Members_Auth {
 		}
 		self::start_session( $user_id, $member_id, (bool) $row->remember );
 		setcookie( 'lld_2fa', '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true );
+		$redirect = get_transient( self::redirect_key( $token ) );
+		delete_transient( self::redirect_key( $token ) );
+		self::$code_redirect = is_string( $redirect ) ? (string) wp_validate_redirect( $redirect, '' ) : '';
 		return true;
 	}
 
