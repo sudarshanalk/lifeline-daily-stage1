@@ -281,9 +281,11 @@ body.archive .tdb-category-description, body.archive .tdb_category_description .
 .td-main-content-wrap .td_module_flex .td-module-container { flex: 1 1 auto; overflow: hidden; height: auto; }
 .td-main-content-wrap .td_module_flex .td-module-thumb { margin: 0; }
 .td-main-content-wrap .td_module_flex .td-image-container { border-radius: 0; overflow: hidden; }
+/* the theme sizes the image box at 100 % of the card, which takes effect once cards share a row height: keep its own height */
+.td-main-content-wrap .td_module_flex .td-module-container > .td-image-container { height: auto !important; }
 .td-main-content-wrap .td_module_flex .td-image-wrap, .td-main-content-wrap .td_module_flex .td-image-wrap img, .td-main-content-wrap .td_module_flex .entry-thumb { transition: transform 0.4s ease; }
 .td-main-content-wrap .td_module_flex:hover .td-image-wrap { transform: scale(1.03); }
-.td-main-content-wrap .td_module_flex .td-module-container > .td-module-meta-info { flex: 1 1 auto; display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: 14px 18px 18px; position: static; }
+.td-main-content-wrap .td_module_flex .td-module-container > .td-module-meta-info { flex: 1 0 auto; display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; min-width: 0; min-height: auto; padding: 14px 18px 18px; position: static; }
 .td-main-content-wrap .td_module_flex .td-module-container > .td-module-meta-info > * { max-width: 100%; }
 .td-main-content-wrap .td_module_flex .td-module-container > .td-module-meta-info > .td-editor-date, .td-main-content-wrap .td_module_flex .td-module-container > .td-module-meta-info > .td-post-date { margin-top: auto; padding-top: 4px; line-height: 1.5; }
 .td-main-content-wrap .td_module_flex .entry-title { margin: 0 0 8px !important; }
