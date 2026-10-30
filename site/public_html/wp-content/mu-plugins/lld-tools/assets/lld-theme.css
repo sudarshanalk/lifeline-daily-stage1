@@ -156,10 +156,10 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
   box-shadow: 0 1px 2px rgba(22, 26, 23, 0.08); transition: background-color 0.15s ease, box-shadow 0.15s ease;
 }
 .lld-tool-card__cta:hover, .lld-button:hover, .lld-button-primary:hover, .lld-tool-cta a:hover, .lld-auto-cta a:hover { background: var(--lld-t-green-hover); color: var(--lld-t-card); box-shadow: 0 2px 6px rgba(22, 26, 23, 0.14); }
-.lld-tool-card, .lld-home-learn__item, .lld-tool-unavailable, .lld-faq__item, .tdb-author-box, .td-main-content-wrap .td_module_flex .td-module-container {
+.lld-tool-card, .lld-home-learn__item, .lld-tool-unavailable, .lld-faq__item, .tdb-author-box, .td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-module-container {
   background: var(--lld-t-card); border: 1px solid var(--lld-t-line); border-radius: var(--lld-t-radius); box-shadow: var(--lld-t-shadow); transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
-.lld-tool-card:hover, .lld-home-learn__item:hover, .td-main-content-wrap .td_module_flex:hover .td-module-container { box-shadow: var(--lld-t-shadow-hover); border-color: var(--lld-t-mint-line); }
+.lld-tool-card:hover, .lld-home-learn__item:hover, .td-main-content-wrap :is(.td_module_flex, .tdb_module_loop):hover .td-module-container { box-shadow: var(--lld-t-shadow-hover); border-color: var(--lld-t-mint-line); }
 .lld-tool-card { padding: 22px 22px 20px; }
 .lld-tool-card__name { font-family: var(--lld-t-font-display); font-size: 1.25rem; font-weight: 700; color: var(--lld-t-ink); }
 .lld-tool-card__status { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--lld-t-muted); }
@@ -277,26 +277,26 @@ body.archive .tdb-category-description, body.archive .tdb_category_description .
    .td-module-container: neighbouring cards keep their gap, the image runs edge to edge, and the text has room below it so
    the byline is never cut off. Cards in one block share the row height; spare height goes under the text. */
 .td-main-content-wrap .td_flex_block .td_block_inner.td-mc1-wrap { display: flex; flex-wrap: wrap; align-items: stretch; align-content: flex-start; }
-.td-main-content-wrap .td_module_flex { display: flex; flex-direction: column; overflow: visible; background: none; border: 0; box-shadow: none; }
-.td-main-content-wrap .td_module_flex .td-module-container { flex: 1 1 auto; overflow: hidden; height: auto; }
-.td-main-content-wrap .td_module_flex .td-module-thumb { margin: 0; }
-.td-main-content-wrap .td_module_flex .td-image-container { border-radius: 0; overflow: hidden; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) { display: flex; flex-direction: column; overflow: visible; background: none; border: 0; box-shadow: none; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-module-container { flex: 1 1 auto; overflow: hidden; height: auto; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-module-thumb { margin: 0; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-image-container { border-radius: 0; overflow: hidden; }
 /* the theme sizes the image box at 100 % of the card, which takes effect once cards share a row height: keep its own height */
-.td-main-content-wrap .td_module_flex .td-module-container > .td-image-container { height: auto !important; }
-.td-main-content-wrap .td_module_flex .td-image-wrap, .td-main-content-wrap .td_module_flex .td-image-wrap img, .td-main-content-wrap .td_module_flex .entry-thumb { transition: transform 0.4s ease; }
-.td-main-content-wrap .td_module_flex:hover .td-image-wrap { transform: scale(1.03); }
-.td-main-content-wrap .td_module_flex .td-module-container > .td-module-meta-info { flex: 1 0 0%; display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; min-width: 0; min-height: auto; padding: 14px 18px 18px; position: static; }
-.td-main-content-wrap .td_module_flex .td-module-container > .td-module-meta-info > * { max-width: 100%; }
-.td-main-content-wrap .td_module_flex .td-module-container > .td-module-meta-info > .td-editor-date, .td-main-content-wrap .td_module_flex .td-module-container > .td-module-meta-info > .td-post-date { margin-top: auto; padding-top: 4px; line-height: 1.5; }
-.td-main-content-wrap .td_module_flex .entry-title { margin: 0 0 8px !important; }
-.td-main-content-wrap .td_module_flex .entry-title, .td-main-content-wrap .td_module_flex .entry-title a { font-family: var(--lld-t-font-display); font-size: 1.05rem !important; line-height: 1.35 !important; font-weight: 700 !important; color: var(--lld-t-ink) !important; }
-.td-main-content-wrap .td_module_flex:hover .entry-title a { color: var(--lld-t-green) !important; }
-.td-main-content-wrap .td_module_flex .td-excerpt { font-family: var(--lld-t-font-body); font-size: 0.85rem; line-height: 1.6; color: var(--lld-t-body-2); margin: 0 0 8px; }
-.td-main-content-wrap .td_module_flex .td-post-date, .td-main-content-wrap .td_module_flex .td-post-author-name, .td-main-content-wrap .td_module_flex .td-post-author-name a, .td-main-content-wrap .td_module_flex .td-module-comments a { font-family: var(--lld-t-font-body); font-size: 0.75rem !important; line-height: 1.5 !important; color: var(--lld-t-muted) !important; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-module-container > .td-image-container { height: auto !important; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-image-wrap, .td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-image-wrap img, .td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .entry-thumb { transition: transform 0.4s ease; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop):hover .td-image-wrap { transform: scale(1.03); }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-module-container > .td-module-meta-info { flex: 1 0 0%; display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; min-width: 0; min-height: auto; padding: 14px 18px 18px; position: static; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-module-container > .td-module-meta-info > * { max-width: 100%; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-module-container > .td-module-meta-info > .td-editor-date, .td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-module-container > .td-module-meta-info > .td-post-date { margin-top: auto; padding-top: 4px; line-height: 1.5; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .entry-title { margin: 0 0 8px !important; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .entry-title, .td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .entry-title a { font-family: var(--lld-t-font-display); font-size: 1.05rem !important; line-height: 1.35 !important; font-weight: 700 !important; color: var(--lld-t-ink) !important; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop):hover .entry-title a { color: var(--lld-t-green) !important; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-excerpt { font-family: var(--lld-t-font-body); font-size: 0.85rem; line-height: 1.6; color: var(--lld-t-body-2); margin: 0 0 8px; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-post-date, .td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-post-author-name, .td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-post-author-name a, .td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-module-comments a { font-family: var(--lld-t-font-body); font-size: 0.75rem !important; line-height: 1.5 !important; color: var(--lld-t-muted) !important; }
 /* category tag: one line, never wider than the card (long names end with an ellipsis) */
-.td-main-content-wrap .td_module_flex .td-post-category { display: inline-block; max-width: 100%; height: 24px; line-height: 22px !important; padding: 0 10px; margin: 0 0 8px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: top; background: var(--lld-t-card) !important; color: var(--lld-t-green-hover) !important; border: 1px solid var(--lld-t-mint-line); font-size: 0.68rem !important; font-weight: 700 !important; letter-spacing: 0.04em; }
-.td-main-content-wrap .td_module_flex .td-category-pos-image .td-image-container .td-post-category { position: absolute; left: 12px; bottom: 12px; margin: 0; }
-.td-main-content-wrap .td_module_flex .td-read-more a { color: var(--lld-t-green) !important; font-weight: 600; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-post-category { display: inline-block; max-width: 100%; height: 24px; line-height: 22px !important; padding: 0 10px; margin: 0 0 8px; border-radius: 999px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; vertical-align: top; background: var(--lld-t-card) !important; color: var(--lld-t-green-hover) !important; border: 1px solid var(--lld-t-mint-line); font-size: 0.68rem !important; font-weight: 700 !important; letter-spacing: 0.04em; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-category-pos-image .td-image-container .td-post-category { position: absolute; left: 12px; bottom: 12px; margin: 0; }
+.td-main-content-wrap :is(.td_module_flex, .tdb_module_loop) .td-read-more a { color: var(--lld-t-green) !important; font-weight: 600; }
 /* a row whose columns each hold one article block (the homepage's first row): both columns end level, and a single big
    card grows its image to fill the height (sidebar rows with sticky columns or ads are left alone) */
 .td-main-content-wrap .td-pb-row:has(> .vc_column + .vc_column):has(.td_flex_block):not(:has(.td-is-sticky, .td_block_ad_box, .wpb_wrapper > .td_block_wrap + .td_block_wrap)) { display: flex; flex-wrap: wrap; }
