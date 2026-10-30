@@ -308,18 +308,17 @@ body.archive .tdb-category-description, body.archive .tdb_category_description .
 .td-main-content-wrap .td-pb-row:has(> .vc_column + .vc_column):has(.td_flex_block):not(:has(.td-is-sticky, .td_block_ad_box, .wpb_wrapper > .td_block_wrap + .td_block_wrap)) .td_block_inner > .td_module_flex:only-child .td-image-container .td-module-thumb, .td-main-content-wrap .td-pb-row:has(> .vc_column + .vc_column):has(.td_flex_block):not(:has(.td-is-sticky, .td_block_ad_box, .wpb_wrapper > .td_block_wrap + .td_block_wrap)) .td_block_inner > .td_module_flex:only-child .td-image-container .td-image-wrap { flex: 1 1 auto; display: flex; flex-direction: column; }
 .td-main-content-wrap .td-pb-row:has(> .vc_column + .vc_column):has(.td_flex_block):not(:has(.td-is-sticky, .td_block_ad_box, .wpb_wrapper > .td_block_wrap + .td_block_wrap)) .td_block_inner > .td_module_flex:only-child .td-image-container .td-image-wrap { position: relative; display: block; }
 .td-main-content-wrap .td-pb-row:has(> .vc_column + .vc_column):has(.td_flex_block):not(:has(.td-is-sticky, .td_block_ad_box, .wpb_wrapper > .td_block_wrap + .td_block_wrap)) .td_block_inner > .td_module_flex:only-child .td-module-meta-info { flex: 0 0 auto; }
-/* homepage top row (the four articles above Tools, the first thing a visitor sees): tall horizontal cards whose thumbnail,
-   padding and title all scale with the card's width (cqi = 1 % of the card), so they read well from laptop to wide screens */
-.lld-home-hero .td_module_flex { container-type: inline-size; }
-.lld-home-hero .td_module_flex .td-module-container { flex-direction: row !important; align-items: center; gap: clamp(14px, 5cqi, 22px); padding: clamp(14px, 5cqi, 22px); min-height: clamp(140px, 46cqi, 200px); }
-.lld-home-hero .td_module_flex .td-image-container { flex: 0 0 clamp(96px, 36cqi, 156px) !important; width: clamp(96px, 36cqi, 156px) !important; max-width: none; align-self: center; border-radius: var(--lld-t-radius-sm); overflow: hidden; }
-.lld-home-hero .td_module_flex .td-image-container .td-image-wrap { padding-bottom: 100% !important; height: 0; }
-.lld-home-hero .td_module_flex .td-module-container > .td-module-meta-info { padding: 0; align-self: stretch; justify-content: center; gap: 2px; }
-.lld-home-hero .td_module_flex .entry-title { margin: 0 0 10px !important; }
-.lld-home-hero .td_module_flex .entry-title, .lld-home-hero .td_module_flex .entry-title a { font-size: clamp(0.98rem, 0.55rem + 2.4cqi, 1.2rem) !important; line-height: 1.28 !important; letter-spacing: -0.01em; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
-.lld-home-hero .td_module_flex .td-post-category { height: 26px; line-height: 24px !important; padding: 0 12px; font-size: clamp(0.68rem, 0.45rem + 1cqi, 0.76rem) !important; }
-.lld-home-hero .td_module_flex .td-module-container > .td-module-meta-info > .td-editor-date { margin-top: 0; padding-top: 0; }
-@container (max-width: 250px) { .lld-home-hero .td_module_flex .td-image-container { display: none; } }
+/* homepage top row (the four articles above Tools, the first thing a visitor sees). The row is capped at about 1200 px, so
+   each card is about 270 px wide on every screen: the cards stack a full-width 16:10 photo over the tag and the full title
+   (up to three lines at 1.1rem), which makes them taller and lets every title be read */
+.lld-home-hero .td_module_flex .td-module-container { flex-direction: column !important; align-items: stretch; padding: 0; }
+.lld-home-hero .td_module_flex .td-image-container { flex: 0 0 auto !important; width: 100% !important; max-width: none; border-radius: 0; overflow: hidden; }
+.lld-home-hero .td_module_flex .td-image-container .td-image-wrap { padding-bottom: 62.5% !important; height: 0; }
+.lld-home-hero .td_module_flex .td-module-container > .td-module-meta-info { padding: 16px 18px 18px; justify-content: flex-start; }
+.lld-home-hero .td_module_flex .entry-title { margin: 0 0 12px !important; }
+.lld-home-hero .td_module_flex .entry-title, .lld-home-hero .td_module_flex .entry-title a { font-size: 1.1rem !important; line-height: 1.3 !important; letter-spacing: -0.01em; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.lld-home-hero .td_module_flex .td-post-category { height: 26px; line-height: 24px !important; padding: 0 12px; font-size: 0.72rem !important; }
+.lld-home-hero .td_module_flex .td-module-container > .td-module-meta-info > .td-editor-date { margin-top: auto; padding-top: 0; }
 /* section titles ("Latest guides") */
 .td-main-content-wrap .td-block-title, .td-main-content-wrap .td-block-title span, .td-main-content-wrap .td-block-title a { font-family: var(--lld-t-font-display) !important; font-size: 1.25rem !important; font-weight: 700 !important; color: var(--lld-t-ink) !important; background: none !important; text-transform: none !important; letter-spacing: -0.01em; }
 .td-main-content-wrap .td-block-title::before, .td-main-content-wrap .td-block-title::after, .td-main-content-wrap .td-block-title span::after { display: none !important; }
