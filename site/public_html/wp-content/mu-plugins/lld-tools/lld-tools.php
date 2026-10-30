@@ -340,10 +340,17 @@ function lld_tools_render_learn_row(array $atts = []): string {
   return $out . '</div></section>';
 }
 add_shortcode('lld_learn_row', 'lld_tools_render_learn_row');
+/** The ?ver= of a plugin asset: the plugin version plus the file's modification time, so every deploy that changes the
+ *  file gives it a new address. The stylesheets are served with a one-year cache lifetime; a fixed version kept browsers
+ *  on the old styles after a change. */
+function lld_tools_asset_version(string $rel): string {
+  $t = @filemtime(LLD_TOOLS_DIR . '/' . $rel);
+  return LLD_TOOLS_VERSION . ($t ? '.' . $t : '');
+}
 if (function_exists('add_action')) add_action('wp_enqueue_scripts', function () {
-  wp_enqueue_style('lld-tools', plugins_url('assets/lld-tools.css', __FILE__), [], LLD_TOOLS_VERSION);
+  wp_enqueue_style('lld-tools', plugins_url('assets/lld-tools.css', __FILE__), [], lld_tools_asset_version('assets/lld-tools.css'));
   // S2-L1: the Interface Pack theme layer (owner-approved 28 Oct 2026). Presentation over the Newspaper templates; theme untouched (DEC-22).
-  wp_enqueue_style('lld-theme', plugins_url('assets/lld-theme.css', __FILE__), ['lld-tools'], LLD_TOOLS_VERSION);
+  wp_enqueue_style('lld-theme', plugins_url('assets/lld-theme.css', __FILE__), ['lld-tools'], lld_tools_asset_version('assets/lld-theme.css'));
 });
 /* S2-L1: preload the two self-hosted fonts so the swap happens before first paint (FR2-27). */
 if (function_exists('add_action')) add_action('wp_head', function () {
