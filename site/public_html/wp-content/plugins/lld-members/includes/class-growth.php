@@ -412,8 +412,31 @@ class LLD_Members_Growth {
 	 * More: help, and the member's own testimonial with a way to withdraw permission (F4).
 	 */
 	public static function more() {
+		LLD_Members_Personal::require_page();
 		$member_id = LLD_Members_Access::current_member_id();
-		$main      = '<h1>More</h1><p><a href="' . esc_url( home_url( '/members/help/' ) ) . '">Help</a></p>';
+		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_sign_out_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_sign_out_nonce'] ) ), 'lld_sign_out' ) ) {
+			self::sign_out( $member_id );
+		}
+		// The More list (Screen Design section 6): every member screen that is not in the bottom bar, then Sign out.
+		$items = array(
+			array( 'Workouts', '/members/workout/', 'Your level, this week\'s sessions and moving up a level.' ),
+			array( 'Monthly challenge', '/members/challenge/', 'This month\'s 28-day challenge and today\'s action.' ),
+			array( 'Progress and badges', '/members/badges/', 'Your totals, check-in charts and badges.' ),
+			array( 'Suggestions', '/members/suggestions/', 'Articles and ideas chosen for your goals.' ),
+			array( 'Members\' group', '/members/group/', 'The private group and the live Q&A.' ),
+			array( 'Profile and settings', '/members/settings/', 'Name, email, password, reminders and consents.' ),
+			array( 'Health profile', '/members/health/', 'Height, weight, diet and conditions that keep content safe for you.' ),
+			array( 'My subscription', '/members/subscription/', 'Your plan, receipts and referral link.' ),
+			array( 'My data', '/members/data/', 'Download everything we hold about you.' ),
+			array( 'Help', '/members/help/', 'Questions and answers, and the contact form.' ),
+		);
+		$main = '<h1>More</h1><ul class="lld-more-list">';
+		foreach ( $items as $item ) {
+			$main .= '<li><a href="' . esc_url( home_url( $item[1] ) ) . '"' . lld_members_current( home_url( $item[1] ) ) . '><strong>' . esc_html( $item[0] ) . '</strong><span>' . esc_html( $item[2] ) . '</span></a></li>';
+		}
+		$main .= '</ul>';
+		$main .= '<form method="post" class="lld-sign-out">' . wp_nonce_field( 'lld_sign_out', 'lld_sign_out_nonce', true, false );
+		$main .= lld_button( array( 'label' => 'Sign out', 'variant' => 'secondary' ) ) . '</form>';
 		if ( $member_id > 0 ) {
 			$main .= self::own_quote_html( $member_id );
 		}
@@ -424,6 +447,26 @@ class LLD_Members_Growth {
 				'signed_in' => $member_id > 0,
 			)
 		);
+	}
+
+	/**
+	 * Ends this browser's session: the member's latest open session line is closed (the one the remember-me check
+	 * reads) and WordPress drops this browser's sign-in. Other devices stay signed in.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function sign_out( $member_id ) {
+		global $wpdb;
+		if ( $member_id > 0 ) {
+			$table = LLD_Members_Schema::table( 'session' );
+			$open  = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE member_id = %d AND ended_at IS NULL ORDER BY id DESC LIMIT 1", $member_id ) );
+			if ( $open ) {
+				$wpdb->update( $table, array( 'ended_at' => lld_members_now_mysql( $member_id ) ), array( 'id' => $open ), array( '%s' ), array( '%d' ) );
+			}
+		}
+		wp_logout();
+		wp_safe_redirect( home_url( '/members/sign-in/?signed_out=1' ) );
+		exit;
 	}
 
 	/**

@@ -395,12 +395,12 @@ test('TC-FR2-13-AS-05', async ({ page, request }) => {
   await createMember(request, { email: monthly, password, first_name: 'Month', role: 'member', access_state: 'Premium', plan: 'monthly' });
   await signIn(page, yearly, password);
   await page.goto('/members/subscription/');
-  await expect(page.getByText('Stage 3 app: included')).toBeVisible();
+  await expect(page.locator('[data-lld-app="included"]')).toHaveText('The Lifeline Daily app is included with your yearly plan when it launches.');
   const yearSnap = await readMember(request, yearly);
   expect(yearSnap.app).toBe('included');
   await signIn(page, monthly, password);
   await page.goto('/members/subscription/');
-  await expect(page.getByText('Stage 3 app: not included')).toBeVisible();
+  await expect(page.locator('[data-lld-app="not included"]')).toHaveText('The Lifeline Daily app, when it launches, is included with yearly plans.');
   const monthSnap = await readMember(request, monthly);
   expect(monthSnap.app).toBe('not included');
 });
@@ -996,7 +996,8 @@ test('TC-FR2-15-AS-03', async ({ page, request }) => {
   await signIn(page, email, password);
   await startTrack(page, fixture.track);
   await page.goto('/members/track/?day=8');
-  await expect(page.getByText('A short preview of this Premium item.')).toBeVisible();
+  await expect(page.locator('[data-lld-lock-preview]')).toBeVisible();
+  await expect(page.locator('.lld-lock')).toContainText('Part of Premium');
   await expect(page.getByRole('link', { name: 'Upgrade' })).toBeVisible();
   await expect(page.getByText(title)).toHaveCount(0);
 });

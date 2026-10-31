@@ -1309,6 +1309,36 @@ class LLD_Members_Content {
 	}
 
 	/**
+	 * True when at least one item of this type has an approved version members may see. Screens use it to tell
+	 * "nothing has been approved yet" apart from "the safety rules leave nothing for you" (section 3.3 empty state).
+	 *
+	 * @param string $type Content type, for example lld_meal.
+	 */
+	public static function has_approved( $type ) {
+		static $seen = array();
+		if ( isset( $seen[ $type ] ) ) {
+			return $seen[ $type ];
+		}
+		$ids = get_posts(
+			array(
+				'post_type'      => $type,
+				'post_status'    => array( 'publish', 'draft', 'private' ),
+				'post_parent'    => 0,
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+			)
+		);
+		$seen[ $type ] = false;
+		foreach ( $ids as $id ) {
+			if ( null !== self::shown( (int) $id ) ) {
+				$seen[ $type ] = true;
+				break;
+			}
+		}
+		return $seen[ $type ];
+	}
+
+	/**
 	 * Goals a member is allowed to choose: approved, with enough content, and not a track the safety matrix
 	 * keeps from this member.
 	 *
