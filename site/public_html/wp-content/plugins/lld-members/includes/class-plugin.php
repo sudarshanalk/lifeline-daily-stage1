@@ -89,7 +89,7 @@ class LLD_Members_Plugin {
 	 * Version of the rule set: bumped when rules change, and different with Yoast's sitemaps on or off.
 	 */
 	public static function rewrite_version() {
-		return '11-' . ( self::yoast_sitemaps() ? 'yoast' : 'own' );
+		return '12-' . ( self::yoast_sitemaps() ? 'yoast' : 'own' );
 	}
 
 	/**
@@ -238,6 +238,7 @@ class LLD_Members_Plugin {
 		add_rewrite_rule( '^members/checkout/?$', 'index.php?lld_screen=checkout', 'top' );
 		add_rewrite_rule( '^members/subscription/?$', 'index.php?lld_screen=subscription', 'top' );
 		add_rewrite_rule( '^pricing/?$', 'index.php?lld_screen=pricing', 'top' );
+		add_rewrite_rule( '^programmes/?$', 'index.php?lld_screen=programmes', 'top' );
 		add_rewrite_rule( '^programmes/(healthy-weight|blood-sugar|fitness|sleep-stress)/?$', 'index.php?lld_screen=sales&lld_track=$matches[1]', 'top' );
 		add_rewrite_rule( '^health-tools/protein/?$', 'index.php?lld_screen=landing&lld_track=protein', 'top' );
 		add_rewrite_rule( '^health-tools/diabetes-risk-check/?$', 'index.php?lld_screen=landing&lld_track=diabetes', 'top' );
@@ -267,3 +268,4 @@ class LLD_Members_Plugin {
 		add_rewrite_rule( '^members/diary-photo/([0-9]+)/?$', 'index.php?lld_screen=diary-photo&lld_member=$matches[1]', 'top' );
 	}
 }
+

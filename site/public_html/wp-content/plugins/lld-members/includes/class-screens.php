@@ -47,6 +47,9 @@ class LLD_Members_Screens {
 			case 'pricing':
 				LLD_Members_Billing::pricing();
 				break;
+			case 'programmes':
+				LLD_Members_Billing::programmes();
+				break;
 			case 'sales':
 				LLD_Members_Billing::sales( (string) get_query_var( 'lld_track' ) );
 				break;
@@ -440,3 +443,4 @@ class LLD_Members_Screens {
 		return wp_validate_redirect( $raw, home_url( '/members/home/' ) );
 	}
 }
+

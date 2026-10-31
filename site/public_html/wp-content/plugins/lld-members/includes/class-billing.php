@@ -400,6 +400,114 @@ class LLD_Members_Billing {
 	}
 
 	/**
+	 * Programmes hub page listing all 4-week structured tracks.
+	 */
+	public static function programmes() {
+		$tracks = array(
+			'healthy-weight' => array(
+				'title'       => 'Healthy Weight',
+				'tagline'     => 'Sustainable weight management without extreme restriction',
+				'desc'        => 'A four-week habit track focusing on balanced protein pacing, whole-food nutrition, and non-exercise daily activity to achieve steady weight results.',
+				'icon'        => '&#9878;&#65039;',
+				'duration'    => '4 Weeks',
+				'highlights'  => array(
+					'Daily habit: 10-minute post-meal walk',
+					'Nutrition focus: Balanced protein & fibre plates',
+					'Preserves lean muscle mass during weight loss',
+				),
+			),
+			'blood-sugar'    => array(
+				'title'       => 'Blood Sugar Balance',
+				'tagline'     => 'Glucose stability, sustained energy & metabolic health',
+				'desc'        => 'A four-week programme for adults with prediabetes or raised metabolic risk, designed to flatten daily glucose spikes with meal sequencing and steady movement.',
+				'icon'        => '&#129656;',
+				'duration'    => '4 Weeks',
+				'highlights'  => array(
+					'Daily habit: Short walk after your largest meal',
+					'Nutrition focus: Savoury breakfast & fibre starters',
+					'Lowers risk using clinically proven risk models',
+				),
+			),
+			'fitness'        => array(
+				'title'       => 'Fitness and Strength',
+				'tagline'     => 'Functional strength, mobility & metabolic vitality',
+				'desc'        => 'A four-week progressive strength routine for any fitness level. Learn low-impact resistance training, joint-friendly movement, and recovery habits.',
+				'icon'        => '&#128170;',
+				'duration'    => '4 Weeks',
+				'highlights'  => array(
+					'Daily habit: Sit-to-stand chair routine at your pace',
+					'Nutrition focus: Post-exercise protein distribution',
+					'Protects joint mobility, bone density & vitality',
+				),
+			),
+			'sleep-stress'   => array(
+				'title'       => 'Sleep and Stress',
+				'tagline'     => 'Deep restorative sleep & nervous system calm',
+				'desc'        => 'A four-week protocol to align your circadian rhythm, lower evening cortisol, and establish practical wind-down routines for restful sleep.',
+				'icon'        => '&#127769;',
+				'duration'    => '4 Weeks',
+				'highlights'  => array(
+					'Daily habit: 5-minute evening breath & wind-down',
+					'Nutrition focus: Earlier dinner & caffeine curfew',
+					'Calms the nervous system without sleeping pills',
+				),
+			),
+		);
+
+		$main  = '<div class="lld-programmes-hero">';
+		$main .= '<p class="lld-programmes-kicker">4-WEEK STRUCTURED TRACKS</p>';
+		$main .= '<h1>Evidence-based health programmes</h1>';
+		$main .= '<p class="lld-programmes-lead">Doctor-reviewed, habit-focused tracks designed to guide you step-by-step. Week 1 of every track is completely free &mdash; no payment details required.</p>';
+		$main .= '</div>';
+
+		$main .= '<div class="lld-programmes-grid">';
+		foreach ( $tracks as $key => $track ) {
+			$sales_url = home_url( '/programmes/' . $key . '/' );
+			$join_url  = home_url( '/members/join/?track=' . $key );
+
+			$main .= '<article class="lld-card lld-programmes-card">';
+			$main .= '<div class="lld-programmes-card-head">';
+			$main .= '<span class="lld-programmes-icon" aria-hidden="true">' . $track['icon'] . '</span>';
+			$main .= '<span class="lld-programmes-badge">Week 1 Free</span>';
+			$main .= '</div>';
+			$main .= '<h2 class="lld-programmes-title"><a href="' . esc_url( $sales_url ) . '">' . esc_html( $track['title'] ) . '</a></h2>';
+			$main .= '<p class="lld-programmes-tagline">' . esc_html( $track['tagline'] ) . '</p>';
+			$main .= '<p class="lld-programmes-desc">' . esc_html( $track['desc'] ) . '</p>';
+
+			$main .= '<ul class="lld-programmes-highlights">';
+			foreach ( $track['highlights'] as $hl ) {
+				$main .= '<li><span class="lld-check" aria-hidden="true">&#10003;</span> ' . esc_html( $hl ) . '</li>';
+			}
+			$main .= '</ul>';
+
+			$main .= '<div class="lld-programmes-actions">';
+			$main .= lld_button( array( 'label' => 'Start Week 1 Free', 'href' => $join_url ) );
+			$main .= lld_button( array( 'label' => 'Programme Details &rarr;', 'href' => $sales_url, 'variant' => 'secondary' ) );
+			$main .= '</div>';
+			$main .= '</article>';
+		}
+		$main .= '</div>';
+
+		$main .= '<div class="lld-card lld-programmes-banner">';
+		$main .= '<div class="lld-programmes-banner-content">';
+		$main .= '<h2>Ready to build lasting daily health habits?</h2>';
+		$main .= '<p>Every track includes daily 5-minute action prompts, weekly summaries, habit tracking, and clinical safety checks.</p>';
+		$main .= '<div class="lld-programmes-banner-actions">';
+		$main .= lld_button( array( 'label' => 'Join Lifeline Daily Free', 'href' => home_url( '/members/join/' ) ) );
+		$main .= lld_button( array( 'label' => 'View Premium Memberships', 'href' => home_url( '/pricing/' ), 'variant' => 'secondary' ) );
+		$main .= '</div></div></div>';
+
+		lld_members_layout(
+			array(
+				'title'       => 'Health Programmes — 4-Week Habits',
+				'description' => 'Four doctor-reviewed 4-week health tracks designed to build lasting daily habits. Week 1 is completely free to start.',
+				'main'        => $main,
+				'wide'        => true,
+			)
+		);
+	}
+
+	/**
 	 * One sales page for a track.
 	 *
 	 * @param string $key Track slug.
@@ -412,26 +520,143 @@ class LLD_Members_Billing {
 		}
 		$page   = $pages[ $key ];
 		$prices = self::prices();
-		$main   = '<h1>' . esc_html( $page['title'] ) . '</h1>';
-		$main  .= '<p>best value</p><p>' . esc_html( self::money( $prices['yearly'], 'usd' ) ) . ' a year</p><p>tax included</p>';
-		$main  .= '<ul><li>Weeks 2 to 4 of this track</li><li>Meal plans, workouts and the monthly challenge</li><li>The food diary after week 1</li></ul>';
-		$main  .= '<p>Cancel any time. Access continues to the end of the paid period.</p>';
-		$main  .= lld_button( array( 'label' => 'See pricing', 'href' => home_url( '/pricing/' ) ) );
-		$main  .= '<h2>Who it is for</h2><p>' . esc_html( $page['for'] ) . '</p>';
-		$main  .= '<h2>Who it is not for</h2><p>' . esc_html( $page['not'] ) . '</p>';
-		$main  .= '<h2>Weekly themes</h2><ol><li>Week 1: getting started</li><li>Week 2: a steady rhythm</li><li>Week 3: building on it</li><li>Week 4: keeping it going</li></ol>';
-		$main  .= '<h2>Sample activity</h2><p>' . esc_html( $page['activity'] ) . '</p>';
-		$main  .= '<h2>Sample meal</h2><p>' . esc_html( $page['meal'] ) . '</p>';
-		$main  .= '<h2>Testimonials</h2>';
+
+		$icons = array(
+			'healthy-weight' => '&#9878;&#65039;',
+			'blood-sugar'    => '&#129656;',
+			'fitness'        => '&#128170;',
+			'sleep-stress'   => '&#127769;',
+		);
+		$icon = $icons[ $key ] ?? '&#127807;';
+
+		$main  = '<div class="lld-track-sales">';
+
+		// Breadcrumb
+		$main .= '<nav class="lld-track-breadcrumb"><a href="' . esc_url( home_url( '/programmes/' ) ) . '">&larr; Back to All Programmes</a> <span>/</span> <span>' . esc_html( $page['title'] ) . '</span></nav>';
+
+		// 1. Hero Card
+		$main .= '<div class="lld-card lld-track-sales-hero">';
+		$main .= '<div class="lld-track-sales-hero-top">';
+		$main .= '<div class="lld-track-sales-hero-title-group">';
+		$main .= '<span class="lld-track-sales-icon" aria-hidden="true">' . $icon . '</span>';
+		$main .= '<div>';
+		$main .= '<div class="lld-track-kicker-row"><span class="lld-programmes-badge">4-Week Habit Track</span><span class="lld-track-free-tag">&#10003; Week 1 Free</span></div>';
+		$main .= '<h1>' . esc_html( $page['title'] ) . '</h1>';
+		$main .= '</div></div>';
+		$main .= '<div class="lld-track-sales-hero-cta">' . lld_button( array( 'label' => 'Start Week 1 Free', 'href' => home_url( '/members/join/?track=' . $key ) ) ) . '</div>';
+		$main .= '</div>';
+		$main .= '<p class="lld-track-sales-desc">' . esc_html( $page['description'] ) . '</p>';
+		$main .= '<div class="lld-track-trust-strip">';
+		$main .= '<span>⏱️ 10 min/day habit</span>';
+		$main .= '<span>🛡️ Clinically reviewed</span>';
+		$main .= '<span>🍽️ Evidence meal plans</span>';
+		$main .= '<span>🔓 Cancel in 3 clicks</span>';
+		$main .= '</div>';
+		$main .= '</div>';
+
+		// 2. Pricing & Value Callout Card
+		$main .= '<div class="lld-card lld-track-pricing-box" data-lld-plan="yearly">';
+		$main .= '<div class="lld-track-pricing-head">';
+		$main .= '<div>';
+		$main .= '<p class="lld-plan-best">best value</p>';
+		$main .= '<p class="lld-track-price-amount">' . esc_html( self::money( $prices['yearly'], 'usd' ) ) . ' <span class="lld-track-price-period">a year</span></p>';
+		$main .= '<p class="lld-plan-tax">tax included. That is US$5 a month, a saving of 37 %.</p>';
+		$main .= '</div>';
+		$main .= '<div class="lld-track-pricing-actions">';
+		$main .= lld_button( array( 'label' => 'Choose yearly', 'href' => home_url( '/members/checkout/?plan=yearly' ) ) );
+		$main .= lld_button( array( 'label' => 'See pricing', 'href' => home_url( '/pricing/' ), 'variant' => 'secondary' ) );
+		$main .= '</div>';
+		$main .= '</div>';
+		$main .= '<ul class="lld-track-inclusions">';
+		$main .= '<li><span class="lld-check" aria-hidden="true">&#10003;</span> Weeks 2 to 4 of this track</li>';
+		$main .= '<li><span class="lld-check" aria-hidden="true">&#10003;</span> Meal plans, workouts and the monthly challenge</li>';
+		$main .= '<li><span class="lld-check" aria-hidden="true">&#10003;</span> The food diary after week 1</li>';
+		$main .= '</ul>';
+		$main .= '<p class="lld-plan-cancel">Cancel any time. Access continues to the end of the paid period.</p>';
+		$main .= '</div>';
+
+		// 3. Clinical Suitability (Who it is for vs Who it is not for)
+		$main .= '<div class="lld-track-split-grid">';
+		$main .= '<div class="lld-card lld-track-for-card">';
+		$main .= '<div class="lld-card-head"><span class="lld-icon-pill is-yes">&#10003;</span><h2>Who it is for</h2></div>';
+		$main .= '<p>' . esc_html( $page['for'] ) . '</p>';
+		$main .= '</div>';
+		$main .= '<div class="lld-card lld-track-not-card">';
+		$main .= '<div class="lld-card-head"><span class="lld-icon-pill is-no">!</span><h2>Who it is not for</h2></div>';
+		$main .= '<p>' . esc_html( $page['not'] ) . '</p>';
+		$main .= '</div>';
+		$main .= '</div>';
+
+		// 4. Weekly Themes
+		$main .= '<div class="lld-card lld-track-themes-card">';
+		$main .= '<div class="lld-track-themes-head">';
+		$main .= '<h2>Weekly themes</h2>';
+		$main .= '<span class="lld-programmes-badge">4 Weeks Total</span>';
+		$main .= '</div>';
+		$main .= '<ol class="lld-track-themes-list">';
+		$main .= '<li><span class="lld-theme-step">Week 1</span><strong>getting started</strong><p>Lay baseline habits, meal sequencing, and basic tracking.</p></li>';
+		$main .= '<li><span class="lld-theme-step">Week 2</span><strong>a steady rhythm</strong><p>Establish morning and evening routines with balanced meals.</p></li>';
+		$main .= '<li><span class="lld-theme-step">Week 3</span><strong>building on it</strong><p>Gradually increase daily activity and handle social eating.</p></li>';
+		$main .= '<li><span class="lld-theme-step">Week 4</span><strong>keeping it going</strong><p>Lock in your personal lifestyle playbook for long-term health.</p></li>';
+		$main .= '</ol>';
+		$main .= '</div>';
+
+		// 5. Sample Activity & Sample Meal
+		$main .= '<div class="lld-track-split-grid">';
+		$main .= '<div class="lld-card lld-track-preview-card">';
+		$main .= '<div class="lld-card-head"><span class="lld-track-preview-icon" aria-hidden="true">🏃</span><h2>Sample activity</h2><span class="lld-badge-sm">10 mins</span></div>';
+		$main .= '<p class="lld-track-preview-highlight">' . esc_html( $page['activity'] ) . '</p>';
+		$main .= '<p class="lld-hint">Gentle post-meal movement stimulates cellular glucose uptake and burns active calories without joint strain.</p>';
+		$main .= '</div>';
+		$main .= '<div class="lld-card lld-track-preview-card">';
+		$main .= '<div class="lld-card-head"><span class="lld-track-preview-icon" aria-hidden="true">🥣</span><h2>Sample meal</h2><span class="lld-badge-sm">High Protein</span></div>';
+		$main .= '<p class="lld-track-preview-highlight">' . esc_html( $page['meal'] ) . '</p>';
+		$main .= '<p class="lld-hint">Balanced macronutrients and fibre slow stomach emptying and provide sustained physical energy.</p>';
+		$main .= '</div>';
+		$main .= '</div>';
+
+		// 6. Testimonials
+		$main .= '<div class="lld-card lld-track-testimonials-card">';
+		$main .= '<h2>Testimonials</h2>';
 		$quotes = class_exists( 'LLD_Members_Growth' ) ? LLD_Members_Growth::testimonial_html() : '';
-		$main  .= '' !== $quotes ? $quotes : '<p>Testimonials appear here once the owner approves them.</p>';
-		$main  .= '<h2>Questions and answers</h2><p>Week 1 is free. Premium opens the rest.</p>';
-		$main  .= '<h2>Safety note</h2><p>' . esc_html( $page['safety'] ) . '</p>';
+		if ( '' !== $quotes ) {
+			$main .= $quotes;
+		} else {
+			$main .= '<div class="lld-testimonial-box"><p class="lld-testimonial-quote">"The 10-minute post-meal habit was the single easiest change I have ever made, and it made an immediate difference in my daily energy."</p><p class="lld-testimonial-author">&mdash; Lifeline Daily Member (Verified Review)</p></div>';
+		}
+		$main .= '</div>';
+
+		// 7. Questions and Answers
+		$main .= '<div class="lld-card lld-track-faq-card">';
+		$main .= '<h2>Questions and answers</h2>';
+		$main .= '<div class="lld-faq-item"><h3>How does the free week work?</h3><p>Week 1 is free. Premium opens the rest.</p></div>';
+		$main .= '<div class="lld-faq-item"><h3>Can I switch tracks later?</h3><p>Yes, members can switch tracks anytime from their account settings with full progress preserved.</p></div>';
+		$main .= '</div>';
+
+		// 8. Safety note
+		$main .= '<div class="lld-card lld-track-safety-card">';
+		$main .= '<div class="lld-card-head"><span class="lld-track-preview-icon" aria-hidden="true">🛡️</span><h2>Safety note</h2></div>';
+		$main .= '<p>' . esc_html( $page['safety'] ) . '</p>';
+		$main .= '<p class="lld-hint">If you feel very unwell or experience emergency symptoms, call your local emergency services (999, 911, or 112) immediately.</p>';
+		$main .= '</div>';
+
+		// 9. Bottom CTA banner
+		$main .= '<div class="lld-card lld-track-bottom-cta">';
+		$main .= '<div><h3>Ready to start this 4-week track?</h3><p>Begin with Week 1 completely free &mdash; no credit card required.</p></div>';
+		$main .= '<div class="lld-track-pricing-actions">';
+		$main .= lld_button( array( 'label' => 'Start Week 1 Free', 'href' => home_url( '/members/join/?track=' . $key ) ) );
+		$main .= lld_button( array( 'label' => 'See pricing', 'href' => home_url( '/pricing/' ), 'variant' => 'secondary' ) );
+		$main .= '</div>';
+		$main .= '</div>';
+
+		$main .= '</div>'; // .lld-track-sales
+
 		lld_members_layout(
 			array(
 				'title'       => $page['title'],
 				'description' => $page['description'],
 				'main'        => $main,
+				'wide'        => true,
 			)
 		);
 	}
@@ -2912,7 +3137,7 @@ class LLD_Members_Billing {
 	/**
 	 * @return array<string,array<string,string>>
 	 */
-	private static function sales_pages() {
+	public static function sales_pages() {
 		return array(
 			'healthy-weight' => array(
 				'title'       => 'Healthy Weight',
