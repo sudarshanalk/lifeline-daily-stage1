@@ -41,6 +41,11 @@ describe('approved content loader', () => {
     expect(problems([item('a', 'post')])).toContain('unknown type');
     expect(problems([item('a', 'lld_activity', { tags: ['Weight Loss'] })])).toContain('tag that is not a slug');
     expect(problems([item('a', 'lld_activity', { body: 'Breathe in and hold your breath for ten.' })])).toContain('breath-holding');
+    expect(problems([item('a', 'lld_workout', { fields: { sessions: 'Plank | 20 | 15 | Hold your breath while you hold the plank' } })])).toContain('breath-holding');
+    expect(problems([item('a', 'lld_activity', { tags: ['breath-holding'] })])).toContain('breath-holding tag');
+    // approved safety advice against holding the breath loads word for word
+    for (const body of ['Never hold your breath.', "Don't hold your breath: breathe out as you push.", 'Breathe steadily, without holding your breath. Avoid breath-holding.'])
+      expect(call('lld_content_check', { items: [item('a', 'lld_activity', { body })] })).toEqual([]);
     // nothing loads without the owner's decision on the approval page and the fingerprint of the draft it approved
     expect(problems([item('a', 'lld_activity', { approval: {} })])).toContain('no approval decision and fingerprint');
     expect(problems([item('a', 'lld_activity', { approval: { decision: 'd-tracks-healthy-weight', sha: 'short' } })])).toContain('no approval decision and fingerprint');

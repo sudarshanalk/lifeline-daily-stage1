@@ -63,8 +63,10 @@ function lld_content_check(array $bundle): array {
     if (isset($it['fields']) && !is_array($it['fields'])) $problems[] = "$where has fields that are not an object";
     foreach (lld_content_refs($it['fields'] ?? []) as $ref) if (!isset($seen[$ref])) $problems[] = "$where refers to @$ref, which is not listed before it";
     foreach ((array)($it['tags'] ?? []) as $tag) if (!is_string($tag) || !preg_match('/^[a-z0-9]+(-[a-z0-9]+)*$/', $tag)) $problems[] = "$where has a tag that is not a slug";
-    $text = strtolower((string)($it['title'] ?? '') . ' ' . (string)($it['body'] ?? '') . ' ' . json_encode($it['tags'] ?? []));
-    if (preg_match('/breath[- ]?holding|hold(ing)? your breath/', $text)) $problems[] = "$where mentions breath-holding";
+    if (preg_grep('/breath/', array_map('strval', (array)($it['tags'] ?? [])))) $problems[] = "$where has a breath-holding tag";
+    // safety advice such as "never hold your breath" stays exactly as the owner approved it; an instruction to hold it is refused
+    $text = strtolower((string)($it['title'] ?? '') . ' ' . (string)($it['body'] ?? '') . ' ' . json_encode($it['fields'] ?? [], JSON_UNESCAPED_UNICODE));
+    if (preg_match('/(?<!never |not |n\'t |do not |without |avoid |no )(breath[- ]?holding|hold(ing)? your breath)/', $text)) $problems[] = "$where mentions breath-holding";
     $ap = (array)($it['approval'] ?? []);
     if (!preg_match('/^d-[a-z0-9-]+$/', (string)($ap['decision'] ?? '')) || !preg_match('/^[0-9a-f]{16}$/', (string)($ap['sha'] ?? ''))) $problems[] = "$where has no approval decision and fingerprint";
     if ($key !== '') $seen[$key] = true;
