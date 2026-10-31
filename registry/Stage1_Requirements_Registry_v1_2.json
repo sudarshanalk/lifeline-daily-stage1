@@ -3178,6 +3178,15 @@
       "ratified_on": "2026-10-27",
       "ratify_at": "HG-02",
       "decided_on": "2026-10-27"
+    },
+    {
+      "id": "DEC-88",
+      "question": "Footer composition after the Interface Pack (owner, 31 Oct 2026)",
+      "selected": "One footer on every page with the medical disclaimer link; unpublished policy pages hidden until live; overrides DEC-43",
+      "status": "ratified",
+      "ratified_on": "2026-10-31",
+      "ratify_at": null,
+      "decided_on": "2026-10-31"
     }
   ],
   "human_gates": [
