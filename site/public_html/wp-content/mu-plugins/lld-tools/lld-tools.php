@@ -705,3 +705,5 @@ require_once __DIR__ . '/page-layout.php';
 require_once __DIR__ . '/footer.php';
 /* Staging mail catcher (P0-4): inert unless LLD_ENV is 'staging'. */
 require_once __DIR__ . '/staging-mail.php';
+/* Approved content loader (S2-L6, B16): wp lld content load | verify. */
+require_once __DIR__ . '/content-load.php';
