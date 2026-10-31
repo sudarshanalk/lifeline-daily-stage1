@@ -707,3 +707,5 @@ require_once __DIR__ . '/footer.php';
 require_once __DIR__ . '/staging-mail.php';
 /* Approved content loader (S2-L6, B16): wp lld content load | verify. */
 require_once __DIR__ . '/content-load.php';
+/* WebP copies beside uploaded images for LiteSpeed's WebP replacement (S2-L1, FR2-27 AS-05): wp lld webp status | generate. */
+require_once __DIR__ . '/webp.php';
