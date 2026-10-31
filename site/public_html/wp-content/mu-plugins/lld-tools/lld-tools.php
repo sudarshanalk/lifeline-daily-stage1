@@ -705,3 +705,5 @@ require_once __DIR__ . '/page-layout.php';
 require_once __DIR__ . '/footer.php';
 /* Staging mail catcher (P0-4): inert unless LLD_ENV is 'staging'. */
 require_once __DIR__ . '/staging-mail.php';
+/* WebP copies beside uploaded images for LiteSpeed's WebP replacement (S2-L1, FR2-27 AS-05): wp lld webp status | generate. */
+require_once __DIR__ . '/webp.php';
