@@ -66,8 +66,8 @@ function lld_members_layout( $args ) {
 function lld_members_header( $signed_in ) {
 	$public = array(
 		'Health Tools' => home_url( '/health-tools/' ),
-		'Articles'     => home_url( '/?post_type=post' ),   // every article, newest first: the site has no posts page (owner question 39)
-		'Programmes'   => home_url( '/pricing/' ),         // no programmes index page yet; pricing lists the four tracks (owner question 39)
+		'Articles'     => home_url( '/articles/' ),
+		'Programmes'   => home_url( '/programmes/' ),
 		'Pricing'      => home_url( '/pricing/' ),
 	);
 	$visitor = array(
@@ -83,8 +83,8 @@ function lld_members_header( $signed_in ) {
 		$links .= '<li class="lld-nav-cta"><a href="' . esc_url( $visitor['Join free'] ) . '">Join free</a></li>';
 	}
 	$html  = '<header class="lld-header"><div class="lld-header-inner">';
-	$html .= '<a class="lld-logo" href="' . esc_url( home_url( '/' ) ) . '">' . lld_members_logo_mark();
-	$html .= '<span><span class="lld-logo-name">Lifeline Daily</span><span class="lld-logo-tagline" aria-hidden="true">Start Small, Change Big</span></span></a>';
+	$html .= '<a class="lld-logo" href="' . esc_url( home_url( '/' ) ) . '">';
+	$html .= '<span><span class="lld-logo-name">Lifeline Daily</span><span class="lld-logo-tagline" aria-hidden="true">Start Small, Change Big, Live Healthier</span></span></a>';
 	$html .= '<nav aria-label="Site"><ul class="lld-public-nav">' . $links . '</ul>';
 	if ( $signed_in ) {
 		$html .= lld_members_chip();
@@ -489,3 +489,4 @@ function lld_state_not_allowed( $level = 'h1' ) {
 	$tag = 'h2' === $level ? 'h2' : 'h1';
 	return '<' . $tag . '>This page isn\'t available</' . $tag . '>';
 }
+
