@@ -258,9 +258,11 @@ function lld_tools_footer(bool $is_member_view = false): void {
 /**
  * Print footer on wp_footer for site-wide coverage outside Newspaper template loops.
  */
-add_action('wp_footer', function () {
-  // If we already rendered inside lld_page_layout_transform, don't duplicate
-  if (defined('LLD_FOOTER_RENDERED') && LLD_FOOTER_RENDERED) return;
-  lld_tools_footer();
-  define('LLD_FOOTER_RENDERED', true);
-}, 20);
+if (function_exists('add_action')) {
+  add_action('wp_footer', function () {
+    // If we already rendered inside lld_page_layout_transform, don't duplicate
+    if (defined('LLD_FOOTER_RENDERED') && LLD_FOOTER_RENDERED) return;
+    lld_tools_footer();
+    define('LLD_FOOTER_RENDERED', true);
+  }, 20);
+}
