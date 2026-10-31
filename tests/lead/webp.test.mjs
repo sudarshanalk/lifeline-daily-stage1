@@ -52,4 +52,10 @@ describe('WebP copies of uploaded images', () => {
     expect(call('lld_webp_due', 1000, 1000)).toBe(false);
     expect(call('lld_webp_due', 1000, 2000)).toBe(false);
   });
+
+  test("the theme's lazy thumbnails join LiteSpeed's WebP attribute list once, after the existing entries", () => {
+    expect(call('lld_webp_attrs', ['img.src', 'img.data-src'])).toEqual(['img.src', 'img.data-src', 'span.data-img-url']);
+    expect(call('lld_webp_attrs', ['img.src', 'span.data-img-url'])).toEqual(['img.src', 'span.data-img-url']);
+    expect(call('lld_webp_attrs', [])).toEqual(['span.data-img-url']);
+  });
 });

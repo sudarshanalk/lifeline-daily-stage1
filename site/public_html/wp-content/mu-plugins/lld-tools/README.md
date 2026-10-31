@@ -73,5 +73,8 @@ QUIC.cloud account; this one uses WordPress's image editor on the server at qual
   [--limit=<n>] [--ids=<id,id>]` fills in the existing library; `--limit` stops after that many attachments, for batches.
   Run it once on each environment after this module first deploys (production: in the release checklist), then purge
   the page cache.
-- Pure builders (`lld_webp_path`, `_convertible`, `_files`, `_keep`, `_due`) are tested in PHP CLI without WordPress:
+- The theme's list and related-article thumbnails are background images whose address sits in `<span data-img-url>`,
+  which LiteSpeed's WebP attribute list leaves out. The module adds `span.data-img-url` to that list in memory on each
+  request (`litespeed_conf_force`), so the saved LiteSpeed setting is unchanged. Favicons stay PNG.
+- Pure builders (`lld_webp_path`, `_convertible`, `_files`, `_keep`, `_due`, `_attrs`) are tested in PHP CLI without WordPress:
   `tests/lead/webp.test.mjs`.

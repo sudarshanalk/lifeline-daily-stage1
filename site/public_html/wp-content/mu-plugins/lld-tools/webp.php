@@ -38,6 +38,10 @@ function lld_webp_keep(int $original_bytes, int $webp_bytes): bool { return $web
 /** A copy is due when there is none, or the original changed after it was made. */
 function lld_webp_due(int $original_mtime, ?int $webp_mtime): bool { return $webp_mtime === null || $webp_mtime < $original_mtime; }
 
+/** The theme's lazy thumbnails (Newspaper's <span data-img-url>) added to LiteSpeed's WebP attribute list, once. */
+const LLD_WEBP_THEME_ATTRS = ['span.data-img-url'];
+function lld_webp_attrs(array $attrs): array { return array_values(array_unique(array_merge($attrs, LLD_WEBP_THEME_ATTRS))); }
+
 /* ---------------------------------------------------------------- WordPress wiring -------------------------------- */
 if (!function_exists('add_action')) return;
 
@@ -79,6 +83,13 @@ add_filter('wp_update_attachment_metadata', function ($meta, $id) {
   if (is_array($meta) && wp_attachment_is_image($id)) lld_webp_attachment((int)$id, $meta);
   return $meta;
 }, 20, 2);
+
+// LiteSpeed only swaps the attributes in its list; the theme's list and related-article thumbnails are background images
+// whose address is in <span data-img-url>. Forced in memory on each request, so the saved setting stays as it is.
+add_action('litespeed_init', function () {
+  $attrs = apply_filters('litespeed_conf', 'img_optm-webp_attr');
+  if (is_array($attrs) && $attrs !== lld_webp_attrs($attrs)) do_action('litespeed_conf_force', 'img_optm-webp_attr', lld_webp_attrs($attrs));
+});
 
 add_action('delete_attachment', function ($id) {
   $file = get_attached_file((int)$id);
