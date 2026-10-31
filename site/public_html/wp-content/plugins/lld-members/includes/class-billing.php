@@ -550,7 +550,7 @@ class LLD_Members_Billing {
 		$main .= '<span>⏱️ 10 min/day habit</span>';
 		$main .= '<span>🛡️ Clinically reviewed</span>';
 		$main .= '<span>🍽️ Evidence meal plans</span>';
-		$main .= '<span>🔓 Cancel any time</span>';
+		$main .= '<span>🔓 Cancel in 3 clicks</span>';
 		$main .= '</div>';
 		$main .= '</div>';
 

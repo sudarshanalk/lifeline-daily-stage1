@@ -881,6 +881,8 @@ fieldset.lld-card > legend + * { clear: both; }
 .lld-plan.is-yearly { background: linear-gradient(135deg, var(--lld-deep) 0%, #1a3324 100%); border: 2px solid var(--lld-green); color: #e6efe9; }
 .lld-plan.is-yearly .lld-plan-name, .lld-plan.is-yearly .lld-plan-price { color: #fff; }
 .lld-plan.is-yearly .lld-plan-price small, .lld-plan.is-yearly .lld-plan-tax { color: #b9ccbf; }
+/* the programme pages' dark yearly price box: same light line as the pricing card (10:1 on --lld-deep; NFR2-04) */
+.lld-track-pricing-box .lld-plan-tax { color: #b9ccbf; }
 .lld-plan.is-yearly ul { border-top-color: var(--lld-deep-line); color: #e6efe9; }
 .lld-plan.is-yearly li::before { color: var(--lld-highlight); }
 .lld-plan.is-yearly a { color: #fff; }
