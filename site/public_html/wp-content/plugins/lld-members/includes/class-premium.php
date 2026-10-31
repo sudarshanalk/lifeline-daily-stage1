@@ -707,7 +707,8 @@ class LLD_Members_Premium {
 		$date = self::next_qa( LLD_Members_Programme::local_today( $member_id ) );
 		$html = '<div class="lld-group-note">';
 		if ( $on_dashboard ) {
-			$html .= '<h3>Members\' group and live Q&amp;A</h3>';
+			// Bold text, not a heading: the dashboard's headings are its fixed FR2-07 sections, Membership last.
+			$html .= '<p><strong>Members\' group and live Q&amp;A</strong></p>';
 		}
 		$html .= '' !== $date ? '<p>Next live Q&amp;A ' . esc_html( $date ) . '</p>' : '<p>The next live Q&amp;A date will appear here once it is set.</p>';
 		$html .= '<p>Facebook\'s own privacy terms apply.</p>';

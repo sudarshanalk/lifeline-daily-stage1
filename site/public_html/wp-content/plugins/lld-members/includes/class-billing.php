@@ -414,9 +414,10 @@ class LLD_Members_Billing {
 			'Free with an account' => array( 'General wellbeing suggestions', 'Health goals (with health consent)', 'Your personal dashboard', 'Week 1 of each track, once per track', 'The food diary during week 1' ),
 			'Premium'              => array( 'Weeks 2 to 4 of every track', 'Weekly meal plans and shopping lists', 'A new challenge every month', 'Progressive workout plans', 'The food diary, ongoing', 'Weekly action plan and weekly review', 'Long-term progress, charts and milestones', 'The members\' Facebook group and a monthly live Q&A', 'Premium-only articles', 'Premium in the Lifeline Daily app when it launches (yearly members)' ),
 		);
-		$html = '<section class="lld-card lld-pricing-features" data-lld-features><h2>What you get</h2><div class="lld-feature-columns">';
+		// Labels, not headings: the pricing page keeps its single heading (UI2-01 snapshot).
+		$html = '<section class="lld-card lld-pricing-features" data-lld-features aria-label="What you get"><p class="lld-section-title"><strong>What you get</strong></p><div class="lld-feature-columns">';
 		foreach ( $columns as $title => $items ) {
-			$html .= '<div><h3>' . esc_html( $title ) . '</h3><ul>';
+			$html .= '<div><p class="lld-section-title"><strong>' . esc_html( $title ) . '</strong></p><ul>';
 			foreach ( $items as $item ) {
 				$html .= '<li>' . esc_html( $item ) . '</li>';
 			}
@@ -436,9 +437,9 @@ class LLD_Members_Billing {
 			'Which currency do I pay in?'    => 'Prices are shown in US dollars with tax included. Stripe\'s secure checkout shows the price in your own currency.',
 			'Is the app included?'           => 'Yes, for yearly members, when the Lifeline Daily app launches.',
 		);
-		$html = '<section class="lld-card lld-faq" data-lld-pricing-faq><h2>Questions and answers</h2>';
+		$html = '<section class="lld-card lld-faq" data-lld-pricing-faq aria-label="Questions and answers"><p class="lld-section-title"><strong>Questions and answers</strong></p>';
 		foreach ( $questions as $question => $answer ) {
-			$html .= '<h3>' . esc_html( $question ) . '</h3><p>' . esc_html( $answer ) . '</p>';
+			$html .= '<details><summary>' . esc_html( $question ) . '</summary><p>' . esc_html( $answer ) . '</p></details>';
 		}
 		return $html . '</section>';
 	}

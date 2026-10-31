@@ -573,10 +573,11 @@ th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--lld-line
 .lld-consent-log summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
 .lld-empty h2 { font-size: 18px; margin: 0 0 8px; }
 .lld-feature-columns { display: grid; gap: 16px; }
-.lld-feature-columns h3 { font-size: 16px; margin: 0 0 8px; }
+.lld-section-title { font-family: var(--lld-font-display); font-size: 16px; margin: 0 0 8px; color: var(--lld-ink); }
+.lld-faq details { border-top: 1px solid var(--lld-line); }
+.lld-faq summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
 .lld-feature-columns ul { margin: 0; padding-left: 20px; }
 @media (min-width: 768px) { .lld-feature-columns { grid-template-columns: repeat(3, 1fr); } }
-.lld-faq h3 { font-size: 16px; margin: 16px 0 4px; }
 .lld-price { font-weight: 700; color: var(--lld-ink); }
 
 .lld-consent-note { background: var(--lld-info-bg); border-color: var(--lld-mint-line); }
