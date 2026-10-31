@@ -655,13 +655,18 @@ h2[data-lld-section="limitations"] + p, h2[data-lld-section="limitations"] + ul 
   border-color: var(--lld-t-mint);
 }
 
-/* 4. Link Groups (Four columns) */
+/* 4. Link Groups (Desktop: four columns; Phones: single column per Footer_Content.md) */
 .lld-footer-groups {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: 1fr;
   gap: 32px 24px;
 }
 @media (min-width: 640px) {
+  .lld-footer-groups {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (min-width: 1024px) {
   .lld-footer-groups {
     grid-template-columns: repeat(4, 1fr);
   }
