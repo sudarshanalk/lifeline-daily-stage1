@@ -196,6 +196,18 @@ if (defined('WP_CLI') && WP_CLI) {
       $ids[$key] = $id; $done++;
       if ($done % 50 === 0) WP_CLI::log("$done changes saved");
     }
+    // Approving a changed item gives every item that links to it a new version (the link fingerprints change). Those
+    // linking items were approved by the owner as loaded, so their newest version is approved too, never left waiting.
+    $relinked = 0;
+    foreach ($ids as $key => $id) {
+      $shown = LLD_Members_Content::shown($id);
+      $newest = get_posts(['post_type' => get_post_type($id), 'post_status' => 'lld_version', 'post_parent' => $id, 'posts_per_page' => 1, 'orderby' => 'ID', 'order' => 'DESC', 'fields' => 'ids']);
+      if (!is_array($shown) || !$newest || (int)$newest[0] === (int)$shown['version_id']) continue;
+      $version = LLD_Members_Content::approve_now($id);
+      update_post_meta($version, '_lld_approval_source', (string)get_post_meta((int)$shown['version_id'], '_lld_approval_source', true) . ' (re-approved: a linked item changed)');
+      $relinked++;
+    }
+    if ($relinked) WP_CLI::log("$relinked items re-approved because an item they link to changed");
     if (has_action('litespeed_purge_all')) do_action('litespeed_purge_all');
     WP_CLI::success("$done items created or updated and approved as " . wp_get_current_user()->user_login . '; check with: wp lld content verify --file=' . $file);
   });
