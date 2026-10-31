@@ -131,6 +131,16 @@ test('TC-FR2-01-AS-01', async ({ page }) => {
   // Refused before confirming: the members page, and WordPress's own form.
   await trySignIn(page, email, memberPass);
   await expect(page.getByText('Confirm your email before you sign in.')).toBeVisible();
+  // The refusal is never a dead end: the right password earns a new link straight from the sign-in page (SCR-03 resend).
+  const sentBefore = await mailCount(email, 'Confirm your Lifeline Daily email');
+  await page.getByRole('button', { name: 'Send a new link' }).click();
+  await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+  await expect(page.getByText('If this email is waiting to be confirmed')).toBeVisible();
+  await expect.poll(() => mailCount(email, 'Confirm your Lifeline Daily email')).toBe(sentBefore + 1);
+  // A wrong password never offers it.
+  await trySignIn(page, email, 'not-the-password');
+  await expect(page.locator('.lld-fail')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Send a new link' })).toHaveCount(0);
   expect((await wpLogin(page.request, email, memberPass)).signedIn).toBe(false);
   await page.goto('/members/home/');
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();

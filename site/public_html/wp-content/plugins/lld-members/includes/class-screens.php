@@ -135,7 +135,8 @@ class LLD_Members_Screens {
 			wp_safe_redirect( self::destination() );
 			exit;
 		}
-		$error = '';
+		$error       = '';
+		$unconfirmed = '';
 		if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['lld_sign_in_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_sign_in_nonce'] ) ), 'lld_sign_in' ) ) {
 			$email    = isset( $_POST['lld_email'] ) ? sanitize_email( wp_unslash( $_POST['lld_email'] ) ) : '';
 			$password = isset( $_POST['lld_password'] ) ? (string) wp_unslash( $_POST['lld_password'] ) : '';
@@ -148,7 +149,8 @@ class LLD_Members_Screens {
 				$member_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE user_id = %d', $user->ID ) );
 				$confirmed = $member_id ? $wpdb->get_var( $wpdb->prepare( 'SELECT email_confirmed_at FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) ) : 'yes';
 				if ( $member_id && ! $confirmed ) {
-					$error = 'Confirm your email before you sign in.';
+					$error       = 'Confirm your email before you sign in.';
+					$unconfirmed = (string) $user->user_email;
 				} elseif ( LLD_Members_Auth::needs_two_step( $user ) ) {
 					LLD_Members_Auth::issue_code( $user, $remember );
 					wp_safe_redirect( home_url( '/members/two-step/' ) );
@@ -160,7 +162,17 @@ class LLD_Members_Screens {
 				}
 			}
 		}
-		$main  = '<h1>Sign in</h1>';
+		$main = '<h1>Sign in</h1>';
+		if ( '' !== $unconfirmed ) {
+			// The password was right, so the member may be told the link is the only thing missing and get a new one (SCR-03 resend).
+			// The link expires after 24 hours, and the first email may never have arrived.
+			$main .= '<div class="lld-fail" role="alert" tabindex="-1"><p>' . esc_html( $error ) . ' Open the link we emailed to ' . esc_html( $unconfirmed ) . '. It expires after 24 hours.</p>';
+			$main .= '<form method="post" action="' . esc_url( home_url( '/members/confirm/' ) ) . '">';
+			$main .= wp_nonce_field( 'lld_resend_confirm', 'lld_resend_nonce', true, false );
+			$main .= '<input type="hidden" name="lld_email" value="' . esc_attr( $unconfirmed ) . '">';
+			$main .= '<button type="submit" class="lld-text-button">Send a new link</button></form></div>';
+			$error = '';
+		}
 		$main .= '<form method="post" class="lld-form lld-card lld-form-card" novalidate>';
 		$main .= wp_nonce_field( 'lld_sign_in', 'lld_sign_in_nonce', true, false );
 		if ( isset( $_GET['redirect_to'] ) ) {
