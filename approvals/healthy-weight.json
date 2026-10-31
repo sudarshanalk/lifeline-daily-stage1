@@ -6,7 +6,7 @@
   "intended_use": "Free educational check for adults that shows BMI, waist-to-height ratio and a healthy weight range for height, with plain guidance. It does not diagnose any condition, set a weight target or give calorie advice.",
   "eligibility": "Adults aged 18 to 99. Stops with an owner-approved message and no numbers for under-18s, pregnancy or breastfeeding (including 'not sure') and a current, past or suspected eating disorder (D52). Unintended weight loss shows a see-your-doctor banner above the result.",
   "sources": [
-    "NICE guideline NG246 (2025), Overweight and obesity management, recommendations 1.9.7 to 1.9.15: BMI categories, lower thresholds for listed family backgrounds, waist-to-height ratio 0.4-0.49 / 0.5-0.59 / 0.6 or more for BMI under 35. https://www.nice.org.uk/guidance/ng246",
+    "NICE guideline NG246, Overweight and obesity management (published 14 January 2025, last updated 8 January 2026), recommendations 1.9.7 to 1.9.15: BMI categories, lower thresholds for listed family backgrounds, waist-to-height ratio 0.4-0.49 / 0.5-0.59 / 0.6 or more for BMI under 35. Read by the owner on 31 October 2026 and found to match the tool. https://www.nice.org.uk/guidance/ng246",
     "Ashwell M, Gibson S. Waist-to-height ratio as an indicator of early health risk. BMJ Open 2016;6:e010159."
   ],
   "limitations": [
@@ -15,7 +15,7 @@
     "Self-reported measurements.",
     "The Daily Protein Target and the Diabetes Risk Check keep their frozen, older cut-offs (D56); the difference is explained in this tool's method section."
   ],
-  "regulatory_statement": "Pending the owner's clinical sign-off (FR2-39 AS-19). General health information, not a diagnosis or a medical device.",
+  "regulatory_statement": "Approved by the owner as clinical reviewer on 31 October 2026 (FR2-39 AS-19). General health information, not a diagnosis or a medical device.",
   "licence": "Lifeline Daily's own implementation of published NICE thresholds.",
   "copy_hashes": {
     "messages.healthy-weight": "4d35387fb5894548e000cce7fb1663ff484e8a105071bf2db74855b662cabeb0",
@@ -27,11 +27,11 @@
   "oracle_report": "oracles/orc-05-healthy-weight/results.json",
   "decisions_ratified": [],
   "clinical_signoff": {
-    "name": "pending — the owner as clinical reviewer (FR2-39 AS-19)",
-    "date": "2026-10-27",
-    "decision": "pending",
-    "notes": "Production is blocked until this records the owner's approval of the thresholds, the background mapping and all wording for this exact version, with the NICE NG246 version and the date it was read."
+    "name": "Product owner (sudarshanalk), acting as clinical reviewer",
+    "date": "2026-10-31",
+    "decision": "approved",
+    "notes": "FR2-39 AS-19 signed 31 Oct 2026, point by point (health-tools/Healthy-Weight-Check-Clinical-Signoff-AS-19.md): standard BMI thresholds; lower thresholds for the listed family backgrounds, with classes 2 and 3 at NICE's 2.5 reduction; waist-to-height bands for BMI under 35; rounding on the value shown (D55); the background mapping, Black Caribbean read as African-Caribbean; Mixed or other: Yes uses the lower thresholds, No and Not sure use the standard thresholds with no note (owner's choice, kept as built); Prefer not to say uses the standard thresholds with the note; the three stops with no numbers (D52); the weight-loss banner and no programme offer after it or after Underweight; all result, method and limits wording; intended use and eligibility. NICE NG246 (last updated 8 January 2026) read by the owner on 31 October 2026."
   },
-  "review_date": "2026-10-27",
-  "next_review_date": "2027-10-27"
+  "review_date": "2026-10-31",
+  "next_review_date": "2027-10-31"
 }
