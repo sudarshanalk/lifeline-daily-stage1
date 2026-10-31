@@ -141,7 +141,7 @@ function lld_tools_render_hub(array $atts = []): string {
   $atts = shortcode_atts(['compact' => '0'], $atts, 'lld_tools_hub');
   $compact = $atts['compact'] === '1';
   $out = '<section class="lld-tools-hub' . ($compact ? ' lld-tools-hub--compact' : '') . '" data-test="tools-hub"><ul class="lld-tools-hub__list">';
-  if ($compact) $out = '<section class="lld-home-row lld-home-tools" data-test="tools-row"><h2 class="lld-home-row__title">Tools</h2>' . $out;
+  if ($compact) $out = '<section class="lld-home-row lld-home-tools" data-test="tools-row"><div class="lld-home-row__head"><div class="lld-home-row__head-text"><span class="lld-home-row__kicker">Clinical Health Calculators</span><h2 class="lld-home-row__title">Tools</h2><p class="lld-home-row__subtitle">Personalised checks backed by evidence</p></div><a class="lld-home-row__more" href="' . esc_url(home_url('/health-tools/')) . '">View all calculators <span aria-hidden="true">&rarr;</span></a></div>' . $out;
   $installed = lld_tools_status()['tools'] ?? [];
   foreach (lld_tools_cards() as $slug => $c) {
     // a tool added after Stage 1 (FR2-39 Healthy Weight Check) is listed only once its server status entry is installed
@@ -200,9 +200,9 @@ function lld_tools_render_tool(array $atts = []): string {
     return $out . '</p></div>';
   }
   $src = $s['tools_origin'] . '/tools/' . lld_tools_file($slug);
-  $out  = '<script>window.lld_tools_settings = ' . wp_json_encode(['iframe_origin' => $s['iframe_origin']]) . ';</script>';
-  $out .= '<script src="' . esc_url(home_url('/wp-content/mu-plugins/lld-tools/assets/lld-tool-frame.js')) . '?v=' . LLD_TOOLS_VERSION . '"></script>';
-  $out .= '<iframe class="lld-tool-frame" id="lld-tool-frame" title="' . esc_attr($c['name']) . '" src="' . esc_url($src) . '" loading="eager"></iframe>';
+  $out  = '<script data-no-optimize="1" data-no-defer="1">window.lld_tools_settings = ' . wp_json_encode(['iframe_origin' => $s['iframe_origin']]) . ';</script>';
+  $out .= '<script data-no-optimize="1" data-no-defer="1" src="' . esc_url(home_url('/wp-content/mu-plugins/lld-tools/assets/lld-tool-frame.js')) . '?v=' . LLD_TOOLS_VERSION . '"></script>';
+  $out .= '<iframe class="lld-tool-frame" id="lld-tool-frame" title="' . esc_attr($c['name']) . '" src="' . esc_url($src) . '" loading="eager" data-no-lazy="1"></iframe>';
   $out .= '<noscript><p>This tool needs JavaScript. <a href="' . esc_url($src) . '">Open the tool directly</a>.</p></noscript>';
   return $out;
 }
@@ -330,12 +330,17 @@ if (function_exists('add_filter')) add_filter('wpseo_schema_webpage', 'lld_tools
 function lld_tools_render_learn_row(array $atts = []): string {
   $atts = shortcode_atts(['limit' => '6'], $atts, 'lld_learn_row');
   $limit = max(1, min(12, (int)$atts['limit']));
-  $out = '<section class="lld-home-row lld-home-learn" data-test="learn-row"><h2 class="lld-home-row__title">Learn</h2><div class="lld-home-learn__list">';
+  $out = '<section class="lld-home-row lld-home-learn" data-test="learn-row"><div class="lld-home-row__head"><div class="lld-home-row__head-text"><span class="lld-home-row__kicker">Latest Insights</span><h2 class="lld-home-row__title">Learn</h2><p class="lld-home-row__subtitle">Evidence-based health reads</p></div><div class="lld-home-row__pills" role="group" aria-label="Article topics"><span class="lld-home-row__pill lld-home-row__pill--active">All</span><span class="lld-home-row__pill">Nutrition</span><span class="lld-home-row__pill">Gut Health</span><span class="lld-home-row__pill">Strength</span></div></div><div class="lld-home-learn__list">';
   $q = new WP_Query(['post_type' => 'post', 'post_status' => 'publish', 'posts_per_page' => $limit, 'orderby' => 'date', 'order' => 'DESC', 'ignore_sticky_posts' => true, 'no_found_rows' => true]);
   foreach ($q->posts as $p) {
-    $img = function_exists('has_post_thumbnail') && has_post_thumbnail($p) ? get_the_post_thumbnail($p, 'medium_large', ['class' => 'lld-home-learn__img', 'loading' => 'lazy', 'alt' => '']) : '';
-    $out .= '<article class="lld-home-learn__item" data-post-id="' . (int)$p->ID . '"><a href="' . esc_url(get_permalink($p)) . '">' . $img . '<h3>' . esc_html(get_the_title($p)) . '</h3></a>';
-    $out .= '<time datetime="' . esc_attr(get_the_date('c', $p)) . '">' . esc_html(get_the_date('', $p)) . '</time></article>';
+    $img = function_exists('has_post_thumbnail') && has_post_thumbnail($p) ? get_the_post_thumbnail($p, 'medium_large', ['class' => 'lld-home-learn__img', 'loading' => 'lazy', 'data-no-lazy' => '1', 'alt' => '']) : '';
+    $cat = function_exists('lld_home_post_category_label') ? lld_home_post_category_label($p) : 'Health Guide';
+    $meta = function_exists('lld_home_post_meta_label') ? lld_home_post_meta_label($p) : '5 min read • Evidence Reviewed';
+    $ex = function_exists('lld_home_post_excerpt') ? lld_home_post_excerpt($p) : '';
+    $media = '<div class="lld-home-learn__media">' . ($img !== '' ? $img : '<span class="lld-home-learn__noimg" aria-hidden="true"></span>') . '<span class="lld-home-learn__badge">' . esc_html($cat) . '</span></div>';
+    $body = '<div class="lld-home-learn__body"><div class="lld-home-learn__meta">' . esc_html($meta) . '</div><h3>' . esc_html(get_the_title($p)) . '</h3>' . ($ex !== '' ? '<p class="lld-home-learn__excerpt">' . esc_html($ex) . '</p>' : '') . '</div>';
+    $out .= '<article class="lld-home-learn__item" data-post-id="' . (int)$p->ID . '"><a class="lld-home-learn__link" href="' . esc_url(get_permalink($p)) . '">' . $media . $body . '</a>';
+    $out .= '<div class="lld-home-learn__foot"><span class="lld-home-learn__read">Read article <span aria-hidden="true">&rarr;</span></span><time datetime="' . esc_attr(get_the_date('c', $p)) . '">' . esc_html(get_the_date('', $p)) . '</time></div></article>';
   }
   return $out . '</div></section>';
 }
@@ -692,5 +697,9 @@ require_once __DIR__ . '/categories.php';
 require_once __DIR__ . '/category-hub.php';
 /* Header menu (owner, 28 Oct 2026; screen specification section 6): wp lld menu apply | verify | restore. */
 require_once __DIR__ . '/menu.php';
+/* Interface Pack Homepage (owner, 28 Oct 2026; prototype: lifeline_daily_ui_demo.html): Split Hero, 4-Week Programmes, Starter Guide. */
+require_once __DIR__ . '/homepage-pack.php';
+/* Interface Pack Single Article & Page Layouts (prototypes: single_article_template_demo.html, health_tools_and_calculators_demo.html, site_governance_and_trust_demo.html). */
+require_once __DIR__ . '/page-layout.php';
 /* Staging mail catcher (P0-4): inert unless LLD_ENV is 'staging'. */
 require_once __DIR__ . '/staging-mail.php';

@@ -59,13 +59,83 @@ function lld_hub_pick(array $posts, array $hub): array {
 /** "n min read" from a word count (200 words a minute, never under 1). */
 function lld_hub_minutes(int $words): int { return max(1, (int)ceil($words / 200)); }
 
+/** Default clinical mission descriptions per category slug when WordPress term description is empty. */
+function lld_hub_default_description(string $slug, string $topSlug = ''): string {
+  $map = [
+    'weight-healthy-eating' => 'Evidence-based nutrition, protein targets, satiety strategies, and sustainable weight management guides — written in plain English and reviewed against clinical guidelines.',
+    'healthy-eating' => 'Practical meal building, balanced plates, whole-food swaps, and everyday nutrition habits grounded in clinical dietary guidance.',
+    'nutrition' => 'Clear, evidence-based guides to macronutrients, micronutrients, dietary fibre, and how food fuels long-term metabolic health.',
+    'weight-management' => 'Sustainable, muscle-preserving approaches to healthy weight loss, waist-to-height targets, and appetite regulation without crash diets.',
+    'blood-sugar-metabolic-health' => 'Practical guides to glucose balance, insulin sensitivity, HbA1c, and type 2 diabetes prevention — grounded in clinical risk models and everyday nutrition.',
+    'diabetes-prevention' => 'Actionable steps to lower type 2 diabetes risk through meal timing, post-meal movement, fibre intake, and weight management.',
+    'metabolic-health' => 'Evidence-based explanations of insulin resistance, metabolic flexibility, triglycerides, and how daily habits shape cardiometabolic risk.',
+    'fitness-strength' => 'Progressive strength training, daily movement habits, mobility, and recovery protocols to preserve muscle mass and functional fitness at every age.',
+    'exercise' => 'Structured cardio and conditioning routines designed for heart health, stamina, and consistent weekly energy expenditure.',
+    'strength' => 'Resistance training fundamentals, progressive overload, and muscle protein synthesis guides for lifelong strength and bone density.',
+    'movement' => 'Low-barrier daily walking, posture, joint mobility, and non-exercise activity habits that fit around a busy schedule.',
+    'sleep-stress' => 'Circadian rhythm alignment, sleep hygiene, nervous-system regulation, and evidence-based stress recovery for restorative energy.',
+    'sleep' => 'Clinical sleep architecture, evening wind-down routines, light exposure, and practical fixes for waking refreshed.',
+    'stress' => 'Physiological stress management, cortisol regulation, breathwork, and realistic boundaries to protect physical and mental recovery.',
+    'mental-wellbeing' => 'Evidence-informed guides on mood resilience, cognitive focus, social connection, and daily habits that support emotional balance.',
+    'heart-health' => 'Clear, clinically reviewed guidance on blood pressure, ApoB and LDL cholesterol, vascular health, and cardiovascular risk reduction.',
+    'blood-pressure' => 'Dietary sodium-potassium balance, aerobic conditioning, and home monitoring strategies for healthy blood pressure.',
+    'cholesterol' => 'Understanding lipid panels, soluble fibre, dietary fats, and lifestyle interventions that improve cholesterol profiles.',
+    'gut-health' => 'Microbiome diversity, prebiotic and fermented foods, digestive comfort, and the gut-brain axis explained without hype.',
+    'healthy-ageing' => 'Longevity habits that protect muscle mass, cognitive sharpness, bone density, and independence across every decade of life.',
+    'longevity' => 'Evidence-graded lifestyle habits linked to healthspan, cardiorespiratory fitness, and cellular resilience.',
+    'sex-relationships' => 'Clinically reviewed, stigma-free guides to sexual health, hormonal changes, communication, and supportive relationships.',
+    'health-conditions' => 'Plain-English overviews of common chronic conditions, symptom red flags, and evidence-based questions to bring to your clinician.',
+    'other-conditions' => 'Practical, medically reviewed guides to managing everyday symptoms and understanding when to seek clinical care.',
+  ];
+  return $map[$slug] ?? $map[$topSlug] ?? 'Evidence-based health guides written in plain English and reviewed against clinical guidelines.';
+}
+
+/** Icon for a tool slug inside the Category Tool callout. */
+function lld_hub_tool_icon(string $slug): string {
+  return match ($slug) {
+    'protein' => '🥩',
+    'diabetes' => '🩺',
+    'healthy-weight' => '⚖️',
+    default => '🧭',
+  };
+}
+
 /** The block's HTML from plain values. $m: category {slug, name}; flagship {id, url, title, excerpt, image (html|''), reviewed
  *  (bool), updated (text), minutes}; trending [{id, url, title, excerpt, image, reviewed, minutes}]; tool {slug, name, purpose,
- *  cta_label, url, minutes}|null; track {slug, title, url}|null. Every value is escaped here; `image` is the only HTML
- *  passed through (built by get_the_post_thumbnail). */
+ *  cta_label, url, minutes}|null; track {slug, title, url}|null; optional runtime keys header {...} and articles [...].
+ *  Every value is escaped here; `image` is the only HTML passed through (built by get_the_post_thumbnail). */
 function lld_hub_markup(array $m): string {
   $cat = (array)($m['category'] ?? []); $f = $m['flagship'] ?? null;
   $out = '<section class="lld-hub" data-test="category-hub" data-category="' . esc_attr($cat['slug'] ?? '') . '">';
+  // optional runtime Category Intro Header (rendered on live WordPress category archives)
+  $hdr = $m['header'] ?? null;
+  if (is_array($hdr) && !empty($hdr)) {
+    $total = (int)($hdr['total_count'] ?? 0);
+    $out .= '<header class="lld-hub__intro" data-test="hub-intro">';
+    $out .= '<div class="lld-hub__header-top">';
+    $out .= '<nav class="lld-hub__crumbs" aria-label="Breadcrumb"><a href="' . esc_url($hdr['home_url'] ?? '/') . '">Home</a>';
+    if (!empty($hdr['parent_name']) && !empty($hdr['parent_url'])) {
+      $out .= '<span class="lld-hub__crumb-sep" aria-hidden="true">&rsaquo;</span><a href="' . esc_url($hdr['parent_url']) . '">' . esc_html($hdr['parent_name']) . '</a>';
+    }
+    $out .= '<span class="lld-hub__crumb-sep" aria-hidden="true">&rsaquo;</span><span class="lld-hub__crumb-current" aria-current="page">' . esc_html($cat['name'] ?? '') . '</span></nav>';
+    $out .= '<span class="lld-hub__header-stat"><span class="lld-hub__stat-dot" aria-hidden="true"></span>' . $total . ' Guide' . ($total === 1 ? '' : 's') . ' &bull; Clinically Reviewed</span>';
+    $out .= '</div>';
+    $out .= '<h1 class="lld-hub__h1">' . esc_html($cat['name'] ?? '') . '</h1>';
+    if (!empty($hdr['description'])) {
+      $out .= '<p class="lld-hub__desc">' . esc_html($hdr['description']) . '</p>';
+    }
+    if (!empty($hdr['pills']) && is_array($hdr['pills'])) {
+      $out .= '<div class="lld-hub__pills" role="navigation" aria-label="Category sub-topics">';
+      $out .= '<span class="lld-hub__pills-label">' . esc_html($hdr['pills_label'] ?? 'Sub-Topics:') . '</span>';
+      foreach ($hdr['pills'] as $pill) {
+        $active = !empty($pill['active']) ? ' is-active' : '';
+        $aria = !empty($pill['active']) ? ' aria-current="page"' : '';
+        $out .= '<a class="lld-hub__pill' . $active . '" href="' . esc_url($pill['url'] ?? '#') . '"' . $aria . '>' . esc_html($pill['label'] ?? '') . '</a>';
+      }
+      $out .= '</div>';
+    }
+    $out .= '</header>';
+  }
   if ($f) {
     $out .= '<div class="lld-hub__hero">';
     // left: the flagship guide (7 of 12)
@@ -81,8 +151,9 @@ function lld_hub_markup(array $m): string {
     // right: two trending articles (5 of 12)
     $out .= '<div class="lld-hub__trending">';
     foreach ((array)($m['trending'] ?? []) as $t) {
+      $topicLabel = (string)($t['category_label'] ?? $cat['name'] ?? '');
       $out .= '<article class="lld-hub__trend" data-test="hub-trending" data-post-id="' . (int)$t['id'] . '">';
-      $out .= '<p class="lld-hub__meta"><span class="lld-hub__topic">' . esc_html($cat['name'] ?? '') . '</span><span class="lld-hub__updated">' . (int)$t['minutes'] . ' min read</span></p>';
+      $out .= '<p class="lld-hub__meta"><span class="lld-hub__topic">' . esc_html($topicLabel) . '</span><span class="lld-hub__updated">' . (int)$t['minutes'] . ' min read</span></p>';
       $out .= '<div class="lld-hub__trend-row"><div class="lld-hub__trend-text"><h3 class="lld-hub__trend-title"><a href="' . esc_url($t['url']) . '">' . esc_html($t['title']) . '</a></h3>';
       if (($t['excerpt'] ?? '') !== '') $out .= '<p class="lld-hub__excerpt">' . esc_html($t['excerpt']) . '</p>';
       $out .= '</div>';
@@ -96,10 +167,46 @@ function lld_hub_markup(array $m): string {
   // the topic tool callout
   $tool = $m['tool'] ?? null;
   if ($tool) {
+    $icon = lld_hub_tool_icon((string)($tool['slug'] ?? ''));
     $out .= '<aside class="lld-hub__tool" data-test="hub-tool" data-tool="' . esc_attr($tool['slug']) . '" aria-labelledby="lld-hub-tool-title">';
+    $out .= '<div class="lld-hub__tool-icon" aria-hidden="true">' . $icon . '</div>';
     $out .= '<div class="lld-hub__tool-text"><p class="lld-hub__meta"><span class="lld-hub__chip">Category tool</span><span class="lld-hub__updated">About ' . (int)$tool['minutes'] . ' minute' . ((int)$tool['minutes'] === 1 ? '' : 's') . '</span></p>';
     $out .= '<h3 class="lld-hub__tool-title" id="lld-hub-tool-title">' . esc_html($tool['name']) . '</h3><p class="lld-hub__tool-purpose">' . esc_html($tool['purpose']) . '</p></div>';
     $out .= '<a class="lld-hub__cta" href="' . esc_url($tool['url']) . '">' . esc_html($tool['cta_label']) . ' <span aria-hidden="true">&rarr;</span></a></aside>';
+  }
+  // optional runtime 3-Column Latest Guides Grid (rendered on live WordPress category archives)
+  $articles = $m['articles'] ?? null;
+  if (is_array($articles) && !empty($articles)) {
+    $shownCount = count($articles);
+    $totalGuides = (int)($m['total_count'] ?? $shownCount);
+    if ($totalGuides < $shownCount) $totalGuides = $shownCount;
+    $out .= '<div class="lld-hub__grid-wrap" data-test="hub-articles">';
+    $out .= '<div class="lld-hub__grid-head">';
+    $out .= '<h2 class="lld-hub__grid-heading">Latest Guides in ' . esc_html($cat['name'] ?? '') . '</h2>';
+    $out .= '<span class="lld-hub__grid-count">Showing ' . $shownCount . ' of ' . $totalGuides . ' guide' . ($totalGuides === 1 ? '' : 's') . '</span>';
+    $out .= '</div>';
+    $out .= '<div class="lld-hub__grid">';
+    foreach ($articles as $a) {
+      $badge = (string)($a['category_label'] ?? $cat['name'] ?? '');
+      $out .= '<article class="lld-hub__card" data-post-id="' . (int)$a['id'] . '">';
+      $out .= '<a class="lld-hub__card-media" href="' . esc_url($a['url']) . '" tabindex="-1" aria-hidden="true">';
+      $out .= ($a['image'] ?? '') !== '' ? $a['image'] : '<span class="lld-hub__noimg"></span>';
+      if ($badge !== '') $out .= '<span class="lld-hub__card-cat">' . esc_html($badge) . '</span>';
+      $out .= '</a>';
+      $out .= '<div class="lld-hub__card-body">';
+      $out .= '<div class="lld-hub__card-meta"><span>' . (int)$a['minutes'] . ' min read</span>';
+      if (!empty($a['reviewed'])) {
+        $out .= '<span>&bull;</span><span class="lld-hub__card-reviewed">Medically Reviewed</span>';
+      } elseif (($a['updated'] ?? '') !== '') {
+        $out .= '<span>&bull;</span><span>Updated ' . esc_html($a['updated']) . '</span>';
+      }
+      $out .= '</div>';
+      $out .= '<h3 class="lld-hub__card-title"><a href="' . esc_url($a['url']) . '">' . esc_html($a['title']) . '</a></h3>';
+      if (($a['excerpt'] ?? '') !== '') $out .= '<p class="lld-hub__card-excerpt">' . esc_html($a['excerpt']) . '</p>';
+      $out .= '<div class="lld-hub__card-foot"><a class="lld-hub__card-link" href="' . esc_url($a['url']) . '">Read guide <span aria-hidden="true">&rarr;</span></a></div>';
+      $out .= '</div></article>';
+    }
+    $out .= '</div></div>';
   }
   // the Stage 2 track banner (prototype copy; week 1 of every track is free, D3)
   $track = $m['track'] ?? null;
@@ -133,13 +240,120 @@ function lld_hub_template_revert(string $content): string {
 /* ---------------------------------------------------------------- WordPress wiring -------------------------------- */
 if (!function_exists('add_action')) return;
 
+/** Primary or specific child category label for a post inside a category hub. */
+function lld_hub_post_category_label($p, string $fallback = ''): string {
+  if (!function_exists('wp_get_post_terms')) return $fallback;
+  $hidden = (array)(lld_categories_doc()['hidden'] ?? ['featured', 'trending', 'video']);
+  $terms = wp_get_post_terms((int)$p->ID, 'category');
+  if (is_wp_error($terms) || empty($terms)) return $fallback;
+  // Prefer a subcategory (parent > 0) so e.g. Sleep & Stress shows 'Sleep', 'Stress', or 'Mental Wellbeing'
+  foreach ($terms as $t) {
+    if (!in_array((string)$t->slug, $hidden, true) && (int)$t->parent > 0) {
+      return html_entity_decode((string)$t->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+  }
+  foreach ($terms as $t) {
+    if (!in_array((string)$t->slug, $hidden, true)) {
+      return html_entity_decode((string)$t->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    }
+  }
+  return $fallback;
+}
+
 /** The hub's view of a post: plain values for lld_hub_markup(). */
-function lld_hub_post_view($p, string $size, bool $eager): array {
+function lld_hub_post_view($p, string $size, bool $eager, string $fallbackCat = '', string $sizesAttr = ''): array {
   $text = wp_strip_all_tags(strip_shortcodes((string)$p->post_content));
   $excerpt = has_excerpt($p) ? wp_strip_all_tags((string)$p->post_excerpt) : wp_trim_words($text, 32, '…');
-  $img = has_post_thumbnail($p) ? get_the_post_thumbnail($p, $size, ['class' => 'lld-hub__img', 'loading' => $eager ? 'eager' : 'lazy', 'decoding' => 'async', 'alt' => '']) : '';
+  $attr = ['class' => 'lld-hub__img', 'loading' => $eager ? 'eager' : 'lazy', 'decoding' => 'async', 'data-no-lazy' => '1', 'alt' => ''];
+  if ($sizesAttr !== '') $attr['sizes'] = $sizesAttr;
+  $img = has_post_thumbnail($p) ? get_the_post_thumbnail($p, $size, $attr) : '';
   return ['id' => (int)$p->ID, 'url' => get_permalink($p), 'title' => html_entity_decode(get_the_title($p), ENT_QUOTES | ENT_HTML5, 'UTF-8'), 'excerpt' => html_entity_decode($excerpt, ENT_QUOTES | ENT_HTML5, 'UTF-8'),
-    'image' => $img, 'reviewed' => lld_tools_review_byline($p) !== '', 'updated' => get_the_modified_date('F Y', $p), 'minutes' => lld_hub_minutes(str_word_count($text))];
+    'image' => $img, 'reviewed' => lld_tools_review_byline($p) !== '', 'updated' => get_the_modified_date('F Y', $p), 'minutes' => lld_hub_minutes(str_word_count($text)),
+    'category_label' => lld_hub_post_category_label($p, $fallbackCat)];
+}
+
+/** Build the Category Intro Header model (breadcrumbs, total count, clinical description, and sub-topic filter pills). */
+function lld_hub_header_view($term, array $hub, int $totalCount): array {
+  $doc = lld_categories_doc();
+  $slug = (string)$term->slug;
+  $topSlug = (string)($hub['category'] ?? $slug);
+  $isChild = $slug !== $topSlug;
+  $topTerm = $isChild ? get_term_by('slug', $topSlug, 'category') : $term;
+  $rawDesc = trim(wp_strip_all_tags((string)($term->description ?? '')));
+  $desc = $rawDesc !== '' ? html_entity_decode($rawDesc, ENT_QUOTES | ENT_HTML5, 'UTF-8') : lld_hub_default_description($slug, $topSlug);
+
+  // Find tree entry for topSlug to build sub-topic pills
+  $children = [];
+  foreach ((array)($doc['tree'] ?? []) as $t) {
+    if ((string)$t['slug'] === $topSlug) {
+      $children = (array)($t['children'] ?? []);
+      break;
+    }
+  }
+
+  $pills = [];
+  $pillsLabel = 'Sub-Topics:';
+  if (!empty($children)) {
+    // Count total in parent category (including children)
+    $parentTotal = $totalCount;
+    if ($isChild && $topTerm && !is_wp_error($topTerm)) {
+      $pq = new WP_Query(['post_type' => 'post', 'post_status' => 'publish', 'cat' => (int)$topTerm->term_id, 'posts_per_page' => 1, 'fields' => 'ids', 'no_found_rows' => false]);
+      $parentTotal = (int)$pq->found_posts;
+    }
+    $topUrl = ($topTerm && !is_wp_error($topTerm)) ? get_term_link($topTerm) : home_url("/category/$topSlug/");
+    $pills[] = [
+      'label' => 'All (' . $parentTotal . ')',
+      'url' => is_wp_error($topUrl) ? home_url("/category/$topSlug/") : (string)$topUrl,
+      'active' => !$isChild,
+    ];
+    foreach ($children as $c) {
+      $ct = get_term_by('slug', (string)$c['slug'], 'category');
+      if (!$ct || is_wp_error($ct)) continue;
+      $cUrl = get_term_link($ct);
+      $pills[] = [
+        'label' => html_entity_decode((string)$c['name'], ENT_QUOTES | ENT_HTML5, 'UTF-8') . ' (' . (int)$ct->count . ')',
+        'url' => is_wp_error($cUrl) ? '#' : (string)$cUrl,
+        'active' => $slug === (string)$c['slug'],
+      ];
+    }
+  } else {
+    // Top category with no subcategories (e.g. Gut Health, Sex & Relationships): show All (N) + related top categories
+    $pillsLabel = 'Explore Topics:';
+    $selfUrl = get_term_link($term);
+    $pills[] = [
+      'label' => 'All ' . html_entity_decode((string)$term->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') . ' (' . $totalCount . ')',
+      'url' => is_wp_error($selfUrl) ? '#' : (string)$selfUrl,
+      'active' => true,
+    ];
+    foreach (array_slice((array)($doc['tree'] ?? []), 0, 5) as $t) {
+      if ((string)$t['slug'] === $slug) continue;
+      $st = get_term_by('slug', (string)$t['slug'], 'category');
+      $sUrl = ($st && !is_wp_error($st)) ? get_term_link($st) : home_url('/category/' . $t['slug'] . '/');
+      $pills[] = [
+        'label' => (string)$t['name'],
+        'url' => is_wp_error($sUrl) ? '#' : (string)$sUrl,
+        'active' => false,
+      ];
+    }
+  }
+
+  $parentName = '';
+  $parentUrl = '';
+  if ($isChild && $topTerm && !is_wp_error($topTerm)) {
+    $parentName = html_entity_decode((string)$topTerm->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
+    $pLink = get_term_link($topTerm);
+    $parentUrl = is_wp_error($pLink) ? home_url("/category/$topSlug/") : (string)$pLink;
+  }
+
+  return [
+    'home_url' => home_url('/'),
+    'parent_name' => $parentName,
+    'parent_url' => $parentUrl,
+    'total_count' => $totalCount,
+    'description' => $desc,
+    'pills_label' => $pillsLabel,
+    'pills' => $pills,
+  ];
 }
 
 /** The tool callout for a card slug, or null when the tool is not shown (same rule as the Health Tools hub: Stage 1 tools
@@ -171,21 +385,43 @@ function lld_hub_render(array $atts = []): string {
   if (!$term || is_wp_error($term) || empty($term->term_id)) return '';
   $hub = lld_hub_entry(lld_categories_doc(), (string)$term->slug);
   if (!$hub) return '';   // not a category of the agreed tree (hidden display categories, retired terms)
-  $q = new WP_Query(['post_type' => 'post', 'post_status' => 'publish', 'cat' => (int)$term->term_id, 'posts_per_page' => 12, 'orderby' => 'date', 'order' => 'DESC', 'ignore_sticky_posts' => true, 'no_found_rows' => true]);
+  $q = new WP_Query(['post_type' => 'post', 'post_status' => 'publish', 'cat' => (int)$term->term_id, 'posts_per_page' => 15, 'orderby' => 'date', 'order' => 'DESC', 'ignore_sticky_posts' => true, 'no_found_rows' => false]);
   $posts = $q->posts; $byId = [];
+  $totalCount = max(count($posts), (int)$q->found_posts);
   foreach ($posts as $p) $byId[(int)$p->ID] = $p;
-  // a named flagship older than the twelve newest is still the flagship
+  // a named flagship older than the newest batch is still the flagship
   $want = $hub['flagship'];
   if ($want !== null && $want !== '') {
     $fp = is_numeric($want) ? get_post((int)$want) : get_page_by_path((string)$want, OBJECT, 'post');
     if ($fp && $fp->post_status === 'publish' && !isset($byId[(int)$fp->ID])) { $posts[] = $fp; $byId[(int)$fp->ID] = $fp; }
   }
+  $catName = html_entity_decode((string)$term->name, ENT_QUOTES | ENT_HTML5, 'UTF-8');
   $plain = array_map(fn($p) => ['id' => (int)$p->ID, 'slug' => (string)$p->post_name, 'date' => (string)$p->post_date_gmt, 'reviewed' => lld_tools_review_byline($p) !== ''], $posts);
   $pick = lld_hub_pick($plain, $hub);
-  $m = ['category' => ['slug' => (string)$term->slug, 'name' => html_entity_decode((string)$term->name, ENT_QUOTES | ENT_HTML5, 'UTF-8')],
-    'flagship' => $pick['flagship'] ? lld_hub_post_view($byId[$pick['flagship']], 'medium_large', true) : null,
-    'trending' => array_map(fn($id) => lld_hub_post_view($byId[$id], 'medium', false), $pick['trending']),
-    'tool' => lld_hub_tool_view($hub['tool']), 'track' => lld_hub_track_view($hub['track'])];
+
+  // Build the 3-column Latest Guides Grid (exclude hero posts when there are > 4 posts, else show all so grid is rich)
+  $heroIds = array_filter(array_merge([$pick['flagship']], (array)$pick['trending']));
+  $gridPosts = [];
+  if (count($posts) > 4) {
+    foreach ($posts as $p) {
+      if (!in_array((int)$p->ID, $heroIds, true)) $gridPosts[] = $p;
+      if (count($gridPosts) >= 9) break;
+    }
+  } else {
+    $gridPosts = array_slice($posts, 0, 9);
+  }
+  $articles = array_map(fn($p) => lld_hub_post_view($p, 'medium', true, $catName, '(max-width: 767px) 92vw, 300px'), $gridPosts);
+
+  $m = [
+    'category' => ['slug' => (string)$term->slug, 'name' => $catName],
+    'header' => lld_hub_header_view($term, $hub, $totalCount),
+    'flagship' => $pick['flagship'] ? lld_hub_post_view($byId[$pick['flagship']], 'medium_large', true, $catName, '(max-width: 767px) 92vw, 320px') : null,
+    'trending' => array_map(fn($id) => lld_hub_post_view($byId[$id], 'thumbnail', true, $catName, '96px'), $pick['trending']),
+    'tool' => lld_hub_tool_view($hub['tool']),
+    'articles' => $articles,
+    'total_count' => $totalCount,
+    'track' => lld_hub_track_view($hub['track']),
+  ];
   return lld_hub_markup($m);
 }
 add_shortcode('lld_category_hub', 'lld_hub_render');

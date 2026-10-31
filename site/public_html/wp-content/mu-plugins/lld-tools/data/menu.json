@@ -11,10 +11,10 @@
         { "title": "Healthy Weight Check", "page": "health-tools/healthy-weight-check" }
       ]
     },
-    { "title": "Articles", "url": "#", "children_from": "categories" },
+    { "title": "Articles", "url": "/articles/", "children_from": "categories" },
     {
       "title": "Programmes",
-      "url": "#",
+      "url": "/programmes/",
       "classes": ["lld-menu-members"],
       "children": [
         { "title": "Healthy Weight", "url": "/programmes/healthy-weight/" },
