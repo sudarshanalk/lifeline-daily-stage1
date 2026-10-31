@@ -45,13 +45,29 @@ function lld_content_refs($value): array {
   return array_values(array_unique($m[1]));
 }
 
+/** The NFR2-07 safety lines an item lacks, by the rules the lld-members approval screen applies before it lets the owner
+ *  approve (LLD_Members_Content::approval_block): stress, mood and Sleep and Stress content links to urgent help, sleep
+ *  content advises a doctor about loud snoring with daytime sleepiness, and Blood Sugar Balance content tells anyone on
+ *  diabetes medication to talk to their doctor first. $track is the title of the track the item belongs to, if any. */
+function lld_content_safety_missing(array $it, string $track = ''): array {
+  $tags = array_map('strtolower', array_map('strval', (array)($it['tags'] ?? [])));
+  $track = strtolower($track);
+  $text = strtolower((string)($it['title'] ?? '') . ' ' . (string)($it['body'] ?? ''));
+  $missing = [];
+  if ((array_intersect($tags, ['stress', 'mood', 'sleep-stress']) || strpos($track, 'sleep') !== false || strpos($track, 'stress') !== false) && strpos($text, 'findahelpline.com') === false) $missing[] = 'the urgent-help link (findahelpline.com)';
+  if ((array_intersect($tags, ['sleep', 'sleep-stress']) || strpos($track, 'sleep') !== false) && strpos($text, 'loud snoring with daytime sleepiness') === false) $missing[] = 'the loud snoring with daytime sleepiness advice';
+  if ((in_array('blood-sugar', $tags, true) || strpos($track, 'blood sugar') !== false) && strpos($text, 'diabetes medication') === false) $missing[] = 'the diabetes medication note';
+  return $missing;
+}
+
 /** The problems that stop a bundle loading: shape, unknown types, repeated keys, references to keys not listed before the
  *  item (the library fingerprints a link by the linked item's approved version, so it must be approved first), tags
- *  that are not slugs, breath-holding (D36), and an item without the approval-page decision it was approved under. */
+ *  that are not slugs, breath-holding (D36), a missing NFR2-07 safety line, and an item without the approval-page
+ *  decision it was approved under. */
 function lld_content_check(array $bundle): array {
   $problems = [];
   if (!isset($bundle['items']) || !is_array($bundle['items']) || !$bundle['items']) return ['the bundle has no items'];
-  $seen = [];
+  $seen = []; $titles = [];
   foreach ($bundle['items'] as $i => $it) {
     $where = 'item ' . ($i + 1) . (isset($it['key']) ? ' (' . $it['key'] . ')' : '');
     if (!is_array($it)) { $problems[] = "$where is not an object"; continue; }
@@ -67,9 +83,12 @@ function lld_content_check(array $bundle): array {
     // safety advice such as "never hold your breath" stays exactly as the owner approved it; an instruction to hold it is refused
     $text = strtolower((string)($it['title'] ?? '') . ' ' . (string)($it['body'] ?? '') . ' ' . json_encode($it['fields'] ?? [], JSON_UNESCAPED_UNICODE));
     if (preg_match('/(?<!never |not |n\'t |do not |without |avoid |no )(breath[- ]?holding|hold(ing)? your breath)/', $text)) $problems[] = "$where mentions breath-holding";
+    $track_ref = (string)($it['fields']['track_id'] ?? '');
+    $track = preg_match('/^@([A-Za-z0-9:._-]+)$/', $track_ref, $m) ? (string)($titles[$m[1]] ?? '') : '';
+    foreach (lld_content_safety_missing($it, $track) as $line) $problems[] = "$where lacks $line (NFR2-07)";
     $ap = (array)($it['approval'] ?? []);
     if (!preg_match('/^d-[a-z0-9-]+$/', (string)($ap['decision'] ?? '')) || !preg_match('/^[0-9a-f]{16}$/', (string)($ap['sha'] ?? ''))) $problems[] = "$where has no approval decision and fingerprint";
-    if ($key !== '') $seen[$key] = true;
+    if ($key !== '') { $seen[$key] = true; $titles[$key] = (string)($it['title'] ?? ''); }
   }
   return $problems;
 }
@@ -177,6 +196,18 @@ if (defined('WP_CLI') && WP_CLI) {
       $ids[$key] = $id; $done++;
       if ($done % 50 === 0) WP_CLI::log("$done changes saved");
     }
+    // Approving a changed item gives every item that links to it a new version (the link fingerprints change). Those
+    // linking items were approved by the owner as loaded, so their newest version is approved too, never left waiting.
+    $relinked = 0;
+    foreach ($ids as $key => $id) {
+      $shown = LLD_Members_Content::shown($id);
+      $newest = get_posts(['post_type' => get_post_type($id), 'post_status' => 'lld_version', 'post_parent' => $id, 'posts_per_page' => 1, 'orderby' => 'ID', 'order' => 'DESC', 'fields' => 'ids']);
+      if (!is_array($shown) || !$newest || (int)$newest[0] === (int)$shown['version_id']) continue;
+      $version = LLD_Members_Content::approve_now($id);
+      update_post_meta($version, '_lld_approval_source', (string)get_post_meta((int)$shown['version_id'], '_lld_approval_source', true) . ' (re-approved: a linked item changed)');
+      $relinked++;
+    }
+    if ($relinked) WP_CLI::log("$relinked items re-approved because an item they link to changed");
     if (has_action('litespeed_purge_all')) do_action('litespeed_purge_all');
     WP_CLI::success("$done items created or updated and approved as " . wp_get_current_user()->user_login . '; check with: wp lld content verify --file=' . $file);
   });
