@@ -339,6 +339,14 @@ class LLD_Members_Premium {
 		if ( ! $consent ) {
 			$main .= '<p>progress isn\'t saved</p>';
 		}
+		$next = $shown ? null : self::next_challenge( $member_id, $today );
+		if ( $next ) {
+			// No challenge this month, but an approved one is set for a later month: say when it starts.
+			$starts = DateTimeImmutable::createFromFormat( '!Y-m', (string) $next['fields']['month'] );
+			$main  .= lld_coming_soon( 'The next challenge, ' . $next['title'] . ', starts on 1 ' . ( $starts ? $starts->format( 'F Y' ) : (string) $next['fields']['month'] ) . '.', 'See today\'s activity', '/members/home/' );
+			self::page( 'Challenge', $main );
+			return;
+		}
 		if ( ! $shown ) {
 			$main .= LLD_Members_Content::has_approved( 'lld_challenge' ) ? LLD_Members_Safety::empty_html( $member_id ) : lld_coming_soon( 'A new 28-day challenge starts every month. The first one will appear here as soon as it is ready.', 'See today\'s activity', '/members/home/' );
 			self::page( 'Challenge', $main );
@@ -1898,6 +1906,29 @@ class LLD_Members_Premium {
 				continue;
 			}
 			if ( ! $found || (int) $challenge['parent_id'] > (int) $found['parent_id'] ) {
+				$found = $challenge;
+			}
+		}
+		return $found;
+	}
+
+	/**
+	 * The earliest approved challenge set for a month after this one that the safety rules allow this member, or null.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $today     Member's local date.
+	 * @return array<string,mixed>|null
+	 */
+	private static function next_challenge( $member_id, $today ) {
+		$month = substr( $today, 0, 7 );
+		$found = null;
+		foreach ( self::approved_of( 'lld_challenge' ) as $challenge ) {
+			$challenge['type'] = 'lld_challenge';
+			$when              = (string) ( $challenge['fields']['month'] ?? '' );
+			if ( ! preg_match( '/^\d{4}-\d{2}$/', $when ) || $when <= $month || ! LLD_Members_Safety::allows( $member_id, $challenge ) ) {
+				continue;
+			}
+			if ( ! $found || $when < (string) $found['fields']['month'] ) {
 				$found = $challenge;
 			}
 		}

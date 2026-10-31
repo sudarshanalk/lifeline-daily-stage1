@@ -23,7 +23,10 @@ test('TC-FR2-06-AS-04 "coming soon" shows only when nothing of that kind is appr
   const programme = read('includes/class-programme.php');
   // every "coming soon" sits behind a check that no item of that type is approved at all
   const soon = [...premium.matchAll(/lld_coming_soon\(/g), ...programme.matchAll(/lld_coming_soon\(/g)].length;
-  expect(soon).toBe(5);
+  expect(soon).toBe(6);
+  // no challenge this month but one approved for a later month: the member is told when it starts
+  expect(premium).toMatch(/\$next = \$shown \? null : self::next_challenge\( \$member_id, \$today \);/);
+  expect(premium).toMatch(/\$when <= \$month \|\| ! LLD_Members_Safety::allows\( \$member_id, \$challenge \)/);
   expect(premium).toMatch(/! \$plan\['days'\] && ! LLD_Members_Content::has_approved\( 'lld_meal' \)/);
   expect(premium).toMatch(/has_approved\( 'lld_workout' \) \? LLD_Members_Safety::empty_html\( \$member_id \) : lld_coming_soon/);
   expect(premium).toMatch(/has_approved\( 'lld_challenge' \) \? LLD_Members_Safety::empty_html\( \$member_id \) : lld_coming_soon/);
