@@ -163,6 +163,9 @@ class LLD_Members_Screens {
 			}
 		}
 		$main = '<h1>Sign in</h1>';
+		if ( isset( $_GET['signed_out'] ) && 'POST' !== $_SERVER['REQUEST_METHOD'] ) {
+			$main .= '<p class="lld-info" role="status">You\'re signed out.</p>';
+		}
 		if ( '' !== $unconfirmed ) {
 			// The password was right, so the member may be told the link is the only thing missing and get a new one (SCR-03 resend).
 			// The link expires after 24 hours, and the first email may never have arrived.
@@ -182,7 +185,7 @@ class LLD_Members_Screens {
 			$main .= '<div class="lld-fail" role="alert" tabindex="-1"><p>' . esc_html( $error ) . '</p></div>';
 		}
 		$kept_email = ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['lld_email'] ) ) ? sanitize_email( wp_unslash( $_POST['lld_email'] ) ) : '';
-		$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email', 'value' => $kept_email ) );
+		$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email', 'value' => $kept_email, 'autocomplete' => 'email' ) );
 		$main .= lld_password_field( array( 'id' => 'lld_password', 'name' => 'lld_password', 'label' => 'Password' ) );
 		$main .= '<label class="lld-check"><input type="checkbox" name="lld_remember" value="1"> <span>Remember me for 30 days</span></label>';
 		$main .= lld_button( array( 'label' => 'Sign in' ) );

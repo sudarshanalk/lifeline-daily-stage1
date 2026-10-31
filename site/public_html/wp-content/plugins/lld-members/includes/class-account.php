@@ -334,11 +334,11 @@ class LLD_Members_Account {
 		$main .= wp_nonce_field( 'lld_join', 'lld_join_nonce', true, false );
 		$keep  = 'POST' === $_SERVER['REQUEST_METHOD'];
 		$main .= '<div class="lld-field-row">';
-		$main .= lld_field( array( 'id' => 'lld_first', 'name' => 'lld_first', 'label' => 'First name', 'value' => $keep && isset( $_POST['lld_first'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_first'] ) ) : '' ) );
-		$main .= lld_field( array( 'id' => 'lld_last', 'name' => 'lld_last', 'label' => 'Last name', 'value' => $keep && isset( $_POST['lld_last'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_last'] ) ) : '' ) );
+		$main .= lld_field( array( 'id' => 'lld_first', 'name' => 'lld_first', 'label' => 'First name', 'autocomplete' => 'given-name', 'value' => $keep && isset( $_POST['lld_first'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_first'] ) ) : '' ) );
+		$main .= lld_field( array( 'id' => 'lld_last', 'name' => 'lld_last', 'label' => 'Last name', 'autocomplete' => 'family-name', 'value' => $keep && isset( $_POST['lld_last'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_last'] ) ) : '' ) );
 		$main .= '</div>';
-		$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email', 'value' => $keep && isset( $_POST['lld_email'] ) ? sanitize_email( wp_unslash( $_POST['lld_email'] ) ) : '' ) );
-		$main .= lld_password_field( array( 'id' => 'lld_password', 'name' => 'lld_password', 'label' => 'Password', 'hint' => 'At least 10 characters.' ) );
+		$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email', 'autocomplete' => 'email', 'value' => $keep && isset( $_POST['lld_email'] ) ? sanitize_email( wp_unslash( $_POST['lld_email'] ) ) : '' ) );
+		$main .= lld_password_field( array( 'id' => 'lld_password', 'name' => 'lld_password', 'label' => 'Password', 'hint' => 'At least 10 characters.', 'autocomplete' => 'new-password' ) );
 		$main .= lld_field( array( 'id' => 'lld_age', 'name' => 'lld_age', 'label' => 'Age in years', 'type' => 'number', 'value' => $keep && isset( $_POST['lld_age'] ) ? (string) (int) $_POST['lld_age'] : '' ) );
 		$main .= '<p class="lld-note">Lifeline Daily relies on the age you give us. Content and results are based on it. Membership is for adults aged 18 and over.</p>';
 		$main .= '<p><a href="' . esc_url( home_url( '/terms/' ) ) . '">Terms</a> and <a href="' . esc_url( home_url( '/privacy/' ) ) . '">privacy policy</a></p>';
@@ -464,7 +464,7 @@ class LLD_Members_Account {
 		if ( '' !== $email ) {
 			$main .= '<input type="hidden" name="lld_email" value="' . esc_attr( $email ) . '">';
 		} else {
-			$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email' ) );
+			$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email', 'autocomplete' => 'email' ) );
 		}
 		$main .= '<button type="submit" class="lld-text-button">Resend</button></form>';
 		self::layout( 'Check your email', $main, false );
@@ -529,7 +529,7 @@ class LLD_Members_Account {
 			$main  = '<h1>Choose a new password</h1>' . self::error_box( $error );
 			$main .= '<form method="post" class="lld-form">';
 			$main .= wp_nonce_field( 'lld_new_password', 'lld_new_nonce', true, false );
-			$main .= lld_password_field( array( 'id' => 'lld_password', 'name' => 'lld_password', 'label' => 'New password', 'hint' => 'At least 10 characters.' ) );
+			$main .= lld_password_field( array( 'id' => 'lld_password', 'name' => 'lld_password', 'label' => 'New password', 'hint' => 'At least 10 characters.', 'autocomplete' => 'new-password' ) );
 			$main .= lld_button( array( 'label' => 'Save password' ) );
 			$main .= '</form>';
 			self::layout( 'Reset password', $main, false );
@@ -541,7 +541,7 @@ class LLD_Members_Account {
 		}
 		$main .= '<form method="post" class="lld-form">';
 		$main .= wp_nonce_field( 'lld_reset', 'lld_reset_nonce', true, false );
-		$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email' ) );
+		$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email', 'autocomplete' => 'email' ) );
 		$main .= lld_button( array( 'label' => 'Send link' ) );
 		$main .= '</form>';
 		self::layout( 'Reset password', $main, false );
@@ -623,18 +623,23 @@ class LLD_Members_Account {
 			$main .= '<p class="lld-info">Check ' . esc_html( $pending ) . ' to confirm. Your current email still works until then.</p>';
 		}
 		$main .= '<p>Joined on ' . esc_html( (string) $row->joined_on ) . '</p>';
-		$main .= '<p>Membership: ' . esc_html( LLD_Members_Access::access_state( $member_id ) ) . '</p>';
+		$main .= '<p>Membership: ' . esc_html( ucfirst( LLD_Members_Access::access_state( $member_id ) ) ) . '</p>';
 		$main .= '<p>Next renewal: ' . esc_html( $renew ) . '</p>';
 		$main .= '<p>Age: ' . esc_html( (string) self::shown_age( $row ) ) . '</p>';
 		$main .= '<form method="post" class="lld-form" enctype="multipart/form-data" data-lld-form>';
 		$main .= wp_nonce_field( 'lld_settings', 'lld_settings_nonce', true, false );
-		$main .= lld_field( array( 'id' => 'lld_first', 'name' => 'lld_first', 'label' => 'First name', 'value' => $row->first_name ) );
-		$main .= lld_field( array( 'id' => 'lld_last', 'name' => 'lld_last', 'label' => 'Last name', 'value' => $row->last_name ) );
+		$main .= lld_field( array( 'id' => 'lld_first', 'name' => 'lld_first', 'label' => 'First name', 'autocomplete' => 'given-name', 'value' => $row->first_name ) );
+		$main .= lld_field( array( 'id' => 'lld_last', 'name' => 'lld_last', 'label' => 'Last name', 'autocomplete' => 'family-name', 'value' => $row->last_name ) );
 		$main .= lld_field( array( 'id' => 'lld_display', 'name' => 'lld_display', 'label' => 'Display name', 'value' => (string) $row->display_name ) );
-		$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email', 'value' => $row->email ) );
-		$main .= lld_password_field( array( 'id' => 'lld_password', 'name' => 'lld_password', 'label' => 'New password', 'hint' => 'Leave blank to keep your password. At least 10 characters.' ) );
+		$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email', 'autocomplete' => 'email', 'value' => $row->email ) );
+		$main .= lld_password_field( array( 'id' => 'lld_password', 'name' => 'lld_password', 'label' => 'New password', 'hint' => 'Leave blank to keep your password. At least 10 characters.', 'autocomplete' => 'new-password' ) );
 		$main .= lld_field( array( 'id' => 'lld_age', 'name' => 'lld_age', 'label' => 'Age in years', 'type' => 'number', 'value' => (string) $row->age ) );
-		$main .= lld_field( array( 'id' => 'lld_timezone', 'name' => 'lld_timezone', 'label' => 'Time zone', 'value' => $row->timezone ) );
+		$main .= str_replace( '<input id="lld_timezone"', '<input list="lld_timezones" autocomplete="off" id="lld_timezone"', lld_field( array( 'id' => 'lld_timezone', 'name' => 'lld_timezone', 'label' => 'Time zone', 'hint' => 'Start typing a city, for example London or New_York.', 'value' => $row->timezone ) ) );
+		$main .= '<datalist id="lld_timezones">';
+		foreach ( timezone_identifiers_list() as $zone ) {
+			$main .= '<option value="' . esc_attr( $zone ) . '"></option>';
+		}
+		$main .= '</datalist>';
 		$main .= '<label class="lld-check"><input type="checkbox" name="lld_units" value="imperial"' . ( 'imperial' === $row->units ? ' checked' : '' ) . '> Show imperial units</label>';
 		$main .= '<p><label for="lld_photo">Profile photo</label><input id="lld_photo" name="lld_photo" type="file" accept=".jpg,.jpeg,.png,.heic,image/jpeg,image/png,image/heic"></p>';
 		if ( $row->photo_path ) {
@@ -649,6 +654,15 @@ class LLD_Members_Account {
 		$main .= '</fieldset>';
 		$main .= self::preference_fields( $member_id );
 		if ( self::has_consent( $member_id, 'health' ) ) {
+			$main .= '<fieldset class="lld-card"><legend>Goals, track and health profile</legend>';
+			$main .= '<p><a href="' . esc_url( home_url( '/members/goals/' ) ) . '">Change your goals</a></p>';
+			$main .= '<p><a href="' . esc_url( home_url( '/members/tracks/' ) ) . '">Start, switch or resume a track</a></p>';
+			$main .= '<p><a href="' . esc_url( home_url( '/members/health/' ) ) . '">Edit your health profile</a></p></fieldset>';
+		} else {
+			$main .= lld_health_consent_notice();
+		}
+		// Quick fields used only by the automated account checks (CI and local test sites), never shown on staging or production.
+		if ( lld_members_test_routes_open() && self::has_consent( $member_id, 'health' ) ) {
 			$goal   = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT goal_key FROM ' . LLD_Members_Schema::table( 'goal_choice' ) . ' WHERE member_id = %d ORDER BY sort_order ASC LIMIT 1', $member_id ) );
 			$track  = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT track_key FROM ' . LLD_Members_Schema::table( 'enrolment' ) . " WHERE member_id = %d AND status = 'active' ORDER BY id DESC LIMIT 1", $member_id ) );
 			$height = $wpdb->get_var( $wpdb->prepare( 'SELECT height_cm FROM ' . LLD_Members_Schema::table( 'health_profile' ) . ' WHERE member_id = %d', $member_id ) );
@@ -657,16 +671,15 @@ class LLD_Members_Account {
 			$main .= lld_field( array( 'id' => 'lld_track', 'name' => 'lld_track', 'label' => 'Track', 'value' => $track ) );
 			$main .= lld_field( array( 'id' => 'lld_height', 'name' => 'lld_height', 'label' => 'Height in centimetres', 'type' => 'number', 'value' => $height ) );
 			$main .= '<p><label for="lld_diary">Diary photo</label><input id="lld_diary" name="lld_diary" type="file" accept=".jpg,.jpeg,.png,.heic"></p>';
-		} else {
-			$main .= lld_health_consent_notice();
 		}
 		$main .= self::consent_fields( $member_id );
 		$history = $wpdb->get_results( $wpdb->prepare( 'SELECT consent_type, change_kind, document_version, occurred_at FROM ' . LLD_Members_Schema::table( 'consent' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ) );
-		$main   .= '<ul class="lld-consent-history">';
+		$main   .= '<details class="lld-card lld-consent-log"><summary>Consent history</summary><ul class="lld-consent-history">';
 		foreach ( $history as $line ) {
 			$main .= '<li>' . esc_html( $line->consent_type . ' ' . $line->change_kind . ' ' . $line->document_version . ' ' . $line->occurred_at ) . '</li>';
 		}
-		$main .= '</ul>';
+		$main .= '</ul></details>';
+		$main .= '<p><a href="' . esc_url( home_url( '/members/subscription/' ) ) . '">My subscription</a></p>';
 		$main .= '<p><a href="' . esc_url( home_url( '/members/data/' ) ) . '">My data</a></p>';
 		$main .= '<p><a href="' . esc_url( home_url( '/members/delete/' ) ) . '">Delete account</a></p>';
 		$main .= lld_button( array( 'label' => 'Save' ) );
@@ -768,6 +781,10 @@ class LLD_Members_Account {
 			}
 			wp_set_password( $pass, (int) $row->user_id );
 			wp_set_auth_cookie( (int) $row->user_id, false );
+		}
+		// A time zone the clock cannot read would break every date on the member's screens, so only listed names are kept.
+		if ( isset( $_POST['lld_timezone'] ) && ! in_array( sanitize_text_field( wp_unslash( $_POST['lld_timezone'] ) ), timezone_identifiers_list(), true ) ) {
+			return new WP_Error( 'lld_timezone', 'Choose a time zone from the list, for example Europe/London or America/New_York.' );
 		}
 		$email = isset( $_POST['lld_email'] ) ? sanitize_email( wp_unslash( $_POST['lld_email'] ) ) : $row->email;
 		if ( $email !== $row->email ) {

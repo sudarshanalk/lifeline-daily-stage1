@@ -1832,6 +1832,11 @@ class LLD_Members_Programme {
 		if ( '' !== $error ) {
 			$main .= '<div class="lld-fail" role="alert"><p>' . esc_html( $error ) . '</p></div>';
 		}
+		if ( ! $plan['actions'] && ! LLD_Members_Content::has_approved( 'lld_activity' ) ) {
+			$main .= lld_coming_soon( 'This week\'s action plan is being prepared. It will appear here as soon as it is ready.', 'Back to your track', '/members/track/' );
+			LLD_Members_Personal::render( $title, $main );
+			return;
+		}
 		if ( ! $plan['actions'] ) {
 			$main .= '<p>' . esc_html( $plan['note'] ) . '</p>' . LLD_Members_Safety::empty_html( $member_id );
 			LLD_Members_Personal::render( $title, $main );
@@ -1891,6 +1896,9 @@ class LLD_Members_Programme {
 			return '<p>The weekly plan is part of Premium.</p>';
 		}
 		$plan = self::stored_plan( $member_id );
+		if ( ! $plan['actions'] && ! LLD_Members_Content::has_approved( 'lld_activity' ) ) {
+			return '<p>This week\'s action plan is being prepared. It will appear here as soon as it is ready.</p>';
+		}
 		if ( ! $plan['actions'] ) {
 			return '<p>' . esc_html( $plan['note'] ) . '</p>';
 		}
@@ -2388,6 +2396,8 @@ class LLD_Members_Programme {
 			$main .= '<p>This day\'s activity is not suitable for you. Here is another one.</p>';
 		} elseif ( $found['replaced'] ) {
 			$main .= LLD_Members_Safety::empty_html( $member_id );
+		} elseif ( ! $found['items'] && ! LLD_Members_Content::has_approved( 'lld_activity' ) ) {
+			$main .= lld_coming_soon( 'The activities for this track are being prepared. Each day\'s activity will appear here as soon as it is ready.', 'Back to your track', '/members/track/' );
 		} elseif ( ! $found['items'] ) {
 			$main .= '<p>No activity for this day.</p>';
 		}

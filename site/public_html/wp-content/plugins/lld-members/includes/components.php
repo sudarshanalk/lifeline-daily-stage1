@@ -234,7 +234,7 @@ function lld_button( $args ) {
 }
 
 /**
- * @param array $args id, label, hint, error, type, name, value.
+ * @param array $args id, label, hint, error, type, name, value, autocomplete.
  */
 function lld_field( $args ) {
 	$id    = (string) $args['id'];
@@ -243,7 +243,8 @@ function lld_field( $args ) {
 	$value = isset( $args['value'] ) ? (string) $args['value'] : '';
 	$html  = '<div class="lld-field">';
 	$html .= '<label for="' . esc_attr( $id ) . '">' . esc_html( $args['label'] ) . '</label>';
-	$html .= '<input id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" type="' . esc_attr( $type ) . '" value="' . esc_attr( $value ) . '">';
+	$auto  = ! empty( $args['autocomplete'] ) ? ' autocomplete="' . esc_attr( $args['autocomplete'] ) . '"' : '';
+	$html .= '<input id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" type="' . esc_attr( $type ) . '" value="' . esc_attr( $value ) . '"' . $auto . '>';
 	if ( ! empty( $args['hint'] ) ) {
 		$html .= '<p class="lld-hint" id="' . esc_attr( $id ) . '-hint">' . esc_html( $args['hint'] ) . '</p>';
 	}
@@ -257,14 +258,14 @@ function lld_field( $args ) {
 /**
  * Password box with a show/hide control.
  *
- * @param array $args id, label, name, error.
+ * @param array $args id, label, name, error, autocomplete (current-password unless given).
  */
 function lld_password_field( $args ) {
 	$id   = (string) $args['id'];
 	$name = isset( $args['name'] ) ? (string) $args['name'] : $id;
 	$html = '<div class="lld-field lld-password">';
 	$html .= '<label for="' . esc_attr( $id ) . '">' . esc_html( $args['label'] ) . '</label>';
-	$html .= '<div class="lld-password-row"><input id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" type="password" autocomplete="current-password">';
+	$html .= '<div class="lld-password-row"><input id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" type="password" autocomplete="' . esc_attr( isset( $args['autocomplete'] ) ? (string) $args['autocomplete'] : 'current-password' ) . '">';
 	$html .= '<button type="button" class="lld-eye" aria-controls="' . esc_attr( $id ) . '" aria-pressed="false" data-lld-show="Show password" data-lld-hide="Hide password">Show password</button></div>';
 	if ( ! empty( $args['hint'] ) ) {
 		$html .= '<p class="lld-hint">' . esc_html( $args['hint'] ) . '</p>';
@@ -380,11 +381,30 @@ function lld_info( $text ) {
  * @param string $line What Premium adds.
  */
 function lld_membership_lock( $line ) {
-	$html  = '<article class="lld-lock"><p class="lld-kicker">Part of Premium</p>';
-	$html .= '<p class="lld-lock-preview">A short preview of this Premium item.</p>';
-	$html .= '<p>' . esc_html( $line ) . '</p><p class="lld-price">US$59.99 a year</p>';
-	$html .= lld_button( array( 'label' => 'Upgrade', 'href' => home_url( '/members/checkout/' ) ) );
-	$html .= '</article>';
+	// Section 5: a faded preview, a lock icon, "Part of Premium", what Premium adds, the price and one upgrade button.
+	// The preview is a faded outline of the item, never its content, so nothing locked can be read from the page.
+	$prices = class_exists( 'LLD_Members_Billing' ) ? LLD_Members_Billing::shown_prices() : array( 'yearly' => 5999, 'monthly' => 799 );
+	$html   = '<article class="lld-lock">';
+	$html  .= '<div class="lld-lock-preview" data-lld-lock-preview aria-hidden="true"><span></span><span></span><span></span></div>';
+	$html  .= '<div class="lld-lock-body"><p class="lld-kicker"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Part of Premium</p>';
+	$html  .= '<p>' . esc_html( $line ) . '</p>';
+	$html  .= '<p class="lld-price">US$' . esc_html( number_format( $prices['yearly'] / 100, 2 ) ) . ' a year <span class="lld-hint">or US$' . esc_html( number_format( $prices['monthly'] / 100, 2 ) ) . ' a month, tax included</span></p>';
+	$html  .= lld_button( array( 'label' => 'Upgrade', 'href' => home_url( '/members/checkout/' ) ) );
+	$html  .= '</div></article>';
+	return $html;
+}
+
+/**
+ * Empty state for a feature whose content has not been approved yet (section 3.3: a friendly line and the next
+ * useful action). Never used when the safety rules leave nothing: that keeps the matrix's own message.
+ *
+ * @param string $line       What is on its way.
+ * @param string $next_label The next useful action.
+ * @param string $next_path  Where it goes.
+ */
+function lld_coming_soon( $line, $next_label, $next_path ) {
+	$html  = '<article class="lld-empty" data-lld-coming-soon><h2>Coming soon</h2><p>' . esc_html( $line ) . '</p>';
+	$html .= '<p><a href="' . esc_url( home_url( $next_path ) ) . '">' . esc_html( $next_label ) . '</a></p></article>';
 	return $html;
 }
 

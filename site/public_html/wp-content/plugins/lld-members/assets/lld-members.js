@@ -259,6 +259,34 @@
     });
   }
 
+  // Referral link: Copy, and Share where the device offers it (SCR-31).
+  function toast(text) {
+    var box = document.querySelector(".lld-toasts");
+    if (!box) return;
+    var note = document.createElement("p");
+    note.className = "lld-toast";
+    note.textContent = text;
+    box.appendChild(note);
+    window.setTimeout(function () { note.remove(); }, 4000);
+  }
+  document.querySelectorAll("[data-lld-copy]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var link = button.getAttribute("data-lld-copy");
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(function () { toast("Link copied"); }, function () { toast("Copy didn't work. Select the link above and copy it."); });
+      } else {
+        toast("Select the link above and copy it.");
+      }
+    });
+  });
+  document.querySelectorAll("[data-lld-share]").forEach(function (button) {
+    if (!navigator.share) return;
+    button.hidden = false;
+    button.addEventListener("click", function () {
+      navigator.share({ title: "Lifeline Daily", url: button.getAttribute("data-lld-share") }).catch(function () {});
+    });
+  });
+
   var fail = document.querySelector(".lld-fail");
   if (fail) {
     if (!fail.hasAttribute("tabindex")) fail.setAttribute("tabindex", "-1");

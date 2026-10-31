@@ -379,16 +379,22 @@ class LLD_Members_Billing {
 		$prices = self::prices();
 		// SCR-01: yearly first, then monthly; the price, what's included and how to cancel sit in the top block (UI2-03).
 		$main   = '<h1>Pricing</h1>';
+		$member = LLD_Members_Access::current_member_id();
+		$premium = $member > 0 && self::paid_open( $member );
+		if ( $premium ) {
+			$main .= '<p class="lld-info" data-lld-premium-now>You\'re Premium. Everything below is already open to you. <a href="' . esc_url( home_url( '/members/subscription/' ) ) . '">My subscription</a></p>';
+		}
 		$main  .= '<div class="lld-plans"><article class="lld-card lld-plan is-yearly" data-lld-plan="yearly"><p class="lld-plan-best">best value</p>';
 		$main  .= '<p class="lld-plan-name">Yearly</p><p class="lld-plan-price">' . esc_html( self::money( $prices['yearly'], 'usd' ) . ' a year' ) . '</p><p class="lld-plan-tax">tax included. That is US$5 a month, a saving of 37 %.</p>';
 		$main  .= '<p class="lld-plan-line">What\'s included: weeks 2 to 4, meal plans, workouts and the food diary.</p>';
 		$main  .= '<p class="lld-plan-line lld-plan-cancel">How to cancel: cancel in 3 clicks from My subscription. Access continues to the end of the paid period.</p>';
-		$main  .= lld_button( array( 'label' => 'Choose yearly', 'href' => home_url( '/members/checkout/?plan=yearly' ) ) ) . '</article>';
+		$main  .= ( $premium ? '' : lld_button( array( 'label' => 'Choose yearly', 'href' => home_url( '/members/checkout/?plan=yearly' ) ) ) ) . '</article>';
 		$main  .= '<article class="lld-card lld-plan" data-lld-plan="monthly"><p class="lld-plan-name">Monthly</p><p class="lld-plan-price">' . esc_html( self::money( $prices['monthly'], 'usd' ) . ' a month' ) . '</p><p class="lld-plan-tax">tax included</p>';
 		$main  .= '<p class="lld-plan-line">The same Premium content, month by month. Cancel in 3 clicks from My subscription.</p>';
-		$main  .= lld_button( array( 'label' => 'Choose monthly', 'href' => home_url( '/members/checkout/?plan=monthly' ), 'variant' => 'secondary' ) ) . '</article></div>';
+		$main  .= ( $premium ? '' : lld_button( array( 'label' => 'Choose monthly', 'href' => home_url( '/members/checkout/?plan=monthly' ), 'variant' => 'secondary' ) ) ) . '</article></div>';
 		$main  .= '<p class="lld-plan-intro">Week 1 of every track is free. Premium opens the rest.</p>';
 		$main  .= '<p data-lld-sale-terms><a href="' . esc_url( self::terms_of_sale_url() ) . '">Terms of sale</a>: price, plans, renewal, cancellation, refunds, discounts and referral rewards.</p>';
+		$main  .= self::pricing_features() . self::pricing_questions();
 		lld_members_layout(
 			array(
 				'title'       => 'Pricing',
@@ -397,6 +403,45 @@ class LLD_Members_Billing {
 				'wide'        => true,
 			)
 		);
+	}
+
+	/**
+	 * SCR-01 item 2: what is free and what is Premium, as listed in Requirements section 3.
+	 */
+	private static function pricing_features() {
+		$columns = array(
+			'Free for everyone'    => array( 'Daily Protein Target calculator', 'Diabetes Risk Check and Healthy Weight Check', 'All public articles', 'A free starter guide for each track' ),
+			'Free with an account' => array( 'General wellbeing suggestions', 'Health goals (with health consent)', 'Your personal dashboard', 'Week 1 of each track, once per track', 'The food diary during week 1' ),
+			'Premium'              => array( 'Weeks 2 to 4 of every track', 'Weekly meal plans and shopping lists', 'A new challenge every month', 'Progressive workout plans', 'The food diary, ongoing', 'Weekly action plan and weekly review', 'Long-term progress, charts and milestones', 'The members\' Facebook group and a monthly live Q&A', 'Premium-only articles', 'Premium in the Lifeline Daily app when it launches (yearly members)' ),
+		);
+		// Labels, not headings: the pricing page keeps its single heading (UI2-01 snapshot).
+		$html = '<section class="lld-card lld-pricing-features" data-lld-features aria-label="What you get"><p class="lld-section-title"><strong>What you get</strong></p><div class="lld-feature-columns">';
+		foreach ( $columns as $title => $items ) {
+			$html .= '<div><p class="lld-section-title"><strong>' . esc_html( $title ) . '</strong></p><ul>';
+			foreach ( $items as $item ) {
+				$html .= '<li>' . esc_html( $item ) . '</li>';
+			}
+			$html .= '</ul></div>';
+		}
+		return $html . '</div></section>';
+	}
+
+	/**
+	 * SCR-01 item 3: questions and answers, in the words already used on the help page and in the requirements.
+	 */
+	private static function pricing_questions() {
+		$questions = array(
+			'Is there a free trial?'         => 'Week 1 of every track is free, so there is no separate trial. You only pay when you want weeks 2 to 4 and the rest of Premium.',
+			'How do I cancel?'               => 'Cancel in 3 clicks from My subscription. Premium stays open to the end of the period you have paid for.',
+			'Can I get a refund?'            => 'Your first payment can be refunded within 14 days.',
+			'Which currency do I pay in?'    => 'Prices are shown in US dollars with tax included. Stripe\'s secure checkout shows the price in your own currency.',
+			'Is the app included?'           => 'Yes, for yearly members, when the Lifeline Daily app launches.',
+		);
+		$html = '<section class="lld-card lld-faq" data-lld-pricing-faq aria-label="Questions and answers"><p class="lld-section-title"><strong>Questions and answers</strong></p>';
+		foreach ( $questions as $question => $answer ) {
+			$html .= '<details><summary>' . esc_html( $question ) . '</summary><p>' . esc_html( $answer ) . '</p></details>';
+		}
+		return $html . '</section>';
 	}
 
 	/**
@@ -593,44 +638,38 @@ class LLD_Members_Billing {
 		$main .= '<h2>Weekly themes</h2>';
 		$main .= '<span class="lld-programmes-badge">4 Weeks Total</span>';
 		$main .= '</div>';
+		// The same four theme names on every track; each track's own descriptions follow its approved content (L6).
 		$main .= '<ol class="lld-track-themes-list">';
-		$main .= '<li><span class="lld-theme-step">Week 1</span><strong>getting started</strong><p>Lay baseline habits, meal sequencing, and basic tracking.</p></li>';
-		$main .= '<li><span class="lld-theme-step">Week 2</span><strong>a steady rhythm</strong><p>Establish morning and evening routines with balanced meals.</p></li>';
-		$main .= '<li><span class="lld-theme-step">Week 3</span><strong>building on it</strong><p>Gradually increase daily activity and handle social eating.</p></li>';
-		$main .= '<li><span class="lld-theme-step">Week 4</span><strong>keeping it going</strong><p>Lock in your personal lifestyle playbook for long-term health.</p></li>';
+		$main .= '<li><span class="lld-theme-step">Week 1</span><strong>getting started</strong></li>';
+		$main .= '<li><span class="lld-theme-step">Week 2</span><strong>a steady rhythm</strong></li>';
+		$main .= '<li><span class="lld-theme-step">Week 3</span><strong>building on it</strong></li>';
+		$main .= '<li><span class="lld-theme-step">Week 4</span><strong>keeping it going</strong></li>';
 		$main .= '</ol>';
 		$main .= '</div>';
 
 		// 5. Sample Activity & Sample Meal
 		$main .= '<div class="lld-track-split-grid">';
 		$main .= '<div class="lld-card lld-track-preview-card">';
-		$main .= '<div class="lld-card-head"><span class="lld-track-preview-icon" aria-hidden="true">🏃</span><h2>Sample activity</h2><span class="lld-badge-sm">10 mins</span></div>';
+		$main .= '<div class="lld-card-head"><span class="lld-track-preview-icon" aria-hidden="true">🏃</span><h2>Sample activity</h2></div>';
 		$main .= '<p class="lld-track-preview-highlight">' . esc_html( $page['activity'] ) . '</p>';
-		$main .= '<p class="lld-hint">Gentle post-meal movement stimulates cellular glucose uptake and burns active calories without joint strain.</p>';
 		$main .= '</div>';
 		$main .= '<div class="lld-card lld-track-preview-card">';
-		$main .= '<div class="lld-card-head"><span class="lld-track-preview-icon" aria-hidden="true">🥣</span><h2>Sample meal</h2><span class="lld-badge-sm">High Protein</span></div>';
+		$main .= '<div class="lld-card-head"><span class="lld-track-preview-icon" aria-hidden="true">🥣</span><h2>Sample meal</h2></div>';
 		$main .= '<p class="lld-track-preview-highlight">' . esc_html( $page['meal'] ) . '</p>';
-		$main .= '<p class="lld-hint">Balanced macronutrients and fibre slow stomach emptying and provide sustained physical energy.</p>';
 		$main .= '</div>';
 		$main .= '</div>';
 
-		// 6. Testimonials
-		$main .= '<div class="lld-card lld-track-testimonials-card">';
-		$main .= '<h2>Testimonials</h2>';
+		// 6. Testimonials, once available (SCR-40): only quotes members gave permission for and the owner approved (FR2-19).
 		$quotes = class_exists( 'LLD_Members_Growth' ) ? LLD_Members_Growth::testimonial_html() : '';
 		if ( '' !== $quotes ) {
-			$main .= $quotes;
-		} else {
-			$main .= '<div class="lld-testimonial-box"><p class="lld-testimonial-quote">"The 10-minute post-meal habit was the single easiest change I have ever made, and it made an immediate difference in my daily energy."</p><p class="lld-testimonial-author">&mdash; Lifeline Daily Member (Verified Review)</p></div>';
+			$main .= '<div class="lld-card lld-track-testimonials-card"><h2>Testimonials</h2>' . $quotes . '</div>';
 		}
-		$main .= '</div>';
 
 		// 7. Questions and Answers
 		$main .= '<div class="lld-card lld-track-faq-card">';
 		$main .= '<h2>Questions and answers</h2>';
 		$main .= '<div class="lld-faq-item"><h3>How does the free week work?</h3><p>Week 1 is free. Premium opens the rest.</p></div>';
-		$main .= '<div class="lld-faq-item"><h3>Can I switch tracks later?</h3><p>Yes, members can switch tracks anytime from their account settings with full progress preserved.</p></div>';
+		$main .= '<div class="lld-faq-item"><h3>Can I switch tracks later?</h3><p>Yes. You can switch at the end of any week from your track page. Your progress is kept, and you can resume the track later.</p></div>';
 		$main .= '</div>';
 
 		// 8. Safety note
@@ -1052,7 +1091,7 @@ class LLD_Members_Billing {
 			$main .= '<p>Your membership is Free.</p>';
 			$main .= '<p><a href="' . esc_url( home_url( '/pricing/' ) ) . '">See pricing</a></p>';
 		} else {
-			$main .= '<p>Plan: ' . esc_html( (string) $sub->plan ) . '</p>';
+			$main .= '<p>Plan: ' . esc_html( ucfirst( (string) $sub->plan ) ) . '</p>';
 			$main .= '<p>Your membership is ' . esc_html( (string) $sub->access_state ) . '.</p>';
 			if ( $sub->locked_amount ) {
 				$main .= '<p>Your price is ' . esc_html( self::money( (int) $sub->locked_amount, (string) $sub->locked_currency ) ) . ', tax included.</p>';
@@ -1067,7 +1106,8 @@ class LLD_Members_Billing {
 				$main .= '<p>Update your card</p>';
 			}
 			$app = ( 'yearly' === (string) $sub->plan && self::paid_open( $member_id ) ) ? 'included' : 'not included';
-			$main .= '<p data-lld-app="' . esc_attr( $app ) . '">Stage 3 app: ' . esc_html( $app ) . '</p>';
+			// The Stage 3 app entitlement (FR2-13), in members' words.
+			$main .= '<p data-lld-app="' . esc_attr( $app ) . '">' . esc_html( 'included' === $app ? 'The Lifeline Daily app is included with your yearly plan when it launches.' : 'The Lifeline Daily app, when it launches, is included with yearly plans.' ) . '</p>';
 			$next = self::next_charge( $member_id );
 			$main .= '<p data-lld-next="' . (int) $next['charged'] . '" data-lld-next-currency="' . esc_attr( $next['currency'] ) . '">Next payment ' . esc_html( self::money( $next['charged'], $next['currency'] ) ) . '</p>';
 			if ( $sub->pending_yearly_on ) {
@@ -1078,6 +1118,8 @@ class LLD_Members_Billing {
 		$main .= self::reward_list( $member_id );
 		$link  = home_url( '/pricing/?ref=' . rawurlencode( self::referral_code( $member_id ) ) );
 		$main .= '<p>Your referral link is <a href="' . esc_url( $link ) . '">' . esc_html( $link ) . '</a></p>';
+		$main .= '<p class="lld-row"><button type="button" class="lld-button lld-button-secondary" data-lld-copy="' . esc_attr( $link ) . '">Copy referral link</button> ';
+		$main .= '<button type="button" class="lld-button lld-button-secondary" data-lld-share="' . esc_attr( $link ) . '" hidden>Share referral link</button></p>';
 		$main .= '<form method="post">';
 		$main .= wp_nonce_field( 'lld_sub', 'lld_sub_nonce', true, false );
 		if ( $sub && 'monthly' === (string) $sub->plan && self::paid_open( $member_id ) && ! $sub->pending_yearly_on ) {
@@ -1091,7 +1133,11 @@ class LLD_Members_Billing {
 			if ( ! $confirm ) {
 				$main .= '<p><a href="' . esc_url( home_url( '/members/subscription/?confirm=1' ) ) . '">Cancel</a></p>';
 			} else {
-				$main .= '<button class="lld-button" type="submit" name="lld_sub_action" value="cancel">Confirm cancellation</button>';
+				$until = ( $sub && $sub->period_ends_on ) ? ' until ' . (string) $sub->period_ends_on : ' until the end of the period you have paid for';
+				$main .= '<div class="lld-card" data-lld-cancel-note><h2>Cancel Premium?</h2><p>' . esc_html( 'Premium stays open' . $until . '. You will not be charged again.' ) . '</p>';
+				$main .= '<p>Your account, your progress and the free features stay. You can rejoin Premium at any time.</p>';
+				$main .= '<button class="lld-button" type="submit" name="lld_sub_action" value="cancel">Confirm cancellation</button> ';
+				$main .= '<a href="' . esc_url( home_url( '/members/subscription/' ) ) . '">Keep Premium</a></div>';
 			}
 		}
 		$main .= '</form>';
@@ -2230,6 +2276,15 @@ class LLD_Members_Billing {
 	/**
 	 * @return array{yearly:int,monthly:int}
 	 */
+	/**
+	 * The current yearly and monthly prices in cents, for screens outside billing (the membership lock).
+	 *
+	 * @return array{yearly:int,monthly:int}
+	 */
+	public static function shown_prices() {
+		return self::prices();
+	}
+
 	private static function prices() {
 		$stored = get_option( 'lld_prices' );
 		$yearly = 5999;

@@ -132,6 +132,11 @@ class LLD_Members_Premium {
 			$main .= '<a class="lld-button lld-button-secondary" href="#lld-shopping">Shopping list</a>';
 		}
 		$main .= '</div>';
+		if ( ! $plan['days'] && ! LLD_Members_Content::has_approved( 'lld_meal' ) ) {
+			$main .= '</div>' . lld_coming_soon( 'Weekly meal plans with recipes and a shopping list are being prepared. Your first plan will appear here as soon as it is ready.', 'Open the food diary', '/members/diary/' );
+			self::page( 'Meal plan', $main, 200, true );
+			return;
+		}
 		if ( ! $plan['days'] ) {
 			$main .= '<p>' . esc_html( LLD_Members_Safety::empty_line( $member_id ) ) . '</p><p>Contact support if you need a plan that fits you.</p></div>';
 			self::page( 'Meal plan', $main, 200, true );
@@ -264,7 +269,7 @@ class LLD_Members_Premium {
 			}
 		}
 		if ( ! $plan ) {
-			$main .= LLD_Members_Safety::empty_html( $member_id );
+			$main .= LLD_Members_Content::has_approved( 'lld_workout' ) ? LLD_Members_Safety::empty_html( $member_id ) : lld_coming_soon( 'Workout plans for home and with equipment are being prepared. They will appear here as soon as they are ready.', 'See today\'s activity', '/members/home/' );
 			self::page( 'Workout', $main );
 			return;
 		}
@@ -334,8 +339,16 @@ class LLD_Members_Premium {
 		if ( ! $consent ) {
 			$main .= '<p>progress isn\'t saved</p>';
 		}
+		$next = $shown ? null : self::next_challenge( $member_id, $today );
+		if ( $next ) {
+			// No challenge this month, but an approved one is set for a later month: say when it starts.
+			$starts = DateTimeImmutable::createFromFormat( '!Y-m', (string) $next['fields']['month'] );
+			$main  .= lld_coming_soon( 'The next challenge, ' . $next['title'] . ', starts on 1 ' . ( $starts ? $starts->format( 'F Y' ) : (string) $next['fields']['month'] ) . '.', 'See today\'s activity', '/members/home/' );
+			self::page( 'Challenge', $main );
+			return;
+		}
 		if ( ! $shown ) {
-			$main .= LLD_Members_Safety::empty_html( $member_id );
+			$main .= LLD_Members_Content::has_approved( 'lld_challenge' ) ? LLD_Members_Safety::empty_html( $member_id ) : lld_coming_soon( 'A new 28-day challenge starts every month. The first one will appear here as soon as it is ready.', 'See today\'s activity', '/members/home/' );
 			self::page( 'Challenge', $main );
 			return;
 		}
@@ -500,11 +513,15 @@ class LLD_Members_Premium {
 			return;
 		}
 		$main  = '<h1>Members\' group</h1>';
-		$main .= self::qa_paragraph( $member_id );
+		$main .= '<p>A private Facebook group for Premium members, with a live Q&amp;A with the Lifeline Daily team.</p>';
+		$main .= self::qa_paragraph( $member_id, false );
 		$link  = self::group_link();
 		if ( '' !== $link ) {
-			$main .= '<p><a href="' . esc_url( $link ) . '" rel="noopener">Join the private Facebook group</a></p>';
+			$main .= '<p><a class="lld-button lld-button-primary" href="' . esc_url( $link ) . '" rel="noopener">Join the private Facebook group</a></p>';
 			$main .= '<p>The owner will approve your request.</p>';
+		} else {
+			// The group address is an owner input (LLD_FACEBOOK_GROUP_URL): until it is set, say so instead of a dead end.
+			$main .= lld_info( 'The group opens soon. The link to join will appear here.' );
 		}
 		self::page( 'Members\' group', $main );
 	}
@@ -683,16 +700,22 @@ class LLD_Members_Premium {
 	/**
 	 * @param int $member_id Member number.
 	 */
-	public static function qa_paragraph( $member_id ) {
+	public static function qa_paragraph( $member_id, $on_dashboard = true ) {
 		if ( ! LLD_Members_Billing::paid_open( $member_id ) ) {
 			return '';
 		}
 		$date = self::next_qa( LLD_Members_Programme::local_today( $member_id ) );
-		$html = '<p>Facebook\'s own privacy terms apply.</p>';
-		if ( '' !== $date ) {
-			$html .= '<p>Next live Q&amp;A ' . esc_html( $date ) . '</p>';
+		$html = '<div class="lld-group-note">';
+		if ( $on_dashboard ) {
+			// Bold text, not a heading: the dashboard's headings are its fixed FR2-07 sections, Membership last.
+			$html .= '<p><strong>Members\' group and live Q&amp;A</strong></p>';
 		}
-		return $html;
+		$html .= '' !== $date ? '<p>Next live Q&amp;A ' . esc_html( $date ) . '</p>' : '<p>The next live Q&amp;A date will appear here once it is set.</p>';
+		$html .= '<p>Facebook\'s own privacy terms apply.</p>';
+		if ( $on_dashboard ) {
+			$html .= '<p><a href="' . esc_url( home_url( '/members/group/' ) ) . '">Open the members\' group</a></p>';
+		}
+		return $html . '</div>';
 	}
 
 	/**
@@ -1884,6 +1907,29 @@ class LLD_Members_Premium {
 				continue;
 			}
 			if ( ! $found || (int) $challenge['parent_id'] > (int) $found['parent_id'] ) {
+				$found = $challenge;
+			}
+		}
+		return $found;
+	}
+
+	/**
+	 * The earliest approved challenge set for a month after this one that the safety rules allow this member, or null.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $today     Member's local date.
+	 * @return array<string,mixed>|null
+	 */
+	private static function next_challenge( $member_id, $today ) {
+		$month = substr( $today, 0, 7 );
+		$found = null;
+		foreach ( self::approved_of( 'lld_challenge' ) as $challenge ) {
+			$challenge['type'] = 'lld_challenge';
+			$when              = (string) ( $challenge['fields']['month'] ?? '' );
+			if ( ! preg_match( '/^\d{4}-\d{2}$/', $when ) || $when <= $month || ! LLD_Members_Safety::allows( $member_id, $challenge ) ) {
+				continue;
+			}
+			if ( ! $found || $when < (string) $found['fields']['month'] ) {
 				$found = $challenge;
 			}
 		}
