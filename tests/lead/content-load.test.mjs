@@ -51,6 +51,28 @@ describe('approved content loader', () => {
     expect(problems([item('a', 'lld_activity', { approval: { decision: 'd-tracks-healthy-weight', sha: 'short' } })])).toContain('no approval decision and fingerprint');
   });
 
+  test('nothing loads without the NFR2-07 safety lines the approval screen asks for', () => {
+    const lines = {
+      help: 'If you are struggling or feel unsafe, find urgent help in your country at findahelpline.com.',
+      snoring: 'See a doctor if you have loud snoring with daytime sleepiness.',
+      diabetes: 'If you take diabetes medication, talk to your doctor first.',
+    };
+    const problems = (items) => call('lld_content_check', { items }).join(' | ');
+    const sleep = item('track:sleep-stress', 'lld_track', { title: 'Sleep and Stress', body: `${lines.help} ${lines.snoring}` });
+    const sugar = item('track:blood-sugar', 'lld_track', { title: 'Blood Sugar Balance', body: lines.diabetes });
+    // an item of the Sleep and Stress track, found through its track link, needs both the helpline and the snoring advice
+    const plan = item('meal:ss-1', 'lld_meal', { body: 'A week of meals.', fields: { track_id: '@track:sleep-stress' } });
+    expect(problems([sleep, plan])).toContain('lacks the urgent-help link (findahelpline.com) (NFR2-07)');
+    expect(problems([sleep, plan])).toContain('lacks the loud snoring with daytime sleepiness advice (NFR2-07)');
+    expect(call('lld_content_check', { items: [sleep, { ...plan, body: `A week of meals.\n\n${lines.help}\n\n${lines.snoring}` }] })).toEqual([]);
+    // tags count as well as the track: mood content needs urgent help, blood-sugar content the medication note
+    expect(problems([item('a', 'lld_activity', { tags: ['mood'] })])).toContain('urgent-help link');
+    expect(problems([sugar, item('b', 'lld_activity', { fields: { track_id: '@track:blood-sugar' } })])).toContain('diabetes medication note');
+    expect(call('lld_content_safety_missing', item('c', 'lld_recipe', { tags: ['blood-sugar'], body: lines.diabetes }), '')).toEqual([]);
+    // content of other tracks needs none of them
+    expect(call('lld_content_safety_missing', item('d', 'lld_activity', { tags: ['healthy-weight'] }), 'Healthy Weight')).toEqual([]);
+  });
+
   test('a second run changes only the items whose content changed', () => {
     const a = item('track:healthy-weight', 'lld_track', { tags: ['healthy-weight', 'beginner'], fields: { status: 'live', measures: '' } });
     const b = item('lesson:healthy-weight:1', 'lld_lesson');
