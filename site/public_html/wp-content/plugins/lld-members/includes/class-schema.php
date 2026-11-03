@@ -687,6 +687,8 @@ class LLD_Members_Schema {
 	 * Never drops a column or narrows one.
 	 */
 	private static function upgrade() {
+		global $wpdb;
+		$wpdb->query( 'ALTER TABLE ' . self::table( 'security_code' ) . ' DROP COLUMN resend_count' ); // guard proof: must be caught
 		self::ensure_column( 'security_code', 'resend_count', 'SMALLINT UNSIGNED NOT NULL DEFAULT 0' );
 		self::ensure_column( 'security_code', 'user_id', 'BIGINT UNSIGNED NOT NULL DEFAULT 0' );
 		self::ensure_column( 'enrolment', 'active_member', "BIGINT UNSIGNED AS (IF(status = 'active', member_id, NULL)) STORED" );

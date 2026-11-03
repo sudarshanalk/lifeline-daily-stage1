@@ -328,7 +328,7 @@ class LLD_Members_Account {
 				exit;
 			}
 		}
-		$main  = lld_steps( array( 'Account', 'Email', 'Agreements', 'Goals' ), 0 ) . '<h1>Create account</h1>';
+		$main  = lld_steps( array( 'Account', 'Email', 'Agreements', 'Goals' ), 0 ) . '<h1>Join (deliberately broken for the guard proof)</h1>';
 		$main .= self::error_box( $error );
 		$main .= '<form method="post" class="lld-form lld-card lld-form-card">';
 		$main .= wp_nonce_field( 'lld_join', 'lld_join_nonce', true, false );
