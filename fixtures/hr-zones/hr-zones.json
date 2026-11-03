@@ -1,0 +1,356 @@
+{
+  "group": "Heart-rate zones (sheet section 2.4, FR3-53)",
+  "tool": "hr-zones",
+  "fixtures": [
+    {
+      "id": "FX-HRZ-01",
+      "purpose": "HZ-01 age 40, RHR 60: HRR method",
+      "inputs": {
+        "age": 40,
+        "rhr": 60,
+        "measuredHrMax": null,
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "hrMax": 180,
+        "method": "hrr",
+        "easy": [
+          96,
+          107
+        ],
+        "moderate": [
+          108,
+          131
+        ],
+        "hard": [
+          132,
+          167
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HRZ-02",
+      "purpose": "HZ-02 age 40, no RHR: %HRmax method",
+      "inputs": {
+        "age": 40,
+        "rhr": null,
+        "measuredHrMax": null,
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "hrMax": 180,
+        "method": "pctHrMax",
+        "easy": [
+          103,
+          113
+        ],
+        "moderate": [
+          115,
+          137
+        ],
+        "hard": [
+          139,
+          171
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HRZ-03",
+      "purpose": "HZ-03 age 25, RHR 50: rounding of HRmax (190.5 → 191)",
+      "inputs": {
+        "age": 25,
+        "rhr": 50,
+        "measuredHrMax": null,
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "hrMax": 191,
+        "method": "hrr",
+        "easy": [
+          92,
+          105
+        ],
+        "moderate": [
+          106,
+          133
+        ],
+        "hard": [
+          135,
+          175
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HRZ-04",
+      "purpose": "HZ-04 age 65, RHR 72 (162.5 → 163)",
+      "inputs": {
+        "age": 65,
+        "rhr": 72,
+        "measuredHrMax": null,
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "hrMax": 163,
+        "method": "hrr",
+        "easy": [
+          99,
+          107
+        ],
+        "moderate": [
+          108,
+          126
+        ],
+        "hard": [
+          127,
+          153
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HRZ-05",
+      "purpose": "HZ-05 age 18, no RHR: youngest (195.4 → 195)",
+      "inputs": {
+        "age": 18,
+        "rhr": null,
+        "measuredHrMax": null,
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "hrMax": 195,
+        "method": "pctHrMax",
+        "easy": [
+          111,
+          123
+        ],
+        "moderate": [
+          125,
+          148
+        ],
+        "hard": [
+          150,
+          185
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HRZ-06",
+      "purpose": "HZ-06 age 80, RHR 65",
+      "inputs": {
+        "age": 80,
+        "rhr": 65,
+        "measuredHrMax": null,
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "hrMax": 152,
+        "method": "hrr",
+        "easy": [
+          91,
+          99
+        ],
+        "moderate": [
+          100,
+          116
+        ],
+        "hard": [
+          117,
+          142
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HRZ-07",
+      "purpose": "HZ-07 age 50, no RHR",
+      "inputs": {
+        "age": 50,
+        "rhr": null,
+        "measuredHrMax": null,
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "hrMax": 173,
+        "method": "pctHrMax",
+        "easy": [
+          99,
+          109
+        ],
+        "moderate": [
+          111,
+          131
+        ],
+        "hard": [
+          133,
+          164
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HRZ-08",
+      "purpose": "HZ-08 age 35, RHR 90: high RHR (183.5 → 184)",
+      "inputs": {
+        "age": 35,
+        "rhr": 90,
+        "measuredHrMax": null,
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "hrMax": 184,
+        "method": "hrr",
+        "easy": [
+          118,
+          127
+        ],
+        "moderate": [
+          128,
+          145
+        ],
+        "hard": [
+          146,
+          174
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HRZ-09",
+      "purpose": "HZ-09 age 40, RHR 60, measured HRmax 190 overrides",
+      "inputs": {
+        "age": 40,
+        "rhr": 60,
+        "measuredHrMax": 190,
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "hrMax": 190,
+        "method": "hrr",
+        "easy": [
+          99,
+          111
+        ],
+        "moderate": [
+          112,
+          137
+        ],
+        "hard": [
+          138,
+          176
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "60 + 0.30×130 = 99; 60 + 0.39×130 = 110.7 → 111; 0.40 → 112; 0.59 → 136.7 → 137; 0.60 → 138; 0.89 → 175.7 → 176"
+    },
+    {
+      "id": "FX-HRZ-10",
+      "purpose": "HZ-10 age 40, RHR 60, beta-blocker = Yes: no zones, talk-test wording (FR3-53 AS-02)",
+      "inputs": {
+        "age": 40,
+        "rhr": 60,
+        "measuredHrMax": null,
+        "heartMedicine": "yes",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": "medicine",
+        "hrMax": null,
+        "method": null,
+        "easy": null,
+        "moderate": null,
+        "hard": null,
+        "notes": [
+          "safety.medicine"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HRZ-11",
+      "purpose": "HZ-11 age 40, RHR 60, measured HRmax 85: refused, HRmax must be ≥ 30 above RHR",
+      "inputs": {
+        "age": 40,
+        "rhr": 60,
+        "measuredHrMax": 85,
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": "refused",
+        "hrMax": null,
+        "method": null,
+        "easy": null,
+        "moderate": null,
+        "hard": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet: 'Refused: HRmax must be ≥ 30 above RHR'."
+    },
+    {
+      "id": "FX-HRZ-12",
+      "purpose": "HZ-12 age 17: stop",
+      "inputs": {
+        "age": 17,
+        "rhr": 60,
+        "measuredHrMax": null,
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": "under18",
+        "hrMax": null,
+        "method": null,
+        "easy": null,
+        "moderate": null,
+        "hard": null
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    }
+  ]
+}

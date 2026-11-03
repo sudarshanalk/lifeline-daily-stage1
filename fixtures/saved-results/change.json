@@ -1,0 +1,192 @@
+{
+  "group": "Change since last check (D3-34 thresholds, comparability, wording)",
+  "tool": "saved-results",
+  "fixtures": [
+    {
+      "id": "FX-SR-01",
+      "purpose": "SR-01: heart_risk lab 12.3 % (1 Feb) then lab 9.8 % (3 May), Premium: better, band High to Moderate",
+      "inputs": {
+        "calculator": "heart_risk",
+        "plan": "premium",
+        "results": [
+          { "result": 12.3, "unit": "%", "model": "lab", "date": "1 Feb" },
+          { "result": 9.8, "unit": "%", "model": "lab", "date": "3 May" }
+        ]
+      },
+      "expected": {
+        "wording": "Better: 2.5 percentage points lower since 1 Feb",
+        "band_from": "High",
+        "band_to": "Moderate",
+        "shown_from": "12 %",
+        "shown_to": "10 %",
+        "comparable": true
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet: shown 12 % to 10 %, band from shown values per D3-13. Sign-off scenario S1 phrases the same case as 'Better: 2 points lower since 1 Feb' using the shown values; the sheet's fixture column is transcribed here."
+    },
+    {
+      "id": "FX-SR-02",
+      "purpose": "SR-02: heart_risk lab 12.3 % then lab 12.9 %, Premium: about the same, below threshold and same band",
+      "inputs": {
+        "calculator": "heart_risk",
+        "plan": "premium",
+        "results": [
+          { "result": 12.3, "unit": "%", "model": "lab" },
+          { "result": 12.9, "unit": "%", "model": "lab" }
+        ]
+      },
+      "expected": {
+        "wording": "About the same (+0.6 points)",
+        "band_change": false,
+        "comparable": true
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sign-off scenario S2 phrases the same case as 'About the same (+1)' using shown values; the sheet's fixture column is transcribed here."
+    },
+    {
+      "id": "FX-SR-03",
+      "purpose": "SR-03: heart_risk lab 12.3 % then non-lab 11.0 %, Premium: not directly comparable",
+      "inputs": {
+        "calculator": "heart_risk",
+        "plan": "premium",
+        "results": [
+          { "result": 12.3, "unit": "%", "model": "lab" },
+          { "result": 11.0, "unit": "%", "model": "non-lab" }
+        ]
+      },
+      "expected": {
+        "wording": "Not directly comparable",
+        "comparable": false,
+        "better_worse_label": null
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-SR-05",
+      "purpose": "SR-05: bp_check 142/91 then 136/88, Premium: better, Grade 1 to High-normal",
+      "inputs": {
+        "calculator": "bp_check",
+        "plan": "premium",
+        "results": [
+          { "systolic": 142, "diastolic": 91, "unit": "mmHg" },
+          { "systolic": 136, "diastolic": 88, "unit": "mmHg" }
+        ]
+      },
+      "expected": {
+        "wording": "Better: 6/3 lower",
+        "category_from": "Grade 1",
+        "category_to": "High-normal"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-SR-06",
+      "purpose": "SR-06: bp_check 128/80 then 131/82, Premium: about the same",
+      "inputs": {
+        "calculator": "bp_check",
+        "plan": "premium",
+        "results": [
+          { "systolic": 128, "diastolic": 80, "unit": "mmHg" },
+          { "systolic": 131, "diastolic": 82, "unit": "mmHg" }
+        ]
+      },
+      "expected": {
+        "wording": "About the same (+3/+2)"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-SR-07",
+      "purpose": "SR-07: fitness_age VO2 36.1, age 66 then 38.0, age 59, Premium: better (FR3-52 AS-02)",
+      "inputs": {
+        "calculator": "fitness_age",
+        "plan": "premium",
+        "results": [
+          { "vo2": 36.1, "fitness_age": 66, "unit": "mL/kg/min; years" },
+          { "vo2": 38.0, "fitness_age": 59, "unit": "mL/kg/min; years" }
+        ]
+      },
+      "expected": {
+        "wording": "Better: +1.9 points; fitness age 66 → 59"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-SR-08",
+      "purpose": "SR-08: metabolic 3 of 4 met then 1 of 4 not met, Premium: better, no longer meets the definition",
+      "inputs": {
+        "calculator": "metabolic",
+        "plan": "premium",
+        "results": [
+          { "criteria_met": 3, "outcome": "met" },
+          { "criteria_met": 1, "outcome": "not met" }
+        ]
+      },
+      "expected": {
+        "wording": "Better: 3 → 1 of 4; no longer meets the definition"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-SR-09",
+      "purpose": "SR-09: healthy_weight BMI 31.2 then 29.8, Premium: moving towards the healthy range, no weight-loss praise",
+      "inputs": {
+        "calculator": "healthy_weight",
+        "plan": "premium",
+        "results": [
+          { "result": 31.2, "unit": "kg/m²" },
+          { "result": 29.8, "unit": "kg/m²" }
+        ]
+      },
+      "expected": {
+        "wording": "BMI 31.2 → 29.8. Moving towards the healthy range.",
+        "weight_loss_praise": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-SR-10",
+      "purpose": "SR-10: diabetes_risk 8.2 % then 8.9 %, Premium: about the same",
+      "inputs": {
+        "calculator": "diabetes_risk",
+        "plan": "premium",
+        "results": [
+          { "result": 8.2, "unit": "%" },
+          { "result": 8.9, "unit": "%" }
+        ]
+      },
+      "expected": {
+        "wording": "About the same (+0.7)"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-SR-11",
+      "purpose": "SR-11: diabetes_risk 8.2 % (version 1.3) then 7.0 % (version 1.4), Premium: better, plus earlier-version note",
+      "inputs": {
+        "calculator": "diabetes_risk",
+        "plan": "premium",
+        "results": [
+          { "result": 8.2, "unit": "%", "engine_version": "1.3" },
+          { "result": 7.0, "unit": "%", "engine_version": "1.4" }
+        ]
+      },
+      "expected": {
+        "wording": "Better: 1.2 points lower",
+        "earlier_version_note": "compared with an earlier version",
+        "comparable": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    }
+  ]
+}

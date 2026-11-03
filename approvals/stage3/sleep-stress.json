@@ -1,0 +1,65 @@
+{
+  "approval_id": "APR-SLEEP-STRESS-2026-11-03",
+  "tool_slug": "sleep-stress",
+  "version_hash": "807d153b12156470616316eaad09ea6492c53590f74ab547c249038cdcdb9f2e",
+  "engine_name": "Sleep and Stress Check: GAD-2 (stress and worry, 0–6, ≥ 3 worth attention) and PHQ-2 (low mood, 0–6, ≥ 3 worth attention), scored exactly as published, plus a 4-item insomnia-symptom count (0–4) written from the ICSD-3 / DSM-5 insomnia criteria and not called a validated test (0–1 no major concern, 2 some concern, 3–4 needs attention; Q6 counts only with Q5), with the Stage 2 FR2-38 self-harm question first (Yes: Stage 2 Response 1 only, no scores) (D3-28, D3-29)",
+  "intended_use": "Screens and signposts: shows 'in the usual range', 'worth attention' or 'needs attention' for stress and worry, low mood and sleep, with the doctor, insomnia (CBT-I) and help-line lines and a pointer to the Sleep and Stress track weeks. It does not diagnose. Answers are never stored; only the scores and the date are saved if the member chooses to save (D3-30).",
+  "eligibility": "Adults. A Yes to the self-harm question shows Stage 2 Response 1 verbatim and no score in that session, with no track offer (FR2-38). 'Needs attention' or 'worth attention' shows the support wording and the NFR2-07 'Need help now?' footer (FR3-54 AS-02).",
+  "sources": [
+    "Kroenke K, Spitzer RL, Williams JBW, Monahan PO, Löwe B. Anxiety disorders in primary care: the GAD-7 and GAD-2. Ann Intern Med 2007;146:317–25.",
+    "Kroenke K, et al. The PHQ-2. Med Care 2003;41:1284–92.",
+    "Pfizer PHQ screeners permission statement: 'No permission required to reproduce, translate, display or distribute'.",
+    "American Academy of Sleep Medicine. ICSD-3 (2014): chronic insomnia ≥ 3 nights/week, ≥ 3 months, daytime impairment. DSM-5 insomnia disorder criteria.",
+    "Watson NF, et al. Recommended amount of sleep for a healthy adult: AASM and SRS consensus. Sleep 2015;38:843–4 (adults 7–9 hours; under 7 scores 1).",
+    "Espie CA, et al. The Sleep Condition Indicator. BMJ Open 2014;4:e004183 (considered; licence unconfirmed; not used).",
+    "Cohen S, Kamarck T, Mermelstein R. A global measure of perceived stress. J Health Soc Behav 1983;24:385–96; Mapi Research Trust licensing page (considered; not used).",
+    "Stage 2 screening wording: 02 Content/Programme content/safety/screening-sleep-and-stress.md (FR2-38; Response 1 and Response 3 reused verbatim)."
+  ],
+  "limitations": [
+    "Screens and signposts; it does not diagnose. Results say 'worth attention' or 'needs attention', never 'you have anxiety / insomnia / depression'.",
+    "GAD-2 measures anxiety, which overlaps with but is not the same as stress; the page says 'stress and worry'.",
+    "The sleep part is a symptom count written from ICSD-3 / DSM-5 criteria, not a validated questionnaire.",
+    "No sleep-medicine mention; no breath-holding anywhere (D36).",
+    "The self-harm answer and the GAD-2 / PHQ-2 answers are never stored (D3-30)."
+  ],
+  "regulatory_statement": "Approved by the owner as clinical reviewer on 3 November 2026 (P3-5A sign-off record, NFR3-14). General information, not a diagnosis, not a medical device.",
+  "licence": "GAD-2 and PHQ-2: no permission required to reproduce, translate, display or distribute (Pfizer notice on every PHQ screener). The 4-item sleep count is written from diagnostic criteria (ICSD-3 / DSM-5), not a copyrighted questionnaire. The questionnaire design is licence-free by the owner's decision D3-28 (GAD-2 + PHQ-2 + 4-item insomnia-symptom count); PSS, ISI, PSQI, Epworth and SCI were considered and not used because their commercial licence needs permission or a fee or is unconfirmed.",
+  "copy_hashes": {
+    "q0": "308b4697f88a2bdcb21f0713de5f0aef59d24e08e4e1e9ca29dfefc3d46b57b3",
+    "gad2.stem": "ce43a42637be413c44a69beb1aa1426336eda701e94123c0d26b28803f01e012",
+    "q1": "de0ad5a5b384e6ad91b4f2bebaf21c4128b5379f9065d75bcf7aef585c16ae60",
+    "q2": "35e4c87722bcc1b6bef5e6ad93bb2980493fa9e8b66873eedd71e4fe7effbbea",
+    "q3": "f898377effa887af9a919501c5d1b6ff6568d23ce726547bfe96392dd05142e8",
+    "q4": "36969ddef17d2ff600d7ffd5e00db363df63628f0d363fa8df343f5ae6f1a9e3",
+    "scale.0": "93a00d07ebb915ae35f57ab3a58e970ae83433dce8329ef6eb5353ee109fafa6",
+    "scale.1": "f2477935aa1e1dadcfece8816f0097289593e2edc67e1f4aef69c57e906c1076",
+    "scale.2": "7cc95688702d097da29212e23b59959f794896997c0d05251ab482431dd48405",
+    "scale.3": "83d825c2c8a2125f9812c4c50247adc9e079cd84fccb3daa1d748b5ab5199341",
+    "q5": "76718b05da2240756c2420e8082f14966c5781ffa7d3d57582355e3b49d9cf04",
+    "q6": "30f885857184bc24431a20e480677ce43575ca2c9c3dfb065be92e510b2023fd",
+    "q7": "9d4ca9a639920bf161c3ba9ab86c916b76706546be262f0f0028bea466adbe51",
+    "q8": "9c9e17a4077622b251ce34b374b7184689079472812a9d5d3b425ba55c6b20d0",
+    "result.stress.usual": "c804a7e051a2192ce7b85b41a53ae2062da4300da4aeca08ff369e46a3adc6a2",
+    "result.stress.attention": "fd97b3adf3f4a98bc885ab0fe212ebd008f88fa95d2df5cb7728d485de093d22",
+    "result.stress.doctor": "887fefc59b238e19dd2a5d0879dc74ba6111b5d50ef85429d01e81ef59cfc7e7",
+    "result.mood.attention": "adc6ca0d979a127806f5ee1e8f43abb9298d1b9beca391d98444d0c61589ac79",
+    "result.sleep.none": "d394e951c38ec63002f38563d534937bea40fd88618e150f130df1b0aa899186",
+    "result.sleep.some": "18dc0001d640f6874594bf6c805edcfa75fd3f04fc053c58587ea70ba660bb25",
+    "result.sleep.needs": "1973319887c5c5c8073e774ea7fd4fa69f8d3c5d06a1931d8d6447fc8457f84e",
+    "result.sleep.insomnia": "b1455c62a2cd5b5eabc8052f72f68acc2b0f16ade29676e99b9e5569eaaa1d4d"
+  },
+  "oracle_report": "oracles/orc-13-sleep-stress/results.json",
+  "decisions_ratified": [
+    "D3-28",
+    "D3-29",
+    "D3-30"
+  ],
+  "clinical_signoff": {
+    "name": "Product owner (sudarshanalk), acting as clinical reviewer",
+    "date": "2026-11-03",
+    "decision": "approved",
+    "notes": "Signed 3 November 2026: 'Approved (\"Approve all, D3-10 = B\", in chat with the clinical session)'. D3-28 decided by the owner 3 Nov 2026: GAD-2 (+ PHQ-2) + 4-item insomnia-symptom count; D3-29 PHQ-2 included with the Stage 2 low-mood response; D3-30 scores and date only if the member saves, answers never stored. Fixture table 3.5 (12 cases) is the frozen reference (FR3-54 AS-01)."
+  },
+  "review_date": "2026-11-03",
+  "next_review_date": "2027-11-03"
+}

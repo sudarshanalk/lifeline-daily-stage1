@@ -1,0 +1,383 @@
+{
+  "group": "Sleep and stress (sheet section 3.5, FR3-54 AS-01)",
+  "tool": "sleep-stress",
+  "fixtures": [
+    {
+      "id": "FX-SS-01",
+      "purpose": "SS-01 all none, 8 h",
+      "inputs": {
+        "q0": "no",
+        "q1": 0,
+        "q2": 0,
+        "q3": 0,
+        "q4": 0,
+        "q5": "no",
+        "q6": null,
+        "q7": "no",
+        "q8": 8
+      },
+      "expected": {
+        "response1": false,
+        "stressScore": 0,
+        "moodScore": 0,
+        "sleepCount": 0,
+        "stressResult": "result.stress.usual",
+        "moodResult": null,
+        "sleepResult": "result.sleep.none",
+        "stressDoctorLine": false,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": false,
+        "summary": "Usual range; no concern; track week 1 general"
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "The sheet gives a mood result only for PHQ-2 3–6 ('Low mood: worth attention'); moodResult is null below 3 because no wording is specified."
+    },
+    {
+      "id": "FX-SS-02",
+      "purpose": "SS-02 GAD-2 1,1; PHQ-2 0,1; Q7 yes; 7 h",
+      "inputs": {
+        "q0": "no",
+        "q1": 1,
+        "q2": 1,
+        "q3": 0,
+        "q4": 1,
+        "q5": "no",
+        "q6": null,
+        "q7": "yes",
+        "q8": 7
+      },
+      "expected": {
+        "response1": false,
+        "stressScore": 2,
+        "moodScore": 1,
+        "sleepCount": 1,
+        "stressResult": "result.stress.usual",
+        "moodResult": null,
+        "sleepResult": "result.sleep.none",
+        "stressDoctorLine": false,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": false,
+        "summary": "Usual range; no major sleep concern"
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "The sheet gives a mood result only for PHQ-2 3–6 ('Low mood: worth attention'); moodResult is null below 3 because no wording is specified."
+    },
+    {
+      "id": "FX-SS-03",
+      "purpose": "SS-03 GAD-2 2,1 = 3: stress worth attention",
+      "inputs": {
+        "q0": "no",
+        "q1": 2,
+        "q2": 1,
+        "q3": 0,
+        "q4": 0,
+        "q5": "no",
+        "q6": null,
+        "q7": "no",
+        "q8": 7.5
+      },
+      "expected": {
+        "response1": false,
+        "stressScore": 3,
+        "moodScore": 0,
+        "sleepCount": 0,
+        "stressResult": "result.stress.attention",
+        "moodResult": null,
+        "sleepResult": "result.sleep.none",
+        "stressDoctorLine": true,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": true,
+        "summary": "Stress worth attention; doctor line; week 2"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-SS-04",
+      "purpose": "SS-04 all maximal: both need attention",
+      "inputs": {
+        "q0": "no",
+        "q1": 3,
+        "q2": 3,
+        "q3": 3,
+        "q4": 3,
+        "q5": "yes",
+        "q6": "yes",
+        "q7": "yes",
+        "q8": 5
+      },
+      "expected": {
+        "response1": false,
+        "stressScore": 6,
+        "moodScore": 6,
+        "sleepCount": 4,
+        "stressResult": "result.stress.attention",
+        "moodResult": "result.mood.attention",
+        "sleepResult": "result.sleep.needs",
+        "stressDoctorLine": true,
+        "insomniaLine": true,
+        "shortSleepNote": false,
+        "helpline": true,
+        "summary": "Both need attention; support wording + helpline; weeks 1–3"
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Q8 = 5 is not under 5, so no short-sleep note."
+    },
+    {
+      "id": "FX-SS-05",
+      "purpose": "SS-05 sleep count 4: needs attention, insomnia wording",
+      "inputs": {
+        "q0": "no",
+        "q1": 0,
+        "q2": 0,
+        "q3": 0,
+        "q4": 0,
+        "q5": "yes",
+        "q6": "yes",
+        "q7": "yes",
+        "q8": 6
+      },
+      "expected": {
+        "response1": false,
+        "stressScore": 0,
+        "moodScore": 0,
+        "sleepCount": 4,
+        "stressResult": "result.stress.usual",
+        "moodResult": null,
+        "sleepResult": "result.sleep.needs",
+        "stressDoctorLine": false,
+        "insomniaLine": true,
+        "shortSleepNote": false,
+        "helpline": true,
+        "summary": "Sleep needs attention; insomnia wording; CBT-I line"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-SS-06",
+      "purpose": "SS-06 Q5 yes, Q6 no, Q7 yes, 7 h: some concern",
+      "inputs": {
+        "q0": "no",
+        "q1": 0,
+        "q2": 0,
+        "q3": 0,
+        "q4": 0,
+        "q5": "yes",
+        "q6": "no",
+        "q7": "yes",
+        "q8": 7
+      },
+      "expected": {
+        "response1": false,
+        "stressScore": 0,
+        "moodScore": 0,
+        "sleepCount": 2,
+        "stressResult": "result.stress.usual",
+        "moodResult": null,
+        "sleepResult": "result.sleep.some",
+        "stressDoctorLine": false,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": false,
+        "summary": "Sleep some concern"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-SS-07",
+      "purpose": "SS-07 Q7 + short sleep, Q6 not asked",
+      "inputs": {
+        "q0": "no",
+        "q1": 0,
+        "q2": 0,
+        "q3": 0,
+        "q4": 0,
+        "q5": "no",
+        "q6": null,
+        "q7": "yes",
+        "q8": 6
+      },
+      "expected": {
+        "response1": false,
+        "stressScore": 0,
+        "moodScore": 0,
+        "sleepCount": 2,
+        "stressResult": "result.stress.usual",
+        "moodResult": null,
+        "sleepResult": "result.sleep.some",
+        "stressDoctorLine": false,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": false,
+        "summary": "Some concern (Q7 + short sleep); Q6 not asked"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-SS-08",
+      "purpose": "SS-08 PHQ-2 2,1 = 3: low mood worth attention",
+      "inputs": {
+        "q0": "no",
+        "q1": 0,
+        "q2": 0,
+        "q3": 2,
+        "q4": 1,
+        "q5": "no",
+        "q6": null,
+        "q7": "no",
+        "q8": 8
+      },
+      "expected": {
+        "response1": false,
+        "stressScore": 0,
+        "moodScore": 3,
+        "sleepCount": 0,
+        "stressResult": "result.stress.usual",
+        "moodResult": "result.mood.attention",
+        "sleepResult": "result.sleep.none",
+        "stressDoctorLine": false,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": true,
+        "summary": "Low mood worth attention; Stage 2 Response 3 wording"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-SS-09",
+      "purpose": "SS-09 self-harm Yes: Response 1 only, no scores, no track",
+      "inputs": {
+        "q0": "yes",
+        "q1": 3,
+        "q2": 3,
+        "q3": 3,
+        "q4": 3,
+        "q5": "yes",
+        "q6": "yes",
+        "q7": "yes",
+        "q8": 4
+      },
+      "expected": {
+        "response1": true,
+        "stressScore": null,
+        "moodScore": null,
+        "sleepCount": null,
+        "stressResult": null,
+        "moodResult": null,
+        "sleepResult": null,
+        "stressDoctorLine": false,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": false,
+        "trackOffer": false,
+        "summary": "Response 1 only; no scores; no track"
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Stage 2 Response 1 verbatim (FR2-38); helpline is false here because Response 1 itself carries the helpline and emergency numbers, not the FR3-54 AS-02 footer; the sheet does not say whether the NFR2-07 footer also shows."
+    },
+    {
+      "id": "FX-SS-10",
+      "purpose": "SS-10 stress 3 + sleep 3 + short sleep (4.5 h)",
+      "inputs": {
+        "q0": "no",
+        "q1": 1,
+        "q2": 2,
+        "q3": 0,
+        "q4": 0,
+        "q5": "yes",
+        "q6": "yes",
+        "q7": "no",
+        "q8": 4.5
+      },
+      "expected": {
+        "response1": false,
+        "stressScore": 3,
+        "moodScore": 0,
+        "sleepCount": 3,
+        "stressResult": "result.stress.attention",
+        "moodResult": null,
+        "sleepResult": "result.sleep.needs",
+        "stressDoctorLine": true,
+        "insomniaLine": true,
+        "shortSleepNote": true,
+        "helpline": true,
+        "summary": "Stress worth attention + sleep needs attention + short-sleep note"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-SS-11",
+      "purpose": "SS-11 Q8 = 16: boundary of range (16 allowed)",
+      "inputs": {
+        "q0": "no",
+        "q1": 0,
+        "q2": 0,
+        "q3": 0,
+        "q4": 0,
+        "q5": "no",
+        "q6": null,
+        "q7": "no",
+        "q8": 16
+      },
+      "expected": {
+        "response1": false,
+        "stressScore": 0,
+        "moodScore": 0,
+        "sleepCount": 0,
+        "stressResult": "result.stress.usual",
+        "moodResult": null,
+        "sleepResult": "result.sleep.none",
+        "stressDoctorLine": false,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": false,
+        "summary": "Boundary of Q8 range (16 allowed)"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-SS-12",
+      "purpose": "SS-12 Q6 counts because Q5 yes",
+      "inputs": {
+        "q0": "no",
+        "q1": 0,
+        "q2": 0,
+        "q3": 0,
+        "q4": 0,
+        "q5": "yes",
+        "q6": "yes",
+        "q7": "no",
+        "q8": 7
+      },
+      "expected": {
+        "response1": false,
+        "stressScore": 0,
+        "moodScore": 0,
+        "sleepCount": 2,
+        "stressResult": "result.stress.usual",
+        "moodResult": null,
+        "sleepResult": "result.sleep.some",
+        "stressDoctorLine": false,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": false,
+        "summary": "Q6 counts because Q5 Yes"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    }
+  ]
+}

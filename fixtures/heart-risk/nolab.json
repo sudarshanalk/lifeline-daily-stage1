@@ -1,0 +1,149 @@
+{
+  "group": "NOLAB",
+  "tool": "heart-risk",
+  "fixtures": [
+    {
+      "id": "FX-HR-NOLAB-12",
+      "purpose": "HR-12: Western Europe (UK), man 55, smoker, SBP 160, cholesterol unknown, BMI 31: 24 %, Very high (non-laboratory chart)",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "country": "United Kingdom",
+        "smoke": "yes",
+        "sbp": 160,
+        "diabetes": "no",
+        "tc": null,
+        "tcUnit": null,
+        "bmi": 31,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "nolab",
+        "region": "Western Europe",
+        "cell": {
+          "sex": "men",
+          "smoking": "smoker",
+          "age": "55-59",
+          "sbp": "160-179",
+          "bmi": "30-35"
+        },
+        "risk": 24,
+        "band": "very-high",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-NOLAB-13",
+      "purpose": "HR-13: Western Europe (UK), woman 45, non-smoker, SBP 120, cholesterol unknown, BMI 22: 1 %, Low",
+      "inputs": {
+        "age": 45,
+        "sex": "female",
+        "country": "United Kingdom",
+        "smoke": "no",
+        "sbp": 120,
+        "diabetes": "no",
+        "tc": null,
+        "tcUnit": null,
+        "bmi": 22,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "nolab",
+        "region": "Western Europe",
+        "cell": {
+          "sex": "women",
+          "smoking": "non-smoker",
+          "age": "45-49",
+          "sbp": "120-139",
+          "bmi": "20-24"
+        },
+        "risk": 1,
+        "band": "low",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-NOLAB-26",
+      "purpose": "HR-26: Western Europe (UK), man 55, smoker, SBP 160, cholesterol unknown, BMI 35.0: falls in the 35 or more band; cell value from the file",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "country": "United Kingdom",
+        "smoke": "yes",
+        "sbp": 160,
+        "diabetes": "no",
+        "tc": null,
+        "tcUnit": null,
+        "bmi": 35.0,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "nolab",
+        "region": "Western Europe",
+        "cell": {
+          "sex": "men",
+          "smoking": "smoker",
+          "age": "55-59",
+          "sbp": "160-179",
+          "bmi": ">=35"
+        },
+        "risk": 27,
+        "band": "very-high",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "The sheet gives no printed expected value ('cell value from the file'); 27 % read from who2019-chart-cells.json on 3 November 2026. BMI 35.0 is in the 35 or more band."
+    },
+    {
+      "id": "FX-HR-NOLAB-27",
+      "purpose": "HR-27: Western Europe (UK), man 55, smoker, SBP 160, cholesterol unknown, BMI 34.96 shown as 35.0: same cell as HR-26 (banded on the 1-dp value)",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "country": "United Kingdom",
+        "smoke": "yes",
+        "sbp": 160,
+        "diabetes": "no",
+        "tc": null,
+        "tcUnit": null,
+        "bmi": 34.96,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "nolab",
+        "region": "Western Europe",
+        "cell": {
+          "sex": "men",
+          "smoking": "smoker",
+          "age": "55-59",
+          "sbp": "160-179",
+          "bmi": ">=35"
+        },
+        "risk": 27,
+        "band": "very-high",
+        "urgent": false,
+        "bmiShown": 35.0
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Same as HR-26: 27 % from the file. BMI 34.96 rounds half-up to 35.0 at 1 dp and is banded on that value."
+    }
+  ]
+}

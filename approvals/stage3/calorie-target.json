@@ -1,0 +1,59 @@
+{
+  "approval_id": "APR-CALORIE-TARGET-2026-11-03",
+  "tool_slug": "calorie-target",
+  "version_hash": "17d69e492862546401b4e1975143fe16ec545af7d739e1e7fcb5371a14b480a3",
+  "engine_name": "Daily Calorie Target: Mifflin-St Jeor resting metabolic rate (1990) times an activity factor (low 1.2, some 1.375, active 1.55, very active 1.725), minus a deficit of 1,100 kcal/day per kg/week of the chosen rate (0.25, 0.5, 0.75 or 1.0 kg a week; plus 275 kcal for a 0.25 kg/week gain), floored at a safe minimum of 1,200 kcal/day (female, and prefer not to say) or 1,500 kcal/day (male), rounded to the nearest 10 kcal half-up; nutrient split of protein from the frozen Stage 1 Daily Protein Target, fat 30 % of kcal / 9, carbohydrate the remainder / 4, fibre 30 g; and a safety layer that stops before any number for under-18s, pregnancy or breastfeeding and eating disorders",
+  "intended_use": "Free general-information calculator for adults that estimates resting metabolic rate, daily energy use and a daily calorie target for a chosen weekly rate of loss, maintenance or gain, and sets the food-tracker target (FR3-28) and the plan's calorie target (FR3-11). It does not diagnose any condition or prescribe a diet.",
+  "eligibility": "Adults aged 18 to 99. Stops with an owner-approved message and no numbers for under-18s, pregnancy or breastfeeding (Yes or Not sure) and a current, past or suspected eating disorder (answer Yes, or the profile flag). 'Prefer not to say' on eating shows maintenance only. BMI below 18.5 gets no loss target (maintenance or gain only). Rates above 0.5 kg a week are not offered at 65 or over, and each rate is offered only if within the P3-56 cap. The safe minimum applies to engine-set and member-set targets.",
+  "sources": [
+    "Mifflin MD, St Jeor ST, et al. A new predictive equation for resting energy expenditure in healthy individuals. Am J Clin Nutr 1990;51:241-7.",
+    "Frankenfield D, Roth-Yousey L, Compher C. Comparison of predictive equations for resting metabolic rate in healthy nonobese and obese adults: a systematic review. J Am Diet Assoc 2005;105:775-89.",
+    "Henry CJK. Basal metabolic rate studies in humans: measurement and development of new equations. Public Health Nutr 2005;8:1133-52 (Oxford equations, used by SACN 2011).",
+    "Hall KD, et al. Quantification of the effect of energy imbalance on bodyweight. Lancet 2011;378:826-37.",
+    "NICE CG189 Obesity: identification, assessment and management (2014, updated 2023): weight-loss rate 0.5-1 kg a week; very-low-calorie diets only under supervision.",
+    "ACSM position stand: Appropriate physical activity intervention strategies for weight loss. Med Sci Sports Exerc 2009;41:459-71.",
+    "SACN Carbohydrates and Health (2015): 30 g fibre a day for adults. WHO (2023) guideline: 25 g or more.",
+    "Institute of Medicine AMDR: fat 20-35 % of energy."
+  ],
+  "limitations": [
+    "Population equations are within about 10 % of measured resting metabolic rate for most people; the result page says 'about' and shows the estimate note.",
+    "Real needs change as weight changes (the 7,700 kcal per kg rule is a convention; real loss slows as weight falls); the weekly check-in corrects the plan from real weigh-ins.",
+    "Not for pregnancy, breastfeeding, under-18s or anyone with an eating disorder.",
+    "Self-reported measurements; protein is never recomputed here but taken from the frozen Stage 1 Daily Protein Target; kcal only at launch (D3-04)."
+  ],
+  "regulatory_statement": "Approved by the owner as clinical reviewer on 3 November 2026 (NFR3-14, Signoff-P3-55-Daily-Calorie-Target.md). General health information, not a diagnosis, a prescribed diet or a medical device.",
+  "licence": "Lifeline Daily's own implementation of the published Mifflin-St Jeor equation and published activity factors, deficit convention and dietetic safe minimums.",
+  "copy_hashes": {
+    "headline": "2c7ecfd6828bb3bb9f797f7532366a7139bd8cd305097c8b2da6baf004ed6974",
+    "headline_subline": "4af164d3812d0f0bcfcc87fe5b7b71627177d2fd128f58423e90b67e19f3a708",
+    "why_this_number": "da83a0bfeaef37c1f4ee1f96bf1cab67fb1f152e9a2a5899eb327d3037b3271a",
+    "floor_note": "e9a78ac20affd6ea2257269245cb8e7394865778a60de6cb12b778b151922b97",
+    "no_loss_note": "b48ae0a250b2fad3ac76b552e9ac5fc088060aded93abf2345f047e2a0335a4c",
+    "sex_not_said_note": "ba7651e6b9161467c769d6e875aa2194a4a67ee44d682699f2c98ff2f451bb01",
+    "stop.under18": "e392c58b7eddc59d0b7093d39624b6fb0bd68f447fca899aca43d1fe54f76ea3",
+    "stop.pregnancy": "650627c067f7ec9ae63e406c019d7849e4b198a9b824a7ed89beab4f3733446d",
+    "stop.eating": "38f3380f5d0d34f2ea6bb1e3e0d80d094dbae94107620b91f29dfd13fa381313",
+    "eating_not_said_note": "bed5c1bf6c41cd57903de509e7022face99d50bc8e66ada2eabb6ea9f51deaf0",
+    "diabetes_note": "b9dd734dec05c71f46d7babbd5a66ae74aeb1c7975353272845a0c86ea1b2fa6",
+    "over65_note": "a3539611dd34f8949354c45cf5f04481014215ee77cc1903697816efb0da838e",
+    "estimate_note": "683d9b9ab826a8442cebd654b6e28198bef55d72a5f2fdff2fcc7e944e165dd2",
+    "hub_card": "2b1df4f1044647265e41a55d5827205a112a17698b76817583f66c50a9f461b4"
+  },
+  "oracle_report": "oracles/orc-06-calorie-target/results.json",
+  "decisions_ratified": [
+    "D3-01",
+    "D3-02",
+    "D3-03",
+    "D3-04",
+    "D3-05",
+    "D3-06"
+  ],
+  "clinical_signoff": {
+    "name": "Product owner (sudarshanalk), acting as clinical reviewer",
+    "date": "2026-11-03",
+    "decision": "approved",
+    "notes": "Signed 3 November 2026 as recorded in 04 Health Tools/Stage 3/Signoff-P3-55-Daily-Calorie-Target.md (method, safety rules, nutrient split, the 20-case fixture table as the frozen reference, and the wording; D3-01 to D3-06)."
+  },
+  "review_date": "2026-11-03",
+  "next_review_date": "2027-11-03"
+}

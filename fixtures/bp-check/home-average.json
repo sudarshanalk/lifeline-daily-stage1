@@ -1,0 +1,314 @@
+{
+  "group": "7-day home average",
+  "tool": "bp-check",
+  "fixtures": [
+    {
+      "id": "FX-BP-HOME-01",
+      "purpose": "7 daily means 138/88, 141/91, 135/86, 139/87, 144/92, 136/85, 140/89: average 139/88, above the home threshold",
+      "inputs": {
+        "mode": "7-day",
+        "pregnant": "no",
+        "today": "2026-11-03",
+        "readings": [
+          {
+            "date": "2026-10-28",
+            "systolic": 138,
+            "diastolic": 88
+          },
+          {
+            "date": "2026-10-29",
+            "systolic": 141,
+            "diastolic": 91
+          },
+          {
+            "date": "2026-10-30",
+            "systolic": 135,
+            "diastolic": 86
+          },
+          {
+            "date": "2026-10-31",
+            "systolic": 139,
+            "diastolic": 87
+          },
+          {
+            "date": "2026-11-01",
+            "systolic": 144,
+            "diastolic": 92
+          },
+          {
+            "date": "2026-11-02",
+            "systolic": 136,
+            "diastolic": 85
+          },
+          {
+            "date": "2026-11-03",
+            "systolic": 140,
+            "diastolic": 89
+          }
+        ]
+      },
+      "expected": {
+        "refused": false,
+        "category": "above",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "home.above.headline",
+          "home.above.body"
+        ],
+        "average": {
+          "systolic": 139,
+          "diastolic": 88
+        }
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-28"
+    },
+    {
+      "id": "FX-BP-HOME-02",
+      "purpose": "128/80, 131/83, 126/79, 133/84, 129/81, 130/82, 127/80: average 129/81, within the home range",
+      "inputs": {
+        "mode": "7-day",
+        "pregnant": "no",
+        "today": "2026-11-03",
+        "readings": [
+          {
+            "date": "2026-10-28",
+            "systolic": 128,
+            "diastolic": 80
+          },
+          {
+            "date": "2026-10-29",
+            "systolic": 131,
+            "diastolic": 83
+          },
+          {
+            "date": "2026-10-30",
+            "systolic": 126,
+            "diastolic": 79
+          },
+          {
+            "date": "2026-10-31",
+            "systolic": 133,
+            "diastolic": 84
+          },
+          {
+            "date": "2026-11-01",
+            "systolic": 129,
+            "diastolic": 81
+          },
+          {
+            "date": "2026-11-02",
+            "systolic": 130,
+            "diastolic": 82
+          },
+          {
+            "date": "2026-11-03",
+            "systolic": 127,
+            "diastolic": 80
+          }
+        ]
+      },
+      "expected": {
+        "refused": false,
+        "category": "within",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "home.within.headline",
+          "home.within.body"
+        ],
+        "average": {
+          "systolic": 129,
+          "diastolic": 81
+        }
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-29"
+    },
+    {
+      "id": "FX-BP-HOME-03",
+      "purpose": "134/84, 136/86, 133/83, 135/85, 137/84, 134/86, 136/85: raw 135.0/84.714 -> 135/85, above the home threshold (rounding boundary)",
+      "inputs": {
+        "mode": "7-day",
+        "pregnant": "no",
+        "today": "2026-11-03",
+        "readings": [
+          {
+            "date": "2026-10-28",
+            "systolic": 134,
+            "diastolic": 84
+          },
+          {
+            "date": "2026-10-29",
+            "systolic": 136,
+            "diastolic": 86
+          },
+          {
+            "date": "2026-10-30",
+            "systolic": 133,
+            "diastolic": 83
+          },
+          {
+            "date": "2026-10-31",
+            "systolic": 135,
+            "diastolic": 85
+          },
+          {
+            "date": "2026-11-01",
+            "systolic": 137,
+            "diastolic": 84
+          },
+          {
+            "date": "2026-11-02",
+            "systolic": 134,
+            "diastolic": 86
+          },
+          {
+            "date": "2026-11-03",
+            "systolic": 136,
+            "diastolic": 85
+          }
+        ]
+      },
+      "expected": {
+        "refused": false,
+        "category": "above",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "home.above.headline",
+          "home.above.body"
+        ],
+        "average": {
+          "systolic": 135,
+          "diastolic": 85
+        },
+        "average_unrounded": {
+          "systolic": 135.0,
+          "diastolic": 84.714
+        }
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-30"
+    },
+    {
+      "id": "FX-BP-HOME-04",
+      "purpose": "readings on only 2 days: 'Add readings on at least 3 days'",
+      "inputs": {
+        "mode": "7-day",
+        "pregnant": "no",
+        "today": "2026-11-03",
+        "readings": [
+          {
+            "date": "2026-11-02",
+            "systolic": 128,
+            "diastolic": 80
+          },
+          {
+            "date": "2026-11-03",
+            "systolic": 128,
+            "diastolic": 80
+          }
+        ]
+      },
+      "expected": {
+        "refused": false,
+        "category": null,
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "home.min-days"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-31. The sheet gives no reading values for the two days; 128/80 is a placeholder and does not affect the outcome."
+    },
+    {
+      "id": "FX-BP-HOME-05",
+      "purpose": "one day with readings 150/90, 130/80, 128/78 and 6 days at 128/80: daily mean 136/82.67, then 129.14/80.38 -> 129/80, within the home range (daily-mean rule)",
+      "inputs": {
+        "mode": "7-day",
+        "pregnant": "no",
+        "today": "2026-11-03",
+        "readings": [
+          {
+            "date": "2026-10-28",
+            "systolic": 150,
+            "diastolic": 90
+          },
+          {
+            "date": "2026-10-28",
+            "systolic": 130,
+            "diastolic": 80
+          },
+          {
+            "date": "2026-10-28",
+            "systolic": 128,
+            "diastolic": 78
+          },
+          {
+            "date": "2026-10-29",
+            "systolic": 128,
+            "diastolic": 80
+          },
+          {
+            "date": "2026-10-30",
+            "systolic": 128,
+            "diastolic": 80
+          },
+          {
+            "date": "2026-10-31",
+            "systolic": 128,
+            "diastolic": 80
+          },
+          {
+            "date": "2026-11-01",
+            "systolic": 128,
+            "diastolic": 80
+          },
+          {
+            "date": "2026-11-02",
+            "systolic": 128,
+            "diastolic": 80
+          },
+          {
+            "date": "2026-11-03",
+            "systolic": 128,
+            "diastolic": 80
+          }
+        ]
+      },
+      "expected": {
+        "refused": false,
+        "category": "within",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "home.within.headline",
+          "home.within.body"
+        ],
+        "average": {
+          "systolic": 129,
+          "diastolic": 80
+        },
+        "average_unrounded": {
+          "systolic": 129.14,
+          "diastolic": 80.38
+        },
+        "daily_mean_day1": {
+          "systolic": 136,
+          "diastolic": 82.67
+        }
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-33"
+    }
+  ]
+}

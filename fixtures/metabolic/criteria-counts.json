@@ -1,0 +1,328 @@
+{
+  "group": "Criteria counts and central obesity",
+  "tool": "metabolic",
+  "fixtures": [
+    {
+      "id": "FX-MET-CRIT-01",
+      "purpose": "MS-01: Male Europid, 4 of 4 met, meets",
+      "inputs": {
+        "age": null,
+        "sex": "male",
+        "background": "Europid",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 102,
+        "bpSystolic": 135,
+        "bpDiastolic": 88,
+        "bpMedicine": false,
+        "triglycerides": 2.0,
+        "triglyceridesUnit": "mmol/L",
+        "hdl": 0.9,
+        "hdlUnit": "mmol/L",
+        "hdlMedicine": false,
+        "fastingGlucose": 6.1,
+        "fastingGlucoseUnit": "mmol/L",
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "met",
+          "hdl": "met",
+          "bloodPressure": "met",
+          "fastingGlucose": "met"
+        },
+        "count": 4,
+        "result": "results.meets",
+        "missing": [],
+        "flags": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range)."
+    },
+    {
+      "id": "FX-MET-CRIT-02",
+      "purpose": "MS-02: Female Europid waist 79, no central obesity, 0 met",
+      "inputs": {
+        "age": null,
+        "sex": "female",
+        "background": "Europid",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 79,
+        "bpSystolic": 120,
+        "bpDiastolic": 78,
+        "bpMedicine": false,
+        "triglycerides": 1.0,
+        "triglyceridesUnit": "mmol/L",
+        "hdl": 1.5,
+        "hdlUnit": "mmol/L",
+        "hdlMedicine": false,
+        "fastingGlucose": 5.0,
+        "fastingGlucoseUnit": "mmol/L",
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": false,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "not-met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 0,
+        "result": "results.notMet.waistBelow",
+        "missing": [],
+        "flags": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range)."
+    },
+    {
+      "id": "FX-MET-CRIT-03",
+      "purpose": "MS-05: BP medicine counts as met; FPG 5.6 at threshold; 2 met, meets",
+      "inputs": {
+        "age": null,
+        "sex": "male",
+        "background": "Europid",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 94,
+        "bpSystolic": 129,
+        "bpDiastolic": 84,
+        "bpMedicine": true,
+        "triglycerides": 1.6,
+        "triglyceridesUnit": "mmol/L",
+        "hdl": 1.1,
+        "hdlUnit": "mmol/L",
+        "hdlMedicine": false,
+        "fastingGlucose": 5.6,
+        "fastingGlucoseUnit": "mmol/L",
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "not-met",
+          "bloodPressure": "met",
+          "fastingGlucose": "met"
+        },
+        "count": 2,
+        "result": "results.meets",
+        "missing": [],
+        "flags": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range). Waist 94 at the Europid male cut-off is central. BP (Rx) and FPG per the sheet row."
+    },
+    {
+      "id": "FX-MET-CRIT-04",
+      "purpose": "MS-06: Waist 93 below cut-off with 4 of 4 raised: not met, talk-to-your-doctor line",
+      "inputs": {
+        "age": null,
+        "sex": "male",
+        "background": "Europid",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 93,
+        "bpSystolic": 160,
+        "bpDiastolic": 100,
+        "bpMedicine": false,
+        "triglycerides": 3.0,
+        "triglyceridesUnit": "mmol/L",
+        "hdl": 0.8,
+        "hdlUnit": "mmol/L",
+        "hdlMedicine": false,
+        "fastingGlucose": 7.0,
+        "fastingGlucoseUnit": "mmol/L",
+        "type2Diabetes": true
+      },
+      "expected": {
+        "stop": null,
+        "central": false,
+        "criteria": {
+          "triglycerides": "met",
+          "hdl": "met",
+          "bloodPressure": "met",
+          "fastingGlucose": "met"
+        },
+        "count": 4,
+        "result": "results.notMet.waistBelow",
+        "missing": [],
+        "flags": [
+          "notes.talkToDoctor"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range). Sheet: 'Not met (no central obesity) + \"talk to your doctor\" because >= 2 raised'. Type 2 diabetes ticked; the exact 'talk to your doctor' text is not quoted in the sheet."
+    },
+    {
+      "id": "FX-MET-CRIT-05",
+      "purpose": "MS-09: Just under every threshold, 0 met",
+      "inputs": {
+        "age": null,
+        "sex": "male",
+        "background": "Sub-Saharan African",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 95,
+        "bpSystolic": 125,
+        "bpDiastolic": 80,
+        "bpMedicine": false,
+        "triglycerides": 1.69,
+        "triglyceridesUnit": "mmol/L",
+        "hdl": 1.03,
+        "hdlUnit": "mmol/L",
+        "hdlMedicine": false,
+        "fastingGlucose": 5.59,
+        "fastingGlucoseUnit": "mmol/L",
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "not-met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 0,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range). HDL 1.03 is not below 1.03, so not met. Sub-Saharan African men use the 94 cm cut-off."
+    },
+    {
+      "id": "FX-MET-CRIT-06",
+      "purpose": "MS-11: HDL medicine counts as met; 1 met, not met",
+      "inputs": {
+        "age": null,
+        "sex": "female",
+        "background": "Europid",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 90,
+        "bpSystolic": 120,
+        "bpDiastolic": 80,
+        "bpMedicine": false,
+        "triglycerides": 1.2,
+        "triglyceridesUnit": "mmol/L",
+        "hdl": 1.6,
+        "hdlUnit": "mmol/L",
+        "hdlMedicine": true,
+        "fastingGlucose": 5.0,
+        "fastingGlucoseUnit": "mmol/L",
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 1,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range)."
+    },
+    {
+      "id": "FX-MET-CRIT-07",
+      "purpose": "MS-13: South Asian man, waist 90 at cut-off, BP and TG met, meets",
+      "inputs": {
+        "age": null,
+        "sex": "male",
+        "background": "South Asian",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 90,
+        "bpSystolic": 131,
+        "bpDiastolic": 80,
+        "bpMedicine": false,
+        "triglycerides": 1.8,
+        "triglyceridesUnit": "mmol/L",
+        "hdl": 1.2,
+        "hdlUnit": "mmol/L",
+        "hdlMedicine": false,
+        "fastingGlucose": 5.0,
+        "fastingGlucoseUnit": "mmol/L",
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "met",
+          "hdl": "not-met",
+          "bloodPressure": "met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 2,
+        "result": "results.meets",
+        "missing": [],
+        "flags": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range)."
+    },
+    {
+      "id": "FX-MET-CRIT-08",
+      "purpose": "MS-14: Same values, Europid man, waist 90 below 94: not met (background changes the answer)",
+      "inputs": {
+        "age": null,
+        "sex": "male",
+        "background": "Europid",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 90,
+        "bpSystolic": 131,
+        "bpDiastolic": 80,
+        "bpMedicine": false,
+        "triglycerides": 1.8,
+        "triglyceridesUnit": "mmol/L",
+        "hdl": 1.2,
+        "hdlUnit": "mmol/L",
+        "hdlMedicine": false,
+        "fastingGlucose": 5.0,
+        "fastingGlucoseUnit": "mmol/L",
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": false,
+        "criteria": {
+          "triglycerides": "met",
+          "hdl": "not-met",
+          "bloodPressure": "met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 2,
+        "result": "results.notMet.waistBelow",
+        "missing": [],
+        "flags": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range). Sheet row lists 'Not met (no central obesity)' only; section 3 says the 'talk to your doctor' line is shown when >= 2 are raised, but the row does not state it, so no flag is recorded here."
+    }
+  ]
+}

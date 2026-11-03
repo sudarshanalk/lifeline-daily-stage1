@@ -1,0 +1,45 @@
+{
+  "group": "Re-check every three months (91-day reminder, D3-35 email)",
+  "tool": "saved-results",
+  "fixtures": [
+    {
+      "id": "FX-SR-12",
+      "purpose": "SR-12: heart_risk 12.3 % saved 1 Feb, Premium: reminder due 3 May (91 days); email text contains no number or calculator result",
+      "inputs": {
+        "calculator": "heart_risk",
+        "plan": "premium",
+        "results": [
+          { "result": 12.3, "unit": "%", "date": "1 Feb" }
+        ]
+      },
+      "expected": {
+        "reminder_created": true,
+        "reminder_type": "check_in",
+        "due_date": "3 May",
+        "days_after_last_saved": 91,
+        "email_contains_number": false,
+        "email_contains_result": false,
+        "email_names_calculator": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "email_names_calculator false follows D3-35 (sign-off: 'No number, no calculator name'); the sheet's fixture row itself says only 'no number or calculator result'."
+    },
+    {
+      "id": "FX-SR-13",
+      "purpose": "SR-13: calorie_target 1,800 saved, Premium: no reminder ever created",
+      "inputs": {
+        "calculator": "calorie_target",
+        "plan": "premium",
+        "results": [
+          { "result": 1800, "unit": "kcal" }
+        ]
+      },
+      "expected": {
+        "reminder_created": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    }
+  ]
+}

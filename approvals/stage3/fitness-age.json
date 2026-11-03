@@ -1,0 +1,55 @@
+{
+  "approval_id": "APR-FITNESS-AGE-2026-11-03",
+  "tool_slug": "fitness-age",
+  "version_hash": "807d153b12156470616316eaad09ea6492c53590f74ab547c249038cdcdb9f2e",
+  "engine_name": "Fitness Age: HUNT non-exercise VO₂peak model (Nes 2011; men 100.27 − 0.296 age + 0.226 PA − 0.369 waist − 0.155 RHR; women 74.736 − 0.247 age + 0.198 PA − 0.259 waist − 0.114 RHR), HUNT activity index (frequency × intensity × duration), and a transparent fitness-age definition on the model's own age slope against a reference person (waist 94 cm men / 80 cm women, resting HR 70, activity index 3.75), clamped 18–90 and rounded half-up (D3-26)",
+  "intended_use": "Estimates VO₂peak (1 dp) with the age-and-sex band, shows the age at which the reference person of the same sex has that VO₂peak, and shows how activity, resting heart rate and waist can improve it. An estimate from a questionnaire, not a fitness test. Premium, signed in: the change since the last saved check (FR3-52 AS-02).",
+  "eligibility": "Adults aged 18 to 99 (model derived 20–90; 18–19 use the equation and get a note). Sex 'prefer not to say' cannot calculate (D3-27). No result for heart-rate-lowering medicine Yes or Not sure; not suitable for a declared heart condition, pregnancy or breastfeeding; under 18 stops. Waist lever hidden with an eating-disorder answer or flag.",
+  "sources": [
+    "Nes BM, Janszky I, Vatten LJ, Nilsen TIL, Aspenes ST, Wisløff U. Estimating VO2peak from a nonexercise prediction model: the HUNT Study, Norway. Med Sci Sports Exerc 2011;43:2024–30 (PMID 21502897; abstract verified on Europe PMC: 4,637 participants, final models 2,067 men and 2,193 women, R² 0.61 / 0.56, SEE 5.70 / 5.14).",
+    "Peterman JE, et al. J Am Heart Assoc 2020;9:e015117 (PMC7428991), Table 1: the independent reproduction of the Nes 2011 coefficients used by this sheet (its footnote mislabels RHR as 'respiratory exchange ratio'; the text and Table 2 use resting heart rate).",
+    "Nes BM, et al. Med Sci Sports Exerc 2014;46:1159–65 (validation for mortality prediction).",
+    "Kurtze N, et al. Reliability and validity of the HUNT physical activity questions. BMC Med Res Methodol 2008;8:63 (activity index).",
+    "Loe H, et al. PLoS One 2013;8:e64319 (HUNT reference tables; considered for option C, not used).",
+    "ACSM's Guidelines for Exercise Testing and Prescription, 11th ed. (2021), fitness norms (age-and-sex band)."
+  ],
+  "limitations": [
+    "An estimate from a questionnaire, not a fitness test (±5–6 VO₂ points for most people; SEE 5.70 men, 5.14 women).",
+    "For healthy adults; medicines that slow the heart make it inaccurate, so no result is shown with a heart-rate-lowering medicine.",
+    "Not for heart conditions, pregnancy or breastfeeding; the model was derived in adults aged 20–90.",
+    "'Fitness age' is not defined in Nes 2011; the site's definition is the model's age slope against a reference person (D3-26), clamped to 18–90.",
+    "The coefficients come from one independent reproduction (Peterman et al., JAHA 2020); the paper's own table 3 is paywalled and has not been seen (D3-32)."
+  ],
+  "regulatory_statement": "Approved by the owner as clinical reviewer on 3 November 2026 (P3-5A sign-off record, NFR3-14). General information, not a diagnosis, not a medical device.",
+  "licence": "Lifeline Daily's own implementation of the published Nes 2011 equations and the HUNT activity questions; free to use.",
+  "copy_hashes": {
+    "input.rhrHint": "f4af3dc644b5bea2128589a43bf692e8ffc4edd30cbb2d7968a115e8e91a5f9a",
+    "result.vo2": "d55989576129cc932b523a711a70026ada689ac4d6e63ecf54ed0f526dafb2f9",
+    "result.fitnessAge": "1e20690c2ecaf345b0bd5a1ff5e169df5266797c8f373ba85ef8c844936121a5",
+    "result.clampedLow": "ada781dfd31b831c93b32750aa8bf7f362ba880a83cc562e5bef2b32f05d7ee2",
+    "result.clampedHigh": "1e6dfa2d385291bf2a5266e4025b756212dce89cb4a4937af476c6cf8235b2b5",
+    "improve.activity": "a4547e60af266084adce583deee1913f4113af3dd749740d42fe4073b966e781",
+    "improve.rhr": "c750799883eee1ba0c0b350989339af75b8b39108905e1a1f9282045852751ef",
+    "improve.waist": "6f4413f398ef5a6cec3e3021baae578e60e60759d297021936a4437bfbba0c4d",
+    "premium.change": "bff290ea2e768765987f943405fa38809ca2c2fa3ac71540d1492fd301a2d965",
+    "always.estimate": "18bb672a495090f7dd564638fd3c098ba5f2faf16c394d9f92f0e07d39ef875c",
+    "safety.medicine": "7e130cc434d66ec75e9e0854f1e504e62968c32319167ebb0a5cd3ed8a7ce44d",
+    "safety.rhrOver100": "ac0a8e4941da0ee43d382fab073a1ac185b856ea46518cae5db1550abd9852da",
+    "safety.rhrUnder40": "b94b21acc629ef1fda9a657eac4794645c44908de8f06a83c396bae7e9050d89",
+    "safety.heartCondition": "d427006c816dc7a75ec4e7f88089bc129f809a30b32359de2eec2eff3c0bf65b"
+  },
+  "oracle_report": "oracles/orc-11-fitness-age/results.json",
+  "decisions_ratified": [
+    "D3-26",
+    "D3-27",
+    "D3-32"
+  ],
+  "clinical_signoff": {
+    "name": "Product owner (sudarshanalk), acting as clinical reviewer",
+    "date": "2026-11-03",
+    "decision": "approved",
+    "notes": "Signed 3 November 2026: 'Approved (\"Approve all, D3-10 = B\", in chat with the clinical session)'. Coefficient status: the sheet's fixture table heading (section 1.6) still reads 'provisional until the coefficients are verified', and the verification note says 'one independent reproduction, not the paper, is the source; the owner or lead should check the paper itself before the fixtures are frozen (D3-32)'. The sign-off record (D3-32) says 'Abstract verified (Europe PMC); coefficients from one independent reproduction (Peterman et al., JAHA 2020). The paper's own table 3 (MSSE 2011;43:2024–30) is paywalled and has not been seen; the owner accepted the reproduction on 3 November 2026. If the paper is obtained later and differs, that is a new decision and a new version'. The fixtures are therefore recorded as pending."
+  },
+  "review_date": "2026-11-03",
+  "next_review_date": "2027-11-03"
+}
