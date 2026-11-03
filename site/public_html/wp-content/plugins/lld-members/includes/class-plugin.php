@@ -237,6 +237,7 @@ class LLD_Members_Plugin {
 		add_rewrite_rule( '^members/sign-in/?$', 'index.php?lld_screen=sign-in', 'top' );
 		add_rewrite_rule( '^members/two-step/?$', 'index.php?lld_screen=two-step', 'top' );
 		add_rewrite_rule( '^members/settings/?$', 'index.php?lld_screen=settings', 'top' );
+		add_rewrite_rule( '^members/account/?$', 'index.php?lld_screen=account', 'top' );
 		add_rewrite_rule( '^members/home/?$', 'index.php?lld_screen=home', 'top' );
 		add_rewrite_rule( '^members/checkout/?$', 'index.php?lld_screen=checkout', 'top' );
 		add_rewrite_rule( '^members/subscription/?$', 'index.php?lld_screen=subscription', 'top' );
