@@ -1,0 +1,558 @@
+{
+  "oracle_id": "ORC-09",
+  "implementation": "Python exact-fraction reference for the Blood Pressure Reading Check (FR3-50, FR3-38, FR3-46): ISH 2020 office categories, the home-average categories and the 7-day average of daily means, the urgent, pregnancy, low and pulse levels and refused readings, from the signed sheet of 3 November 2026",
+  "versions": {
+    "python": "3.14.6",
+    "sheet": "P3-58 v1.0 signed 2026-11-03"
+  },
+  "source_hash": "d151635ee9f831557e7dab0c393bf73d2a0a32fb8bad590dde3de7625b0e9f62",
+  "run_at": "2026-11-03T22:30:30Z",
+  "results": [
+    {
+      "fixture_id": "FX-BP-HOME-01",
+      "expected": {
+        "refused": false,
+        "category": "above",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "home.above.headline",
+          "home.above.body"
+        ],
+        "average": {
+          "systolic": 139,
+          "diastolic": 88
+        },
+        "average_shown": true,
+        "average_unrounded": {
+          "systolic": 139.0,
+          "diastolic": 88.286
+        }
+      }
+    },
+    {
+      "fixture_id": "FX-BP-HOME-02",
+      "expected": {
+        "refused": false,
+        "category": "within",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "home.within.headline",
+          "home.within.body"
+        ],
+        "average": {
+          "systolic": 129,
+          "diastolic": 81
+        },
+        "average_shown": true,
+        "average_unrounded": {
+          "systolic": 129.143,
+          "diastolic": 81.286
+        }
+      }
+    },
+    {
+      "fixture_id": "FX-BP-HOME-03",
+      "expected": {
+        "refused": false,
+        "category": "above",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "home.above.headline",
+          "home.above.body"
+        ],
+        "average": {
+          "systolic": 135,
+          "diastolic": 85
+        },
+        "average_shown": true,
+        "average_unrounded": {
+          "systolic": 135.0,
+          "diastolic": 84.714
+        }
+      }
+    },
+    {
+      "fixture_id": "FX-BP-HOME-04",
+      "expected": {
+        "refused": false,
+        "category": null,
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "home.min-days"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-HOME-05",
+      "expected": {
+        "refused": false,
+        "category": "within",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "home.within.headline",
+          "home.within.body"
+        ],
+        "average": {
+          "systolic": 129,
+          "diastolic": 80
+        },
+        "average_shown": true,
+        "average_unrounded": {
+          "systolic": 129.143,
+          "diastolic": 80.381
+        }
+      }
+    },
+    {
+      "fixture_id": "FX-BP-LOW-01",
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "low_note",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal-low.headline",
+          "category.normal-low.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-LOW-02",
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "low_note",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal-low.headline",
+          "category.normal-low.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-LOW-03",
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal.headline",
+          "category.normal.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-PREG-01",
+      "expected": {
+        "refused": false,
+        "category": null,
+        "warning_level": "pregnancy_same_day",
+        "urgent": false,
+        "wording_keys": [
+          "pregnancy.same-day"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-PREG-02",
+      "expected": {
+        "refused": false,
+        "category": null,
+        "warning_level": "pregnancy_urgent",
+        "urgent": true,
+        "wording_keys": [
+          "pregnancy.urgent"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-PREG-03",
+      "expected": {
+        "refused": false,
+        "category": null,
+        "warning_level": "pregnancy_urgent",
+        "urgent": true,
+        "wording_keys": [
+          "pregnancy.urgent"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-PREG-04",
+      "expected": {
+        "refused": false,
+        "category": null,
+        "warning_level": "pregnancy_neutral",
+        "urgent": false,
+        "wording_keys": [
+          "pregnancy.neutral"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-01",
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal.headline",
+          "category.normal.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-02",
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal.headline",
+          "category.normal.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-03",
+      "expected": {
+        "refused": false,
+        "category": "high-normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.high-normal.headline",
+          "category.high-normal.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-04",
+      "expected": {
+        "refused": false,
+        "category": "high-normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.high-normal.headline",
+          "category.high-normal.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-05",
+      "expected": {
+        "refused": false,
+        "category": "high-normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.high-normal.headline",
+          "category.high-normal.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-06",
+      "expected": {
+        "refused": false,
+        "category": "grade1",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.grade1.headline",
+          "category.grade1.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-07",
+      "expected": {
+        "refused": false,
+        "category": "grade1",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.grade1.headline",
+          "category.grade1.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-08",
+      "expected": {
+        "refused": false,
+        "category": "grade1",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.grade1.headline",
+          "category.grade1.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-09",
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.grade2.headline",
+          "category.grade2.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-10",
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.grade2.headline",
+          "category.grade2.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-11",
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.grade2.headline",
+          "category.grade2.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-12",
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.grade2.headline",
+          "category.grade2.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-13",
+      "expected": {
+        "refused": true,
+        "category": null,
+        "warning_level": "refused",
+        "urgent": false,
+        "wording_keys": [
+          "refused.impossible"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-14",
+      "expected": {
+        "refused": true,
+        "category": null,
+        "warning_level": "refused",
+        "urgent": false,
+        "wording_keys": [
+          "refused.impossible"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-15",
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal.headline",
+          "category.normal.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-16",
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "pulse_high",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal.headline",
+          "category.normal.body",
+          "pulse.note"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-SINGLE-17",
+      "expected": {
+        "refused": false,
+        "category": "grade1",
+        "warning_level": "age80_note",
+        "urgent": false,
+        "wording_keys": [
+          "category.grade1.headline",
+          "category.grade1.body",
+          "age80.note"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-URGENT-01",
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "urgent",
+        "urgent": true,
+        "wording_keys": [
+          "urgent.alert",
+          "category.grade2.headline",
+          "category.grade2.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-URGENT-02",
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "urgent",
+        "urgent": true,
+        "wording_keys": [
+          "urgent.alert",
+          "category.grade2.headline",
+          "category.grade2.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-URGENT-03",
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "urgent",
+        "urgent": true,
+        "wording_keys": [
+          "urgent.alert",
+          "category.grade2.headline",
+          "category.grade2.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-URGENT-04",
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "urgent",
+        "urgent": true,
+        "wording_keys": [
+          "urgent.alert",
+          "category.grade2.headline",
+          "category.grade2.body"
+        ],
+        "average": null,
+        "average_shown": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-URGENT-05",
+      "expected": {
+        "refused": false,
+        "category": null,
+        "warning_level": "urgent",
+        "urgent": true,
+        "wording_keys": [
+          "urgent.alert"
+        ],
+        "average": {
+          "systolic": 136,
+          "diastolic": 83
+        },
+        "average_shown": true,
+        "average_unrounded": {
+          "systolic": 135.714,
+          "diastolic": 82.857
+        }
+      }
+    }
+  ],
+  "notes": [
+    "Fixtures are read, never written; differences are printed and listed here."
+  ]
+}

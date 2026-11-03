@@ -16,6 +16,7 @@ const src = (name) => readFileSync(stage3(name), 'utf8');
 const toPhpPath = (p) => JSON.stringify(p.split('\\').join('/'));
 const json = (p) => JSON.parse(readFileSync(resolve(root, p), 'utf8'));
 const approval = json('approvals/stage3/safety-matrix.json');
+const bpApproval = json('approvals/stage3/bp-check.json'); // P3-58: the blood-pressure wording for logged readings too (P3-51)
 
 // WordPress and Stage 2 stubs: switches on for member 7, off for member 8; the profile row is whatever the test sets.
 const stubs = `
@@ -243,18 +244,36 @@ test('TC-FR3-46-AS-01', () => {
       $w('blood_pressure', ['sys' => 120, 'dia' => 80, 'pulse' => 130]),
       $w('blood_pressure', ['sys' => 120, 'dia' => 115]),
       $w('blood_pressure', ['sys' => 300, 'dia' => 80]),
+      $w('blood_pressure', ['sys' => 85, 'dia' => 55], ['dizzy' => true]),
+      $w('blood_pressure', ['sys' => 120, 'dia' => 80, 'pulse' => 35]),
+      $w('blood_pressure', ['sys' => 120, 'dia' => 80, 'pulse' => 230]),
+      LLD_Members_Stage3_Safety::BP_MESSAGES,
+      $w('blood_pressure', ['sys' => 85, 'dia' => 55], ['pregnancy' => true]),
+      $w('blood_pressure', ['sys' => 85, 'dia' => 55], ['pregnancy' => true, 'dizzy' => true]),
+      $w('blood_pressure', ['dia' => 80]),
     ];
   `);
-  expect(r[0]).toEqual({ level: 'urgent', key: 'global_urgent', message: null, emergency_numbers: false });
-  expect(r[1].level).toBe('urgent');
-  expect(r[2].level).toBe('urgent');
-  expect(r[3]).toMatchObject({ level: 'urgent', key: 'global_urgent' }); // pregnancy: 160 or 110
-  expect(r[4]).toMatchObject({ level: 'caution', key: 'rule.R-SAFE-01p' }); // pregnancy: 140 or 90, same day
-  expect(r[5].level).toBe('none');
-  expect(r[6]).toMatchObject({ level: 'caution', key: 'blood_pressure.low' });
-  expect(r[7]).toMatchObject({ level: 'caution', key: 'blood_pressure.pulse' });
-  expect(r[8]).toMatchObject({ level: 'impossible', key: 'check_the_number' }); // the bottom number not 10 below the top
-  expect(r[9].level).toBe('impossible');
+  const BP = r[13];
+  // The signed P3-58 alert, before anything else, with its own example emergency numbers (P3-58 §4.1, D3-16).
+  expect(r[0]).toEqual({ level: 'urgent', key: 'bp-check.urgent.alert', message: BP['urgent.alert'], emergency_numbers: false });
+  expect(r[0].message.split('\n')[0]).toBe('Your reading is very high.');
+  expect(r[1]).toMatchObject({ level: 'urgent', key: 'bp-check.urgent.alert' });
+  expect(r[2]).toMatchObject({ level: 'urgent', key: 'bp-check.urgent.alert' });
+  // Pregnancy: 160 or 110 is the pregnancy urgent line, 140 or 90 the same-day line (P3-58 §4.2, D3-19), as the calculator.
+  expect(r[3]).toEqual({ level: 'urgent', key: 'bp-check.pregnancy.urgent', message: BP['pregnancy.urgent'], emergency_numbers: true });
+  expect(r[4]).toEqual({ level: 'caution', key: 'bp-check.pregnancy.same-day', message: BP['pregnancy.same-day'], emergency_numbers: false });
+  expect(r[5]).toEqual({ level: 'none', key: null, message: null, emergency_numbers: false }); // 142/92, not pregnant: the category is the calculator's
+  expect(r[6]).toMatchObject({ level: 'caution', key: 'bp-check.category.normal-low.body', message: BP['category.normal-low.body'] });
+  expect(r[7]).toMatchObject({ level: 'caution', key: 'bp-check.pulse.note', message: BP['pulse.note'].replace('{high|low}', 'high') });
+  expect(r[8]).toMatchObject({ level: 'impossible', key: 'bp-check.refused.impossible', message: BP['refused.impossible'] }); // the bottom number not 10 below the top
+  expect(r[9]).toMatchObject({ level: 'impossible', key: 'bp-check.refused.impossible' });
+  expect(r[10]).toEqual({ level: 'caution', key: 'bp-check.low.dizzy', message: BP['low.dizzy'], emergency_numbers: true }); // D3-17
+  expect(r[11]).toMatchObject({ level: 'caution', message: BP['pulse.note'].replace('{high|low}', 'low') }); // D3-20
+  expect(r[12]).toMatchObject({ level: 'impossible', key: 'bp-check.refused.impossible' }); // pulse outside 30-220 (P3-58 §4.4)
+  // No category wording in pregnancy (D3-19): a low reading gives no note, but feeling dizzy still gets its line.
+  expect(r[14]).toEqual({ level: 'none', key: null, message: null, emergency_numbers: false });
+  expect(r[15]).toMatchObject({ level: 'caution', key: 'bp-check.low.dizzy', emergency_numbers: true });
+  expect(r[16]).toMatchObject({ level: 'impossible', key: 'bp-check.refused.impossible', message: BP['refused.impossible'] }); // no top number
   // Safety is never paid for: nothing in the matrix or the engine asks about Premium.
   expect(src('class-safety-stage3.php')).not.toMatch(/has_premium|LLD_Members_Billing|LLD_Members_Access::/);
   const engine = src('engine/class-decision-engine.php');
@@ -272,11 +291,18 @@ test('TC-FR3-46-AS-02', () => {
 });
 
 test('TC-FR3-46-AS-03', () => {
-  // The wording shown matches the frozen approved text exactly: the urgent blood-pressure level points at the frozen
-  // global urgent-care wording (HG-02, never re-typed here); every other message is the matrix's own signed text; the
-  // levels are the signed ones (Part C) and are constants, not options.
+  // The wording shown matches the frozen approved text exactly: the blood-pressure lines are P3-58's signed text, each
+  // hashing to approvals/stage3/bp-check.json (the urgent alert of FR3-46 among them); every other message is the
+  // matrix's own signed text; the levels are the signed ones (Part C) and are constants, not options.
   const L = run('return LLD_Members_Stage3_Safety::LEVELS;');
-  expect(L.blood_pressure).toMatchObject({ urgent: { sys: 180, dia: 120 }, urgent_pregnancy: { sys: 160, dia: 110 }, same_day_pregnancy: { sys: 140, dia: 90 }, low: { sys: 90, dia: 60 }, pulse: [40, 120] });
+  expect(L.blood_pressure).toMatchObject({ impossible: { sys: [60, 260], dia: [30, 160], gap: 10 }, urgent: { sys: 180, dia: 120 }, urgent_pregnancy: { sys: 160, dia: 110 }, same_day_pregnancy: { sys: 140, dia: 90 }, low: { sys: 90, dia: 60 }, pulse: [40, 120], pulse_impossible: [30, 220] });
+  const BP = run('return LLD_Members_Stage3_Safety::BP_MESSAGES;');
+  expect(Object.keys(BP).sort()).toEqual(['category.normal-low.body', 'low.dizzy', 'pregnancy.same-day', 'pregnancy.urgent', 'pulse.note', 'refused.impossible', 'urgent.alert']);
+  for (const [key, text] of Object.entries(BP)) {
+    expect(bpApproval.copy_hashes[key], key).toMatch(/^[0-9a-f]{64}$/);
+    expect(createHash('sha256').update(text, 'utf8').digest('hex'), key).toBe(bpApproval.copy_hashes[key]);
+  }
+  expect(bpApproval.clinical_signoff.decision).toBe('approved');
   expect(L.glucose).toMatchObject({ urgent_low: 3, urgent_high: 15, urgent_high_symptoms: 13.9, caution_low: [3, 3.9], caution_high: [11.1, 14.9], impossible: [1, 35] });
   expect(L.weight).toMatchObject({ impossible: [25, 350], check_change_pct: 10, check_hours: 24, bmi_under: 18.5 });
   expect(L.sleep).toMatchObject({ impossible: [0, 16], short_average_7_nights: 5 });
@@ -284,7 +310,7 @@ test('TC-FR3-46-AS-03', () => {
   expect(L.water).toMatchObject({ impossible: [50, 5000], day_caution_ml: 5000 });
   const safety = src('class-safety-stage3.php');
   expect(safety).not.toMatch(/get_option|apply_filters\( 'lld_members_stage3_levels/);
-  expect(safety).not.toMatch(/chest pain|Call your local emergency number \(999/); // the global wording lives in the Stage 1 tools only
+  expect(safety).not.toMatch(/Call your local emergency number \(999/); // the Stage 1 footer line is not re-typed here
   const r = run(`return [LLD_Members_Stage3_Safety::warning_level('glucose', ['mmol' => 2.8])['message'], LLD_Members_Stage3_Safety::warning_level('water', ['ml' => 300, 'day_total_ml' => 5200])['message']];`);
   expect(r[0]).toBe("Very low blood sugar. Take 15 g of fast sugar now (glucose tablets, sugary drink, juice) and re-test in 15 minutes. If you can't swallow safely, are confused or don't improve, someone should call your local emergency number.");
   expect(r[1]).toBe("that's a lot of water; if you're unusually thirsty, see your doctor");

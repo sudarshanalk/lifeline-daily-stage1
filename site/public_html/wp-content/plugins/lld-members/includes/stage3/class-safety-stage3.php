@@ -56,6 +56,24 @@ class LLD_Members_Stage3_Safety {
 	);
 
 	/**
+	 * The owner's blood-pressure wording for a logged reading (P3-58 sections 4.1 to 4.4, D3-16, D3-17, D3-19, D3-20;
+	 * the same levels and text on the calculator and the logging screen, P3-51, FR3-46), keyed as
+	 * approvals/stage3/bp-check.json keys them and hashed against it by the test. warning_level() returns them as
+	 * 'bp-check.<key>'.
+	 */
+	const BP_MESSAGES = array(
+		'urgent.alert'             => "Your reading is very high.
+Sit quietly for 5 minutes and take it again. If it is still 180/120 or more, contact a doctor today.
+If you also have chest pain, shortness of breath, a severe headache, weakness or numbness, trouble speaking or seeing, or feel confused or very unwell, call your local emergency number now — for example 999 in the UK, 911 in the US and Canada, 112 in the EU and India, or 000 in Australia. [When to seek urgent care]",
+		'pregnancy.urgent'         => 'In pregnancy a reading of 160/110 or more needs same-day care. Contact your maternity unit or midwife now, or call your local emergency number.',
+		'pregnancy.same-day'       => 'In pregnancy, 140/90 or more should be checked the same day. Please contact your midwife or maternity unit today.',
+		'category.normal-low.body' => 'Lower readings are usually fine. If you feel dizzy, faint or unusually tired, talk to your doctor.',
+		'low.dizzy'                => "If you feel faint or dizzy now, sit or lie down and ask someone to stay with you. If it doesn't pass in a few minutes, or you have chest pain or trouble breathing, call your local emergency number.",
+		'pulse.note'               => "Your pulse is {high|low} for a resting reading. If this is usual for you, fine; if it's new, or you feel unwell, dizzy or breathless, contact your doctor.",
+		'refused.impossible'       => "Please check the numbers: that reading isn't possible. The top number is usually 30 to 60 higher than the bottom one.",
+	);
+
+	/**
 	 * The two new profile questions (D3-38). The answer is stored as a key in the health profile's conditions list
 	 * (data model: Health profile, "extended"), so no Stage 2 column changes.
 	 */
@@ -85,6 +103,7 @@ class LLD_Members_Stage3_Safety {
 			'same_day_pregnancy'  => array( 'sys' => 140, 'dia' => 90 ),
 			'low'                 => array( 'sys' => 90, 'dia' => 60 ),
 			'pulse'               => array( 40, 120 ),
+			'pulse_impossible'    => array( 30, 220 ),
 		),
 		'glucose'        => array(
 			'impossible'          => array( 1, 35 ),
@@ -209,11 +228,12 @@ class LLD_Members_Stage3_Safety {
 	 * @param array  $values       value_1, value_2, value_3 (or sys, dia, pulse; mmol; kg; hours; mood; minutes, steps,
 	 *                             effort; ml), unit (mg/dL for glucose), previous (kg, hours_ago) for weight,
 	 *                             day_total_ml for water, vigorous_minutes_day for activity, avg_7_nights for sleep.
-	 * @param array  $flags        Situations in force (pregnancy, bmi_under_18_5, lose_weight_goal) and glucose
-	 *                             symptoms, self_harm.
+	 * @param array  $flags        Situations in force (pregnancy, set for "Yes" and "Not sure" alike; bmi_under_18_5,
+	 *                             lose_weight_goal) and glucose symptoms, self_harm, dizzy (blood pressure). One level
+	 *                             is returned: the most serious, so a low reading's note hides a pulse note.
 	 * @return array{level:string,key:?string,message:?string,emergency_numbers:bool}
-	 *               level: none, caution, check, urgent or impossible. key: a MESSAGES key, 'global_urgent' (the
-	 *               frozen Stage 2 urgent-care wording, FR3-46), 'rule.R-SAFE-01p' (the catalogue's pregnancy line),
+	 *               level: none, caution, check, urgent or impossible. key: a MESSAGES key, 'bp-check.<key>' (P3-58's
+	 *               signed blood-pressure lines: the urgent alert, FR3-46),
 	 *               'stage2_response_1' (self-harm), 'healthy_weight_check.underweight', or 'check_the_number'.
 	 */
 	public static function warning_level( $reading_type, array $values, array $flags = array() ) {
@@ -222,26 +242,35 @@ class LLD_Members_Stage3_Safety {
 		$v3 = self::num( $values, array( 'value_3', 'pulse', 'effort' ) );
 		$L  = isset( self::LEVELS[ $reading_type ] ) ? self::LEVELS[ $reading_type ] : null;
 		if ( ! $L || null === $v1 ) {
-			return self::level( 'impossible', 'check_the_number' );
+			return self::level( 'impossible', 'blood_pressure' === $reading_type ? 'bp-check.refused.impossible' : 'check_the_number' );
 		}
 		$pregnant = self::flag( $flags, 'pregnancy' );
 		switch ( $reading_type ) {
 			case 'blood_pressure':
-				if ( null === $v2 || $v1 < $L['impossible']['sys'][0] || $v1 > $L['impossible']['sys'][1] || $v2 < $L['impossible']['dia'][0] || $v2 > $L['impossible']['dia'][1] || $v2 > $v1 - $L['impossible']['gap'] ) {
-					return self::level( 'impossible', 'check_the_number' );
+				if ( null === $v2 || $v1 < $L['impossible']['sys'][0] || $v1 > $L['impossible']['sys'][1] || $v2 < $L['impossible']['dia'][0] || $v2 > $L['impossible']['dia'][1] || $v2 > $v1 - $L['impossible']['gap']
+					|| ( null !== $v3 && ( $v3 < $L['pulse_impossible'][0] || $v3 > $L['pulse_impossible'][1] ) ) ) {
+					return self::level( 'impossible', 'bp-check.refused.impossible' );
 				}
 				$u = $pregnant ? $L['urgent_pregnancy'] : $L['urgent'];
 				if ( $v1 >= $u['sys'] || $v2 >= $u['dia'] ) {
-					return self::level( 'urgent', 'global_urgent' );
+					// The adult alert carries its own example emergency numbers; the pregnancy line asks for them.
+					return $pregnant ? self::level( 'urgent', 'bp-check.pregnancy.urgent', true ) : self::level( 'urgent', 'bp-check.urgent.alert' );
 				}
 				if ( $pregnant && ( $v1 >= $L['same_day_pregnancy']['sys'] || $v2 >= $L['same_day_pregnancy']['dia'] ) ) {
-					return self::level( 'caution', 'rule.R-SAFE-01p' );
+					return self::level( 'caution', 'bp-check.pregnancy.same-day' ); // the calculator's line too (fixture FX-BP-PREG-01)
 				}
 				if ( $v1 < $L['low']['sys'] || $v2 < $L['low']['dia'] ) {
-					return self::level( 'caution', 'blood_pressure.low' );
+					if ( self::flag( $flags, 'dizzy' ) ) {
+						return self::level( 'caution', 'bp-check.low.dizzy', true );
+					}
+					if ( ! $pregnant ) { // no category wording in pregnancy (D3-19): a low reading there is no warning
+						return self::level( 'caution', 'bp-check.category.normal-low.body' );
+					}
 				}
 				if ( null !== $v3 && ( $v3 < $L['pulse'][0] || $v3 > $L['pulse'][1] ) ) {
-					return self::level( 'caution', 'blood_pressure.pulse' );
+					$note = self::level( 'caution', 'bp-check.pulse.note' );
+					$note['message'] = str_replace( '{high|low}', $v3 > $L['pulse'][1] ? 'high' : 'low', $note['message'] );
+					return $note;
 				}
 				return self::level( 'none', null );
 
@@ -626,9 +655,26 @@ class LLD_Members_Stage3_Safety {
 		return array(
 			'level'             => $level,
 			'key'               => $key,
-			'message'           => null !== $key && isset( self::MESSAGES[ $key ] ) ? self::MESSAGES[ $key ] : null,
+			'message'           => self::message( $key ),
 			'emergency_numbers' => (bool) $emergency,
 		);
+	}
+
+	/** A wording key's text: the matrix's own, P3-58's blood-pressure lines ('bp-check.'), or the rule catalogue's ('rule.'). */
+	private static function message( $key ) {
+		if ( null === $key ) {
+			return null;
+		}
+		if ( isset( self::MESSAGES[ $key ] ) ) {
+			return self::MESSAGES[ $key ];
+		}
+		if ( 0 === strpos( $key, 'bp-check.' ) && isset( self::BP_MESSAGES[ substr( $key, 9 ) ] ) ) {
+			return self::BP_MESSAGES[ substr( $key, 9 ) ];
+		}
+		if ( 0 === strpos( $key, 'rule.' ) && class_exists( 'LLD_Members_Rule_Catalogue' ) && isset( LLD_Members_Rule_Catalogue::TEMPLATES[ $key ] ) ) {
+			return LLD_Members_Rule_Catalogue::TEMPLATES[ $key ];
+		}
+		return null;
 	}
 
 	private static function num( array $values, array $names ) {
