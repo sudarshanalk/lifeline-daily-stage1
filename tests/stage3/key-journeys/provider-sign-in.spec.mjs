@@ -192,6 +192,22 @@ test.describe.serial('provider sign-in', () => {
     }, { timeout: 20000 }).toBe(true);
   });
 
+  test('TC-FR3-05-AS-01 (two-step): a member with two-step sign-in is not opened by a provider alone', async ({ page }) => {
+    // Google is one factor: with the same verified email it neither links nor signs in a member who has two-step on;
+    // the member is told to sign in with the password and the emailed code, and no Google link is made.
+    const I = 'p3-signin-i@test.lifelinedaily.invalid';
+    await createMember(page.request, { email: I, password, first_name: 'Synthetic', consents: ['terms'], two_step: true });
+    await signedOut(page);
+    const redirect = await provider(page, { provider: 'google', sub: 'google-sub-i-0005', email: I, email_verified: true });
+    expect(redirect).toMatch(/\/members\/sign-in\/\?provider_error=two_step$/);
+    await page.goto(redirect);
+    await expect(page.getByText('This account uses two-step sign-in: sign in with your password, then the emailed code.')).toBeVisible();
+    await page.goto('/members/home/');
+    await expect(page).toHaveURL(/\/members\/sign-in\//);
+    // Asked again, it still refuses: nothing was linked the first time.
+    expect(await provider(page, { provider: 'google', sub: 'google-sub-i-0005', email: I, email_verified: true })).toMatch(/provider_error=two_step$/);
+  });
+
   test('TC-FR3-05-AS-06', async ({ page, browser }) => {
     // Two browsers signed in; Sign out everywhere in one ends the other's session too.
     await signIn(page, G, password);
