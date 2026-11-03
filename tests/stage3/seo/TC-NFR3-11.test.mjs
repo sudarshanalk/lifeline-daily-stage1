@@ -16,10 +16,17 @@ test('TC-NFR3-11-AS-01', () => {
   expect(proxy.responsiveness_metric).toMatch(/^TBT .*lab proxy for INP/);
   expect(judgeVitals({ lcp_ms: 1800, cls: 0.02, tbt_ms: 250 }).pass.responsiveness).toBe(false);
   // Each budget is a strict "under": the boundary values fail, just under passes.
-  expect(judgeVitals({ lcp_ms: 2500, cls: 0.05, inp_ms: 100 }).pass).toEqual({ lcp: false, responsiveness: true, cls: true });
-  expect(judgeVitals({ lcp_ms: 2499, cls: 0.1, inp_ms: 100 }).pass).toEqual({ lcp: true, responsiveness: true, cls: false });
-  expect(judgeVitals({ lcp_ms: 2499, cls: 0.099, inp_ms: 200 }).pass).toEqual({ lcp: true, responsiveness: false, cls: true });
+  expect(judgeVitals({ lcp_ms: 2500, cls: 0.05, inp_ms: 100 }).pass).toEqual({ lcp: false, responsiveness: true, cls: true, runs: true });
+  expect(judgeVitals({ lcp_ms: 2499, cls: 0.1, inp_ms: 100 }).pass).toEqual({ lcp: true, responsiveness: true, cls: false, runs: true });
+  expect(judgeVitals({ lcp_ms: 2499, cls: 0.099, inp_ms: 200 }).pass).toEqual({ lcp: true, responsiveness: false, cls: true, runs: true });
   expect(judgeVitals({ lcp_ms: 2499, cls: 0.099, inp_ms: 199 }).ok).toBe(true);
+  // A page with any errored run fails even when the medians of the other runs are within budget: a median over fewer
+  // runs than asked for is not a pass.
+  const errored = judgeVitals({ lcp_ms: 1800, cls: 0.02, inp_ms: 120 }, SPEED_BUDGETS, { erroredRuns: 1 });
+  expect(errored.ok).toBe(false);
+  expect(errored.pass).toEqual({ lcp: true, responsiveness: true, cls: true, runs: false });
+  expect(errored.errored_runs).toBe(1);
+  expect(judgeVitals({ lcp_ms: 1800, cls: 0.02, inp_ms: 120 }, SPEED_BUDGETS, { erroredRuns: 0 }).ok).toBe(true);
   // A metric that was not measured fails rather than passing by default.
   const missing = judgeVitals({ lcp_ms: null, cls: 0.01, inp_ms: 50 });
   expect(missing.ok).toBe(false);

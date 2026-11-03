@@ -7,9 +7,10 @@
 //   LCP  PerformanceObserver largest-contentful-paint
 //   CLS  PerformanceObserver layout-shift, largest session window
 //   TBT  sum of (long task - 50 ms) between first contentful paint and load + 2 s quiet: the lab proxy for INP
-//   INP  Event Timing API on one scripted tap of the mobile menu toggle (when found); worst interaction
+//   INP  Event Timing API; worst of two scripted taps (the mobile menu toggle, then closed, and one in-page
+//        non-navigating button), as lab-vitals.mjs does
 // Each page is run N times (default 3) and the median judged. The judgement (lib.mjs judgeVitals) uses INP when a tap
-// was measured and TBT otherwise, and says which. "Saving a log entry in under 1 second" (TC-NFR3-11-AS-02) needs a
+// was measured and TBT otherwise, and says which; a page with any errored run fails. "Saving a log entry in under 1 second" (TC-NFR3-11-AS-02) needs a
 // signed-in member and belongs to P3-50's tests, not here.
 //
 // Usage: node tools/seo/speed.mjs <base-url> [--pages home,/slug-1/,/slug-2/,/slug-3/] [--runs 3] [--out report.json]
@@ -24,7 +25,36 @@ import { getOnce } from './fetch.mjs';
 const MOBILE_UA = 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36';
 const NET = { offline: false, latency: 60, downloadThroughput: (9 * 1024 * 1024) / 8, uploadThroughput: (1.5 * 1024 * 1024) / 8 };
 const CPU_RATE = 4;
+// Newspaper (tagDiv) mobile menu toggle and close, then fallbacks; and in-page controls that do not navigate away
+// (first visible wins): a tool/form button in content, the cookie banner "Customise" button, the header search toggle.
 const MENU = ['.tdb-mobile-menu-button', '.td-mobile-menu-button', '#td-top-mobile-toggle', 'button[aria-label*="menu" i]'];
+const MENU_CLOSE = ['.td-mobile-close', '.tdb-mobile-menu-close'];
+const BUTTON = ['.td-main-content-wrap button[type="button"]', '.td-main-content-wrap button:not([type="submit"])', '.cky-btn-customize', '.tdb-header-search-button-mob'];
+
+async function firstVisible(page, selectors) {
+  for (const sel of selectors) {
+    const loc = page.locator(sel);
+    const n = await loc.count().catch(() => 0);
+    for (let i = 0; i < Math.min(n, 10); i++) {
+      const el = loc.nth(i);
+      if (await el.isVisible().catch(() => false)) return { sel, el };
+    }
+  }
+  return null;
+}
+
+async function tapAndMeasure(page, target, label) {
+  const before = await page.evaluate(() => performance.now());
+  const urlBefore = page.url();
+  await target.el.scrollIntoViewIfNeeded().catch(() => {});
+  await target.el.tap({ timeout: 5000 });
+  await page.waitForTimeout(1200); // let the next paint and the Event Timing entries land
+  const evs = await page.evaluate((t0) => window.__lv.events.filter((e) => e.start >= t0 - 5), before);
+  const inter = evs.filter((e) => e.id > 0);
+  const worst = (inter.length ? inter : evs).reduce((m, e) => (e.duration > (m?.duration ?? -1) ? e : m), null);
+  // Event Timing only reports events >= 16 ms; no entry means the response was under 16 ms.
+  return { label, selector: target.sel, navigated: page.url() !== urlBefore, latency_ms: worst ? Math.round(worst.duration) : 16, below_threshold: !worst };
+}
 
 function parseArgs(argv) {
   const a = { base: null, pages: null, runs: 3, out: null, md: null };
@@ -101,21 +131,20 @@ async function runOnce(browser, url) {
     res.lcp_element = m.lcpEl;
     res.tbt_ms = Math.round(m.tbt);
     res.long_tasks = m.longTasks;
-    // One scripted tap on the mobile menu toggle, measured with the Event Timing API.
-    res.inp_ms = null;
-    for (const sel of MENU) {
-      const el = page.locator(sel).first();
-      if (!(await el.isVisible().catch(() => false))) continue;
-      const t0 = await page.evaluate(() => performance.now());
-      await el.tap({ timeout: 5000 });
-      await page.waitForTimeout(1200);
-      const evs = await page.evaluate((t) => window.__lv.events.filter((e) => e.start >= t - 5), t0);
-      const inter = evs.filter((e) => e.id > 0);
-      const worst = (inter.length ? inter : evs).reduce((w, e) => (e.duration > (w?.duration ?? -1) ? e : w), null);
-      res.inp_ms = worst ? Math.round(worst.duration) : 16; // Event Timing reports >= 16 ms only
-      res.inp_target = sel;
-      break;
-    }
+    // Scripted taps as in tools/lead/lab-vitals.mjs: the mobile menu toggle (then closed) and one in-page,
+    // non-navigating button; INP for the run = the worst of the two, from the Event Timing API.
+    res.taps = [];
+    const menu = await firstVisible(page, MENU);
+    if (menu) {
+      res.taps.push(await tapAndMeasure(page, menu, 'main-menu'));
+      const close = await firstVisible(page, MENU_CLOSE);
+      if (close) { await close.el.tap({ timeout: 5000 }).catch(() => {}); await page.waitForTimeout(800); }
+    } else res.taps.push({ label: 'main-menu', error: 'menu toggle not found' });
+    const btn = await firstVisible(page, BUTTON);
+    if (btn) res.taps.push(await tapAndMeasure(page, btn, 'in-page-button'));
+    else res.taps.push({ label: 'in-page-button', error: 'no suitable in-page button found' });
+    const lat = res.taps.filter((t) => typeof t.latency_ms === 'number').map((t) => t.latency_ms);
+    res.inp_ms = lat.length ? Math.max(...lat) : null;
     res.cls = Math.round((await page.evaluate(() => window.__lv.cls)) * 1000) / 1000;
   } catch (e) { res.ok = false; res.error = String(e.message || e).slice(0, 300); }
   await ctx.close();
@@ -131,7 +160,7 @@ export async function run(args) {
     kind: 'lab', package: 'P3-82', requirement: 'NFR3-11', label: 'LAB results (simulated mid-range phone on 4G), not real-visitor data', base: args.base,
     generated_at: new Date().toISOString(), tool: 'tools/seo/speed.mjs (Playwright chromium ' + browser.version() + ')',
     profile: { viewport: '412x915', device_scale_factor: 2.625, user_agent: MOBILE_UA, cpu_throttling: CPU_RATE + 'x', network: { down_mbps: 9, up_mbps: 1.5, latency_ms: 60 }, cache: 'cold each run' },
-    method: { lcp: 'PerformanceObserver largest-contentful-paint', cls: 'PerformanceObserver layout-shift, largest session window', tbt: 'sum of (long task - 50 ms) from first contentful paint to load + 2 s; lab proxy for INP', inp: 'Event Timing API on one scripted tap of the mobile menu toggle; null when no toggle is found' },
+    method: { lcp: 'PerformanceObserver largest-contentful-paint', cls: 'PerformanceObserver layout-shift, largest session window', tbt: 'sum of (long task - 50 ms) from first contentful paint to load + 2 s; lab proxy for INP', inp: 'Event Timing API; worst of the scripted taps (mobile menu toggle + one in-page button), as tools/lead/lab-vitals.mjs; null when neither is found; a page with an errored run fails' },
     budgets: SPEED_BUDGETS, runs_per_page: args.runs, out_of_scope: 'TC-NFR3-11-AS-02 (save a log entry under 1 s) needs a signed-in member: P3-50',
     results: [],
   };
@@ -143,7 +172,9 @@ export async function run(args) {
       console.error(`${url} run ${i + 1}: LCP ${r.lcp_ms} ms, CLS ${r.cls}, TBT ${r.tbt_ms} ms, INP ${r.inp_ms ?? '—'} ms${r.error ? ' ERROR ' + r.error : ''}`);
     }
     const med = { lcp_ms: median(runs.map((r) => r.lcp_ms)), cls: median(runs.map((r) => r.cls)), tbt_ms: median(runs.map((r) => r.tbt_ms)), inp_ms: median(runs.map((r) => r.inp_ms)), ttfb_ms: median(runs.map((r) => r.ttfb_ms)), fcp_ms: median(runs.map((r) => r.fcp_ms)) };
-    report.results.push({ url, median: med, judgement: judgeVitals(med), runs });
+    // A page with any errored run fails: a median over fewer runs than asked for is not a pass.
+    const erroredRuns = runs.filter((r) => !r.ok).length;
+    report.results.push({ url, median: med, judgement: judgeVitals(med, SPEED_BUDGETS, { erroredRuns }), runs });
   }
   await browser.close();
   report.summary = { pages: report.results.length, failing: report.results.filter((r) => !r.judgement.ok).length, all_ok: report.results.every((r) => r.judgement.ok) };
@@ -153,7 +184,7 @@ export async function run(args) {
 function toMarkdown(report) {
   const L = [`# NFR3-11 lab speed (TC-NFR3-11-AS-01) — ${report.base}`, '', `${report.label}. Generated ${report.generated_at} by ${report.tool}; ${report.runs_per_page} runs per page, medians shown.`, '',
     `Budgets: LCP < ${report.budgets.lcp_ms} ms, INP < ${report.budgets.inp_ms} ms (TBT < ${report.budgets.tbt_ms} ms stands in when no tap was measured), CLS < ${report.budgets.cls}.`, '',
-    mdTable(['Page', 'LCP ms', 'CLS', 'TBT ms', 'INP ms (menu tap)', 'Judged on', 'Pass'], report.results.map((r) => [r.url, r.median.lcp_ms ?? '—', r.median.cls ?? '—', r.median.tbt_ms ?? '—', r.median.inp_ms ?? '—', r.judgement.responsiveness_metric.split(' ')[0], r.judgement.ok ? 'yes' : `no (${Object.entries(r.judgement.pass).filter(([, v]) => !v).map(([k]) => k).join(', ')})`])),
+    mdTable(['Page', 'LCP ms', 'CLS', 'TBT ms', 'INP ms (taps)', 'Judged on', 'Errored runs', 'Pass'], report.results.map((r) => [r.url, r.median.lcp_ms ?? '—', r.median.cls ?? '—', r.median.tbt_ms ?? '—', r.median.inp_ms ?? '—', r.judgement.responsiveness_metric.split(' ')[0], r.judgement.errored_runs, r.judgement.ok ? 'yes' : `no (${Object.entries(r.judgement.pass).filter(([, v]) => !v).map(([k]) => k).join(', ')})`])),
     '', `Overall: ${report.summary.all_ok ? 'all pages within budget' : `${report.summary.failing} of ${report.summary.pages} pages over budget`}.`, '', `Not in this run: ${report.out_of_scope}.`];
   return L.join('\n') + '\n';
 }

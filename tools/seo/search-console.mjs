@@ -15,8 +15,8 @@
 //        [--md report.md] [--skip-sitemap] [--auth user:pass]
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
-import { parseSitemap, parseRobots, robotsClosesSite, judgeIndexable, judgeRedirect, parseAddressList, parseNotIndexedCsv, mdTable, joinUrl } from './lib.mjs';
-import { makeQueue, getOnce, getChain } from './fetch.mjs';
+import { parseSitemap, parseRobots, robotsClosesSite, judgeIndexable, judgeRedirect, parseAddressList, parseNotIndexedCsv, sitemapSection, mdTable, joinUrl } from './lib.mjs';
+import { makeQueue, getOnce, getChain, basicAuth } from './fetch.mjs';
 
 function parseArgs(argv) {
   const a = { base: null, redirects: null, notIndexed: null, out: null, md: null, sitemap: true, auth: null };
@@ -27,7 +27,7 @@ function parseArgs(argv) {
     else if (v === '--out') a.out = argv[++i];
     else if (v === '--md') a.md = argv[++i];
     else if (v === '--skip-sitemap') a.sitemap = false;
-    else if (v === '--auth') a.auth = 'Basic ' + Buffer.from(argv[++i]).toString('base64');
+    else if (v === '--auth') a.auth = argv[++i];
     else if (v === '-h' || v === '--help') a.help = true;
     else if (!a.base) a.base = v.replace(/\/+$/, '');
   }
@@ -52,7 +52,8 @@ export async function sitemapUrls(base, get) {
 
 export async function run(args) {
   const queue = makeQueue({ concurrency: 2, gapMs: 200 });
-  const get = (u) => queue(() => getOnce(u, { auth: args.auth }));
+  const auth = basicAuth(args.auth, args.base); // sent to the base host only, never to a host a redirect leads to
+  const get = (u) => queue(() => getOnce(u, { auth }));
   const report = { kind: 'search-console', package: 'P3-81', requirement: 'FR3-25', base: args.base, generated_at: new Date().toISOString(), sections: {} };
 
   // robots.txt
@@ -65,7 +66,7 @@ export async function run(args) {
   if (args.redirects) {
     const old = parseAddressList(readFileSync(args.redirects, 'utf8'), args.base);
     const rows = await Promise.all(old.map(async (u) => {
-      const chain = await queue(() => getChain(u, { auth: args.auth }));
+      const chain = await queue(() => getChain(u, { auth }));
       const j = judgeRedirect(chain);
       return { url: u, ...j, chain: chain.map((h) => ({ url: h.url, status: h.status, location: h.location })) };
     }));
@@ -80,7 +81,8 @@ export async function run(args) {
       const r = await get(u);
       return judgeIndexable({ url: u, status: r.status, html: r.body, headers: r.headers, robots, robotsClosed });
     }));
-    report.sections.sitemap = { sitemaps, sitemap_problems: problems, checked: rows.length, failing: rows.filter((r) => !r.ok).length, rows: rows.map((r) => ({ url: r.url, status: r.status, ok: r.ok, problems: r.problems })) };
+    for (const p of problems) console.error(p + ': its URLs were not checked');
+    report.sections.sitemap = sitemapSection({ sitemaps, rows, problems });
   }
 
   // AS-03 crawled but not indexed
@@ -89,7 +91,7 @@ export async function run(args) {
     const gone = rows.filter((r) => r.action === 'removed' || r.action === 'merged');
     const checks = await Promise.all(gone.map(async (r) => {
       const u = /^https?:\/\//i.test(r.slug) ? r.slug : joinUrl(args.base, '/' + r.slug.replace(/^\/+|\/+$/g, '') + '/');
-      const chain = await queue(() => getChain(u, { auth: args.auth }));
+      const chain = await queue(() => getChain(u, { auth }));
       const first = chain[0]?.status;
       const ok = r.action === 'merged' ? judgeRedirect(chain).ok : first === 410 || first === 404 || judgeRedirect(chain).ok;
       return { slug: r.slug, action: r.action, status: first, ok, problem: ok ? null : r.action === 'merged' ? 'a merged article must redirect permanently to its target' : 'a removed article must answer 410/404 or redirect' };
@@ -119,8 +121,8 @@ function toMarkdown(report) {
   const r = report.sections.redirects;
   if (r && r.failing) L.push(`## Old addresses not redirecting correctly (${r.failing})`, '', mdTable(['Old address', 'Chain', 'Why'], r.rows.filter((x) => !x.ok).map((x) => [x.url, x.chain.map((h) => h.status).join(' → '), x.problems.join('; ')])), '');
   const m = report.sections.sitemap;
-  if (m && m.failing) L.push(`## Sitemap URLs not indexable (${m.failing})`, '', mdTable(['URL', 'Status', 'Why'], m.rows.filter((x) => !x.ok).map((x) => [x.url, x.status, x.problems.join('; ')])), '');
-  if (m && m.sitemap_problems.length) L.push('## Sitemaps that could not be read', '', ...m.sitemap_problems.map((p) => `- ${p}`), '');
+  if (m && m.failing_urls) L.push(`## Sitemap URLs not indexable (${m.failing_urls})`, '', mdTable(['URL', 'Status', 'Why'], m.rows.filter((x) => !x.ok).map((x) => [x.url, x.status, x.problems.join('; ')])), '');
+  if (m && m.sitemap_problems.length) L.push(`## Sitemaps that could not be read (${m.sitemap_problems.length}; their URLs were not checked, so the run fails)`, '', ...m.sitemap_problems.map((p) => `- ${p}`), '');
   const n = report.sections.not_indexed;
   if (n && n.failing) {
     L.push(`## Crawled-but-not-indexed list problems (${n.failing})`, '');

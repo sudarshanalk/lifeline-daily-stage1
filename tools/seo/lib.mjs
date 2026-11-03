@@ -58,9 +58,24 @@ export function contentRoot(doc) {
   return doc.body;
 }
 
+/** The direct answer's word budget, as lld_search_aeo_row applies it (FR2-21 AS-01). */
+export const ANSWER_MAX_WORDS = 60;
+
+/** The first node of the article body that carries visible text (style/script/noscript and empty wrappers skipped). */
+function firstTextElement(root) {
+  const SKIP = new Set(['STYLE', 'SCRIPT', 'NOSCRIPT', 'TEMPLATE']);
+  for (const node of root.childNodes) {
+    if (node.nodeType === 3) { if (norm(node.textContent)) return node; continue; }
+    if (node.nodeType !== 1 || SKIP.has(node.tagName)) continue;
+    if (norm(node.textContent)) return node;
+  }
+  return null;
+}
+
 /**
- * TC-FR3-24-AS-01: the direct-answer block sits in the article's first section, that is inside the article body and
- * before the first <h2> of that body (so before any later section of the article).
+ * TC-FR3-24-AS-01: the direct-answer block is the article body's first content, as the mu-plugin's own rule has it
+ * (lld_search_aeo_row: nothing but whitespace before [lld_answer], 1 to 60 words). The first text-bearing node of the
+ * body must be the block itself or a wrapper whose first text-bearing node is the block.
  */
 export function judgeDirectAnswer(doc) {
   const root = contentRoot(doc);
@@ -68,15 +83,14 @@ export function judgeDirectAnswer(doc) {
   if (!answer) return { present: false, first_section: false, words: 0, text: null, ok: false, reason: 'no direct-answer block (.lld-answer[data-test="direct-answer"])' };
   const text = norm(answer.textContent);
   const words = text ? text.split(' ').length : 0;
-  const firstH2 = root.querySelector('h2');
-  // Node.DOCUMENT_POSITION_FOLLOWING (4): the h2 comes after the answer in document order.
-  const firstSection = !firstH2 || Boolean(answer.compareDocumentPosition(firstH2) & 4);
   const inBody = root.contains(answer);
-  const ok = firstSection && inBody && words > 0;
+  let first = inBody ? firstTextElement(root) : null;
+  while (first && first !== answer && first.nodeType === 1 && first.contains(answer)) first = firstTextElement(first);
+  const firstSection = inBody && first === answer;
+  const ok = firstSection && words > 0 && words <= ANSWER_MAX_WORDS;
   return {
-    present: true, first_section: firstSection && inBody, words, text,
-    ok,
-    reason: ok ? null : !inBody ? 'direct answer is outside the article body' : !firstSection ? 'direct answer comes after the first <h2>: not in the first section' : 'direct answer is empty',
+    present: true, first_section: firstSection, words, text, ok,
+    reason: ok ? null : words === 0 ? 'direct answer is empty' : !inBody ? 'direct answer is outside the article body' : !firstSection ? 'direct answer is not the first content of the article body' : `direct answer is ${words} words (over ${ANSWER_MAX_WORDS})`,
   };
 }
 
@@ -89,8 +103,9 @@ export function extractSources(doc) {
 }
 
 /**
- * TC-FR3-24-AS-02: a Sources section with at least one link that answers 2xx or 3xx. `statuses` maps href -> HTTP status
- * (or a string such as 'error: …') as found by the tool; a link not in the map is treated as unchecked.
+ * TC-FR3-24-AS-02: a Sources section with at least one link that answers 2xx once its redirects are followed. `statuses`
+ * maps href -> the final HTTP status (or a string such as 'error: redirect loop') as found by the tool; a 3xx reaching
+ * the judge is an unresolved redirect and does not count. A link not in the map is treated as unchecked.
  */
 export function judgeSources(doc, statuses = {}) {
   const { present, links } = extractSources(doc);
@@ -99,10 +114,10 @@ export function judgeSources(doc, statuses = {}) {
   const working = links.filter((h) => isWorkingStatus(statuses[h]));
   const unchecked = links.filter((h) => statuses[h] === undefined);
   const ok = working.length > 0;
-  return { present: true, links, working, unchecked, ok, reason: ok ? null : unchecked.length === links.length ? 'source links not checked' : 'no source link answers 2xx/3xx' };
+  return { present: true, links, working, unchecked, ok, reason: ok ? null : unchecked.length === links.length ? 'source links not checked' : 'no source link answers 2xx' };
 }
 
-export const isWorkingStatus = (s) => typeof s === 'number' && s >= 200 && s < 400;
+export const isWorkingStatus = (s) => typeof s === 'number' && s >= 200 && s < 300;
 
 /** The visible FAQ questions (the <h3 class="lld-faq__q"> headings), in order. */
 export function extractFaqQuestions(doc) {
@@ -219,16 +234,31 @@ export function robotsAllows(rules, url) {
 /** True when the rules shut the whole site ("Disallow: /" with no allow), as staging does on purpose. */
 export const robotsClosesSite = (rules) => (rules.disallow || []).some((p) => p === '/') && !(rules.allow || []).length;
 
-/** The robots meta tag(s) and X-Robots-Tag header, lower-cased directives. */
-export function robotsDirectives(doc, headers = {}) {
+/**
+ * The robots meta tag(s) and X-Robots-Tag header as lower-cased directives. The header's agent-prefixed form
+ * ("googlebot: noindex") is recognised, as is "unavailable_after: <date>", which becomes "noindex" once the date has
+ * passed (an unparseable date counts as passed). `now` is injectable for the tests.
+ */
+export function robotsDirectives(doc, headers = {}, now = Date.now()) {
   const out = [];
-  for (const m of doc.querySelectorAll('meta[name="robots"], meta[name="googlebot"], meta[name="bingbot"]')) {
-    out.push(...String(m.getAttribute('content') || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean));
-  }
+  const add = (value) => {
+    for (let d of String(value || '').toLowerCase().split(',').map((s) => s.trim()).filter(Boolean)) {
+      // "googlebot: noindex" or "bingbot: nofollow": drop the agent prefix (but not the value of unavailable_after).
+      const agent = d.match(/^([a-z][a-z0-9_-]*)\s*:\s*(.+)$/);
+      if (agent && agent[1] !== 'unavailable_after') d = agent[2].trim();
+      const ua = d.match(/^unavailable_after\s*:\s*(.+)$/);
+      if (ua) { const t = Date.parse(ua[1]); out.push(Number.isNaN(t) || t <= now ? 'noindex' : 'unavailable_after'); continue; }
+      out.push(d);
+    }
+  };
+  for (const m of doc.querySelectorAll('meta[name="robots"], meta[name="googlebot"], meta[name="bingbot"]')) add(m.getAttribute('content'));
   const h = headers['x-robots-tag'] ?? headers['X-Robots-Tag'];
-  if (h) out.push(...String(h).toLowerCase().split(/[,;]/).map((s) => s.trim()).filter(Boolean));
+  if (h) for (const part of String(h).split(/\r?\n/)) add(part);
   return out;
 }
+
+/** Whether a page's directives keep it out of the index. */
+export const isNoindex = (directives) => directives.includes('noindex') || directives.includes('none');
 
 /** TC-FR3-25-AS-02 for one page: 200, not noindex (meta or header), canonical (if any) points at itself, robots allows. */
 export function judgeIndexable({ url, status, html = '', headers = {}, robots = null, robotsClosed = false }) {
@@ -236,7 +266,7 @@ export function judgeIndexable({ url, status, html = '', headers = {}, robots = 
   if (status !== 200) problems.push(`answers ${status}`);
   const doc = html ? parseHtml(html) : null;
   const directives = doc ? robotsDirectives(doc, headers) : robotsDirectives(parseHtml(''), headers);
-  if (directives.includes('noindex') || directives.includes('none')) problems.push('noindex');
+  if (isNoindex(directives)) problems.push('noindex');
   if (doc) {
     const canon = doc.querySelector('link[rel="canonical"]')?.getAttribute('href');
     if (canon && stripSlash(canon) !== stripSlash(url)) problems.push(`canonical points elsewhere: ${canon}`);
@@ -268,9 +298,19 @@ export function judgeRedirect(chain, { maxHops = 3 } = {}) {
   else if (last.status !== 200) problems.push(`final page answers ${last.status}`);
   else {
     const directives = last.html !== undefined ? robotsDirectives(parseHtml(last.html), last.headers || {}) : robotsDirectives(parseHtml(''), last.headers || {});
-    if (directives.includes('noindex') || directives.includes('none')) problems.push('final page is noindex');
+    if (isNoindex(directives)) problems.push('final page is noindex');
   }
   return { ok: problems.length === 0, problems, hops: redirects.length, final: last.url, final_status: last.status };
+}
+
+/**
+ * TC-FR3-25-AS-02 for the whole sitemap: the per-URL judgements plus the sitemaps that could not be read. A sitemap
+ * that could not be read means part of the site was never checked, so it counts as failing.
+ */
+export function sitemapSection({ sitemaps = [], rows = [], problems = [], partial = false }) {
+  const failingRows = rows.filter((r) => !r.ok).length;
+  return { sitemaps, sitemap_problems: problems, checked: rows.length, failing_urls: failingRows, unreadable_sitemaps: problems.length,
+    failing: failingRows + problems.length, partial, rows: rows.map((r) => ({ url: r.url, status: r.status, ok: r.ok, problems: r.problems })) };
 }
 
 /** One address per line; blank lines and # comments skipped; a bare path is joined to base. */
@@ -348,9 +388,10 @@ export const SPEED_BUDGETS = { lcp_ms: 2500, inp_ms: 200, tbt_ms: 200, cls: 0.1 
 
 /**
  * Judge one page's lab medians against the budgets. `m` may carry lcp_ms, cls, inp_ms and/or tbt_ms. INP is used when
- * measured; otherwise TBT stands in and the result says so (`responsiveness_metric`). A metric that is null fails.
+ * measured; otherwise TBT stands in and the result says so (`responsiveness_metric`). A metric that is null fails, and
+ * so does a page any of whose runs errored (`erroredRuns` > 0): a median over fewer runs than asked for is not a pass.
  */
-export function judgeVitals(m, budgets = SPEED_BUDGETS) {
+export function judgeVitals(m, budgets = SPEED_BUDGETS, { erroredRuns = 0 } = {}) {
   const num = (x) => (typeof x === 'number' && Number.isFinite(x) ? x : null);
   const lcp = num(m?.lcp_ms);
   const cls = num(m?.cls);
@@ -363,11 +404,13 @@ export function judgeVitals(m, budgets = SPEED_BUDGETS) {
     lcp: lcp !== null && lcp < budgets.lcp_ms,
     responsiveness: resp !== null && resp < respBudget,
     cls: cls !== null && cls < budgets.cls,
+    runs: !(erroredRuns > 0),
   };
   return {
-    pass, ok: pass.lcp && pass.responsiveness && pass.cls,
+    pass, ok: pass.lcp && pass.responsiveness && pass.cls && pass.runs,
     responsiveness_metric: useInp ? 'INP' : 'TBT (lab proxy for INP: no interaction measured)',
     values: { lcp_ms: lcp, cls, inp_ms: inp, tbt_ms: tbt },
+    errored_runs: erroredRuns,
   };
 }
 

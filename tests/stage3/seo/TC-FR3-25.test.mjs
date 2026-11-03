@@ -1,11 +1,48 @@
 // FR3-25 (P3-81): the judging logic of tools/seo/search-console.mjs over fixture hops, HTML, robots.txt and the
 // crawled-but-not-indexed CSV, no network. The staging run is documented in tools/seo/README.md.
 import { expect, test } from 'vitest';
-import { judgeRedirect, judgeIndexable, parseRobots, robotsAllows, robotsClosesSite, parseAddressList, parseNotIndexedCsv } from '../../../tools/seo/lib.mjs';
+import { judgeRedirect, judgeIndexable, parseRobots, robotsAllows, robotsClosesSite, robotsDirectives, parseAddressList, parseNotIndexedCsv, sitemapSection, parseHtml } from '../../../tools/seo/lib.mjs';
+import { getChain, getOnce, basicAuth, authAppliesTo } from '../../../tools/seo/fetch.mjs';
 
 const live = (url, extra = '') => ({ url, status: 200, headers: {}, html: `<html><head><link rel="canonical" href="${url}">${extra}</head><body>ok</body></html>` });
 
-test('TC-FR3-25-AS-01', () => {
+/** A fake fetch: `routes` maps URL -> { status, headers }, recording every request's URL and authorization header. */
+function fakeFetch(routes, log = []) {
+  return async (url, init) => {
+    log.push({ url, authorization: init.headers.authorization || null });
+    const r = routes[url] || { status: 404 };
+    return { status: r.status, headers: new Map(Object.entries(r.headers || {})), text: async () => r.body || '', arrayBuffer: async () => new ArrayBuffer(0) };
+  };
+}
+
+test('TC-FR3-25-AS-01', async () => {
+  // The staging password (--auth) goes only to the base host: an old address that redirects off-site must not carry
+  // the credentials to the other host, nor must a sitemap <loc> on another host.
+  const auth = basicAuth('lead:secret', 'https://stg.test');
+  expect(auth).toEqual({ value: 'Basic ' + Buffer.from('lead:secret').toString('base64'), host: 'stg.test' });
+  expect(authAppliesTo(auth, 'https://stg.test/old/')).toBe(true);
+  expect(authAppliesTo(auth, 'https://STG.test/old/')).toBe(true);
+  expect(authAppliesTo(auth, 'https://www.stg.test/old/')).toBe(false);
+  expect(authAppliesTo(auth, 'https://other.example/')).toBe(false);
+  expect(authAppliesTo(null, 'https://stg.test/')).toBe(false);
+  const log = [];
+  const fetchImpl = fakeFetch({ 'https://stg.test/old/': { status: 301, headers: { location: 'https://other.example/new/' } }, 'https://other.example/new/': { status: 200, headers: { 'content-type': 'text/html' } } }, log);
+  const offsite = await getChain('https://stg.test/old/', { auth, fetchImpl });
+  expect(offsite.map((h) => h.status)).toEqual([301, 200]);
+  expect(log).toEqual([{ url: 'https://stg.test/old/', authorization: auth.value }, { url: 'https://other.example/new/', authorization: null }]);
+  const log2 = [];
+  await getOnce('https://cdn.example/post-sitemap.xml', { auth, fetchImpl: fakeFetch({}, log2) });
+  expect(log2[0].authorization).toBeNull();
+  // Without --auth nothing is sent anywhere.
+  const log3 = [];
+  await getOnce('https://stg.test/', { fetchImpl: fakeFetch({}, log3) });
+  expect(log3[0].authorization).toBeNull();
+  // A looping old address ends the chain with an error hop, which the judge fails rather than mistaking for a page.
+  const loop = fakeFetch({ 'https://stg.test/a/': { status: 301, headers: { location: '/b/' } }, 'https://stg.test/b/': { status: 301, headers: { location: '/a/' } } });
+  const looped = judgeRedirect(await getChain('https://stg.test/a/', { fetchImpl: loop }));
+  expect(looped.ok).toBe(false);
+  expect(looped.problems).toContain('final page answers 0');
+
   // 301 straight to a live, indexable page passes; 308 too.
   expect(judgeRedirect([{ url: 'https://s.test/old/', status: 301, location: '/new/' }, live('https://s.test/new/')]).ok).toBe(true);
   expect(judgeRedirect([{ url: 'https://s.test/old/', status: 308, location: '/new/' }, live('https://s.test/new/')]).ok).toBe(true);
@@ -53,6 +90,27 @@ test('TC-FR3-25-AS-02', () => {
   expect(stg.ok).toBe(true);
   expect(stg.robots_site_closed).toBe(true);
   expect(judgeIndexable({ ...live('https://stg.test/a/'), robots: closed, robotsClosed: false }).problems).toEqual(['disallowed by robots.txt']);
+  // The X-Robots-Tag header's agent-prefixed form and unavailable_after are recognised.
+  const doc = parseHtml('<html></html>');
+  expect(robotsDirectives(doc, { 'x-robots-tag': 'googlebot: noindex, nofollow' })).toEqual(['noindex', 'nofollow']);
+  expect(robotsDirectives(doc, { 'x-robots-tag': 'bingbot: none' })).toEqual(['none']);
+  const now = Date.parse('2026-11-03T00:00:00Z');
+  expect(robotsDirectives(doc, { 'x-robots-tag': 'unavailable_after: 25 Jun 2020 15:00:00 PST' }, now)).toEqual(['noindex']);
+  expect(robotsDirectives(doc, { 'x-robots-tag': 'googlebot: unavailable_after: 2030-01-01' }, now)).toEqual(['unavailable_after']);
+  expect(robotsDirectives(doc, { 'x-robots-tag': 'unavailable_after: not a date' }, now)).toEqual(['noindex']);
+  expect(robotsDirectives(parseHtml('<html><head><meta name="googlebot" content="unavailable_after: 2020-01-01"></head></html>'), {}, now)).toEqual(['noindex']);
+  expect(judgeIndexable({ ...live('https://s.test/a/'), headers: { 'x-robots-tag': 'googlebot: noindex' }, robots }).problems).toEqual(['noindex']);
+  expect(judgeIndexable({ ...live('https://s.test/a/'), headers: { 'x-robots-tag': 'unavailable_after: 2020-01-01' }, robots }).problems).toEqual(['noindex']);
+  // A sub-sitemap that could not be read means part of the site was never checked: the section fails even when every
+  // URL that was checked passes.
+  const rows = [judgeIndexable({ ...live('https://s.test/a/'), robots }), judgeIndexable({ ...live('https://s.test/b/'), robots })];
+  const clean = sitemapSection({ sitemaps: ['https://s.test/post-sitemap.xml'], rows, problems: [] });
+  expect(clean).toMatchObject({ checked: 2, failing_urls: 0, unreadable_sitemaps: 0, failing: 0, partial: false });
+  const unreadable = sitemapSection({ sitemaps: ['https://s.test/post-sitemap.xml', 'https://s.test/page-sitemap.xml'], rows, problems: ['https://s.test/page-sitemap.xml answers 500'] });
+  expect(unreadable.failing).toBe(1);
+  expect(unreadable.unreadable_sitemaps).toBe(1);
+  expect(unreadable.failing_urls).toBe(0);
+  expect(sitemapSection({ rows: [rows[0], { url: 'https://s.test/c/', status: 404, ok: false, problems: ['answers 404'] }], problems: ['x answers 0'] }).failing).toBe(2);
 });
 
 test('TC-FR3-25-AS-03', () => {
