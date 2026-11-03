@@ -74,11 +74,16 @@ class LLD_Members_Stage3_Data {
 		$now = lld_members_now_mysql( $member_id );
 		$data = self::prepare_columns( $member_id, $row, $sealed );
 		$data['member_id'] = $member_id;
-		if ( ! isset( $data['created_at'] ) ) {
+		// Only the columns the table has (today_steps keeps updated_at alone; found by the live interface test, PR #173).
+		$table   = LLD_Members_Stage3_Schema::table( $suffix );
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM {$table}", 0 ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- internal table name.
+		if ( ! isset( $data['created_at'] ) && in_array( 'created_at', $columns, true ) ) {
 			$data['created_at'] = $now;
 		}
-		$data['updated_at'] = $now;
-		$ok = $wpdb->insert( LLD_Members_Stage3_Schema::table( $suffix ), $data );
+		if ( in_array( 'updated_at', $columns, true ) ) {
+			$data['updated_at'] = $now;
+		}
+		$ok = $wpdb->insert( $table, $data );
 		return $ok ? (int) $wpdb->insert_id : 0;
 	}
 

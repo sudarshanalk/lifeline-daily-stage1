@@ -19,6 +19,8 @@ async function confirmationLink(email) {
 test('TC-NFR3-03-AS-01 sign up', async ({ page }) => {
   const email = emailFor('signup');
   await page.goto('/members/join/');
+  // The page itself, not only the form: a broken join page fails the journey (guard proof, docs/stage3/guard-proofs.md).
+  await expect(page.getByRole('heading', { name: 'Create account', exact: true })).toBeVisible();
   await page.locator('#lld_first').fill('Synthetic'); await page.locator('#lld_last').fill('Member');
   await page.locator('#lld_email').fill(email); await page.locator('#lld_password').fill(password); await page.locator('#lld_age').fill('30');
   await page.getByRole('button', { name: 'Create account', exact: true }).click();
