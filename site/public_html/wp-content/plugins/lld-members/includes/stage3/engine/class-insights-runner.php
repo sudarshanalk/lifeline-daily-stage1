@@ -289,7 +289,7 @@ class LLD_Members_Insights_Runner {
 				'target_value_2' => $target_2,
 				'unit'           => (string) $goal['unit'],
 				'target_date'    => $goal['target_date'] ? (string) $goal['target_date'] : null,
-				'reached'        => false,
+				'reached'        => 'keep_weight' === (string) $goal['goal_type'], // a maintain goal has no finish line (P3-31: R-INS-10 never fires for it)
 				'rate_kg_week'   => null,
 			);
 			foreach ( LLD_Members_Stage3_Data::rows( 'plans', $member_id, array(), '', 50 ) as $p ) {
