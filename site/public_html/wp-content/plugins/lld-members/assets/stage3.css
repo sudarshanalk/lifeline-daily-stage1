@@ -24,13 +24,12 @@
 
 .lld-account-nav {
   margin-bottom: 24px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .lld-account-tabs {
   display: flex;
-  gap: 8px;
+  flex-wrap: wrap;
+  gap: 4px 8px;
   list-style: none;
   padding: 0;
   margin: 0;
@@ -48,7 +47,6 @@
   text-decoration: none;
   border-bottom: 3px solid transparent;
   transition: all 0.15s ease;
-  white-space: nowrap;
 }
 
 .lld-account-tab:hover,
@@ -115,6 +113,41 @@
   margin: 0;
 }
 
+/* Download my data · Delete my account: 44px targets */
+.lld-account-links a,
+.lld-account-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.lld-account-state dt {
+  font-weight: 600;
+}
+
+.lld-account-state dd {
+  margin: 4px 0 12px;
+}
+
+/* Sections that are not built yet: shown, never pretending to save */
+.lld-badge-soon {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--lld-s3-mint-soft);
+  color: var(--lld-s3-ink);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.lld-coming-soon fieldset[disabled] {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  opacity: 0.7;
+}
+
 /* ================= DESKTOP USER MENU (P3-30 · FR3-07) ================= */
 .lld-chip-wrap {
   position: relative;
@@ -154,7 +187,11 @@
 .lld-menu-item:focus-visible {
   background-color: var(--lld-s3-mint-soft);
   color: var(--lld-s3-green);
-  outline: none;
+}
+
+.lld-menu-item:focus-visible {
+  outline: 3px solid var(--lld-s3-green);
+  outline-offset: -3px;
 }
 
 .lld-menu-divider {
