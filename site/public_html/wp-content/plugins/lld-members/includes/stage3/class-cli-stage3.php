@@ -18,6 +18,77 @@ class LLD_Members_Stage3_CLI {
 		WP_CLI::add_command( 'lld-members feature', array( __CLASS__, 'feature' ) );
 		WP_CLI::add_command( 'lld-members test-accounts', array( __CLASS__, 'test_accounts' ) );
 		WP_CLI::add_command( 'lld-members food', array( __CLASS__, 'food' ) );
+		WP_CLI::add_command( 'lld-members insights', array( __CLASS__, 'insights' ) );
+	}
+
+	/**
+	 * Run the decision engine (P3-34, FR3-17) for every member with Stage 3 data, or for one member.
+	 *
+	 * Needs the insights switch at test_accounts or everyone. Prints only rule names and outcomes: never a
+	 * reading, a number or a message (NFR3-16).
+	 *
+	 * ## OPTIONS
+	 *
+	 * <run>
+	 * : What to do.
+	 *
+	 * [--member=<id>]
+	 * : One member number. Omit for every member with Stage 3 data.
+	 *
+	 * [--date=<Y-m-d>]
+	 * : Run as if it were this local date (tests on staging).
+	 *
+	 * [--dry-run]
+	 * : Evaluate and report, write nothing.
+	 *
+	 * [--check-in]
+	 * : Evaluate the weekly check-in adjustments too.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp lld-members insights run --dry-run
+	 *     wp lld-members insights run --member=12 --date=2026-11-10
+	 *
+	 * @param string[] $args  Positional args.
+	 * @param array    $assoc Assoc args.
+	 */
+	public function insights( $args, $assoc ) {
+		if ( 'run' !== ( isset( $args[0] ) ? (string) $args[0] : '' ) ) {
+			WP_CLI::error( 'Use "run".' );
+		}
+		if ( 'off' === LLD_Members_Features::state( 'insights' ) ) {
+			WP_CLI::error( 'The insights switch is off. Nothing was done.' );
+		}
+		$options = array(
+			'dry_run'     => ! empty( $assoc['dry-run'] ),
+			'at_check_in' => ! empty( $assoc['check-in'] ),
+		);
+		$date    = isset( $assoc['date'] ) && preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $assoc['date'] ) ? (string) $assoc['date'] : null;
+		$members = isset( $assoc['member'] ) ? array( (int) $assoc['member'] ) : array();
+		if ( ! $members ) {
+			global $wpdb;
+			foreach ( array( 'readings', 'goals', 'food_log' ) as $suffix ) {
+				$found = $wpdb->get_col( 'SELECT DISTINCT member_id FROM ' . LLD_Members_Stage3_Schema::table( $suffix ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- internal table name.
+				$members = array_merge( $members, array_map( 'intval', is_array( $found ) ? $found : array() ) );
+			}
+			$members = array_values( array_unique( $members ) );
+		}
+		$rows = array();
+		foreach ( $members as $member_id ) {
+			$s      = LLD_Members_Insights_Runner::run_member( $member_id, $date, $options );
+			$rows[] = array(
+				'member'      => $member_id,
+				'date'        => isset( $s['date'] ) ? $s['date'] : '',
+				'status'      => $s['status'],
+				'safety'      => isset( $s['safety'] ) ? implode( ' ', $s['safety'] ) : '',
+				'today_step'  => isset( $s['today_step'] ) ? (string) $s['today_step'] : '',
+				'insight'     => isset( $s['insight'] ) ? (string) $s['insight'] : '',
+				'adjustments' => isset( $s['adjustments'] ) ? implode( ' ', $s['adjustments'] ) : '',
+				'outcomes'    => isset( $s['outcomes'] ) ? implode( ' ', array_map( function ( $k, $v ) { return $k . '=' . $v; }, array_keys( $s['outcomes'] ), $s['outcomes'] ) ) : '',
+			);
+		}
+		WP_CLI\Utils\format_items( 'table', $rows, array( 'member', 'date', 'status', 'safety', 'today_step', 'insight', 'adjustments', 'outcomes' ) );
+		WP_CLI::success( count( $rows ) . ' member(s) ' . ( $options['dry_run'] ? 'evaluated (dry run)' : 'run' ) . '.' );
 	}
 
 	/**

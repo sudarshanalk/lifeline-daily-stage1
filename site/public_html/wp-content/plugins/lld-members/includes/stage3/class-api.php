@@ -347,6 +347,11 @@ class LLD_Members_Stage3_API {
 		if ( ! empty( $def['health'] ) && ! LLD_Members_Access::has_health_consent( $member_id ) ) {
 			return self::refuse( 403, 'Health consent is needed first.' );
 		}
+		// The safety matrix may refuse a type for this member (P3-03; FR3-69 AS-02): safety before access.
+		$refusal = apply_filters( 'lld_members_stage3_api_refuse', null, $type, $member_id );
+		if ( $refusal instanceof WP_REST_Response ) {
+			return $refusal;
+		}
 		return array( $member_id, $def );
 	}
 
@@ -467,6 +472,7 @@ class LLD_Members_Stage3_API {
 			return new WP_REST_Response( array( 'rows' => self::stage2_rows( $def['table'], $member_id, $since ) ), 200 );
 		}
 		$rows = LLD_Members_Stage3_Data::rows( $def['table'], $member_id, $def['sealed'], null === $since ? '' : $since, $limit > 0 ? $limit : 500 );
+		$rows = apply_filters( 'lld_members_stage3_api_rows', $rows, (string) $request['type'], $member_id ); // the safety matrix strips what the member must not see (FR3-69)
 		return new WP_REST_Response(
 			array(
 				'rows'   => array_map( array( __CLASS__, 'present' ), $rows ),
@@ -492,6 +498,7 @@ class LLD_Members_Stage3_API {
 		if ( ! $row ) {
 			return self::refuse( 404, 'Not found.' );
 		}
+		$row = apply_filters( 'lld_members_stage3_api_rows', $row, (string) $request['type'], $member_id );
 		return new WP_REST_Response( self::present( $row ), 200 );
 	}
 
