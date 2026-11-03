@@ -319,6 +319,59 @@ jobs:
         if: failure()
         with: { name: 'stage2-playwright-traces-${{ matrix.browser }}-${{ matrix.part }}', path: test-results/, if-no-files-found: ignore }
 
+  # P3-11 / NFR3-03: a compact, independent run of the eight Stage 2 key journeys.
+  # It uses the same throwaway WordPress and caught mail as Stage 2, while its tests live separately so a Stage 3
+  # change cannot silently narrow the regression set.
+  stage3-e2e:
+    if: "github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'S3-')"
+    name: "stage3-e2e (${{ matrix.browser }}${{ matrix.parts > 1 && format(' {0} of {1}', matrix.part, matrix.parts) || '' }})"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { browser: chromium, part: 1, parts: 1 }
+          - { browser: webkit, part: 1, parts: 2 }
+          - { browser: webkit, part: 2, parts: 2 }
+    timeout-minutes: 30
+    services:
+      db:
+        image: mariadb:11
+        env: { MARIADB_ROOT_PASSWORD: ci-only, MARIADB_DATABASE: wp }
+        ports: ['3306:3306']
+        options: --health-cmd="healthcheck.sh --connect" --health-interval=5s --health-retries=20
+      mailpit:
+        image: axllent/mailpit:v1.20
+        ports: ['1025:1025', '8025:8025']
+      stripe:
+        image: stripe/stripe-mock:v0.206.0
+        ports: ['12111:12111']
+    env:
+      LLD_WP_URL: http://127.0.0.1:8090
+      MAILPIT_URL: http://127.0.0.1:8025
+      LLD_TEST_CLOCK: '1'
+      LLD_STRIPE_API_BASE: http://127.0.0.1:12111
+      LLD_STRIPE_SECRET: sk_test_123
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          extensions: mysqli, gd, zip, exif
+          tools: wp-cli
+      - name: Throwaway WordPress with the Stage 2 member plugin
+        run: bash tests/ci/stage2-wp.sh "$RUNNER_TEMP/wp"
+      - name: Playwright key journeys (${{ matrix.browser }}, ${{ matrix.part }} of ${{ matrix.parts }})
+        run: |
+          npm ci
+          npx playwright install --with-deps ${{ matrix.browser }}
+          npx playwright test -c tests/stage3/e2e/playwright.config.mjs --project=${{ matrix.browser }} --shard=${{ matrix.part }}/${{ matrix.parts }}
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with: { name: 'stage3-key-journeys-${{ matrix.browser }}-${{ matrix.part }}', path: test-results/stage3/, if-no-files-found: ignore }
+
   saf:
     if: "!startsWith(github.event.pull_request.title || '', 'SPEC: ')"   # SPEC PRs (DEC-55) carry no code or tests
     runs-on: ubuntu-latest
