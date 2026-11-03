@@ -1038,7 +1038,8 @@ class LLD_Members_Billing {
 				LLD_Members_Personal::render( 'Checkout', $main );
 				return;
 			}
-			$session = $opened['id'];
+			$session = (string) $opened['id'];
+			self::store_quote( $session, $quote, $member_id, $ref );
 			$shown   = true;
 			$main .= '<p>You\'ll pay securely with Stripe. We never see your card details.</p>';
 			$main .= '<p data-lld-charge="' . (int) $quote['charged'] . '" data-lld-shown="' . (int) $quote['charged'] . '" data-lld-tax="' . (int) $quote['tax'] . '" data-lld-currency="' . esc_attr( $quote['currency'] ) . '" data-lld-session="' . esc_attr( $session ) . '">';
@@ -1472,6 +1473,7 @@ class LLD_Members_Billing {
 			if ( is_wp_error( $opened ) ) {
 				return new WP_REST_Response( array( 'message' => $opened->get_error_message() ), 503 );
 			}
+			self::store_quote( (string) $opened['id'], $quote, $member_id, $ref );
 			$quote['session'] = $opened['id'];
 			return new WP_REST_Response( $quote, 200 );
 		}
@@ -2643,7 +2645,7 @@ class LLD_Members_Billing {
 	}
 
 	/**
-	 * Open the checkout session for a quote and keep the quote under its id. Stage 3 (D2) opens a real Stripe
+	 * Open the checkout session for a quote; the caller keeps the quote under its id. Stage 3 (D2) opens a real Stripe
 	 * session through the lld_members_checkout_session filter; without it the session is simulated as before.
 	 *
 	 * @param array<string,mixed> $quote     Quote.
@@ -2663,7 +2665,6 @@ class LLD_Members_Billing {
 				'url' => 'https://checkout.stripe.com/c/pay/' . $id,
 			);
 		}
-		self::store_quote( (string) $opened['id'], $quote, $member_id, $ref );
 		return $opened;
 	}
 
