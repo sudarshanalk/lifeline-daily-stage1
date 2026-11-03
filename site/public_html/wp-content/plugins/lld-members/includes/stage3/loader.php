@@ -21,6 +21,7 @@ require_once __DIR__ . '/class-safety-stage3.php';
 require_once __DIR__ . '/engine/class-rule-catalogue.php';
 require_once __DIR__ . '/engine/class-decision-engine.php';
 require_once __DIR__ . '/engine/class-insights-runner.php';
+require_once __DIR__ . '/class-stripe-api.php';
 
 /**
  * Hooks the Stage 3 layer into the Stage 2 plugin. Called from LLD_Members_Plugin::boot().
@@ -31,6 +32,7 @@ function lld_members_stage3_boot() {
 	LLD_Members_Stage3_Content::boot();
 	LLD_Members_Stage3_Safety::boot();
 	LLD_Members_Insights_Runner::boot();
+	LLD_Members_Stripe_API::boot();
 	add_action( 'rest_api_init', array( 'LLD_Members_Stage3_API', 'register' ) );
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		require_once __DIR__ . '/class-cli-stage3.php';
