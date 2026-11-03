@@ -60,6 +60,8 @@ test.describe.serial('P3-30 account hub and desktop menu', () => {
     await page.locator('#lld_display').fill('Sam Updated');
     await page.getByRole('button', { name: 'Save profile' }).click();
 
+    // Post-redirect-get: the save redirects, and the notice is shown from the query flag.
+    await expect(page).toHaveURL(/\/members\/settings\/\?section=profile&saved=1$/);
     await expect(page.locator('.lld-notice-box')).toContainText('Profile saved.');
     await expect(page.locator('#lld_display')).toHaveValue('Sam Updated');
     // Only Profile was saved: two-step sign-in is still off.
@@ -68,8 +70,22 @@ test.describe.serial('P3-30 account hub and desktop menu', () => {
   });
 
   test('TC-FR3-06-AS-03 Privacy and consents lists every consent the member has given, with the date, and each can be withdrawn', async ({ page }) => {
-    await hubMember(page, { health_consent: true, consents: ['terms', 'health'] });
+    await hubMember(page, { health_consent: true, consents: ['terms', 'health', 'marketing'] });
     await page.goto('/members/settings/?section=privacy');
+
+    // All four consents Stage 2 records are listed, each with how to change it.
+    await expect(page.locator('.lld-consent-item')).toHaveCount(4);
+    expect(await page.locator('.lld-consent-item').evaluateAll((els) => els.map((el) => el.dataset.consentType))).toEqual(['terms', 'privacy', 'health', 'marketing']);
+    await expect(page.locator('.lld-account-section .lld-muted').first()).not.toContainText('can be withdrawn');
+    for (const type of ['terms', 'privacy']) {
+      const item = page.locator(`.lld-consent-item[data-consent-type="${type}"]`);
+      await expect(item).toContainText('Needed for your account');
+      await expect(item.getByRole('link', { name: 'Delete my account' })).toHaveAttribute('href', /\/members\/delete\/$/);
+    }
+    const marketing = page.locator('.lld-consent-item[data-consent-type="marketing"]');
+    await expect(marketing).toContainText('Marketing emails');
+    await expect(marketing).toContainText(/Accepted on \d{4}-\d\d-\d\d/);
+    await expect(marketing.getByRole('link')).toHaveAttribute('href', /\/members\/settings\/\?all=1$/);
 
     const health = page.locator('.lld-consent-item[data-consent-type="health"]');
     await expect(health).toContainText('Store my health information');
@@ -117,13 +133,19 @@ test.describe.serial('P3-30 account hub and desktop menu', () => {
     await expect(menu.getByRole('menuitem', { name: 'My subscription' })).toHaveAttribute('href', /section=membership$/);
     await expect(menu.getByRole('menuitem', { name: 'My data' })).toHaveAttribute('href', /section=privacy$/);
     await expect(menu.getByRole('menuitem', { name: 'Help' })).toHaveAttribute('href', /\/members\/help\/$/);
-    // Sign out is WordPress's nonce-protected logout, never a bare ?action=sign_out address.
+    // Sign out posts the hub's form to the Stage 2 sign-out (the More screen) with its nonce: never a link, never
+    // a bare ?action=sign_out address and never WordPress's own logout.
     const out = menu.getByRole('menuitem', { name: 'Sign out' });
-    await expect(out).toHaveAttribute('href', /wp-login\.php\?action=logout&.*_wpnonce=[0-9a-f]+/);
-    await expect(out).not.toHaveAttribute('href', /action=sign_out/);
+    expect(await out.evaluate((el) => el.tagName)).toBe('BUTTON');
+    expect(await out.getAttribute('href')).toBeNull();
+    const form = page.locator('form#lld-hub-sign-out');
+    await expect(form).toHaveAttribute('method', 'post');
+    await expect(form).toHaveAttribute('action', /\/members\/more\/$/);
+    await expect(form.locator('input[name="lld_sign_out_nonce"]')).toHaveAttribute('value', /^[0-9a-f]+$/);
+    await expect(page.locator('a[href*="action=sign_out"], a[href*="action=logout"]')).toHaveCount(0);
 
     await out.click();
-    await page.waitForURL((url) => !url.pathname.includes('wp-login.php'));
+    await page.waitForURL(/\/members\/sign-in\/\?signed_out=1$/);
     await page.goto('/members/settings/');
     await expect(page).toHaveURL(/\/members\/sign-in\//);
     await expect(page.locator('#lld_email')).toBeVisible();

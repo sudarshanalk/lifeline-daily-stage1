@@ -9,8 +9,9 @@
     const chip = document.querySelector('.lld-chip');
     if (!chip) return;
 
-    // The links and the nonce-protected sign-out address come from PHP (data attributes on the hub);
-    // without them no menu is built and the chip stays a plain link to settings.
+    // The links come from PHP (a data attribute on the hub), and data-lld-sign-out names the hub's sign-out form:
+    // a POST to the Stage 2 sign-out carrying its nonce. Without them no menu is built and the chip stays a plain
+    // link to settings.
     const hub = document.querySelector('[data-lld-menu][data-lld-sign-out]');
     if (!hub) return;
     let links;
@@ -19,8 +20,8 @@
     } catch (err) {
       return;
     }
-    const signOut = hub.getAttribute('data-lld-sign-out');
-    if (!signOut || !links.profile || !links.subscription || !links.data || !links.help) return;
+    const signOut = document.getElementById(hub.getAttribute('data-lld-sign-out') || '');
+    if (!signOut || signOut.tagName !== 'FORM' || !links.profile || !links.subscription || !links.data || !links.help) return;
 
     let menu = document.getElementById('lld-desktop-user-menu');
     if (!menu) {
@@ -46,8 +47,18 @@
           menu.appendChild(hr);
           return;
         }
-        const a = document.createElement('a');
-        a.href = item[0];
+        let a;
+        if (item[0] === signOut) {
+          // Sign out posts the hub's sign-out form (with its nonce); it is never a link.
+          a = document.createElement('button');
+          a.type = 'button';
+          a.addEventListener('click', function () {
+            signOut.submit();
+          });
+        } else {
+          a = document.createElement('a');
+          a.href = item[0];
+        }
         a.textContent = item[1];
         a.setAttribute('role', 'menuitem');
         a.className = 'lld-menu-item' + item[2];

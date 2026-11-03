@@ -62,9 +62,17 @@ test('account hub: no password or two-step writes, no consent writes, no home-ma
   expect(hub).not.toMatch(/\$wpdb->insert|\bINSERT\b/i);
   expect(hub).not.toMatch(/lld_members_withdraw_health/);
   expect(hub).toMatch(/home_url\( '\/members\/withdraw\/' \)/);
-  expect(hub).toMatch(/wp_logout_url\( home_url\( '\/' \) \)/);
-  expect(hub).toMatch(/data-lld-sign-out/);
-  for (const src of [hub, js]) expect(src).not.toMatch(/action=sign_out/);
+  // Sign out is a POST form to the Stage 2 sign-out (the More screen) with its nonce, never a logout link.
+  expect(hub).toMatch(/<form method="post" action="' \. esc_url\( home_url\( '\/members\/more\/' \) \) \. '" id="lld-hub-sign-out"/);
+  expect(hub).toMatch(/wp_nonce_field\( 'lld_sign_out', 'lld_sign_out_nonce', true, false \)/);
+  expect(hub).toMatch(/data-lld-sign-out="lld-hub-sign-out"/);
+  expect(js).toMatch(/signOut\.submit\(\)/);
+  for (const src of [hub, js]) {
+    expect(src).not.toMatch(/action=sign_out/);
+    expect(src).not.toMatch(/wp_logout_url|wp-login\.php\?action=logout/);
+  }
+  // No fixed price is shown: prices come from Stage 2 billing, not the hub.
+  expect(hub).not.toMatch(/US\$\d/);
   // Pause and notifications have no save handler.
   expect(hub).not.toMatch(/lld_pause_nonce|lld_notif_nonce|lld_security_nonce|lld_privacy_nonce/);
 });

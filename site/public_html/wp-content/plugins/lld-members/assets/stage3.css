@@ -194,6 +194,15 @@
   outline-offset: -3px;
 }
 
+button.lld-menu-item {
+  width: 100%;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
 .lld-menu-divider {
   margin: 6px 0;
   border: none;
