@@ -34,8 +34,9 @@ describe('TC-NFR1-09 reproducible AI development', () => {
     const title = process.env.PR_TITLE;
     // Stage 2 package PRs (S2-Cn / S2-Ln, Stage 2 Build Method §2) and Stage 3 package PRs (S3-Pnn, Stage 3 Build Method §2)
     if (title) expect(title).toMatch(/^((FR1|NFR1|UI1)-\d{2}|S2-(C([1-9]|10)(-C([1-9]|10))?|L1?[0-9][a-z]?)|S3-P[0-9][0-9A-B](-P[0-9][0-9A-B])?): /);
-    // every requirement PR merged since HG-01 (#2 onward; #1 was the repository skeleton) came from a req/<ID> branch
-    const merged = execSync('git log --merges --format=%s -n 20 origin/staging', { cwd: ROOT, encoding: 'utf8' }).split('\n').filter((l) => /^Merge pull request #(?!1\b)\d+ from sudarshanalk\/req\//.test(l));
+    // every requirement PR merged since HG-01 (#2 onward; #1 was the repository skeleton) came from a req/<ID> branch.
+    // The whole history is read: Stage 2 and 3 merges have pushed every Stage 1 merge out of any recent window.
+    const merged = execSync('git log --merges --format=%s origin/staging', { cwd: ROOT, encoding: 'utf8' }).split('\n').filter((l) => /^Merge pull request #(?!1\b)\d+ from sudarshanalk\/req\//.test(l));
     expect(merged.length).toBeGreaterThan(0);
     for (const m of merged) expect(m).toMatch(/req\/(FR1|NFR1|UI1)-\d{2}/);
   });
