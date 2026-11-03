@@ -133,7 +133,7 @@ class LLD_Members_Stage3_CLI {
 	 * ## OPTIONS
 	 *
 	 * [<feature>]
-	 * : Feature name, or "list".
+	 * : Feature name, "list", or "all-on" / "all-off" (every feature always on, including later ones).
 	 *
 	 * [<state>]
 	 * : off, test_accounts or everyone.
@@ -152,6 +152,11 @@ class LLD_Members_Stage3_CLI {
 	 */
 	public function feature( $args, $assoc ) {
 		$feature = isset( $args[0] ) ? (string) $args[0] : 'list';
+		if ( 'all-on' === $feature || 'all-off' === $feature ) {
+			update_option( LLD_Members_Features::ALL_ON, 'all-on' === $feature ? 1 : 0, true );
+			WP_CLI::success( 'all-on' === $feature ? 'Every feature is now on for everyone, including features added later.' : 'Each feature follows its own switch again.' );
+			return;
+		}
 		if ( 'list' === $feature ) {
 			$rows = array();
 			foreach ( LLD_Members_Features::all() as $name => $row ) {
