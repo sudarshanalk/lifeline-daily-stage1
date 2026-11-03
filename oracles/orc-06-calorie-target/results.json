@@ -1,0 +1,307 @@
+{
+  "oracle_id": "ORC-06",
+  "implementation": "Python decimal reference for the Daily Calorie Target (FR3-47, FR3-28): Mifflin-St Jeor, activity factors, the P3-56 rate cap, the 1,100 kcal per kg a week deficit, the safe minimum, rounding and the safety order, from the signed sheet of 3 November 2026",
+  "versions": {
+    "python": "3.14.6",
+    "sheet": "P3-55 v1.0 signed 2026-11-03"
+  },
+  "source_hash": "056e4eea360030fd2682d457eb5b387783ef536ca3aae90b88d57b20ac4d9c3c",
+  "run_at": "2026-11-03T11:30:49Z",
+  "results": [
+    {
+      "fixture_id": "FX-CAL-TARGET-01",
+      "expected": {
+        "stop": null,
+        "rmr": 1395.25,
+        "tdee": 1674.3,
+        "raw": 1674.3,
+        "targetKcal": 1670,
+        "achievableRate": null,
+        "notes": []
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-02",
+      "expected": {
+        "stop": null,
+        "rmr": 1805.0,
+        "tdee": 2481.88,
+        "raw": 2481.88,
+        "targetKcal": 2480,
+        "achievableRate": null,
+        "notes": []
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-03",
+      "expected": {
+        "stop": null,
+        "rmr": 1414.0,
+        "tdee": 1944.25,
+        "raw": 1394.25,
+        "targetKcal": 1390,
+        "achievableRate": 0.5,
+        "notes": []
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-04",
+      "expected": {
+        "stop": null,
+        "rmr": 1798.75,
+        "tdee": 2788.06,
+        "raw": 1963.06,
+        "targetKcal": 1960,
+        "achievableRate": 0.75,
+        "notes": []
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-05",
+      "expected": {
+        "stop": null,
+        "rmr": 1237.75,
+        "tdee": 1485.3,
+        "raw": 935.3,
+        "targetKcal": 1200,
+        "achievableRate": 0.26,
+        "notes": [
+          "floor"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-06",
+      "expected": {
+        "stop": null,
+        "rmr": 1381.5,
+        "tdee": 1657.8,
+        "raw": 1107.8,
+        "targetKcal": 1200,
+        "achievableRate": 0.42,
+        "notes": [
+          "floor"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-07",
+      "expected": {
+        "stop": null,
+        "rmr": 1510.0,
+        "tdee": 1812.0,
+        "raw": 1262.0,
+        "targetKcal": 1500,
+        "achievableRate": 0.28,
+        "notes": [
+          "floor",
+          "over65"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-08",
+      "expected": {
+        "stop": null,
+        "rmr": 1751.25,
+        "tdee": 3020.91,
+        "raw": 3295.91,
+        "targetKcal": 3300,
+        "achievableRate": null,
+        "notes": []
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-09",
+      "expected": {
+        "stop": null,
+        "rmr": 996.5,
+        "tdee": 1195.8,
+        "raw": 920.8,
+        "targetKcal": 1200,
+        "achievableRate": 0,
+        "notes": [
+          "no_loss"
+        ],
+        "maintenanceOnly": true
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-10",
+      "expected": {
+        "stop": null,
+        "rmr": 2117.5,
+        "tdee": 2541.0,
+        "raw": 1716.0,
+        "targetKcal": 1720,
+        "achievableRate": 0.75,
+        "notes": []
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-11",
+      "expected": {
+        "stop": null,
+        "rmr": 1299.0,
+        "tdee": 1786.13,
+        "raw": 1236.13,
+        "targetKcal": 1240,
+        "achievableRate": 0.5,
+        "notes": []
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-12",
+      "expected": {
+        "stop": null,
+        "rmr": 1222.5,
+        "tdee": 1467.0,
+        "raw": 1467.0,
+        "targetKcal": 1470,
+        "achievableRate": null,
+        "notes": [
+          "over65"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-13",
+      "expected": {
+        "stop": null,
+        "rmr": 1395.25,
+        "tdee": 1674.3,
+        "raw": 1674.3,
+        "targetKcal": 1670,
+        "achievableRate": null,
+        "notes": [
+          "sex_not_said"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-14",
+      "expected": {
+        "stop": "under18",
+        "rmr": null,
+        "tdee": null,
+        "raw": null,
+        "targetKcal": null,
+        "achievableRate": null,
+        "notes": []
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-15",
+      "expected": {
+        "stop": "pregnancy",
+        "rmr": null,
+        "tdee": null,
+        "raw": null,
+        "targetKcal": null,
+        "achievableRate": null,
+        "notes": []
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-16",
+      "expected": {
+        "stop": "eating",
+        "rmr": null,
+        "tdee": null,
+        "raw": null,
+        "targetKcal": null,
+        "achievableRate": null,
+        "notes": []
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-17",
+      "expected": {
+        "stop": null,
+        "rmr": 1251.5,
+        "tdee": 1720.81,
+        "raw": null,
+        "targetKcal": 1720,
+        "achievableRate": null,
+        "notes": [
+          "underweight"
+        ],
+        "maintenanceOnly": true
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-18",
+      "expected": {
+        "stop": null,
+        "rmr": 1723.75,
+        "tdee": 2370.16,
+        "raw": 1820.16,
+        "targetKcal": 1820,
+        "achievableRate": 0.5,
+        "notes": [
+          "diabetes"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-19",
+      "expected": {
+        "stop": null,
+        "rmr": 1412.45,
+        "tdee": 1942.12,
+        "raw": 1392.12,
+        "targetKcal": 1390,
+        "achievableRate": 0.5,
+        "notes": []
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-TARGET-20",
+      "expected": {
+        "stop": null,
+        "rmr": null,
+        "tdee": null,
+        "raw": null,
+        "targetKcal": null,
+        "achievableRate": null,
+        "notes": [
+          "floor"
+        ],
+        "refused": true
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-MACROS-01",
+      "expected": {
+        "fatG": 60,
+        "carbG": 231,
+        "fibreG": 30
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-MACROS-02",
+      "expected": {
+        "fatG": 73,
+        "carbG": 286,
+        "fibreG": 30
+      }
+    },
+    {
+      "fixture_id": "FX-CAL-MACROS-03",
+      "expected": {
+        "fatG": 40,
+        "carbG": 140,
+        "fibreG": 30
+      }
+    }
+  ],
+  "notes": [
+    "Fixtures are read, never written; differences are printed and listed here.",
+    "FX-CAL-TARGET-19.rmr: oracle 1412.45 != fixture None",
+    "FX-CAL-TARGET-19.tdee: oracle 1942.12 != fixture None",
+    "FX-CAL-TARGET-19.raw: oracle 1392.12 != fixture None",
+    "FX-CAL-TARGET-19.achievableRate: oracle 0.5 != fixture None",
+    "FX-CAL-MACROS-02.fibreG: oracle 30 != fixture None",
+    "FX-CAL-MACROS-03.fibreG: oracle 30 != fixture None"
+  ]
+}

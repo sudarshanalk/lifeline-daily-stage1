@@ -118,6 +118,14 @@ test("NFR3-14 (guard): a Stage 3 calculator's first fixtures come from its signe
     writeFileSync(join(repo, 'fixtures', 'heart-risk', 'lab.json'), fx(8)); git('commit -q -am "S3-P57: engine"');
     const r = oracleGuard({ root: repo, base: 'staging', head: 'HEAD' });
     expect(r.ok).toBe(false);
+    // ... unless the tool's oracle at head derived exactly that value for that fixture id (the oracle decides, not the author)
+    mkdirSync(join(repo, 'oracles', 'orc-08-heart-risk'), { recursive: true });
+    writeFileSync(join(repo, 'oracles', 'orc-08-heart-risk', 'results.json'), JSON.stringify({ results: [{ fixture_id: 'FX-HR-LAB-01', expected: { risk: 8 } }] }));
+    git('add -A'); git('commit -q -m "S3-P57: oracle"');
+    expect(oracleGuard({ root: repo, base: 'staging', head: 'HEAD' }).ok).toBe(true);
+    writeFileSync(join(repo, 'fixtures', 'heart-risk', 'lab.json'), fx(9)); git('commit -q -am "S3-P57: not the oracle value"');
+    expect(oracleGuard({ root: repo, base: 'staging', head: 'HEAD' }).ok).toBe(false);
+    git('checkout -q -- .');
     expect(r.problems.join('\n')).toMatch(/lab\.json: expected changed for FX-HR-LAB-01/);
     git('checkout -q staging'); git('checkout -q -b s1'); mkdirSync(join(repo, 'fixtures', 'protein'), { recursive: true });
     writeFileSync(join(repo, 'fixtures', 'protein', 'new.json'), fx(1).replace('heart-risk', 'protein')); git('add -A'); git('commit -q -m "S3-P02: not allowed"');
