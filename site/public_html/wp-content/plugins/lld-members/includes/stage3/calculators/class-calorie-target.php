@@ -61,6 +61,16 @@ class LLD_Members_Calorie_Target {
 	);
 
 	/**
+	 * Wording this calculator quotes unchanged from the signed Stage 1 and 2 tools (sheet section 2): the Healthy
+	 * Weight Check's underweight text (it already says to talk to your doctor), and the Daily Protein Target's
+	 * kidney message, shown in place of a protein target (FR3-69 AS-03). The test reads both from the tool pages.
+	 */
+	const QUOTED = array(
+		'underweight' => "Your BMI is below the healthy range. Being underweight can affect your energy, bones and immunity. It's worth talking to your doctor, who can check for any cause and help you look after your health.",
+		'kidney'      => "We can't give you a protein target. In kidney disease, protein guidance is different from general advice. Kidney guidelines advise against high protein intakes, and the right amount is set for you individually, against your kidney function and treatment. A general-population number could be harmful here, so this tool will not produce one for you. Please ask your kidney team or a renal dietitian for your personal target.",
+	);
+
+	/**
 	 * Safe minimum for a sex answer: 1,500 kcal for male, 1,200 kcal for female or "prefer not to say".
 	 *
 	 * @param string $sex F, M or PNTS (female, male, prefer not to say also accepted).
@@ -132,11 +142,11 @@ class LLD_Members_Calorie_Target {
 		if ( null === $weight || $weight < 25 || $weight > 350 ) {
 			return self::invalid( 'weight' );
 		}
-		$activity = isset( $in['activity'] ) ? str_replace( '_', ' ', strtolower( trim( (string) $in['activity'] ) ) ) : '';
+		$activity = isset( $in['activity'] ) && is_scalar( $in['activity'] ) ? str_replace( '_', ' ', strtolower( trim( (string) $in['activity'] ) ) ) : '';
 		if ( ! isset( self::FACTORS[ $activity ] ) ) {
 			return self::invalid( 'activity' );
 		}
-		$goal = isset( $in['goal'] ) ? strtolower( trim( (string) $in['goal'] ) ) : 'maintain';
+		$goal = isset( $in['goal'] ) && is_scalar( $in['goal'] ) ? strtolower( trim( (string) $in['goal'] ) ) : 'maintain';
 		if ( ! in_array( $goal, array( 'lose', 'maintain', 'gain' ), true ) ) {
 			return self::invalid( 'goal' );
 		}
@@ -145,6 +155,9 @@ class LLD_Members_Calorie_Target {
 
 		// A Premium member's own target: only the floor is checked (FR3-28 AS-02).
 		if ( isset( $in['memberTarget'] ) && null !== $in['memberTarget'] && '' !== $in['memberTarget'] ) {
+			if ( ! is_numeric( $in['memberTarget'] ) || (float) $in['memberTarget'] > 10000 ) {
+				return self::invalid( 'memberTarget' );
+			}
 			$own = (float) $in['memberTarget'];
 			if ( $own < $floor ) {
 				$out['refused']  = true;
@@ -201,12 +214,14 @@ class LLD_Members_Calorie_Target {
 				}
 			}
 		} elseif ( 'gain' === $goal ) {
-			$requested = isset( $in['rateKgWeek'] ) && is_numeric( $in['rateKgWeek'] ) ? (float) $in['rateKgWeek'] : 0.25;
-			$rate      = $requested >= 0.5 ? 0.5 : 0.25;
-			$raw       = $tdee + self::KCAL_PER_KG_WEEK * $rate;
+			$rate = 0.25; // the only gain rate the sheet offers (section 1.2)
+			$raw  = $tdee + self::KCAL_PER_KG_WEEK * $rate;
 			$out['offeredRate'] = $rate;
 			$out['raw']         = self::r2( $raw );
 			$out['targetKcal']  = self::r10( $raw );
+			if ( $underweight ) {
+				$out['notes'][] = 'underweight';
+			}
 		} else {
 			$out['raw']        = self::r2( $tdee );
 			$out['targetKcal'] = self::r10( $tdee );
@@ -295,10 +310,12 @@ class LLD_Members_Calorie_Target {
 		$map  = array(
 			'floor'           => 'floor_note',
 			'no_loss'         => 'no_loss_note',
+			'underweight'     => 'quoted.underweight',
 			'eating_not_said' => 'eating_not_said_note',
 			'sex_not_said'    => 'sex_not_said_note',
 			'over65'          => 'over65_note',
 			'diabetes'        => 'diabetes_note',
+			'kidney'          => 'quoted.kidney',
 		);
 		$keys = array( 'headline', 'headline_subline', 'why_this_number' );
 		foreach ( $out['notes'] as $note ) {
@@ -335,6 +352,9 @@ class LLD_Members_Calorie_Target {
 	 * @return string F, M, PNTS or ''.
 	 */
 	private static function sex( $value ) {
+		if ( ! is_scalar( $value ) ) {
+			return '';
+		}
 		$v = strtolower( trim( (string) $value ) );
 		if ( in_array( $v, array( 'f', 'female', 'woman' ), true ) ) {
 			return 'F';
@@ -353,6 +373,9 @@ class LLD_Members_Calorie_Target {
 	 * @param string[] $allowed Accepted answers.
 	 */
 	private static function answer( $value, array $allowed ) {
+		if ( ! is_scalar( $value ) ) {
+			return null;
+		}
 		$v = strtolower( str_replace( array( ' ', '-', '_' ), '', trim( (string) $value ) ) );
 		if ( 'prefernottosay' === $v || 'prefernot' === $v ) {
 			$v = 'pnts';

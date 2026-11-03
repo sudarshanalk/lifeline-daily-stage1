@@ -9,7 +9,7 @@ Exact decimal arithmetic, so rounding ties are decided exactly.
   Loss     : raw = TDEE - 1100 x rate; target = round10(max(raw, floor)); floor 1,200 (F, PNTS) / 1,500 (M);
              floored -> achievable = round2((TDEE - floor) / 1100); TDEE <= floor -> maintenance only, target
              round10(TDEE), achievable 0; BMI < 18.5 or eating "prefer not to say" -> maintenance only, no raw
-  Gain     : only below BMI 25 with eating "no"; rate 0.25 or 0.5; raw = TDEE + 1100 x rate; no floor
+  Gain     : only below BMI 25 with eating "no"; rate 0.25 only; raw = TDEE + 275; no floor
   Maintain : target = round10(TDEE)
   Stops    : age < 18; pregnant yes / not sure; eating yes. Own target below the floor: refused.
   Macros   : fat = round(kcal x 0.3 / 9); carbs = round((kcal - 4 protein - 9 fat) / 4); fibre 30 g
@@ -113,9 +113,10 @@ def assess(i: dict) -> dict:
             else:
                 out["targetKcal"] = r10(raw); out["achievableRate"] = float(rate)
     elif goal == "gain":
-        rate = D("0.5") if (num(i.get("rateKgWeek")) or D("0.25")) >= D("0.5") else D("0.25")
+        rate = D("0.25")  # the only gain rate the sheet offers (1.2)
         raw = tdee + KCAL * rate
         out["raw"] = float(q(raw, "0.01")); out["targetKcal"] = r10(raw)
+        if underweight: out["notes"].append("underweight")
     else:
         out["raw"] = float(q(tdee, "0.01")); out["targetKcal"] = r10(tdee)
         if maint_only:

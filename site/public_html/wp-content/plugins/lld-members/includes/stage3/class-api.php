@@ -368,13 +368,34 @@ class LLD_Members_Stage3_API {
 		}
 		$params = $request->get_json_params();
 		$params = is_array( $params ) ? $params : array();
+		// The member's health profile applies as well as the answers on the page (sheet section 2, FR3-69 AS-03/04):
+		// an eating-disorder flag stops the calculator; kidney disease removes the protein target; diabetes adds its note.
+		if ( class_exists( 'LLD_Members_Safety' ) ) {
+			$flags = LLD_Members_Safety::situations( $member_id );
+			if ( in_array( 'eating-disorder', $flags, true ) ) {
+				$params['eatingDisorder'] = 'yes';
+			}
+			if ( in_array( 'kidney', $flags, true ) ) {
+				$params['kidneyDisease'] = true;
+			}
+			if ( in_array( 'diabetes', $flags, true ) ) {
+				$params['type2Diabetes'] = true;
+			}
+		}
 		$result = LLD_Members_Calorie_Target::compute( $params );
 		if ( isset( $result['error'] ) ) {
 			return self::refuse( 422, 'Check ' . $result['error'] . '.' );
 		}
 		$result['wording'] = array();
 		foreach ( $result['messages'] as $key ) {
-			$result['wording'][ $key ] = LLD_Members_Calorie_Target::MESSAGES[ $key ];
+			$result['wording'][ $key ] = 0 === strpos( $key, 'quoted.' ) ? LLD_Members_Calorie_Target::QUOTED[ substr( $key, 7 ) ] : LLD_Members_Calorie_Target::MESSAGES[ $key ];
+		}
+		// The profile's safe minimum applies to every saved or own target, whatever sex the page answered.
+		if ( null !== $result['targetKcal'] && ! $result['refused'] && ! $result['maintenanceOnly'] && $result['targetKcal'] < self::kcal_floor( $member_id ) ) {
+			$result['refused']               = true;
+			$result['targetKcal']            = null;
+			$result['notes'][]               = 'floor';
+			$result['wording']['floor_note'] = LLD_Members_Calorie_Target::MESSAGES['floor_note'];
 		}
 		if ( null !== $result['targetKcal'] && ! $result['refused'] ) {
 			$protein           = in_array( 'kidney', $result['notes'], true ) ? null : self::protein_target( $member_id );

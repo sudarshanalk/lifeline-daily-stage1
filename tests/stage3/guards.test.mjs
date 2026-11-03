@@ -3,6 +3,7 @@ import { expect, test } from 'vitest';
 import { stage3Scope, stage3Guards, classify, unknownTestIds, DECLARED_STAGE2 } from '../ci/stage3-scope.mjs';
 import { oracleGuard } from '../ci/oracle-guard.mjs';
 import { execSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -120,8 +121,13 @@ test("NFR3-14 (guard): a Stage 3 calculator's first fixtures come from its signe
     expect(r.ok).toBe(false);
     // ... unless the tool's oracle at head derived exactly that value for that fixture id (the oracle decides, not the author)
     mkdirSync(join(repo, 'oracles', 'orc-08-heart-risk'), { recursive: true });
-    writeFileSync(join(repo, 'oracles', 'orc-08-heart-risk', 'results.json'), JSON.stringify({ results: [{ fixture_id: 'FX-HR-LAB-01', expected: { risk: 8 } }] }));
+    const script = 'print(8)\n';
+    writeFileSync(join(repo, 'oracles', 'orc-08-heart-risk', 'hr_ref.py'), script);
+    writeFileSync(join(repo, 'oracles', 'orc-08-heart-risk', 'results.json'), JSON.stringify({ source_hash: 'not-the-script', results: [{ fixture_id: 'FX-HR-LAB-01', expected: { risk: 8 } }] }));
     git('add -A'); git('commit -q -m "S3-P57: oracle"');
+    expect(oracleGuard({ root: repo, base: 'staging', head: 'HEAD' }).ok).toBe(false); // results.json not from the committed script
+    writeFileSync(join(repo, 'oracles', 'orc-08-heart-risk', 'results.json'), JSON.stringify({ source_hash: createHash('sha256').update(script, 'utf8').digest('hex'), results: [{ fixture_id: 'FX-HR-LAB-01', expected: { risk: 8 } }] }));
+    git('commit -q -am "S3-P57: oracle hash"');
     expect(oracleGuard({ root: repo, base: 'staging', head: 'HEAD' }).ok).toBe(true);
     writeFileSync(join(repo, 'fixtures', 'heart-risk', 'lab.json'), fx(9)); git('commit -q -am "S3-P57: not the oracle value"');
     expect(oracleGuard({ root: repo, base: 'staging', head: 'HEAD' }).ok).toBe(false);

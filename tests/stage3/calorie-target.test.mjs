@@ -113,6 +113,16 @@ test('TC-FR3-28-AS-02 (source and engine): a calorie target below the safe minim
   expect(calc).toMatch(/LLD_Members_Features::enabled\( 'calculators_new', \$member_id \)/);
   expect(calc.indexOf("enabled( 'calculators_new'")).toBeLessThan(calc.indexOf('$member_id < 1'));
   expect(calc).toMatch(/has_health_consent\( \$member_id \)/);
+  // The member's profile flags apply as well as the page answers (sheet section 2), and the profile's floor applies to
+  // every target the route returns or saves, whatever sex the page answered.
+  expect(calc).toMatch(/LLD_Members_Safety::situations\( \$member_id \)/);
+  for (const flag of ['eating-disorder', 'kidney', 'diabetes']) expect(calc).toContain(`'${flag}'`);
+  expect(calc.indexOf('situations(')).toBeLessThan(calc.indexOf('LLD_Members_Calorie_Target::compute('));
+  expect(calc).toMatch(/kcal_floor\( \$member_id \)/);
+  expect(calc.indexOf('kcal_floor(')).toBeLessThan(calc.indexOf('LLD_Members_Stage3_Data::insert'));
+  // Non-scalar answers are refused without a PHP notice.
+  const odd = execFileSync('php', ['-d', 'display_errors=stderr', '-r', `define('ABSPATH', '/'); require ${toPhpPath(engine)}; echo json_encode([LLD_Members_Calorie_Target::compute(['sex' => ['a'], 'age' => 30]), LLD_Members_Calorie_Target::compute(['sex' => 'F', 'age' => 30, 'eatingDisorder' => [], 'heightCm' => 160, 'weightKg' => 60, 'activity' => 'low'])]);`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+  expect(JSON.parse(odd).map((r) => r.error)).toEqual(['sex', 'eatingDisorder']);
   expect(calc).toMatch(/'set_by'\s+=> 'calculator'/);
   expect(api).toMatch(/\/me\/calculate\/\(\?P<tool>\[a-z-\]\+\)/);
   // The engine never computes protein (D3-06): macros take it as given and leave carbohydrate open without it.
@@ -131,6 +141,24 @@ test('NFR3-14 (wording): every signed string in the engine hashes to the approva
   expect(problems).toEqual([]);
   expect(Object.keys(M).sort()).toEqual(Object.keys(approval.copy_hashes).sort());
   expect(approval.clinical_signoff.decision).toBe('approved');
+  // Wording quoted from the signed Stage 1 and 2 tools is byte-identical to what those tools show (sheet section 2).
+  const Q = JSON.parse(php('echo json_encode(LLD_Members_Calorie_Target::QUOTED);'));
+  const hw = readFileSync(resolve(root, 'site/public_html/tools/healthy-weight-tool.html'), 'utf8');
+  expect(hw).toContain(JSON.stringify(Q.underweight));
+  const protein = readFileSync(resolve(root, 'site/public_html/tools/protein-requirement-tool.html'), 'utf8');
+  const renal = protein.slice(protein.indexOf('renalStop: {'), protein.indexOf('}', protein.indexOf('renalStop: {')));
+  const joined = [...renal.matchAll(/"((?:[^"\\]|\\.)*)"/g)].map((m) => m[1]).join('');
+  expect(Q.kidney).toBe(joined.replace('We can\'t give you a protein target', 'We can\'t give you a protein target.').replace('target.In', 'target. In'));
+  // Underweight and kidney results carry that wording; gain at BMI < 18.5 keeps the underweight note.
+  const [under, kidney, gainUnder] = compute([
+    { sex: 'F', age: 30, heightCm: 170, weightKg: 50, activity: 'some', goal: 'lose', rateKgWeek: 0.5 },
+    { sex: 'M', age: 40, heightCm: 178, weightKg: 90, activity: 'some', goal: 'lose', rateKgWeek: 0.5, kidneyDisease: true },
+    { sex: 'F', age: 30, heightCm: 170, weightKg: 50, activity: 'some', goal: 'gain', rateKgWeek: 1.0 },
+  ]);
+  expect(under.messages).toContain('quoted.underweight');
+  expect(kidney.messages).toContain('quoted.kidney');
+  expect(gainUnder.notes).toContain('underweight');
+  expect(gainUnder.offeredRate).toBe(0.25);
   // The engine is loaded through the Stage 3 loader and does nothing on its own (no hooks, no database).
   const src = readFileSync(engine, 'utf8');
   expect(src).not.toMatch(/add_action|add_filter|\$wpdb|get_option|wp_remote/);

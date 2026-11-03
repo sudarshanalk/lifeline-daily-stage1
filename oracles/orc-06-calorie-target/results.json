@@ -5,8 +5,8 @@
     "python": "3.14.6",
     "sheet": "P3-55 v1.0 signed 2026-11-03"
   },
-  "source_hash": "056e4eea360030fd2682d457eb5b387783ef536ca3aae90b88d57b20ac4d9c3c",
-  "run_at": "2026-11-03T11:30:49Z",
+  "source_hash": "3651a7d40fe918639bbca93d2c0064be13e50dc0045e6c2789fc24e8e6270fb0",
+  "run_at": "2026-11-03T11:51:41Z",
   "results": [
     {
       "fixture_id": "FX-CAL-TARGET-01",
