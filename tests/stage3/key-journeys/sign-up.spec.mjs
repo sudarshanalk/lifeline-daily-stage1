@@ -10,7 +10,7 @@ async function confirmationLink(email) {
     if (!message) return false;
     const id = message.ID || message.Id || message.id;
     const body = await (await fetch(`${mailpit}/api/v1/message/${id}`)).json();
-    link = `${body.Text || body.HTML || ''}`.match(/https?:\/\/\S+\/members\/confirm\/\?code=[^\s<]+/)?.[0] || '';
+    link = `${body.Text || body.HTML || ''}`.match(/https?:\/\/\S+\/members\/confirm\/\?token=[^\s<]+/)?.[0] || '';
     return Boolean(link);
   }, { timeout: 20000 }).toBe(true);
   return link.replace(/[).,>]+$/, '');

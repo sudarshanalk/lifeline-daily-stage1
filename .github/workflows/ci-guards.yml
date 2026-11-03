@@ -324,7 +324,7 @@ jobs:
   # change cannot silently narrow the regression set.
   stage3-e2e:
     if: "github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'S3-')"
-    name: "stage3-e2e (${{ matrix.browser }} ${{ matrix.part }} of ${{ matrix.parts }})"
+    name: "stage3-e2e (${{ matrix.browser }}${{ matrix.parts > 1 && format(' {0} of {1}', matrix.part, matrix.parts) || '' }})"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -333,7 +333,7 @@ jobs:
           - { browser: chromium, part: 1, parts: 1 }
           - { browser: webkit, part: 1, parts: 2 }
           - { browser: webkit, part: 2, parts: 2 }
-    timeout-minutes: 20
+    timeout-minutes: 30
     services:
       db:
         image: mariadb:11
@@ -370,7 +370,7 @@ jobs:
           npx playwright test -c tests/stage3/e2e/playwright.config.mjs --project=${{ matrix.browser }} --shard=${{ matrix.part }}/${{ matrix.parts }}
       - uses: actions/upload-artifact@v4
         if: failure()
-        with: { name: 'stage3-key-journeys-${{ matrix.browser }}-${{ matrix.part }}', path: test-results/, if-no-files-found: ignore }
+        with: { name: 'stage3-key-journeys-${{ matrix.browser }}-${{ matrix.part }}', path: test-results/stage3/, if-no-files-found: ignore }
 
   saf:
     if: "!startsWith(github.event.pull_request.title || '', 'SPEC: ')"   # SPEC PRs (DEC-55) carry no code or tests

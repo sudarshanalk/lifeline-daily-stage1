@@ -16,7 +16,9 @@ export async function startTrack(page, slug = 'healthy-weight') {
   await page.goto('/members/tracks/');
   const nonce = await page.locator('input[name="lld_track_nonce"]').first().inputValue();
   const response = await page.request.post('/members/tracks/', { form: { lld_track_nonce: nonce, lld_track: slug }, maxRedirects: 0 });
-  expect([200, 302, 303]).toContain(response.status());
+  // A failed start re-renders the "Start a track" page with 200; success redirects to /members/home/.
+  expect(response.status(), await response.text()).toBe(302);
+  expect(response.headers().location).toContain('/members/home/');
 }
 
 export async function serveHealthyWeightTool(page) {
