@@ -38,8 +38,12 @@ wp lld-members db-update --path="$DIR"
 # screens: the two listed test members and the owner admin (an admin is always a test account, so it sees every
 # Stage 3 screen whose switch is at test_accounts). Every other Stage 2 member stays exactly as Stage 2
 # (content_new stays off here on purpose).
-for f in api account_hub goals today insights food_tracker health_logging calculators_new reminders; do wp lld-members feature "$f" test_accounts --path="$DIR" --quiet; done
-wp lld-members test-accounts p3-api-a@test.lifelinedaily.invalid p3-api-b@test.lifelinedaily.invalid --path="$DIR" --quiet
+for f in api account_hub goals today insights food_tracker health_logging calculators_new reminders sign_in_social sign_in_code; do wp lld-members feature "$f" test_accounts --path="$DIR" --quiet; done
+wp lld-members test-accounts p3-api-a@test.lifelinedaily.invalid p3-api-b@test.lifelinedaily.invalid p3-signin-a@test.lifelinedaily.invalid p3-signin-b@test.lifelinedaily.invalid p3-signin-c@test.lifelinedaily.invalid p3-signin-d@test.lifelinedaily.invalid p3-signin-e@test.lifelinedaily.invalid p3-signin-f@test.lifelinedaily.invalid p3-signin-g@test.lifelinedaily.invalid p3-signin-h@test.lifelinedaily.invalid p3-signin-relay@privaterelay.appleid.test --path="$DIR" --quiet
+# P3-20: a Google client that exists only here, so the Continue with Google button and the start route can be checked;
+# the callback is never reached (the tests complete provider sign-ins through the test route instead)
+wp config set --path="$DIR" LLD_GOOGLE_CLIENT_ID ci-google-client.apps.googleusercontent.com --quiet
+wp config set --path="$DIR" LLD_GOOGLE_CLIENT_SECRET ci-only --quiet
 # Router: without one, PHP's built-in server answers 404 itself for any missing path with a dot (/sitemap.xml)
 # instead of passing it to WordPress, unlike Apache/LiteSpeed with the WordPress .htaccess on staging and production
 nohup php -S 127.0.0.1:8090 -t "$DIR" "$REPO/tools/local/router.php" > "$DIR/../php-server.log" 2>&1 &
