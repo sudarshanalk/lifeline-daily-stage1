@@ -137,7 +137,8 @@ export function stage3Guards({ files, diffs, texts, decisions = loadDecisions() 
     }
     if (schemaFiles.includes(f)) {
       for (const line of d.added) {
-        if (/\b(DROP\s+(TABLE|COLUMN|INDEX)|MODIFY\s+COLUMN|MODIFY\s+\w|CHANGE\s+COLUMN|CHANGE\s+\w+\s+\w|RENAME\s+(TABLE|COLUMN|TO))\b/i.test(line)) {
+        // SQL-shaped only: an upper-case verb followed by a table, column or name, so prose in a comment is not caught.
+        if (/\b(DROP\s+(TABLE|COLUMN|INDEX)|ALTER\s+TABLE\s+\S+\s+(MODIFY|CHANGE|RENAME)|MODIFY\s+COLUMN|CHANGE\s+COLUMN|RENAME\s+(TABLE|COLUMN|TO))\b/.test(line)) {
           problems.push(`${f}: a database change that drops, changes or renames (NFR3-04): ${line.trim()}`);
         }
       }

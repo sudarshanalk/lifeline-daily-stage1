@@ -409,7 +409,7 @@ class LLD_Members_Stage3_Schema {
 	 * Columns added after a table first shipped. Only ever ADD COLUMN.
 	 */
 	private static function upgrade() {
-		// Nothing yet. Later packages add ensure_column() lines here, never a change to a Stage 2 statement.
+		// Nothing yet. Later packages add ensure_column() lines here and leave every Stage 2 statement as it is.
 	}
 
 	/**

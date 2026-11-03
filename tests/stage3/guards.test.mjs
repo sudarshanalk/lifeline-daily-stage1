@@ -38,7 +38,7 @@ test('TC-NFR3-04-AS-01', () => {
   // A database change that drops or renames a Stage 2 column is failed by the check.
   const schema = `${PLUGIN}/includes/class-schema.php`;
   const stage3 = `${PLUGIN}/includes/stage3/class-schema-stage3.php`;
-  for (const line of ['ALTER TABLE x DROP COLUMN age', "$wpdb->query( \"ALTER TABLE {$table} MODIFY COLUMN age INT\" );", 'ALTER TABLE x CHANGE age years INT', 'RENAME TABLE a TO b', 'DROP TABLE IF EXISTS x']) {
+  for (const line of ['ALTER TABLE x DROP COLUMN age', "$wpdb->query( \"ALTER TABLE {$table} MODIFY COLUMN age INT\" );", 'ALTER TABLE x CHANGE age years INT', 'RENAME TABLE a TO b', 'DROP TABLE IF EXISTS x', 'ALTER TABLE {$table} RENAME COLUMN age TO years']) {
     const r = stage3Guards({ files: [stage3], diffs: () => ({ removed: [], added: [line] }), texts: text, decisions: [] });
     expect(r.ok, line).toBe(false);
     expect(r.problems[0]).toMatch(/NFR3-04/);
