@@ -13,6 +13,8 @@ TARGETS = [
     ("oracles/*/results.json", "oracle-result.schema.json"),
     ("approvals/protein.json", "methodology-approval.schema.json"),
     ("approvals/diabetes.json", "methodology-approval.schema.json"),
+    ("approvals/healthy-weight.json", "methodology-approval.schema.json"),
+    ("approvals/stage3/*.json", "methodology-approval.schema.json"),
     ("approvals/copy.json", "copy-approval.schema.json"),
     ("approvals/hg-0*.json", "gate-record.schema.json"),
     ("evidence/*/*.json", "evidence.schema.json"),
@@ -25,6 +27,15 @@ TARGETS = [
     ("incidents/*.json", "clinical-incident.schema.json"),
 ]
 bad = 0; n = 0
+# Fixture ids are unique across every fixture file: a second file could not shadow a frozen one.
+seen = {}
+for f in sorted(glob.glob(str(ROOT / "fixtures/*/*.json"))):
+    doc = json.load(open(f, encoding="utf-8"))
+    for fx in doc.get("fixtures", []) if isinstance(doc, dict) else []:
+        rel = Path(f).relative_to(ROOT).as_posix()
+        if fx.get("id") in seen:
+            bad += 1; print(f"INVALID {rel}: fixture id {fx['id']} already used in {seen[fx['id']]}")
+        seen[fx.get("id")] = rel
 for pattern, schema_name in TARGETS:
     schema = S(schema_name)
     for f in sorted(glob.glob(str(ROOT / pattern))):

@@ -1,0 +1,586 @@
+{
+  "group": "LAB",
+  "tool": "heart-risk",
+  "fixtures": [
+    {
+      "id": "FX-HR-LAB-01",
+      "purpose": "HR-01: Western Europe (UK), man 55, non-smoker, SBP 130, TC 5.0: 7 %, Moderate",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "country": "United Kingdom",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 7,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-LAB-02",
+      "purpose": "HR-02: Western Europe (UK), man 55, smoker, SBP 160, TC 7.0: 26 %, Very high",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "country": "United Kingdom",
+        "smoke": "yes",
+        "sbp": 160,
+        "diabetes": "no",
+        "tc": 7.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "smoker",
+          "age": "55-59",
+          "sbp": "160-179",
+          "tc": ">=7"
+        },
+        "risk": 26,
+        "band": "very-high",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-LAB-03",
+      "purpose": "HR-03: Western Europe (UK), woman 45, non-smoker, SBP 120, TC 4.5: 1 %, Low",
+      "inputs": {
+        "age": 45,
+        "sex": "female",
+        "country": "United Kingdom",
+        "smoke": "no",
+        "sbp": 120,
+        "diabetes": "no",
+        "tc": 4.5,
+        "tcUnit": "mmol/L",
+        "bmi": 23,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "women",
+          "smoking": "non-smoker",
+          "age": "45-49",
+          "sbp": "120-139",
+          "tc": "4-4.9"
+        },
+        "risk": 1,
+        "band": "low",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-LAB-04",
+      "purpose": "HR-04: South Asia (India), man 60, smoker, SBP 170, diabetes, TC 6.5: 35 %, Very high",
+      "inputs": {
+        "age": 60,
+        "sex": "male",
+        "country": "India",
+        "smoke": "yes",
+        "sbp": 170,
+        "diabetes": "yes",
+        "tc": 6.5,
+        "tcUnit": "mmol/L",
+        "bmi": 27,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "South Asia",
+        "cell": {
+          "diabetes": "yes",
+          "sex": "men",
+          "smoking": "smoker",
+          "age": "60-64",
+          "sbp": "160-179",
+          "tc": "6-6.9"
+        },
+        "risk": 35,
+        "band": "very-high",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-LAB-05",
+      "purpose": "HR-05: South Asia (India), woman 50, non-smoker, SBP 140, TC 5.5: 5 %, Moderate",
+      "inputs": {
+        "age": 50,
+        "sex": "female",
+        "country": "India",
+        "smoke": "no",
+        "sbp": 140,
+        "diabetes": "no",
+        "tc": 5.5,
+        "tcUnit": "mmol/L",
+        "bmi": 28,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "South Asia",
+        "cell": {
+          "diabetes": "no",
+          "sex": "women",
+          "smoking": "non-smoker",
+          "age": "50-54",
+          "sbp": "140-159",
+          "tc": "5-5.9"
+        },
+        "risk": 5,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-LAB-06",
+      "purpose": "HR-06: High-income North America (US), man 65, non-smoker, SBP 150, TC 6.0: 21 %, Very high",
+      "inputs": {
+        "age": 65,
+        "sex": "male",
+        "country": "United States of America",
+        "smoke": "no",
+        "sbp": 150,
+        "diabetes": "no",
+        "tc": 6.0,
+        "tcUnit": "mmol/L",
+        "bmi": 30,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "High-income North America",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "65-69",
+          "sbp": "140-159",
+          "tc": "6-6.9"
+        },
+        "risk": 21,
+        "band": "very-high",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-LAB-07",
+      "purpose": "HR-07: High-income North America (US), woman 70, smoker, SBP 160, diabetes, TC 6.0: 45 %, Very high",
+      "inputs": {
+        "age": 70,
+        "sex": "female",
+        "country": "United States of America",
+        "smoke": "yes",
+        "sbp": 160,
+        "diabetes": "yes",
+        "tc": 6.0,
+        "tcUnit": "mmol/L",
+        "bmi": 24,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "High-income North America",
+        "cell": {
+          "diabetes": "yes",
+          "sex": "women",
+          "smoking": "smoker",
+          "age": "70-74",
+          "sbp": "160-179",
+          "tc": "6-6.9"
+        },
+        "risk": 45,
+        "band": "very-high",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-LAB-08",
+      "purpose": "HR-08: East Asia (China), man 50, smoker, SBP 140, TC 5.0: 12 %, High",
+      "inputs": {
+        "age": 50,
+        "sex": "male",
+        "country": "China",
+        "smoke": "yes",
+        "sbp": 140,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 25,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "East Asia",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "smoker",
+          "age": "50-54",
+          "sbp": "140-159",
+          "tc": "5-5.9"
+        },
+        "risk": 12,
+        "band": "high",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-LAB-09",
+      "purpose": "HR-09: Southern Sub-Saharan Africa (South Africa), woman 60, non-smoker, SBP 150, diabetes, TC 5.0: 14 %, High",
+      "inputs": {
+        "age": 60,
+        "sex": "female",
+        "country": "South Africa",
+        "smoke": "no",
+        "sbp": 150,
+        "diabetes": "yes",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 32,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Southern Sub-Saharan Africa",
+        "cell": {
+          "diabetes": "yes",
+          "sex": "women",
+          "smoking": "non-smoker",
+          "age": "60-64",
+          "sbp": "140-159",
+          "tc": "5-5.9"
+        },
+        "risk": 14,
+        "band": "high",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-LAB-10",
+      "purpose": "HR-10: Australasia (Australia), man 74, non-smoker, SBP 120, TC 4.0: 17 %, High (upper age bound)",
+      "inputs": {
+        "age": 74,
+        "sex": "male",
+        "country": "Australia",
+        "smoke": "no",
+        "sbp": 120,
+        "diabetes": "no",
+        "tc": 4.0,
+        "tcUnit": "mmol/L",
+        "bmi": 24,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Australasia",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "70-74",
+          "sbp": "120-139",
+          "tc": "4-4.9"
+        },
+        "risk": 17,
+        "band": "high",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-LAB-11",
+      "purpose": "HR-11: Western Europe (UK), man 40, non-smoker, SBP 110, TC 4.0: 1 %, Low (lower age bound)",
+      "inputs": {
+        "age": 40,
+        "sex": "male",
+        "country": "United Kingdom",
+        "smoke": "no",
+        "sbp": 110,
+        "diabetes": "no",
+        "tc": 4.0,
+        "tcUnit": "mmol/L",
+        "bmi": 22,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "40-44",
+          "sbp": "<120",
+          "tc": "4-4.9"
+        },
+        "risk": 1,
+        "band": "low",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-LAB-14",
+      "purpose": "HR-14: North Africa and Middle East (Egypt), man 60, smoker, SBP 180, diabetes, TC 7.5: 66 %, Very high, urgent wording first",
+      "inputs": {
+        "age": 60,
+        "sex": "male",
+        "country": "Egypt",
+        "smoke": "yes",
+        "sbp": 180,
+        "diabetes": "yes",
+        "tc": 7.5,
+        "tcUnit": "mmol/L",
+        "bmi": 29,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "North Africa and Middle East",
+        "cell": {
+          "diabetes": "yes",
+          "sex": "men",
+          "smoking": "smoker",
+          "age": "60-64",
+          "sbp": ">=180",
+          "tc": ">=7"
+        },
+        "risk": 66,
+        "band": "very-high",
+        "urgent": true
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "SBP 180 entered: the frozen global urgent-care wording (FR3-46) is shown first, as an alert; the result is still shown below it."
+    },
+    {
+      "id": "FX-HR-LAB-20",
+      "purpose": "HR-20: Western Europe (UK), man 55, non-smoker, SBP 130, TC 193 mg/dL = 4.99 mmol/L: 6 %, Moderate",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "country": "United Kingdom",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 193,
+        "tcUnit": "mg/dL",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 7,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet: 193 / 38.67 = 4.99 -> 4-4.9 band, 6 % (not HR-01's cell, because 4.99 mmol/L is below 5; the unit twin of HR-01 is 194 mg/dL = 5.02), and sign-off scenario S10 says 6 %. The 4-4.9 cell reads 6 % in the file. AMBIGUITY flagged for the lead: 193 / 38.67 = 4.991, and the sheet's section 6 rule ('banded on the value to 1 dp, half-up') would give 5.0 and the 5-5.9 band (7 %); this fixture records the sheet's explicit expected value as signed. Owner decided 3 Nov 2026 (Owner_Questions 63): the 1 dp half-up rule stands; 4.991 -> 5.0 -> band 5-5.9 -> 7 %."
+    },
+    {
+      "id": "FX-HR-LAB-23",
+      "purpose": "HR-23: Central Latin America (Mexico), HR-01's inputs: 5 %, Moderate (region effect: 7 % in Western Europe)",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "country": "Mexico",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Central Latin America",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 5,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-LAB-24",
+      "purpose": "HR-24: Western Europe (UK), man 55, non-smoker, SBP 139, TC 5.9: 7 %, same cell as HR-01 (top of both bands)",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "country": "United Kingdom",
+        "smoke": "no",
+        "sbp": 139,
+        "diabetes": "no",
+        "tc": 5.9,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 7,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-LAB-25",
+      "purpose": "HR-25: Western Europe (UK), man 55, non-smoker, SBP 140, TC 6.0: both bands step up (band boundary); cell value from the file",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "country": "United Kingdom",
+        "smoke": "no",
+        "sbp": 140,
+        "diabetes": "no",
+        "tc": 6.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "140-159",
+          "tc": "6-6.9"
+        },
+        "risk": 11,
+        "band": "high",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "The sheet gives no printed expected value ('cell value from the file'); 11 % read from who2019-chart-cells.json on 3 November 2026."
+    }
+  ]
+}

@@ -54,6 +54,7 @@ class LLD_Members_Features {
 			'weekly_report'    => 'P3-72 weekly owner report',
 			'reminders'        => 'P3-85 reminders, shareable summary, add to home screen',
 			'consent_new'      => 'P3-86 health consent for new data, download and deletion',
+			'content_new'      => 'P3-73 to P3-77: new tracks, challenges and wording',
 		);
 	}
 

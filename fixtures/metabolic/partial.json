@@ -1,0 +1,134 @@
+{
+  "group": "Partial results and missing values",
+  "tool": "metabolic",
+  "fixtures": [
+    {
+      "id": "FX-MET-PART-01",
+      "purpose": "MS-07: No blood results, BP not raised: partial, TG, HDL and FPG needed (AS-03)",
+      "inputs": {
+        "age": null,
+        "sex": "female",
+        "background": "Chinese",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 85,
+        "bpSystolic": 118,
+        "bpDiastolic": 76,
+        "bpMedicine": false,
+        "triglycerides": null,
+        "triglyceridesUnit": null,
+        "hdl": null,
+        "hdlUnit": null,
+        "hdlMedicine": false,
+        "fastingGlucose": null,
+        "fastingGlucoseUnit": null,
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "unknown",
+          "hdl": "unknown",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "unknown"
+        },
+        "count": 0,
+        "result": "results.partial",
+        "missing": [
+          "triglycerides",
+          "hdl",
+          "fastingGlucose"
+        ],
+        "flags": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range)."
+    },
+    {
+      "id": "FX-MET-PART-02",
+      "purpose": "MS-08: No blood results, BP 132 raised (1 met): partial, TG, HDL and FPG needed",
+      "inputs": {
+        "age": null,
+        "sex": "female",
+        "background": "Chinese",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 85,
+        "bpSystolic": 132,
+        "bpDiastolic": 76,
+        "bpMedicine": false,
+        "triglycerides": null,
+        "triglyceridesUnit": null,
+        "hdl": null,
+        "hdlUnit": null,
+        "hdlMedicine": false,
+        "fastingGlucose": null,
+        "fastingGlucoseUnit": null,
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "unknown",
+          "hdl": "unknown",
+          "bloodPressure": "met",
+          "fastingGlucose": "unknown"
+        },
+        "count": 1,
+        "result": "results.partial",
+        "missing": [
+          "triglycerides",
+          "hdl",
+          "fastingGlucose"
+        ],
+        "flags": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range)."
+    },
+    {
+      "id": "FX-MET-PART-03",
+      "purpose": "MS-12: FPG missing but 2 cannot be reached: not met, no partial",
+      "inputs": {
+        "age": null,
+        "sex": "male",
+        "background": "Europid",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 110,
+        "bpSystolic": 118,
+        "bpDiastolic": 70,
+        "bpMedicine": false,
+        "triglycerides": 1.5,
+        "triglyceridesUnit": "mmol/L",
+        "hdl": 1.2,
+        "hdlUnit": "mmol/L",
+        "hdlMedicine": false,
+        "fastingGlucose": null,
+        "fastingGlucoseUnit": null,
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "not-met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "unknown"
+        },
+        "count": 0,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range). Sheet: 'Not met (even if FPG were raised, only 1) - no \"partial\" because 2 can't be reached'. The missing FPG is listed as not provided but is not in 'missing' because no partial result is given."
+    }
+  ]
+}

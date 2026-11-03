@@ -1,0 +1,98 @@
+{
+  "group": "Pregnancy",
+  "tool": "bp-check",
+  "fixtures": [
+    {
+      "id": "FX-BP-PREG-01",
+      "purpose": "Pregnant yes, 141/91: same-day note, no category",
+      "inputs": {
+        "systolic": 141,
+        "diastolic": 91,
+        "mode": "single",
+        "pregnant": "yes"
+      },
+      "expected": {
+        "refused": false,
+        "category": null,
+        "warning_level": "pregnancy_same_day",
+        "urgent": false,
+        "wording_keys": [
+          "pregnancy.same-day"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-24"
+    },
+    {
+      "id": "FX-BP-PREG-02",
+      "purpose": "Pregnant yes, 160/95: pregnancy urgent",
+      "inputs": {
+        "systolic": 160,
+        "diastolic": 95,
+        "mode": "single",
+        "pregnant": "yes"
+      },
+      "expected": {
+        "refused": false,
+        "category": null,
+        "warning_level": "pregnancy_urgent",
+        "urgent": true,
+        "wording_keys": [
+          "pregnancy.urgent"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-25"
+    },
+    {
+      "id": "FX-BP-PREG-03",
+      "purpose": "Pregnant not sure, 150/110: pregnancy urgent (diastolic)",
+      "inputs": {
+        "systolic": 150,
+        "diastolic": 110,
+        "mode": "single",
+        "pregnant": "notsure"
+      },
+      "expected": {
+        "refused": false,
+        "category": null,
+        "warning_level": "pregnancy_urgent",
+        "urgent": true,
+        "wording_keys": [
+          "pregnancy.urgent"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-26"
+    },
+    {
+      "id": "FX-BP-PREG-04",
+      "purpose": "Pregnant yes, 118/76: neutral note, no category",
+      "inputs": {
+        "systolic": 118,
+        "diastolic": 76,
+        "mode": "single",
+        "pregnant": "yes"
+      },
+      "expected": {
+        "refused": false,
+        "category": null,
+        "warning_level": "pregnancy_neutral",
+        "urgent": false,
+        "wording_keys": [
+          "pregnancy.neutral"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-27"
+    }
+  ]
+}

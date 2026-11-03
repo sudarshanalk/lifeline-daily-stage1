@@ -85,7 +85,7 @@ test('TC-NFR3-10-AS-01', () => {
   expect(out).toBe('hidden,142.5,other-member-refused,empty-null,bad-null');
   // The readings, goals and insights tables keep only ciphertext columns for health values.
   const schema = stage3('class-schema-stage3.php');
-  const table = (name) => schema.slice(schema.indexOf(`self::create( '${name}'`), schema.indexOf("' );", schema.indexOf(`self::create( '${name}'`)));
+  const table = (name) => schema.slice(schema.indexOf(`'${name}' => '`), schema.indexOf("',\n", schema.indexOf(`'${name}' => '`)));
   expect(table('readings')).toMatch(/value_1_ct TEXT/);
   expect(table('readings')).not.toMatch(/\bvalue_1 (DECIMAL|INT|SMALLINT|FLOAT)/);
   expect(table('goals')).toMatch(/target_value_ct TEXT/);
@@ -121,7 +121,7 @@ test('TC-NFR3-09-AS-01 (source): every Stage 3 data type is served by the interf
   // Every table the schema creates is either served, or named here as not a member record (identities and email
   // codes are sign-in records, pauses are payment records: P3-20 to P3-22 and P3-63 add their own routes).
   const schema = stage3('class-schema-stage3.php');
-  const created = [...schema.matchAll(/self::create\( '(\w+)'/g)].map((m) => m[1]);
+  const created = [...schema.slice(schema.indexOf('function definitions')).matchAll(/^\s*'(\w+)' => '$/gm)].map((m) => m[1]);
   const notServed = ['identities', 'email_codes', 'goal_baselines', 'plan_adjustments', 'foods', 'pauses'];
   for (const t of created) if (!notServed.includes(t)) expect(types, t).toMatch(new RegExp(`'table'\\s+=> '${t}'`));
   // Every reading type in the data model has its ranges.
@@ -134,9 +134,11 @@ test('TC-NFR3-04-AS-02 (source): the Stage 3 schema only creates and adds, and S
   expect(schema).not.toMatch(/DROP\s+(TABLE|COLUMN)/i);
   expect(schema).not.toMatch(/\b(MODIFY|CHANGE)\s+COLUMN|RENAME\s+(TABLE|COLUMN)|ALTER TABLE \S+ (MODIFY|CHANGE|RENAME)/);
   expect(schema).toMatch(/ALTER TABLE \{\$table\} ADD COLUMN/);
+  expect(schema).toMatch(/ALTER TABLE \{\$table\} ADD \{\$ddl\}/);
+  expect(schema).toMatch(/foreach \( self::definitions\(\) as \$suffix => \$body \)/);
   // Table names follow the data model v0.2 (wp_lld_<suffix>), all unique.
   const suffixes = [...schema.slice(schema.indexOf('function suffixes')).matchAll(/^\s*'(\w+)',$/gm)].map((m) => m[1]);
-  const created = [...schema.matchAll(/self::create\( '(\w+)'/g)].map((m) => m[1]);
+  const created = [...schema.slice(schema.indexOf('function definitions')).matchAll(/^\s*'(\w+)' => '$/gm)].map((m) => m[1]);
   expect(created.sort()).toEqual([...suffixes].sort());
   expect(new Set(suffixes).size).toBe(suffixes.length);
   // The Stage 2 schema still runs first and is unchanged apart from the Stage 3 call.

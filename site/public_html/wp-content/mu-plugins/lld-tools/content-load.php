@@ -62,8 +62,11 @@ function lld_content_safety_missing(array $it, string $track = ''): array {
 
 /** The problems that stop a bundle loading: shape, unknown types, repeated keys, references to keys not listed before the
  *  item (the library fingerprints a link by the linked item's approved version, so it must be approved first), tags
- *  that are not slugs, breath-holding (D36), a missing NFR2-07 safety line, and an item without the approval-page
- *  decision it was approved under. */
+ *  that are not slugs, breath-holding (D36), a missing NFR2-07 safety line, an item without the approval-page
+ *  decision it was approved under, and a "stage" that is not 3 (Stage 3 items, P3-73 to P3-77, carry "stage": 3 and
+ *  are stored with the post meta _lld_stage so lld-members keeps them behind the content_new switch; Stage 2 items
+ *  carry no stage). A wording item's kind is whatever the approved draft names (screening-hh-chest-pain, gm-01,
+ *  st-hl-05): the loader does not limit kinds. */
 function lld_content_check(array $bundle): array {
   $problems = [];
   if (!isset($bundle['items']) || !is_array($bundle['items']) || !$bundle['items']) return ['the bundle has no items'];
@@ -88,18 +91,27 @@ function lld_content_check(array $bundle): array {
     foreach (lld_content_safety_missing($it, $track) as $line) $problems[] = "$where lacks $line (NFR2-07)";
     $ap = (array)($it['approval'] ?? []);
     if (!preg_match('/^d-[a-z0-9-]+$/', (string)($ap['decision'] ?? '')) || !preg_match('/^[0-9a-f]{16}$/', (string)($ap['sha'] ?? ''))) $problems[] = "$where has no approval decision and fingerprint";
+    if (array_key_exists('stage', $it) && $it['stage'] !== 3) $problems[] = "$where has a stage that is not 3";
     if ($key !== '') { $seen[$key] = true; $titles[$key] = (string)($it['title'] ?? ''); }
   }
   return $problems;
 }
 
-/** A stable fingerprint of what the bundle says about one item, so a second run skips items that did not change. */
+/** A stable fingerprint of what the bundle says about one item, so a second run skips items that did not change. The
+ *  stage is part of it only when the item has one, so every Stage 2 item keeps the fingerprint it was loaded with. */
 function lld_content_item_hash(array $it): string {
   $tags = array_map('strval', (array)($it['tags'] ?? []));
   sort($tags);
   $sorted = function ($v) use (&$sorted) { if (!is_array($v)) return $v; if (array_keys($v) !== range(0, count($v) - 1)) ksort($v); return array_map($sorted, $v); };
-  return substr(hash('sha256', json_encode([(string)$it['type'], (string)$it['title'], (string)($it['slug'] ?? ''), (string)($it['body'] ?? ''), $tags,
-    $sorted((array)($it['fields'] ?? [])), (array)($it['approval'] ?? [])], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)), 0, 16);
+  $parts = [(string)$it['type'], (string)$it['title'], (string)($it['slug'] ?? ''), (string)($it['body'] ?? ''), $tags,
+    $sorted((array)($it['fields'] ?? [])), (array)($it['approval'] ?? [])];
+  if (array_key_exists('stage', $it)) $parts[] = (int)$it['stage'];
+  return substr(hash('sha256', json_encode($parts, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)), 0, 16);
+}
+
+/** Stage of a bundle item: 3 for an item from a Stage 3 draft, 0 for a Stage 2 item. */
+function lld_content_stage(array $it): int {
+  return array_key_exists('stage', $it) ? (int)$it['stage'] : 0;
 }
 
 /** create, update or same for each item, given the stored hash of every key already loaded. */
@@ -124,10 +136,14 @@ if (defined('WP_CLI') && WP_CLI) {
     $bundle = is_readable($file) ? json_decode((string)file_get_contents($file), true) : null;
     if (!is_array($bundle)) WP_CLI::error("cannot read a bundle from '$file'");
     if ($problems = lld_content_check($bundle)) WP_CLI::error("the bundle cannot load:\n- " . implode("\n- ", array_slice($problems, 0, 40)));
+    $staged = count(array_filter($bundle['items'], fn($it) => lld_content_stage($it) === 3));
+    if ($staged && (!class_exists('LLD_Members_Features') || !array_key_exists('content_new', LLD_Members_Features::catalog())))
+      WP_CLI::error("$staged Stage 3 items in the bundle, but this lld-members has no content_new switch to keep them from members: deploy the plugin first");
+    if ($staged) WP_CLI::log("$staged Stage 3 items (stage 3): stored with _lld_stage and shown only where the content_new switch allows (now: " . LLD_Members_Features::state('content_new') . ')');
 
-    // what is already loaded: bundle key => working copy
+    // what is already loaded: bundle key => working copy (every stage: the loader is never filtered)
     $rows = get_posts(['post_type' => LLD_CONTENT_TYPES, 'post_status' => ['publish', 'draft', 'pending', 'private'], 'post_parent' => 0,
-      'posts_per_page' => -1, 'meta_key' => '_lld_source_key']);
+      'posts_per_page' => -1, 'meta_key' => '_lld_source_key', 'lld_all_stages' => true]);
     $existing = []; $loaded = [];
     foreach ($rows as $p) { $k = (string)get_post_meta($p->ID, '_lld_source_key', true); $existing[$k] = (int)$p->ID; $loaded[$k] = (string)get_post_meta($p->ID, '_lld_bundle_hash', true); }
 
@@ -146,8 +162,9 @@ if (defined('WP_CLI') && WP_CLI) {
 
     $plan = lld_content_plan($bundle, $loaded);
     $by = [];
-    foreach ($bundle['items'] as $it) $by[$it['type']][$plan[$it['key']]] = ($by[$it['type']][$plan[$it['key']]] ?? 0) + 1;
-    foreach ($by as $type => $n) WP_CLI::log(sprintf('%-14s %s', $type, implode(', ', array_map(fn($a, $c) => "$c $a", array_keys($n), $n))));
+    foreach ($bundle['items'] as $it) { $label = $it['type'] . (lld_content_stage($it) === 3 ? ' (stage 3)' : ''); $by[$label][$plan[$it['key']]] = ($by[$label][$plan[$it['key']]] ?? 0) + 1; }
+    ksort($by);
+    foreach ($by as $type => $n) WP_CLI::log(sprintf('%-24s %s', $type, implode(', ', array_map(fn($a, $c) => "$c $a", array_keys($n), $n))));
     $changes = count(array_filter($plan, fn($a) => $a !== 'same'));
     if (!empty($assoc['dry-run'])) { WP_CLI::success("dry run: $changes of " . count($plan) . ' items would be created or updated'); return; }
     if (!current_user_can('manage_options')) WP_CLI::error('run it as the owner admin with --user=<login>: the approval records name who approved');
@@ -182,11 +199,13 @@ if (defined('WP_CLI') && WP_CLI) {
       if ($missing) WP_CLI::error("$key: unresolved " . implode(', ', $missing) . " (stopped after $done changes; run it again to finish)");
       $post = ['post_type' => (string)$it['type'], 'post_status' => 'publish', 'post_title' => (string)$it['title'], 'post_content' => (string)($it['body'] ?? ''),
         'meta_input' => ['_lld_fields' => $fields, '_lld_source_key' => $key], 'tax_input' => ['lld_tag' => array_values((array)($it['tags'] ?? []))]];
+      if (lld_content_stage($it) === 3) $post['meta_input']['_lld_stage'] = 3;
       if (!empty($it['slug'])) $post['post_name'] = (string)$it['slug'];
       if (isset($ids[$key])) $post['ID'] = $ids[$key];
       $id = isset($post['ID']) ? wp_update_post(wp_slash($post), true) : wp_insert_post(wp_slash($post), true);
       if (is_wp_error($id) || !$id) WP_CLI::error("$key: " . (is_wp_error($id) ? $id->get_error_message() : 'not saved') . " (stopped after $done changes)");
       $id = (int)$id;
+      if (lld_content_stage($it) !== 3) delete_post_meta($id, '_lld_stage');
       wp_set_object_terms($id, array_values((array)($it['tags'] ?? [])), 'lld_tag');
       $version = LLD_Members_Content::approve_now($id);
       if (!$version || !is_array(LLD_Members_Content::shown($id))) WP_CLI::error("$key: the approved version is not shown to members (#$id); check the approvals screen");

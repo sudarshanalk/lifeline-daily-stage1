@@ -13,6 +13,7 @@ Target: the previous version back on staging, with the key journeys passing, in 
 Because every Stage 3 database change is additive and every Stage 3 feature is behind a switch, the quickest rollback is usually one of these, in order:
 
 1. **Switch the feature off** — no deploy at all: `wp lld-members feature <name> off`. Use this first when one feature misbehaves.
+   - `content_new` (P3-73 to P3-77) is different in two ways. The 2027 monthly challenges sit behind it: with it still off on 1 January 2027, Stage 2 members see the empty challenge state (no January challenge exists today either), so the owner sets `content_new` to `everyone` before 1 January 2027. And switching it back off after a test account has used Stage 3 content leaves that member's enrolment naming a track `track_id()` no longer finds, so their programme screen shows an empty track until the switch is on again or the enrolment is stopped.
 2. **Roll the files back** with the Stage 1 tooling: `bash deploy/rollback.sh staging <backup-id>` (the id is in the failed deploy's output; `deploy/runbooks/runbook-rollback.md` has the detail). It restores the managed files, purges LiteSpeed and runs the smoke checks. The database is untouched, and the previous plugin ignores the extra Stage 3 tables.
 3. Run `bash deploy/key-journeys.sh https://stg.lifelinedaily.com` to confirm the Stage 2 key journeys answer.
 

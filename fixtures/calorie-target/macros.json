@@ -1,0 +1,53 @@
+{
+  "group": "Nutrient split (sheet section 6, macro fixtures)",
+  "tool": "calorie-target",
+  "fixtures": [
+    {
+      "id": "FX-CAL-MACROS-01",
+      "purpose": "1,800 kcal and 84 g protein",
+      "inputs": {
+        "targetKcal": 1800,
+        "proteinG": 84
+      },
+      "expected": {
+        "fatG": 60,
+        "carbG": 231,
+        "fibreG": 30
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-CAL-MACROS-02",
+      "purpose": "2,200 kcal and 100 g protein",
+      "inputs": {
+        "targetKcal": 2200,
+        "proteinG": 100
+      },
+      "expected": {
+        "fatG": 73,
+        "carbG": 286,
+        "fibreG": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "The sheet gives fat and carbs only for this case; fibre is not stated in the row, so left null."
+    },
+    {
+      "id": "FX-CAL-MACROS-03",
+      "purpose": "1,200 kcal and 70 g protein",
+      "inputs": {
+        "targetKcal": 1200,
+        "proteinG": 70
+      },
+      "expected": {
+        "fatG": 40,
+        "carbG": 140,
+        "fibreG": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "The sheet gives fat and carbs only for this case; fibre is not stated in the row, so left null."
+    }
+  ]
+}

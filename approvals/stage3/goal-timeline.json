@@ -1,0 +1,47 @@
+{
+  "approval_id": "APR-GOAL-TIMELINE-2026-11-03",
+  "tool_slug": "goal-timeline",
+  "version_hash": "cfe4294001151016beffbdb4eadfa86d03c3d0fef546940e847960c94b1ea646",
+  "engine_name": "Goal Weight Timeline: goal BMI floor of 18.5 (1 dp, half-up) for every background, safe weekly rate cap min(1.0 kg, 1 % of current weight rounded to 2 dp) with 0.25 and 0.5 kg a week only at age 65+, weeks to goal = ceil((current - goal) / rate), target date = today + 7 x weeks, 5 % first milestone, daily deficit 1100 x rate kcal handed to the calorie calculator, implied-rate check when a date is given instead, and a safety layer that stops before any number for under-18s, pregnancy or breastfeeding and eating disorders",
+  "intended_use": "Free tool, used inside goal setting (FR3-09) and as a standalone calculator, that checks a weight-loss goal against a healthy BMI floor and a safe weekly rate, then shows the weeks to goal, the target date, the weekly targets for the first 4 weeks and the 5 % milestone. The same safe-rate rule and BMI floor apply to every weight goal on the site (goal setting, check-ins, plan adjustments). General information, not a medical device. It never shows a calorie number (the calorie calculator does) and never a badge for kilograms lost. Loss and maintain goals only at launch (D3-08); goal reached means the 7-day mean weight is at or below the goal (D3-09).",
+  "eligibility": "Adults aged 18 to 99 with a goal weight below their current weight (equal means maintain, and the Keep It Off track is offered instead of a timeline). Stops with no numbers for under-18s, pregnancy or breastfeeding (Yes or Not sure) and an eating disorder (Yes, or the profile flag; a member with the flag cannot create a weight goal at all). 'Prefer not to say' on the eating-disorder question limits the rate to 0.25 or 0.5 with 'about' wording and no 'fastest' option. Goal BMI below 18.5 is refused with the lowest healthy weight offered; current BMI below 18.5 gets no loss timeline and the underweight wording from the Healthy Weight Check. Age 65+ is offered 0.25 and 0.5 kg a week only, with the muscle-preservation note from P3-55.",
+  "sources": [
+    "NICE CG189 (2014, updated 2023) section 1.7: aim for 0.5-1 kg a week; 5-10 % loss is clinically meaningful.",
+    "NHS Better Health: safe weight loss 0.5-1 kg (1-2 lb) a week.",
+    "CDC Healthy Weight: 1-2 lb a week.",
+    "NHMRC (Australia) Clinical practice guidelines for the management of overweight and obesity (2013).",
+    "ACSM position stand (2009) and Hall KD et al. Lancet 2011 (energy-balance dynamics, plateaus).",
+    "NICE NG246 (2025) BMI thresholds; WHO BMI classification (healthy range from 18.5).",
+    "Diabetes Prevention Program Research Group. NEJM 2002;346:393-403 (7 % loss target)."
+  ],
+  "limitations": [
+    "Linear estimate: weight loss is not a straight line, plateaus and water-weight swings are expected, and the real trend is checked every week.",
+    "Not for pregnancy or breastfeeding, under-18s or eating disorders.",
+    "Self-reported measurements; the lower BMI bound of 18.5 is the same for every family background, so the background question is not asked.",
+    "Gain goals are not offered at launch (D3-08); maintain and loss only."
+  ],
+  "regulatory_statement": "Approved by the owner as clinical reviewer on 3 November 2026 (NFR3-14; decisions D3-07 to D3-09). General health information, not a diagnosis or a medical device.",
+  "licence": "Lifeline Daily's own implementation of the published NICE, NHS and CDC safe weight-loss range and WHO BMI threshold.",
+  "copy_hashes": {
+    "stops.pregnancy": "c677976a8748fccdacb0c0aebf520c8aa564396b21f1a06258ba6f55a1cbc8d4",
+    "refusals.bmi-floor": "f10e122746062aa118909d04a232cab95716877c01f9b33c7d78f95384649495",
+    "refusals.rate-cap": "01dcb513faf70c16b5305f6bb23e49af44c196f6d3c73896e949fff122f5270a",
+    "notes.over-10pct": "b6d24298ef0a91c65c91ecfa473236b1bc8492d0c3a10087b9e0b5a7d8047862",
+    "notes.plateau": "ad78f315fbea452db5155372f17edff02d57a489dff553d05385229c12b4f3f4",
+    "progress.before-3-weigh-ins": "99c2fae8456a7fb54851dde23d2781e48d38d8bff7e26a75257a98fb35c2f8ec"
+  },
+  "oracle_report": "oracles/orc-07-goal-timeline/results.json",
+  "decisions_ratified": [
+    "D3-07",
+    "D3-08",
+    "D3-09"
+  ],
+  "clinical_signoff": {
+    "name": "Product owner (sudarshanalk), acting as clinical reviewer",
+    "date": "2026-11-03",
+    "decision": "approved",
+    "notes": "Signed 3 November 2026 as recorded in 04 Health Tools/Stage 3/Signoff-P3-56-Goal-Weight-Timeline.md (safe-rate rule, BMI floor, refusal wording, the 18-case fixture table and the progress fixtures)."
+  },
+  "review_date": "2026-11-03",
+  "next_review_date": "2027-11-03"
+}

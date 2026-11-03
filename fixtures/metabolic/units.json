@@ -1,0 +1,126 @@
+{
+  "group": "Unit handling (mmol/L and mg/dL thresholds applied in the unit entered)",
+  "tool": "metabolic",
+  "fixtures": [
+    {
+      "id": "FX-MET-UNIT-01",
+      "purpose": "MS-03: Every boundary in mmol/L: TG 1.7 met, HDL 1.29 not below, BP 128/84 not, FPG 5.5 not; 1 met",
+      "inputs": {
+        "age": null,
+        "sex": "female",
+        "background": "South Asian",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 80,
+        "bpSystolic": 128,
+        "bpDiastolic": 84,
+        "bpMedicine": false,
+        "triglycerides": 1.7,
+        "triglyceridesUnit": "mmol/L",
+        "hdl": 1.29,
+        "hdlUnit": "mmol/L",
+        "hdlMedicine": false,
+        "fastingGlucose": 5.5,
+        "fastingGlucoseUnit": "mmol/L",
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "met",
+          "hdl": "not-met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 1,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range)."
+    },
+    {
+      "id": "FX-MET-UNIT-02",
+      "purpose": "MS-04: Same person in mg/dL (150, 50, 99): identical answer (AS-02)",
+      "inputs": {
+        "age": null,
+        "sex": "female",
+        "background": "South Asian",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 80,
+        "bpSystolic": 128,
+        "bpDiastolic": 84,
+        "bpMedicine": false,
+        "triglycerides": 150,
+        "triglyceridesUnit": "mg/dL",
+        "hdl": 50,
+        "hdlUnit": "mg/dL",
+        "hdlMedicine": false,
+        "fastingGlucose": 99,
+        "fastingGlucoseUnit": "mg/dL",
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "met",
+          "hdl": "not-met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 1,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range). Unit-native thresholds: 150 mg/dL counts as met; no conversion before comparison."
+    },
+    {
+      "id": "FX-MET-UNIT-03",
+      "purpose": "MS-10: mg/dL boundaries: TG 149 not, HDL 39 met, FPG 100 met; 2 met, meets",
+      "inputs": {
+        "age": null,
+        "sex": "male",
+        "background": "Europid",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 100,
+        "bpSystolic": 125,
+        "bpDiastolic": 80,
+        "bpMedicine": false,
+        "triglycerides": 149,
+        "triglyceridesUnit": "mg/dL",
+        "hdl": 39,
+        "hdlUnit": "mg/dL",
+        "hdlMedicine": false,
+        "fastingGlucose": 100,
+        "fastingGlucoseUnit": "mg/dL",
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "met"
+        },
+        "count": 2,
+        "result": "results.meets",
+        "missing": [],
+        "flags": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range)."
+    }
+  ]
+}
