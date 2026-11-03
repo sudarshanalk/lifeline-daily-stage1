@@ -272,8 +272,8 @@ class LLD_Members_Stage3_Report {
 	 */
 	private static function member_figures() {
 		global $wpdb;
-		$counts  = count_users();
-		$all     = (int) ( $counts['avail_roles']['member'] ?? 0 );
+		// Members are rows of the member table (their WordPress accounts are subscribers); the owner and support are not counted.
+		$all     = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'member' ) . " WHERE role = 'member'" );
 		$premium = (int) $wpdb->get_var( 'SELECT COUNT(*) FROM ' . LLD_Members_Schema::table( 'subscription' ) . " WHERE access_state = 'Premium'" );
 		return array(
 			'all'     => $all,

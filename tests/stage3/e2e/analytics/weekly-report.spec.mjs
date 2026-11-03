@@ -68,7 +68,7 @@ test('TC-FR3-70-AS-01', async ({ request }) => {
   const after = new Date(Date.now() - 2000);
   const run = await growth(request, { action: 'monday' });
   expect(run.weekday).toBe('Monday 07:00');
-  const mail = (await latestReport(after)).split(/\r?\n/);
+  const mail = (await latestReport(after)).split(/\r?\n/).map((l) => l.trimEnd());
   expect(mail[0]).toBe(`Weekly report for ${run.week[0]} to ${run.week[1]}`);
   for (const line of [
     'Totals for the week',
@@ -101,6 +101,9 @@ test('TC-FR3-70-AS-02', async ({ request }) => {
   expect(mail).toContain('Totals for the week');
   for (const banned of [email, 'Sentinelname', 'Sentinelsurname', '@']) expect(mail).not.toContain(banned);
   // Every Stage 3 line is a label and a count or an amount.
-  const part = mail.split(/\r?\n/).slice(mail.split(/\r?\n/).indexOf('Totals for the week') + 1);
+  // The email may end with a line break; empty lines are not report lines.
+  const lines = mail.split(/\r?\n/).map((l) => l.trimEnd());
+  const part = lines.slice(lines.indexOf('Totals for the week') + 1).filter((l) => l !== '');
+  expect(part.length).toBeGreaterThan(10);
   for (const line of part) expect(line).toMatch(/^[A-Za-z :-]+( [A-Z]{3} \d+\.\d{2} \(\d+\)| \d+| none|: Stripe is not connected)$/);
 });

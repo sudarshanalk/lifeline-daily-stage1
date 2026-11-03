@@ -34,7 +34,6 @@ function wp_json_encode($v, $f = 0) { return json_encode($v, $f); }
 function sanitize_key($s) { return strtolower(preg_replace('/[^a-z0-9_-]/i', '', (string) $s)); }
 function wp_timezone() { return new DateTimeZone('UTC'); }
 function wp_date($f) { return gmdate($f); }
-function count_users() { return ['avail_roles' => ['member' => 12, 'administrator' => 1]]; }
 function wp_remote_post($url, $args) {
   $GLOBALS['posts'][] = ['url' => $url, 'args' => $args];
   foreach ($GLOBALS['answers'] as $match => $answer) { if (strpos($url, $match) !== false) { return $answer; } }
@@ -49,10 +48,10 @@ class LLD_Members_Growth { const REPORT_HOOK = 'lld_members_weekly_report'; cons
 class FakeDb {
   public $queries = []; public $updated = [];
   public $pauses = ['starts_at BETWEEN' => 2, 'created_at BETWEEN' => 3, 'ends_at IS NULL' => 4];
-  public $premium = 5;
+  public $premium = 5; public $members = 12;
   public $orders = [];
   function prepare($q, ...$a) { return $q . ' -- ' . implode(',', $a); }
-  function get_var($q) { $this->queries[] = $q; if (strpos($q, 'subscription') !== false) return $this->premium; foreach ($this->pauses as $k => $v) { if (strpos($q, $k) !== false) return $v; } return 0; }
+  function get_var($q) { $this->queries[] = $q; if (strpos($q, 'subscription') !== false) return $this->premium; if (strpos($q, 'FROM wp_lld_member ') !== false) return $this->members; foreach ($this->pauses as $k => $v) { if (strpos($q, $k) !== false) return $v; } return 0; }
   function get_results($q) { $this->queries[] = $q; return $this->orders; }
   function update($t, $d, $w) { $this->updated[] = [$t, $d, $w]; return 1; }
 }
