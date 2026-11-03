@@ -406,7 +406,8 @@ class LLD_Members_Stage3_API {
 	public static function calculate( $request ) {
 		$tool      = (string) $request['tool'];
 		$member_id = LLD_Members_Access::current_member_id();
-		if ( 'calorie-target' !== $tool || ! LLD_Members_Features::enabled( 'calculators_new', $member_id ) ) {
+		$engines   = self::calculator_engines();
+		if ( ! isset( $engines[ $tool ] ) || ! class_exists( $engines[ $tool ] ) || ! LLD_Members_Features::enabled( 'calculators_new', $member_id ) ) {
 			return self::refuse( 404, 'Not available.' );
 		}
 		if ( $member_id < 1 ) {
@@ -414,6 +415,9 @@ class LLD_Members_Stage3_API {
 		}
 		$params = $request->get_json_params();
 		$params = is_array( $params ) ? $params : array();
+		if ( 'calorie-target' !== $tool ) {
+			return self::calculate_engine( $engines[ $tool ], $params, $member_id );
+		}
 		// The member's health profile applies as well as the answers on the page (sheet section 2, FR3-69 AS-03/04):
 		// an eating-disorder flag stops the calculator; kidney disease removes the protein target; diabetes adds its note.
 		if ( class_exists( 'LLD_Members_Safety' ) ) {
@@ -467,6 +471,43 @@ class LLD_Members_Stage3_API {
 			);
 			$result['saved'] = $id > 0 ? $id : null;
 		}
+		return new WP_REST_Response( $result, 200 );
+	}
+
+	/**
+	 * The Stage 3 calculator engines by tool slug (the approval record's tool_slug). A tool whose class is not loaded
+	 * looks absent.
+	 */
+	private static function calculator_engines() {
+		return array(
+			'calorie-target' => 'LLD_Members_Calorie_Target',
+			'heart-risk'     => 'LLD_Members_Heart_Risk',
+			'bp-check'       => 'LLD_Members_BP_Check',
+			'metabolic'      => 'LLD_Members_Metabolic',
+			'fitness-age'    => 'LLD_Members_Fitness_Age',
+			'hr-zones'       => 'LLD_Members_HR_Zones',
+			'sleep-stress'   => 'LLD_Members_Sleep_Stress',
+		);
+	}
+
+	/**
+	 * Run a pure engine (P3-57 to P3-5A): the member's health profile is passed to the engine's apply_profile() when it
+	 * has one (sheet section 2 of each tool), then compute(), then the signed wording for the keys it returned. Nothing
+	 * is stored here; saving results over time is P3-5B.
+	 *
+	 * @param string $class     Engine class.
+	 * @param array  $params    The answers on the page.
+	 * @param int    $member_id Member number.
+	 */
+	private static function calculate_engine( $class, array $params, $member_id ) {
+		if ( method_exists( $class, 'apply_profile' ) && class_exists( 'LLD_Members_Stage3_Safety' ) ) {
+			$params = $class::apply_profile( $params, LLD_Members_Stage3_Safety::situations( $member_id ) );
+		}
+		$result = $class::compute( $params );
+		if ( isset( $result['error'] ) ) {
+			return self::refuse( 422, 'Check ' . $result['error'] . '.' );
+		}
+		$result['wording'] = $class::wording( isset( $result['messages'] ) ? $result['messages'] : array(), $result );
 		return new WP_REST_Response( $result, 200 );
 	}
 
