@@ -1,0 +1,387 @@
+{
+  "oracle_id": "ORC-10",
+  "implementation": "Python decimal reference for the Metabolic Health Check (FR3-51, FR3-45): the IDF 2006 definition with background- and sex-specific waist cut-offs, the four criteria applied in the unit entered, treatment counting as met, the partial result, and the safety flags and stops, from the signed sheet of 3 November 2026",
+  "versions": {
+    "python": "3.14.6",
+    "sheet": "P3-59 v1.0 signed 2026-11-03"
+  },
+  "source_hash": "8d0bedf934760a62aa30d362fd72d5793151a094aa93aa9d659bd19d87d03f01",
+  "run_at": "2026-11-03T22:26:22Z",
+  "results": [
+    {
+      "fixture_id": "FX-MET-CRIT-01",
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "met",
+          "hdl": "met",
+          "bloodPressure": "met",
+          "fastingGlucose": "met"
+        },
+        "count": 4,
+        "result": "results.meets",
+        "missing": [],
+        "flags": [],
+        "lifestyleWaistShown": true
+      }
+    },
+    {
+      "fixture_id": "FX-MET-CRIT-02",
+      "expected": {
+        "stop": null,
+        "central": false,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "not-met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 0,
+        "result": "results.notMet.waistBelow",
+        "missing": [],
+        "flags": [],
+        "lifestyleWaistShown": false
+      }
+    },
+    {
+      "fixture_id": "FX-MET-CRIT-03",
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "not-met",
+          "bloodPressure": "met",
+          "fastingGlucose": "met"
+        },
+        "count": 2,
+        "result": "results.meets",
+        "missing": [],
+        "flags": [],
+        "lifestyleWaistShown": true
+      }
+    },
+    {
+      "fixture_id": "FX-MET-CRIT-04",
+      "expected": {
+        "stop": null,
+        "central": false,
+        "criteria": {
+          "triglycerides": "met",
+          "hdl": "met",
+          "bloodPressure": "met",
+          "fastingGlucose": "met"
+        },
+        "count": 4,
+        "result": "results.notMet.waistBelow",
+        "missing": [],
+        "flags": [
+          "notes.talkToDoctor"
+        ],
+        "lifestyleWaistShown": false
+      }
+    },
+    {
+      "fixture_id": "FX-MET-CRIT-05",
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "not-met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 0,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": [],
+        "lifestyleWaistShown": true
+      }
+    },
+    {
+      "fixture_id": "FX-MET-CRIT-06",
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 1,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": [],
+        "lifestyleWaistShown": true
+      }
+    },
+    {
+      "fixture_id": "FX-MET-CRIT-07",
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "met",
+          "hdl": "not-met",
+          "bloodPressure": "met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 2,
+        "result": "results.meets",
+        "missing": [],
+        "flags": [],
+        "lifestyleWaistShown": true
+      }
+    },
+    {
+      "fixture_id": "FX-MET-CRIT-08",
+      "expected": {
+        "stop": null,
+        "central": false,
+        "criteria": {
+          "triglycerides": "met",
+          "hdl": "not-met",
+          "bloodPressure": "met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 2,
+        "result": "results.notMet.waistBelow",
+        "missing": [],
+        "flags": [],
+        "lifestyleWaistShown": false
+      }
+    },
+    {
+      "fixture_id": "FX-MET-PART-01",
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "unknown",
+          "hdl": "unknown",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "unknown"
+        },
+        "count": 0,
+        "result": "results.partial",
+        "missing": [
+          "triglycerides",
+          "hdl",
+          "fastingGlucose"
+        ],
+        "flags": [],
+        "lifestyleWaistShown": true
+      }
+    },
+    {
+      "fixture_id": "FX-MET-PART-02",
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "unknown",
+          "hdl": "unknown",
+          "bloodPressure": "met",
+          "fastingGlucose": "unknown"
+        },
+        "count": 1,
+        "result": "results.partial",
+        "missing": [
+          "triglycerides",
+          "hdl",
+          "fastingGlucose"
+        ],
+        "flags": [],
+        "lifestyleWaistShown": true
+      }
+    },
+    {
+      "fixture_id": "FX-MET-PART-03",
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "not-met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "unknown"
+        },
+        "count": 0,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": [],
+        "lifestyleWaistShown": true
+      }
+    },
+    {
+      "fixture_id": "FX-MET-SAFE-01",
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "not-met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "met"
+        },
+        "count": 1,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": [
+          "flags.glucoseDiagnostic"
+        ],
+        "lifestyleWaistShown": true
+      }
+    },
+    {
+      "fixture_id": "FX-MET-SAFE-02",
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "not-met",
+          "bloodPressure": "met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 1,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": [
+          "flags.bpUrgent"
+        ],
+        "lifestyleWaistShown": true
+      }
+    },
+    {
+      "fixture_id": "FX-MET-SAFE-03",
+      "expected": {
+        "stop": "stops.pregnancy",
+        "central": null,
+        "criteria": null,
+        "count": null,
+        "result": null,
+        "missing": [],
+        "flags": []
+      }
+    },
+    {
+      "fixture_id": "FX-MET-SAFE-04",
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 1,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": [
+          "notes.sex"
+        ],
+        "lifestyleWaistShown": true
+      }
+    },
+    {
+      "fixture_id": "FX-MET-SAFE-05",
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "not-met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 0,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": [
+          "flags.glucoseUrgent"
+        ],
+        "lifestyleWaistShown": true
+      }
+    },
+    {
+      "fixture_id": "FX-MET-SAFE-06",
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "met",
+          "hdl": "met",
+          "bloodPressure": "met",
+          "fastingGlucose": "met"
+        },
+        "count": 4,
+        "result": "results.meets",
+        "missing": [],
+        "flags": [],
+        "lifestyleWaistShown": false
+      }
+    },
+    {
+      "fixture_id": "FX-MET-UNIT-01",
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "met",
+          "hdl": "not-met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 1,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": [],
+        "lifestyleWaistShown": true
+      }
+    },
+    {
+      "fixture_id": "FX-MET-UNIT-02",
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "met",
+          "hdl": "not-met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 1,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": [],
+        "lifestyleWaistShown": true
+      }
+    },
+    {
+      "fixture_id": "FX-MET-UNIT-03",
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "met"
+        },
+        "count": 2,
+        "result": "results.meets",
+        "missing": [],
+        "flags": [],
+        "lifestyleWaistShown": true
+      }
+    }
+  ],
+  "notes": [
+    "Fixtures are read, never written; differences are printed and listed here."
+  ]
+}
