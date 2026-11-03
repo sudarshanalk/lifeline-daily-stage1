@@ -22,6 +22,8 @@ class WP_Error { public $m; function __construct($c = '', $m = '') { $this->m = 
 function is_wp_error($t) { return $t instanceof WP_Error; }
 $GLOBALS['opts'] = []; $GLOBALS['hooks'] = []; $GLOBALS['removed'] = []; $GLOBALS['posts'] = []; $GLOBALS['answers'] = [];
 function get_option($k, $d = false) { return $GLOBALS['opts'][$k] ?? $d; }
+function update_option($k, $v) { $GLOBALS['opts'][$k] = $v; return true; }
+function wp_parse_url($u, $c = -1) { return parse_url($u, $c); }
 function get_transient($k) { return $GLOBALS['opts']['_t_' . $k] ?? false; }
 function set_transient($k, $v) { $GLOBALS['opts']['_t_' . $k] = $v; return true; }
 function delete_transient($k) { unset($GLOBALS['opts']['_t_' . $k]); return true; }
@@ -58,6 +60,7 @@ class FakeDb {
 $GLOBALS['wpdb'] = new FakeDb();
 require ${toPhpPath(resolve(plugin, 'includes/stage3/class-analytics.php'))};
 require ${toPhpPath(resolve(plugin, 'includes/stage3/class-weekly-report-stage3.php'))};
+require ${toPhpPath(resolve(plugin, 'includes/stage3/class-calculator-count.php'))};
 `;
 
 test('TC-FR3-66-AS-03 (hooks): with a measurement ID the Plausible script is taken off; without one nothing is hooked', () => {
@@ -124,6 +127,7 @@ const figures = { registrations: 3, tracks: { 'healthy-weight': { upgrades: 2, r
 
 test('TC-FR3-70-AS-01 (figures): sign-ups, upgrades, renewals, pauses, cancellations, revenue and members match the prepared week', () => {
   const text = php(`${stubs()}
+    $GLOBALS['opts']['lld_calculator_counts'] = ['${week[0]}' => ['protein' => 3, 'healthy-weight' => 1], '2026-11-02' => ['protein' => 9]];
     $GLOBALS['wpdb']->orders = [(object) ['kind' => 'payment', 'charged_currency' => 'gbp', 'n' => 2, 'total' => 1998], (object) ['kind' => 'payment', 'charged_currency' => 'usd', 'n' => 1, 'total' => 6999], (object) ['kind' => 'refund', 'charged_currency' => 'usd', 'n' => 1, 'total' => 999]];
     echo LLD_Members_Stage3_Report::extend_text(${JSON.stringify(stage2Text)}, json_decode(${JSON.stringify(JSON.stringify(figures))}, true), ['${week[0]}', '${week[1]}'], null);`);
   const lines = text.split('\n');
@@ -136,6 +140,9 @@ test('TC-FR3-70-AS-01 (figures): sign-ups, upgrades, renewals, pauses, cancellat
     'Totals for the week', 'Sign-ups 3', 'Upgrades 4', 'Renewals 3', 'Pauses started 2', 'Pauses requested 3', 'Cancellations 2',
     'Payments GBP 19.98 (2)', 'Payments USD 69.99 (1)', 'Refunds USD 9.99 (1)', 'Stripe paid invoices: Stripe is not connected',
     'Members 12', 'Free members 7', 'Premium members 5', 'Members on pause 4',
+    'Protein calculator page views not connected', 'Protein calculator completions 3',
+    'Diabetes Risk Check page views not connected', 'Diabetes Risk Check completions 0',
+    'Healthy Weight Check page views not connected', 'Healthy Weight Check completions 1',
   ]);
   // Counts come from the report week only.
   const queries = JSON.parse(php(`${stubs()} LLD_Members_Stage3_Report::extend_text('x', [], ['${week[0]}', '${week[1]}'], null); echo json_encode($GLOBALS['wpdb']->queries);`));
@@ -171,7 +178,7 @@ test('TC-FR3-70-AS-01 (Google Analytics): visits and calculator page views come 
     echo json_encode(['ga' => $ga, 'text' => LLD_Members_Stage3_Report::extend_text(${JSON.stringify(stage2Text)}, [], ['${week[0]}', '${week[1]}'], $ga), 'posts' => $GLOBALS['posts']]);`));
   expect(out.ga.total).toBe(25);
   const lines = out.text.split('\n');
-  for (const line of ['Visits and calculator page views from Google Analytics', 'All page views 25', 'Healthy Weight visits 5', 'Blood Sugar Balance visits 6', 'Blood Sugar Balance calculator page views 6', 'Fitness and Strength visits 3', 'Fitness and Strength calculator page views 3', 'Sleep and Stress visits 2', 'Healthy Weight calculator page views 0']) expect(lines).toContain(line);
+  for (const line of ['Protein calculator page views 3', 'Diabetes Risk Check page views 6', 'Healthy Weight Check page views 0', 'Visits and calculator page views from Google Analytics', 'All page views 25', 'Healthy Weight visits 5', 'Blood Sugar Balance visits 6', 'Blood Sugar Balance calculator page views 6', 'Fitness and Strength visits 3', 'Fitness and Strength calculator page views 3', 'Sleep and Stress visits 2', 'Healthy Weight calculator page views 0']) expect(lines).toContain(line);
   // The token request is a JWT signed by the service account for the read-only scope, and the report asks for the week.
   const [token, report] = out.posts;
   expect(token.url).toBe('https://oauth2.googleapis.com/token');
@@ -204,7 +211,46 @@ test('TC-FR3-70-AS-02 (figures): the Stage 3 part holds labels and counts only, 
   const lines = out.report.message.split('\n');
   const part = lines.slice(lines.indexOf('Totals for the week') + 1);
   expect(part.length).toBeGreaterThan(10);
-  for (const line of part) expect(line).toMatch(/^[A-Za-z :-]+( [A-Z]{3} \d+\.\d{2} \(\d+\)| \d+| none|: Stripe is not connected)$/);
+  for (const line of part) expect(line).toMatch(/^[A-Za-z :-]+( [A-Z]{3} \d+\.\d{2} \(\d+\)| \d+| none| not connected|: Stripe is not connected)$/);
   // The kept copy of the week's report is the full text.
   expect(out.updated).toEqual([['wp_lld_weekly_report', { totals: out.report.message }, { week_starting: out.range[0] }]]);
+});
+
+test('TC-FR3-70-AS-01 (completions): each calculator result adds one to the weekly total of that calculator, and nothing else is kept', () => {
+  const out = JSON.parse(php(`${stubs()}
+    $r = [];
+    $r[] = LLD_Members_Calculator_Count::add('protein', '2026-10-28');
+    $r[] = LLD_Members_Calculator_Count::add('protein', '2026-11-01');
+    $r[] = LLD_Members_Calculator_Count::add('healthy-weight', '2026-10-26');
+    $r[] = LLD_Members_Calculator_Count::add('diabetes', '2026-11-02');
+    $r[] = LLD_Members_Calculator_Count::add('bmi-31', '2026-10-28');
+    $r[] = LLD_Members_Calculator_Count::add('', '2026-10-28');
+    echo json_encode(['added' => $r, 'week' => LLD_Members_Calculator_Count::week('2026-10-26'), 'next' => LLD_Members_Calculator_Count::week('2026-11-02'), 'stored' => $GLOBALS['opts']['lld_calculator_counts']]);`));
+  expect(out.added).toEqual([true, true, true, true, false, false]);
+  expect(out.week).toEqual({ protein: 2, diabetes: 0, 'healthy-weight': 1 });
+  expect(out.next).toEqual({ protein: 0, diabetes: 1, 'healthy-weight': 0 });
+  // Stored: week start, calculator and a number. Nothing else.
+  expect(out.stored).toEqual({ '2026-11-02': { diabetes: 1 }, '2026-10-26': { protein: 2, 'healthy-weight': 1 } });
+  // Only 12 weeks are kept.
+  const kept = JSON.parse(php(`${stubs()} for ($i = 0; $i < 15; $i++) { LLD_Members_Calculator_Count::add('protein', gmdate('Y-m-d', strtotime('2026-01-05 12:00 UTC +' . (7 * $i) . ' days'))); } echo json_encode(array_keys($GLOBALS['opts']['lld_calculator_counts']));`));
+  expect(kept).toHaveLength(12);
+  expect(kept[0]).toBe('2026-04-13');
+  // Only the site's own pages count.
+  const same = JSON.parse(php(`${stubs()} echo json_encode([
+    LLD_Members_Calculator_Count::same_site('https://stg.example.test', ''),
+    LLD_Members_Calculator_Count::same_site('', 'https://stg.example.test/health-tools/protein/'),
+    LLD_Members_Calculator_Count::same_site('https://evil.example', 'https://stg.example.test/'),
+    LLD_Members_Calculator_Count::same_site('http://stg.example.test', ''),
+    LLD_Members_Calculator_Count::same_site('', ''),
+  ]);`));
+  expect(same).toEqual([true, true, false, false, false]);
+});
+
+test('TC-NFR3-16-AS-02 (completions): the page sends only the calculator name, without cookies, and never to Google', () => {
+  const js = php(`${stubs()} echo LLD_Members_Calculator_Count::script('https://stg.example.test/wp-json/lld-members/v1/calculator-count');`);
+  expect(js).toContain('body:JSON.stringify({calculator:which})');
+  expect(js).toContain('credentials:"omit"');
+  expect(js).toContain('if(e.origin!==location.origin)return;');
+  expect(js).toContain('done[which]=1');
+  for (const banned of ['headline', 'band', 'unit', 'gtag', 'dataLayer', 'google', 'cookie']) expect(js).not.toContain(banned);
 });

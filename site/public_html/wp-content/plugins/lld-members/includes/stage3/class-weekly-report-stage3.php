@@ -52,6 +52,15 @@ class LLD_Members_Stage3_Report {
 	);
 
 	/**
+	 * Each calculator page and the slug its calculator sends (LLD_Members_Calculator_Count::CALCULATORS).
+	 */
+	const CALCULATOR_SLUGS = array(
+		'/health-tools/protein/'              => 'protein',
+		'/health-tools/diabetes-risk-check/'  => 'diabetes',
+		'/health-tools/healthy-weight-check/' => 'healthy-weight',
+	);
+
+	/**
 	 * The week's own figures, read just before the Stage 2 report resets them.
 	 *
 	 * @var array<string,mixed>|null
@@ -145,6 +154,12 @@ class LLD_Members_Stage3_Report {
 		$lines[] = 'Free members ' . $members['free'];
 		$lines[] = 'Premium members ' . $members['premium'];
 		$lines[] = 'Members on pause ' . $pauses['now'];
+		// Owner answer 86: both page views (Google Analytics, after consent) and completed calculations (this site).
+		$done = LLD_Members_Calculator_Count::week( $range[0] );
+		foreach ( LLD_Members_Calculator_Count::CALCULATORS as $which => $label ) {
+			$lines[] = $label . ' page views ' . ( null === $ga ? 'not connected' : (string) (int) ( $ga['calculators'][ $which ] ?? 0 ) );
+			$lines[] = $label . ' completions ' . (int) ( $done[ $which ] ?? 0 );
+		}
 		return implode( "\n", $lines );
 	}
 
@@ -296,7 +311,7 @@ class LLD_Members_Stage3_Report {
 	 *
 	 * @param string $from First day.
 	 * @param string $to   Last day.
-	 * @return array{tracks:array<string,array{visits:int,calculator:int}>,total:int}|null
+	 * @return array{tracks:array<string,array{visits:int,calculator:int}>,calculators:array<string,int>,total:int}|null
 	 */
 	public static function ga_figures( $from, $to ) {
 		$property = defined( 'LLD_GA4_PROPERTY' ) ? preg_replace( '/\D/', '', (string) LLD_GA4_PROPERTY ) : '';
@@ -335,6 +350,7 @@ class LLD_Members_Stage3_Report {
 			return null;
 		}
 		$out   = array();
+		$calcs = array_fill_keys( array_values( self::CALCULATOR_SLUGS ), 0 );
 		$total = 0;
 		foreach ( array_keys( LLD_Members_Growth::TRACKS ) as $track ) {
 			$out[ $track ] = array(
@@ -355,11 +371,13 @@ class LLD_Members_Stage3_Report {
 			if ( isset( self::CALCULATOR_PAGES[ $path ] ) ) {
 				$out[ self::CALCULATOR_PAGES[ $path ] ]['visits']     += $views;
 				$out[ self::CALCULATOR_PAGES[ $path ] ]['calculator'] += $views;
+				$calcs[ self::CALCULATOR_SLUGS[ $path ] ]             += $views;
 			}
 		}
 		return array(
-			'tracks' => $out,
-			'total'  => $total,
+			'tracks'      => $out,
+			'calculators' => $calcs,
+			'total'       => $total,
 		);
 	}
 
