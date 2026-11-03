@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Lifeline Daily — Stage 3 rules for Cursor
 
-Stage 3 (goal journey, food tracker, health logging, new calculators, decision engine, paid launch) is built on top of the finished Stage 2 plugin. Claude is the lead and merges; Antigravity builds the screens; Codex writes the tests and reviews; the owner decides. `AGENTS.md` in the repository root is the shared guide; read it first, then `docs/stage3/01_Build_Method_Stage3.md`.
+Stage 3 (goal journey, food tracker, health logging, new calculators, decision engine, paid launch) is built on top of the finished Stage 2 plugin. Claude is the lead; for your delegated packages (below) you build, test, merge and check staging yourself; Antigravity builds the screens; Codex writes the tests and reviews; the owner decides. `AGENTS.md` in the repository root is the shared guide; read it first, then `docs/stage3/01_Build_Method_Stage3.md`.
 
 ## Read before any work
 1. `docs/stage3/01_Build_Method_Stage3.md` — packages, order, file scopes, switches, pull request template.
@@ -14,6 +14,14 @@ Stage 3 (goal journey, food tracker, health logging, new calculators, decision e
 
 ## Your packages
 P3-40 to P3-43 (food database import and search, logging, targets, custom foods, recipes), P3-50 (health logging), P3-31 and P3-32 (goal, baseline, plan and check-in logic), P3-85 and P3-86 (reminders, consent, export and deletion), and the calculator engines P3-55 to P3-5B only once each method sheet in `04 Health Tools/Stage 3/` is signed off by the owner (NFR3-14).
+
+## Delegated in full (owner, 3 Nov 2026)
+P3-31, P3-32 (logic), P3-41 to P3-43, P3-50, P3-56 to P3-5B, P3-85 and P3-86 are yours from start to staging (build method §7 rule 6):
+- Merge your own pull request into `staging` only when every check has finished and passed (about 30, including the three `stage2-e2e` browser jobs) and Codex's review findings are fixed or answered. Never merge on a watcher timeout, never with a check pending, skipped by you or failed.
+- Merging deploys to staging automatically (`deploy-staging`). Then: the deploy run is green; `curl -sI https://stg.lifelinedaily.com/` and your screens' routes answer 200 or 302; over SSH (`ssh -i ~/.ssh/lifelinedaily_staging -p 65002 u406593106@212.85.30.82`, docroot `domains/stg.lifelinedaily.com/public_html`) `wp lld-members db-update` is clean, `wp lld-members feature list` shows your switch, and `deploy/key-journeys.sh` passes. Take a backup into `~/lld-backups/staging/` before any manual database change.
+- You may set your feature to `test_accounts` on staging to check it; `everyone` is the owner's (P3-92). Never touch production.
+- A failed deploy or a broken Stage 2 journey: roll back with `docs/stage3/02_Rollback_Stage3.md`, then fix forward in a new pull request.
+- Update your rows in `Lifeline_Daily_To_Do.md` (project folder) as each package moves; the live tracker page reads GitHub and that file.
 
 ## Hard rules
 - One package per branch `s3/p<nn>-<short-name>`; pull request into `staging` titled `S3-Pnn: <name>`, with the template in the build method §6.
