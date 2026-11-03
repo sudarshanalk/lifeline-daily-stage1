@@ -29,8 +29,9 @@ test('screens loader: every class-<name>.php is required and its LLD_Members_<Na
     expect(r.classes).toEqual(['LLD_Members_Account_Hub', 'LLD_Members_Goal_Setting', 'LLD_Members_No_Boot']);
     expect(r.booted).toEqual(['hub', 'goal', 'hub', 'goal']); // boot() runs per call; the files are required once
   } finally { rmSync(dir, { recursive: true, force: true }); }
-  // With no screen classes (today) the loader still runs and boots nothing.
-  expect(php(`define('ABSPATH', '/'); require ${p(join(stage3, 'screens', 'screens.php'))}; lld_members_stage3_screens_boot(); echo json_encode(lld_members_stage3_screens());`)).toBe('[]');
+  // On the real folder the loader runs without error, and every class it names comes from a class-*.php file there.
+  const real = JSON.parse(php(`define('ABSPATH', '/'); require ${p(join(stage3, 'screens', 'screens.php'))}; echo json_encode(lld_members_stage3_screens());`));
+  for (const cls of real) expect(cls).toMatch(/^LLD_Members_[A-Z][A-Za-z]*(_[A-Z][A-Za-z]*)*$/);
   // The lead's loader requires it and calls it right after the switches boot, and still registers no route itself.
   const loader = readFileSync(join(stage3, 'loader.php'), 'utf8');
   expect(loader).toMatch(/require_once __DIR__ \. '\/screens\/screens\.php';/);
