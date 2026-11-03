@@ -28,12 +28,13 @@ function wp_json_encode($v) { return json_encode($v); }
 class LLD_Members_Schema { static function table($s) { return 'wp_lld_' . $s; } }
 class LLD_Members_Features { public static $on = [7 => true, 8 => false]; static function enabled($f, $m = 0) { return !empty(self::$on[$m]); } static function state($f) { return 'test_accounts'; } }
 class LLD_Members_Safety { public static $stage2 = []; static function situations($m) { return self::$stage2[$m] ?? ['none']; } }
+class LLD_Members_Account { public static $consent = [7 => true, 8 => true]; static function has_consent($m, $t) { return !empty(self::$consent[$m]); } }
 class FakeDb { public $profile = []; function prepare($q, ...$a) { return $a[0] ?? $q; } function get_row($m) { return $this->profile[$m] ?? null; } function get_var() { return null; } }
 $GLOBALS['wpdb'] = new FakeDb();
 require ${toPhpPath(stage3('engine/class-rule-catalogue.php'))};
 require ${toPhpPath(stage3('engine/class-decision-engine.php'))};
 require ${toPhpPath(stage3('class-safety-stage3.php'))};
-function profile($m, $conditions, $age = 40, $h = 170, $w = 70) { $GLOBALS['wpdb']->profile[$m] = (object) ['conditions' => json_encode($conditions), 'age' => $age, 'height_cm' => $h, 'weight_kg' => $w]; }
+function profile($m, $conditions, $age = 40, $h = 170, $w = 70, $answered = 'answered') { $GLOBALS['wpdb']->profile[$m] = (object) ['conditions' => json_encode($conditions), 'conditions_answered' => $answered, 'age' => $age, 'height_cm' => $h, 'weight_kg' => $w]; }
 `;
 const php = (code) => execFileSync('php', ['-d', 'display_errors=stderr', '-r', `${stubs} ${code}`], { encoding: 'utf8', timeout: 120000 }).trim();
 const run = (code) => JSON.parse(php(`echo json_encode((function () { ${code} })());`));
@@ -171,6 +172,59 @@ test('TC-FR3-69-AS-04', () => {
   const runner = src('engine/class-insights-runner.php');
   expect(runner.indexOf('LLD_Members_Decision_Engine::evaluate( $state )')).toBeLessThan(runner.indexOf('$situations = LLD_Members_Stage3_Safety::situations( $member_id )'));
   expect(runner.match(/LLD_Members_Stage3_Safety::allows_rule\( \$situations/g).length).toBeGreaterThanOrEqual(4);
+});
+
+test('TC-FR3-69-AS-01 (Unknown row): a consented member who has not answered the conditions gets safety only', () => {
+  // P3-03 Part B row 1: no insights, no Today step from logs, no adjustments for a member without health consent, without
+  // a profile row, or with conditions not answered; the safety rules still run. The runner withholds every non-safety
+  // write for them (review must-fix 1).
+  const r = run(`
+    LLD_Members_Safety::$stage2 = [7 => ['unknown']];
+    profile(7, [], 40, 170, 70, 'not_answered');
+    $unanswered = LLD_Members_Stage3_Safety::situations(7);
+    $rules = [];
+    foreach (['R-SAFE-01', 'R-SAFE-03', 'R-SAFE-04', 'R-STEP-01', 'R-STEP-05', 'R-ADJ-03', 'R-INS-01', 'R-INS-09', 'R-INS-10'] as $n) $rules[$n] = LLD_Members_Stage3_Safety::allows_rule($unanswered, $n);
+    unset($GLOBALS['wpdb']->profile[7]);
+    $noRow = LLD_Members_Stage3_Safety::situations(7);
+    LLD_Members_Safety::$stage2 = [7 => ['diabetes']]; profile(7, ['type-2-diabetes']); LLD_Members_Account::$consent[7] = false;
+    $noConsent = LLD_Members_Stage3_Safety::situations(7);
+    LLD_Members_Account::$consent[7] = true;
+    $row = LLD_Members_Stage3_Safety::applies(7, 'insights', ['situations' => ['unknown']]);
+    return compact('unanswered', 'rules', 'noRow', 'noConsent', 'row');
+  `);
+  expect(r.unanswered).toEqual(['unknown']);
+  expect(r.rules).toEqual({ 'R-SAFE-01': true, 'R-SAFE-03': true, 'R-SAFE-04': true, 'R-STEP-01': false, 'R-STEP-05': false, 'R-ADJ-03': false, 'R-INS-01': false, 'R-INS-09': false, 'R-INS-10': false });
+  expect(r.noRow).toEqual(['unknown']);
+  expect(r.noConsent).toEqual(['unknown']);
+  expect(r.row.refused).toEqual(['insights', 'today_step_from_logs']);
+  const runner = src('engine/class-insights-runner.php');
+  const run_member = runner.slice(runner.indexOf('public static function run_member('), runner.indexOf('public static function low_mood_active('));
+  expect(run_member).toMatch(/in_array\( 'unknown', \$situations, true \)[\s\S]*'safety_only_unknown'[\s\S]*return \$summary;/);
+  expect(run_member.indexOf("'safety_only_unknown'")).toBeLessThan(run_member.indexOf('write_today_step'));
+});
+
+test('TC-FR3-69-AS-01 (new rows): the two new questions apply when they are the only conditions', () => {
+  // The Stage 2 list knows no key for the new questions and answers "unknown" for a member whose only condition is one
+  // of them; the Stage 3 matrix reads the profile row itself, so known heart disease, heart-rate medicine ("Yes" or
+  // "Not sure"), age 65 and over and BMI under 18.5 all apply (review must-fix 2).
+  const r = run(`
+    LLD_Members_Safety::$stage2 = [7 => ['unknown']];
+    profile(7, ['heart-disease']);
+    $heart = LLD_Members_Stage3_Safety::situations(7);
+    profile(7, ['heart-rate-medicine:not_sure']);
+    $notSure = LLD_Members_Stage3_Safety::situations(7);
+    profile(7, ['heart-rate-medicine'], 70, 180, 55);
+    $three = LLD_Members_Stage3_Safety::situations(7);
+    profile(7, [], 66, 170, 70, 'none');
+    $none = LLD_Members_Stage3_Safety::situations(7);
+    $calc = LLD_Members_Stage3_Safety::applies(7, 'calculators_new', ['situations' => $heart]);
+    return compact('heart', 'notSure', 'three', 'none', 'calc');
+  `);
+  expect(r.heart).toEqual(['heart_disease']);
+  expect(r.notSure).toEqual(['heart_rate_medicine']);
+  expect(r.three).toEqual(['heart_rate_medicine', 'age_65_plus', 'bmi_under_18_5']);
+  expect(r.none).toEqual(['age_65_plus']);
+  expect(r.calc.refused).toEqual(['heart-risk', 'fitness-age', 'hr-zones']);
 });
 
 test('TC-FR3-46-AS-01', () => {
@@ -369,6 +423,8 @@ test('TC-NFR3-17-AS-01 (daily values and local days: ENG-08 to ENG-10)', () => {
       'brisbane' => $R::local_date('2026-11-15 13:50:00', 'Australia/Brisbane'),
       'utc' => $R::local_date('2026-11-15 13:50:00', 'UTC'),
       'weekday' => [$R::weekday_key('Monday'), $R::weekday_key('sun'), $R::weekday_key(3), $R::weekday_key(null)],
+      'rate' => [$R::rate_one_step_lower(1.0), $R::rate_one_step_lower(0.75), $R::rate_one_step_lower(0.5), $R::rate_one_step_lower(0.25), $R::rate_one_step_lower(0.9)],
+      'build_state_private' => !(new ReflectionMethod($R, 'build_state'))->isPublic(),
     ]);
   `;
   const r = JSON.parse(execFileSync('php', ['-d', 'display_errors=stderr', '-r', code], { encoding: 'utf8', timeout: 60000 }).trim());
@@ -382,4 +438,9 @@ test('TC-NFR3-17-AS-01 (daily values and local days: ENG-08 to ENG-10)', () => {
   expect(r.brisbane).toBe('2026-11-15'); // 23:50 local on D-1
   expect(r.utc).toBe('2026-11-15');
   expect(r.weekday).toEqual([0, 6, 3, null]);
+  expect(r.rate).toEqual([0.75, 0.5, 0.25, 0.25, 0.75]); // R-ADJ-03 lowers the rate one step with the target
+  expect(r.build_state_private).toBe(true); // the opened health values never leave the runner
+  const runner = src('engine/class-insights-runner.php');
+  expect(runner).toMatch(/rate_one_step_lower\( \(float\) \$schedule\['rate_kg_week'\] \)/);
+  expect(runner).toMatch(/=== \$result\['date'\] \) \{\s*\$summary\['outcomes'\]\[ \$o\['rule'\] \] = 'shown_today'/); // one safety row a day (R-SAFE-01p)
 });

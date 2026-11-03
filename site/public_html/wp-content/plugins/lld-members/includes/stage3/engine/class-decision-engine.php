@@ -295,9 +295,9 @@ class LLD_Members_Decision_Engine {
 			if ( ! $found || $found[1] <= 0 ) {
 				continue;
 			}
-			$pct = round( ( $found[1] - $last_value ) / $found[1] * 100, 1 );
-			if ( $pct >= $min_pct ) {
-				return self::yes( array( 'pct' => $pct, 'date' => $found[0] ) );
+			$pct = ( $found[1] - $last_value ) / $found[1] * 100;
+			if ( $pct >= $min_pct - 1e-9 ) {
+				return self::yes( array( 'pct' => round( $pct, 1 ), 'date' => $found[0] ) );
 			}
 		}
 		return self::no( 'below_minimum_difference' );
@@ -489,7 +489,7 @@ class LLD_Members_Decision_Engine {
 		$points  = self::points_window( $s['daily']['weight'], $s['today'], -28, -1 );
 		$slope   = count( $points ) >= 4 ? self::loss_per_week( $points ) : null;
 		$too_fast = null !== $slope && $slope > 1.25 * $cap + 1e-9;
-		$seven   = self::seven_day_loss_pct( $s['daily']['weight'] );
+		$seven   = self::seven_day_loss_pct( $s['daily']['weight'], $s['today'] );
 		$doctor  = null !== $seven && $seven > 2.0;
 		if ( ! $too_fast && ! $doctor ) {
 			return self::no( null === $slope ? 'min_data' : 'within_safe_rate' );
@@ -533,7 +533,11 @@ class LLD_Members_Decision_Engine {
 		if ( $ms['sys'] - $ml['sys'] < 5 ) {
 			return self::no( 'difference_below_5' );
 		}
-		return self::yes( array( 'bp_short' => self::bp_text( $ms ), 'bp_long' => self::bp_text( $ml ) ) );
+		$r = self::yes( array( 'bp_short' => self::bp_text( $ms ), 'bp_long' => self::bp_text( $ml ) ) );
+		if ( in_array( 'blood_pressure', $s['situations'], true ) ) {
+			$r['notes'][] = 'on_medicine_line'; // shown to members on blood-pressure medicine with the on-medicine line
+		}
+		return $r;
 	}
 
 	private static function rule_r_ins_02( array $s ) {
@@ -572,12 +576,12 @@ class LLD_Members_Decision_Engine {
 		if ( count( $active ) < 7 || count( $inactive ) < 7 ) {
 			return self::no( 'min_data' );
 		}
-		$ma = round( array_sum( $active ) / count( $active ), 1 );
-		$mi = round( array_sum( $inactive ) / count( $inactive ), 1 );
-		if ( round( $ma - $mi, 1 ) < 0.7 ) {
+		$ma = array_sum( $active ) / count( $active );
+		$mi = array_sum( $inactive ) / count( $inactive );
+		if ( $ma - $mi < 0.7 - 1e-9 ) {
 			return self::no( 'difference_below_0_7' );
 		}
-		return self::yes( array( 'mood_active' => $ma, 'mood_rest' => $mi ) );
+		return self::yes( array( 'mood_active' => round( $ma, 1 ), 'mood_rest' => round( $mi, 1 ) ) );
 	}
 
 	private static function rule_r_ins_04( array $s ) {
@@ -586,15 +590,15 @@ class LLD_Members_Decision_Engine {
 		if ( count( $last ) < 5 || count( $prev ) < 5 ) {
 			return self::no( 'min_data' );
 		}
-		$hours  = round( array_sum( $last ) / count( $last ), 1 );
-		$before = round( array_sum( $prev ) / count( $prev ), 1 );
+		$hours  = array_sum( $last ) / count( $last );
+		$before = array_sum( $prev ) / count( $prev );
 		if ( $hours >= 6.0 ) {
 			return self::no( 'not_below_6' );
 		}
 		if ( $before < 6.5 ) {
 			return self::no( 'previous_week_below_6_5' );
 		}
-		return self::yes( array( 'hours' => $hours, 'before' => $before ) );
+		return self::yes( array( 'hours' => round( $hours, 1 ), 'before' => round( $before, 1 ) ) );
 	}
 
 	private static function rule_r_ins_05( array $s ) {
@@ -620,11 +624,17 @@ class LLD_Members_Decision_Engine {
 		if ( $target <= 0 ) {
 			return self::no( 'no_target' );
 		}
-		$days  = array();
-		$under = 0;
-		for ( $i = -7; $i <= -1; $i++ ) {
+		// The last 7 logged days ending yesterday (days with any food entry), of which at least 5 have 2 or more meals.
+		$days   = array();
+		$under  = 0;
+		$logged = 0;
+		for ( $i = -1; $i >= -120 && $logged < 7; $i-- ) {
 			$date = self::add_days( $s['today'], $i );
-			if ( ! isset( $s['food'][ $date ] ) || (int) $s['food'][ $date ]['meals'] < 2 ) {
+			if ( ! isset( $s['food'][ $date ] ) ) {
+				continue;
+			}
+			$logged++;
+			if ( (int) $s['food'][ $date ]['meals'] < 2 ) {
 				continue;
 			}
 			$value  = isset( $s['food'][ $date ][ $field ] ) ? (float) $s['food'][ $date ][ $field ] : 0.0;
@@ -678,9 +688,10 @@ class LLD_Members_Decision_Engine {
 	private static function rule_r_ins_09( array $s ) {
 		$streak = self::streak( $s['log_dates'], self::add_days( $s['today'], -1 ) );
 		$hit    = null;
+		$top    = $s['milestones_shown'] ? max( array_map( 'intval', $s['milestones_shown'] ) ) : 0;
 		foreach ( self::STREAK_MILESTONES as $m ) {
-			if ( $streak >= $m && ! in_array( $m, $s['milestones_shown'], true ) ) {
-				$hit = $m;
+			if ( $streak >= $m && $m > $top ) {
+				$hit = $m; // the highest one not yet shown; every lower milestone counts as shown with it
 			}
 		}
 		if ( null === $hit ) {
@@ -860,21 +871,28 @@ class LLD_Members_Decision_Engine {
 		return -( $num / $den ) * 7;
 	}
 
-	/** Loss over the last 7 days as % of the earlier weight: the last reading against the nearest 6 to 8 days before it. */
-	private static function seven_day_loss_pct( array $by_day ) {
-		if ( ! $by_day ) {
-			return null;
-		}
-		krsort( $by_day );
-		$last_date  = array_key_first( $by_day );
-		$last_value = (float) $by_day[ $last_date ];
-		foreach ( $by_day as $date => $value ) {
-			$gap = self::days_between( $date, $last_date );
-			if ( $gap >= 6 && $gap <= 8 && (float) $value > 0 ) {
-				return ( (float) $value - $last_value ) / (float) $value * 100;
+	/**
+	 * The largest loss over any 7-day span (6 to 8 days between two readings) in the last 4 weeks, as % of the
+	 * earlier weight; null without such a pair.
+	 */
+	private static function seven_day_loss_pct( array $by_day, $D ) {
+		$points = self::points_window( $by_day, $D, -28, 0 );
+		ksort( $points );
+		$dates = array_keys( $points );
+		$max   = null;
+		foreach ( $dates as $i => $from ) {
+			foreach ( array_slice( $dates, $i + 1 ) as $to ) {
+				$gap = self::days_between( $from, $to );
+				if ( $gap < 6 || $gap > 8 || $points[ $from ] <= 0 ) {
+					continue;
+				}
+				$pct = ( $points[ $from ] - $points[ $to ] ) / $points[ $from ] * 100;
+				if ( null === $max || $pct > $max ) {
+					$max = $pct;
+				}
 			}
 		}
-		return null;
+		return $max;
 	}
 
 	/** Weight-loss rate cap (P3-56): the plan's, else min(1 kg, 1 % of weight), 0.5 kg at 65 and over. */

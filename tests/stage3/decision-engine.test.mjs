@@ -199,10 +199,37 @@ test('TC-NFR3-17-AS-01', () => {
   ]);
   expect(p.map((r) => r.fires)).toEqual([true, false, false, true, true, false, true, false, false, false, true, false, false, true, false, true, false, false, true]);
   expect(p[8].reason).toBe('safety_check:kidney');
+  // Boundaries compare raw values; rounding is for display only (review note): 1.96 % does not fire R-SAFE-03.
+  const raw = runRules([
+    ['R-SAFE-03', { today: D, daily: { weight: { [day(-8)]: 80.0, [day(-1)]: 78.43 } } }],
+    ['R-SAFE-03', { today: D, daily: { weight: { [day(-8)]: 80.0, [day(-1)]: 78.4 } } }],
+    ['R-INS-04', { today: D, premium: true, daily: { sleep: Object.fromEntries([...range(1, 5).map((n) => [day(-n), 5.98]), ...range(8, 12).map((n) => [day(-n), 6.52])]) } }],
+    ['R-INS-04', { today: D, premium: true, daily: { sleep: Object.fromEntries([...range(1, 5).map((n) => [day(-n), 5.98]), ...range(8, 12).map((n) => [day(-n), 6.48])]) } }],
+  ]);
+  expect(raw.map((r) => r.fires)).toEqual([false, true, true, false]);
+  expect(raw[1].values.pct).toBe(2);
+  expect(raw[2].values).toEqual({ hours: 6, before: 6.5 });
   expect(p[10].values).toEqual({ days: 14 });
   expect(p[13].milestone).toBe(30);
   expect(p[15].values).toEqual({ goal: '75 kg' });
   expect(p[6].values).toEqual({ protein: 49, target: 60 });
+  // Nutrient rules read the last 7 logged days, not the last 7 calendar days; a shown milestone covers every lower
+  // one; R-INS-01 carries the on-medicine line for a member with high blood pressure (review should-fixes 5 to 7).
+  const gaps = { today: D, premium: true, targets: { fibre_g: 30 }, food: Object.fromEntries([1, 2, 3, 4, 8, 9].map((n) => [day(-n), { meals: 2, fibre_g: 10 }])) };
+  const q = runRules([
+    ['R-INS-06', gaps],
+    ['R-INS-06', { ...gaps, food: { ...gaps.food, [day(-15)]: { meals: 3, fibre_g: 30 }, [day(-16)]: { meals: 2, fibre_g: 30 } } }], // the 7th logged day is D-15; D-16 is outside
+    ['R-INS-09', { today: D, premium: true, log_dates: range(1, 31).map((n) => day(-n)), milestones_shown: [30] }],
+    ['R-INS-09', { today: D, premium: true, log_dates: range(1, 60).map((n) => day(-n)), milestones_shown: [14] }],
+    ['R-INS-01', { ...fr3_17(14), situations: ['blood_pressure'] }],
+    ['R-INS-01', fr3_17(14)],
+  ]);
+  expect(q[0]).toMatchObject({ fires: true, values: { fibre: 10, target: 30 } });
+  expect(q[1]).toMatchObject({ fires: true, values: { fibre: 13, target: 30 } });
+  expect(q[2]).toMatchObject({ fires: false, reason: 'milestone_already_shown' });
+  expect(q[3].milestone).toBe(60);
+  expect(q[4].notes).toEqual(['on_medicine_line']);
+  expect(q[5].notes).toEqual([]);
 });
 
 test('TC-NFR3-17-AS-02', () => {
@@ -470,6 +497,10 @@ test('TC-FR3-14-AS-02', () => {
   expect(applied.adjustments[0].notes).toEqual([]);
   expect(sevenDay.adjustments[0]).toMatchObject({ rule: 'R-ADJ-03', outcome: 'applied', notes: ['doctor_line'] }); // 2.3 % in 7 days
   expect(over65.adjustments[0].values.cap).toBe(0.5); // 65 and over: the 0.5 kg cap (P3-03 new row)
+  // "any 7-day loss > 2 %" means any pair 6 to 8 days apart inside the 4 weeks, not only the latest reading.
+  const earlier = { ...seven, daily: { weight: { [day(-20)]: 90, [day(-13)]: 87.5, [day(-6)]: 87.4, [day(-1)]: 87.3 } } };
+  const [pair] = evaluate([earlier]);
+  expect(pair.adjustments[0]).toMatchObject({ rule: 'R-ADJ-03', notes: ['doctor_line'] }); // 2.8 % between D-20 and D-13
   const behind = builders['R-ADJ-01']({ goal_type: 'lose_weight', check_ins: { 'D-7': { projected_late_days: 21 }, D: { projected_late_days: 21 } } });
   behind.goal.rate_kg_week = 1.5; // the member's own rate is above the cap: the new date uses the cap
   const [capped] = evaluate([behind]);

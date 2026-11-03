@@ -338,14 +338,20 @@ class LLD_Members_Stage3_Safety {
 		$stage2    = class_exists( 'LLD_Members_Safety' ) ? LLD_Members_Safety::situations( $member_id ) : array( 'unknown' );
 		$map       = array( 'eating-disorder' => 'eating_disorder', 'blood-pressure' => 'blood_pressure' );
 		foreach ( $stage2 as $key ) {
-			if ( 'none' === $key ) {
+			if ( 'none' === $key || 'unknown' === $key ) {
 				continue;
 			}
 			$out[] = isset( $map[ $key ] ) ? $map[ $key ] : str_replace( '-', '_', $key );
 		}
+		// "Unknown" is decided from the profile itself (no health consent, no profile row, or conditions not answered),
+		// not from the Stage 2 list being empty: a member whose only conditions are the two new questions is known.
+		$consent = ! class_exists( 'LLD_Members_Account' ) || LLD_Members_Account::has_consent( $member_id, 'health' );
+		$row     = $consent ? $wpdb->get_row( $wpdb->prepare( 'SELECT p.conditions, p.conditions_answered, p.height_cm, p.weight_kg, m.age FROM ' . LLD_Members_Schema::table( 'health_profile' ) . ' p JOIN ' . LLD_Members_Schema::table( 'member' ) . ' m ON m.id = p.member_id WHERE p.member_id = %d', $member_id ) ) : null;
+		if ( ! $row || 'not_answered' === (string) $row->conditions_answered ) {
+			$out = array( 'unknown' ); // as Stage 2: an unknown profile is unknown and nothing else
+		}
 		if ( ! in_array( 'unknown', $out, true ) ) {
-			$row = $wpdb->get_row( $wpdb->prepare( 'SELECT p.conditions, p.height_cm, p.weight_kg, m.age FROM ' . LLD_Members_Schema::table( 'health_profile' ) . ' p JOIN ' . LLD_Members_Schema::table( 'member' ) . ' m ON m.id = p.member_id WHERE p.member_id = %d', $member_id ) );
-			$conditions = $row ? json_decode( (string) $row->conditions, true ) : array();
+			$conditions = json_decode( (string) $row->conditions, true );
 			$conditions = is_array( $conditions ) ? array_map( 'strval', $conditions ) : array();
 			foreach ( self::PROFILE_QUESTIONS as $key => $q ) {
 				foreach ( $q['applies_on'] as $answer ) {
@@ -453,6 +459,11 @@ class LLD_Members_Stage3_Safety {
 			return false;
 		}
 		if ( array_intersect( $rule['silenced_by'], $situations ) ) {
+			return false;
+		}
+		// The "Unknown" row (no consent, no profile, conditions not answered): no insights, no Today step from logs,
+		// no adjustments; the safety rules still run (Part B, row 1).
+		if ( in_array( 'unknown', $situations, true ) && LLD_Members_Rule_Catalogue::CLASS_SAFETY !== $rule['class'] ) {
 			return false;
 		}
 		if ( self::forbids( $situations, 'insights', 'rule:' . $rule_name ) ) {

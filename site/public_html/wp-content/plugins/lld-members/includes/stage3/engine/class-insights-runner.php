@@ -113,6 +113,10 @@ class LLD_Members_Insights_Runner {
 		$summary    = array( 'status' => 'ran', 'date' => $result['date'], 'safety' => array(), 'today_step' => null, 'adjustments' => array(), 'insight' => null, 'events' => array(), 'outcomes' => array() );
 		foreach ( $result['safety'] as $o ) {
 			$summary['outcomes'][ $o['rule'] ] = $o['outcome'];
+			if ( isset( $state['shown'][ $o['rule'] ] ) && $state['shown'][ $o['rule'] ] === $result['date'] ) {
+				$summary['outcomes'][ $o['rule'] ] = 'shown_today'; // a rule without a cooldown (R-SAFE-01p) is written once a day
+				continue;
+			}
 			if ( LLD_Members_Decision_Engine::OUTCOME_SHOWN === $o['outcome'] && LLD_Members_Stage3_Safety::allows_rule( $situations, $o['rule'] ) ) {
 				$summary['safety'][] = $o['rule'];
 				if ( ! $dry ) {
@@ -122,6 +126,10 @@ class LLD_Members_Insights_Runner {
 		}
 		if ( ! $engine_on || ! empty( $options['safety_only'] ) ) {
 			$summary['status'] = 'safety_only';
+			return $summary;
+		}
+		if ( in_array( 'unknown', $situations, true ) ) {
+			$summary['status'] = 'safety_only_unknown'; // Part B "Unknown": no insights, no Today step from logs, no adjustments
 			return $summary;
 		}
 		$step = $result['today_step'];
@@ -194,7 +202,7 @@ class LLD_Members_Insights_Runner {
 	 * @param bool        $at_check_in Whether this run is the weekly check-in.
 	 * @return array
 	 */
-	public static function build_state( $member_id, $today = null, $at_check_in = false ) {
+	private static function build_state( $member_id, $today = null, $at_check_in = false ) {
 		$member_id = (int) $member_id;
 		$zone      = self::timezone( $member_id );
 		$today     = $today ? $today : LLD_Members_Clock::now( $member_id )->setTimezone( $zone )->format( 'Y-m-d' );
@@ -415,6 +423,12 @@ class LLD_Members_Insights_Runner {
 				$copy = array_intersect_key( $old, array_flip( array( 'goal_id', 'track_id', 'calorie_target', 'protein_g', 'carb_g', 'fat_g', 'fibre_g', 'activity_minutes_week', 'meal_plan_id', 'workout_plan_id', 'log_schedule', 'valid_to' ) ) );
 				$copy['version']        = (int) $old['version'] + 1;
 				$copy['calorie_target'] = (int) $o['values']['kcal'];
+				$schedule               = json_decode( (string) $old['log_schedule'], true );
+				$schedule               = is_array( $schedule ) ? $schedule : array();
+				if ( isset( $schedule['rate_kg_week'] ) && is_numeric( $schedule['rate_kg_week'] ) ) {
+					$schedule['rate_kg_week'] = self::rate_one_step_lower( (float) $schedule['rate_kg_week'] ); // the rate is lowered one step with the target (catalogue R-ADJ-03)
+					$copy['log_schedule']     = wp_json_encode( $schedule );
+				}
 				$copy['valid_from']     = $state['today'];
 				$copy['created_by']     = 'engine';
 				$new_plan               = LLD_Members_Stage3_Data::insert( 'plans', $member_id, $copy );
@@ -535,6 +549,17 @@ class LLD_Members_Insights_Runner {
 			$at = new DateTimeImmutable( 'now', new DateTimeZone( 'UTC' ) );
 		}
 		return $at->setTimezone( $zone );
+	}
+
+	/** The next lower of the plan rates 0.25, 0.5, 0.75 and 1.0 kg a week (P3-55 RATES); 0.25 stays. */
+	public static function rate_one_step_lower( $rate ) {
+		$lower = 0.25;
+		foreach ( array( 0.25, 0.5, 0.75, 1.0 ) as $step ) {
+			if ( $step < $rate - 1e-9 ) {
+				$lower = $step;
+			}
+		}
+		return $lower;
 	}
 
 	/** 0 Monday … 6 Sunday from a number or a day name; null when unset. */
