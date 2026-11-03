@@ -38,12 +38,22 @@ async function api(page) {
   return { get: (p) => call('GET', p), post: (p, d) => call('POST', p, d), del: (p) => call('DELETE', p) };
 }
 
+// The signed-in member answers the health questions with "none": the safety matrix (P3-03) treats an unanswered
+// profile as unknown and holds back calorie and protein targets, so the interface check needs a known profile.
+async function answerNoConditions(page, memberId) {
+  const nonce = await restNonce(page);
+  const saved = await page.request.post(`/wp-json/lld-members/v1/members/${memberId}/health`, { data: { kind: 'profile', confirmed: true, conditions_answered: 'none', conditions: '[]' }, headers: { 'X-WP-Nonce': nonce } });
+  expect(saved.status(), await saved.text()).toBe(200);
+}
+
 test.describe.serial('members interface', () => {
   const ids = {};
 
   test('TC-NFR3-09-AS-01 every Stage 3 data type is read and written by a signed-in test member', async ({ page }) => {
-    await createMember(page.request, { email: A, password, first_name: 'Sentinel', health_consent: true });
+    const createdA = await createMember(page.request, { email: A, password, first_name: 'Sentinel', health_consent: true });
     await signIn(page, A, password);
+    await page.goto('/members/home/');
+    await answerNoConditions(page, createdA.member_id);
     const me = await api(page);
     const features = await me.get('features');
     expect(features.ok(), await features.text()).toBeTruthy();
@@ -71,8 +81,10 @@ test.describe.serial('members interface', () => {
   });
 
   test('TC-NFR3-09-AS-02 a member can never read another member\'s data through the interface', async ({ page }) => {
-    await createMember(page.request, { email: B, password, first_name: 'Other', health_consent: true });
+    const createdB = await createMember(page.request, { email: B, password, first_name: 'Other', health_consent: true });
     await signIn(page, B, password);
+    await page.goto('/members/home/');
+    await answerNoConditions(page, createdB.member_id);
     const other = await api(page);
     for (const [type, id] of Object.entries(ids)) {
       const one = await other.get(`${type}/${id}`);
