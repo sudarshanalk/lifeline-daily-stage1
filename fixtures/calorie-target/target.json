@@ -91,14 +91,14 @@
         "stop": null,
         "rmr": 1798.75,
         "tdee": 2788.06,
-        "raw": 1688.06,
-        "targetKcal": null,
-        "achievableRate": null,
+        "raw": 1963.06,
+        "targetKcal": 1960,
+        "achievableRate": 0.75,
         "notes": []
       },
       "oracle": "clinical",
       "status": "recorded",
-      "notes": "1.0 allowed: 1 % of 95 kg = 0.95 -> refused by P3-56 cap; use 0.75 instead -> raw 1963.06 -> 1960. AMBIGUOUS: the Target column gives 1690 with achievable rate 1.0, while the Notes column gives 1960 at 0.75; targetKcal and achievableRate left null pending the owner's answer."
+      "notes": "1.0 allowed: 1 % of 95 kg = 0.95 -> refused by P3-56 cap; use 0.75 instead -> raw 1963.06 -> 1960. AMBIGUOUS: the Target column gives 1690 with achievable rate 1.0, while the Notes column gives 1960 at 0.75; targetKcal and achievableRate left null pending the owner's answer. Owner decided 3 Nov 2026 (Owner_Questions 62): the P3-56 cap applies, so the tool offers 0.75 kg/week; raw 1963.06 -> 1960."
     },
     {
       "id": "FX-CAL-TARGET-05",

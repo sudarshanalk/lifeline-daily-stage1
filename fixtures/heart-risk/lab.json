@@ -462,16 +462,16 @@
           "smoking": "non-smoker",
           "age": "55-59",
           "sbp": "120-139",
-          "tc": "4-4.9"
+          "tc": "5-5.9"
         },
-        "risk": 6,
+        "risk": 7,
         "band": "moderate",
         "urgent": false,
-        "tcMmolL": 4.99
+        "tcMmolL": 5.0
       },
       "oracle": "clinical",
       "status": "recorded",
-      "notes": "Sheet: 193 / 38.67 = 4.99 -> 4-4.9 band, 6 % (not HR-01's cell, because 4.99 mmol/L is below 5; the unit twin of HR-01 is 194 mg/dL = 5.02), and sign-off scenario S10 says 6 %. The 4-4.9 cell reads 6 % in the file. AMBIGUITY flagged for the lead: 193 / 38.67 = 4.991, and the sheet's section 6 rule ('banded on the value to 1 dp, half-up') would give 5.0 and the 5-5.9 band (7 %); this fixture records the sheet's explicit expected value as signed."
+      "notes": "Sheet: 193 / 38.67 = 4.99 -> 4-4.9 band, 6 % (not HR-01's cell, because 4.99 mmol/L is below 5; the unit twin of HR-01 is 194 mg/dL = 5.02), and sign-off scenario S10 says 6 %. The 4-4.9 cell reads 6 % in the file. AMBIGUITY flagged for the lead: 193 / 38.67 = 4.991, and the sheet's section 6 rule ('banded on the value to 1 dp, half-up') would give 5.0 and the 5-5.9 band (7 %); this fixture records the sheet's explicit expected value as signed. Owner decided 3 Nov 2026 (Owner_Questions 63): the 1 dp half-up rule stands; 4.991 -> 5.0 -> band 5-5.9 -> 7 %."
     },
     {
       "id": "FX-HR-LAB-23",

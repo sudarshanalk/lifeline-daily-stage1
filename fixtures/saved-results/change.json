@@ -9,12 +9,22 @@
         "calculator": "heart_risk",
         "plan": "premium",
         "results": [
-          { "result": 12.3, "unit": "%", "model": "lab", "date": "1 Feb" },
-          { "result": 9.8, "unit": "%", "model": "lab", "date": "3 May" }
+          {
+            "result": 12.3,
+            "unit": "%",
+            "model": "lab",
+            "date": "1 Feb"
+          },
+          {
+            "result": 9.8,
+            "unit": "%",
+            "model": "lab",
+            "date": "3 May"
+          }
         ]
       },
       "expected": {
-        "wording": "Better: 2.5 percentage points lower since 1 Feb",
+        "wording": "Better: 2 points lower since 1 Feb",
         "band_from": "High",
         "band_to": "Moderate",
         "shown_from": "12 %",
@@ -23,7 +33,7 @@
       },
       "oracle": "clinical",
       "status": "recorded",
-      "notes": "Sheet: shown 12 % to 10 %, band from shown values per D3-13. Sign-off scenario S1 phrases the same case as 'Better: 2 points lower since 1 Feb' using the shown values; the sheet's fixture column is transcribed here."
+      "notes": "Sheet: shown 12 % to 10 %, band from shown values per D3-13. Sign-off scenario S1 phrases the same case as 'Better: 2 points lower since 1 Feb' using the shown values; the sheet's fixture column is transcribed here. Owner decided 3 Nov 2026 (Owner_Questions 64): changes are shown in whole points, as the results the member saw."
     },
     {
       "id": "FX-SR-02",
@@ -32,18 +42,26 @@
         "calculator": "heart_risk",
         "plan": "premium",
         "results": [
-          { "result": 12.3, "unit": "%", "model": "lab" },
-          { "result": 12.9, "unit": "%", "model": "lab" }
+          {
+            "result": 12.3,
+            "unit": "%",
+            "model": "lab"
+          },
+          {
+            "result": 12.9,
+            "unit": "%",
+            "model": "lab"
+          }
         ]
       },
       "expected": {
-        "wording": "About the same (+0.6 points)",
+        "wording": "About the same (+1 point)",
         "band_change": false,
         "comparable": true
       },
       "oracle": "clinical",
       "status": "recorded",
-      "notes": "Sign-off scenario S2 phrases the same case as 'About the same (+1)' using shown values; the sheet's fixture column is transcribed here."
+      "notes": "Sign-off scenario S2 phrases the same case as 'About the same (+1)' using shown values; the sheet's fixture column is transcribed here. Owner decided 3 Nov 2026 (Owner_Questions 64): whole points."
     },
     {
       "id": "FX-SR-03",
@@ -52,8 +70,16 @@
         "calculator": "heart_risk",
         "plan": "premium",
         "results": [
-          { "result": 12.3, "unit": "%", "model": "lab" },
-          { "result": 11.0, "unit": "%", "model": "non-lab" }
+          {
+            "result": 12.3,
+            "unit": "%",
+            "model": "lab"
+          },
+          {
+            "result": 11.0,
+            "unit": "%",
+            "model": "non-lab"
+          }
         ]
       },
       "expected": {
@@ -71,8 +97,16 @@
         "calculator": "bp_check",
         "plan": "premium",
         "results": [
-          { "systolic": 142, "diastolic": 91, "unit": "mmHg" },
-          { "systolic": 136, "diastolic": 88, "unit": "mmHg" }
+          {
+            "systolic": 142,
+            "diastolic": 91,
+            "unit": "mmHg"
+          },
+          {
+            "systolic": 136,
+            "diastolic": 88,
+            "unit": "mmHg"
+          }
         ]
       },
       "expected": {
@@ -90,8 +124,16 @@
         "calculator": "bp_check",
         "plan": "premium",
         "results": [
-          { "systolic": 128, "diastolic": 80, "unit": "mmHg" },
-          { "systolic": 131, "diastolic": 82, "unit": "mmHg" }
+          {
+            "systolic": 128,
+            "diastolic": 80,
+            "unit": "mmHg"
+          },
+          {
+            "systolic": 131,
+            "diastolic": 82,
+            "unit": "mmHg"
+          }
         ]
       },
       "expected": {
@@ -107,8 +149,16 @@
         "calculator": "fitness_age",
         "plan": "premium",
         "results": [
-          { "vo2": 36.1, "fitness_age": 66, "unit": "mL/kg/min; years" },
-          { "vo2": 38.0, "fitness_age": 59, "unit": "mL/kg/min; years" }
+          {
+            "vo2": 36.1,
+            "fitness_age": 66,
+            "unit": "mL/kg/min; years"
+          },
+          {
+            "vo2": 38.0,
+            "fitness_age": 59,
+            "unit": "mL/kg/min; years"
+          }
         ]
       },
       "expected": {
@@ -124,8 +174,14 @@
         "calculator": "metabolic",
         "plan": "premium",
         "results": [
-          { "criteria_met": 3, "outcome": "met" },
-          { "criteria_met": 1, "outcome": "not met" }
+          {
+            "criteria_met": 3,
+            "outcome": "met"
+          },
+          {
+            "criteria_met": 1,
+            "outcome": "not met"
+          }
         ]
       },
       "expected": {
@@ -141,8 +197,14 @@
         "calculator": "healthy_weight",
         "plan": "premium",
         "results": [
-          { "result": 31.2, "unit": "kg/m²" },
-          { "result": 29.8, "unit": "kg/m²" }
+          {
+            "result": 31.2,
+            "unit": "kg/m²"
+          },
+          {
+            "result": 29.8,
+            "unit": "kg/m²"
+          }
         ]
       },
       "expected": {
@@ -159,8 +221,14 @@
         "calculator": "diabetes_risk",
         "plan": "premium",
         "results": [
-          { "result": 8.2, "unit": "%" },
-          { "result": 8.9, "unit": "%" }
+          {
+            "result": 8.2,
+            "unit": "%"
+          },
+          {
+            "result": 8.9,
+            "unit": "%"
+          }
         ]
       },
       "expected": {
@@ -176,8 +244,16 @@
         "calculator": "diabetes_risk",
         "plan": "premium",
         "results": [
-          { "result": 8.2, "unit": "%", "engine_version": "1.3" },
-          { "result": 7.0, "unit": "%", "engine_version": "1.4" }
+          {
+            "result": 8.2,
+            "unit": "%",
+            "engine_version": "1.3"
+          },
+          {
+            "result": 7.0,
+            "unit": "%",
+            "engine_version": "1.4"
+          }
         ]
       },
       "expected": {
