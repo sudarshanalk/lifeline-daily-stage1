@@ -26,7 +26,9 @@ const STAGE3 = `${PLUGIN}/includes/stage3`;
 export const TOOL_FILES = {
   cursor: [`${STAGE3}/**`, 'tests/stage3/**'],
   antigravity: [`${STAGE3}/screens/**`, `${PLUGIN}/assets/stage3.css`, `${PLUGIN}/assets/stage3.js`, 'tests/stage3/look/**', 'tests/stage3/e2e/screens/**'],
-  codex: ['tests/stage3/**', 'tests/ci/**', '.github/workflows/**'],
+  // tools/seo/**: the checking tools of P3-80 to P3-82 (direct answers, Search Console and speed), which the Codex brief
+  // assigns as "tooling under tools/ and tests/"; the lead applies the content changes they report.
+  codex: ['tests/stage3/**', 'tests/ci/**', '.github/workflows/**', 'tools/seo/**'],
   claude: ['.github/**', 'deploy/**', 'docs/**', '.cursor/**', 'AGENTS.md', 'CLAUDE.md', 'README.md', 'Makefile', 'package.json', 'package-lock.json',
     '.gitignore', '.gitattributes', `${STAGE3}/**`, `${PLUGIN}/assets/stage3.css`, `${PLUGIN}/assets/stage3.js`, 'tests/**', 'tools/**', 'content/**', 'reports/**',
     'site/public_html/wp-content/mu-plugins/lld-tools/**', 'site/public_html/wp-content/mu-plugins/lld-tools-loader.php', 'schemas/**', 'registry/**', 'design/**', 'fixtures/**',
