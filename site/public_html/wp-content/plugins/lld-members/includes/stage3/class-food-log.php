@@ -1,10 +1,13 @@
 <?php
 /**
- * Food logging (P3-41, FR3-27 to FR3-32).
+ * Food logging (P3-41, FR3-27 to FR3-32) and earlier Stage 2 diary entries (P3-42, FR3-33).
  *
  * Calories and nutrients are worked out when an entry is saved, and stored on the entry.
  * Changing the portion scales those saved values. A later refresh of the food database
  * does not change a past day.
+ *
+ * Stage 2 diary meals are only read, never copied or converted, so they stay exactly as
+ * the member left them and cannot be duplicated.
  *
  * @package LLD_Members
  */
@@ -21,6 +24,8 @@ class LLD_Members_Food_Log {
 	const MEALS     = array( 'breakfast', 'lunch', 'dinner', 'snacks' );
 	const NUTRIENTS = array( 'kcal', 'protein_g', 'carb_g', 'fat_g', 'fibre_g' );
 	const HISTORY   = 14;
+
+	const EARLIER_LABEL = 'Earlier diary entry, nutrition unknown';
 
 	/**
 	 * Premium is the access state stored for the membership. "Premium ended" is not Premium.
@@ -403,6 +408,130 @@ class LLD_Members_Food_Log {
 	}
 
 	/**
+	 * One Stage 2 diary meal as the food tracker shows it: read-only, with no nutrition numbers.
+	 *
+	 * @param array<string,mixed> $row         Stage 2 diary_meal row. It is not changed.
+	 * @param string              $description Decrypted description, or ''.
+	 * @param string|null         $photo_url   Link to the member's own photo, or null.
+	 * @return array<string,mixed>
+	 */
+	public static function earlier_entry( array $row, $description, $photo_url ) {
+		$meal = (string) ( $row['meal'] ?? '' );
+		if ( 'snack' === $meal || ! in_array( $meal, self::MEALS, true ) ) {
+			$meal = 'snacks';
+		}
+		$checks = array();
+		foreach ( array( 'vegetables', 'protein_source', 'sugary_drink' ) as $check ) {
+			$checks[ $check ] = isset( $row[ $check ] ) && is_numeric( $row[ $check ] ) ? 1 === (int) $row[ $check ] : null;
+		}
+		$portion = (string) ( $row['portion'] ?? '' );
+		return array(
+			'kind'           => 'earlier',
+			'id'             => (int) ( $row['id'] ?? 0 ),
+			'label'          => self::EARLIER_LABEL,
+			'nutrition'      => 'unknown',
+			'read_only'      => true,
+			'entry_date'     => substr( (string) ( $row['local_date'] ?? '' ), 0, 10 ),
+			'meal'           => $meal,
+			'entry_type'     => (string) ( $row['entry_type'] ?? '' ),
+			'planned'        => 'planned' === (string) ( $row['entry_type'] ?? '' ),
+			'recipe_version' => '' !== (string) ( $row['recipe_version'] ?? '' ) ? (string) $row['recipe_version'] : null,
+			'description'    => (string) $description,
+			'portion'        => '' !== $portion ? $portion : null,
+			'photo'          => $photo_url,
+			'checks'         => $checks,
+			'recorded_at'    => (string) ( $row['recorded_at'] ?? '' ),
+		);
+	}
+
+	/**
+	 * A Stage 2 day row (water, hunger, energy), or null when nothing was logged.
+	 *
+	 * @param array<string,mixed>|null $row Stage 2 diary_day row.
+	 * @return array<string,int|null>|null
+	 */
+	public static function earlier_extras( $row ) {
+		if ( ! is_array( $row ) ) {
+			return null;
+		}
+		$out = array();
+		foreach ( array( 'water_glasses', 'hunger', 'energy' ) as $field ) {
+			$out[ $field ] = isset( $row[ $field ] ) && is_numeric( $row[ $field ] ) ? (int) $row[ $field ] : null;
+		}
+		return $out;
+	}
+
+	/**
+	 * Add earlier diary entries to a day, grouped by meal. They sit beside the new entries,
+	 * never inside them, so totals, what is left and the amount over stay as they were.
+	 *
+	 * @param array<string,mixed>            $day     Result of day().
+	 * @param array<int,array<string,mixed>> $earlier Results of earlier_entry().
+	 * @param array<string,int|null>|null    $extras  Result of earlier_extras().
+	 * @return array<string,mixed>
+	 */
+	public static function with_earlier( array $day, array $earlier, $extras ) {
+		$grouped = array();
+		foreach ( self::MEALS as $meal ) {
+			$grouped[ $meal ] = array();
+		}
+		$seen = array();
+		foreach ( $earlier as $entry ) {
+			if ( ! is_array( $entry ) || ( $entry['entry_date'] ?? '' ) !== ( $day['date'] ?? '' ) ) {
+				continue;
+			}
+			$id = (int) ( $entry['id'] ?? 0 );
+			if ( $id > 0 && isset( $seen[ $id ] ) ) {
+				continue;
+			}
+			$seen[ $id ]                          = true;
+			$grouped[ (string) $entry['meal'] ][] = $entry;
+		}
+		$day['earlier']       = $grouped;
+		$day['earlier_day']   = $extras;
+		$day['earlier_label'] = self::EARLIER_LABEL;
+		return $day;
+	}
+
+	/**
+	 * Read this member's Stage 2 diary for one day. Read only: nothing is written back.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $date      Y-m-d.
+	 * @return array{meals: array<int,array<string,mixed>>, day: array<string,int|null>|null}
+	 */
+	private static function earlier_stored( $member_id, $date ) {
+		global $wpdb;
+		$none = array(
+			'meals' => array(),
+			'day'   => null,
+		);
+		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) || ! class_exists( 'LLD_Members_Schema' ) ) {
+			return $none;
+		}
+		$meals = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Schema::table( 'diary_meal' ) . ' WHERE member_id = %d AND local_date = %s ORDER BY id ASC', $member_id, $date ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
+		$day   = $wpdb->get_row( $wpdb->prepare( 'SELECT water_glasses, hunger, energy FROM ' . LLD_Members_Schema::table( 'diary_day' ) . ' WHERE member_id = %d AND local_date = %s', $member_id, $date ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
+		$out   = array();
+		foreach ( is_array( $meals ) ? $meals : array() as $row ) {
+			$text = '';
+			if ( is_string( $row['description_ciphertext'] ?? null ) && '' !== $row['description_ciphertext'] && class_exists( 'LLD_Members_Crypto' ) ) {
+				try {
+					$text = LLD_Members_Crypto::decrypt( $row['description_ciphertext'], 'diary_meal:' . $row['id'] );
+				} catch ( RuntimeException $e ) {
+					unset( $e );
+					$text = '';
+				}
+			}
+			$photo = is_string( $row['photo_path'] ?? null ) && '' !== $row['photo_path'] ? home_url( '/members/diary-photo/' . (int) $member_id . '/?meal=' . (int) $row['id'] ) : null;
+			$out[] = self::earlier_entry( $row, $text, $photo );
+		}
+		return array(
+			'meals' => $out,
+			'day'   => self::earlier_extras( is_array( $day ) ? $day : null ),
+		);
+	}
+
+	/**
 	 * Foods this member can log: the shared catalogue, then their own custom foods.
 	 * Another member's custom food is never included. A deleted custom food is not included.
 	 *
@@ -569,7 +698,9 @@ class LLD_Members_Food_Log {
 			}
 			$rows    = self::rows_for( 'food_log', $member_id );
 			$targets = self::rows_for( 'nutrition_targets', $member_id );
-			return self::day( $rows, $date, self::target_for_day( $targets, $date ) );
+			$day     = self::day( $rows, $date, self::target_for_day( $targets, $date ) );
+			$earlier = self::earlier_stored( $member_id, $date );
+			return self::with_earlier( $day, $earlier['meals'], $earlier['day'] );
 		}
 		if ( 'search' === $which ) {
 			return array( 'foods' => self::search_member( $member_id, $query['q'] ?? '' ) );
