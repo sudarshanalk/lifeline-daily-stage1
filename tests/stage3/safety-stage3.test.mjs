@@ -248,7 +248,9 @@ test('TC-FR3-46-AS-01', () => {
       $w('blood_pressure', ['sys' => 120, 'dia' => 80, 'pulse' => 35]),
       $w('blood_pressure', ['sys' => 120, 'dia' => 80, 'pulse' => 230]),
       LLD_Members_Stage3_Safety::BP_MESSAGES,
-      LLD_Members_Rule_Catalogue::TEMPLATES['rule.R-SAFE-01p'],
+      $w('blood_pressure', ['sys' => 85, 'dia' => 55], ['pregnancy' => true]),
+      $w('blood_pressure', ['sys' => 85, 'dia' => 55], ['pregnancy' => true, 'dizzy' => true]),
+      $w('blood_pressure', ['dia' => 80]),
     ];
   `);
   const BP = r[13];
@@ -257,9 +259,9 @@ test('TC-FR3-46-AS-01', () => {
   expect(r[0].message.split('\n')[0]).toBe('Your reading is very high.');
   expect(r[1]).toMatchObject({ level: 'urgent', key: 'bp-check.urgent.alert' });
   expect(r[2]).toMatchObject({ level: 'urgent', key: 'bp-check.urgent.alert' });
-  // Pregnancy: 160 or 110 is the pregnancy urgent line (P3-58 §4.2, D3-19); 140 or 90 is the catalogue's same-day line.
+  // Pregnancy: 160 or 110 is the pregnancy urgent line, 140 or 90 the same-day line (P3-58 §4.2, D3-19), as the calculator.
   expect(r[3]).toEqual({ level: 'urgent', key: 'bp-check.pregnancy.urgent', message: BP['pregnancy.urgent'], emergency_numbers: true });
-  expect(r[4]).toEqual({ level: 'caution', key: 'rule.R-SAFE-01p', message: r[14], emergency_numbers: false });
+  expect(r[4]).toEqual({ level: 'caution', key: 'bp-check.pregnancy.same-day', message: BP['pregnancy.same-day'], emergency_numbers: false });
   expect(r[5]).toEqual({ level: 'none', key: null, message: null, emergency_numbers: false }); // 142/92, not pregnant: the category is the calculator's
   expect(r[6]).toMatchObject({ level: 'caution', key: 'bp-check.category.normal-low.body', message: BP['category.normal-low.body'] });
   expect(r[7]).toMatchObject({ level: 'caution', key: 'bp-check.pulse.note', message: BP['pulse.note'].replace('{high|low}', 'high') });
@@ -268,6 +270,10 @@ test('TC-FR3-46-AS-01', () => {
   expect(r[10]).toEqual({ level: 'caution', key: 'bp-check.low.dizzy', message: BP['low.dizzy'], emergency_numbers: true }); // D3-17
   expect(r[11]).toMatchObject({ level: 'caution', message: BP['pulse.note'].replace('{high|low}', 'low') }); // D3-20
   expect(r[12]).toMatchObject({ level: 'impossible', key: 'bp-check.refused.impossible' }); // pulse outside 30-220 (P3-58 §4.4)
+  // No category wording in pregnancy (D3-19): a low reading gives no note, but feeling dizzy still gets its line.
+  expect(r[14]).toEqual({ level: 'none', key: null, message: null, emergency_numbers: false });
+  expect(r[15]).toMatchObject({ level: 'caution', key: 'bp-check.low.dizzy', emergency_numbers: true });
+  expect(r[16]).toMatchObject({ level: 'impossible', key: 'bp-check.refused.impossible', message: BP['refused.impossible'] }); // no top number
   // Safety is never paid for: nothing in the matrix or the engine asks about Premium.
   expect(src('class-safety-stage3.php')).not.toMatch(/has_premium|LLD_Members_Billing|LLD_Members_Access::/);
   const engine = src('engine/class-decision-engine.php');
@@ -291,7 +297,7 @@ test('TC-FR3-46-AS-03', () => {
   const L = run('return LLD_Members_Stage3_Safety::LEVELS;');
   expect(L.blood_pressure).toMatchObject({ impossible: { sys: [60, 260], dia: [30, 160], gap: 10 }, urgent: { sys: 180, dia: 120 }, urgent_pregnancy: { sys: 160, dia: 110 }, same_day_pregnancy: { sys: 140, dia: 90 }, low: { sys: 90, dia: 60 }, pulse: [40, 120], pulse_impossible: [30, 220] });
   const BP = run('return LLD_Members_Stage3_Safety::BP_MESSAGES;');
-  expect(Object.keys(BP).sort()).toEqual(['category.normal-low.body', 'low.dizzy', 'pregnancy.urgent', 'pulse.note', 'refused.impossible', 'urgent.alert']);
+  expect(Object.keys(BP).sort()).toEqual(['category.normal-low.body', 'low.dizzy', 'pregnancy.same-day', 'pregnancy.urgent', 'pulse.note', 'refused.impossible', 'urgent.alert']);
   for (const [key, text] of Object.entries(BP)) {
     expect(bpApproval.copy_hashes[key], key).toMatch(/^[0-9a-f]{64}$/);
     expect(createHash('sha256').update(text, 'utf8').digest('hex'), key).toBe(bpApproval.copy_hashes[key]);

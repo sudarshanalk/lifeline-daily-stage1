@@ -66,6 +66,7 @@ class LLD_Members_Stage3_Safety {
 Sit quietly for 5 minutes and take it again. If it is still 180/120 or more, contact a doctor today.
 If you also have chest pain, shortness of breath, a severe headache, weakness or numbness, trouble speaking or seeing, or feel confused or very unwell, call your local emergency number now — for example 999 in the UK, 911 in the US and Canada, 112 in the EU and India, or 000 in Australia. [When to seek urgent care]",
 		'pregnancy.urgent'         => 'In pregnancy a reading of 160/110 or more needs same-day care. Contact your maternity unit or midwife now, or call your local emergency number.',
+		'pregnancy.same-day'       => 'In pregnancy, 140/90 or more should be checked the same day. Please contact your midwife or maternity unit today.',
 		'category.normal-low.body' => 'Lower readings are usually fine. If you feel dizzy, faint or unusually tired, talk to your doctor.',
 		'low.dizzy'                => "If you feel faint or dizzy now, sit or lie down and ask someone to stay with you. If it doesn't pass in a few minutes, or you have chest pain or trouble breathing, call your local emergency number.",
 		'pulse.note'               => "Your pulse is {high|low} for a resting reading. If this is usual for you, fine; if it's new, or you feel unwell, dizzy or breathless, contact your doctor.",
@@ -227,11 +228,12 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 	 * @param array  $values       value_1, value_2, value_3 (or sys, dia, pulse; mmol; kg; hours; mood; minutes, steps,
 	 *                             effort; ml), unit (mg/dL for glucose), previous (kg, hours_ago) for weight,
 	 *                             day_total_ml for water, vigorous_minutes_day for activity, avg_7_nights for sleep.
-	 * @param array  $flags        Situations in force (pregnancy, bmi_under_18_5, lose_weight_goal) and glucose
-	 *                             symptoms, self_harm, dizzy (blood pressure).
+	 * @param array  $flags        Situations in force (pregnancy, set for "Yes" and "Not sure" alike; bmi_under_18_5,
+	 *                             lose_weight_goal) and glucose symptoms, self_harm, dizzy (blood pressure). One level
+	 *                             is returned: the most serious, so a low reading's note hides a pulse note.
 	 * @return array{level:string,key:?string,message:?string,emergency_numbers:bool}
 	 *               level: none, caution, check, urgent or impossible. key: a MESSAGES key, 'bp-check.<key>' (P3-58's
-	 *               signed blood-pressure lines: the urgent alert, FR3-46), 'rule.R-SAFE-01p' (the catalogue's pregnancy line),
+	 *               signed blood-pressure lines: the urgent alert, FR3-46),
 	 *               'stage2_response_1' (self-harm), 'healthy_weight_check.underweight', or 'check_the_number'.
 	 */
 	public static function warning_level( $reading_type, array $values, array $flags = array() ) {
@@ -240,7 +242,7 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 		$v3 = self::num( $values, array( 'value_3', 'pulse', 'effort' ) );
 		$L  = isset( self::LEVELS[ $reading_type ] ) ? self::LEVELS[ $reading_type ] : null;
 		if ( ! $L || null === $v1 ) {
-			return self::level( 'impossible', 'check_the_number' );
+			return self::level( 'impossible', 'blood_pressure' === $reading_type ? 'bp-check.refused.impossible' : 'check_the_number' );
 		}
 		$pregnant = self::flag( $flags, 'pregnancy' );
 		switch ( $reading_type ) {
@@ -255,10 +257,15 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 					return $pregnant ? self::level( 'urgent', 'bp-check.pregnancy.urgent', true ) : self::level( 'urgent', 'bp-check.urgent.alert' );
 				}
 				if ( $pregnant && ( $v1 >= $L['same_day_pregnancy']['sys'] || $v2 >= $L['same_day_pregnancy']['dia'] ) ) {
-					return self::level( 'caution', 'rule.R-SAFE-01p' );
+					return self::level( 'caution', 'bp-check.pregnancy.same-day' ); // the calculator's line too (fixture FX-BP-PREG-01)
 				}
 				if ( $v1 < $L['low']['sys'] || $v2 < $L['low']['dia'] ) {
-					return self::flag( $flags, 'dizzy' ) ? self::level( 'caution', 'bp-check.low.dizzy', true ) : self::level( 'caution', 'bp-check.category.normal-low.body' );
+					if ( self::flag( $flags, 'dizzy' ) ) {
+						return self::level( 'caution', 'bp-check.low.dizzy', true );
+					}
+					if ( ! $pregnant ) { // no category wording in pregnancy (D3-19): a low reading there is no warning
+						return self::level( 'caution', 'bp-check.category.normal-low.body' );
+					}
 				}
 				if ( null !== $v3 && ( $v3 < $L['pulse'][0] || $v3 > $L['pulse'][1] ) ) {
 					$note = self::level( 'caution', 'bp-check.pulse.note' );
