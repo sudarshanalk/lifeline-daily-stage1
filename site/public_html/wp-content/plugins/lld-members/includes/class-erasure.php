@@ -103,7 +103,10 @@ class LLD_Members_Erasure {
 			self::delete_where( $suffix, $column, $member_id );
 		}
 		// Stage 3 health tables (readings, food log, goals' values, plans, insights) go with the same withdrawal.
-		do_action( 'lld_members_withdraw_health', $member_id );
+		// The Stage 2 erasure tests run this method in PHP CLI without WordPress, hence the guard.
+		if ( function_exists( 'do_action' ) ) {
+			do_action( 'lld_members_withdraw_health', $member_id );
+		}
 		self::delete_periods_for_missing_enrolments();
 		self::delete_workout_changes_for_missing_workouts();
 		// Data Model A3: records naming an enrolment are deleted with that enrolment. The programme emails' claim
