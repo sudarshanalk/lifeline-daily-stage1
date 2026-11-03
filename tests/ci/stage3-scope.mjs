@@ -29,7 +29,8 @@ export const TOOL_FILES = {
   codex: ['tests/stage3/**', 'tests/ci/**', '.github/workflows/**'],
   claude: ['.github/**', 'deploy/**', 'docs/**', '.cursor/**', 'AGENTS.md', 'CLAUDE.md', 'README.md', 'Makefile', 'package.json', 'package-lock.json',
     '.gitignore', '.gitattributes', `${STAGE3}/**`, `${PLUGIN}/assets/stage3.css`, `${PLUGIN}/assets/stage3.js`, 'tests/**', 'tools/**', 'content/**', 'reports/**',
-    'site/public_html/wp-content/mu-plugins/lld-tools/**', 'site/public_html/wp-content/mu-plugins/lld-tools-loader.php', 'schemas/**', 'registry/**', 'design/**', 'fixtures/**'],
+    'site/public_html/wp-content/mu-plugins/lld-tools/**', 'site/public_html/wp-content/mu-plugins/lld-tools-loader.php', 'schemas/**', 'registry/**', 'design/**', 'fixtures/**',
+    'approvals/**', 'oracles/**', 'manifests/**'],
 };
 
 // Which tools build which package (AGENTS.md "Stage 3 work by tool"; Build Method §2). A package not listed is the lead's.

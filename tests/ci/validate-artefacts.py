@@ -13,6 +13,8 @@ TARGETS = [
     ("oracles/*/results.json", "oracle-result.schema.json"),
     ("approvals/protein.json", "methodology-approval.schema.json"),
     ("approvals/diabetes.json", "methodology-approval.schema.json"),
+    ("approvals/healthy-weight.json", "methodology-approval.schema.json"),
+    ("approvals/stage3/*.json", "methodology-approval.schema.json"),
     ("approvals/copy.json", "copy-approval.schema.json"),
     ("approvals/hg-0*.json", "gate-record.schema.json"),
     ("evidence/*/*.json", "evidence.schema.json"),
