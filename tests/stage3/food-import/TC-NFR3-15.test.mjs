@@ -219,9 +219,11 @@ test('TC-NFR3-15-AS-03 switching food source changes food values only', () => {
   expect(wrapped).toEqual([{ fdcId: 42, description: 'Wrapped sample' }]);
   expect(product).toEqual([{ code: '999', product_name: 'Wrapped bar' }]);
 
+  // The plugin and the Stage 3 loader never load the importer on a request: only the
+  // `wp lld-members food` command does, and only with the switch on.
   const plugin = readFileSync(loader, 'utf8');
   expect(plugin).not.toContain('food-import');
-  expect(plugin).not.toContain('stage3');
+  expect(readFileSync(resolve(importer, '../loader.php'), 'utf8')).not.toContain('food-import');
   for (const name of readdirSync(importer)) {
     if (!name.endsWith('.php')) continue;
     const text = readFileSync(resolve(importer, name), 'utf8');

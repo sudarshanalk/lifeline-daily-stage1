@@ -30,9 +30,9 @@ class LLD_Members_Food_Schema {
 	}
 
 	/**
-	 * The columns the importer writes, in the Stage 3 schema's order (data model: Food).
+	 * The table's columns and their definitions, in the Stage 3 schema's order (data model: Food).
 	 *
-	 * @return string[]
+	 * @return array<string,string>
 	 */
 	public static function columns() {
 		$columns = array();
@@ -41,7 +41,8 @@ class LLD_Members_Food_Schema {
 			if ( '' === $line || preg_match( '/^(PRIMARY|UNIQUE|KEY|FULLTEXT)\b/', $line ) ) {
 				continue;
 			}
-			$columns[] = strtok( $line, ' ' );
+			list( $name, $definition ) = array_pad( explode( ' ', $line, 2 ), 2, '' );
+			$columns[ $name ]          = $definition;
 		}
 		return $columns;
 	}
