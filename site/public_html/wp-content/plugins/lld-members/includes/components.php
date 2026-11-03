@@ -50,9 +50,12 @@ function lld_members_layout( $args ) {
 	}
 	echo '<div class="lld-toasts" aria-live="polite"></div>';
 	echo '<script src="' . esc_url( $js ) . '?ver=' . esc_attr( LLD_MEMBERS_VERSION ) . '"></script>';
-	if ( class_exists( 'LLD_Members_Growth' ) ) {
+	// Stage 3 (P3-70): Google Analytics replaces Plausible, so the Plausible script stays off while GA4 is set.
+	if ( class_exists( 'LLD_Members_Growth' ) && apply_filters( 'lld_members_plausible_on', true ) ) {
 		echo LLD_Members_Growth::script();
 	}
+	// Stage 3 (P3-70, P3-71): the cookie banner and, after consent, the GA4 tag on public screens.
+	do_action( 'lld_members_layout_foot' );
 	echo '</body></html>';
 }
 
@@ -207,7 +210,10 @@ function lld_members_footer() {
 	$html  = '<footer class="lld-footer"><div class="lld-footer-inner"><p>&copy; ' . esc_html( gmdate( 'Y' ) ) . ' Lifeline Daily. Health information, not medical advice.</p>';
 	$html .= '<ul><li><a href="' . esc_url( home_url( '/medical-disclaimer/' ) ) . '">Medical disclaimer</a></li>';
 	$html .= '<li><a href="' . esc_url( home_url( '/privacy/' ) ) . '">Privacy policy</a></li>';
-	$html .= '<li><a href="' . esc_url( home_url( '/terms/' ) ) . '">Terms of membership</a></li></ul></div></footer>';
+	$html .= '<li><a href="' . esc_url( home_url( '/terms/' ) ) . '">Terms of membership</a></li>';
+	// Stage 3 (P3-71): "Cookie settings" while Google Analytics is set; empty otherwise, so Stage 2 is unchanged.
+	$html .= (string) apply_filters( 'lld_members_footer_links', '' );
+	$html .= '</ul></div></footer>';
 	return $html;
 }
 
