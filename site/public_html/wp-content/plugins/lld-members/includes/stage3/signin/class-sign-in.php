@@ -307,7 +307,8 @@ class LLD_Members_Sign_In {
 			}
 		}
 		if ( $post && $pending && isset( $_POST['lld_s3_resend_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_s3_resend_nonce'] ) ), 'lld_s3_resend' ) ) {
-			$again = self::request_sign_in_code( $pending['email'], ! empty( $pending['remember'] ) );
+			// A new code keeps where the member was going and whether the password was already proved.
+			$again = self::request_sign_in_code( $pending['email'], ! empty( $pending['remember'] ), array_intersect_key( $pending, array( 'redirect_to' => 1, 'password_proved' => 1 ) ) );
 			if ( is_wp_error( $again ) ) {
 				$error = $again->get_error_message();
 			} else {
@@ -328,7 +329,7 @@ class LLD_Members_Sign_In {
 					$error = self::MESSAGES['two_step'];
 				} else {
 					self::clear_pending();
-					self::open_session( $member, ! empty( $pending['remember'] ) );
+					self::open_session( $member, ! empty( $pending['remember'] ), ! empty( $pending['password_proved'] ) );
 					wp_safe_redirect( self::destination( isset( $pending['redirect_to'] ) ? (string) $pending['redirect_to'] : '' ) );
 					exit;
 				}
@@ -425,7 +426,7 @@ class LLD_Members_Sign_In {
 		$member = self::member_by_user( (int) $user->ID );
 		if ( $member && empty( $member->email_confirmed_at ) ) {
 			if ( self::on( 'sign_in_code' ) && self::applies( 'sign_in_code', (string) $member->email ) ) {
-				$sent = self::request_sign_in_code( (string) $member->email, $remember );
+				$sent = self::request_sign_in_code( (string) $member->email, $remember, array( 'password_proved' => true ) );
 				if ( is_wp_error( $sent ) ) {
 					return $sent->get_error_message();
 				}
@@ -452,7 +453,7 @@ class LLD_Members_Sign_In {
 	 * @param bool   $remember Remember me.
 	 * @return true|WP_Error
 	 */
-	private static function request_sign_in_code( $email, $remember ) {
+	private static function request_sign_in_code( $email, $remember, array $keep = array() ) {
 		$member = self::member_by_email( $email );
 		// The code row (and its hourly count) is written for every address, so the limit message and the
 		// time taken are the same whether or not the address has an account; only the email is skipped.
@@ -464,11 +465,14 @@ class LLD_Members_Sign_In {
 			LLD_Members_Email_Codes::send( $email, 'sign_in', $code );
 		}
 		self::set_pending(
-			array(
-				'purpose'     => 'sign_in',
-				'email'       => $email,
-				'remember'    => $remember,
-				'redirect_to' => isset( $_POST['redirect_to'] ) ? esc_url_raw( wp_unslash( $_POST['redirect_to'] ) ) : '',
+			array_merge(
+				array(
+					'purpose'     => 'sign_in',
+					'email'       => $email,
+					'remember'    => $remember,
+					'redirect_to' => isset( $_POST['redirect_to'] ) ? esc_url_raw( wp_unslash( $_POST['redirect_to'] ) ) : '',
+				),
+				$keep
 			)
 		);
 		return true;
@@ -785,6 +789,9 @@ class LLD_Members_Sign_In {
 		$cookie = isset( $_COOKIE[ self::COOKIE_OAUTH ] ) ? (string) $_COOKIE[ self::COOKIE_OAUTH ] : '';
 		self::cookie( self::COOKIE_OAUTH, '', -1, 'Lax' );
 		$fail = home_url( '/members/sign-in/?provider_error=' );
+		if ( get_option( 'lld_members_closed' ) ) {
+			self::leave( $fail . 'unavailable' ); // a flow started before the site closed does not sign in during it
+		}
 		if ( ! is_array( $ctx ) || $ctx['provider'] !== $provider || '' === $cookie || ! hash_equals( $state, $cookie ) ) {
 			self::leave( $fail . 'mismatch' );
 		}
@@ -814,6 +821,9 @@ class LLD_Members_Sign_In {
 		$provider = isset( $p['provider'] ) && in_array( $p['provider'], LLD_Members_Identity_Provider::PROVIDERS, true ) ? (string) $p['provider'] : 'google';
 		if ( ! self::on( 'sign_in_social' ) ) {
 			return new WP_Error( 'lld_off', 'sign_in_social is off.', array( 'status' => 409 ) );
+		}
+		if ( get_option( 'lld_members_closed' ) ) {
+			return rest_ensure_response( array( 'redirect' => home_url( '/members/sign-in/?provider_error=unavailable' ) ) );
 		}
 		$claims = array(
 			'sub'            => isset( $p['sub'] ) ? (string) $p['sub'] : '',
@@ -874,6 +884,9 @@ class LLD_Members_Sign_In {
 				if ( 'owner_admin' === (string) $member->role ) {
 					return $fail . 'owner';
 				}
+				if ( '1' === (string) $member->two_step ) {
+					return $fail . 'two_step'; // a provider is one factor: two-step members keep their password and code
+				}
 				// The account is known by the provider's ID, so a changed email at the provider keeps it (TC-FR3-05-AS-03).
 				$wpdb->update( $table, array( 'provider_email' => $claims['email'], 'last_used_at' => gmdate( 'Y-m-d H:i:s' ) ), array( 'id' => (int) $identity->id ), array( '%s', '%s' ), array( '%d' ) );
 				self::open_session( $member, false );
@@ -890,6 +903,9 @@ class LLD_Members_Sign_In {
 		if ( $member ) {
 			if ( 'owner_admin' === (string) $member->role ) {
 				return $fail . 'owner';
+			}
+			if ( '1' === (string) $member->two_step ) {
+				return $fail . 'two_step';
 			}
 			if ( self::has_provider( (int) $member->id, $provider ) ) {
 				return $fail . 'already_linked'; // another account at the same provider: the member unlinks the first one in the hub
@@ -1097,14 +1113,15 @@ class LLD_Members_Sign_In {
 	/**
 	 * Sign a member in: confirm the email if it never was (a provider or code proved it), then the Stage 2 session.
 	 *
-	 * @param object $member   Member row.
-	 * @param bool   $remember Remember me.
+	 * @param object $member          Member row.
+	 * @param bool   $remember        Remember me.
+	 * @param bool   $password_proved The member typed the right password before the code (password_sign_in()).
 	 */
-	private static function open_session( $member, $remember ) {
+	private static function open_session( $member, $remember, $password_proved = false ) {
 		global $wpdb;
 		if ( empty( $member->email_confirmed_at ) ) {
 			$changed = $wpdb->query( $wpdb->prepare( 'UPDATE ' . LLD_Members_Schema::table( 'member' ) . ' SET email_confirmed_at = %s WHERE id = %d AND email_confirmed_at IS NULL', lld_members_now_mysql( (int) $member->id ), (int) $member->id ) );
-			if ( 1 === (int) $changed ) {
+			if ( 1 === (int) $changed && ! $password_proved ) {
 				// The password on a never-confirmed account was typed by whoever registered the address, which may not
 				// be this member: it is replaced by a random one (set a new one at /members/reset/) and its sessions end.
 				wp_set_password( wp_generate_password( 32, true, true ), (int) $member->user_id );
