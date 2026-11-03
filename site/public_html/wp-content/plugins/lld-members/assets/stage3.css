@@ -1,0 +1,223 @@
+/* Lifeline Daily — Stage 3 Stylesheet
+ * Strict WCAG 2.2 Level AA compliance, 44px tap targets, 360px mobile reflow.
+ */
+
+:root {
+  --lld-s3-green: #157a42;
+  --lld-s3-green-hover: #0f5c31;
+  --lld-s3-mint: #2cc8b3;
+  --lld-s3-mint-soft: #f0f7f3;
+  --lld-s3-bg: #f8faf9;
+  --lld-s3-card: #ffffff;
+  --lld-s3-line: #e5ece8;
+  --lld-s3-ink: #111a14;
+  --lld-s3-muted: #5c6b64;
+  --lld-s3-border: #7d8a84;
+}
+
+/* ================= ACCOUNT HUB (P3-30 · FR3-06) ================= */
+.lld-stage3-account-hub {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px 8px;
+}
+
+.lld-account-nav {
+  margin-bottom: 24px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.lld-account-tabs {
+  display: flex;
+  gap: 8px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-bottom: 2px solid var(--lld-s3-line);
+}
+
+.lld-account-tab {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--lld-s3-muted);
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+
+.lld-account-tab:hover,
+.lld-account-tab:focus-visible {
+  color: var(--lld-s3-ink);
+}
+
+.lld-account-tab.is-active {
+  color: var(--lld-s3-green);
+  border-bottom-color: var(--lld-s3-green);
+  font-weight: 700;
+}
+
+.lld-account-section {
+  background: var(--lld-s3-card);
+  border: 1px solid var(--lld-s3-line);
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.lld-field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.lld-field-row > * {
+  flex: 1 1 240px;
+}
+
+/* ================= CONSENTS LIST (TC-FR3-06-AS-03) ================= */
+.lld-consent-list {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0;
+}
+
+.lld-consent-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border: 1px solid var(--lld-s3-line);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  background: #fbfdfc;
+  gap: 12px;
+}
+
+.lld-consent-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.lld-consent-date {
+  font-size: 12px;
+  color: var(--lld-s3-muted);
+}
+
+.lld-inline-form {
+  margin: 0;
+}
+
+/* ================= DESKTOP USER MENU (P3-30 · FR3-07) ================= */
+.lld-chip-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.lld-desktop-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  width: 220px;
+  background: #ffffff;
+  border: 1px solid var(--lld-s3-line);
+  border-radius: 14px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: 8px 0;
+  z-index: 1000;
+}
+
+.lld-desktop-menu[hidden] {
+  display: none !important;
+}
+
+.lld-menu-item {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--lld-s3-ink);
+  text-decoration: none;
+}
+
+.lld-menu-item:hover,
+.lld-menu-item:focus-visible {
+  background-color: var(--lld-s3-mint-soft);
+  color: var(--lld-s3-green);
+  outline: none;
+}
+
+.lld-menu-divider {
+  margin: 6px 0;
+  border: none;
+  border-top: 1px solid var(--lld-s3-line);
+}
+
+.lld-menu-signout {
+  color: #b5302f;
+  font-weight: 600;
+}
+
+.lld-menu-signout:hover,
+.lld-menu-signout:focus-visible {
+  background-color: #fdeeee;
+  color: #b5302f;
+}
+
+/* ================= HELPFUL EMPTY SCREENS (P3-30 · FR3-08) ================= */
+.lld-empty-helpful {
+  text-align: center;
+  padding: 40px 20px;
+  border: 1px solid var(--lld-s3-line);
+  border-radius: 16px;
+  background: #ffffff;
+  max-width: 640px;
+  margin: 24px auto;
+}
+
+.lld-empty-icon {
+  font-size: 40px;
+  margin-bottom: 12px;
+}
+
+.lld-empty-message {
+  font-size: 14px;
+  color: var(--lld-s3-muted);
+  max-width: 440px;
+  margin: 0 auto 20px;
+  line-height: 1.5;
+}
+
+.lld-empty-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 360px mobile reflow guarantee */
+@media (max-width: 480px) {
+  .lld-account-tab {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+  .lld-empty-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+  .lld-empty-actions > * {
+    width: 100%;
+    text-align: center;
+  }
+}
