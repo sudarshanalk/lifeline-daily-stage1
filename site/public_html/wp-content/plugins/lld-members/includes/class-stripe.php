@@ -62,6 +62,43 @@ class LLD_Members_Stripe {
 		$ended     = $row && in_array( strtolower( (string) $row->stripe_state ), array( 'cancelled', 'canceled', 'incomplete_expired' ), true );
 		$forced    = ! lld_members_is_production() && get_option( 'lld_members_stripe_cancel_fail' );
 		$open      = '' !== $ref && ! $ended;
+		if ( ! $forced && $open ) {
+			// Stage 3 (D2): with the real Stripe connected the subscription is ended there.
+			$asked = apply_filters( 'lld_members_stripe_cancel_member', null, $member_id, $ref );
+			if ( is_wp_error( $asked ) ) {
+				update_option(
+					'lld_members_last_cancel',
+					array(
+						'member_id'    => $member_id,
+						'ok'           => false,
+						'why'          => 'stripe_error',
+						'subscription' => $ref,
+					),
+					false
+				);
+				return new WP_Error(
+					'lld_stripe',
+					'Stripe did not cancel the subscription: ' . $asked->get_error_message(),
+					array(
+						'subscription' => $ref,
+						'customer'     => $customer,
+					)
+				);
+			}
+			if ( true === $asked ) {
+				update_option(
+					'lld_members_last_cancel',
+					array(
+						'member_id'    => $member_id,
+						'ok'           => true,
+						'why'          => 'cancelled_at_stripe',
+						'subscription' => $ref,
+					),
+					false
+				);
+				return true;
+			}
+		}
 		if ( $forced || $open ) {
 			$why = $forced ? 'forced' : 'not_connected';
 			update_option(

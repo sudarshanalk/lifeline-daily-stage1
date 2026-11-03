@@ -1032,16 +1032,22 @@ class LLD_Members_Billing {
 			if ( $code && empty( $quote['code'] ) ) {
 				$note = 'This code has ended.';
 			}
-			$session = 'cs_test_' . bin2hex( random_bytes( 8 ) );
+			$opened = self::open_session( $quote, $member_id, $ref );
+			if ( is_wp_error( $opened ) ) {
+				$main .= '<div class="lld-fail" role="alert"><p>' . esc_html( LLD_Members_Stripe::try_again_message() ) . '</p></div>';
+				LLD_Members_Personal::render( 'Checkout', $main );
+				return;
+			}
+			$session = (string) $opened['id'];
 			self::store_quote( $session, $quote, $member_id, $ref );
-			$shown = true;
+			$shown   = true;
 			$main .= '<p>You\'ll pay securely with Stripe. We never see your card details.</p>';
 			$main .= '<p data-lld-charge="' . (int) $quote['charged'] . '" data-lld-shown="' . (int) $quote['charged'] . '" data-lld-tax="' . (int) $quote['tax'] . '" data-lld-currency="' . esc_attr( $quote['currency'] ) . '" data-lld-session="' . esc_attr( $session ) . '">';
 			$main .= esc_html( self::money( $quote['charged'], $quote['currency'] ) ) . '</p>';
 			$main .= '<p>tax included</p>';
 			$main .= '<p>' . esc_html( self::tax_line( $quote ) ) . '</p>';
 			$main .= '<p>Apple Pay and Google Pay are offered by Stripe on devices that support them.</p>';
-			$main .= '<p><a href="' . esc_url( 'https://checkout.stripe.com/c/pay/' . $session ) . '">Continue to payment</a></p>';
+			$main .= '<p><a href="' . esc_url( $opened['url'] ) . '">Continue to payment</a></p>';
 			$main .= '<p data-lld-sale-terms>You accepted the <a href="' . esc_url( self::terms_of_sale_url() ) . '">terms of sale</a>.</p>';
 			if ( $note ) {
 				$main .= '<p>' . esc_html( $note ) . '</p>';
@@ -1075,11 +1081,13 @@ class LLD_Members_Billing {
 		LLD_Members_Personal::require_page();
 		$member_id = LLD_Members_Access::current_member_id();
 		$posted    = 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' );
+		$failed    = false;
+		$switching = (bool) apply_filters( 'lld_members_can_switch_yearly', true, $member_id );
 		if ( $posted && isset( $_POST['lld_sub_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_sub_nonce'] ) ), 'lld_sub' ) ) {
 			$action = isset( $_POST['lld_sub_action'] ) ? sanitize_key( wp_unslash( $_POST['lld_sub_action'] ) ) : '';
 			if ( 'cancel' === $action ) {
-				self::cancel_at_period_end( $member_id );
-			} elseif ( 'switch' === $action ) {
+				$failed = is_wp_error( self::cancel_at_period_end( $member_id ) );
+			} elseif ( 'switch' === $action && $switching ) {
 				self::queue_yearly( $member_id );
 			} elseif ( 'undo' === $action ) {
 				self::save_sub( $member_id, array( 'pending_yearly_on' => null ) );
@@ -1087,6 +1095,9 @@ class LLD_Members_Billing {
 		}
 		$sub  = self::subscription_row( $member_id );
 		$main = '<h1>My subscription</h1>';
+		if ( $failed ) {
+			$main .= '<div class="lld-fail" role="alert"><p>Your subscription was not cancelled. ' . esc_html( LLD_Members_Stripe::try_again_message() ) . '</p></div>';
+		}
 		if ( ! $sub || 'free' === strtolower( (string) $sub->access_state ) ) {
 			$main .= '<p>Your membership is Free.</p>';
 			$main .= '<p><a href="' . esc_url( home_url( '/pricing/' ) ) . '">See pricing</a></p>';
@@ -1122,7 +1133,7 @@ class LLD_Members_Billing {
 		$main .= '<button type="button" class="lld-button lld-button-secondary" data-lld-share="' . esc_attr( $link ) . '" hidden>Share referral link</button></p>';
 		$main .= '<form method="post">';
 		$main .= wp_nonce_field( 'lld_sub', 'lld_sub_nonce', true, false );
-		if ( $sub && 'monthly' === (string) $sub->plan && self::paid_open( $member_id ) && ! $sub->pending_yearly_on ) {
+		if ( $switching && $sub && 'monthly' === (string) $sub->plan && self::paid_open( $member_id ) && ! $sub->pending_yearly_on ) {
 			$main .= '<button class="lld-button" type="submit" name="lld_sub_action" value="switch">Switch to yearly</button> ';
 		}
 		if ( $sub && $sub->pending_yearly_on ) {
@@ -1457,10 +1468,14 @@ class LLD_Members_Billing {
 				return new WP_REST_Response( array( 'message' => 'Please accept the terms of sale to continue.' ), 400 );
 			}
 			self::accept_terms_of_sale( $member_id );
-			$quote   = self::quote( $member_id, $plan, $country, $code );
-			$session = 'cs_test_' . bin2hex( random_bytes( 8 ) );
-			self::store_quote( $session, $quote, $member_id, $ref );
-			$quote['session'] = $session;
+			$quote  = self::quote( $member_id, $plan, $country, $code );
+			$opened = self::open_session( $quote, $member_id, $ref );
+			if ( is_wp_error( $opened ) ) {
+				// Stripe's own text (which can carry a masked key fragment or price ids) stays with the admin log.
+				return new WP_REST_Response( array( 'message' => self::try_again_message() ), 503 );
+			}
+			self::store_quote( (string) $opened['id'], $quote, $member_id, $ref );
+			$quote['session'] = $opened['id'];
 			return new WP_REST_Response( $quote, 200 );
 		}
 		if ( 'read' === $action ) {
@@ -1548,8 +1563,9 @@ class LLD_Members_Billing {
 	 */
 	public static function quote( $member_id, $plan, $country, $code ) {
 		$prices   = self::prices();
-		$currency = self::currency_for( $country );
-		$base     = 'yearly' === $plan ? (int) $prices['yearly'] : (int) $prices['monthly'];
+		// Stage 3 (D2): with the real Stripe connected, the price and currency are Stripe's own.
+		$currency = (string) apply_filters( 'lld_members_plan_currency', self::currency_for( $country ), $plan, $member_id );
+		$base     = (int) apply_filters( 'lld_members_plan_price', 'yearly' === $plan ? (int) $prices['yearly'] : (int) $prices['monthly'], $plan, $member_id );
 		$used     = '';
 		$charged  = $base;
 		if ( '' !== $code && self::code_applies( $member_id, $code, $plan ) ) {
@@ -1583,7 +1599,7 @@ class LLD_Members_Billing {
 			return;
 		}
 		if ( 'invoice.payment_failed' === $type ) {
-			$sub_id = isset( $object['subscription'] ) ? (string) $object['subscription'] : '';
+			$sub_id = self::invoice_subscription( $object );
 			$row    = self::by_stripe_subscription( $sub_id );
 			if ( $row ) {
 				$invoice = isset( $object['id'] ) && '' !== (string) $object['id'] ? (string) $object['id'] : 'sub:' . $sub_id;
@@ -1769,9 +1785,17 @@ class LLD_Members_Billing {
 		$today    = LLD_Members_Programme::local_today( $member_id );
 		$ends     = self::add_period( $today, (string) $quote['plan'] );
 		$stripe   = isset( $object['subscription'] ) ? sanitize_text_field( (string) $object['subscription'] ) : '';
-		$payment  = isset( $object['payment_intent'] ) ? sanitize_text_field( (string) $object['payment_intent'] ) : $session;
+		$payment  = isset( $object['payment_intent'] ) && is_string( $object['payment_intent'] ) ? sanitize_text_field( $object['payment_intent'] ) : $session;
+		// A real subscription session carries its invoice, not a payment intent; Stage 3 (D2) looks the intent up.
+		$payment  = sanitize_text_field( (string) apply_filters( 'lld_members_payment_ref', $payment, $object ) );
 		$fingerprint = isset( $object['fingerprint'] ) ? sanitize_text_field( (string) $object['fingerprint'] ) : '';
-		$email    = isset( $object['email'] ) ? sanitize_email( (string) $object['email'] ) : self::email_of( $member_id );
+		$email    = isset( $object['email'] ) ? sanitize_email( (string) $object['email'] ) : '';
+		if ( '' === $email && isset( $object['customer_details']['email'] ) ) {
+			$email = sanitize_email( (string) $object['customer_details']['email'] );
+		}
+		if ( '' === $email ) {
+			$email = self::email_of( $member_id );
+		}
 		$current  = self::subscription_row( $member_id );
 		if ( self::has_premium( $member_id ) && $current && '' !== (string) $current->stripe_subscription && (string) $current->stripe_subscription !== $stripe ) {
 			// Paid twice: keep the first subscription, record the payment so the owner can refund it, and flag it.
@@ -1812,7 +1836,7 @@ class LLD_Members_Billing {
 	 * @param array<string,mixed> $object Invoice object.
 	 */
 	private static function apply_renewal( $object ) {
-		$row = self::by_stripe_subscription( isset( $object['subscription'] ) ? (string) $object['subscription'] : '' );
+		$row = self::by_stripe_subscription( self::invoice_subscription( $object ) );
 		if ( ! $row ) {
 			return;
 		}
@@ -1828,7 +1852,8 @@ class LLD_Members_Billing {
 		if ( $row->pending_yearly_on && (string) $row->pending_yearly_on <= $today ) {
 			$plan = 'yearly';
 		}
-		$payment = isset( $object['payment_intent'] ) ? sanitize_text_field( (string) $object['payment_intent'] ) : sanitize_text_field( (string) $object['id'] );
+		$payment = isset( $object['payment_intent'] ) && is_string( $object['payment_intent'] ) ? sanitize_text_field( $object['payment_intent'] ) : sanitize_text_field( (string) $object['id'] );
+		$payment = sanitize_text_field( (string) apply_filters( 'lld_members_payment_ref', $payment, $object ) );
 		$quote   = array(
 			'plan'     => $plan,
 			'country'  => 'gbp' === $next['currency'] ? 'GB' : ( 'eur' === $next['currency'] ? 'DE' : 'US' ),
@@ -1945,7 +1970,12 @@ class LLD_Members_Billing {
 	private static function cancel_at_period_end( $member_id ) {
 		$sub = self::subscription_row( $member_id );
 		if ( ! $sub ) {
-			return;
+			return true;
+		}
+		// Stage 3 (D2): Stripe is told first; the site changes only when Stripe agreed.
+		$asked = apply_filters( 'lld_members_stripe_cancel', true, $member_id, $sub );
+		if ( is_wp_error( $asked ) ) {
+			return $asked;
 		}
 		self::save_sub(
 			$member_id,
@@ -1954,6 +1984,7 @@ class LLD_Members_Billing {
 				'stripe_state' => 'cancel_at_period_end',
 			)
 		);
+		return true;
 	}
 
 	/**
@@ -1988,7 +2019,12 @@ class LLD_Members_Billing {
 		if ( 'refunded' === (string) $order->status ) {
 			return new WP_Error( 'lld_refund', 'This payment is already refunded.' );
 		}
-		self::record_refund( $order, 're_test_' . $order_id, 'owner' );
+		// Stage 3 (D2): the refund is made at Stripe first and recorded here with Stripe's reference.
+		$ref = apply_filters( 'lld_members_stripe_refund', 're_test_' . $order_id, $order );
+		if ( is_wp_error( $ref ) ) {
+			return $ref;
+		}
+		self::record_refund( $order, sanitize_text_field( (string) $ref ), 'owner' );
 		return true;
 	}
 
@@ -2607,6 +2643,45 @@ class LLD_Members_Billing {
 			$all = array_slice( $all, -20, null, true );
 		}
 		update_option( 'lld_quotes', $all, false );
+	}
+
+	/**
+	 * Open the checkout session for a quote; the caller keeps the quote under its id. Stage 3 (D2) opens a real Stripe
+	 * session through the lld_members_checkout_session filter; without it the session is simulated as before.
+	 *
+	 * @param array<string,mixed> $quote     Quote.
+	 * @param int                 $member_id Member.
+	 * @param string              $ref       Referral code.
+	 * @return array{id:string,url:string}|WP_Error
+	 */
+	private static function open_session( $quote, $member_id, $ref ) {
+		$opened = apply_filters( 'lld_members_checkout_session', null, $quote, $member_id, $ref );
+		if ( is_wp_error( $opened ) ) {
+			return $opened;
+		}
+		if ( ! is_array( $opened ) || empty( $opened['id'] ) || empty( $opened['url'] ) ) {
+			$id     = 'cs_test_' . bin2hex( random_bytes( 8 ) );
+			$opened = array(
+				'id'  => $id,
+				'url' => 'https://checkout.stripe.com/c/pay/' . $id,
+			);
+		}
+		return $opened;
+	}
+
+	/**
+	 * The subscription a Stripe invoice belongs to: the older top-level field, or the newer parent details.
+	 *
+	 * @param array<string,mixed> $object Invoice object.
+	 */
+	private static function invoice_subscription( $object ) {
+		if ( ! empty( $object['subscription'] ) && is_string( $object['subscription'] ) ) {
+			return (string) $object['subscription'];
+		}
+		if ( ! empty( $object['parent']['subscription_details']['subscription'] ) && is_string( $object['parent']['subscription_details']['subscription'] ) ) {
+			return (string) $object['parent']['subscription_details']['subscription'];
+		}
+		return '';
 	}
 
 	/**
