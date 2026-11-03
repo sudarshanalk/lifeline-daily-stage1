@@ -231,6 +231,47 @@ class LLD_Members_Stage3_API {
 				),
 				'required' => array(),
 			),
+			// Computed views (P3-41). They are not tables: the food log class builds them.
+			'food-day'           => array(
+				'table'    => 'food_log',
+				'feature'  => 'food_tracker',
+				'health'   => true,
+				'computed' => 'day',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
+			'food-search'        => array(
+				'table'    => 'custom_foods',
+				'feature'  => 'food_tracker',
+				'health'   => false,
+				'computed' => 'search',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
+			'food-recent'        => array(
+				'table'    => 'food_log',
+				'feature'  => 'food_tracker',
+				'health'   => true,
+				'computed' => 'recent',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
+			'food-copy'          => array(
+				'table'    => 'food_log',
+				'feature'  => 'food_tracker',
+				'health'   => true,
+				'computed' => 'copy',
+				'sealed'   => array(),
+				'fields'   => array(
+					'from_date' => 'date',
+					'to_date'   => 'date',
+					'meal'      => 'choice:breakfast|lunch|dinner|snacks',
+				),
+				'required' => array( 'from_date', 'to_date' ),
+			),
 		);
 	}
 
@@ -410,18 +451,18 @@ class LLD_Members_Stage3_API {
 			if ( ! LLD_Members_Access::has_health_consent( $member_id ) ) {
 				return self::refuse( 403, 'Health consent is needed first.' );
 			}
-			$m  = $result['macros'];
-			$id = LLD_Members_Stage3_Data::insert(
+			$target = LLD_Members_Food_Log::target_from_result( $result['targetKcal'], $protein, gmdate( 'Y-m-d' ) );
+			$id     = isset( $target['error'] ) ? 0 : LLD_Members_Stage3_Data::insert(
 				'nutrition_targets',
 				$member_id,
 				array(
-					'kcal'       => $result['targetKcal'],
-					'protein_g'  => $m['proteinG'],
-					'carb_g'     => $m['carbG'],
-					'fat_g'      => $m['fatG'],
-					'fibre_g'    => $m['fibreG'],
+					'kcal'       => $target['kcal'],
+					'protein_g'  => $target['protein_g'],
+					'carb_g'     => $target['carb_g'],
+					'fat_g'      => $target['fat_g'],
+					'fibre_g'    => $target['fibre_g'],
 					'set_by'     => 'calculator',
-					'valid_from' => gmdate( 'Y-m-d' ),
+					'valid_from' => $target['valid_from'],
 				)
 			);
 			$result['saved'] = $id > 0 ? $id : null;
@@ -466,13 +507,34 @@ class LLD_Members_Stage3_API {
 			return $gate;
 		}
 		list( $member_id, $def ) = $gate;
-		$since = self::clean_datetime( (string) $request->get_param( 'since' ) );
-		$limit = (int) $request->get_param( 'limit' );
-		if ( ! empty( $def['stage2'] ) ) {
+		$computed = ! empty( $def['computed'] );
+		if ( $computed ) {
+			$rows = LLD_Members_Food_Log::view(
+				$def['computed'],
+				$member_id,
+				array(
+					'date' => (string) $request->get_param( 'date' ),
+					'q'    => (string) $request->get_param( 'q' ),
+				)
+			);
+			if ( isset( $rows['error'] ) ) {
+				return self::refuse( 400, $rows['error'] );
+			}
+		} elseif ( ! empty( $def['stage2'] ) ) {
+			$since = self::clean_datetime( (string) $request->get_param( 'since' ) );
 			return new WP_REST_Response( array( 'rows' => self::stage2_rows( $def['table'], $member_id, $since ) ), 200 );
+		} else {
+			$since = self::clean_datetime( (string) $request->get_param( 'since' ) );
+			$limit = (int) $request->get_param( 'limit' );
+			$rows  = LLD_Members_Stage3_Data::rows( $def['table'], $member_id, $def['sealed'], null === $since ? '' : $since, $limit > 0 ? $limit : 500 );
+			if ( 'food_log' === $def['table'] ) {
+				$rows = LLD_Members_Food_Log::limit_history( $rows, LLD_Members_Food_Log::premium( $member_id ), gmdate( 'Y-m-d' ) );
+			}
 		}
-		$rows = LLD_Members_Stage3_Data::rows( $def['table'], $member_id, $def['sealed'], null === $since ? '' : $since, $limit > 0 ? $limit : 500 );
 		$rows = apply_filters( 'lld_members_stage3_api_rows', $rows, (string) $request['type'], $member_id ); // the safety matrix strips what the member must not see (FR3-69)
+		if ( $computed ) {
+			return new WP_REST_Response( $rows, 200 );
+		}
 		return new WP_REST_Response(
 			array(
 				'rows'   => array_map( array( __CLASS__, 'present' ), $rows ),
@@ -523,9 +585,35 @@ class LLD_Members_Stage3_API {
 		if ( 'shares' === $def['table'] ) {
 			$clean['token'] = bin2hex( random_bytes( 16 ) );
 		}
-		// A calorie target below the member's safe minimum is never saved (FR3-28 AS-02, D3-02).
-		if ( 'nutrition_targets' === $def['table'] && isset( $clean['kcal'] ) && (float) $clean['kcal'] < self::kcal_floor( $member_id ) ) {
-			return self::refuse( 422, LLD_Members_Calorie_Target::MESSAGES['floor_note'] );
+		if ( ! empty( $def['computed'] ) && 'copy' === $def['computed'] ) {
+			$result = LLD_Members_Food_Log::copy_into( $member_id, $clean );
+			if ( isset( $result['error'] ) ) {
+				return self::refuse( isset( $result['status'] ) ? (int) $result['status'] : 422, $result['error'] );
+			}
+			return new WP_REST_Response( $result, 201 );
+		}
+		if ( 'custom_foods' === $def['table'] ) {
+			$denied = LLD_Members_Food_Log::gate_custom( LLD_Members_Food_Log::premium( $member_id ) );
+			if ( null !== $denied ) {
+				return self::refuse( 403, $denied );
+			}
+		}
+		// A target the member types is Premium, and one below the safe minimum is never saved (FR3-28).
+		if ( 'nutrition_targets' === $def['table'] ) {
+			$denied = LLD_Members_Food_Log::gate_member_target( isset( $clean['set_by'] ) ? (string) $clean['set_by'] : 'plan', LLD_Members_Food_Log::premium( $member_id ) );
+			if ( null !== $denied ) {
+				return self::refuse( 403, $denied );
+			}
+			if ( isset( $clean['kcal'] ) && (float) $clean['kcal'] < self::kcal_floor( $member_id ) ) {
+				return self::refuse( 422, LLD_Members_Calorie_Target::MESSAGES['floor_note'] );
+			}
+		}
+		if ( 'food_log' === $def['table'] ) {
+			$filled = LLD_Members_Food_Log::for_member( $member_id, $clean );
+			if ( isset( $filled['error'] ) ) {
+				return self::refuse( 422, $filled['error'] );
+			}
+			$clean = $filled;
 		}
 		$id = LLD_Members_Stage3_Data::insert( $def['table'], $member_id, $clean, $def['sealed'] );
 		if ( $id < 1 ) {
@@ -547,9 +635,16 @@ class LLD_Members_Stage3_API {
 		if ( ! empty( $def['stage2'] ) ) {
 			return self::refuse( 405, 'This type is read-only here.' );
 		}
-		$id = (int) $request['id'];
-		if ( ! LLD_Members_Stage3_Data::row( $def['table'], $member_id, $id, $def['sealed'] ) ) {
+		$id  = (int) $request['id'];
+		$row = LLD_Members_Stage3_Data::row( $def['table'], $member_id, $id, $def['sealed'] );
+		if ( ! $row ) {
 			return self::refuse( 404, 'Not found.' );
+		}
+		if ( 'custom_foods' === $def['table'] ) {
+			$denied = LLD_Members_Food_Log::gate_custom( LLD_Members_Food_Log::premium( $member_id ) );
+			if ( null !== $denied ) {
+				return self::refuse( 403, $denied );
+			}
 		}
 		$params = $request->get_json_params();
 		$params = is_array( $params ) ? $params : array();
@@ -562,6 +657,18 @@ class LLD_Members_Stage3_API {
 		}
 		if ( ! $clean ) {
 			return self::refuse( 400, 'Nothing to change.' );
+		}
+		if ( 'nutrition_targets' === $def['table'] && isset( $clean['kcal'] ) && (float) $clean['kcal'] < self::kcal_floor( $member_id ) ) {
+			return self::refuse( 422, LLD_Members_Calorie_Target::MESSAGES['floor_note'] );
+		}
+		if ( 'food_log' === $def['table'] && isset( $clean['grams'] ) && round( (float) $clean['grams'], 1 ) !== round( (float) $row['grams'], 1 ) ) {
+			$scaled = LLD_Members_Food_Log::scale( $row, $clean['grams'] );
+			if ( null === $scaled ) {
+				return self::refuse( 400, 'Check the value of grams.' );
+			}
+			foreach ( array( 'grams', 'kcal', 'protein_g', 'carb_g', 'fat_g', 'fibre_g' ) as $key ) {
+				$clean[ $key ] = $scaled[ $key ];
+			}
 		}
 		LLD_Members_Stage3_Data::update( $def['table'], $member_id, $id, $clean, $def['sealed'] );
 		return new WP_REST_Response( self::present( LLD_Members_Stage3_Data::row( $def['table'], $member_id, $id, $def['sealed'] ) ), 200 );
@@ -583,6 +690,12 @@ class LLD_Members_Stage3_API {
 		$row = LLD_Members_Stage3_Data::row( $def['table'], $member_id, $id, $def['sealed'] );
 		if ( ! $row ) {
 			return self::refuse( 404, 'Not found.' );
+		}
+		if ( 'custom_foods' === $def['table'] ) {
+			$denied = LLD_Members_Food_Log::gate_custom( LLD_Members_Food_Log::premium( $member_id ) );
+			if ( null !== $denied ) {
+				return self::refuse( 403, $denied );
+			}
 		}
 		if ( array_key_exists( 'deleted_at', $row ) ) {
 			LLD_Members_Stage3_Data::soft_delete( $def['table'], $member_id, $id );

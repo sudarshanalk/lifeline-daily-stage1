@@ -42,13 +42,19 @@ test.describe.serial('members interface', () => {
   const ids = {};
 
   test('TC-NFR3-09-AS-01 every Stage 3 data type is read and written by a signed-in test member', async ({ page }) => {
-    await createMember(page.request, { email: A, password, first_name: 'Sentinel', health_consent: true });
+    await createMember(page.request, { email: A, password, first_name: 'Sentinel', health_consent: true, access_state: 'Premium' });
     await signIn(page, A, password);
     const me = await api(page);
     const features = await me.get('features');
     expect(features.ok(), await features.text()).toBeTruthy();
     for (const [type, row] of Object.entries(ROWS)) {
-      const created = await me.post(type, row);
+      // A food log entry stores calories worked out from the food, so it uses the custom food just created.
+      let payload = row;
+      if (type === 'food-log') {
+        payload = { ...row, food_id: ids['custom-foods'], food_kind: 'custom' };
+        delete payload.kcal;
+      }
+      const created = await me.post(type, payload);
       expect(created.status(), `${type}: ${await created.text()}`).toBe(201);
       const body = await created.json();
       expect(body.id, type).toBeGreaterThan(0);

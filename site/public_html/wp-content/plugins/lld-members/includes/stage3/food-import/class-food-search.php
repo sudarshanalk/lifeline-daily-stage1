@@ -198,6 +198,9 @@ class LLD_Members_Food_Search {
 		foreach ( self::FIELDS as $field ) {
 			$ordered[ $field ] = $hit[ $field ];
 		}
+		if ( isset( $row['id'] ) ) {
+			$ordered['id'] = (int) $row['id'];
+		}
 		return $ordered;
 	}
 
