@@ -9,7 +9,20 @@
     const chip = document.querySelector('.lld-chip');
     if (!chip) return;
 
-    // Check if desktop menu already exists or build it
+    // The links come from PHP (a data attribute on the hub), and data-lld-sign-out names the hub's sign-out form:
+    // a POST to the Stage 2 sign-out carrying its nonce. Without them no menu is built and the chip stays a plain
+    // link to settings.
+    const hub = document.querySelector('[data-lld-menu][data-lld-sign-out]');
+    if (!hub) return;
+    let links;
+    try {
+      links = JSON.parse(hub.getAttribute('data-lld-menu') || '{}');
+    } catch (err) {
+      return;
+    }
+    const signOut = document.getElementById(hub.getAttribute('data-lld-sign-out') || '');
+    if (!signOut || signOut.tagName !== 'FORM' || !links.profile || !links.subscription || !links.data || !links.help) return;
+
     let menu = document.getElementById('lld-desktop-user-menu');
     if (!menu) {
       menu = document.createElement('div');
@@ -19,15 +32,38 @@
       menu.setAttribute('role', 'menu');
       menu.setAttribute('aria-label', 'User account menu');
 
-      const origin = window.location.origin;
-      menu.innerHTML = [
-        '<a href="' + origin + '/members/settings/?section=profile" role="menuitem" class="lld-menu-item">Profile</a>',
-        '<a href="' + origin + '/members/settings/?section=membership" role="menuitem" class="lld-menu-item">My subscription</a>',
-        '<a href="' + origin + '/members/settings/?section=privacy" role="menuitem" class="lld-menu-item">My data</a>',
-        '<a href="' + origin + '/members/help/" role="menuitem" class="lld-menu-item">Help</a>',
-        '<hr class="lld-menu-divider">',
-        '<a href="' + origin + '/members/sign-in/?action=sign_out" role="menuitem" class="lld-menu-item lld-menu-signout">Sign out</a>'
-      ].join('');
+      const items = [
+        [links.profile, 'Profile', ''],
+        [links.subscription, 'My subscription', ''],
+        [links.data, 'My data', ''],
+        [links.help, 'Help', ''],
+        null,
+        [signOut, 'Sign out', ' lld-menu-signout']
+      ];
+      items.forEach(function (item) {
+        if (!item) {
+          const hr = document.createElement('hr');
+          hr.className = 'lld-menu-divider';
+          menu.appendChild(hr);
+          return;
+        }
+        let a;
+        if (item[0] === signOut) {
+          // Sign out posts the hub's sign-out form (with its nonce); it is never a link.
+          a = document.createElement('button');
+          a.type = 'button';
+          a.addEventListener('click', function () {
+            signOut.submit();
+          });
+        } else {
+          a = document.createElement('a');
+          a.href = item[0];
+        }
+        a.textContent = item[1];
+        a.setAttribute('role', 'menuitem');
+        a.className = 'lld-menu-item' + item[2];
+        menu.appendChild(a);
+      });
 
       // Wrap chip in container if not wrapped
       const parent = chip.parentNode;

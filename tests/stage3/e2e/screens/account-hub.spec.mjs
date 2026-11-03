@@ -1,156 +1,178 @@
-// Stage 3 E2E screen tests for P3-30: Account Hub, Desktop Menu, Empty Screens.
-// Test criteria: TC-FR3-06-AS-01 .. TC-FR3-08-AS-02
+// Stage 3 screen tests for P3-30: account hub and desktop menu, live on the CI WordPress.
+// The account_hub switch is at test_accounts in CI (tests/ci/stage2-wp.sh) and the member below is a listed test
+// account, so ordinary Stage 2 members still get the Stage 2 settings screen.
 import { test, expect } from '@playwright/test';
-import { createMember, signIn } from '../../../stage2/e2e/helpers.mjs';
+import { createMember, signIn, password } from '../../key-journeys/helpers.mjs';
 
-test.describe('P3-30 Account Hub, Desktop Menu and Empty Screens', () => {
+const A = 'p3-api-a@test.lifelinedaily.invalid';
 
-  test('TC-FR3-06-AS-01 Open Account: the five sections are listed and each opens its own page', async ({ page, request }) => {
-    const member = await createMember(request, { display_name: 'Alex Rivera' });
-    await signIn(page, member.email, member.password);
+async function hubMember(page, fields = {}) {
+  await createMember(page.request, { email: A, password, first_name: 'Alex', ...fields });
+  await signIn(page, A, password);
+}
 
+test.describe.serial('P3-30 account hub and desktop menu', () => {
+  test('TC-FR3-06-AS-01 Open Account: the five sections are listed and each opens its own page', async ({ page }) => {
+    await hubMember(page);
     await page.goto('/members/settings/');
     await expect(page.locator('.lld-stage3-account-hub')).toBeVisible();
 
-    // Verify 5 sections are listed
-    const tabs = page.locator('.lld-account-tab');
-    await expect(tabs).toHaveCount(5);
-    await expect(page.locator('#tab-profile')).toHaveText('Profile');
-    await expect(page.locator('#tab-security')).toHaveText('Sign-in & security');
-    await expect(page.locator('#tab-notifications')).toHaveText('Notifications');
-    await expect(page.locator('#tab-privacy')).toHaveText('Privacy & consents');
-    await expect(page.locator('#tab-membership')).toHaveText('Membership');
+    const nav = page.locator('nav.lld-account-nav');
+    await expect(nav.locator('ul > li > a.lld-account-tab')).toHaveCount(5);
+    await expect(nav.locator('[role="tablist"], [role="tab"]')).toHaveCount(0);
+    await expect(page.locator('#tab-profile')).toHaveAttribute('aria-current', 'page');
 
-    // Click each tab and verify section opens
-    await page.locator('#tab-security').click();
-    await expect(page).toHaveURL(/section=security/);
-    await expect(page.locator('h2')).toHaveText('Sign-in & security');
+    const sections = [
+      ['security', 'Sign-in & security'],
+      ['notifications', 'Notifications & reminders'],
+      ['privacy', 'Privacy & consents'],
+      ['membership', 'Membership'],
+      ['profile', 'Profile'],
+    ];
+    for (const [id, heading] of sections) {
+      await page.locator(`#tab-${id}`).click();
+      await expect(page).toHaveURL(new RegExp(`section=${id}`));
+      await expect(page.locator('.lld-account-content h2')).toHaveText(heading);
+      await expect(page.locator(`#tab-${id}`)).toHaveAttribute('aria-current', 'page');
+      await expect(page.locator('[aria-current="page"].lld-account-tab')).toHaveCount(1);
+    }
 
-    await page.locator('#tab-notifications').click();
-    await expect(page).toHaveURL(/section=notifications/);
-    await expect(page.locator('h2')).toHaveText('Notifications & reminders');
+    // No section shows a requirement or test ID to the member.
+    for (const [id] of sections) {
+      await page.goto(`/members/settings/?section=${id}`);
+      await expect(page.locator('main')).not.toContainText(/\b(?:TC-)?N?FR\d-\d\d/);
+    }
 
-    await page.locator('#tab-privacy').click();
-    await expect(page).toHaveURL(/section=privacy/);
-    await expect(page.locator('h2')).toHaveText('Privacy & consents');
-
-    await page.locator('#tab-membership').click();
-    await expect(page).toHaveURL(/section=membership/);
-    await expect(page.locator('h2')).toHaveText('Membership');
+    // The section strip wraps at 360 px: no horizontal scroll.
+    await page.setViewportSize({ width: 360, height: 780 });
+    await page.goto('/members/settings/');
+    const strip = await page.locator('.lld-account-tabs').evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth, right: el.getBoundingClientRect().right, overflowX: getComputedStyle(el.parentElement).overflowX }));
+    expect(strip.scroll).toBeLessThanOrEqual(strip.client);
+    expect(strip.right).toBeLessThanOrEqual(360);
+    expect(strip.overflowX).not.toBe('auto');
   });
 
-  test('TC-FR3-06-AS-02 Change the display name in Profile and press Save: only Profile is saved and a confirmation is shown', async ({ page, request }) => {
-    const member = await createMember(request, { display_name: 'Sam Original' });
-    await signIn(page, member.email, member.password);
-
+  test('TC-FR3-06-AS-02 Change the display name in Profile and press Save: only Profile is saved and a confirmation is shown', async ({ page }) => {
+    await hubMember(page, { two_step: false });
     await page.goto('/members/settings/?section=profile');
+    await expect(page.locator('#lld_email_display')).toHaveAttribute('readonly', '');
+    await expect(page.locator('#lld_email_display')).not.toBeDisabled();
     await page.locator('#lld_display').fill('Sam Updated');
-    await page.locator('button:has-text("Save profile")').click();
+    await page.getByRole('button', { name: 'Save profile' }).click();
 
-    // Confirmation shown
+    // Post-redirect-get: the save redirects, and the notice is shown from the query flag.
+    await expect(page).toHaveURL(/\/members\/settings\/\?section=profile&saved=1$/);
     await expect(page.locator('.lld-notice-box')).toContainText('Profile saved.');
     await expect(page.locator('#lld_display')).toHaveValue('Sam Updated');
+    // Only Profile was saved: two-step sign-in is still off.
+    await page.goto('/members/settings/?section=security');
+    await expect(page.locator('[data-lld-two-step]')).toHaveAttribute('data-lld-two-step', 'off');
   });
 
-  test('TC-FR3-06-AS-03 Privacy and consents lists every consent the member has given, with the date, and each can be withdrawn', async ({ page, request }) => {
-    const member = await createMember(request, { health_consent: true });
-    await signIn(page, member.email, member.password);
-
+  test('TC-FR3-06-AS-03 Privacy and consents lists every consent the member has given, with the date, and each can be withdrawn', async ({ page }) => {
+    await hubMember(page, { health_consent: true, consents: ['terms', 'health', 'marketing'] });
     await page.goto('/members/settings/?section=privacy');
-    const list = page.locator('.lld-consent-item');
-    await expect(list.first()).toBeVisible();
 
-    // Contains health consent with date
-    await expect(page.locator('.lld-consent-list')).toContainText('Store my health information');
-    await expect(page.locator('.lld-consent-list')).toContainText('Accepted on');
+    // All four consents Stage 2 records are listed, each with how to change it.
+    await expect(page.locator('.lld-consent-item')).toHaveCount(4);
+    expect(await page.locator('.lld-consent-item').evaluateAll((els) => els.map((el) => el.dataset.consentType))).toEqual(['terms', 'privacy', 'health', 'marketing']);
+    await expect(page.locator('.lld-account-section .lld-muted').first()).not.toContainText('can be withdrawn');
+    for (const type of ['terms', 'privacy']) {
+      const item = page.locator(`.lld-consent-item[data-consent-type="${type}"]`);
+      await expect(item).toContainText('Needed for your account');
+      await expect(item.getByRole('link', { name: 'Delete my account' })).toHaveAttribute('href', /\/members\/delete\/$/);
+    }
+    const marketing = page.locator('.lld-consent-item[data-consent-type="marketing"]');
+    await expect(marketing).toContainText('Marketing emails');
+    await expect(marketing).toContainText(/Accepted on \d{4}-\d\d-\d\d/);
+    await expect(marketing.getByRole('link')).toHaveAttribute('href', /\/members\/settings\/\?all=1$/);
 
-    // Can be withdrawn
-    const withdrawBtn = page.locator('button:has-text("Withdraw consent")');
-    await expect(withdrawBtn).toBeVisible();
-    await withdrawBtn.click();
+    const health = page.locator('.lld-consent-item[data-consent-type="health"]');
+    await expect(health).toContainText('Store my health information');
+    await expect(health).toContainText(/Accepted on \d{4}-\d\d-\d\d/);
+    await expect(page.locator('.lld-consent-item[data-consent-type="terms"]')).toContainText(/Accepted on \d{4}-\d\d-\d\d/);
 
-    await expect(page.locator('.lld-notice-box')).toContainText('Health consent withdrawn.');
+    // Withdrawal goes through the Stage 2 screen, which shows what will be deleted before anything changes.
+    const withdraw = health.getByRole('link', { name: 'Withdraw consent' });
+    await expect(withdraw).toHaveAttribute('href', /\/members\/withdraw\/$/);
+    await expect(page.locator('form input[name="lld_withdraw_health"]')).toHaveCount(0);
+    await withdraw.click();
+    await expect(page.getByRole('heading', { name: 'Withdraw health consent' })).toBeVisible();
+    // Opening the screen withdraws nothing.
+    await page.goto('/members/settings/?section=privacy');
+    await expect(health).toContainText('Accepted on');
+
+    // Download and delete links are 44 px targets.
+    for (const name of ['Download my data', 'Delete my account']) {
+      const box = await page.locator('.lld-account-links').getByRole('link', { name }).boundingBox();
+      expect(box.height).toBeGreaterThanOrEqual(44);
+      expect(box.width).toBeGreaterThanOrEqual(44);
+    }
   });
 
-  test('TC-FR3-07-AS-01 At 1280 pixels wide, click the name chip: a menu with the five links opens', async ({ page, request }) => {
+  test('TC-FR3-07-AS-01 At 1280 pixels wide, click the name chip: a menu with the five links opens', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    const member = await createMember(request, { display_name: 'Desktop User' });
-    await signIn(page, member.email, member.password);
-
-    await page.goto('/members/home/');
-    const chip = page.locator('.lld-chip');
-    await expect(chip).toBeVisible();
-
-    await chip.click();
-    const menu = page.locator('#lld-desktop-user-menu');
-    await expect(menu).toBeVisible();
-
-    const items = menu.locator('[role="menuitem"]');
-    await expect(items).toHaveCount(5);
-    await expect(items.nth(0)).toHaveText('Profile');
-    await expect(items.nth(1)).toHaveText('My subscription');
-    await expect(items.nth(2)).toHaveText('My data');
-    await expect(items.nth(3)).toHaveText('Help');
-    await expect(items.nth(4)).toHaveText('Sign out');
-  });
-
-  test('TC-FR3-07-AS-02 Each link goes to the right page, and Sign out signs the member out', async ({ page, request }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
-    const member = await createMember(request, { display_name: 'Nav User' });
-    await signIn(page, member.email, member.password);
-
-    await page.goto('/members/home/');
+    await hubMember(page);
+    await page.goto('/members/settings/');
     await page.locator('.lld-chip').click();
 
-    // Check link destinations
-    await expect(page.locator('#lld-desktop-user-menu a:has-text("Profile")')).toHaveAttribute('href', /section=profile/);
-    await expect(page.locator('#lld-desktop-user-menu a:has-text("My subscription")')).toHaveAttribute('href', /section=membership/);
-    await expect(page.locator('#lld-desktop-user-menu a:has-text("My data")')).toHaveAttribute('href', /section=privacy/);
-    await expect(page.locator('#lld-desktop-user-menu a:has-text("Help")')).toHaveAttribute('href', /\/members\/help\//);
+    const menu = page.locator('#lld-desktop-user-menu');
+    await expect(menu).toBeVisible();
+    const items = menu.locator('[role="menuitem"]');
+    await expect(items).toHaveText(['Profile', 'My subscription', 'My data', 'Help', 'Sign out']);
+  });
 
-    // Click Sign out
-    await page.locator('#lld-desktop-user-menu a:has-text("Sign out")').click();
-    await page.waitForURL((url) => url.pathname.includes('/members/sign-in'));
+  test('TC-FR3-07-AS-02 Each link goes to the right page, and Sign out signs the member out', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await hubMember(page);
+    await page.goto('/members/settings/');
+    await page.locator('.lld-chip').click();
+
+    const menu = page.locator('#lld-desktop-user-menu');
+    await expect(menu.getByRole('menuitem', { name: 'Profile' })).toHaveAttribute('href', /\/members\/settings\/\?section=profile$/);
+    await expect(menu.getByRole('menuitem', { name: 'My subscription' })).toHaveAttribute('href', /section=membership$/);
+    await expect(menu.getByRole('menuitem', { name: 'My data' })).toHaveAttribute('href', /section=privacy$/);
+    await expect(menu.getByRole('menuitem', { name: 'Help' })).toHaveAttribute('href', /\/members\/help\/$/);
+    // Sign out posts the hub's form to the Stage 2 sign-out (the More screen) with its nonce: never a link, never
+    // a bare ?action=sign_out address and never WordPress's own logout.
+    const out = menu.getByRole('menuitem', { name: 'Sign out' });
+    expect(await out.evaluate((el) => el.tagName)).toBe('BUTTON');
+    expect(await out.getAttribute('href')).toBeNull();
+    const form = page.locator('form#lld-hub-sign-out');
+    await expect(form).toHaveAttribute('method', 'post');
+    await expect(form).toHaveAttribute('action', /\/members\/more\/$/);
+    await expect(form.locator('input[name="lld_sign_out_nonce"]')).toHaveAttribute('value', /^[0-9a-f]+$/);
+    await expect(page.locator('a[href*="action=sign_out"], a[href*="action=logout"]')).toHaveCount(0);
+
+    await out.click();
+    await page.waitForURL(/\/members\/sign-in\/\?signed_out=1$/);
+    await page.goto('/members/settings/');
+    await expect(page).toHaveURL(/\/members\/sign-in\//);
     await expect(page.locator('#lld_email')).toBeVisible();
   });
 
-  test('TC-FR3-07-AS-03 The menu can be opened and used with the keyboard alone', async ({ page, request }) => {
+  test('TC-FR3-07-AS-03 The menu can be opened and used with the keyboard alone', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
-    const member = await createMember(request, { display_name: 'Key User' });
-    await signIn(page, member.email, member.password);
-
-    await page.goto('/members/home/');
+    await hubMember(page);
+    await page.goto('/members/settings/');
     const chip = page.locator('.lld-chip');
     await chip.focus();
     await page.keyboard.press('Enter');
 
     const menu = page.locator('#lld-desktop-user-menu');
     await expect(menu).toBeVisible();
+    await expect(chip).toHaveAttribute('aria-expanded', 'true');
+    const items = menu.locator('[role="menuitem"]');
+    await expect(items.nth(0)).toBeFocused();
 
-    // Navigate with arrow down
     await page.keyboard.press('ArrowDown');
-    await expect(menu.locator('[role="menuitem"]').nth(1)).toBeFocused();
+    await expect(items.nth(1)).toBeFocused();
+    // Keyboard focus is visibly marked.
+    const outline = await items.nth(1).evaluate((el) => getComputedStyle(el).outlineStyle);
+    expect(outline).not.toBe('none');
 
-    // Close with Escape
     await page.keyboard.press('Escape');
     await expect(menu).toBeHidden();
     await expect(chip).toBeFocused();
   });
-
-  test('TC-FR3-08-AS-01 A new test member opens each log and list: none shows a blank area; each shows a picture, a short message and one action button', async ({ page, request }) => {
-    const member = await createMember(request, {});
-    await signIn(page, member.email, member.password);
-
-    // Test helper route or page rendering empty state
-    await page.goto('/members/settings/?section=profile');
-    const emptyStates = page.locator('.lld-empty-helpful');
-    // None shows blank area; each shows art, message, button
-    expect(true).toBe(true);
-  });
-
-  test('TC-FR3-08-AS-02 The empty blood pressure log links to the guide on measuring blood pressure', async ({ page, request }) => {
-    // Verified by unit test and screen test check
-    expect(true).toBe(true);
-  });
-
 });
