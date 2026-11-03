@@ -1,0 +1,47 @@
+{
+  "approval_id": "APR-SAVED-RESULTS-2026-11-03",
+  "tool_slug": "saved-results",
+  "version_hash": "ae4c407128bdd46239d10d6538b5b550f4473cd0214230c6f47d0459a3a5a596",
+  "engine_name": "Saved Calculator Results Over Time: per-calculator headline saving (headline, unit, band, engine version; encrypted inputs for Stage 3 calculators only), 'change since last check' wording with meaningful-change thresholds (D3-34), heart-risk lab versus non-lab comparability and earlier-version notes, and a 91-day re-check reminder with a generic email line (D3-35)",
+  "intended_use": "Lets a member save a calculator's headline result and, with Premium, see the history, how it has changed since the last check and a 3-monthly re-check reminder. Saving a headline is free (with health consent); history, re-check reminders and comparisons are Premium. It does not diagnose any condition.",
+  "eligibility": "Members with health consent. Stage 1 tools (protein, diabetes, healthy weight) keep their Stage 2 behaviour: headline, unit, band, version only; inputs are never stored (D51). Eating-disorder flag (FR3-69): calorie_target and goal_timeline results are never shown and none are created; healthy_weight and metabolic are shown without weight-loss wording. Re-check reminders for heart_risk, bp_check, metabolic, fitness_age and healthy_weight only; never for calorie_target or goal_timeline, and never for a calculator the safety matrix now hides for the member.",
+  "sources": [
+    "Stage 2 requirements FR2-23 and data model C4 (saved results), decision D51.",
+    "Minimal clinically important differences used for the thresholds: ISH home BP day-to-day variability (~5 mmHg); Nes 2011 SEE (5.1-5.7 mL/kg/min); NICE NG246 BMI rounding (D55)."
+  ],
+  "limitations": [
+    "Below the meaningful-change threshold the result is 'about the same', so noise is not presented as a trend.",
+    "Heart risk lab versus non-lab results are not directly comparable: no better/worse label.",
+    "Results from different engine versions are always compared, with the version noted.",
+    "HR zones has no comparison (changes only with age).",
+    "'Better' never celebrates weight lost (FR3-16 AS-04).",
+    "Reminder emails carry no health numbers and do not name the calculator (D3-35); the calculator is named only on the page after sign-in."
+  ],
+  "regulatory_statement": "Approved by the owner as clinical reviewer on 3 November 2026 (P3-5B, FR3-55, NFR3-14, NFR3-17). General health information, not a diagnosis or a medical device.",
+  "licence": "Lifeline Daily's own rules built on Stage 2 saved results (FR2-23, D51) and published minimal clinically important differences.",
+  "copy_hashes": {
+    "change.better": "954321262dace7087c765bf62446f4772b0eec529715c5e2085bc89cafb0e795",
+    "change.higher": "12db882a3b9671bdf294a99366763bdf24a9815e1806fd51398327686a3164e9",
+    "change.lower": "612a240c2997741f1b9bbe27179b385184d404def951eaa9773c000edb888a8b",
+    "change.same": "23e745d748c00966c553d3bf3d3bede3d04c308a7c8f94b3e05cdcb51aa347c0",
+    "change.earlierVersion": "06a790aa6db44d44be592facbef056a79816f14f71ddb63e9a9936923f4c43c4",
+    "change.notComparable": "3cd4405dfa2acef6af2aa3b233a76881960391134e7e53ae1572a653f5eebb9e",
+    "healthyWeight.comparison": "fdc4b02680d1766f6ff9411e1513a6240ec856050c5d26400ebb98871c5a5ad3",
+    "recheck.email": "02f9a460f4f963ddcc6d653912d9b87d5a669f32bca10da66e74d34a4d0a13ac",
+    "free.upgrade": "26ae8e288018c7d9c2e90041d60a93c70dc20ce729a58adf7d46e87f20fe85e0"
+  },
+  "oracle_report": "oracles/orc-14-saved-results/results.json",
+  "decisions_ratified": [
+    "D3-33",
+    "D3-34",
+    "D3-35"
+  ],
+  "clinical_signoff": {
+    "name": "Product owner (sudarshanalk), acting as clinical reviewer",
+    "date": "2026-11-03",
+    "decision": "approved",
+    "notes": "Signed 3 November 2026 ('Approve all, D3-10 = B', in chat with the clinical session; record Signoff-P3-5B-Saved-Results-Over-Time.md). D3-33: Stage 3 calculators store encrypted inputs so re-checks pre-fill; Stage 1 tools keep Stage 2 behaviour (D51). D3-34 thresholds: protein 5 g; diabetes risk 1 point; BMI 0.5; calorie target 50 kcal; heart risk 1 point or a band change; BP 5 systolic or 3 diastolic; metabolic 1 criterion; VO2 1.5; fitness age 2 years; stress score 2; sleep count 1. D3-35: generic re-check email ('a calculator re-check is due'), calculator named only after sign-in. Lab vs non-lab heart risk 'not directly comparable'; different engine versions compared with a note. Wording 'Better / Higher than last time / About the same'; never praise for kilograms lost (FR3-16 AS-04). Save and latest result Free with health consent; history, comparisons and re-check reminders Premium; downgrade keeps history (FR3-68). Re-check 91 days after the last saved result for heart risk, BP check, metabolic, fitness age, healthy weight. Copy hashes: change.lower is the fragment 'Lower than last time' as the sheet gives it (fitness); recheck.email is the D3-35 decided generic line, which supersedes the sheet's example that names the calculator. Sheet hash refreshed after the owner's decisions of 3 Nov 2026 (Owner_Questions 62-65) were written into the sheet."
+  },
+  "review_date": "2026-11-03",
+  "next_review_date": "2027-11-03"
+}

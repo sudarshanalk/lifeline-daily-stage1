@@ -1,0 +1,78 @@
+{
+  "group": "Low readings",
+  "tool": "bp-check",
+  "fixtures": [
+    {
+      "id": "FX-BP-LOW-01",
+      "purpose": "89/60: Normal, low note",
+      "inputs": {
+        "systolic": 89,
+        "diastolic": 60,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "low_note",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal-low.headline",
+          "category.normal-low.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-17"
+    },
+    {
+      "id": "FX-BP-LOW-02",
+      "purpose": "90/59: Normal, low note",
+      "inputs": {
+        "systolic": 90,
+        "diastolic": 59,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "low_note",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal-low.headline",
+          "category.normal-low.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-18"
+    },
+    {
+      "id": "FX-BP-LOW-03",
+      "purpose": "90/60: Normal, no low note",
+      "inputs": {
+        "systolic": 90,
+        "diastolic": 60,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal.headline",
+          "category.normal.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-19"
+    }
+  ]
+}

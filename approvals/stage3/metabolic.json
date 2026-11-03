@@ -1,0 +1,59 @@
+{
+  "approval_id": "APR-METABOLIC-2026-11-03",
+  "tool_slug": "metabolic",
+  "version_hash": "00ea22bed8355798acc03388dc198fff29a41acee30aa919632b40d5d856e465",
+  "engine_name": "Metabolic Health Check: IDF 2006 consensus worldwide definition of the metabolic syndrome (central obesity by background- and sex-specific waist cut-off plus any two of raised triglycerides, reduced HDL cholesterol, raised blood pressure, raised fasting glucose, each also met by its specific treatment or a type 2 diabetes diagnosis), thresholds applied in the unit entered using the IDF's own paired mmol/L and mg/dL values, a partial result naming the missing blood values, and a safety layer (pregnancy or breastfeeding stop, blood pressure and glucose urgent wording, glucose and triglyceride flags)",
+  "intended_use": "Free educational check for adults that shows whether a set of recent results meets the IDF 2006 definition of the metabolic syndrome, explains each component against its threshold, and gives lifestyle suggestions from the approved content library. 'Meets the definition' is never 'you have metabolic syndrome': a doctor confirms it from the full history and tests. It does not diagnose any condition and gives no medicine advice.",
+  "eligibility": "Adults aged 18 to 99. Stops (adult definition) for under-18s. Stops with an owner-approved message for pregnancy or breastfeeding, including 'Not sure'. Waist is required (the IDF definition cannot be assessed without it). Fasting glucose only; a non-fasting value is not used and HbA1c is not accepted at launch (D3-24). Sex 'Prefer not to say' uses the female HDL threshold (1.29 mmol/L / 50 mg/dL) and the 80 cm waist cut-off, with a note (D3-23). An eating-disorder answer or flag runs the check but hides the weight-loss suggestion (D3-25).",
+  "sources": [
+    "International Diabetes Federation. The IDF consensus worldwide definition of the metabolic syndrome (2006).",
+    "Alberti KGMM, Zimmet P, Shaw J. Metabolic syndrome: a new world-wide definition. Lancet 2005;366:1059-62.",
+    "Alberti KGMM, Eckel RH, Grundy SM, et al. Harmonizing the metabolic syndrome. Circulation 2009;120:1640-5 (the 2009 harmonised definition, mentioned in the 'about' section only; D3-22).",
+    "WHO. Waist circumference and waist-hip ratio: report of a WHO expert consultation (2008).",
+    "ADA Standards of Care 2025: fasting glucose 100-125 mg/dL (5.6-6.9 mmol/L) prediabetes; 126 mg/dL (7.0 mmol/L) or more diabetes; 200 mg/dL or more random with symptoms. The 11.1 mmol/L 'see your doctor' line is the random-glucose diagnostic level, used as a conservative fasting flag.",
+    "NICE NG246 (2025) for the family-background list used across the site.",
+    "P3-58 section 4.1 (frozen urgent-care wording for blood pressure 180/120 or more) and the P3-03 safety matrix (glucose urgent wording)."
+  ],
+  "limitations": [
+    "A definition, not a diagnosis: a doctor confirms the metabolic syndrome from the full history and tests.",
+    "Needs recent fasting blood results; triglycerides, HDL cholesterol and fasting glucose that are not provided give a partial result when they could still bring the count to two.",
+    "Waist cut-offs are population averages; the IDF uses European data for Sub-Saharan African and Eastern Mediterranean or Middle East backgrounds until specific data exist, and 'Other / Mixed / Prefer not to say' uses the 94 cm (men) / 80 cm (women) cut-offs with a note that lower cut-offs apply to some backgrounds.",
+    "Thresholds are applied in the unit entered with no conversion before comparison, so 150 mg/dL counts and 1.69 mmol/L does not; values are compared as entered (up to 2 decimals mmol/L, whole mg/dL) with no rounding.",
+    "Other definitions exist (the 2009 harmonised definition does not require a large waist) and a doctor may use one of them.",
+    "Self-reported measurements and results."
+  ],
+  "regulatory_statement": "Approved by the owner as clinical reviewer on 3 November 2026 (P3-59, FR3-51, NFR3-14, NFR3-17). General health information, not a diagnosis or a medical device.",
+  "licence": "Free to use. Lifeline Daily's own implementation of the published IDF 2006 consensus definition and its waist cut-offs.",
+  "copy_hashes": {
+    "results.meets.headline": "fdcf330f448989b2d2707947a8a595375a8cb3826ed12b9ed04a4819a86d4610",
+    "results.meets.body": "a813bc9f30a9932629a5a66a8942438ce5de12d3540de103c755460e6e2959da",
+    "results.notMet.headline": "0d3ea5241f059b9661eb242f2d233e8964f16439ce5d49b0f3eef3bbdca08bf5",
+    "results.notMet.body": "4c8e3b7b356e996941867326c61c12d4b5be9c9fc8059c05b1c6b46319edc22c",
+    "results.notMet.waistBelow.headline": "0d3ea5241f059b9661eb242f2d233e8964f16439ce5d49b0f3eef3bbdca08bf5",
+    "results.notMet.waistBelow.body": "9149440f3472df9e063b008912efd4fee9ce69ef87082f1828de4f290c3816d5",
+    "results.partial.headline": "e11ccc2b6d14bb08b0e63b998f94904d17eacb5f5c411701f2134d9bbb0f1cc5",
+    "results.partial.body": "f22747a7bc265f2d7416a928a142c95c2fe84b4b77ea65ae5addfad01b69488f",
+    "about.definition": "54cbf360feadb9cea3f0d1ecc63fcdfdf02257bd89bf21de36a9c5c3b0d67740",
+    "lifestyle.waist": "7089faacaf31670928a730de7e4555d52e136a64346e3c6ab688766d03790fd4",
+    "stops.pregnancy": "3b45bf69465fe0894af1c8ef85a5d0b56a2b2b8efefcea90b21d9fa0863df3a4",
+    "flags.glucoseDiagnostic": "d6ba08785b55def5870479f779a4060c1acab873e9c529dbdb8d551eca01efb6",
+    "flags.glucoseLow": "cbe031870fb21e499328bb5b626806e3001b519ba417ab120ae5875b88518c6c",
+    "flags.triglyceridesHigh": "a24215e5c6484579c1de9dcc5966ed2beb211f2df6f59436938f73969e334dd1",
+    "notes.diabetes": "22bf38c37031e4828db4331f7eb325ada66ab37a9dc93d1a3d7f99ec64b2579f"
+  },
+  "oracle_report": "oracles/orc-10-metabolic/results.json",
+  "decisions_ratified": [
+    "D3-22",
+    "D3-23",
+    "D3-24",
+    "D3-25"
+  ],
+  "clinical_signoff": {
+    "name": "Product owner (sudarshanalk), acting as clinical reviewer",
+    "date": "2026-11-03",
+    "decision": "approved",
+    "notes": "Signed 3 November 2026 ('Approve all, D3-10 = B', in chat with the clinical session; record Signoff-P3-59-Metabolic-Health-Check.md). D3-22: IDF 2006; the 2009 harmonised definition is mentioned in 'about'. D3-23: sex 'prefer not to say' uses the female HDL threshold (1.29 mmol/L / 50 mg/dL) and the 80 cm waist, with a note. D3-24: HbA1c not accepted at launch; fasting glucose only. D3-25: with an eating-disorder answer the check runs and the weight-loss suggestion is hidden. Waist cut-offs: men 94 cm Europid, Sub-Saharan African, Middle Eastern, other; 90 cm South Asian, Chinese, Japanese, South/Central American; women 80 cm every group. Thresholds: TG 1.7 mmol/L or 150 mg/dL or more (or treated); HDL below 1.03 / 40 men, below 1.29 / 50 women (or treated); BP 130 systolic or 85 diastolic or more (or treated); fasting glucose 5.6 mmol/L or 100 mg/dL or more (or type 2 diabetes). Unit rule: each unit's own IDF threshold, no conversion before comparison. Partial result: waist met, fewer than 2 criteria met, and enough unknown values to reach 2. Flags: BP 180/120 or more urgent; glucose 11.1 mmol/L or more 'diagnostic range, see your doctor soon'; glucose 15 or more urgent; below 3.9 low note; below 3.0 urgent; TG 10 mmol/L or more 'medical review soon'. The 20-row fixture table (section 7) is the frozen reference. Copy hashes cover the exact strings quoted in sheet sections 3 and 4; the BP urgent wording (frozen in P3-58), the glucose urgent wording (P3-03), the 'talk to your doctor' line, the D3-23 sex note and the per-component and lifestyle paragraphs other than the waist line are described but not quoted in the sheet, so they have no hash here."
+  },
+  "review_date": "2026-11-03",
+  "next_review_date": "2027-11-03"
+}

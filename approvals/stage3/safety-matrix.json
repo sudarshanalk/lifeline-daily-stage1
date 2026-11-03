@@ -1,0 +1,63 @@
+{
+  "approval_id": "APR-SAFETY-MATRIX-STAGE3-2026-11-03",
+  "tool_slug": "safety-matrix",
+  "version_hash": "a981c8c5e590bd2c67775e48af9c18d288397e5af9507d9c7c8f374bb7c501aa",
+  "engine_name": "Stage 3 safety matrix (P3-03, FR3-69): the eight rules that apply everywhere, the matrix of situations by Stage 3 feature with five new rows (heart-rate-lowering medicine, known heart disease, age 65 and over, BMI under 18.5, low-mood signal), the frozen warning levels for every logged reading (blood pressure, glucose, weight, waist, sleep, mood, activity, water), the feature-by-feature safety rules and the member wording for the new rows and the two new profile questions.",
+  "intended_use": "Applied first, before access and matching, to every Stage 3 feature: goals and plans, the food tracker and targets, health logging, the decision engine, the calculators, reminders, sharing and saved results, and the app's programming interface. It hides, refuses or annotates features for members whose health profile or logged readings match a row, and shows the frozen global urgent-care wording at once for any reading at an urgent level. It never diagnoses, never gives medicine advice and never praises weight loss.",
+  "eligibility": "Every Stage 3 feature and every member, Free and Premium alike, and the programming interface (FR3-69 AS-02, FR3-63 AS-06). Safety is never paid for. Members without health consent or a profile are on the general wellbeing path with nothing health-related stored; calculators still run one-off and unsaved. Nothing in the Stage 2 matrix is changed; this record adds Stage 3 columns and rows.",
+  "sources": [
+    "Stage 2 Requirements section 8.2 and the drafted wording file (02 Content/Programme content/safety/safety-matrix.md); Stage 2 decisions D36, D37, D48.",
+    "ADA Standards of Care in Diabetes 2025, sections 6 (glycaemic goals, hypoglycaemia) and 7 (sick-day rules); Diabetes UK hypo guidance; JBDS guidelines.",
+    "ISH 2020; NICE NG133 (pregnancy BP).",
+    "NICE CG189 and NG246; ACSM 2021 (exercise with beta-blockers, cardiac conditions).",
+    "AASM/SRS consensus on sleep duration (2015).",
+    "FR2-38 wording (screening-sleep-and-stress.md) for the self-harm response."
+  ],
+  "limitations": [
+    "The Stage 2 matrix rows and their drafted member wording are unchanged and are signed separately (02 Content/Programme content/safety/safety-matrix.md, still awaiting approval).",
+    "The 15.0 mmol/L (270 mg/dL) symptom-free urgent cut-off for glucose is this site's conservative choice, confirmed by the owner on 3 November 2026 (D3-39); glucose gets no 'in range' wording (I-12).",
+    "Blood-pressure warning levels follow the P3-58 method sheet; the urgent level shows the frozen global urgent-care wording, not wording defined in this matrix.",
+    "The low-mood support message contains the FR3-44 support message as a placeholder; the full text is approved with P3-77.",
+    "Warning levels apply at save time and when a reading is edited; they are frozen like the calculators and change only with a new decision and a new version (NFR3-14, NFR3-17)."
+  ],
+  "regulatory_statement": "Signed off by the owner as clinical reviewer on 3 November 2026 (D3-36 to D3-42; record Signoff-P3-03-Safety-Matrix-Stage-3.md). General health information, not a diagnosis or a medical device. Frozen: any change needs a new decision and a new version.",
+  "licence": "Lifeline Daily's own rules",
+  "copy_hashes": {
+    "glucose.urgent-low": "bf634d4a29a9370d110e8d859fa40341592644d86ebde94244a04d8f30f0a51e",
+    "glucose.urgent-high": "2afbbc092c48e522756e6f1519ede371173b5effaf360b92131129c7a32fa947",
+    "glucose.caution-low": "a185f815b4b9d92abc6237bcc083dc2945793ad16dbf04509da8e678c468cfee",
+    "glucose.caution-high": "ef7e9def7951a38d1a851f6aeee35dd2e75725d3b8ded7dae8a4cb12e039bbc9",
+    "water.caution": "1a28558b82493a66c693d5bad6fb68d60c899df85aebfd38f6bbb49940d2e033",
+    "ed.food-tracker.calorie-total": "dc55ca64ee76a4d587033356bd9620af0d410526165947e746c2c6c8e670a63b",
+    "ed.food-tracker.diary-heading": "5958d461923ff3f4d054bd0f16fbc2dcb8c6eb710284b22b4b224e1555c56622",
+    "ed.weight-goal-screen": "30aaf647ad1c02953dbde8dbab2c5d81564086ea1c3f522864f57c5915190c65",
+    "pregnancy.calorie-target": "2843e1bcb97433fbdc8843f25be23991d392ca323d8489260eced49e232d1b44",
+    "profile.heart-rate-medicine.question": "55a4df5ad13c61f871e4e878aab391d1bada6c4971a2d89fd89f0bce6efd8e9f",
+    "profile.heart-rate-medicine.effect-note": "00e1b3fcafac221cd6c76315ec82e0d8451355f0b950c5ec23de1396d94fbe35",
+    "profile.known-heart-disease.question": "c0d0dd4e8bccee91e242d61158eb5e1050c0f5b3ef415c905274799d124dd45e",
+    "profile.known-heart-disease.effect-note": "b11217916c6d9a124574315e47296d0231eb777ca61308d4be0f32c73afceb64",
+    "low-mood-signal": "c45a3f3d4067531333c8f9f7b0d96f11f98fc7abc1ed02815820965d4d1d633c",
+    "reminder.log-meals": "7c2f424c6649036b76cf4e7267440a42746a595b5466eba551ed99fc2623b841",
+    "reminder.weigh-in-day": "a0cfff289875118a3ffc4b7ec4a7fad27e8c32cdf05e943ce7578d4c59457b07",
+    "reminder.workout-day": "9215316bc1b1a0c6c67ef62283d6effb95bfe8f3e682be1922682273381fd882",
+    "reminder.weekly-check-in": "0cf101efa5c3050f5014921bc5f21cf916a9cdbadbb24c8228e2d31ff986c475",
+    "food-tracker.over-target": "e912fdcd7c63cd925abe48e1e58c44252b3f50d4f4e9050d9e4256a573a13582"
+  },
+  "decisions_ratified": [
+    "D3-36",
+    "D3-37",
+    "D3-38",
+    "D3-39",
+    "D3-40",
+    "D3-41",
+    "D3-42"
+  ],
+  "clinical_signoff": {
+    "name": "Product owner (sudarshanalk), acting as clinical reviewer",
+    "date": "2026-11-03",
+    "decision": "approved",
+    "notes": "Signed 3 November 2026 ('Approve all, D3-10 = B', in chat with the clinical session). D3-36 new rows approved as drafted; D3-37 no calorie target at all in pregnancy or breastfeeding; D3-38 the two new profile questions and effect notes as Part E; D3-39 glucose levels approved: urgent < 3.0 mmol/L (54 mg/dL) with the '15 g fast sugar, re-test in 15 minutes' line, and >= 15.0 mmol/L (270 mg/dL) symptom-free kept urgent (owner's choice 3 Nov 2026), or >= 13.9 (250) with vomiting, drowsiness, deep breathing or stomach pain; caution 3.0-3.9 and 11.1-14.9; impossible outside 1-35 mmol/L; D3-40 > 10 % weight change within 24 h -> 'check the number', not refused; D3-41 no numeric glucose goal default; D3-42 shared summary optional health numbers: weight change and activity minutes only, tick absent for eating-disorder, pregnancy and BMI < 18.5 members. Blood pressure levels as P3-58; weight, mood, sleep, activity and water caution notes as Part C; eating-disorder and kidney-disease rows as drafted."
+  },
+  "review_date": "2026-11-03",
+  "next_review_date": "2027-11-03"
+}

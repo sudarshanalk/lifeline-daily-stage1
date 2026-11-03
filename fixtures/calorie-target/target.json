@@ -1,0 +1,536 @@
+{
+  "group": "Daily calorie target (sheet section 6, CAL-01 to CAL-20)",
+  "tool": "calorie-target",
+  "fixtures": [
+    {
+      "id": "FX-CAL-TARGET-01",
+      "purpose": "CAL-01 F 35 165 cm 70 kg low maintain",
+      "inputs": {
+        "sex": "F",
+        "age": 35,
+        "heightCm": 165,
+        "weightKg": 70,
+        "activity": "low",
+        "goal": "maintain",
+        "rateKgWeek": null
+      },
+      "expected": {
+        "stop": null,
+        "rmr": 1395.25,
+        "tdee": 1674.3,
+        "raw": 1674.3,
+        "targetKcal": 1670,
+        "achievableRate": null,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-CAL-TARGET-02",
+      "purpose": "CAL-02 M 35 180 cm 85 kg some maintain",
+      "inputs": {
+        "sex": "M",
+        "age": 35,
+        "heightCm": 180,
+        "weightKg": 85,
+        "activity": "some",
+        "goal": "maintain",
+        "rateKgWeek": null
+      },
+      "expected": {
+        "stop": null,
+        "rmr": 1805.0,
+        "tdee": 2481.88,
+        "raw": 2481.88,
+        "targetKcal": 2480,
+        "achievableRate": null,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-CAL-TARGET-03",
+      "purpose": "CAL-03 F 45 160 cm 80 kg some lose 0.5 (Example A)",
+      "inputs": {
+        "sex": "F",
+        "age": 45,
+        "heightCm": 160,
+        "weightKg": 80,
+        "activity": "some",
+        "goal": "lose",
+        "rateKgWeek": 0.5
+      },
+      "expected": {
+        "stop": null,
+        "rmr": 1414.0,
+        "tdee": 1944.25,
+        "raw": 1394.25,
+        "targetKcal": 1390,
+        "achievableRate": 0.5,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Example A"
+    },
+    {
+      "id": "FX-CAL-TARGET-04",
+      "purpose": "CAL-04 M 50 175 cm 95 kg active lose 1.0",
+      "inputs": {
+        "sex": "M",
+        "age": 50,
+        "heightCm": 175,
+        "weightKg": 95,
+        "activity": "active",
+        "goal": "lose",
+        "rateKgWeek": 1.0
+      },
+      "expected": {
+        "stop": null,
+        "rmr": 1798.75,
+        "tdee": 2788.06,
+        "raw": 1963.06,
+        "targetKcal": 1960,
+        "achievableRate": 0.75,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "1.0 allowed: 1 % of 95 kg = 0.95 -> refused by P3-56 cap; use 0.75 instead -> raw 1963.06 -> 1960. AMBIGUOUS: the Target column gives 1690 with achievable rate 1.0, while the Notes column gives 1960 at 0.75; targetKcal and achievableRate left null pending the owner's answer. Owner decided 3 Nov 2026 (Owner_Questions 62): the P3-56 cap applies, so the tool offers 0.75 kg/week; raw 1963.06 -> 1960."
+    },
+    {
+      "id": "FX-CAL-TARGET-05",
+      "purpose": "CAL-05 F 30 155 cm 58 kg low lose 1.0 (floor)",
+      "inputs": {
+        "sex": "F",
+        "age": 30,
+        "heightCm": 155,
+        "weightKg": 58,
+        "activity": "low",
+        "goal": "lose",
+        "rateKgWeek": 1.0
+      },
+      "expected": {
+        "stop": null,
+        "rmr": 1237.75,
+        "tdee": 1485.3,
+        "raw": 385.3,
+        "targetKcal": 1200,
+        "achievableRate": 0.26,
+        "notes": [
+          "floor"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Floor; rate 1.0 also fails the 1 % cap (0.58)"
+    },
+    {
+      "id": "FX-CAL-TARGET-06",
+      "purpose": "CAL-06 F 28 170 cm 62 kg low lose 0.5 (Example B, floor)",
+      "inputs": {
+        "sex": "F",
+        "age": 28,
+        "heightCm": 170,
+        "weightKg": 62,
+        "activity": "low",
+        "goal": "lose",
+        "rateKgWeek": 0.5
+      },
+      "expected": {
+        "stop": null,
+        "rmr": 1381.5,
+        "tdee": 1657.8,
+        "raw": 1107.8,
+        "targetKcal": 1200,
+        "achievableRate": 0.42,
+        "notes": [
+          "floor"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Example B"
+    },
+    {
+      "id": "FX-CAL-TARGET-07",
+      "purpose": "CAL-07 M 70 172 cm 78 kg low lose 0.5 (floor, 65+)",
+      "inputs": {
+        "sex": "M",
+        "age": 70,
+        "heightCm": 172,
+        "weightKg": 78,
+        "activity": "low",
+        "goal": "lose",
+        "rateKgWeek": 0.5
+      },
+      "expected": {
+        "stop": null,
+        "rmr": 1510.0,
+        "tdee": 1812.0,
+        "raw": 1262.0,
+        "targetKcal": 1500,
+        "achievableRate": 0.28,
+        "notes": [
+          "floor",
+          "over65"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Floor; 65+ note"
+    },
+    {
+      "id": "FX-CAL-TARGET-08",
+      "purpose": "CAL-08 M 22 185 cm 70 kg very active gain 0.25",
+      "inputs": {
+        "sex": "M",
+        "age": 22,
+        "heightCm": 185,
+        "weightKg": 70,
+        "activity": "very active",
+        "goal": "gain",
+        "rateKgWeek": 0.25
+      },
+      "expected": {
+        "stop": null,
+        "rmr": 1751.25,
+        "tdee": 3020.91,
+        "raw": 3295.91,
+        "targetKcal": 3300,
+        "achievableRate": null,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "BMI 20.5, gain allowed"
+    },
+    {
+      "id": "FX-CAL-TARGET-09",
+      "purpose": "CAL-09 F 60 150 cm 52 kg low lose 0.25 (Example C, no loss possible)",
+      "inputs": {
+        "sex": "F",
+        "age": 60,
+        "heightCm": 150,
+        "weightKg": 52,
+        "activity": "low",
+        "goal": "lose",
+        "rateKgWeek": 0.25
+      },
+      "expected": {
+        "stop": null,
+        "rmr": 996.5,
+        "tdee": 1195.8,
+        "raw": 920.8,
+        "targetKcal": 1200,
+        "achievableRate": 0,
+        "notes": [
+          "no_loss"
+        ],
+        "maintenanceOnly": true
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Example C; achievable rate shown in the sheet as '0 (maintain only)'"
+    },
+    {
+      "id": "FX-CAL-TARGET-10",
+      "purpose": "CAL-10 M 40 178 cm 120 kg low lose 0.75",
+      "inputs": {
+        "sex": "M",
+        "age": 40,
+        "heightCm": 178,
+        "weightKg": 120,
+        "activity": "low",
+        "goal": "lose",
+        "rateKgWeek": 0.75
+      },
+      "expected": {
+        "stop": null,
+        "rmr": 2117.5,
+        "tdee": 2541.0,
+        "raw": 1716.0,
+        "targetKcal": 1720,
+        "achievableRate": 0.75,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-CAL-TARGET-11",
+      "purpose": "CAL-11 F 18 160 cm 55 kg some lose 0.5 (youngest allowed)",
+      "inputs": {
+        "sex": "F",
+        "age": 18,
+        "heightCm": 160,
+        "weightKg": 55,
+        "activity": "some",
+        "goal": "lose",
+        "rateKgWeek": 0.5
+      },
+      "expected": {
+        "stop": null,
+        "rmr": 1299.0,
+        "tdee": 1786.12,
+        "raw": 1236.12,
+        "targetKcal": 1240,
+        "achievableRate": 0.5,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Youngest allowed"
+    },
+    {
+      "id": "FX-CAL-TARGET-12",
+      "purpose": "CAL-12 M 99 170 cm 65 kg low maintain (oldest allowed, 65+)",
+      "inputs": {
+        "sex": "M",
+        "age": 99,
+        "heightCm": 170,
+        "weightKg": 65,
+        "activity": "low",
+        "goal": "maintain",
+        "rateKgWeek": null
+      },
+      "expected": {
+        "stop": null,
+        "rmr": 1222.5,
+        "tdee": 1467.0,
+        "raw": 1467.0,
+        "targetKcal": 1470,
+        "achievableRate": null,
+        "notes": [
+          "over65"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Oldest allowed; 65+ note"
+    },
+    {
+      "id": "FX-CAL-TARGET-13",
+      "purpose": "CAL-13 PNTS 35 165 cm 70 kg low maintain (female equation)",
+      "inputs": {
+        "sex": "PNTS",
+        "age": 35,
+        "heightCm": 165,
+        "weightKg": 70,
+        "activity": "low",
+        "goal": "maintain",
+        "rateKgWeek": null
+      },
+      "expected": {
+        "stop": null,
+        "rmr": 1395.25,
+        "tdee": 1674.3,
+        "raw": 1674.3,
+        "targetKcal": 1670,
+        "achievableRate": null,
+        "notes": [
+          "sex_not_said"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Prefer-not-to-say -> female equation + note. RMR, TDEE and raw given in the sheet as 'as CAL-01' and copied from CAL-01."
+    },
+    {
+      "id": "FX-CAL-TARGET-14",
+      "purpose": "CAL-14 F 17 under 18 stop",
+      "inputs": {
+        "sex": "F",
+        "age": 17,
+        "heightCm": 160,
+        "weightKg": 55,
+        "activity": "some",
+        "goal": "lose",
+        "rateKgWeek": 0.5
+      },
+      "expected": {
+        "stop": "under18",
+        "rmr": null,
+        "tdee": null,
+        "raw": null,
+        "targetKcal": null,
+        "achievableRate": null,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Under 18"
+    },
+    {
+      "id": "FX-CAL-TARGET-15",
+      "purpose": "CAL-15 F 30 pregnant Not sure stop",
+      "inputs": {
+        "sex": "F",
+        "age": 30,
+        "heightCm": 165,
+        "weightKg": 70,
+        "activity": "low",
+        "goal": "lose",
+        "rateKgWeek": 0.5,
+        "pregnant": "notsure"
+      },
+      "expected": {
+        "stop": "pregnancy",
+        "rmr": null,
+        "tdee": null,
+        "raw": null,
+        "targetKcal": null,
+        "achievableRate": null,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-CAL-TARGET-16",
+      "purpose": "CAL-16 M 40 eating disorder Yes stop, no numbers",
+      "inputs": {
+        "sex": "M",
+        "age": 40,
+        "heightCm": 178,
+        "weightKg": 120,
+        "activity": "low",
+        "goal": "lose",
+        "rateKgWeek": 0.5,
+        "eatingDisorder": "yes"
+      },
+      "expected": {
+        "stop": "eating",
+        "rmr": null,
+        "tdee": null,
+        "raw": null,
+        "targetKcal": null,
+        "achievableRate": null,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "findahelpline.com shown"
+    },
+    {
+      "id": "FX-CAL-TARGET-17",
+      "purpose": "CAL-17 F 30 170 cm 50 kg some lose 0.5 (BMI 17.3, maintenance only)",
+      "inputs": {
+        "sex": "F",
+        "age": 30,
+        "heightCm": 170,
+        "weightKg": 50,
+        "activity": "some",
+        "goal": "lose",
+        "rateKgWeek": 0.5
+      },
+      "expected": {
+        "stop": null,
+        "rmr": 1296.5,
+        "tdee": 1782.69,
+        "raw": null,
+        "targetKcal": 1780,
+        "achievableRate": null,
+        "notes": [
+          "underweight"
+        ],
+        "maintenanceOnly": true
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "BMI 17.3: no loss target; underweight wording"
+    },
+    {
+      "id": "FX-CAL-TARGET-18",
+      "purpose": "CAL-18 M 55 175 cm 90 kg some lose 0.5, type 2 diabetes",
+      "inputs": {
+        "sex": "M",
+        "age": 55,
+        "heightCm": 175,
+        "weightKg": 90,
+        "activity": "some",
+        "goal": "lose",
+        "rateKgWeek": 0.5,
+        "type2Diabetes": true
+      },
+      "expected": {
+        "stop": null,
+        "rmr": 1817.5,
+        "tdee": 2499.06,
+        "raw": 1949.06,
+        "targetKcal": 1950,
+        "achievableRate": 0.5,
+        "notes": [
+          "diabetes"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Diabetes medicine note"
+    },
+    {
+      "id": "FX-CAL-TARGET-19",
+      "purpose": "CAL-19 imperial twin of CAL-03: 5 ft 3 in / 12 st 8 lb",
+      "inputs": {
+        "sex": "F",
+        "age": 45,
+        "heightCm": null,
+        "weightKg": null,
+        "activity": "some",
+        "goal": "lose",
+        "rateKgWeek": 0.5,
+        "heightFtIn": {
+          "ft": 5,
+          "in": 3
+        },
+        "weightStLb": {
+          "st": 12,
+          "lb": 8
+        }
+      },
+      "expected": {
+        "stop": null,
+        "rmr": null,
+        "tdee": null,
+        "raw": null,
+        "targetKcal": 1390,
+        "achievableRate": null,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Imperial twin of CAL-03 (5'3\" = 160.02 cm, 176 lb = 79.83 kg -> 1,388.5 -> 1390). The sheet's Height cm / Weight kg columns show 160 / 80 for this row; the imperial entries are the inputs, and RMR, TDEE, raw and achievable rate are blank in the sheet."
+    },
+    {
+      "id": "FX-CAL-TARGET-20",
+      "purpose": "CAL-20 Premium member sets own target 1,150 (F): refused below floor",
+      "inputs": {
+        "sex": "F",
+        "age": 45,
+        "heightCm": 160,
+        "weightKg": 80,
+        "activity": "some",
+        "goal": "lose",
+        "rateKgWeek": 0.5,
+        "memberTarget": 1150
+      },
+      "expected": {
+        "stop": null,
+        "refused": true,
+        "rmr": null,
+        "tdee": null,
+        "raw": null,
+        "targetKcal": null,
+        "achievableRate": null,
+        "notes": [
+          "floor"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Below floor (FR3-28 AS-02)"
+    }
+  ]
+}

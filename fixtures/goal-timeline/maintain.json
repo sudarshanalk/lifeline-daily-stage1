@@ -1,0 +1,29 @@
+{
+  "group": "MAINTAIN",
+  "tool": "goal-timeline",
+  "fixtures": [
+    {
+      "id": "FX-GWT-MAINTAIN-01",
+      "purpose": "TL-14: goal equals current weight, maintain",
+      "inputs": {
+        "currentKg": 90,
+        "goalKg": 90,
+        "heightCm": 175
+      },
+      "expected": {
+        "stop": null,
+        "refused": null,
+        "maintain": true,
+        "offerKeepItOff": true,
+        "goalBmi": null,
+        "capKgPerWeek": null,
+        "weeks": null,
+        "milestone5PctKg": null,
+        "deficitKcalPerDay": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet row TL-14: 'Maintain: Keep It Off offered, no timeline'; goal BMI, cap, weeks, milestone and deficit are all '-' in the row."
+    }
+  ]
+}

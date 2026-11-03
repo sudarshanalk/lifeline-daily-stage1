@@ -1,0 +1,76 @@
+{
+  "group": "SAFETY",
+  "tool": "goal-timeline",
+  "fixtures": [
+    {
+      "id": "FX-GWT-SAFETY-01",
+      "purpose": "TL-16: pregnant = Yes, stop",
+      "inputs": {
+        "currentKg": 90,
+        "goalKg": 84,
+        "heightCm": 175,
+        "rateKgPerWeek": 0.5,
+        "preg": "yes"
+      },
+      "expected": {
+        "stop": "pregnancy",
+        "refused": null,
+        "goalBmi": null,
+        "capKgPerWeek": null,
+        "weeks": null,
+        "milestone5PctKg": null,
+        "deficitKcalPerDay": null
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-GWT-SAFETY-02",
+      "purpose": "TL-17: age 70 asks for 0.75, 65+ maximum is 0.5",
+      "inputs": {
+        "currentKg": 90,
+        "goalKg": 84,
+        "heightCm": 175,
+        "rateKgPerWeek": 0.75,
+        "age": 70
+      },
+      "expected": {
+        "stop": null,
+        "refused": "65+ max 0.5",
+        "goalBmi": 27.4,
+        "capKgPerWeek": 0.9,
+        "weeks": null,
+        "milestone5PctKg": null,
+        "deficitKcalPerDay": null,
+        "offer": {
+          "rateKgPerWeek": 0.5,
+          "weeks": 12
+        }
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-GWT-SAFETY-03",
+      "purpose": "TL-18: eating disorder = Yes, stop with no numbers",
+      "inputs": {
+        "currentKg": 90,
+        "goalKg": 84,
+        "heightCm": 175,
+        "rateKgPerWeek": 0.5,
+        "eat": "yes"
+      },
+      "expected": {
+        "stop": "eating",
+        "refused": null,
+        "goalBmi": null,
+        "capKgPerWeek": null,
+        "weeks": null,
+        "milestone5PctKg": null,
+        "deficitKcalPerDay": null
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    }
+  ]
+}

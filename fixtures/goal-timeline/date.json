@@ -1,0 +1,77 @@
+{
+  "group": "DATE",
+  "tool": "goal-timeline",
+  "fixtures": [
+    {
+      "id": "FX-GWT-DATE-01",
+      "purpose": "TL-11: 90 to 84 kg by a date 8 weeks away, implied 0.75",
+      "inputs": {
+        "currentKg": 90,
+        "goalKg": 84,
+        "heightCm": 175,
+        "targetDateWeeksFromToday": 8
+      },
+      "expected": {
+        "stop": null,
+        "refused": null,
+        "goalBmi": 27.4,
+        "capKgPerWeek": 0.9,
+        "weeks": 8,
+        "milestone5PctKg": 85.5,
+        "deficitKcalPerDay": 825,
+        "notes": [],
+        "impliedRateKgPerWeek": 0.75
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-GWT-DATE-02",
+      "purpose": "TL-12: 90 to 84 kg by a date 12 weeks away, implied 0.5",
+      "inputs": {
+        "currentKg": 90,
+        "goalKg": 84,
+        "heightCm": 175,
+        "targetDateWeeksFromToday": 12
+      },
+      "expected": {
+        "stop": null,
+        "refused": null,
+        "goalBmi": 27.4,
+        "capKgPerWeek": 0.9,
+        "weeks": 12,
+        "milestone5PctKg": 85.5,
+        "deficitKcalPerDay": 550,
+        "notes": [],
+        "impliedRateKgPerWeek": 0.5
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-GWT-DATE-03",
+      "purpose": "TL-13: 90 to 84 kg by a date 4 weeks away, implied 1.5 above cap",
+      "inputs": {
+        "currentKg": 90,
+        "goalKg": 84,
+        "heightCm": 175,
+        "targetDateWeeksFromToday": 4
+      },
+      "expected": {
+        "stop": null,
+        "refused": "1.5 > cap",
+        "goalBmi": 27.4,
+        "capKgPerWeek": 0.9,
+        "weeks": null,
+        "milestone5PctKg": null,
+        "deficitKcalPerDay": null,
+        "offer": {
+          "safeDateWeeksFromToday": 7
+        },
+        "impliedRateKgPerWeek": 1.5
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    }
+  ]
+}

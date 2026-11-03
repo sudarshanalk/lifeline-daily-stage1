@@ -1,0 +1,166 @@
+{
+  "group": "Urgent level",
+  "tool": "bp-check",
+  "fixtures": [
+    {
+      "id": "FX-BP-URGENT-01",
+      "purpose": "180/119: Urgent",
+      "inputs": {
+        "systolic": 180,
+        "diastolic": 119,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "urgent",
+        "urgent": true,
+        "wording_keys": [
+          "urgent.alert",
+          "category.grade2.headline",
+          "category.grade2.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-13"
+    },
+    {
+      "id": "FX-BP-URGENT-02",
+      "purpose": "179/120: Urgent",
+      "inputs": {
+        "systolic": 179,
+        "diastolic": 120,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "urgent",
+        "urgent": true,
+        "wording_keys": [
+          "urgent.alert",
+          "category.grade2.headline",
+          "category.grade2.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-14"
+    },
+    {
+      "id": "FX-BP-URGENT-03",
+      "purpose": "185/125: Urgent (FR3-46 AS-01)",
+      "inputs": {
+        "systolic": 185,
+        "diastolic": 125,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "urgent",
+        "urgent": true,
+        "wording_keys": [
+          "urgent.alert",
+          "category.grade2.headline",
+          "category.grade2.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-15"
+    },
+    {
+      "id": "FX-BP-URGENT-04",
+      "purpose": "200/80: Urgent",
+      "inputs": {
+        "systolic": 200,
+        "diastolic": 80,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "urgent",
+        "urgent": true,
+        "wording_keys": [
+          "urgent.alert",
+          "category.grade2.headline",
+          "category.grade2.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-16"
+    },
+    {
+      "id": "FX-BP-URGENT-05",
+      "purpose": "7-day: 6 normal days + one reading 182/100: urgent wording shown; average also shown",
+      "inputs": {
+        "mode": "7-day",
+        "pregnant": "no",
+        "today": "2026-11-03",
+        "readings": [
+          {
+            "date": "2026-10-28",
+            "systolic": 128,
+            "diastolic": 80
+          },
+          {
+            "date": "2026-10-29",
+            "systolic": 128,
+            "diastolic": 80
+          },
+          {
+            "date": "2026-10-30",
+            "systolic": 128,
+            "diastolic": 80
+          },
+          {
+            "date": "2026-10-31",
+            "systolic": 128,
+            "diastolic": 80
+          },
+          {
+            "date": "2026-11-01",
+            "systolic": 128,
+            "diastolic": 80
+          },
+          {
+            "date": "2026-11-02",
+            "systolic": 128,
+            "diastolic": 80
+          },
+          {
+            "date": "2026-11-03",
+            "systolic": 182,
+            "diastolic": 100
+          }
+        ]
+      },
+      "expected": {
+        "refused": false,
+        "category": null,
+        "warning_level": "urgent",
+        "urgent": true,
+        "wording_keys": [
+          "urgent.alert"
+        ],
+        "average": null,
+        "average_shown": true
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-32. The sheet says '6 normal days' without values; 128/80 is a placeholder for those days. The sheet does not state the average value or the home category, so both are null here."
+    }
+  ]
+}

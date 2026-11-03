@@ -1,0 +1,67 @@
+{
+  "approval_id": "APR-HEART-RISK-2026-11-03",
+  "tool_slug": "heart-risk",
+  "version_hash": "26c6d0b10fc60ed7b15203c4f83f9d2b35a60f404ffa9ea5cdf74b4998c35028",
+  "engine_name": "Heart Attack and Stroke Risk Check: WHO 2019 cardiovascular disease risk charts (Kaptoge et al., Lancet Global Health 2019) used as a look-up of the 44,100 published chart cells (21 GBD regions; laboratory-based charts by diabetes, sex, smoking, age band, systolic blood pressure band and total cholesterol band; non-laboratory-based charts by sex, smoking, age band, systolic blood pressure band and BMI band), giving the printed whole-number 10-year risk of a first fatal or non-fatal heart attack or stroke and its band, with adjacent-cell what-ifs for smoking, blood pressure, cholesterol and BMI, and a safety layer that stops before any number for ages under 40 or over 74, existing cardiovascular disease, and pregnancy or breastfeeding (including 'not sure')",
+  "intended_use": "Free educational estimate of the 10-year chance of a heart attack or stroke for people without known heart disease, with the band, the '{n} in 100 people like you' comparison, which single change would lower it most, and plain guidance. It does not diagnose any condition, give treatment or medicine advice (statins are never mentioned as a recommendation), and does not replace an assessment by the member's doctor, who may use a method made for their country (QRISK, PREVENT, ACC/AHA, SCORE2).",
+  "eligibility": "Adults aged 40 to 74 (the page accepts 18 to 99 so the not-suitable message is specific). Sex female or male ('prefer not to say' cannot calculate, with a plain explanation, D3-11). Stops with an owner-approved message and no number for age under 40, age over 74 (FR3-49 AS-03), existing cardiovascular disease (heart attack, stroke, TIA, angina, or heart or artery surgery) and pregnancy or breastfeeding (yes or not sure). A systolic blood pressure of 180 mmHg or more entered shows the frozen global urgent-care wording (FR3-46) first; the result is still shown below it. Total cholesterol 'I don't know' switches to the non-laboratory (BMI) chart (D3-15). The weight what-if is hidden for members with an eating-disorder answer or flag.",
+  "sources": [
+    "Kaptoge S, Pennells L, De Bacquer D, et al; WHO CVD Risk Chart Working Group. World Health Organization cardiovascular disease risk charts: revised models to estimate risk in 21 global regions. Lancet Glob Health 2019;7:e1332-45, with appendix 1 (model coefficients, recalibration method, country-to-region list, section 3) and appendix 2 (the recalibrated charts, every cell transcribed on 3 November 2026 into who2019-chart-cells.json). Open access, Creative Commons Attribution 4.0 (CC BY 4.0). Full text and appendices obtained from Europe PMC (PMC7025029).",
+    "World Health Organization. HEARTS technical package for cardiovascular disease management in primary health care: risk-based CVD management (2020), which reproduces the charts for public use.",
+    "Mohammadnezhad M, et al. Comparison of the laboratory-based and non-laboratory-based WHO cardiovascular disease risk charts (PMC8925162), for the non-laboratory model's performance.",
+    "Hippisley-Cox J, Coupland C, Brindle P. Development and validation of QRISK3 risk prediction algorithms to estimate future risk of cardiovascular disease: prospective cohort study. BMJ 2017;357:j2099 (UK), and the ClinRisk licence terms (for the comparison of methods; not used by the engine).",
+    "Khan SS, et al. Novel prediction equations for absolute risk assessment of total cardiovascular disease incorporating cardiovascular-kidney-metabolic health: the AHA PREVENT equations. Circulation 2024;149:430-49, and the AHA licence (comparison only; not used).",
+    "SCORE2 working group and ESC Cardiovascular risk collaboration. SCORE2 risk prediction algorithms. Eur Heart J 2021;42:2439-54 (comparison only; not used).",
+    "Goff DC Jr, et al. 2013 ACC/AHA guideline on the assessment of cardiovascular risk: Pooled Cohort Equations. Circulation 2014;129(25 Suppl 2):S49-73 (comparison only; not used)."
+  ],
+  "limitations": [
+    "The charts give one figure per cell: a man with a systolic blood pressure of 121 and one with 139 get the same answer. The core equations (appendix 1, Table 1.6) are transcribed for reference only and may later explain 'between cells'; they are never the headline, because the WHO's region-specific recalibration factors are unpublished and the appendix's worked example is internally inconsistent (D3-10, option B).",
+    "Not for people with existing cardiovascular disease, under 40 or over 74, or who are pregnant or breastfeeding.",
+    "Family history, kidney disease, familial hypercholesterolaemia, rheumatoid arthritis and some other conditions are not in the charts, so real risk may be higher; the member's doctor can assess it.",
+    "Built from 85 cohorts (376,177 people) and recalibrated to each of 21 Global Burden of Disease regions' 2019 rates; countries not in the appendix's 195-country list map to the region of the country they belong to or neighbour (the site's own extension, marked in who2019-country-to-region.json).",
+    "The result is the whole-number percentage printed in the chart cell and the band is decided on that number (D3-13, confirmed by the colour check: 0 mismatches in 44,100 cells). Cholesterol in mg/dL is converted at 38.67 unrounded, then banded on the value to 1 dp; BMI is banded on the 1-dp value (35.0 falls in the 35 or more band); SBP is the whole mmHg entered or the 7-day home average rounded half-up.",
+    "A member in the UK or US may know a QRISK or PREVENT result from their doctor; those country-calibrated methods are the ones to use for treatment decisions.",
+    "Self-reported inputs. The decision engine never uses the risk result in an insight."
+  ],
+  "regulatory_statement": "Approved by the owner as clinical reviewer on 3 November 2026 (NFR3-14; FR3-49 AS-01 to AS-03). An educational estimate from a published WHO method: general health information, not a diagnosis, not a medical device, and no treatment advice (D3-14, confirmed 3 November 2026; the same position as the Diabetes Risk Check).",
+  "licence": "The WHO 2019 cardiovascular disease risk charts are reproduced from Kaptoge S, et al; WHO CVD Risk Chart Working Group. Lancet Glob Health 2019;7:e1332-45, appendix 2, published under the Creative Commons Attribution 4.0 International licence (CC BY 4.0, https://creativecommons.org/licenses/by/4.0/). The chart cells are transcribed unchanged; the look-up engine, country-to-region extension list, what-if ranking and wording are Lifeline Daily's own. Free to use.",
+  "copy_hashes": {
+    "headline": "3137b2e8554ec07c58224660c9aefb4282a6f522db1bcb2426e682ea071667ce",
+    "band.low": "9f82036b2322567518739a5fbea1974ec2a075f9fded92513186dd5f589115f4",
+    "band.moderate": "ddb587ac60d407fe7ee063d5c36a157ebbe17440aa1f7e9679b0839086a1cf64",
+    "band.high": "738e6e27f00fc1fd857d77f5c7fd507667a6398dcf788a78f7ac899ca3809131",
+    "band.very-high": "825d91ee6a79535b43339fb368319ea1683d65e7f2f11efd1991b4f1d829eaa1",
+    "comparison": "eef1cebe10d6e10d55c9264073663fed3e197c42aa19a13eaaa1704cbc8fbd76",
+    "whatif": "24bcc2d6e317b369d3cf5038958bc35b76646a273a14de6d821a321aa6f6a2e5",
+    "whatif.diabetes": "bb42cbf8213de3d019801ce32e6b453e9fd681909155cdd78de061fea1345e3b",
+    "whatif.none": "b0df2982e0b6f86c559cc442d97da89c151122714bee8d96da0209a9f5f1b4e7",
+    "always": "63c446839df256d26984a39bbfff64ff6f7530be2b25b2d886c1927db7303697",
+    "model.lab": "5006c09e0c3423135cbf4081e960ab05f85793a98f3a2874aa6ccee450c37e65",
+    "model.nolab": "fc9a54d5a32909fabf29c78012d602be08412ac6b4b26d1e992f4de96cdf4a79",
+    "other-methods": "a1341cd882f3b5442620a70b5a24b94df862a1af4500ea5689db3cbe1c9ae328",
+    "stops.under40": "510689ea8b00b94d4bf57c28d54421ca5ffef79eaa2a61c40fb83e31686d4f62",
+    "stops.over74": "45f3cf7848cbb4be49e5ba8dee25aaf8861634f02e6780e20e1325083a0084fe",
+    "stops.cvd": "2fed14630c4fe1fdcea3ee1fecbd55dbf8bbd96647daac488e4e191753dfca14",
+    "notes.diabetes": "4b1416ebd17fe19f2ab601e216babcda9e47aa6f4bccb535224b0e0a7d8c2033",
+    "limits.other-conditions": "36fd328b4f2d70d513c8ebbc4b7ae216d5c99fc7be1c8fa12ec6883447f46ae3",
+    "data.who2019-chart-cells": "b1997812986cdd91894b31cbb0ef629653c3ce11b82b5024f6f8a14c69d6e593",
+    "data.who2019-country-to-region": "c6d965c1a09a15566c5491f9b6a086029d16f55b108852a6ecc0d87fd99f02d1"
+  },
+  "oracle_report": "oracles/orc-08-heart-risk/results.json",
+  "decisions_ratified": [
+    "D3-10",
+    "D3-11",
+    "D3-12",
+    "D3-13",
+    "D3-14",
+    "D3-15"
+  ],
+  "clinical_signoff": {
+    "name": "Product owner (sudarshanalk), acting as clinical reviewer",
+    "date": "2026-11-03",
+    "decision": "approved",
+    "notes": "Signed 3 November 2026 ('Approve all, D3-10 = B', in chat with the clinical session; record 04 Health Tools/Stage 3/Signoff-P3-57-Heart-Attack-Stroke-Risk.md). D3-10 engine decided as option B, chart look-up of the 44,100 published cells (option A, equations, gives only the un-recalibrated core model because the WHO's regional recalibration factors are unpublished). D3-11 sex 'prefer not to say': cannot calculate, with a plain explanation. D3-12 smoking: 'I smoke now, or stopped less than a year ago' = Yes. D3-13 band on the printed whole number (< 5, 5-9, 10-19, 20-29, 30 or more %), confirmed by the colour check. D3-14 regulatory: educational estimate, not a medical device, confirmed. D3-15 non-laboratory version offered, labelled 'without a blood test'. Cell boundaries: age 40-44 to 70-74; SBP < 120, 120-139, 140-159, 160-179, 180 or more; cholesterol < 4, 4-4.9, 5-5.9, 6-6.9, 7 or more mmol/L (mg/dL / 38.67, 1 dp); BMI < 20, 20-24, 25-29, 30-35, 35 or more (35.0 is 35 or more; 1 dp). What-if: adjacent cell per factor, ranked by fall; ties smoking, BP, cholesterol, weight; weight what-if hidden for eating-disorder members. Urgent: SBP 180 or more entered shows the frozen urgent-care wording first. The fixture table (sheet section 7) is the frozen reference; every expected value was looked up in who2019-chart-cells.json on 3 November 2026 and agrees with the sheet. version_hash is the SHA-256 of the signed method sheet file; copy_hashes.data.* are the SHA-256 of the two data files copied unchanged into fixtures/heart-risk/. Before merge: the engine's table must be byte-identical to fixtures/heart-risk/who2019-chart-cells.json, and the lead and Codex check 40 or more further cells by eye on appendix-2 pages other than 3 and 25. Sheet hash refreshed after the owner's decisions of 3 Nov 2026 (Owner_Questions 62-65) were written into the sheet."
+  },
+  "review_date": "2026-11-03",
+  "next_review_date": "2027-11-03"
+}

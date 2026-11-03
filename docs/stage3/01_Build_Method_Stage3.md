@@ -86,6 +86,7 @@ Questions for the lead: none | …
 1. Claude joins each tool's branches on one integration branch, runs the full CI, asks Codex for an independent review, then merges one pull request into `staging` only when every check (about 30) has finished and passed. A watcher timeout never merges.
 2. After the deploy: `curl` checks, `wp lld-members db-update` output, then the key-journeys check (`deploy/key-journeys.sh`).
 3. Rollback follows `docs/stage3/02_Rollback_Stage3.md` (files through `deploy/rollback.sh`, database from the pre-deploy backup) and is rehearsed on staging before the first Stage 3 feature is switched to `everyone` (NFR3-07).
+4. A calculator's fixtures are first written from its owner-signed method sheet (NFR3-14): a **new** file under `fixtures/<tool>/` for a Stage 3 tool may land in an `S3-P` pull request by the lead; every later change to an `expected` value needs the oracle runner or a reviewer-signed commit, as in Stage 1 (`tests/ci/oracle-guard.mjs`). The approval record goes in `approvals/stage3/<tool>.json` and the Stage 2 fixture folders keep the Stage 1 rule in full.
 
 ## 8. Owner inputs that gate packages
 
