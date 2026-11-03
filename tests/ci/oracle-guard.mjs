@@ -28,7 +28,14 @@ export function oracleGuard({ root = ROOT, base = 'origin/staging', head = 'HEAD
   const botRe = new RegExp(botPattern, 'i');
   const signedByReviewer = (sha) => { try { git(`verify-commit ${sha}`, root); return true; } catch { return false; } };
   const privileged = commits.every((c) => ((/^(FR1-01|FR1-22|ORC-0[1-5]):/.test(c.s)) && (botRe.test(c.an) || botRe.test(c.ae))) || signedByReviewer(c.sha));
+  // Stage 3 (NFR3-14): a calculator's fixture file is first written from the owner-signed method sheet, so a NEW file
+  // under a Stage 3 tool folder may land in an S3-P pull request; the Stage 1 and 2 folders, and every later change to
+  // an expected value anywhere, keep the rule above.
+  const stage12 = new Set(['protein', 'diabetes', 'healthy-weight', 'site', 'mail']);
+  const isNewStage3File = (f) => !stage12.has(f.split('/')[1]) && (() => { try { git(`cat-file -e ${base}:${f}`, root); return false; } catch { return true; } })()
+    && commits.every((c) => /^S3-P[0-9][0-9A-B](-P[0-9][0-9A-B])?: /.test(c.s));
   for (const f of files) {
+    if (isNewStage3File(f)) continue;
     const changed = expectedChanged(base, head, f, root);
     if (changed === true || (Array.isArray(changed) && changed.length)) {
       if (!privileged) problems.push(`${f}: expected changed for ${Array.isArray(changed) ? changed.join(', ') : 'file'} outside an oracle-runner/baseline commit or a reviewer-signed commit`);

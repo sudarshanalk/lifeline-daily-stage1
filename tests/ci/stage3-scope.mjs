@@ -49,7 +49,8 @@ export const DECLARED_STAGE2 = [
   'tests/stage2/data-model-map.json', 'tests/stage2/personal-columns.json',
 ];
 const STAGE2_TESTS = ['tests/stage2/**'];
-const PROTECTED = ['site/public_html/tools/**', 'approvals/**', 'manifests/**', 'copy/**'];
+// The Stage 1 and 2 calculators and their approvals. Stage 3 sign-offs live in approvals/stage3/ (Build Method §7.4).
+const PROTECTED = ['site/public_html/tools/**', 'approvals/*', 'manifests/**', 'copy/**'];
 const SKIP_RE = /\b(test|it|describe)\.(skip|only|todo)\s*\(|\bx(it|test|describe)\s*\(|\btest\.fixme\s*\(/;
 
 export function classify(title = '') {

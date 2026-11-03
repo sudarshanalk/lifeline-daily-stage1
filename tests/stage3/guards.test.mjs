@@ -1,6 +1,11 @@
 // Stage 3 guards (P3-10): NFR3-02, NFR3-04, NFR3-05 on the scope module itself, with injected diffs so no git is needed.
 import { expect, test } from 'vitest';
 import { stage3Scope, stage3Guards, classify, unknownTestIds, DECLARED_STAGE2 } from '../ci/stage3-scope.mjs';
+import { oracleGuard } from '../ci/oracle-guard.mjs';
+import { execSync } from 'node:child_process';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 
 const PLUGIN = 'site/public_html/wp-content/plugins/lld-members';
 const none = () => ({ removed: [], added: [] });
@@ -78,4 +83,32 @@ test('every Stage 3 test id in tests/stage3 is a check in docs/stage3/03', () =>
   const r = unknownTestIds();
   expect(r.problems).toEqual([]);
   expect(r.known).toBeGreaterThan(200);
+});
+
+test("NFR3-14 (guard): a Stage 3 calculator's first fixtures come from its signed sheet; later changes and the Stage 1 folders stay guarded", () => {
+  // The lead may add approvals/stage3/<tool>.json and fixtures/<tool>/ in an S3-P pull request; the Stage 1 approvals stay protected.
+  const lead = stage3Scope({ title: 'S3-P02-P03: sign-offs', files: ['approvals/stage3/heart-risk.json', 'fixtures/heart-risk/lab.json', 'schemas/fixture.schema.json'], decisions: [] });
+  expect(lead.ok).toBe(true);
+  expect(stage3Scope({ title: 'S3-P02-P03: sign-offs', files: ['approvals/healthy-weight.json'], decisions: [] }).ok).toBe(false);
+  expect(stage3Scope({ title: 'S3-P40: food search', files: ['approvals/stage3/heart-risk.json'], decisions: [] }).ok).toBe(false);
+  // oracle-guard: a new fixture file under a Stage 3 tool folder passes in an S3-P commit; editing its expected afterwards fails;
+  // a new file under a Stage 1 folder fails even in an S3-P commit.
+  const repo = mkdtempSync(join(tmpdir(), 'lld-s3-oracle-'));
+  try {
+    const git = (c) => execSync(`git ${c}`, { cwd: repo, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    git('init -q -b staging'); git('config user.email dev@example.test'); git('config user.name "Dev Person"'); git('config commit.gpgsign false');
+    writeFileSync(join(repo, 'README'), 'x'); git('add -A'); git('commit -q -m "start"');
+    const fx = (v) => JSON.stringify({ group: 'LAB', tool: 'heart-risk', fixtures: [{ id: 'FX-HR-LAB-01', inputs: { a: 1 }, expected: { risk: v }, oracle: 'clinical', status: 'recorded' }] });
+    git('checkout -q -b s3'); mkdirSync(join(repo, 'fixtures', 'heart-risk'), { recursive: true });
+    writeFileSync(join(repo, 'fixtures', 'heart-risk', 'lab.json'), fx(7)); git('add -A'); git('commit -q -m "S3-P02-P03: sign-offs"');
+    expect(oracleGuard({ root: repo, base: 'staging', head: 'HEAD' }).ok).toBe(true);
+    git('checkout -q staging'); git('merge -q s3'); git('checkout -q -b later');
+    writeFileSync(join(repo, 'fixtures', 'heart-risk', 'lab.json'), fx(8)); git('commit -q -am "S3-P57: engine"');
+    const r = oracleGuard({ root: repo, base: 'staging', head: 'HEAD' });
+    expect(r.ok).toBe(false);
+    expect(r.problems.join('\n')).toMatch(/lab\.json: expected changed for FX-HR-LAB-01/);
+    git('checkout -q staging'); git('checkout -q -b s1'); mkdirSync(join(repo, 'fixtures', 'protein'), { recursive: true });
+    writeFileSync(join(repo, 'fixtures', 'protein', 'new.json'), fx(1).replace('heart-risk', 'protein')); git('add -A'); git('commit -q -m "S3-P02: not allowed"');
+    expect(oracleGuard({ root: repo, base: 'staging', head: 'HEAD' }).ok).toBe(false);
+  } finally { rmSync(repo, { recursive: true, force: true }); }
 });
