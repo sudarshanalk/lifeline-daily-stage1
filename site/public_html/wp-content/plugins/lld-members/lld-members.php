@@ -47,6 +47,8 @@ require_once LLD_MEMBERS_DIR . 'includes/components.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-screens.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-rest.php';
 require_once LLD_MEMBERS_DIR . 'includes/class-plugin.php';
+// Stage 3 (Build Method Stage 3 §3): every class under includes/stage3/ sits behind a feature switch.
+require_once LLD_MEMBERS_DIR . 'includes/stage3/loader.php';
 
 register_activation_hook( __FILE__, array( 'LLD_Members_Plugin', 'activate' ) );
 add_action( 'plugins_loaded', array( 'LLD_Members_Plugin', 'boot' ) );

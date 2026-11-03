@@ -1,5 +1,9 @@
 # Lifeline Daily — Stage 1 build repository
 
+## Stage 3 (from 2 Nov 2026)
+
+Read `AGENTS.md` (repository root) and `docs/stage3/01_Build_Method_Stage3.md` first. Stage 3 code lives in `site/public_html/wp-content/plugins/lld-members/includes/stage3/` behind feature switches; tests in `tests/stage3/`; pull requests are titled `S3-Pnn:`. Never break Stage 2: its full suite runs on every Stage 3 pull request, Stage 2 tests cannot be weakened, and database changes only add.
+
 ## Stage 2 (from 25 Oct 2026)
 
 Stage 2 work does **not** use the Stage 1 loop below. Read `docs/stage2/04_Build_Method_Stage2.md` first: Cursor builds the `lld-members` plugin (packages S2-C1…C10, rules in `.cursor/rules/stage2.mdc`); Claude is the lead (Phase 0, review and merge of Cursor PRs, staging deploys, search and content packages S2-L1…L8). Stage 2 documents: `docs/stage2/01…04`. The Stage 1 hard rules on frozen calculator objects, fixtures and copy still apply to every change.
