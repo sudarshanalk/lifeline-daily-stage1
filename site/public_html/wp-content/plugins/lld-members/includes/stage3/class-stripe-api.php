@@ -55,6 +55,11 @@ class LLD_Members_Stripe_API {
 		if ( ! LLD_Members_Features::enabled( 'stripe_api', (int) $member_id ) ) {
 			return false;
 		}
+		// Half-configured is off: without the webhook signing secret every Stripe notice would be refused and no
+		// member would ever receive Premium after paying.
+		if ( ! defined( 'LLD_STRIPE_WEBHOOK' ) || 0 !== strpos( (string) LLD_STRIPE_WEBHOOK, 'whsec_' ) ) {
+			return false;
+		}
 		$key = LLD_Members_Billing::stripe_key( 'secret' );
 		return is_string( $key ) && '' !== $key;
 	}
@@ -246,10 +251,10 @@ class LLD_Members_Stripe_API {
 					'quantity' => 1,
 				),
 			),
-			// Stripe is the merchant of record: it charges, collects and files sales tax and VAT.
+			// Stripe is the merchant of record: it charges, collects and files sales tax and VAT. Adaptive Pricing
+			// is always on with Managed Payments (the parameter is unsupported there), so a member paying in another
+			// currency sees a converted amount and may choose US$ on Stripe's page (Owner_Questions 70).
 			'managed_payments'    => array( 'enabled' => true ),
-			// The member pays exactly the price shown on the site, in its currency (FR3-62).
-			'adaptive_pricing'    => array( 'enabled' => false ),
 			'client_reference_id' => (string) (int) $member_id,
 			'metadata'            => array(
 				'member_id' => (string) (int) $member_id,
@@ -299,8 +304,9 @@ class LLD_Members_Stripe_API {
 		}
 		$coupon = '';
 		if ( '' !== (string) $quote['code'] && (int) $quote['charged'] < (int) $quote['base'] ) {
-			$percent = (int) round( 100 - ( (int) $quote['charged'] * 100 / max( 1, (int) $quote['base'] ) ) );
-			$coupon  = self::coupon( (string) $quote['code'], $percent );
+			// The exact cents the site took off, so Stripe's total equals the quote's charged amount to the cent
+			// (a percentage would let Stripe round the other way and the notice would be refused as a mismatch).
+			$coupon = self::coupon( (string) $quote['code'], (int) $quote['base'] - (int) $quote['charged'], (string) $quote['currency'] );
 			if ( is_wp_error( $coupon ) ) {
 				return $coupon;
 			}
@@ -323,14 +329,18 @@ class LLD_Members_Stripe_API {
 	}
 
 	/**
-	 * A once-only percentage coupon for a site discount code, made the first time it is used.
+	 * A once-only fixed-amount coupon for a site discount code, made the first time that amount is used. The id
+	 * carries the amount and currency, so a changed discount makes a new coupon rather than reusing the old one.
 	 *
-	 * @param string $code    Discount code.
-	 * @param int    $percent Percent off the first payment.
+	 * @param string $code     Discount code.
+	 * @param int    $amount   Minor units off the first payment (the quote's base minus charged).
+	 * @param string $currency Three-letter currency code of the quote.
 	 * @return string|WP_Error Coupon id.
 	 */
-	public static function coupon( $code, $percent ) {
-		$id    = 'lld_' . strtolower( preg_replace( '/[^A-Za-z0-9]/', '', $code ) ) . '_' . (int) $percent;
+	public static function coupon( $code, $amount, $currency ) {
+		$amount   = max( 1, (int) $amount );
+		$currency = strtolower( preg_replace( '/[^A-Za-z]/', '', (string) $currency ) );
+		$id       = 'lld_' . strtolower( preg_replace( '/[^A-Za-z0-9]/', '', $code ) ) . '_' . $amount . $currency;
 		$found = self::request( 'GET', 'coupons/' . rawurlencode( $id ) );
 		if ( ! is_wp_error( $found ) ) {
 			return $id;
@@ -343,10 +353,11 @@ class LLD_Members_Stripe_API {
 			'POST',
 			'coupons',
 			array(
-				'id'          => $id,
-				'name'        => strtoupper( $code ),
-				'percent_off' => (int) $percent,
-				'duration'    => 'once',
+				'id'         => $id,
+				'name'       => strtoupper( $code ),
+				'amount_off' => $amount,
+				'currency'   => $currency,
+				'duration'   => 'once',
 			),
 			'lld-coupon-' . $id
 		);

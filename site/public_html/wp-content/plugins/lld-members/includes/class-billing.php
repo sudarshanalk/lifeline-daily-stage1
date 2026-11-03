@@ -1471,7 +1471,8 @@ class LLD_Members_Billing {
 			$quote  = self::quote( $member_id, $plan, $country, $code );
 			$opened = self::open_session( $quote, $member_id, $ref );
 			if ( is_wp_error( $opened ) ) {
-				return new WP_REST_Response( array( 'message' => $opened->get_error_message() ), 503 );
+				// Stripe's own text (which can carry a masked key fragment or price ids) stays with the admin log.
+				return new WP_REST_Response( array( 'message' => self::try_again_message() ), 503 );
 			}
 			self::store_quote( (string) $opened['id'], $quote, $member_id, $ref );
 			$quote['session'] = $opened['id'];

@@ -16,9 +16,12 @@ const FAKE_KEY = ['sk', 'test', 'FAKEKEY123'].join('_');
 const LIVE_KEY = ['sk', 'live', 'NOTALLOWED'].join('_');
 
 // Fake WordPress: options, transients, a recorded HTTP transport answering from $GLOBALS['answers'], and a tiny wpdb.
-const stubs = (key = FAKE_KEY) => `
+const WEBHOOK = ['whsec', 'FAKEWEBHOOK123'].join('_');
+// webhook: the signing secret; on() needs it as well as the key (a half-configured site stays off).
+const stubs = (key = FAKE_KEY, webhook = WEBHOOK) => `
 define('ABSPATH', '/'); define('HOUR_IN_SECONDS', 3600); define('DAY_IN_SECONDS', 86400);
 ${key ? `define('LLD_STRIPE_SECRET', '${key}');` : ''}
+${webhook ? `define('LLD_STRIPE_WEBHOOK', '${webhook}');` : ''}
 class WP_Error { public $code; public $message; public $data; function __construct($c = '', $m = '', $d = '') { $this->code = $c; $this->message = $m; $this->data = $d; } function get_error_message() { return $this->message; } function get_error_data() { return $this->data; } }
 function is_wp_error($t) { return $t instanceof WP_Error; }
 $GLOBALS['opts'] = []; $GLOBALS['sent'] = []; $GLOBALS['answers'] = [];
@@ -75,7 +78,7 @@ test('TC-FR3-62-AS-02 (session): the price and currency shown are Stripe\'s own,
   expect(out.form.mode).toBe('subscription');
   expect(out.form.line_items[0]).toEqual({ price: 'price_M', quantity: '1' });
   expect(out.form.managed_payments.enabled).toBe('true');     // Stripe is the merchant of record
-  expect(out.form.adaptive_pricing.enabled).toBe('false');     // no conversion: the member pays the price shown
+  expect(out.form.adaptive_pricing).toBeUndefined();            // unsupported with Managed Payments: never sent
   expect(out.form.client_reference_id).toBe('7');
   expect(out.form.metadata).toEqual({ member_id: '7', plan: 'monthly' });
   expect(out.form.customer_email).toBe('member@example.test');
@@ -89,7 +92,7 @@ test('TC-FR3-62-AS-02 (session): the price and currency shown are Stripe\'s own,
 test('TC-FR3-62-AS-03 (request): each plan opens a session for its own Stripe price; a discount code becomes a once-only coupon', () => {
   const out = JSON.parse(php(`${stubs()}
     $GLOBALS['answers']['POST https://api.stripe.com/v1/checkout/sessions'] = ok(['id' => 'cs_test_y', 'url' => 'https://checkout.stripe.com/c/pay/cs_test_y']);
-    $GLOBALS['answers']['POST https://api.stripe.com/v1/coupons'] = ok(['id' => 'lld_launch50_50']);
+    $GLOBALS['answers']['POST https://api.stripe.com/v1/coupons'] = ok(['id' => 'lld_launch50_499usd']);
     $yearly = ['plan' => 'yearly', 'country' => 'US', 'currency' => 'usd', 'base' => 6999, 'charged' => 6999, 'tax' => 0, 'code' => ''];
     LLD_Members_Stripe_API::checkout_session(null, $yearly, 7, '');
     $post = end($GLOBALS['sent']); parse_str($post['args']['body'], $y);
@@ -101,9 +104,9 @@ test('TC-FR3-62-AS-03 (request): each plan opens a session for its own Stripe pr
     echo json_encode(['yearly_price' => $y['line_items'][0]['price'], 'coupon' => $coupon, 'discount' => $m['discounts'][0] ?? null, 'calls' => $calls]);
   `));
   expect(out.yearly_price).toBe('price_Y');
-  expect(out.coupon).toEqual({ id: 'lld_launch50_50', name: 'LAUNCH50', percent_off: '50', duration: 'once' });
-  expect(out.discount).toEqual({ coupon: 'lld_launch50_50' });
-  expect(out.calls).toContain('GET https://api.stripe.com/v1/coupons/lld_launch50_50');
+  expect(out.coupon).toEqual({ id: 'lld_launch50_499usd', name: 'LAUNCH50', amount_off: '499', currency: 'usd', duration: 'once' }); // exact cents, never a percentage
+  expect(out.discount).toEqual({ coupon: 'lld_launch50_499usd' });
+  expect(out.calls).toContain('GET https://api.stripe.com/v1/coupons/lld_launch50_499usd');
 });
 
 test('TC-NFR3-06-AS-01 (stripe): with the switch off or no key, nothing goes to Stripe and the Stage 2 values stay', () => {
@@ -126,6 +129,15 @@ test('TC-NFR3-06-AS-01 (stripe): with the switch off or no key, nothing goes to 
     echo json_encode(['on' => LLD_Members_Stripe_API::on(7), 'mode' => LLD_Members_Stripe_API::mode(), 'price' => LLD_Members_Stripe_API::plan_price(799, 'monthly', 7), 'sent' => count($GLOBALS['sent'])]);
   `));
   expect(nokey).toEqual({ on: false, mode: 'none', price: 799, sent: 0 });
+});
+
+test('Stripe stays off without the webhook signing secret: no session is opened and nothing is sent', () => {
+  const out = JSON.parse(php(`${stubs(FAKE_KEY, '')}
+    update_option('lld_feature_switches', ['stripe_api' => ['state' => 'everyone', 'approved_by' => 'test', 'changed_at' => '']]);
+    $quote = ['plan' => 'monthly', 'base' => 999, 'charged' => 999, 'tax' => 0, 'currency' => 'usd', 'code' => ''];
+    echo json_encode(['on' => LLD_Members_Stripe_API::on(7), 'session' => LLD_Members_Stripe_API::checkout_session(null, $quote, 7, ''), 'sent' => count($GLOBALS['sent'])]);
+  `));
+  expect(out).toEqual({ on: false, session: null, sent: 0 });
 });
 
 test('Stripe keys never leave the Authorization header, and a live key outside production is refused', () => {
