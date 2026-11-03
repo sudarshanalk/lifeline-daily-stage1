@@ -200,6 +200,10 @@ jobs:
         run: node tests/ci/stage3-scope.mjs --guards --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }}
       - name: Stage 3 test names are checks in docs/stage3/03
         run: node tests/ci/stage3-scope.mjs --names
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - name: Stage 3 oracles reproduce their committed results (Build Method §7.4)
+        run: python tests/ci/oracle-rerun.py
       - name: Label the PR lead-review when a declared Stage 2 file changed (NFR3-05 AS-02)
         env:
           GH_TOKEN: ${{ github.token }}

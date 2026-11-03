@@ -116,7 +116,7 @@
         "stop": null,
         "rmr": 1237.75,
         "tdee": 1485.3,
-        "raw": 385.3,
+        "raw": 935.3,
         "targetKcal": 1200,
         "achievableRate": 0.26,
         "notes": [
@@ -125,7 +125,7 @@
       },
       "oracle": "clinical",
       "status": "recorded",
-      "notes": "Floor; rate 1.0 also fails the 1 % cap (0.58)"
+      "notes": "Floor; rate 1.0 also fails the 1 % cap (0.58) Owner decided 3 Nov 2026 (Owner_Questions 67): the signed formula stands over the hand-computed row; corrected from {\"raw\": 385.3} to the oracle's values."
     },
     {
       "id": "FX-CAL-TARGET-06",
@@ -274,15 +274,15 @@
       "expected": {
         "stop": null,
         "rmr": 1299.0,
-        "tdee": 1786.12,
-        "raw": 1236.12,
+        "tdee": 1786.13,
+        "raw": 1236.13,
         "targetKcal": 1240,
         "achievableRate": 0.5,
         "notes": []
       },
       "oracle": "clinical",
       "status": "recorded",
-      "notes": "Youngest allowed"
+      "notes": "Youngest allowed Owner decided 3 Nov 2026 (Owner_Questions 67): the signed formula stands over the hand-computed row; corrected from {\"tdee\": 1786.12, \"raw\": 1236.12} to the oracle's values."
     },
     {
       "id": "FX-CAL-TARGET-12",
@@ -428,10 +428,10 @@
       },
       "expected": {
         "stop": null,
-        "rmr": 1296.5,
-        "tdee": 1782.69,
+        "rmr": 1251.5,
+        "tdee": 1720.81,
         "raw": null,
-        "targetKcal": 1780,
+        "targetKcal": 1720,
         "achievableRate": null,
         "notes": [
           "underweight"
@@ -440,7 +440,7 @@
       },
       "oracle": "clinical",
       "status": "recorded",
-      "notes": "BMI 17.3: no loss target; underweight wording"
+      "notes": "BMI 17.3: no loss target; underweight wording Owner decided 3 Nov 2026 (Owner_Questions 67): the signed formula stands over the hand-computed row; corrected from {\"rmr\": 1296.5, \"tdee\": 1782.69, \"targetKcal\": 1780} to the oracle's values."
     },
     {
       "id": "FX-CAL-TARGET-18",
@@ -457,10 +457,10 @@
       },
       "expected": {
         "stop": null,
-        "rmr": 1817.5,
-        "tdee": 2499.06,
-        "raw": 1949.06,
-        "targetKcal": 1950,
+        "rmr": 1723.75,
+        "tdee": 2370.16,
+        "raw": 1820.16,
+        "targetKcal": 1820,
         "achievableRate": 0.5,
         "notes": [
           "diabetes"
@@ -468,7 +468,7 @@
       },
       "oracle": "clinical",
       "status": "recorded",
-      "notes": "Diabetes medicine note"
+      "notes": "Diabetes medicine note Owner decided 3 Nov 2026 (Owner_Questions 67): the signed formula stands over the hand-computed row; corrected from {\"rmr\": 1817.5, \"tdee\": 2499.06, \"raw\": 1949.06, \"targetKcal\": 1950} to the oracle's values."
     },
     {
       "id": "FX-CAL-TARGET-19",

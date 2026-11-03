@@ -262,6 +262,16 @@ class LLD_Members_Stage3_API {
 				'permission_callback' => '__return_true',
 			)
 		);
+		// Calculators (P3-55 onwards): the engine runs for a signed-in member; "save" writes the nutrition target.
+		register_rest_route(
+			'lld-members/v1',
+			'/me/calculate/(?P<tool>[a-z-]+)',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'calculate' ),
+				'permission_callback' => '__return_true',
+			)
+		);
 		register_rest_route(
 			'lld-members/v1',
 			'/me/(?P<type>[a-z-]+)',
@@ -341,6 +351,108 @@ class LLD_Members_Stage3_API {
 	}
 
 	/**
+	 * Run a calculator for the signed-in member (FR3-47). Behind calculators_new; a switched-off tool looks absent.
+	 * With {"save": true} the result also becomes the member's nutrition target (FR3-28 AS-01), which needs health
+	 * consent; the answers themselves are never stored here.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
+	public static function calculate( $request ) {
+		$tool      = (string) $request['tool'];
+		$member_id = LLD_Members_Access::current_member_id();
+		if ( 'calorie-target' !== $tool || ! LLD_Members_Features::enabled( 'calculators_new', $member_id ) ) {
+			return self::refuse( 404, 'Not available.' );
+		}
+		if ( $member_id < 1 ) {
+			return self::refuse( 401, 'Sign in.' );
+		}
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+		// The member's health profile applies as well as the answers on the page (sheet section 2, FR3-69 AS-03/04):
+		// an eating-disorder flag stops the calculator; kidney disease removes the protein target; diabetes adds its note.
+		if ( class_exists( 'LLD_Members_Safety' ) ) {
+			$flags = LLD_Members_Safety::situations( $member_id );
+			if ( in_array( 'eating-disorder', $flags, true ) ) {
+				$params['eatingDisorder'] = 'yes';
+			}
+			if ( in_array( 'kidney', $flags, true ) ) {
+				$params['kidneyDisease'] = true;
+			}
+			if ( in_array( 'diabetes', $flags, true ) ) {
+				$params['type2Diabetes'] = true;
+			}
+		}
+		$result = LLD_Members_Calorie_Target::compute( $params );
+		if ( isset( $result['error'] ) ) {
+			return self::refuse( 422, 'Check ' . $result['error'] . '.' );
+		}
+		$result['wording'] = array();
+		foreach ( $result['messages'] as $key ) {
+			$result['wording'][ $key ] = 0 === strpos( $key, 'quoted.' ) ? LLD_Members_Calorie_Target::QUOTED[ substr( $key, 7 ) ] : LLD_Members_Calorie_Target::MESSAGES[ $key ];
+		}
+		// The profile's safe minimum applies to every saved or own target, whatever sex the page answered.
+		if ( null !== $result['targetKcal'] && ! $result['refused'] && ! $result['maintenanceOnly'] && $result['targetKcal'] < self::kcal_floor( $member_id ) ) {
+			$result['refused']               = true;
+			$result['targetKcal']            = null;
+			$result['notes'][]               = 'floor';
+			$result['wording']['floor_note'] = LLD_Members_Calorie_Target::MESSAGES['floor_note'];
+		}
+		if ( null !== $result['targetKcal'] && ! $result['refused'] ) {
+			$protein           = in_array( 'kidney', $result['notes'], true ) ? null : self::protein_target( $member_id );
+			$result['macros']  = LLD_Members_Calorie_Target::macros( $result['targetKcal'], $protein );
+		}
+		if ( ! empty( $params['save'] ) && null !== $result['targetKcal'] && ! $result['refused'] ) {
+			if ( ! LLD_Members_Access::has_health_consent( $member_id ) ) {
+				return self::refuse( 403, 'Health consent is needed first.' );
+			}
+			$m  = $result['macros'];
+			$id = LLD_Members_Stage3_Data::insert(
+				'nutrition_targets',
+				$member_id,
+				array(
+					'kcal'       => $result['targetKcal'],
+					'protein_g'  => $m['proteinG'],
+					'carb_g'     => $m['carbG'],
+					'fat_g'      => $m['fatG'],
+					'fibre_g'    => $m['fibreG'],
+					'set_by'     => 'calculator',
+					'valid_from' => gmdate( 'Y-m-d' ),
+				)
+			);
+			$result['saved'] = $id > 0 ? $id : null;
+		}
+		return new WP_REST_Response( $result, 200 );
+	}
+
+	/**
+	 * The member's Daily Protein Target (Stage 1 tool), read from the saved result's headline; null when none is
+	 * saved. Never recomputed here (D3-06).
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function protein_target( $member_id ) {
+		global $wpdb;
+		$table    = LLD_Members_Schema::table( 'calculator_result' );
+		$headline = $wpdb->get_var( $wpdb->prepare( "SELECT headline FROM {$table} WHERE member_id = %d AND calculator = %s ORDER BY id DESC LIMIT 1", $member_id, 'protein' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
+		if ( ! is_string( $headline ) || ! preg_match( '/(\d+(?:\.\d+)?)/', $headline, $m ) ) {
+			return null;
+		}
+		return (float) $m[1];
+	}
+
+	/**
+	 * The member's safe minimum (FR3-28 AS-02): 1,500 kcal when the health profile says male, else 1,200.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function kcal_floor( $member_id ) {
+		global $wpdb;
+		$table = LLD_Members_Schema::table( 'health_profile' );
+		$sex   = $wpdb->get_var( $wpdb->prepare( "SELECT sex FROM {$table} WHERE member_id = %d", $member_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
+		return LLD_Members_Calorie_Target::floor_for( is_string( $sex ) ? $sex : '' );
+	}
+
+	/**
 	 * @param WP_REST_Request $request Request.
 	 */
 	public static function list_rows( $request ) {
@@ -403,6 +515,10 @@ class LLD_Members_Stage3_API {
 		}
 		if ( 'shares' === $def['table'] ) {
 			$clean['token'] = bin2hex( random_bytes( 16 ) );
+		}
+		// A calorie target below the member's safe minimum is never saved (FR3-28 AS-02, D3-02).
+		if ( 'nutrition_targets' === $def['table'] && isset( $clean['kcal'] ) && (float) $clean['kcal'] < self::kcal_floor( $member_id ) ) {
+			return self::refuse( 422, LLD_Members_Calorie_Target::MESSAGES['floor_note'] );
 		}
 		$id = LLD_Members_Stage3_Data::insert( $def['table'], $member_id, $clean, $def['sealed'] );
 		if ( $id < 1 ) {
