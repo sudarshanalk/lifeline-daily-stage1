@@ -32,7 +32,13 @@ class LLD_Members_Screens {
 			case 'two-step':
 				self::two_step();
 				break;
+			case 'account':
 			case 'settings':
+				if ( class_exists( 'LLD_Members_Features' ) && LLD_Members_Features::enabled( 'account_hub' ) ) {
+					require_once LLD_MEMBERS_DIR . 'includes/stage3/screens/class-account-hub.php';
+					LLD_Members_Account_Hub::render();
+					break;
+				}
 				LLD_Members_Account::screen( 'settings' );
 				break;
 			case 'home':
@@ -131,6 +137,11 @@ class LLD_Members_Screens {
 	}
 
 	private static function sign_in() {
+		if ( isset( $_GET['action'] ) && 'sign_out' === $_GET['action'] ) {
+			wp_logout();
+			wp_safe_redirect( home_url( '/members/sign-in/?signed_out=1' ) );
+			exit;
+		}
 		if ( is_user_logged_in() && LLD_Members_Access::current_member_id() ) {
 			wp_safe_redirect( self::destination() );
 			exit;
