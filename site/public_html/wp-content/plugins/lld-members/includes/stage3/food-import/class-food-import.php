@@ -3,9 +3,9 @@
  * Imports USDA FoodData Central basic foods and Open Food Facts packaged foods
  * into the Food table (wp_lld_foods).
  *
- * This file is not loaded by the Stage 2 plugin. Run run.php, or have the lead
- * call these methods from the Stage 3 programming interface once that exists.
- * While the food_database switch is missing or off, import writes nothing.
+ * This file is not loaded by the Stage 2 plugin: `wp lld-members food import` loads it,
+ * and later packages call these methods from the Stage 3 programming interface.
+ * While the food_tracker switch is missing or off, import writes nothing.
  *
  * Pass a downloaded JSON or JSONL file. No API key is read or stored.
  *

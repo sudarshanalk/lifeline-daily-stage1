@@ -76,13 +76,19 @@ class LLD_Members_Food_Wp_Store extends LLD_Members_Food_Store {
 		$boolean = LLD_Members_Food_Search::boolean( $normal );
 		$rows    = array();
 		if ( '' !== $boolean ) {
+			// Best matches first, shortest name first among equals, so the ranker sees the plain foods before the
+			// long branded names. The food_search key is added by Stage 3 schema version 2; if it is missing the
+			// query fails quietly and the LIKE search below runs instead.
+			$quiet = $wpdb->suppress_errors();
 			$found = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM {$table} WHERE MATCH(name, search_names) AGAINST (%s IN BOOLEAN MODE) LIMIT 50", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
+					"SELECT * FROM {$table} WHERE MATCH(name, search_names) AGAINST (%s IN BOOLEAN MODE) ORDER BY MATCH(name, search_names) AGAINST (%s IN BOOLEAN MODE) DESC, CHAR_LENGTH(name) ASC LIMIT 200", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
+					$boolean,
 					$boolean
 				),
 				ARRAY_A
 			);
+			$wpdb->suppress_errors( $quiet );
 			if ( is_array( $found ) ) {
 				$rows = $found;
 			}
@@ -91,7 +97,7 @@ class LLD_Members_Food_Wp_Store extends LLD_Members_Food_Store {
 			$like  = '%' . $wpdb->esc_like( $normal ) . '%';
 			$found = $wpdb->get_results(
 				$wpdb->prepare(
-					"SELECT * FROM {$table} WHERE name LIKE %s OR search_names LIKE %s LIMIT 50", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
+					"SELECT * FROM {$table} WHERE name LIKE %s OR search_names LIKE %s ORDER BY CHAR_LENGTH(name) ASC LIMIT 200", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
 					$like,
 					$like
 				),

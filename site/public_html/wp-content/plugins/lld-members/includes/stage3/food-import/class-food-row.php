@@ -76,7 +76,7 @@ class LLD_Members_Food_Row {
 			return null;
 		}
 		$licence = LLD_Members_Food_Licence::for_source( $source );
-		$attribution = self::label( (string) ( $input['attribution'] ?? '' ), 500 );
+		$attribution = self::label( (string) ( $input['attribution'] ?? '' ), 255 ); // attribution VARCHAR(255) in the Stage 3 schema
 		if ( '' === $attribution && $licence ) {
 			$attribution = (string) $licence['attribution'];
 		}
