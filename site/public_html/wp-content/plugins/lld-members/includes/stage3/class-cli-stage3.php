@@ -121,7 +121,7 @@ class LLD_Members_Stage3_CLI {
 		$status = LLD_Members_Stripe_API::status();
 		WP_CLI::line( 'mode: ' . $status['mode'] );
 		WP_CLI::line( 'switch stripe_api: ' . $status['switch'] );
-		WP_CLI::line( 'webhook secret: ' . $status['webhook_secret'] );
+		WP_CLI::line( 'webhook signing (whsec_): ' . $status['webhook_secret'] );
 		foreach ( $status['prices'] as $plan => $price ) {
 			WP_CLI::line( $plan . ': ' . ( is_array( $price ) ? $price['id'] . ', ' . $price['amount'] . ' ' . $price['currency'] . ', tax ' . $price['tax_behavior'] : $price ) );
 		}
