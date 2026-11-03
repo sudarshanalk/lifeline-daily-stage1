@@ -1,6 +1,6 @@
 <?php
 /**
- * Stage 3 WP-CLI commands: feature switches, test accounts and the food database.
+ * Stage 3 WP-CLI commands: feature switches, test accounts, the food database and the Stripe check.
  *
  * @package LLD_Members
  */
@@ -18,6 +18,7 @@ class LLD_Members_Stage3_CLI {
 		WP_CLI::add_command( 'lld-members feature', array( __CLASS__, 'feature' ) );
 		WP_CLI::add_command( 'lld-members test-accounts', array( __CLASS__, 'test_accounts' ) );
 		WP_CLI::add_command( 'lld-members food', array( __CLASS__, 'food' ) );
+		WP_CLI::add_command( 'lld-members stripe', array( __CLASS__, 'stripe' ) );
 		WP_CLI::add_command( 'lld-members insights', array( __CLASS__, 'insights' ) );
 	}
 
@@ -89,6 +90,41 @@ class LLD_Members_Stage3_CLI {
 		}
 		WP_CLI\Utils\format_items( 'table', $rows, array( 'member', 'date', 'status', 'safety', 'today_step', 'insight', 'adjustments', 'outcomes' ) );
 		WP_CLI::success( count( $rows ) . ' member(s) ' . ( $options['dry_run'] ? 'evaluated (dry run)' : 'run' ) . '.' );
+	}
+
+
+	/**
+	 * Check the Stripe connection (D2) without showing any key, or make the two prices tax-inclusive.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [<action>]
+	 * : check (default) or tax-inclusive.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp lld-members stripe check
+	 *     wp lld-members stripe tax-inclusive
+	 *
+	 * @param string[] $args  Positional args.
+	 * @param array    $assoc Assoc args.
+	 */
+	public function stripe( $args, $assoc ) {
+		unset( $assoc );
+		$action = isset( $args[0] ) ? (string) $args[0] : 'check';
+		if ( 'tax-inclusive' === $action ) {
+			foreach ( LLD_Members_Stripe_API::make_tax_inclusive() as $plan => $result ) {
+				WP_CLI::line( $plan . ': ' . $result );
+			}
+			return;
+		}
+		$status = LLD_Members_Stripe_API::status();
+		WP_CLI::line( 'mode: ' . $status['mode'] );
+		WP_CLI::line( 'switch stripe_api: ' . $status['switch'] );
+		WP_CLI::line( 'webhook signing (whsec_): ' . $status['webhook_secret'] );
+		foreach ( $status['prices'] as $plan => $price ) {
+			WP_CLI::line( $plan . ': ' . ( is_array( $price ) ? $price['id'] . ', ' . $price['amount'] . ' ' . $price['currency'] . ', tax ' . $price['tax_behavior'] : $price ) );
+		}
 	}
 
 	/**

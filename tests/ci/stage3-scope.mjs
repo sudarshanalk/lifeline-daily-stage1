@@ -51,6 +51,8 @@ export const DECLARED_STAGE2 = [
   `${PLUGIN}/includes/class-safety.php`, `${PLUGIN}/includes/class-access.php`, `${PLUGIN}/includes/components.php`, `${PLUGIN}/assets/lld-members.js`, `${PLUGIN}/assets/lld-members.css`,
   'tests/stage2/data-model-map.json', 'tests/stage2/personal-columns.json',
 ];
+// Stage 2 payment files only the lead's packages may touch (D2, P3-60 to P3-63); the change labels the PR for review.
+export const LEAD_STAGE2 = [`${PLUGIN}/includes/class-billing.php`, `${PLUGIN}/includes/class-stripe.php`];
 const STAGE2_TESTS = ['tests/stage2/**'];
 // The Stage 1 and 2 calculators and their approvals. Stage 3 sign-offs live in approvals/stage3/ (Build Method §7.4).
 const PROTECTED = ['site/public_html/tools/**', 'approvals/*', 'manifests/**', 'copy/**'];
@@ -81,6 +83,7 @@ export function stage3Scope({ title, files, decisions = loadDecisions() }) {
   for (const f of files) {
     if (matches(f, PROTECTED)) { problems.push(`${f} is a Stage 1 calculator, approval, manifest or copy file: owner decision needed`); continue; }
     if (DECLARED_STAGE2.includes(f)) { review.push(f); continue; }
+    if (LEAD_STAGE2.includes(f) && toolsFor(c.ids).every((t) => t === 'claude')) { review.push(f); continue; }
     if (matches(f, STAGE2_TESTS)) {
       if (decisions.some((d) => d.file === f)) { review.push(f); continue; }
       problems.push(`${f} is a Stage 2 test: it may change only with a decision in docs/stage3/stage2-test-changes.json (NFR3-02)`);

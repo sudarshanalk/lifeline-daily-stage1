@@ -516,7 +516,10 @@ class LLD_Members_Stage3_Safety {
 		if ( ! is_array( $rows ) || ! $rows ) {
 			return $rows;
 		}
-		if ( ! in_array( $type, array( 'food-log', 'recipes', 'custom-foods', 'targets', 'plans' ), true ) ) {
+		if ( 'food-day' === $type && isset( $rows['meals'] ) && is_array( $rows['meals'] ) ) {
+			return self::strip_food_day( $rows, $member_id );
+		}
+		if ( ! in_array( $type, array( 'food-log', 'food-recent', 'recipes', 'custom-foods', 'targets', 'plans' ), true ) ) {
 			return $rows;
 		}
 		$feature = 'food_tracker'; // a plan's calorie and protein targets are food-tracker targets (Part B column 2)
@@ -544,6 +547,77 @@ class LLD_Members_Stage3_Safety {
 			}
 		}
 		return $single ? $list[0] : $list;
+	}
+
+	/**
+	 * A day's diary: hide calorie totals, the amount left, and the target when the matrix says so.
+	 * Food names and meals stay. The eating-disorder note is the approved sentence.
+	 *
+	 * @param array<string,mixed> $day       Day document from the food log.
+	 * @param int                 $member_id Member number.
+	 * @return array<string,mixed>
+	 */
+	private static function strip_food_day( array $day, $member_id ) {
+		$a = self::applies( $member_id, 'food_tracker' );
+		if ( ! $a['active'] ) {
+			return $day;
+		}
+		$hide_calories = in_array( 'calories', $a['hidden'], true ) || in_array( 'nutrient_totals', $a['hidden'], true );
+		$hide_target   = in_array( 'targets', $a['hidden'], true ) || in_array( 'calorie_target', $a['hidden'], true );
+		$hide_left     = in_array( 'left_today', $a['hidden'], true ) || $hide_target || $hide_calories;
+		$hide_protein  = in_array( 'protein_target', $a['hidden'], true );
+		if ( $hide_calories ) {
+			foreach ( $day['meals'] as $meal => $entries ) {
+				if ( ! is_array( $entries ) ) {
+					continue;
+				}
+				foreach ( $entries as $i => $entry ) {
+					if ( ! is_array( $entry ) ) {
+						continue;
+					}
+					foreach ( array( 'kcal', 'protein_g', 'carb_g', 'fat_g', 'fibre_g' ) as $field ) {
+						if ( array_key_exists( $field, $entry ) ) {
+							$day['meals'][ $meal ][ $i ][ $field ] = null;
+						}
+					}
+				}
+			}
+			if ( isset( $day['totals'] ) && is_array( $day['totals'] ) ) {
+				foreach ( array( 'kcal', 'protein_g', 'carb_g', 'fat_g', 'fibre_g' ) as $field ) {
+					if ( array_key_exists( $field, $day['totals'] ) ) {
+						$day['totals'][ $field ] = null;
+					}
+				}
+			}
+		}
+		if ( $hide_left ) {
+			$day['left']      = null;
+			$day['over']      = null;
+			$day['over_note'] = null;
+		}
+		if ( $hide_target && isset( $day['target'] ) && is_array( $day['target'] ) ) {
+			foreach ( array( 'kcal', 'protein_g', 'carb_g', 'fat_g', 'fibre_g' ) as $field ) {
+				if ( array_key_exists( $field, $day['target'] ) ) {
+					$day['target'][ $field ] = null;
+				}
+			}
+		}
+		if ( $hide_protein && isset( $day['target'] ) && is_array( $day['target'] ) && array_key_exists( 'protein_g', $day['target'] ) ) {
+			$day['target']['protein_g'] = null;
+		}
+		if ( in_array( 'portion_questions', $a['hidden'], true ) && isset( $day['earlier'] ) && is_array( $day['earlier'] ) ) {
+			foreach ( $day['earlier'] as $meal => $entries ) {
+				foreach ( is_array( $entries ) ? $entries : array() as $i => $entry ) {
+					if ( is_array( $entry ) && array_key_exists( 'portion', $entry ) ) {
+						$day['earlier'][ $meal ][ $i ]['portion'] = null;
+					}
+				}
+			}
+		}
+		if ( $hide_calories && in_array( 'ed.food-tracker.calorie-total', $a['notes'], true ) ) {
+			$day['note'] = self::MESSAGES['ed.food-tracker.calorie-total'];
+		}
+		return $day;
 	}
 
 	// ---- Helpers -------------------------------------------------------------------------------------------------
