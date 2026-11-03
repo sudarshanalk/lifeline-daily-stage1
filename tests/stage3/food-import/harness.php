@@ -33,7 +33,7 @@ function get_option( $name, $default = false ) {
 		return array();
 	}
 	return array(
-		'food_database' => array(
+		'food_tracker' => array(
 			'state'       => $state,
 			'approved_by' => '',
 			'changed_at'  => '',
@@ -41,7 +41,7 @@ function get_option( $name, $default = false ) {
 	);
 }
 
-require dirname( __DIR__, 3 ) . '/site/public_html/wp-content/plugins/lld-members/stage3/food-import/load.php';
+require dirname( __DIR__, 3 ) . '/site/public_html/wp-content/plugins/lld-members/includes/stage3/food-import/load.php';
 
 /**
  * In-memory Food store. A side list stands in for a Stage 2 table the importer must not touch.

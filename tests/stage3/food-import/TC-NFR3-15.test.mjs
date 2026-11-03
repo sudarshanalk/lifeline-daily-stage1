@@ -6,7 +6,7 @@ import { food } from './food-php.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const root = resolve(here, '../../..');
-const importer = resolve(root, 'site/public_html/wp-content/plugins/lld-members/stage3/food-import');
+const importer = resolve(root, 'site/public_html/wp-content/plugins/lld-members/includes/stage3/food-import');
 const loader = resolve(root, 'site/public_html/wp-content/plugins/lld-members/lld-members.php');
 
 const basic = {
