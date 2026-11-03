@@ -63,14 +63,17 @@ test('TC-FR3-47-AS-02', () => {
         $n++;
         $floor = LLD_Members_Calorie_Target::floor_for($sex);
         if (isset($r['error']) || $r['stop'] !== null) { $bad[] = "$sex $age $h $w: unexpected stop/error"; continue; }
-        if ($r['targetKcal'] < $floor) $bad[] = "$sex $age $h $w $act $rate: {$r['targetKcal']} < $floor";
+        // A loss target is never below the floor. When no loss is possible (TDEE at or under the floor, BMI under 18.5)
+        // the sheet offers maintenance at round10(TDEE) instead, with no rate: that is not a loss target.
+        if ($r['maintenanceOnly']) { if ($r['achievableRate'] !== 0 && $r['achievableRate'] !== null) $bad[] = "$sex $age $h $w: maintenance with a rate"; }
+        elseif ($r['targetKcal'] < $floor) $bad[] = "$sex $age $h $w $act $rate: {$r['targetKcal']} < $floor";
         if ($r['offeredRate'] > 1.0 || $r['offeredRate'] > 0.01 * $w + 0.005 + 1e-9 || ($age >= 65 && $r['offeredRate'] > 0.5)) $bad[] = "$sex $age $w: rate {$r['offeredRate']} above the cap";
       }
     $own = LLD_Members_Calorie_Target::compute(['sex' => 'F', 'age' => 45, 'heightCm' => 160, 'weightKg' => 80, 'activity' => 'some', 'goal' => 'lose', 'rateKgWeek' => 0.5, 'memberTarget' => 1150]);
     $ownM = LLD_Members_Calorie_Target::compute(['sex' => 'M', 'age' => 45, 'heightCm' => 180, 'weightKg' => 90, 'activity' => 'some', 'goal' => 'lose', 'rateKgWeek' => 0.5, 'memberTarget' => 1450]);
     $ok = LLD_Members_Calorie_Target::compute(['sex' => 'M', 'age' => 45, 'heightCm' => 180, 'weightKg' => 90, 'activity' => 'some', 'goal' => 'lose', 'rateKgWeek' => 0.5, 'memberTarget' => 1500]);
     echo json_encode(['n' => $n, 'bad' => $bad, 'own' => $own['refused'], 'ownM' => $ownM['refused'], 'ok' => [$ok['refused'], $ok['targetKcal']], 'floors' => [LLD_Members_Calorie_Target::floor_for('female'), LLD_Members_Calorie_Target::floor_for('male'), LLD_Members_Calorie_Target::floor_for(''), LLD_Members_Calorie_Target::floor_for('prefer_not')]]);
-  `);
+  `));
   expect(out.n).toBeGreaterThan(4000);
   expect(out.bad).toEqual([]);
   expect(out.own).toBe(true);
