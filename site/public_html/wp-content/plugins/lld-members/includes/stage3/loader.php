@@ -27,6 +27,9 @@ require_once __DIR__ . '/class-stripe-api.php';
 require_once __DIR__ . '/class-access-tiers.php';
 require_once __DIR__ . '/class-membership.php';
 require_once __DIR__ . '/class-pause.php';
+require_once __DIR__ . '/signin/class-email-codes.php';
+require_once __DIR__ . '/signin/class-identity-provider.php';
+require_once __DIR__ . '/signin/class-sign-in.php';
 
 /**
  * Hooks the Stage 3 layer into the Stage 2 plugin. Called from LLD_Members_Plugin::boot().
@@ -42,6 +45,7 @@ function lld_members_stage3_boot() {
 	LLD_Members_Access_Tiers::boot();
 	LLD_Members_Membership::boot();
 	LLD_Members_Pause::boot();
+	LLD_Members_Sign_In::boot();
 	add_action( 'rest_api_init', array( 'LLD_Members_Stage3_API', 'register' ) );
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		require_once __DIR__ . '/class-cli-stage3.php';

@@ -605,6 +605,15 @@ class LLD_Members_Stage3_Safety {
 		if ( $hide_protein && isset( $day['target'] ) && is_array( $day['target'] ) && array_key_exists( 'protein_g', $day['target'] ) ) {
 			$day['target']['protein_g'] = null;
 		}
+		if ( in_array( 'portion_questions', $a['hidden'], true ) && isset( $day['earlier'] ) && is_array( $day['earlier'] ) ) {
+			foreach ( $day['earlier'] as $meal => $entries ) {
+				foreach ( is_array( $entries ) ? $entries : array() as $i => $entry ) {
+					if ( is_array( $entry ) && array_key_exists( 'portion', $entry ) ) {
+						$day['earlier'][ $meal ][ $i ]['portion'] = null;
+					}
+				}
+			}
+		}
 		if ( $hide_calories && in_array( 'ed.food-tracker.calorie-total', $a['notes'], true ) ) {
 			$day['note'] = self::MESSAGES['ed.food-tracker.calorie-total'];
 		}
