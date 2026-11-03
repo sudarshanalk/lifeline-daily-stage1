@@ -17,6 +17,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 class LLD_Members_Features {
 
 	const OPTION        = 'lld_feature_switches';
+	// The owner retired the switches on 3 Nov 2026 (the whole system launches together): with this option set, every
+	// catalogue feature is on for everyone, including features added later. CI leaves it unset, so the Stage 2 suite
+	// still runs against the switch states that tests/ci/stage2-wp.sh sets.
+	const ALL_ON        = 'lld_features_all_on';
 	const TEST_ACCOUNTS = 'lld_test_account_emails';
 	const STATES        = array( 'off', 'test_accounts', 'everyone' );
 
@@ -65,6 +69,9 @@ class LLD_Members_Features {
 	 * @param string $feature Feature name from catalog().
 	 */
 	public static function state( $feature ) {
+		if ( get_option( self::ALL_ON ) && array_key_exists( $feature, self::catalog() ) ) {
+			return 'everyone';
+		}
 		$all = get_option( self::OPTION );
 		if ( ! is_array( $all ) || ! isset( $all[ $feature ] ) || ! is_array( $all[ $feature ] ) ) {
 			return 'off';

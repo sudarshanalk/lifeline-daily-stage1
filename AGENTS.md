@@ -25,7 +25,7 @@ The requirements for all stages (v0.3) and the data model (v0.2) live outside th
 - **Tool rules:** Cursor `.cursor/rules/stage3.mdc`; Antigravity and Codex follow the build method §4 and their briefs.
 
 Stage 3 rules, on top of the rules below:
-- **Never break Stage 2.** Every Stage 3 feature sits behind its own switch (off, test accounts, everyone) and stays off for ordinary members until the owner approves it. The full Stage 2 suite must pass on every Stage 3 pull request (NFR3-01 to NFR3-06).
+- **Never break Stage 2.** **Switches retired (owner, 3 Nov 2026).** The whole system launches together, so every Stage 3 feature is always on: staging has `wp lld-members feature all-on` set, and features added later are on too. New code does not need a switch check or a catalogue entry, and nobody sets switches. The existing `LLD_Members_Features::enabled()` calls stay in place (CI still sets its own states so the Stage 2 suite runs as before); the admin panel (requirements in progress) will bring a proper on/off later. The full Stage 2 suite must pass on every Stage 3 pull request (NFR3-01 to NFR3-06).
 - **Database changes only add** (NFR3-04). Stage 2 tests cannot be edited, skipped or deleted without a decision in `docs/stage3/stage2-test-changes.json` (NFR3-02).
 - **Calculators:** a method sheet is researched and drafted at the start of each build and signed off by the owner before its code is written (NFR3-14). Sheets live in `04 Health Tools/Stage 3/` outside the repository.
 - **Decision engine:** rules and wording are signed off by the owner before they run (NFR3-17).
@@ -64,8 +64,8 @@ Stage 3 rules, on top of the rules below:
 | Tool | Work (tracker IDs) |
 |---|---|
 | **Claude (lead)** | Foundations P3-10 to P3-15 and the members' interface (done first); sign-in P3-20 to P3-22; membership, prices and pause P3-60 to P3-63; decision engine P3-34; analytics P3-70 to P3-72; staging deploys and launch P3-90 to P3-95; joining every tool's branch, full CI, Codex review, merge. Separate Claude sessions: method sheets, safety matrix, engine rules, content drafts |
-| **Cursor** | Server-side code in `includes/stage3/`: food P3-40 to P3-43; health logging P3-50; goal, baseline, plan and check-in logic P3-31, P3-32; reminders, consent, export and deletion P3-85, P3-86; calculator engines after sign-off |
+| **Cursor** | Server-side code in `includes/stage3/`: food P3-40 to P3-43; health logging P3-50; goal, baseline, plan and check-in logic P3-31, P3-32; reminders, consent, export and deletion P3-85, P3-86; calculator engines P3-56 to P3-5B. **Delegated in full from 3 Nov 2026** (P3-31, P3-32, P3-41 to P3-43, P3-50, P3-56 to P3-5B, P3-85, P3-86): Cursor builds, tests, has Codex review, decides when to merge and deploy to staging, and checks staging (build method §7 rule 6) |
 | **Antigravity** | Every Stage 3 screen (P3-30 to P3-33, food and logging screens, barcode P3-44, cookie banner, add to home screen), then visual checks at phone and desktop sizes on staging (NFR3-12, NFR3-13; P3-83) |
 | **Codex** | Tests from the checks, package by package; the Stage 2 key-journeys set P3-11; P0-03 test updates to ratified decisions; speed, Search Console and direct-answer work P3-80 to P3-82; an independent review of every package before Claude merges it |
 
-Order: Claude's foundations first; then Cursor, Antigravity and Codex in parallel, each in its own worktree and its own files; Claude joins the branches on one branch, runs the full CI, Codex reviews, one pull request is merged when every check has passed.
+Order: Claude's foundations first; then Cursor, Antigravity and Codex in parallel, each in its own worktree and its own files; Claude joins the branches on one branch, runs the full CI, Codex reviews, one pull request is merged when every check has passed. Cursor's delegated packages are the exception: it merges and deploys them to staging itself, when it judges them ready (build method §7 rule 6).
