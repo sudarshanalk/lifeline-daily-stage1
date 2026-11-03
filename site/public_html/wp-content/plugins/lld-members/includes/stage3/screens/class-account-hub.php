@@ -346,6 +346,10 @@ class LLD_Members_Account_Hub {
 			$html .= '<p class="lld-hint">The owner admin account always uses an email code.</p>';
 		}
 		$html .= '<p><a class="lld-account-link" href="' . esc_url( self::all_settings_url() ) . '">Change your password or two-step sign-in</a></p>';
+		// P3-20 to P3-22: linked Google and Apple accounts, unlinking, and sign out everywhere (FR3-05).
+		if ( class_exists( 'LLD_Members_Sign_In' ) && ( LLD_Members_Sign_In::on( 'sign_in_social' ) || LLD_Members_Sign_In::on( 'sign_in_code' ) ) ) {
+			$html .= LLD_Members_Sign_In::security_html( (int) $row->id, $row );
+		}
 		$html .= '</section>';
 		return $html;
 	}
