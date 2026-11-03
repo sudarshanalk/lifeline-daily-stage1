@@ -37,7 +37,9 @@ export const TOOL_FILES = {
 
 // Which tools build which package (AGENTS.md "Stage 3 work by tool"; Build Method §2). A package not listed is the lead's.
 export const PACKAGE_TOOLS = {
-  11: ['codex'], 30: ['antigravity'], 31: ['cursor', 'antigravity'], 32: ['cursor', 'antigravity'], 33: ['antigravity'],
+  // The goal journey: the lead built P3-30 (#169) and builds P3-31 to P3-33 while Cursor and Antigravity have not
+  // started them (3 Nov 2026), as with the calculator engines below; the listed tools keep their files.
+  11: ['codex'], 30: ['antigravity', 'claude'], 31: ['cursor', 'antigravity', 'claude'], 32: ['cursor', 'antigravity', 'claude'], 33: ['antigravity', 'claude'],
   40: ['cursor'], 41: ['cursor'], 42: ['cursor'], 43: ['cursor'], 44: ['antigravity'], 50: ['cursor'], 51: ['cursor'],
   // The calculator engines: Cursor's in the plan; the lead builds them from the signed sheets while Cursor has not started (3 Nov 2026).
   55: ['cursor', 'claude'], 56: ['cursor', 'claude'], 57: ['cursor', 'claude'], 58: ['cursor', 'claude'], 59: ['cursor', 'claude'], '5A': ['cursor', 'claude'], '5B': ['cursor', 'claude'],

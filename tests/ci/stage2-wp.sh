@@ -38,7 +38,7 @@ wp lld-members db-update --path="$DIR"
 # screens: the two listed test members and the owner admin (an admin is always a test account, so it sees every
 # Stage 3 screen whose switch is at test_accounts). Every other Stage 2 member stays exactly as Stage 2
 # (content_new stays off here on purpose).
-for f in api account_hub goals today insights food_tracker health_logging calculators_new reminders; do wp lld-members feature "$f" test_accounts --path="$DIR" --quiet; done
+for f in api account_hub goals today progress insights food_tracker health_logging calculators_new reminders; do wp lld-members feature "$f" test_accounts --path="$DIR" --quiet; done
 wp lld-members test-accounts p3-api-a@test.lifelinedaily.invalid p3-api-b@test.lifelinedaily.invalid --path="$DIR" --quiet
 # Router: without one, PHP's built-in server answers 404 itself for any missing path with a dot (/sitemap.xml)
 # instead of passing it to WordPress, unlike Apache/LiteSpeed with the WordPress .htaccess on staging and production
