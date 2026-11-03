@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Stage3_Schema {
 
-	const VERSION = 2;
+	const VERSION = 3;
 
 	/**
 	 * Every Stage 3 table suffix, in creation order. Stage 2's all_suffixes() is left as it is; the
@@ -42,6 +42,7 @@ class LLD_Members_Stage3_Schema {
 			'food_favourites',
 			'nutrition_targets',
 			'recipes',
+			'food_preferences',
 			'readings',
 			'reminders',
 			'shares',
@@ -56,7 +57,7 @@ class LLD_Members_Stage3_Schema {
 	 * @return string[]
 	 */
 	public static function health_suffixes() {
-		return array( 'goals', 'goal_baselines', 'plans', 'plan_adjustments', 'insights', 'food_log', 'nutrition_targets', 'readings' );
+		return array( 'goals', 'goal_baselines', 'plans', 'plan_adjustments', 'insights', 'food_log', 'nutrition_targets', 'food_preferences', 'readings' );
 	}
 
 	/**
@@ -341,6 +342,17 @@ class LLD_Members_Stage3_Schema {
 			deleted_at DATETIME NULL,
 			PRIMARY KEY (id),
 			KEY member_updated (member_id, updated_at)
+			',
+			// Allergies and dislikes for recipe suggestions (FR3-36).
+			'food_preferences' => '
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			member_id BIGINT UNSIGNED NOT NULL,
+			allergies TEXT NULL,
+			dislikes TEXT NULL,
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL,
+			PRIMARY KEY (id),
+			UNIQUE KEY one_member (member_id)
 			',
 			// Health reading (FR3-38 to FR3-46): every value sealed.
 			'readings' => '

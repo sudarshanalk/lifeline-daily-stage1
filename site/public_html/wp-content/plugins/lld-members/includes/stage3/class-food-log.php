@@ -206,14 +206,18 @@ class LLD_Members_Food_Log {
 	 */
 	public static function for_member( $member_id, array $entry ) {
 		$kind = isset( $entry['food_kind'] ) ? (string) $entry['food_kind'] : '';
-		if ( 'recipe' === $kind ) {
-			return array( 'error' => 'Recipes are added with the recipe tools.' );
-		}
 		$basis = self::basis( (int) $member_id, $kind, (int) ( $entry['food_id'] ?? 0 ) );
 		if ( null === $basis ) {
 			return array( 'error' => 'That food is not available.' );
 		}
-		return self::apply_basis( $basis, $entry );
+		$out = self::apply_basis( $basis, $entry );
+		if ( 'recipe' === $kind && ! isset( $out['error'] ) ) {
+			$out['source'] = isset( $entry['source'] ) && '' !== (string) $entry['source'] ? (string) $entry['source'] : 'recipe';
+			if ( ! isset( $out['portion_label'] ) || '' === (string) $out['portion_label'] ) {
+				$out['portion_label'] = LLD_Members_Food_Log::format_amount( $out['grams'] ) . ' serving' . ( abs( (float) $out['grams'] - 1 ) < 0.001 ? '' : 's' );
+			}
+		}
+		return $out;
 	}
 
 	/**
@@ -848,6 +852,14 @@ class LLD_Members_Food_Log {
 			$table = LLD_Members_Stage3_Schema::table( 'custom_foods' );
 			$row   = $wpdb->get_row( $wpdb->prepare( "SELECT id, portion_g, kcal, protein_g, carb_g, fat_g, fibre_g FROM {$table} WHERE id = %d AND member_id = %d AND deleted_at IS NULL", $id, $member_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
 			return is_array( $row ) ? array( 'per_portion' => $row ) : null;
+		}
+		if ( 'recipe' === $kind ) {
+			$table = LLD_Members_Stage3_Schema::table( 'recipes' );
+			$row   = $wpdb->get_row( $wpdb->prepare( "SELECT id, name, servings, kcal_per_serving, protein_per_serving, carb_per_serving, fat_per_serving, fibre_per_serving, deleted_at FROM {$table} WHERE id = %d AND member_id = %d", $id, $member_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
+			if ( ! is_array( $row ) || ! empty( $row['deleted_at'] ) ) {
+				return null;
+			}
+			return class_exists( 'LLD_Members_Recipes' ) ? LLD_Members_Recipes::serving_basis( $row, 1 ) : null;
 		}
 		return null;
 	}
