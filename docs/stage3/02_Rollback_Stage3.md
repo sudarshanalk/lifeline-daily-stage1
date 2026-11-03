@@ -32,4 +32,4 @@ Members who signed up between the backup and the restore lose their accounts in 
 
 | Date | Path | Measured time | Key journeys after | Notes |
 |---|---|---|---|---|
-| — | fast | — | — | To be run on staging after the foundations pull request is deployed (TC-NFR3-07-AS-01) |
+| 3 Nov 2026 | fast | 36 s (restore and purge 13 s; smoke and key journeys by 36 s) | All passed | TC-NFR3-07-AS-01. Backup `20261103T061609Z-5e1226262d23` from the foundations deploy (#161). `rollback.sh` removed the Stage 3 files, kept the database (Stage 3 tables and the schema option stayed) and the Stage 2 pages answered unchanged; the `feature` CLI command and `/me/<type>` routes disappeared as expected. Stage 3 restored by re-running the `deploy-staging` run. On Windows, `smoke.sh` needs `python3` on the PATH (a shim to `python`). |
