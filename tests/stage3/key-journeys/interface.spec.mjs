@@ -12,7 +12,7 @@ const A = 'p3-api-a@test.lifelinedaily.invalid';
 const B = 'p3-api-b@test.lifelinedaily.invalid';
 // Sentinel values (fixtures/sentinel-values.json): unique numbers whose appearance in mail or logs is a leak.
 const SENTINEL = { weightKg: 83.7, waistCm: 97.3 };
-const DAY = '2026-11-03';
+const DAY = '2026-11-01'; // clearly in the past: a reading more than 5 minutes ahead of the clock is refused
 
 /** Minimal valid rows per writable type (class-api.php types()). */
 const ROWS = {
@@ -98,6 +98,8 @@ test.describe.serial('members interface', () => {
       expect(found.ok(), `Mailpit search ${needle}`).toBeTruthy();
       expect((await found.json()).messages_count, `caught mail mentioning ${needle}`).toBe(0);
     }
+    // In CI the PHP built-in server log holds request lines only (no WP_DEBUG_LOG), so this part proves the values
+    // never reach a URL; the mail search above is the stronger check.
     const temp = process.env.RUNNER_TEMP;
     for (const file of temp ? [`${temp}/php-server.log`, `${temp}/wp/wp-content/debug.log`] : []) {
       if (!existsSync(file)) continue;
