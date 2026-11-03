@@ -320,7 +320,7 @@ class LLD_Members_Today_Screen {
 	public static function progress_block( $member_id, array $goal, array $facts, $kicker ) {
 		$p     = LLD_Members_Goal_Journey::progress( $member_id, $goal, $facts );
 		$imp   = ! empty( $facts['imperial'] );
-		$html  = '<div class="lld-goal-progress" data-lld-goal="' . (int) $goal['id'] . '" data-lld-goal-type="' . esc_attr( (string) $goal['goal_type'] ) . '" data-lld-trend="' . esc_attr( $p['trend']['status'] ) . '">';
+		$html  = '<div class="lld-goal-progress" data-lld-goal-progress data-lld-goal="' . (int) $goal['id'] . '" data-lld-goal-type="' . esc_attr( (string) $goal['goal_type'] ) . '" data-lld-trend="' . esc_attr( $p['trend']['status'] ) . '">';
 		$html .= '<p class="lld-kicker">' . esc_html( $kicker ) . '</p><h2>' . esc_html( LLD_Members_Goal_Setting::goal_line( $goal, $facts ) ) . '</h2>';
 		if ( $p['progress'] && null !== $p['progress']['pct'] ) {
 			$unit  = self::unit_label( (string) $goal['measure'], $imp );
@@ -616,17 +616,17 @@ class LLD_Members_Today_Screen {
 		$html    .= '<form method="post" class="lld-form">' . wp_nonce_field( 'lld_checkin3', 'lld_checkin3_nonce', true, false );
 		foreach ( $measures as $m ) {
 			if ( 'weight' === $m ) {
-				$html .= '<div class="lld-field"><label for="lld_weight">Weight in ' . ( $imp ? 'pounds' : 'kilograms' ) . '</label><input id="lld_weight" name="lld_weight" type="number" inputmode="decimal" step="0.1"></div>';
+				$html .= '<div class="lld-field"><label for="lld_weight">Weight in ' . ( $imp ? 'pounds' : 'kilograms' ) . '</label><input id="lld_weight" name="lld_weight" type="number" inputmode="decimal" step="any"></div>';
 			} elseif ( 'waist' === $m ) {
-				$html .= '<div class="lld-field"><label for="lld_waist">Waist in ' . ( $imp ? 'inches' : 'centimetres' ) . '</label><input id="lld_waist" name="lld_waist" type="number" inputmode="decimal" step="0.1"></div>';
+				$html .= '<div class="lld-field"><label for="lld_waist">Waist in ' . ( $imp ? 'inches' : 'centimetres' ) . '</label><input id="lld_waist" name="lld_waist" type="number" inputmode="decimal" step="any"></div>';
 			} elseif ( 'blood_pressure' === $m ) {
 				$html .= '<div class="lld-field-row"><div class="lld-field"><label for="lld_sys">Blood pressure: top number</label><input id="lld_sys" name="lld_sys" type="number" inputmode="numeric" step="1"></div><div class="lld-field"><label for="lld_dia">Bottom number</label><input id="lld_dia" name="lld_dia" type="number" inputmode="numeric" step="1"></div></div>';
 			} elseif ( 'activity' === $m ) {
 				$html .= '<div class="lld-field"><label for="lld_activity">Minutes of activity today</label><input id="lld_activity" name="lld_activity" type="number" inputmode="numeric" step="5"></div>';
 			} elseif ( 'sleep' === $m ) {
-				$html .= '<div class="lld-field"><label for="lld_sleep">Hours slept last night</label><input id="lld_sleep" name="lld_sleep" type="number" inputmode="decimal" step="0.5"></div>';
+				$html .= '<div class="lld-field"><label for="lld_sleep">Hours slept last night</label><input id="lld_sleep" name="lld_sleep" type="number" inputmode="decimal" step="any"></div>';
 			} elseif ( 'glucose' === $m ) {
-				$html .= '<div class="lld-field"><label for="lld_glucose">Fasting glucose, mmol/L</label><input id="lld_glucose" name="lld_glucose" type="number" inputmode="decimal" step="0.1"></div>';
+				$html .= '<div class="lld-field"><label for="lld_glucose">Fasting glucose, mmol/L</label><input id="lld_glucose" name="lld_glucose" type="number" inputmode="decimal" step="any"></div>';
 			}
 		}
 		$html .= '<p class="lld-hint">Leave a box empty to skip it this week.</p>';
@@ -704,7 +704,7 @@ class LLD_Members_Today_Screen {
 	/** What the check-in asks for, from the goal's measure. */
 	private static function measures_for( array $goal ) {
 		$by = array(
-			'weight'           => array( 'weight', 'waist' ),
+			'weight'           => array( 'weight', 'waist', 'blood_pressure' ),
 			'blood_pressure'   => array( 'blood_pressure', 'weight' ),
 			'glucose'          => array( 'glucose', 'weight', 'waist' ),
 			'activity_minutes' => array( 'activity', 'weight' ),

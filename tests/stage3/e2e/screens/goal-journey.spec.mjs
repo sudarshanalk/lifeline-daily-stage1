@@ -11,9 +11,12 @@ const A = 'p3-api-a@test.lifelinedaily.invalid'; // Premium in most journeys
 const B = 'p3-api-b@test.lifelinedaily.invalid'; // Free in most journeys
 const ID = /\b(?:TC-)?N?FR\d-\d\d/;
 
-/** Day n of the journey as a UTC datetime; day 0 is Monday 16 November 2026 (Europe/London: the same date). */
-const at = (day, hour = 9) => { const d = new Date(Date.UTC(2026, 10, 16, hour)); d.setUTCDate(d.getUTCDate() + day); return d.toISOString().slice(0, 19).replace('T', ' '); };
+/** Day n of the journey as a UTC datetime; day 0 is Monday 28 September 2026 (Europe/London: the same date), in the past so
+ * readings dated by day are never "in the future" for the members' interface. */
+const at = (day, hour = 9) => { const d = new Date(Date.UTC(2026, 8, 28, hour)); d.setUTCDate(d.getUTCDate() + day); return d.toISOString().slice(0, 19).replace('T', ' '); };
 const dateOf = (day) => at(day).slice(0, 10);
+/** The date as the screens print it: "Monday 28 September 2026". */
+const nice = (day) => new Date(`${dateOf(day)}T00:00:00Z`).toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).replace(',', '');
 
 async function clock(page, email, day) {
   const res = await page.request.post('/wp-json/lld-members/v1/test/clock', { data: { email, utc: at(day) } });
@@ -23,7 +26,7 @@ async function clock(page, email, day) {
 /** A clean member: the account (and every Stage 3 row of it) is erased first, then made again and signed in. */
 async function fresh(page, email, fields = {}) {
   await page.request.post('/wp-json/lld-members/v1/test/reset', { data: { email } });
-  const member = await createMember(page.request, { email, password, first_name: 'Alex', health_consent: true, ...fields });
+  const member = await createMember(page.request, { email, password, first_name: 'Alex', health_consent: true, consents: ['terms'], ...fields });
   await signIn(page, email, password);
   await clock(page, email, 0);
   return member;
@@ -159,10 +162,12 @@ test.describe.serial('P3-31 goal setting, starting measurements and the plan', (
     await expect(refused).toHaveAttribute('data-lld-refused', 'bmi_floor');
     await expect(refused).toContainText('A goal of 50 kg would put you below the healthy range for your height (BMI 16.3). The lowest weight in the healthy range for you is about 56.7 kg. Would you like to use that?');
     await expect(page.locator('#lld_target')).toHaveValue('56.7');
-    await weightGoal(page, { current: 90, target: 84, rate: '1' });
+    // The screen never offers a rate above the cap (1.0 is missing at 90 kg); a date too soon asks for one and is refused.
+    await expect(page.locator('input[name="lld_rate"][value="1"]')).toHaveCount(0);
+    await weightGoal(page, { current: 90, target: 84, date: dateOf(28) }); // 1.5 kg a week
     await expect(page.locator('[data-lld-refused]')).toHaveAttribute('data-lld-refused', 'rate_cap');
-    await expect(page.locator('[data-lld-refused]')).toContainText("That's faster than the safe rate of about 0.9 kg a week. At a safe rate you'd reach 84 kg by about Monday 11 January 2027.");
-    await expect(page.locator('#lld_date')).toHaveValue('2027-01-11');
+    await expect(page.locator('[data-lld-refused]')).toContainText(`That's faster than the safe rate of about 0.9 kg a week. At a safe rate you'd reach 84 kg by about ${nice(49)}.`);
+    await expect(page.locator('#lld_date')).toHaveValue(dateOf(49));
     expect((await rows(page, 'goals')).length).toBe(0);
   });
 
@@ -258,11 +263,12 @@ test.describe.serial('P3-31 goal setting, starting measurements and the plan', (
     await expect(plan).toHaveAttribute('data-lld-premium', 'yes');
     await expect(plan.locator('[data-lld-section="track"]')).toHaveAttribute('data-lld-track', 'healthy-weight');
     await expect(plan.locator('[data-lld-section="track"] h2')).toHaveText('Healthy Weight');
-    // Female, 40, 175 cm, 90 kg, some activity, 0.375 kg a week (6 kg in 16 weeks): RMR 1632.75 × 1.375 − 412.5 = 1832.6 → 1,830 kcal.
-    await expect(plan.locator('[data-lld-kcal]')).toHaveAttribute('data-lld-kcal', '1830');
+    // Female, 40, 175 cm, 90 kg, some activity: RMR 1632.75 × 1.375 = 2245 kcal. 6 kg in 16 weeks asks for 0.375 kg a week;
+    // the signed calculator offers the nearest rate at or below it (0.25, deficit 275): 1970 kcal.
+    await expect(plan.locator('[data-lld-kcal]')).toHaveAttribute('data-lld-kcal', '1970');
     await expect(plan.locator('[data-lld-section="targets"]')).toContainText("This week's meal plan");
     await expect(plan.locator('[data-lld-section="schedule"]')).toContainText('Weigh in once a week, on Mondays');
-    await expect(plan.locator('[data-lld-section="goal"]')).toContainText('Lose 6 kg to reach 84 kg by Monday 8 March 2027');
+    await expect(plan.locator('[data-lld-section="goal"]')).toContainText(`Lose 6 kg to reach 84 kg by ${nice(112)}`);
   });
 
   test('TC-FR3-11-AS-02 A Premium member with a blood pressure goal is offered the Heart Health track and a blood pressure logging schedule', async ({ page }) => {
@@ -406,15 +412,16 @@ test.describe.serial('P3-32 Today, goal progress, check-in and goal reached', ()
     await weighIn(page, 10, 89.9);
     await clock(page, A, 14);
     await checkIn(page, { weight: 89.85 });
-    const offer = page.locator('[data-lld-section="adjustment"]');
-    await expect(offer).toHaveAttribute('data-lld-rule', 'R-ADJ-01');
+    // The plateau offer (R-ADJ-02) may sit beside it; the behind-two-weeks offer is the one under test.
+    const offer = page.locator('[data-lld-section="adjustment"][data-lld-rule="R-ADJ-01"]');
+    await expect(offer).toBeVisible();
     await expect(offer).toContainText('Would you like to move your date');
     await expect(offer.getByRole('button', { name: 'Move my date' })).toBeVisible();
     await expect(offer.getByRole('button', { name: 'Keep my plan' })).toBeVisible();
     const before = (await rows(page, 'goals')).find((g) => g.role === 'main');
     expect(before.target_date).toBe(dateOf(56));
     await page.goto('/members/check-in/');
-    await page.locator('[data-lld-section="adjustment"]').getByRole('button', { name: 'Move my date' }).click();
+    await page.locator('[data-lld-section="adjustment"][data-lld-rule="R-ADJ-01"]').getByRole('button', { name: 'Move my date' }).click();
     await expect(page).toHaveURL(/adjusted=changed/);
     const after = (await rows(page, 'goals')).find((g) => g.role === 'main');
     expect(after.target_date > before.target_date).toBe(true);
@@ -462,7 +469,9 @@ test.describe.serial('P3-32 Today, goal progress, check-in and goal reached', ()
     await expect(page).toHaveURL(/\/members\/goal\/\?done=\d+$/);
     await expect(page.locator('[data-lld-section="goal"]')).toContainText('Keep my weight steady at about 84 kg');
     const goals = await rows(page, 'goals');
-    expect(goals.find((g) => g.status === 'active' && g.role === 'main').goal_type).toBe('keep_weight');
+    const kept = goals.find((g) => g.status === 'active' && g.role === 'main');
+    expect(kept, JSON.stringify(goals.map((g) => [g.id, g.role, g.goal_type, g.status]))).toBeDefined();
+    expect(kept.goal_type).toBe('keep_weight');
     expect(goals.some((g) => g.status === 'reached')).toBe(true);
   });
 });
@@ -495,7 +504,8 @@ test.describe.serial('P3-33 progress page and dashboard', () => {
     const cells = await table.locator('td[data-lld-days-value]').allTextContents();
     const heights = await page.locator('[data-lld-section="weekly-bars"] .lld-bar > span').evaluateAll((els) => els.map((el) => el.style.height));
     expect(cells.map((c) => Math.round(Number(c.split(' ')[0]) / 7 * 100) + '%')).toEqual(heights);
-    expect(cells.slice(-2)).toEqual(['7 of 7', '7 of 7']); // days 17 to 30 fill the two most recent weeks (the plan started on a Monday)
+    // Days 17 to 30, weeks from the plan's Monday start: days 14 to 20 hold 4, 21 to 27 all 7, this week (28 to 30) 3.
+    expect(cells).toEqual(['0 of 7', '4 of 7', '7 of 7', '3 of 7']);
   });
 
   test("TC-FR3-16-AS-03 The weight, waist and blood pressure trends match the member's logged values", async ({ page }) => {

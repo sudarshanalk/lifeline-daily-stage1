@@ -526,7 +526,7 @@ class LLD_Members_Goal_Setting {
 	}
 
 	private static function number( $id, $label, $value, $step, $required = false ) {
-		return '<div class="lld-field"><label for="' . esc_attr( $id ) . '">' . esc_html( $label ) . '</label><input id="' . esc_attr( $id ) . '" name="' . esc_attr( $id ) . '" type="number" inputmode="decimal" step="' . esc_attr( (string) $step ) . '" value="' . esc_attr( (string) $value ) . '"' . ( $required ? ' required' : '' ) . '></div>';
+		return '<div class="lld-field"><label for="' . esc_attr( $id ) . '">' . esc_html( $label ) . '</label><input id="' . esc_attr( $id ) . '" name="' . esc_attr( $id ) . '" type="number" inputmode="' . ( $step >= 1 ? 'numeric' : 'decimal' ) . '" step="' . ( $step >= 1 ? esc_attr( (string) $step ) : 'any' ) . '" value="' . esc_attr( (string) $value ) . '"' . ( $required ? ' required' : '' ) . '></div>';
 	}
 
 	private static function date( $id, $label, $value ) {
