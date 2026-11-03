@@ -25,7 +25,7 @@ The requirements for all stages (v0.3) and the data model (v0.2) live outside th
 - **Tool rules:** Cursor `.cursor/rules/stage3.mdc`; Antigravity and Codex follow the build method §4 and their briefs.
 
 Stage 3 rules, on top of the rules below:
-- **Never break Stage 2.** Every Stage 3 feature sits behind its own switch (off, test accounts, everyone) and stays off for ordinary members until the owner approves it. The full Stage 2 suite must pass on every Stage 3 pull request (NFR3-01 to NFR3-06).
+- **Never break Stage 2.** **Switches retired (owner, 3 Nov 2026).** The whole system launches together, so every Stage 3 feature is always on: staging has `wp lld-members feature all-on` set, and features added later are on too. New code does not need a switch check or a catalogue entry, and nobody sets switches. The existing `LLD_Members_Features::enabled()` calls stay in place (CI still sets its own states so the Stage 2 suite runs as before); the admin panel (requirements in progress) will bring a proper on/off later. The full Stage 2 suite must pass on every Stage 3 pull request (NFR3-01 to NFR3-06).
 - **Database changes only add** (NFR3-04). Stage 2 tests cannot be edited, skipped or deleted without a decision in `docs/stage3/stage2-test-changes.json` (NFR3-02).
 - **Calculators:** a method sheet is researched and drafted at the start of each build and signed off by the owner before its code is written (NFR3-14). Sheets live in `04 Health Tools/Stage 3/` outside the repository.
 - **Decision engine:** rules and wording are signed off by the owner before they run (NFR3-17).
