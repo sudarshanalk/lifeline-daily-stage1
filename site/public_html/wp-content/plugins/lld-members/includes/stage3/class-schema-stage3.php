@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Stage3_Schema {
 
-	const VERSION = 1;
+	const VERSION = 2;
 
 	/**
 	 * Every Stage 3 table suffix, in creation order. Stage 2's all_suffixes() is left as it is; the
@@ -101,11 +101,15 @@ class LLD_Members_Stage3_Schema {
 	}
 
 	/**
-	 * Create every table if it is missing.
+	 * Column and key definitions of every Stage 3 table, by suffix. Packages read their own table's
+	 * definition from here (for example the food importer); nothing else defines a Stage 3 table.
+	 *
+	 * @return array<string,string>
 	 */
-	public static function create_all() {
-		// Linked sign-in (FR3-01, FR3-02, FR3-05).
-		self::create( 'identities', '
+	public static function definitions() {
+		return array(
+			// Linked sign-in (FR3-01, FR3-02, FR3-05).
+			'identities' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT UNSIGNED NOT NULL,
 			provider VARCHAR(16) NOT NULL,
@@ -116,9 +120,9 @@ class LLD_Members_Stage3_Schema {
 			PRIMARY KEY (id),
 			UNIQUE KEY one_identity (provider, provider_user_id),
 			KEY member_id (member_id)
-		' );
-		// Email code (FR3-03, FR3-04, NFR3-18): the code itself is never stored.
-		self::create( 'email_codes', '
+			',
+			// Email code (FR3-03, FR3-04, NFR3-18): the code itself is never stored.
+			'email_codes' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			email VARCHAR(190) NOT NULL,
 			purpose VARCHAR(16) NOT NULL,
@@ -129,9 +133,9 @@ class LLD_Members_Stage3_Schema {
 			used_at DATETIME NULL,
 			PRIMARY KEY (id),
 			KEY email_purpose (email, purpose)
-		' );
-		// Goal (FR3-09, FR3-13, FR3-15): values sealed.
-		self::create( 'goals', '
+			',
+			// Goal (FR3-09, FR3-13, FR3-15): values sealed.
+			'goals' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT UNSIGNED NOT NULL,
 			role VARCHAR(8) NOT NULL,
@@ -149,9 +153,9 @@ class LLD_Members_Stage3_Schema {
 			deleted_at DATETIME NULL,
 			PRIMARY KEY (id),
 			KEY member_updated (member_id, updated_at)
-		' );
-		// Goal baseline (FR3-10).
-		self::create( 'goal_baselines', '
+			',
+			// Goal baseline (FR3-10).
+			'goal_baselines' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			goal_id BIGINT UNSIGNED NOT NULL,
 			measure VARCHAR(32) NOT NULL,
@@ -159,9 +163,9 @@ class LLD_Members_Stage3_Schema {
 			created_at DATETIME NOT NULL,
 			PRIMARY KEY (id),
 			KEY goal_id (goal_id)
-		' );
-		// Personal plan (FR3-11, FR3-14, FR3-28).
-		self::create( 'plans', '
+			',
+			// Personal plan (FR3-11, FR3-14, FR3-28).
+			'plans' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT UNSIGNED NOT NULL,
 			goal_id BIGINT UNSIGNED NOT NULL,
@@ -183,9 +187,9 @@ class LLD_Members_Stage3_Schema {
 			updated_at DATETIME NOT NULL,
 			PRIMARY KEY (id),
 			KEY member_updated (member_id, updated_at)
-		' );
-		// Plan adjustment (FR3-14).
-		self::create( 'plan_adjustments', '
+			',
+			// Plan adjustment (FR3-14).
+			'plan_adjustments' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT UNSIGNED NOT NULL,
 			plan_id BIGINT UNSIGNED NOT NULL,
@@ -196,9 +200,9 @@ class LLD_Members_Stage3_Schema {
 			created_at DATETIME NOT NULL,
 			PRIMARY KEY (id),
 			KEY member_id (member_id)
-		' );
-		// Today step (FR3-12).
-		self::create( 'today_steps', '
+			',
+			// Today step (FR3-12).
+			'today_steps' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT UNSIGNED NOT NULL,
 			step_date DATE NOT NULL,
@@ -209,9 +213,9 @@ class LLD_Members_Stage3_Schema {
 			updated_at DATETIME NOT NULL,
 			PRIMARY KEY (id),
 			UNIQUE KEY one_step (member_id, step_date)
-		' );
-		// Insight shown (FR3-17): the numbers used are sealed.
-		self::create( 'insights', '
+			',
+			// Insight shown (FR3-17): the numbers used are sealed.
+			'insights' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT UNSIGNED NOT NULL,
 			rule_id BIGINT UNSIGNED NOT NULL,
@@ -223,9 +227,9 @@ class LLD_Members_Stage3_Schema {
 			updated_at DATETIME NOT NULL,
 			PRIMARY KEY (id),
 			KEY member_shown (member_id, shown_at)
-		' );
-		// Food (FR3-26, NFR3-15): public reference data; member_id only for member-added packaged foods.
-		self::create( 'foods', '
+			',
+			// Food (FR3-26, NFR3-15): public reference data; member_id only for member-added packaged foods.
+			'foods' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			source VARCHAR(16) NOT NULL,
 			source_ref VARCHAR(64) NOT NULL,
@@ -250,9 +254,9 @@ class LLD_Members_Stage3_Schema {
 			UNIQUE KEY one_source (source, source_ref),
 			KEY barcode (barcode),
 			KEY name (name(64))
-		' );
-		// Custom food (FR3-30).
-		self::create( 'custom_foods', '
+			',
+			// Custom food (FR3-30).
+			'custom_foods' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT UNSIGNED NOT NULL,
 			name VARCHAR(255) NOT NULL,
@@ -268,9 +272,9 @@ class LLD_Members_Stage3_Schema {
 			deleted_at DATETIME NULL,
 			PRIMARY KEY (id),
 			KEY member_updated (member_id, updated_at)
-		' );
-		// Food log entry (FR3-27 to FR3-33): nutrition saved so past days never change.
-		self::create( 'food_log', '
+			',
+			// Food log entry (FR3-27 to FR3-33): nutrition saved so past days never change.
+			'food_log' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT UNSIGNED NOT NULL,
 			entry_date DATE NOT NULL,
@@ -291,9 +295,9 @@ class LLD_Members_Stage3_Schema {
 			PRIMARY KEY (id),
 			KEY member_day (member_id, entry_date),
 			KEY member_updated (member_id, updated_at)
-		' );
-		// Favourite food (FR3-31).
-		self::create( 'food_favourites', '
+			',
+			// Favourite food (FR3-31).
+			'food_favourites' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT UNSIGNED NOT NULL,
 			food_id BIGINT UNSIGNED NOT NULL,
@@ -303,9 +307,9 @@ class LLD_Members_Stage3_Schema {
 			deleted_at DATETIME NULL,
 			PRIMARY KEY (id),
 			UNIQUE KEY one_favourite (member_id, food_kind, food_id)
-		' );
-		// Nutrition target (FR3-28, FR3-29).
-		self::create( 'nutrition_targets', '
+			',
+			// Nutrition target (FR3-28, FR3-29).
+			'nutrition_targets' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT UNSIGNED NOT NULL,
 			kcal SMALLINT UNSIGNED NULL,
@@ -319,9 +323,9 @@ class LLD_Members_Stage3_Schema {
 			updated_at DATETIME NOT NULL,
 			PRIMARY KEY (id),
 			KEY member_from (member_id, valid_from)
-		' );
-		// Recipe a member built (FR3-35).
-		self::create( 'recipes', '
+			',
+			// Recipe a member built (FR3-35).
+			'recipes' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT UNSIGNED NOT NULL,
 			name VARCHAR(255) NOT NULL,
@@ -337,9 +341,9 @@ class LLD_Members_Stage3_Schema {
 			deleted_at DATETIME NULL,
 			PRIMARY KEY (id),
 			KEY member_updated (member_id, updated_at)
-		' );
-		// Health reading (FR3-38 to FR3-46): every value sealed.
-		self::create( 'readings', '
+			',
+			// Health reading (FR3-38 to FR3-46): every value sealed.
+			'readings' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT UNSIGNED NOT NULL,
 			reading_type VARCHAR(16) NOT NULL,
@@ -359,9 +363,9 @@ class LLD_Members_Stage3_Schema {
 			KEY member_type_time (member_id, reading_type, taken_at),
 			KEY member_updated (member_id, updated_at),
 			UNIQUE KEY one_external (member_id, source, external_ref)
-		' );
-		// Reminder (FR3-56).
-		self::create( 'reminders', '
+			',
+			// Reminder (FR3-56).
+			'reminders' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT UNSIGNED NOT NULL,
 			reminder_type VARCHAR(16) NOT NULL,
@@ -374,9 +378,9 @@ class LLD_Members_Stage3_Schema {
 			deleted_at DATETIME NULL,
 			PRIMARY KEY (id),
 			KEY member_id (member_id)
-		' );
-		// Shared summary (FR3-57).
-		self::create( 'shares', '
+			',
+			// Shared summary (FR3-57).
+			'shares' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT UNSIGNED NOT NULL,
 			token VARCHAR(64) NOT NULL,
@@ -388,9 +392,9 @@ class LLD_Members_Stage3_Schema {
 			PRIMARY KEY (id),
 			UNIQUE KEY token (token),
 			KEY member_id (member_id)
-		' );
-		// Subscription pause (FR3-65).
-		self::create( 'pauses', '
+			',
+			// Subscription pause (FR3-65).
+			'pauses' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT UNSIGNED NOT NULL,
 			subscription_ref VARCHAR(190) NOT NULL,
@@ -402,14 +406,36 @@ class LLD_Members_Stage3_Schema {
 			updated_at DATETIME NOT NULL,
 			PRIMARY KEY (id),
 			KEY member_id (member_id)
-		' );
+			',
+		);
 	}
 
 	/**
-	 * Columns added after a table first shipped. Only ever ADD COLUMN.
+	 * Create every table if it is missing.
+	 */
+	public static function create_all() {
+		foreach ( self::definitions() as $suffix => $body ) {
+			self::create( $suffix, $body );
+		}
+	}
+
+	/**
+	 * One table's column and key definitions, for the package that owns it.
+	 *
+	 * @param string $suffix Table suffix from suffixes().
+	 */
+	public static function definition( $suffix ) {
+		$all = self::definitions();
+		return isset( $all[ $suffix ] ) ? $all[ $suffix ] : '';
+	}
+
+	/**
+	 * Columns and keys added after a table first shipped. Only ever ADD COLUMN or ADD KEY.
 	 */
 	private static function upgrade() {
-		// Nothing yet. Later packages add ensure_column() lines here and leave every Stage 2 statement as it is.
+		// Version 2 (P3-40): the food search key. Later packages add ensure_column() and ensure_key() lines
+		// here and leave every Stage 2 statement as it is.
+		self::ensure_key( 'foods', 'food_search', 'FULLTEXT KEY food_search (name, search_names)' );
 	}
 
 	/**
@@ -444,6 +470,26 @@ class LLD_Members_Stage3_Schema {
 		$ok = $wpdb->query( "ALTER TABLE {$table} ADD COLUMN {$column} {$definition}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- DDL from this class.
 		if ( false === $ok ) {
 			throw new RuntimeException( 'Could not add ' . $column . ' on ' . $table . ': ' . $wpdb->last_error );
+		}
+	}
+
+	/**
+	 * Add a key if it is missing. Never changes or drops one.
+	 *
+	 * @param string $suffix Table suffix.
+	 * @param string $name   Key name.
+	 * @param string $ddl    Key clause, for example "KEY barcode (barcode)".
+	 */
+	public static function ensure_key( $suffix, $name, $ddl ) {
+		global $wpdb;
+		$table = self::table( $suffix );
+		$rows  = $wpdb->get_results( $wpdb->prepare( "SHOW INDEX FROM {$table} WHERE Key_name = %s", $name ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
+		if ( $rows ) {
+			return;
+		}
+		$ok = $wpdb->query( "ALTER TABLE {$table} ADD {$ddl}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- DDL from this class.
+		if ( false === $ok ) {
+			throw new RuntimeException( 'Could not add key ' . $name . ' on ' . $table . ': ' . $wpdb->last_error );
 		}
 	}
 }

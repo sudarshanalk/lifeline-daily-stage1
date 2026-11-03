@@ -1,6 +1,6 @@
 <?php
 /**
- * Stage 3 WP-CLI commands: feature switches and test accounts.
+ * Stage 3 WP-CLI commands: feature switches, test accounts and the food database.
  *
  * @package LLD_Members
  */
@@ -10,13 +10,14 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
- * `wp lld-members feature …` and `wp lld-members test-accounts …`.
+ * `wp lld-members feature …`, `wp lld-members test-accounts …` and `wp lld-members food …`.
  */
 class LLD_Members_Stage3_CLI {
 
 	public static function register() {
 		WP_CLI::add_command( 'lld-members feature', array( __CLASS__, 'feature' ) );
 		WP_CLI::add_command( 'lld-members test-accounts', array( __CLASS__, 'test_accounts' ) );
+		WP_CLI::add_command( 'lld-members food', array( __CLASS__, 'food' ) );
 	}
 
 	/**
@@ -88,5 +89,64 @@ class LLD_Members_Stage3_CLI {
 		}
 		update_option( LLD_Members_Features::TEST_ACCOUNTS, array_values( array_map( 'strtolower', array_map( 'trim', $args ) ) ), true );
 		WP_CLI::success( count( $args ) . ' test account(s) set.' );
+	}
+
+	/**
+	 * Import a food file into the food table, or search it (P3-40, FR3-26, NFR3-15).
+	 *
+	 * Needs the food_tracker switch at test_accounts or everyone. USDA files are Foundation or
+	 * SR Legacy JSON (or JSONL); Open Food Facts files are product JSON or JSONL. Packaged USDA
+	 * foods are skipped. Every imported row keeps its source and attribution.
+	 *
+	 * ## OPTIONS
+	 *
+	 * <import|search>
+	 * : What to do.
+	 *
+	 * [<text>]
+	 * : For search: the text to search for.
+	 *
+	 * [--source=<source>]
+	 * : For import: usda or off.
+	 *
+	 * [--file=<path>]
+	 * : For import: the file to read.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     wp lld-members food import --source=usda --file=foundation.json
+	 *     wp lld-members food import --source=off --file=products.jsonl
+	 *     wp lld-members food search banana
+	 *
+	 * @param string[] $args  Positional args.
+	 * @param array    $assoc Assoc args.
+	 */
+	public function food( $args, $assoc ) {
+		require_once __DIR__ . '/food-import/load.php';
+		if ( ! LLD_Members_Food_Switch::enabled() ) {
+			WP_CLI::error( 'The food_tracker switch is off. Nothing was done.' );
+		}
+		$what = isset( $args[0] ) ? (string) $args[0] : '';
+		try {
+			if ( 'import' === $what ) {
+				$source = isset( $assoc['source'] ) ? (string) $assoc['source'] : '';
+				$file   = isset( $assoc['file'] ) ? (string) $assoc['file'] : '';
+				if ( ! in_array( $source, array( 'usda', 'off' ), true ) || '' === $file ) {
+					WP_CLI::error( 'Use --source=usda|off --file=<path>.' );
+				}
+				LLD_Members_Food_Schema::install();
+				$summary = LLD_Members_Food_Import::path( $file, LLD_Members_Food_Sources::get( $source ), new LLD_Members_Food_Wp_Store() );
+				WP_CLI::line( wp_json_encode( $summary ) );
+				return;
+			}
+			if ( 'search' === $what ) {
+				$store = new LLD_Members_Food_Wp_Store();
+				WP_CLI::line( wp_json_encode( $store->search( isset( $args[1] ) ? (string) $args[1] : '' ) ) );
+				return;
+			}
+		} catch ( Throwable $error ) {
+			WP_CLI::error( $error->getMessage() );
+		}
+		WP_CLI::error( 'Use "import" or "search".' );
 	}
 }
