@@ -1,0 +1,37 @@
+---
+description: Lifeline Daily Stage 3 build rules for Cursor (always apply from 2 Nov 2026)
+alwaysApply: true
+---
+
+# Lifeline Daily — Stage 3 rules for Cursor
+
+Stage 3 (goal journey, food tracker, health logging, new calculators, decision engine, paid launch) is built on top of the finished Stage 2 plugin. Claude is the lead and merges; Antigravity builds the screens; Codex writes the tests and reviews; the owner decides. `AGENTS.md` in the repository root is the shared guide; read it first, then `docs/stage3/01_Build_Method_Stage3.md`.
+
+## Read before any work
+1. `docs/stage3/01_Build_Method_Stage3.md` — packages, order, file scopes, switches, pull request template.
+2. The requirements v0.3 and data model v0.2 in `01 Requirements/` of the project folder (outside the repository): FR3-nn, NFR3-nn and their TC rows are the specification. `docs/stage3/03_Test_Criteria_Stage3.md` is the extract of every Stage 3 check.
+3. The Stage 2 rules in `stage2.mdc` still describe the plugin you are extending: units, UTC, consent, safety-before-access, no health data in emails, logs or analytics.
+
+## Your packages
+P3-40 to P3-43 (food database import and search, logging, targets, custom foods, recipes), P3-50 (health logging), P3-31 and P3-32 (goal, baseline, plan and check-in logic), P3-85 and P3-86 (reminders, consent, export and deletion), and the calculator engines P3-55 to P3-5B only once each method sheet in `04 Health Tools/Stage 3/` is signed off by the owner (NFR3-14).
+
+## Hard rules
+- One package per branch `s3/p<nn>-<short-name>`; pull request into `staging` titled `S3-Pnn: <name>`, with the template in the build method §6.
+- Write only in `site/public_html/wp-content/plugins/lld-members/includes/stage3/` (one class per area, loaded from `stage3/loader.php`) and `tests/stage3/`. Screens' markup belongs to Antigravity (`includes/stage3/screens/`); you provide the data and the actions they call.
+- Never edit a Stage 2 class, test or asset. If a Stage 2 file must change (a new hook, rewrite, route or `ensure_column`), it must be one of the declared files in the build method §4, changed additively, and said in the pull request: CI labels it `lead-review`.
+- **Every feature is behind a switch:** check `LLD_Members_Features::enabled( '<feature>', $member_id )` before any Stage 3 code runs, and add your feature to `LLD_Members_Features::catalog()`. With the switch off, members must see exactly the Stage 2 behaviour (NFR3-06).
+- Database: new tables and columns only, in `stage3/class-schema-stage3.php` (`create()`, `ensure_column()`); never `DROP`, `MODIFY`, `CHANGE` or `RENAME` (NFR3-04). Table and column names follow the data model v0.2.
+- Health data goes through `LLD_Members_Stage3_Data` (sealed values, member-scoped reads and writes) and the interface `LLD_Members_Stage3_API` (`/wp-json/lld-members/v1/me/<type>`): add a type there rather than a new route. A member can never read another member's data (NFR3-09, NFR3-10). Never write a health value to a log, email, analytics event or error report.
+- Order on every screen, route and interface answer: feature switch, safety flags (`LLD_Members_Safety`; eating-disorder flag hides calories and weight-loss plans, kidney flag hides protein targets), access (`LLD_Members_Access`), then data (FR3-69). Safety is never behind Premium.
+- Tests are named after checks, for example `TC-FR3-27-AS-02`, and are never weaker than the check's wording. Vitest under `tests/stage3/**/*.test.mjs`, Playwright under `tests/stage3/e2e/**/*.spec.mjs`. Every id must exist in `docs/stage3/03`, or CI fails.
+- Calculators: the signed method sheet is the specification; its fixture table becomes `fixtures/stage3/<calculator>.json` and the engine is frozen once signed off (NFR3-14). Never change the Stage 1 and 2 calculators.
+- Wording members see (insights, plan messages, safety text) comes only from owner-approved templates; put placeholders in `docs/stage3/wording-pending.md` and ask, never invent clinical wording.
+- PHP 8.1, WordPress coding standards, plain JS/CSS, no new dependency without asking. No secrets, no real personal or health data; test members and sentinel values only.
+- Unsure? Ask under "Questions for the lead" in the pull request and continue with the rest. Never change a requirement or weaken a test to make it pass.
+
+## Contracts with the lead's code
+- `wp lld-members db-update` also runs `LLD_Members_Stage3_Schema::update()`.
+- `wp lld-members feature <name> <state>` sets a switch; `wp lld-members test-accounts a@x b@y` lists the test accounts that see `test_accounts` features.
+- Erasure: hook `lld_members_erase_account` and `lld_members_withdraw_health` for anything you store outside the Stage 3 tables; the tables themselves are already covered.
+- Interface types, validation rules and reading ranges are in `LLD_Members_Stage3_API::types()` and `reading_ranges()`; add fields there when the data model names them.
+- File scope is enforced by CI `component-scope` through `tests/ci/stage3-scope.mjs`.

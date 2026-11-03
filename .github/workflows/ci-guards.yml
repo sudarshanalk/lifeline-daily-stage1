@@ -25,6 +25,7 @@ jobs:
         run: |
           if echo "$PR_TITLE" | grep -Eq '^SPEC: '; then echo "pr-title: SPEC PR (specification/registry/schema change, DEC-55) - no evidence bundle required"; exit 0; fi
           if echo "$PR_TITLE" | grep -Eq '^S2-(C([1-9]|10)(-C([1-9]|10))?|L1?[0-9][a-z]?): '; then echo "pr-title: Stage 2 package PR (Build Method §2) - no evidence bundle required"; exit 0; fi
+          if echo "$PR_TITLE" | grep -Eq '^S3-P[0-9][0-9A-B](-P[0-9][0-9A-B])?: '; then echo "pr-title: Stage 3 package PR (Build Method Stage 3 §2) - no evidence bundle required"; exit 0; fi
           echo "$PR_TITLE" | grep -Eq '^(FR1|NFR1|UI1)-[0-9]{2}: ' || { echo "pr-title: title must match ^(FR1|NFR1|UI1)-\d{2}: <title>, ^S2-Cn: / ^S2-Ln: for Stage 2 packages, or ^SPEC: for specification PRs"; exit 1; }
           echo "$PR_BODY" | grep -q 'evidence/' || { echo "pr-title: body must contain the evidence/ path of the run"; exit 1; }
           echo "pr-title: OK"
@@ -87,7 +88,7 @@ jobs:
         run: node tests/ci/oracle-guard.mjs --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }}
 
   assertion-map:
-    if: "github.event_name == 'pull_request' && !startsWith(github.event.pull_request.title, 'SPEC: ') && !startsWith(github.event.pull_request.title, 'S2-')"   # Stage 1 registry map; Stage 2 test names are checked by stage2-tests
+    if: "github.event_name == 'pull_request' && !startsWith(github.event.pull_request.title, 'SPEC: ') && !startsWith(github.event.pull_request.title, 'S2-') && !startsWith(github.event.pull_request.title, 'S3-')"   # Stage 1 registry map; Stage 2 and 3 test names are checked by stage2-tests and stage3-guards
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -112,6 +113,7 @@ jobs:
         run: |
           if echo "$PR_TITLE" | grep -Eq '^SPEC: '; then node tests/ci/component-scope.mjs --spec --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }};
           elif echo "$PR_TITLE" | grep -Eq '^S2-'; then node tests/ci/stage2-scope.mjs --title "$PR_TITLE" --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }};
+          elif echo "$PR_TITLE" | grep -Eq '^S3-'; then node tests/ci/stage3-scope.mjs --title "$PR_TITLE" --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }};
           else node tests/ci/component-scope.mjs --req "$(echo "$PR_TITLE" | grep -oE '^(FR1|NFR1|UI1)-[0-9]{2}')" --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }}; fi
 
   copy-hash:
@@ -176,6 +178,37 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: failure()
         with: { name: playwright-traces, path: test-results/, if-no-files-found: ignore }
+
+  # stage3-guards (Stage 3 Build Method §1): on a Stage 3 PR, no Stage 2 test is edited, skipped or deleted without a
+  # recorded decision (NFR3-02), the schema diff only adds (NFR3-04), every Stage 3 test id is a check in docs/stage3/03,
+  # and a touched declared Stage 2 file labels the PR lead-review (NFR3-05 AS-02). Then the Stage 3 Vitest suites.
+  stage3-guards:
+    if: "github.event_name == 'pull_request' && startsWith(github.event.pull_request.title, 'S3-')"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-node@v4
+        with: { node-version: '24' }
+      - uses: shivammathur/setup-php@v2
+        with: { php-version: '8.1' }
+      - run: npm ci
+      - name: Stage 2 tests untouched and the schema only adds (NFR3-02, NFR3-04)
+        run: node tests/ci/stage3-scope.mjs --guards --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }}
+      - name: Stage 3 test names are checks in docs/stage3/03
+        run: node tests/ci/stage3-scope.mjs --names
+      - name: Label the PR lead-review when a declared Stage 2 file changed (NFR3-05 AS-02)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          out=$(node tests/ci/stage3-scope.mjs --title "$PR_TITLE" --base origin/${{ github.base_ref }} --head ${{ github.event.pull_request.head.sha }} || true)
+          echo "$out"
+          if echo "$out" | grep -q 'lead-review'; then gh pr edit ${{ github.event.pull_request.number }} --add-label lead-review || echo "stage3-guards: could not add the label (token permissions); the file list above stands"; fi
+      - name: Stage 3 Vitest suites (tests/stage3)
+        run: npx vitest run -c tests/vitest.config.mjs tests/stage3 --passWithNoTests
 
   # stage2-tests (Build Method §2, §7; Test Criteria §3): Stage 2 test ids must be checks in docs/stage2/03, then the
   # Stage 2 unit and integration tests (Vitest, tests/stage2). Browser journeys against WordPress run in stage2-e2e.

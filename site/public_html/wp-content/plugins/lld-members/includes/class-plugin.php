@@ -23,6 +23,9 @@ class LLD_Members_Plugin {
 		LLD_Members_Premium::boot();
 		LLD_Members_Growth::boot();
 		LLD_Members_Quality::boot();
+		if ( function_exists( 'lld_members_stage3_boot' ) ) {
+			lld_members_stage3_boot();
+		}
 		add_action( 'init', array( 'LLD_Members_Account', 'expire_sessions' ), 20 );
 		add_action( 'profile_update', array( 'LLD_Members_Account', 'sync_email' ) );
 		add_filter( 'query_vars', array( __CLASS__, 'query_vars' ) );

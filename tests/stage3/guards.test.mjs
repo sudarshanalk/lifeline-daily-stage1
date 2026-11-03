@@ -1,0 +1,81 @@
+// Stage 3 guards (P3-10): NFR3-02, NFR3-04, NFR3-05 on the scope module itself, with injected diffs so no git is needed.
+import { expect, test } from 'vitest';
+import { stage3Scope, stage3Guards, classify, unknownTestIds, DECLARED_STAGE2 } from '../ci/stage3-scope.mjs';
+
+const PLUGIN = 'site/public_html/wp-content/plugins/lld-members';
+const none = () => ({ removed: [], added: [] });
+const text = () => 'test("TC-FR2-01-AS-01", () => {});';
+
+test('TC-NFR3-02-AS-01', () => {
+  // A Stage 2 test edited without a recorded decision is failed by the guard.
+  const r = stage3Guards({ files: ['tests/stage2/accounts.test.mjs'], diffs: () => ({ removed: ['expect(a).toBe(1);'], added: ['expect(a).toBe(2);'] }), texts: text, decisions: [] });
+  expect(r.ok).toBe(false);
+  expect(r.problems[0]).toMatch(/changed without a decision/);
+  // The scope check refuses the file too.
+  const s = stage3Scope({ title: 'S3-P40: food search', files: ['tests/stage2/accounts.test.mjs'], decisions: [] });
+  expect(s.ok).toBe(false);
+  // With a recorded decision the same change passes, and is marked for the lead's review.
+  const decided = [{ file: 'tests/stage2/accounts.test.mjs', decision: 'I-19', change: 'new prices' }];
+  expect(stage3Guards({ files: ['tests/stage2/accounts.test.mjs'], diffs: () => ({ removed: ['a'], added: ['b'] }), texts: text, decisions: decided }).ok).toBe(true);
+  const ok = stage3Scope({ title: 'S3-P40: food search', files: ['tests/stage2/accounts.test.mjs'], decisions: decided });
+  expect(ok.ok).toBe(true);
+  expect(ok.review).toEqual(['tests/stage2/accounts.test.mjs']);
+  // A deleted Stage 2 test file is caught.
+  expect(stage3Guards({ files: ['tests/stage2/accounts.test.mjs'], diffs: none, texts: () => '', decisions: [] }).problems[0]).toMatch(/deleted/);
+});
+
+test('TC-NFR3-02-AS-02', () => {
+  // A Stage 2 test marked as skipped (or .only, .todo, xit) is failed by the guard even with a decision.
+  const decided = [{ file: 'tests/stage2/accounts.test.mjs', decision: 'I-19', change: 'prices' }];
+  for (const line of ["test.skip('TC-FR2-01-AS-01', () => {});", "it.only('x', () => {});", "xit('x', () => {});", "describe.skip('x', () => {});", "test.fixme('x', async () => {});"]) {
+    const r = stage3Guards({ files: ['tests/stage2/accounts.test.mjs'], diffs: () => ({ removed: [], added: [line] }), texts: text, decisions: decided });
+    expect(r.ok, line).toBe(false);
+    expect(r.problems.join('\n')).toMatch(/skipped, limited or marked to-do/);
+  }
+});
+
+test('TC-NFR3-04-AS-01', () => {
+  // A database change that drops or renames a Stage 2 column is failed by the check.
+  const schema = `${PLUGIN}/includes/class-schema.php`;
+  const stage3 = `${PLUGIN}/includes/stage3/class-schema-stage3.php`;
+  for (const line of ['ALTER TABLE x DROP COLUMN age', "$wpdb->query( \"ALTER TABLE {$table} MODIFY COLUMN age INT\" );", 'ALTER TABLE x CHANGE age years INT', 'RENAME TABLE a TO b', 'DROP TABLE IF EXISTS x', 'ALTER TABLE {$table} RENAME COLUMN age TO years']) {
+    const r = stage3Guards({ files: [stage3], diffs: () => ({ removed: [], added: [line] }), texts: text, decisions: [] });
+    expect(r.ok, line).toBe(false);
+    expect(r.problems[0]).toMatch(/NFR3-04/);
+  }
+  // Removing a line of the Stage 2 schema (a column, a key) fails; adding an ensure_column passes.
+  expect(stage3Guards({ files: [schema], diffs: () => ({ removed: ['\t\t\tage SMALLINT UNSIGNED NULL,'], added: [] }), texts: text }).ok).toBe(false);
+  expect(stage3Guards({ files: [schema], diffs: () => ({ removed: [], added: ["\t\tself::ensure_column( 'calculator_result', 'engine_version', 'VARCHAR(32) NULL' );"] }), texts: text }).ok).toBe(true);
+  expect(stage3Guards({ files: [stage3], diffs: () => ({ removed: [], added: ['\t\t\tcreated_at DATETIME NOT NULL,'] }), texts: text }).ok).toBe(true);
+});
+
+test('TC-NFR3-05-AS-01', () => {
+  // A pull request that changes an undeclared Stage 2 file is failed by the scope guard.
+  const r = stage3Scope({ title: 'S3-P40: food search', files: [`${PLUGIN}/includes/class-billing.php`], decisions: [] });
+  expect(r.ok).toBe(false);
+  expect(r.problems[0]).toMatch(/Stage 2 plugin file that Stage 3 does not declare/);
+  // Cursor's package may not touch the lead's deploy files or the calculators either.
+  expect(stage3Scope({ title: 'S3-P40: food search', files: ['deploy/deploy.sh'] }).ok).toBe(false);
+  expect(stage3Scope({ title: 'S3-P40: food search', files: ['site/public_html/tools/protein-requirement-tool.html'] }).ok).toBe(false);
+  // Its own files pass.
+  expect(stage3Scope({ title: 'S3-P40: food search', files: [`${PLUGIN}/includes/stage3/class-food.php`, 'tests/stage3/food.test.mjs'] }).ok).toBe(true);
+  // A bad title is refused; a joined title is accepted.
+  expect(classify('S2-C1: x')).toBeNull();
+  expect(classify('S3-P40-P43: food tracker').id).toBe('S3-P40-P43');
+  expect(classify('S3-P5B: saved results').ids).toEqual(['5B']);
+});
+
+test('TC-NFR3-05-AS-02', () => {
+  // A pull request that changes a declared Stage 2 file passes and is listed for the lead-review label.
+  const file = `${PLUGIN}/includes/class-plugin.php`;
+  expect(DECLARED_STAGE2).toContain(file);
+  const r = stage3Scope({ title: 'S3-P30: account hub', files: [file, `${PLUGIN}/includes/stage3/screens/hub.php`] });
+  expect(r.ok).toBe(true);
+  expect(r.review).toEqual([file]);
+});
+
+test('every Stage 3 test id in tests/stage3 is a check in docs/stage3/03', () => {
+  const r = unknownTestIds();
+  expect(r.problems).toEqual([]);
+  expect(r.known).toBeGreaterThan(200);
+});

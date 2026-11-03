@@ -40,6 +40,10 @@ class LLD_Members_Schema {
 		if ( class_exists( 'LLD_Members_Billing' ) ) {
 			LLD_Members_Billing::db_update();
 		}
+		// Stage 3 tables (NFR3-04): their own file only ever adds.
+		if ( class_exists( 'LLD_Members_Stage3_Schema' ) ) {
+			LLD_Members_Stage3_Schema::update();
+		}
 		update_option( 'lld_members_schema_version', self::VERSION, true );
 		return array(
 			'changed' => $before < self::VERSION,

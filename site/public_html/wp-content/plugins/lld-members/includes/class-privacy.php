@@ -104,6 +104,8 @@ class LLD_Members_Privacy {
 		foreach ( LLD_Members_Schema::all_suffixes() as $suffix ) {
 			$known[] = LLD_Members_Schema::table( $suffix );
 		}
+		// Stage 3 tables are checked against the all-stages data model by tests/stage3; here they are known, not extra.
+		$known = apply_filters( 'lld_members_known_tables', $known );
 		$live  = $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $wpdb->prefix . 'lld_' ) . '%' ) );
 		$extra = array();
 		foreach ( $live as $table ) {
@@ -175,7 +177,8 @@ class LLD_Members_Privacy {
 		$links['survey']           = array( 'member_id' );
 		$links['fb_removal']       = array( 'member_number' );
 		$links['test_clock']       = array( 'member_id' );
-		return $links;
+		// Stage 3 tables join the checker's list through this filter (one erasure routine for every stage).
+		return apply_filters( 'lld_members_member_links', $links );
 	}
 
 	/**
@@ -223,9 +226,10 @@ class LLD_Members_Privacy {
 		$table = LLD_Members_Schema::table( $suffix );
 		$first = $how[0];
 		// Table and column names below come from member_links(), never from a request.
-		if ( 'via:enrolment' === $first || 'via:workout' === $first ) {
-			$parent = 'via:enrolment' === $first ? 'enrolment' : 'workout';
-			$key    = $parent . '_id';
+		if ( 0 === strpos( $first, 'via:' ) ) {
+			// via:enrolment, via:workout, and the Stage 3 via:goals (baselines link through their goal).
+			$parent = substr( $first, 4 );
+			$key    = ( 'goals' === $parent ? 'goal' : $parent ) . '_id';
 			$sql    = $wpdb->prepare( "SELECT x.* FROM {$table} x INNER JOIN " . LLD_Members_Schema::table( $parent ) . " p ON p.id = x.{$key} WHERE p.member_id = %d ORDER BY x.id ASC", $member_id ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		} elseif ( 'email' === $first ) {
 			if ( '' === $email ) {
@@ -306,7 +310,7 @@ class LLD_Members_Privacy {
 		$member_id = (int) $member_id;
 		$problems  = array();
 		if ( 'health' === $scope ) {
-			$health = array_merge( LLD_Members_Schema::health_tables(), array( 'enrolment_period', 'workout_change' ) );
+			$health = apply_filters( 'lld_members_health_tables', array_merge( LLD_Members_Schema::health_tables(), array( 'enrolment_period', 'workout_change' ) ) );
 			foreach ( self::member_rows( $member_id, $email, $health ) as $suffix => $rows ) {
 				if ( $rows ) {
 					$problems[] = $suffix . ' still has ' . count( $rows ) . ' rows.';
@@ -363,6 +367,16 @@ class LLD_Members_Privacy {
 		$personal = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$log} WHERE member_number = %d AND money_related = 0", $member_id ) );
 		if ( $personal > 0 ) {
 			$problems[] = 'A non-money admin log still names the member.';
+		}
+		// P3-15 (data model, notes from checking the built Stage 2 database): payments keep some personal data in
+		// wp_options (card fingerprints, referral code, checkout quotes, mismatch notes, retry windows). The billing
+		// erasure step removes them; the checker now confirms it.
+		if ( class_exists( 'LLD_Members_Billing' ) ) {
+			foreach ( LLD_Members_Billing::member_options( $member_id ) as $what => $count ) {
+				if ( $count > 0 ) {
+					$problems[] = 'wp_options still holds ' . str_replace( '_', ' ', $what ) . ' for the member.';
+				}
+			}
 		}
 		$dir = lld_members_private_dir() . '/photos/' . $member_id;
 		if ( is_dir( $dir ) ) {

@@ -1,0 +1,4 @@
+{
+  "_about": "NFR3-02: a Stage 3 pull request may change a file under tests/stage2/ only when an owner decision recorded here covers it. Each entry: the file (repository path), the decision (requirements v0.3 section 6 or a dated owner decision) and what changes. CI stage3-guards fails any other change, and any skip, to a Stage 2 test.",
+  "changes": []
+}
