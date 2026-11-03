@@ -172,6 +172,8 @@ $call = (string) $GLOBALS['lld_test']['call'];
 $args = $GLOBALS['lld_test']['args'] ?? array();
 if ( 'get_posts' === $call ) {
 	$result = array_map( static function ( $p ) { return is_object( $p ) ? array( 'id' => $p->ID, 'title' => $p->post_title ) : $p; }, get_posts( $args[0] ) );
+} elseif ( 'item_hidden' === $call ) {
+	$result = LLD_Members_Stage3_Content::item_hidden( ...$args );
 } elseif ( 'filter_vars' === $call ) {
 	$q = new WP_Query( $args[0] );
 	LLD_Members_Stage3_Content::hide_new_content( $q );

@@ -11,8 +11,18 @@
  * allows the member. With the switch off, every query returns exactly what it returned before the Stage 3 items
  * were loaded, so Stage 2 members see no new track, goal, challenge or wording (Build Method Stage 3 §1 rule 5).
  *
+ * An item asked for by its number (`/members/library/<id>/`, `/members/read/<id>/`, with or without `?download=1`)
+ * is read with get_post(), not WP_Query, so `pre_get_posts` never runs for it: `template_redirect` (before the Stage 2
+ * screens dispatch) answers the same "This page isn't available" 404 the library gives an unapproved item when the
+ * item is Stage 3 and the switch does not allow the member.
+ *
  * The owner's admin screens (the library, the approvals queue) and the content loader (`lld_all_stages` query
  * var) always see every stage.
+ *
+ * The one path not covered: LLD_Members_Personal::safe_titles_limited() reads lld_meal and lld_recipe rows with
+ * its own SQL. No Stage 3 bundle carries a meal or a recipe (P3-73 to P3-77 add tracks, challenges and wording), so
+ * nothing leaks; when a Stage 3 bundle first carries one, that query gains the same exclusion (a declared Stage 2
+ * change, lead review).
  *
  * @package LLD_Members
  */
@@ -66,7 +76,45 @@ class LLD_Members_Stage3_Content {
 
 	public static function boot() {
 		add_action( 'pre_get_posts', array( __CLASS__, 'hide_new_content' ) );
+		// Priority 5: before LLD_Members_Screens::dispatch (10) renders an item by its number.
+		add_action( 'template_redirect', array( __CLASS__, 'guard_item' ), 5 );
 		add_action( 'init', array( __CLASS__, 'seed_tags' ), 20 );
+	}
+
+	/**
+	 * `template_redirect`: a request for a Stage 3 item by number, from a signed-in member the switch does not allow,
+	 * gets the library's 404 page. A visitor is left to the Stage 2 screen, which sends them to sign in as before.
+	 */
+	public static function guard_item() {
+		$item = (int) get_query_var( 'lld_item' );
+		if ( $item < 1 || ! class_exists( 'LLD_Members_Access' ) || LLD_Members_Access::current_member_id() < 1 ) {
+			return;
+		}
+		if ( ! self::item_hidden( $item ) ) {
+			return;
+		}
+		lld_members_layout(
+			array(
+				'title'     => "This page isn't available",
+				'main'      => lld_state_not_allowed(),
+				'signed_in' => true,
+				'status'    => 404,
+			)
+		);
+		exit;
+	}
+
+	/**
+	 * True when this item is Stage 3 content the switch does not allow the member to see.
+	 *
+	 * @param int $item_id   Content item (working copy) number.
+	 * @param int $member_id Member number; 0 for the signed-in member.
+	 */
+	public static function item_hidden( $item_id, $member_id = 0 ) {
+		if ( '3' !== (string) get_post_meta( (int) $item_id, self::META, true ) ) {
+			return false;
+		}
+		return self::hidden( $member_id );
 	}
 
 	/**

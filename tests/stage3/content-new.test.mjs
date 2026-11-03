@@ -64,6 +64,8 @@ function listings(world) {
   return out;
 }
 
+// TC-NFR3-06-AS-01 is a screenshot comparison on staging after the merge; here the switch-gating claim behind it is
+// proven: with the switch off, every query the Stage 2 screens run returns exactly what it returned before.
 test('TC-NFR3-06-AS-01 with the switch off, every Stage 2 listing is byte-identical to the library before Stage 3 content was loaded', () => {
   const before = listings({ items: stage2 });
   const after = listings({ items: both });
@@ -90,6 +92,24 @@ test('TC-NFR3-06-AS-02 content switched on for test accounts is visible to a tes
 });
 
 test('TC-FR3-19-AS-03 no Stage 3 track, goal or wording reaches a member the switch does not allow, and nothing unapproved loads', () => {
+  // an item asked for by its number (/members/library/<id>/, /members/read/<id>/, ?download=1) is read with get_post(),
+  // so template_redirect answers the library's 404 for a Stage 3 item the switch does not allow
+  const hidden = (id, world) => run(world, 'item_hidden', id, world.member ?? MEMBER);
+  expect(hidden(13, { items: both })).toBe(true);                                          // switch off: Heart Health track by id
+  expect(hidden(13, { items: both, switch: 'test_accounts', member: MEMBER })).toBe(true);
+  expect(hidden(13, { items: both, switch: 'test_accounts', member: TESTER })).toBe(false);  // the test account opens it
+  expect(hidden(13, { items: both, switch: 'everyone', member: MEMBER })).toBe(false);
+  expect(hidden(11, { items: both })).toBe(false);                                         // a Stage 2 item is never touched
+  expect(hidden(999, { items: both })).toBe(false);                                        // an unknown number falls through to the Stage 2 404
+  const guard = readFileSync(resolve(plugin, 'includes/stage3/class-content-stage3.php'), 'utf8');
+  expect(guard).toMatch(/add_action\( 'template_redirect', array\( __CLASS__, 'guard_item' \), 5 \)/);
+  expect(readFileSync(resolve(plugin, 'includes/class-plugin.php'), 'utf8')).toMatch(/add_action\( 'template_redirect', array\( 'LLD_Members_Screens', 'dispatch' \) \)/);
+  const body = guard.slice(guard.indexOf('function guard_item'), guard.indexOf('function item_hidden'));
+  expect(body).toMatch(/get_query_var\( 'lld_item' \)/);
+  expect(body).toMatch(/current_member_id\(\) < 1/);     // a visitor is still sent to sign in by the Stage 2 screen
+  expect(body).toMatch(/'status'\s*=> 404/);
+  expect(body).toMatch(/lld_state_not_allowed\(\)/);
+  expect(body).toMatch(/exit;/);
   const ids = (type, world) => run(world, 'get_posts', { post_type: type, post_status: ['publish', 'draft', 'private'], post_parent: 0, posts_per_page: -1, fields: 'ids' });
   for (const world of [{ items: both }, { items: both, switch: 'test_accounts', member: MEMBER }]) {
     expect(ids('lld_track', world)).toEqual([11, 12]);
@@ -129,6 +149,8 @@ test('TC-FR3-23-AS-01 for each month of the year the challenge page shows that m
   for (const month of ['2027-03', '2027-11']) expect(run({ items: both, switch: 'everyone', member: MEMBER }, 'current_challenge', MEMBER, `${month}-01`).title).toBe(`Challenge ${month}`);
 });
 
+// TC-FR3-23-AS-02 (the exact approved version is what members see) is checked on staging after the merge with
+// `wp lld content verify`; here the switch-gating claim is proven: no 2027 challenge reaches a member the switch does not allow.
 test('TC-FR3-23-AS-02 a 2027 challenge is shown to nobody the switch does not allow, and December 2026 stays as it is', () => {
   for (const world of [{ items: both }, { items: both, switch: 'test_accounts', member: MEMBER }]) {
     for (const month of MONTHS) expect(run(world, 'current_challenge', MEMBER, `${month}-15`)).toBeNull();
