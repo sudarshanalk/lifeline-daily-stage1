@@ -272,6 +272,36 @@ class LLD_Members_Stage3_API {
 				),
 				'required' => array( 'from_date', 'to_date' ),
 			),
+			// Weekly summary and suggestions (P3-43).
+			'food-week'          => array(
+				'table'    => 'food_log',
+				'feature'  => 'food_tracker',
+				'health'   => true,
+				'computed' => 'week',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
+			'recipe-suggestions' => array(
+				'table'    => 'recipes',
+				'feature'  => 'food_tracker',
+				'health'   => false,
+				'computed' => 'suggest',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
+			'food-preferences'   => array(
+				'table'   => 'food_preferences',
+				'feature' => 'food_tracker',
+				'health'  => true,
+				'sealed'  => array(),
+				'fields'  => array(
+					'allergies' => 'json',
+					'dislikes'  => 'json',
+				),
+				'required' => array(),
+			),
 		);
 	}
 
@@ -509,16 +539,18 @@ class LLD_Members_Stage3_API {
 		list( $member_id, $def ) = $gate;
 		$computed = ! empty( $def['computed'] );
 		if ( $computed ) {
-			$rows = LLD_Members_Food_Log::view(
-				$def['computed'],
-				$member_id,
-				array(
-					'date' => (string) $request->get_param( 'date' ),
-					'q'    => (string) $request->get_param( 'q' ),
-				)
+			$query = array(
+				'date'       => (string) $request->get_param( 'date' ),
+				'q'          => (string) $request->get_param( 'q' ),
+				'week_start' => (string) $request->get_param( 'week_start' ),
 			);
+			if ( in_array( $def['computed'], array( 'week', 'suggest' ), true ) ) {
+				$rows = LLD_Members_Recipes::view( $def['computed'], $member_id, $query );
+			} else {
+				$rows = LLD_Members_Food_Log::view( $def['computed'], $member_id, $query );
+			}
 			if ( isset( $rows['error'] ) ) {
-				return self::refuse( 400, $rows['error'] );
+				return self::refuse( isset( $rows['status'] ) ? (int) $rows['status'] : 400, $rows['error'] );
 			}
 		} elseif ( ! empty( $def['stage2'] ) ) {
 			$since = self::clean_datetime( (string) $request->get_param( 'since' ) );
@@ -598,6 +630,38 @@ class LLD_Members_Stage3_API {
 				return self::refuse( 403, $denied );
 			}
 		}
+		if ( 'recipes' === $def['table'] ) {
+			$denied = LLD_Members_Recipes::gate_premium( LLD_Members_Food_Log::premium( $member_id ) );
+			if ( null !== $denied ) {
+				return self::refuse( 403, $denied );
+			}
+			$filled = LLD_Members_Recipes::for_member( $member_id, $clean );
+			if ( isset( $filled['error'] ) ) {
+				return self::refuse( 422, $filled['error'] );
+			}
+			$clean = $filled;
+		}
+		if ( 'food_preferences' === $def['table'] ) {
+			$raw = array(
+				'allergies' => isset( $params['allergies'] ) ? $params['allergies'] : array(),
+				'dislikes'  => isset( $params['dislikes'] ) ? $params['dislikes'] : array(),
+			);
+			if ( is_string( $raw['allergies'] ) ) {
+				$decoded = json_decode( $raw['allergies'], true );
+				$raw['allergies'] = is_array( $decoded ) ? $decoded : array();
+			}
+			if ( is_string( $raw['dislikes'] ) ) {
+				$decoded = json_decode( $raw['dislikes'], true );
+				$raw['dislikes'] = is_array( $decoded ) ? $decoded : array();
+			}
+			$clean = LLD_Members_Recipes::prefs_for( $raw );
+			$existing = LLD_Members_Stage3_Data::rows( 'food_preferences', $member_id, array(), '', 1 );
+			if ( $existing ) {
+				LLD_Members_Stage3_Data::update( 'food_preferences', $member_id, (int) $existing[0]['id'], $clean, array() );
+				$row = LLD_Members_Stage3_Data::row( 'food_preferences', $member_id, (int) $existing[0]['id'], array() );
+				return new WP_REST_Response( self::present( $row ), 200 );
+			}
+		}
 		// A target the member types is Premium, and one below the safe minimum is never saved (FR3-28).
 		if ( 'nutrition_targets' === $def['table'] ) {
 			$denied = LLD_Members_Food_Log::gate_member_target( isset( $clean['set_by'] ) ? (string) $clean['set_by'] : 'plan', LLD_Members_Food_Log::premium( $member_id ) );
@@ -646,6 +710,12 @@ class LLD_Members_Stage3_API {
 				return self::refuse( 403, $denied );
 			}
 		}
+		if ( 'recipes' === $def['table'] ) {
+			$denied = LLD_Members_Recipes::gate_premium( LLD_Members_Food_Log::premium( $member_id ) );
+			if ( null !== $denied ) {
+				return self::refuse( 403, $denied );
+			}
+		}
 		$params = $request->get_json_params();
 		$params = is_array( $params ) ? $params : array();
 		if ( ! empty( $def['patch'] ) ) {
@@ -657,6 +727,29 @@ class LLD_Members_Stage3_API {
 		}
 		if ( ! $clean ) {
 			return self::refuse( 400, 'Nothing to change.' );
+		}
+		if ( 'recipes' === $def['table'] ) {
+			$merged = array_merge( $row, $clean );
+			$filled = LLD_Members_Recipes::for_member( $member_id, $merged );
+			if ( isset( $filled['error'] ) ) {
+				return self::refuse( 422, $filled['error'] );
+			}
+			$clean = $filled;
+		}
+		if ( 'food_preferences' === $def['table'] ) {
+			$raw = array(
+				'allergies' => array_key_exists( 'allergies', $params ) ? $params['allergies'] : ( isset( $row['allergies'] ) ? $row['allergies'] : array() ),
+				'dislikes'  => array_key_exists( 'dislikes', $params ) ? $params['dislikes'] : ( isset( $row['dislikes'] ) ? $row['dislikes'] : array() ),
+			);
+			if ( is_string( $raw['allergies'] ) ) {
+				$decoded = json_decode( $raw['allergies'], true );
+				$raw['allergies'] = is_array( $decoded ) ? $decoded : array();
+			}
+			if ( is_string( $raw['dislikes'] ) ) {
+				$decoded = json_decode( $raw['dislikes'], true );
+				$raw['dislikes'] = is_array( $decoded ) ? $decoded : array();
+			}
+			$clean = LLD_Members_Recipes::prefs_for( $raw );
 		}
 		if ( 'nutrition_targets' === $def['table'] && isset( $clean['kcal'] ) && (float) $clean['kcal'] < self::kcal_floor( $member_id ) ) {
 			return self::refuse( 422, LLD_Members_Calorie_Target::MESSAGES['floor_note'] );
@@ -693,6 +786,12 @@ class LLD_Members_Stage3_API {
 		}
 		if ( 'custom_foods' === $def['table'] ) {
 			$denied = LLD_Members_Food_Log::gate_custom( LLD_Members_Food_Log::premium( $member_id ) );
+			if ( null !== $denied ) {
+				return self::refuse( 403, $denied );
+			}
+		}
+		if ( 'recipes' === $def['table'] ) {
+			$denied = LLD_Members_Recipes::gate_premium( LLD_Members_Food_Log::premium( $member_id ) );
 			if ( null !== $denied ) {
 				return self::refuse( 403, $denied );
 			}
