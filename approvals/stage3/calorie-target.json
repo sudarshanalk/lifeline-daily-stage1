@@ -1,7 +1,7 @@
 {
   "approval_id": "APR-CALORIE-TARGET-2026-11-03",
   "tool_slug": "calorie-target",
-  "version_hash": "17d69e492862546401b4e1975143fe16ec545af7d739e1e7fcb5371a14b480a3",
+  "version_hash": "8e3fd9add63c34b7375b2eaac33b73932394d9bc99e147a439a23bcff6bbd389",
   "engine_name": "Daily Calorie Target: Mifflin-St Jeor resting metabolic rate (1990) times an activity factor (low 1.2, some 1.375, active 1.55, very active 1.725), minus a deficit of 1,100 kcal/day per kg/week of the chosen rate (0.25, 0.5, 0.75 or 1.0 kg a week; plus 275 kcal for a 0.25 kg/week gain), floored at a safe minimum of 1,200 kcal/day (female, and prefer not to say) or 1,500 kcal/day (male), rounded to the nearest 10 kcal half-up; nutrient split of protein from the frozen Stage 1 Daily Protein Target, fat 30 % of kcal / 9, carbohydrate the remainder / 4, fibre 30 g; and a safety layer that stops before any number for under-18s, pregnancy or breastfeeding and eating disorders",
   "intended_use": "Free general-information calculator for adults that estimates resting metabolic rate, daily energy use and a daily calorie target for a chosen weekly rate of loss, maintenance or gain, and sets the food-tracker target (FR3-28) and the plan's calorie target (FR3-11). It does not diagnose any condition or prescribe a diet.",
   "eligibility": "Adults aged 18 to 99. Stops with an owner-approved message and no numbers for under-18s, pregnancy or breastfeeding (Yes or Not sure) and a current, past or suspected eating disorder (answer Yes, or the profile flag). 'Prefer not to say' on eating shows maintenance only. BMI below 18.5 gets no loss target (maintenance or gain only). Rates above 0.5 kg a week are not offered at 65 or over, and each rate is offered only if within the P3-56 cap. The safe minimum applies to engine-set and member-set targets.",
@@ -52,7 +52,7 @@
     "name": "Product owner (sudarshanalk), acting as clinical reviewer",
     "date": "2026-11-03",
     "decision": "approved",
-    "notes": "Signed 3 November 2026 as recorded in 04 Health Tools/Stage 3/Signoff-P3-55-Daily-Calorie-Target.md (method, safety rules, nutrient split, the 20-case fixture table as the frozen reference, and the wording; D3-01 to D3-06)."
+    "notes": "Signed 3 November 2026 as recorded in 04 Health Tools/Stage 3/Signoff-P3-55-Daily-Calorie-Target.md (method, safety rules, nutrient split, the 20-case fixture table as the frozen reference, and the wording; D3-01 to D3-06). Sheet hash refreshed after the owner's decisions of 3 Nov 2026 (Owner_Questions 62-65) were written into the sheet."
   },
   "review_date": "2026-11-03",
   "next_review_date": "2027-11-03"
