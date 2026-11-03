@@ -221,9 +221,9 @@ class LLD_Members_Goal_Setting {
 					$html  .= self::number( 'lld_target', 'Goal weight, in ' . ( $imp ? 'pounds' : 'kilograms' ), $target, 0.1 );
 					$rates  = $check && ! empty( $check['rates'] ) ? $check['rates'] : self::rates_for( $facts );
 					$chosen = isset( $offered['rate'] ) ? (float) $offered['rate'] : ( isset( $p['lld_rate'] ) && is_numeric( $p['lld_rate'] ) ? (float) $p['lld_rate'] : LLD_Members_Goal_Rules::DEFAULT_RATE );
-					$html  .= '<fieldset class="lld-options"><legend>How fast? (kg a week)</legend>';
+					$html  .= '<fieldset class="lld-options"><legend>How fast?</legend>';
 					foreach ( $rates as $r ) {
-						$html .= '<div class="lld-option"><label><input type="radio" name="lld_rate" value="' . esc_attr( LLD_Members_Goal_Rules::plain( $r ) ) . '"' . ( abs( $r - $chosen ) < 0.001 ? ' checked' : '' ) . '> ' . esc_html( LLD_Members_Goal_Rules::plain( $r ) . ' kg a week' . ( abs( $r - 0.5 ) < 0.001 ? ' (steady, the usual choice)' : '' ) ) . '</label></div>';
+						$html .= '<div class="lld-option"><label><input type="radio" name="lld_rate" value="' . esc_attr( LLD_Members_Goal_Rules::plain( $r ) ) . '"' . ( abs( $r - $chosen ) < 0.001 ? ' checked' : '' ) . '> ' . esc_html( self::rate_label( $r, $imp ) . ( abs( $r - 0.5 ) < 0.001 ? ' (steady, the usual choice)' : '' ) ) . '</label></div>';
 					}
 					$html .= '<div class="lld-option"><label><input type="radio" name="lld_rate" value="date"' . ( isset( $offered['date'] ) || ( isset( $p['lld_rate'] ) && 'date' === $p['lld_rate'] ) ? ' checked' : '' ) . '> By a date instead</label></div></fieldset>';
 					$html .= self::date( 'lld_date', 'Date to reach it (optional)', isset( $offered['date'] ) ? $offered['date'] : ( $p['lld_date'] ?? '' ) );
@@ -294,10 +294,11 @@ class LLD_Members_Goal_Setting {
 			$html .= '<div class="lld-notice-box lld-state-saved" role="status"><p>Track started.</p></div>';
 		}
 		$html .= '<section class="lld-card" data-lld-section="goal"><p class="lld-kicker">' . ( 'extra' === (string) $goal['role'] ? 'Extra goal' : 'Main goal' ) . '</p><h2>' . esc_html( self::goal_line( $goal, $facts ) ) . '</h2>';
-		if ( $plan && ! empty( $plan['schedule']['rate_kg_week'] ) ) {
-			$html .= '<p>About ' . esc_html( LLD_Members_Goal_Rules::plain( (float) $plan['schedule']['rate_kg_week'] ) ) . ' kg a week. First milestone: ' . esc_html( LLD_Members_Goal_Rules::show_weight( $plan['schedule']['milestone5'], $facts['imperial'] ) ) . '.</p>';
-			if ( is_numeric( $goal['start_value'] ) && is_numeric( $goal['target_value'] ) && (float) $goal['start_value'] - (float) $goal['target_value'] > 0.1 * (float) $goal['start_value'] ) {
-				$html .= '<p>' . esc_html( LLD_Members_Goal_Rules::fill( 'over_10', array( 'milestone' => $plan['schedule']['milestone5'] ) ) ) . '</p>';
+		if ( $plan && ! empty( $plan['schedule']['rate_kg_week'] ) && is_numeric( $goal['start_value'] ) ) {
+			$milestone = LLD_Members_Goal_Rules::round1( 0.95 * (float) $goal['start_value'] ); // from the opened goal, never stored plain
+			$html     .= '<p>About ' . esc_html( self::rate_label( (float) $plan['schedule']['rate_kg_week'], $facts['imperial'] ) ) . '. First milestone: ' . esc_html( LLD_Members_Goal_Rules::show_weight( $milestone, $facts['imperial'] ) ) . '.</p>';
+			if ( is_numeric( $goal['target_value'] ) && (float) $goal['start_value'] - (float) $goal['target_value'] > 0.1 * (float) $goal['start_value'] ) {
+				$html .= '<p>' . esc_html( LLD_Members_Goal_Rules::fill( 'over_10', array( 'milestone' => $milestone ) ) ) . '</p>';
 			}
 			$html .= '<p class="lld-hint">' . esc_html( LLD_Members_Goal_Rules::MESSAGES['plateau'] ) . '</p>';
 		}
@@ -536,6 +537,12 @@ class LLD_Members_Goal_Setting {
 	private static function track_name( $slug ) {
 		$names = array( 'healthy-weight' => 'Healthy Weight', 'blood-sugar' => 'Blood Sugar Balance', 'fitness' => 'Fitness and Strength', 'sleep-stress' => 'Sleep and Stress', 'heart-health' => 'Heart Health', 'keep-it-off' => 'Keep It Off' );
 		return isset( $names[ $slug ] ) ? $names[ $slug ] : ucwords( str_replace( '-', ' ', (string) $slug ) );
+	}
+
+	/** "0.5 kg a week", or "0.5 kg (about 1.1 lb) a week" for an imperial member: the rate stays the sheet's kg figure. */
+	public static function rate_label( $rate, $imperial ) {
+		$kg = LLD_Members_Goal_Rules::plain( (float) $rate ) . ' kg';
+		return $imperial ? $kg . ' (about ' . LLD_Members_Goal_Rules::plain( LLD_Members_Goal_Rules::round1( (float) $rate / 0.45359237 ) ) . ' lb) a week' : $kg . ' a week';
 	}
 
 	public static function weekday_name( $key ) {

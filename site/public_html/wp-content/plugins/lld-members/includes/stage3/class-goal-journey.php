@@ -27,6 +27,9 @@ class LLD_Members_Goal_Journey {
 	/** A glass of water on the quick-log tile, ml. */
 	const GLASS_ML = 250;
 
+	/** Daily values already read in this request, member:type => date => value; cleared by every reading saved. */
+	private static $daily_cache = array();
+
 	/**
 	 * Member-facing wording for the safety-matrix note keys of the goals feature (P3-03 Part B). Where an approved
 	 * text exists elsewhere (the calorie target sheet, the matrix, the Stage 2 rows) it is reused verbatim.
@@ -264,6 +267,7 @@ class LLD_Members_Goal_Journey {
 						'target_date' => $date,
 						'today'       => $today,
 						'situations'  => $facts['situations'],
+						'imperial'    => ! empty( $facts['imperial'] ),
 					)
 				);
 				if ( ! $check['ok'] ) {
@@ -351,10 +355,10 @@ class LLD_Members_Goal_Journey {
 			if ( 'blood_pressure' === $def['measure'] && null !== $number( 'current_2' ) ) {
 				$values['value_2'] = $number( 'current_2' );
 			}
-			$baseline[ $def['measure'] ] = self::save_reading( $member_id, $reading[ $def['measure'] ], $values, isset( $in['unit_shown'] ) ? (string) $in['unit_shown'] : '' );
+			$baseline[ $def['measure'] ] = self::save_reading( $member_id, $reading[ $def['measure'] ], $values, isset( $in['unit_shown'] ) ? (string) $in['unit_shown'] : '', 'manual', $facts );
 		}
 		if ( in_array( 'waist', $def['baseline'], true ) && null !== $number( 'waist_cm' ) ) {
-			$baseline['waist'] = self::save_reading( $member_id, 'waist', array( 'value_1' => $number( 'waist_cm' ) ), ! empty( $facts['imperial'] ) ? 'in' : 'cm' );
+			$baseline['waist'] = self::save_reading( $member_id, 'waist', array( 'value_1' => $number( 'waist_cm' ) ), ! empty( $facts['imperial'] ) ? 'in' : 'cm', 'manual', $facts );
 		}
 		foreach ( $baseline as $measure => $saved ) {
 			if ( ! empty( $saved['id'] ) ) {
@@ -403,10 +407,10 @@ class LLD_Members_Goal_Journey {
 	 * @param string $source    manual or quick_tile.
 	 * @return array{id:int,level:string,message:string}
 	 */
-	public static function save_reading( $member_id, $type, array $values, $unit = '', $source = 'manual' ) {
+	public static function save_reading( $member_id, $type, array $values, $unit = '', $source = 'manual', $facts = null ) {
 		$level = array( 'level' => 'none', 'message' => null );
 		if ( class_exists( 'LLD_Members_Stage3_Safety' ) && in_array( $type, array( 'blood_pressure', 'weight', 'glucose' ), true ) ) {
-			$facts = self::facts( $member_id );
+			$facts = is_array( $facts ) ? $facts : self::facts( $member_id );
 			$got   = LLD_Members_Stage3_Safety::warning_level( $type, $values, array_fill_keys( $facts['situations'], true ) );
 			if ( is_array( $got ) ) {
 				$level = $got;
@@ -428,6 +432,7 @@ class LLD_Members_Goal_Journey {
 			$row['unit_shown'] = $unit;
 		}
 		$id = LLD_Members_Stage3_Data::insert( 'readings', $member_id, $row, self::SEALED_READING );
+		self::$daily_cache = array();
 		if ( $id > 0 && class_exists( 'LLD_Members_Insights_Runner' ) ) {
 			LLD_Members_Insights_Runner::on_reading_saved( $member_id, array( 'reading_type' => $type ) );
 		}
@@ -471,10 +476,9 @@ class LLD_Members_Goal_Journey {
 			'created_by'            => 'engine',
 		);
 		if ( in_array( $type, array( 'lose_weight', 'keep_weight' ), true ) && is_array( $check ) ) {
+			// The rate only: the cap and the 5 % milestone derive from the sealed starting weight, so they are recomputed
+			// from the opened goal where needed and never written in plain text (NFR3-10, Build Method §3.6).
 			$schedule['rate_kg_week'] = $check['rate'];
-			$schedule['cap_kg_week']  = $check['cap'];
-			$schedule['milestone5']   = $check['milestone5'];
-			$schedule['deficit']      = $check['deficit'];
 			$schedule['weigh_ins']    = 'weekly';
 			$targets                  = self::calorie_targets( $facts, 'lose_weight' === $type ? 'lose' : 'maintain', $check['rate'] );
 			if ( $targets ) {
@@ -628,7 +632,7 @@ class LLD_Members_Goal_Journey {
 				if ( null === $latest || ! is_numeric( $goal['target_value'] ) ) {
 					return new WP_Error( 'lld_adjust', 'A recent weigh-in is needed first.' );
 				}
-				$cap   = isset( $schedule['cap_kg_week'] ) && is_numeric( $schedule['cap_kg_week'] ) ? (float) $schedule['cap_kg_week'] : min( 1.0, LLD_Members_Goal_Rules::round2( 0.01 * $latest ) );
+				$cap   = LLD_Members_Goal_Rules::rate_cap( $latest, in_array( 'age_65_plus', $facts['situations'], true ) );
 				$later = LLD_Members_Goal_Rules::later_date( $latest, (float) $goal['target_value'], isset( $schedule['rate_kg_week'] ) ? (float) $schedule['rate_kg_week'] : $cap, $cap, $today );
 				if ( $later['date'] > (string) $goal['target_date'] ) {
 					LLD_Members_Stage3_Data::update( 'goals', $member_id, (int) $goal['id'], array( 'target_date' => $later['date'] ) );
@@ -679,6 +683,10 @@ class LLD_Members_Goal_Journey {
 	 * @return array<string,mixed> date => value (blood pressure: [sys, dia]).
 	 */
 	public static function daily( $member_id, $type ) {
+		$key = (int) $member_id . ':' . $type;
+		if ( isset( self::$daily_cache[ $key ] ) ) {
+			return self::$daily_cache[ $key ];
+		}
 		$zone = self::zone( $member_id );
 		$days = array();
 		foreach ( LLD_Members_Stage3_Data::rows( 'readings', $member_id, self::SEALED_READING, '', 2000 ) as $r ) {
@@ -701,6 +709,7 @@ class LLD_Members_Goal_Journey {
 			}
 		}
 		ksort( $out );
+		self::$daily_cache[ $key ] = $out;
 		return $out;
 	}
 
@@ -819,17 +828,14 @@ class LLD_Members_Goal_Journey {
 	 * @return int|WP_Error New goal id.
 	 */
 	public static function keep_it_off( $member_id, array $reached, array $facts ) {
+		if ( 'weight' !== (string) $reached['measure'] ) {
+			return new WP_Error( 'lld_keep', 'Keep it off follows a weight goal. Set a new goal to carry on.' );
+		}
 		$latest = self::latest_value( $member_id, 'weight' );
 		if ( null === $latest ) {
 			$latest = is_numeric( $reached['target_value'] ) ? (float) $reached['target_value'] : null;
 		}
-		$in = array( 'current' => $latest, 'facts' => $facts );
-		if ( 'weight' !== (string) $reached['measure'] ) {
-			// A non-weight goal: keep the result as a maintain goal of the same type.
-			$in['current'] = is_numeric( $reached['target_value'] ) ? (float) $reached['target_value'] : null;
-			$in['target']  = $in['current'];
-		}
-		$id = self::create_goal( $member_id, 'main', 'weight' === (string) $reached['measure'] ? 'keep_weight' : (string) $reached['goal_type'], $in );
+		$id = self::create_goal( $member_id, 'main', 'keep_weight', array( 'current' => $latest, 'facts' => $facts ) );
 		if ( ! is_wp_error( $id ) && class_exists( 'LLD_Members_Programme' ) ) {
 			$track = LLD_Members_Programme::track_exists( 'keep-it-off' ) ? 'keep-it-off' : 'healthy-weight';
 			if ( LLD_Members_Programme::track_exists( $track ) && LLD_Members_Programme::track_allowed( $member_id, $track ) ) {
@@ -1093,6 +1099,12 @@ class LLD_Members_Goal_Journey {
 
 	private static function zone( $member_id ) {
 		global $wpdb;
+		if ( class_exists( 'LLD_Members_Programme' ) ) {
+			$zone = LLD_Members_Programme::timezone( $member_id );
+			if ( $zone instanceof DateTimeZone ) {
+				return $zone;
+			}
+		}
 		$name = (string) $wpdb->get_var( $wpdb->prepare( 'SELECT timezone FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
 		try {
 			return new DateTimeZone( '' !== $name ? $name : 'UTC' );

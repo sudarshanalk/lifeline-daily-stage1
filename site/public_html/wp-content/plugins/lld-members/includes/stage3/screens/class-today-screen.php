@@ -403,10 +403,13 @@ class LLD_Members_Today_Screen {
 		}
 		$html .= '<section class="lld-card"><p class="lld-kicker">Well done</p><h2>' . esc_html( "You've reached your goal: " . LLD_Members_Goal_Setting::goal_line( $goal, $facts ) ) . '</h2>';
 		$html .= '<p>That took steady work, week after week. What comes next is up to you.</p>';
-		$html .= '<form method="post" class="lld-row">' . wp_nonce_field( 'lld_reached', 'lld_reached_nonce', true, false );
-		$html .= '<button class="lld-button" type="submit" name="lld_next" value="keep">Keep it off</button> ';
-		$html .= '<button class="lld-button lld-button-secondary" type="submit" name="lld_next" value="new">Set a new goal</button></form>';
-		$html .= '<p class="lld-hint">Keep it off holds your result with a goal to stay steady' . ( class_exists( 'LLD_Members_Programme' ) && LLD_Members_Programme::track_exists( 'keep-it-off' ) ? ' and the Keep It Off track' : '' ) . '. Set a new goal starts the goal screen again.</p></section></div>';
+		$weight = 'weight' === (string) $goal['measure'];
+		$html  .= '<form method="post" class="lld-row">' . wp_nonce_field( 'lld_reached', 'lld_reached_nonce', true, false );
+		if ( $weight ) {
+			$html .= '<button class="lld-button" type="submit" name="lld_next" value="keep">Keep it off</button> ';
+		}
+		$html .= '<button class="lld-button' . ( $weight ? ' lld-button-secondary' : '' ) . '" type="submit" name="lld_next" value="new">Set a new goal</button></form>';
+		$html .= '<p class="lld-hint">' . ( $weight ? 'Keep it off holds your result with a goal to stay steady' . ( class_exists( 'LLD_Members_Programme' ) && LLD_Members_Programme::track_exists( 'keep-it-off' ) ? ' and the Keep It Off track' : '' ) . '. ' : '' ) . 'Set a new goal starts the goal screen again.</p></section></div>';
 		return $html;
 	}
 
@@ -665,7 +668,7 @@ class LLD_Members_Today_Screen {
 		$rank  = array( '' => 0, 'none' => 0, 'caution' => 1, 'check' => 2, 'urgent' => 3 );
 		$saved = array();
 		if ( null !== $num( 'lld_weight' ) ) {
-			$saved[] = LLD_Members_Goal_Journey::save_reading( $member_id, 'weight', array( 'value_1' => LLD_Members_Goal_Rules::to_kg( $num( 'lld_weight' ), $imp ) ), $imp ? 'lb' : 'kg' );
+			$saved[] = LLD_Members_Goal_Journey::save_reading( $member_id, 'weight', array( 'value_1' => LLD_Members_Goal_Rules::to_kg( $num( 'lld_weight' ), $imp ) ), $imp ? 'lb' : 'kg', 'manual', $facts );
 		}
 		if ( null !== $num( 'lld_waist' ) ) {
 			$saved[] = LLD_Members_Goal_Journey::save_reading( $member_id, 'waist', array( 'value_1' => LLD_Members_Goal_Rules::to_cm( $num( 'lld_waist' ), $imp ) ), $imp ? 'in' : 'cm' );
@@ -674,7 +677,7 @@ class LLD_Members_Today_Screen {
 			if ( $num( 'lld_dia' ) >= $num( 'lld_sys' ) ) {
 				return new WP_Error( 'lld_check', 'The bottom number must be lower than the top number.' );
 			}
-			$saved[] = LLD_Members_Goal_Journey::save_reading( $member_id, 'blood_pressure', array( 'value_1' => $num( 'lld_sys' ), 'value_2' => $num( 'lld_dia' ) ) );
+			$saved[] = LLD_Members_Goal_Journey::save_reading( $member_id, 'blood_pressure', array( 'value_1' => $num( 'lld_sys' ), 'value_2' => $num( 'lld_dia' ) ), '', 'manual', $facts );
 		}
 		if ( null !== $num( 'lld_activity' ) ) {
 			$saved[] = LLD_Members_Goal_Journey::save_reading( $member_id, 'activity', array( 'value_1' => $num( 'lld_activity' ) ) );
@@ -683,7 +686,7 @@ class LLD_Members_Today_Screen {
 			$saved[] = LLD_Members_Goal_Journey::save_reading( $member_id, 'sleep', array( 'value_1' => $num( 'lld_sleep' ) ) );
 		}
 		if ( null !== $num( 'lld_glucose' ) ) {
-			$saved[] = LLD_Members_Goal_Journey::save_reading( $member_id, 'glucose', array( 'value_1' => $num( 'lld_glucose' ) ), 'mmol/L' );
+			$saved[] = LLD_Members_Goal_Journey::save_reading( $member_id, 'glucose', array( 'value_1' => $num( 'lld_glucose' ) ), 'mmol/L', 'manual', $facts );
 		}
 		foreach ( $saved as $s ) {
 			if ( 'impossible' === $s['level'] ) {
@@ -694,7 +697,10 @@ class LLD_Members_Today_Screen {
 			}
 		}
 		LLD_Members_Goal_Journey::record_check_in( $member_id, (string) $facts['today'] );
-		LLD_Members_Goal_Journey::check_reached( $member_id, $goal, $facts );
+		if ( LLD_Members_Goal_Journey::check_reached( $member_id, $goal, $facts ) ) {
+			wp_safe_redirect( home_url( '/members/home/' ) ); // the Goal reached screen
+			exit;
+		}
 		if ( class_exists( 'LLD_Members_Insights_Runner' ) ) {
 			LLD_Members_Insights_Runner::run_member( $member_id, (string) $facts['today'], array( 'at_check_in' => true ) );
 		}

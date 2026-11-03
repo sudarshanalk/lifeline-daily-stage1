@@ -46,7 +46,7 @@ class LLD_Members_Progress_Page {
 			exit;
 		}
 		$member_id = (int) LLD_Members_Access::current_member_id();
-		if ( ! LLD_Members_Features::enabled( 'progress', $member_id ) ) {
+		if ( ! LLD_Members_Features::enabled( 'progress', $member_id ) || '' !== LLD_Members_Access::preview_state() ) {
 			return;
 		}
 		self::render( $member_id );

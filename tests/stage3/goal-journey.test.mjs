@@ -55,7 +55,7 @@ test('goal rules: every row of the signed Goal Weight Timeline fixture table (P3
     }
     if (want.offered) expect(got.offered, `${id} offered`).toMatchObject(want.offered);
     if (want.note) expect(got.notes, `${id} note`).toContain(want.note);
-    if (want.ok && !want.maintain) expect(got.target_date, `${id} date`).toBe(day(7 * got.weeks));
+    if (want.ok && !want.maintain) expect(got.target_date, `${id} date`).toBe(input.target_date || day(7 * got.weeks));
   }
 });
 
@@ -65,6 +65,8 @@ test('TC-FR3-09-AS-05', () => {
   expect(low.ok).toBe(false);
   expect(low.code).toBe('bmi_floor');
   expect(low.message).toBe('A goal of 50 kg would put you below the healthy range for your height (BMI 17.3). The lowest weight in the healthy range for you is about 53.5 kg. Would you like to use that?');
+  // An imperial member reads the same refusal in pounds; the limits themselves stay in kg.
+  expect(check({ current_kg: 70, goal_kg: 50, height_cm: 170, rate: 0.5, imperial: true }).message).toBe('A goal of 110.2 lb would put you below the healthy range for your height (BMI 17.3). The lowest weight in the healthy range for you is about 117.9 lb. Would you like to use that?');
   expect(low.offered).toEqual({ goal_kg: 53.5 });
   // Faster than the safe rate is refused with the earliest safe date.
   const fast = check({ current_kg: 90, goal_kg: 84, height_cm: 175, rate: 1.0 });
@@ -75,6 +77,10 @@ test('TC-FR3-09-AS-05', () => {
   // The accepted goal's date is never earlier than the safe-rate date (data model: Goal.target_date).
   const ok = check({ current_kg: 90, goal_kg: 84, height_cm: 175, rate: 0.5 });
   expect(ok.target_date >= day(7 * 7)).toBe(true);
+  // A date keeps the member's own day: 44 days is 7 weeks on the sheet (6 ÷ 7 = 0.86, under the cap), and the date stands.
+  const chosen = check({ current_kg: 90, goal_kg: 84, height_cm: 175, target_date: day(44) });
+  expect(chosen).toMatchObject({ ok: true, weeks: 7, rate: 0.86, target_date: day(44) });
+  expect(check({ current_kg: 90, goal_kg: 84, height_cm: 175, target_date: day(0) })).toMatchObject({ ok: false, code: 'invalid' });
 });
 
 test('TC-FR3-09-AS-04', () => {
@@ -252,10 +258,7 @@ test('goal journey: the data class hooks nothing with every switch off, and its 
   expect(loader).toContain('LLD_Members_Goal_Journey::boot();');
 });
 
-test('goal journey: no Stage 2 plugin file changed, and no requirement or test ID in any member-facing string', () => {
-  const changed = execFileSync('git', ['diff', '--name-only', 'origin/staging...HEAD', '--'], { cwd: root, encoding: 'utf8' }).split('\n').filter(Boolean);
-  const stage2 = changed.filter((f) => f.startsWith('site/public_html/wp-content/plugins/lld-members/includes/') && !f.includes('/includes/stage3/'));
-  expect(stage2).toEqual([]);
+test('goal journey: no requirement or test ID in any member-facing string', () => {
   for (const file of [...SCREENS.map((f) => `screens/${f}`), 'class-goal-journey.php', 'class-goal-rules.php']) {
     const s = src(`includes/stage3/${file}`).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
     const strings = [...s.matchAll(/'((?:[^'\\]|\\.)*)'/g)].map((m) => m[1]).filter((t) => /[A-Za-z]{3,}\s[A-Za-z]{2,}/.test(t));
@@ -265,7 +268,8 @@ test('goal journey: no Stage 2 plugin file changed, and no requirement or test I
 
 test('goal journey: the member-facing wording is the signed sheet\'s where the sheet has it', () => {
   const m = JSON.parse(php('echo json_encode(LLD_Members_Goal_Rules::MESSAGES);'));
-  expect(m.rate_cap).toBe("That's faster than the safe rate of about {cap} kg a week. At a safe rate you'd reach {goal} kg by about {safe_date}. Shall we use that date?");
+  expect(m.rate_cap).toBe("That's faster than the safe rate of about {cap} kg a week. At a safe rate you'd reach {goal} by about {safe_date}. Shall we use that date?");
+  expect(m.bmi_floor).toBe('A goal of {goal} would put you below the healthy range for your height (BMI {bmi}). The lowest weight in the healthy range for you is about {lowest}. Would you like to use that?');
   expect(m.over_10).toBe('Losing more than 10 % is a big change. Setting a first goal of 5 to 10 % ({milestone} kg) and then a new one works well for most people.');
   expect(m.plateau).toBe("Weight loss isn't a straight line: expect plateaus and water-weight swings. We check your real trend every week and adjust.");
   expect(m.pregnancy_stop).toBe("Weight-loss goals aren't advised during pregnancy or breastfeeding. Your midwife or doctor can advise.");

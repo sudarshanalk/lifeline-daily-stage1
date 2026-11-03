@@ -47,8 +47,8 @@ class LLD_Members_Goal_Rules {
 	 * for the owner's wording list.
 	 */
 	const MESSAGES = array(
-		'bmi_floor'       => 'A goal of {goal} kg would put you below the healthy range for your height (BMI {bmi}). The lowest weight in the healthy range for you is about {lowest} kg. Would you like to use that?',
-		'rate_cap'        => "That's faster than the safe rate of about {cap} kg a week. At a safe rate you'd reach {goal} kg by about {safe_date}. Shall we use that date?",
+		'bmi_floor'       => 'A goal of {goal} would put you below the healthy range for your height (BMI {bmi}). The lowest weight in the healthy range for you is about {lowest}. Would you like to use that?',
+		'rate_cap'        => "That's faster than the safe rate of about {cap} kg a week. At a safe rate you'd reach {goal} by about {safe_date}. Shall we use that date?",
 		'over_10'         => 'Losing more than 10 % is a big change. Setting a first goal of 5 to 10 % ({milestone} kg) and then a new one works well for most people.',
 		'plateau'         => "Weight loss isn't a straight line: expect plateaus and water-weight swings. We check your real trend every week and adjust.",
 		'pregnancy_stop'  => "Weight-loss goals aren't advised during pregnancy or breastfeeding. Your midwife or doctor can advise.",
@@ -205,6 +205,10 @@ class LLD_Members_Goal_Rules {
 			'version'     => self::VERSION,
 		);
 		$situations = isset( $in['situations'] ) ? (array) $in['situations'] : array();
+		$imperial   = ! empty( $in['imperial'] );
+		$show       = function ( $kg ) use ( $imperial ) {
+			return $imperial ? self::plain( self::round1( (float) $kg / 0.45359237 ) ) . ' lb' : self::plain( (float) $kg ) . ' kg';
+		};
 		$current    = isset( $in['current_kg'] ) && is_numeric( $in['current_kg'] ) ? (float) $in['current_kg'] : null;
 		$goal       = isset( $in['goal_kg'] ) && is_numeric( $in['goal_kg'] ) ? (float) $in['goal_kg'] : null;
 		$height     = isset( $in['height_cm'] ) && is_numeric( $in['height_cm'] ) ? (float) $in['height_cm'] : null;
@@ -236,7 +240,7 @@ class LLD_Members_Goal_Rules {
 		if ( $out['goal_bmi'] < self::BMI_FLOOR ) {
 			$lowest         = self::round1( self::BMI_FLOOR * $h2 );
 			$out['offered'] = array( 'goal_kg' => $lowest );
-			return self::refused( $out, 'bmi_floor', self::fill( 'bmi_floor', array( 'goal' => $goal, 'bmi' => $out['goal_bmi'], 'lowest' => $lowest ) ) );
+			return self::refused( $out, 'bmi_floor', self::fill( 'bmi_floor', array( 'goal' => $show( $goal ), 'bmi' => $out['goal_bmi'], 'lowest' => $show( $lowest ) ) ) );
 		}
 		$over65 = in_array( 'age_65_plus', $situations, true );
 		$cap    = min( 1.0, self::round2( 0.01 * $current ) );
@@ -269,27 +273,28 @@ class LLD_Members_Goal_Rules {
 				$weeks           = self::weeks_for( $diff, $offered );
 				$out['offered']  = array( 'rate' => $offered, 'weeks' => $weeks, 'date' => self::add_days( $today, 7 * $weeks ) );
 				$out['rates']    = $rates;
-				return self::refused( $out, 'rate_cap', self::fill( 'rate_cap', array( 'cap' => $cap, 'goal' => $goal, 'safe_date' => self::nice_date( $out['offered']['date'] ) ) ) );
+				return self::refused( $out, 'rate_cap', self::fill( 'rate_cap', array( 'cap' => $cap, 'goal' => $show( $goal ), 'safe_date' => self::nice_date( $out['offered']['date'] ) ) ) );
 			}
 			$weeks = self::weeks_for( $diff, $rate );
 		} else {
+			// Sheet section 1: weeks = ceil(days ÷ 7), implied rate = diff ÷ weeks, and the member keeps their date.
 			$days = self::days_between( $today, $date );
-			if ( $days < 7 ) {
-				$days = 7;
+			if ( $days < 1 ) {
+				return self::refused( $out, 'invalid', 'Choose a date in the future.' );
 			}
-			$weeks   = (int) ceil( $days / 7 - 1e-9 );
-			$implied = $diff / ( $days / 7 );
+			$weeks   = max( 1, (int) ceil( $days / 7 - 1e-9 ) );
+			$implied = $diff / $weeks;
 			if ( $implied > $cap + 1e-9 ) {
 				$safe_weeks     = self::weeks_for( $diff, $cap );
 				$out['offered'] = array( 'rate' => $cap, 'weeks' => $safe_weeks, 'date' => self::add_days( $today, 7 * $safe_weeks ) );
-				return self::refused( $out, 'rate_cap', self::fill( 'rate_cap', array( 'cap' => $cap, 'goal' => $goal, 'safe_date' => self::nice_date( $out['offered']['date'] ) ) ) );
+				return self::refused( $out, 'rate_cap', self::fill( 'rate_cap', array( 'cap' => $cap, 'goal' => $show( $goal ), 'safe_date' => self::nice_date( $out['offered']['date'] ) ) ) );
 			}
 			$rate = self::round2( $implied );
 		}
 		$out['ok']          = true;
 		$out['rate']        = $rate;
 		$out['weeks']       = $weeks;
-		$out['target_date'] = self::add_days( $today, 7 * $weeks );
+		$out['target_date'] = null !== $date ? $date : self::add_days( $today, 7 * $weeks );
 		$out['milestone5']  = self::round1( 0.95 * $current );
 		$out['deficit']     = (int) round( self::DEFICIT_PER_KG * $rate );
 		if ( $diff > 0.10 * $current + 1e-9 ) {
@@ -300,6 +305,17 @@ class LLD_Members_Goal_Rules {
 			$out['notes'][] = 'over65';
 		}
 		return $out;
+	}
+
+	/**
+	 * The safe weekly rate cap (D3-07): min(1 kg, 1 % of the current weight), 0.5 kg from 65.
+	 *
+	 * @param float $current_kg Current weight.
+	 * @param bool  $over65     Age 65 or over.
+	 */
+	public static function rate_cap( $current_kg, $over65 = false ) {
+		$cap = min( 1.0, self::round2( 0.01 * (float) $current_kg ) );
+		return $over65 ? min( $cap, 0.5 ) : $cap;
 	}
 
 	/**
