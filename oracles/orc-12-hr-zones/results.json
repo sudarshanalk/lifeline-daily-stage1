@@ -1,0 +1,231 @@
+{
+  "oracle_id": "ORC-12",
+  "implementation": "Python decimal reference for Heart-Rate Training Zones (FR3-53): Tanaka maximum heart rate, Karvonen and % HRmax zones on the ACSM 11th ed. bands, rounding and the safety order, from the signed sheet of 3 November 2026",
+  "versions": {
+    "python": "3.14.6",
+    "sheet": "P3-5A v1.0 signed 2026-11-03"
+  },
+  "source_hash": "e7098260016a386a0dce9b6f1ab57c29742eb5461973b74cfeb6d37f95184ca2",
+  "run_at": "2026-11-03T22:29:43Z",
+  "results": [
+    {
+      "fixture_id": "FX-HRZ-01",
+      "expected": {
+        "stop": null,
+        "hrMax": 180,
+        "method": "hrr",
+        "easy": [
+          96,
+          107
+        ],
+        "moderate": [
+          108,
+          131
+        ],
+        "hard": [
+          132,
+          167
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HRZ-02",
+      "expected": {
+        "stop": null,
+        "hrMax": 180,
+        "method": "pctHrMax",
+        "easy": [
+          103,
+          113
+        ],
+        "moderate": [
+          115,
+          137
+        ],
+        "hard": [
+          139,
+          171
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HRZ-03",
+      "expected": {
+        "stop": null,
+        "hrMax": 191,
+        "method": "hrr",
+        "easy": [
+          92,
+          105
+        ],
+        "moderate": [
+          106,
+          133
+        ],
+        "hard": [
+          135,
+          175
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HRZ-04",
+      "expected": {
+        "stop": null,
+        "hrMax": 163,
+        "method": "hrr",
+        "easy": [
+          99,
+          107
+        ],
+        "moderate": [
+          108,
+          126
+        ],
+        "hard": [
+          127,
+          153
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HRZ-05",
+      "expected": {
+        "stop": null,
+        "hrMax": 195,
+        "method": "pctHrMax",
+        "easy": [
+          111,
+          123
+        ],
+        "moderate": [
+          125,
+          148
+        ],
+        "hard": [
+          150,
+          185
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HRZ-06",
+      "expected": {
+        "stop": null,
+        "hrMax": 152,
+        "method": "hrr",
+        "easy": [
+          91,
+          99
+        ],
+        "moderate": [
+          100,
+          116
+        ],
+        "hard": [
+          117,
+          142
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HRZ-07",
+      "expected": {
+        "stop": null,
+        "hrMax": 173,
+        "method": "pctHrMax",
+        "easy": [
+          99,
+          109
+        ],
+        "moderate": [
+          111,
+          131
+        ],
+        "hard": [
+          133,
+          164
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HRZ-08",
+      "expected": {
+        "stop": null,
+        "hrMax": 184,
+        "method": "hrr",
+        "easy": [
+          118,
+          127
+        ],
+        "moderate": [
+          128,
+          145
+        ],
+        "hard": [
+          146,
+          174
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HRZ-09",
+      "expected": {
+        "stop": null,
+        "hrMax": 190,
+        "method": "hrr",
+        "easy": [
+          99,
+          111
+        ],
+        "moderate": [
+          112,
+          137
+        ],
+        "hard": [
+          138,
+          176
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HRZ-10",
+      "expected": {
+        "stop": "medicine",
+        "hrMax": null,
+        "method": null,
+        "easy": null,
+        "moderate": null,
+        "hard": null,
+        "notes": [
+          "safety.medicine"
+        ]
+      }
+    },
+    {
+      "fixture_id": "FX-HRZ-11",
+      "expected": {
+        "stop": "refused",
+        "hrMax": null,
+        "method": null,
+        "easy": null,
+        "moderate": null,
+        "hard": null
+      }
+    },
+    {
+      "fixture_id": "FX-HRZ-12",
+      "expected": {
+        "stop": "under18",
+        "hrMax": null,
+        "method": null,
+        "easy": null,
+        "moderate": null,
+        "hard": null
+      }
+    }
+  ],
+  "notes": [
+    "Fixtures are read, never written; differences are printed and listed here."
+  ]
+}
