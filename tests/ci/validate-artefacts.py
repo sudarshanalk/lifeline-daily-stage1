@@ -27,6 +27,15 @@ TARGETS = [
     ("incidents/*.json", "clinical-incident.schema.json"),
 ]
 bad = 0; n = 0
+# Fixture ids are unique across every fixture file: a second file could not shadow a frozen one.
+seen = {}
+for f in sorted(glob.glob(str(ROOT / "fixtures/*/*.json"))):
+    doc = json.load(open(f, encoding="utf-8"))
+    for fx in doc.get("fixtures", []) if isinstance(doc, dict) else []:
+        rel = Path(f).relative_to(ROOT).as_posix()
+        if fx.get("id") in seen:
+            bad += 1; print(f"INVALID {rel}: fixture id {fx['id']} already used in {seen[fx['id']]}")
+        seen[fx.get("id")] = rel
 for pattern, schema_name in TARGETS:
     schema = S(schema_name)
     for f in sorted(glob.glob(str(ROOT / pattern))):

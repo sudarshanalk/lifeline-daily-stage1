@@ -99,9 +99,21 @@ test("NFR3-14 (guard): a Stage 3 calculator's first fixtures come from its signe
     git('init -q -b staging'); git('config user.email dev@example.test'); git('config user.name "Dev Person"'); git('config commit.gpgsign false');
     writeFileSync(join(repo, 'README'), 'x'); git('add -A'); git('commit -q -m "start"');
     const fx = (v) => JSON.stringify({ group: 'LAB', tool: 'heart-risk', fixtures: [{ id: 'FX-HR-LAB-01', inputs: { a: 1 }, expected: { risk: v }, oracle: 'clinical', status: 'recorded' }] });
+    mkdirSync(join(repo, 'schemas'), { recursive: true });
+    writeFileSync(join(repo, 'schemas', 'fixture.schema.json'), JSON.stringify({ properties: { tool: { enum: ['protein', 'heart-risk'] } } }));
+    git('add -A'); git('commit -q -m "schema"');
     git('checkout -q -b s3'); mkdirSync(join(repo, 'fixtures', 'heart-risk'), { recursive: true });
     writeFileSync(join(repo, 'fixtures', 'heart-risk', 'lab.json'), fx(7)); git('add -A'); git('commit -q -m "S3-P02-P03: sign-offs"');
+    // ... refused without the tool's approval record, accepted with it
+    expect(oracleGuard({ root: repo, base: 'staging', head: 'HEAD' }).ok).toBe(false);
+    mkdirSync(join(repo, 'approvals', 'stage3'), { recursive: true });
+    writeFileSync(join(repo, 'approvals', 'stage3', 'heart-risk.json'), '{}'); git('add -A'); git('commit -q -m "S3-P02-P03: approval"');
     expect(oracleGuard({ root: repo, base: 'staging', head: 'HEAD' }).ok).toBe(true);
+    // ... and never for a folder the fixture schema does not name
+    git('checkout -q -b unknown'); mkdirSync(join(repo, 'fixtures', 'foo'), { recursive: true });
+    writeFileSync(join(repo, 'fixtures', 'foo', 'x.json'), fx(1).replace('heart-risk', 'foo')); git('add -A'); git('commit -q -m "S3-P12: unknown tool"');
+    expect(oracleGuard({ root: repo, base: 'staging', head: 'HEAD' }).ok).toBe(false);
+    git('checkout -q s3');
     git('checkout -q staging'); git('merge -q s3'); git('checkout -q -b later');
     writeFileSync(join(repo, 'fixtures', 'heart-risk', 'lab.json'), fx(8)); git('commit -q -am "S3-P57: engine"');
     const r = oracleGuard({ root: repo, base: 'staging', head: 'HEAD' });
