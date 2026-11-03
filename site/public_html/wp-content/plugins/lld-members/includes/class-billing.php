@@ -36,9 +36,20 @@ class LLD_Members_Billing {
 	}
 
 	/**
+	 * Premium open now. Stage 3 may close it while a subscription is paused (P3-63, FR3-65).
+	 *
 	 * @param int $member_id Member number.
 	 */
 	public static function paid_open( $member_id ) {
+		return (bool) apply_filters( 'lld_members_paid_open', self::paid_state( $member_id ), (int) $member_id );
+	}
+
+	/**
+	 * Premium as paid for, before any pause.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function paid_state( $member_id ) {
 		$state = strtolower( LLD_Members_Access::access_state( $member_id ) );
 		if ( in_array( $state, array( 'free', 'premium ended', 'refunded', '' ), true ) ) {
 			return false;
@@ -377,6 +388,7 @@ class LLD_Members_Billing {
 	 */
 	public static function pricing() {
 		$prices = self::prices();
+		$launch = class_exists( 'LLD_Members_Membership' ) && LLD_Members_Membership::launch_on();
 		// SCR-01: yearly first, then monthly; the price, what's included and how to cancel sit in the top block (UI2-03).
 		$main   = '<h1>Pricing</h1>';
 		$member = LLD_Members_Access::current_member_id();
@@ -398,7 +410,7 @@ class LLD_Members_Billing {
 		lld_members_layout(
 			array(
 				'title'       => 'Pricing',
-				'description' => 'Premium is US$59.99 a year or US$7.99 a month, tax included.',
+				'description' => 'Premium is ' . self::money( $prices['yearly'], 'usd' ) . ' a year or ' . self::money( $prices['monthly'], 'usd' ) . ' a month, tax included.',
 				'main'        => $main,
 				'wide'        => true,
 			)
@@ -605,7 +617,7 @@ class LLD_Members_Billing {
 		$main .= '<div>';
 		$main .= '<p class="lld-plan-best">best value</p>';
 		$main .= '<p class="lld-track-price-amount">' . esc_html( self::money( $prices['yearly'], 'usd' ) ) . ' <span class="lld-track-price-period">a year</span></p>';
-		$main .= '<p class="lld-plan-tax">tax included. That is US$5 a month, a saving of 37 %.</p>';
+		$main .= '<p class="lld-plan-tax">' . esc_html( $launch ? LLD_Members_Membership::yearly_line( $prices ) : 'tax included. That is US$5 a month, a saving of 37 %.' ) . '</p>';
 		$main .= '</div>';
 		$main .= '<div class="lld-track-pricing-actions">';
 		$main .= lld_button( array( 'label' => 'Choose yearly', 'href' => home_url( '/members/checkout/?plan=yearly' ) ) );
@@ -1092,9 +1104,13 @@ class LLD_Members_Billing {
 			} elseif ( 'undo' === $action ) {
 				self::save_sub( $member_id, array( 'pending_yearly_on' => null ) );
 			}
+			// Stage 3 actions on this page (P3-63 pause).
+			do_action( 'lld_members_subscription_post', $action, $member_id );
 		}
 		$sub  = self::subscription_row( $member_id );
 		$main = '<h1>My subscription</h1>';
+		// Stage 3: the membership card and the pause (P3-62, P3-63).
+		$main .= (string) apply_filters( 'lld_members_subscription_top', '', $member_id, $sub );
 		if ( $failed ) {
 			$main .= '<div class="lld-fail" role="alert"><p>Your subscription was not cancelled. ' . esc_html( LLD_Members_Stripe::try_again_message() ) . '</p></div>';
 		}
@@ -1131,7 +1147,7 @@ class LLD_Members_Billing {
 		$main .= '<p>Your referral link is <a href="' . esc_url( $link ) . '">' . esc_html( $link ) . '</a></p>';
 		$main .= '<p class="lld-row"><button type="button" class="lld-button lld-button-secondary" data-lld-copy="' . esc_attr( $link ) . '">Copy referral link</button> ';
 		$main .= '<button type="button" class="lld-button lld-button-secondary" data-lld-share="' . esc_attr( $link ) . '" hidden>Share referral link</button></p>';
-		$main .= '<form method="post">';
+		$main .= '<form method="post" id="lld-plan-actions">';
 		$main .= wp_nonce_field( 'lld_sub', 'lld_sub_nonce', true, false );
 		if ( $switching && $sub && 'monthly' === (string) $sub->plan && self::paid_open( $member_id ) && ! $sub->pending_yearly_on ) {
 			$main .= '<button class="lld-button" type="submit" name="lld_sub_action" value="switch">Switch to yearly</button> ';
@@ -1139,7 +1155,8 @@ class LLD_Members_Billing {
 		if ( $sub && $sub->pending_yearly_on ) {
 			$main .= '<button class="lld-button" type="submit" name="lld_sub_action" value="undo">Undo</button> ';
 		}
-		if ( self::paid_open( $member_id ) && ( ! $sub || 'cancelled' !== strtolower( (string) $sub->access_state ) ) ) {
+		// paid_state: a paused member can still cancel.
+		if ( self::paid_state( $member_id ) && ( ! $sub || 'cancelled' !== strtolower( (string) $sub->access_state ) ) ) {
 			$confirm = isset( $_GET['confirm'] );
 			if ( ! $confirm ) {
 				$main .= '<p><a href="' . esc_url( home_url( '/members/subscription/?confirm=1' ) ) . '">Cancel</a></p>';
@@ -1147,6 +1164,8 @@ class LLD_Members_Billing {
 				$until = ( $sub && $sub->period_ends_on ) ? ' until ' . (string) $sub->period_ends_on : ' until the end of the period you have paid for';
 				$main .= '<div class="lld-card" data-lld-cancel-note><h2>Cancel Premium?</h2><p>' . esc_html( 'Premium stays open' . $until . '. You will not be charged again.' ) . '</p>';
 				$main .= '<p>Your account, your progress and the free features stay. You can rejoin Premium at any time.</p>';
+				// Stage 3: a pause is offered before the final button (TC-FR3-65-AS-06).
+				$main .= (string) apply_filters( 'lld_members_cancel_offer', '', $member_id, $sub );
 				$main .= '<button class="lld-button" type="submit" name="lld_sub_action" value="cancel">Confirm cancellation</button> ';
 				$main .= '<a href="' . esc_url( home_url( '/members/subscription/' ) ) . '">Keep Premium</a></div>';
 			}
@@ -1368,7 +1387,7 @@ class LLD_Members_Billing {
 		$params = $request->get_json_params();
 		$action = isset( $params['action'] ) ? sanitize_key( (string) $params['action'] ) : '';
 		if ( 'reset' === $action ) {
-			delete_option( 'lld_prices' );
+			delete_option( self::price_option() );
 			delete_option( 'lld_codes' );
 			delete_option( 'lld_launch_on' );
 			delete_option( 'lld_reward_stop' );
@@ -2321,10 +2340,27 @@ class LLD_Members_Billing {
 		return self::prices();
 	}
 
+	/**
+	 * The Stage 2 subscription row, for Stage 3 (P3-62, P3-63).
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function subscription_for( $member_id ) {
+		return self::subscription_row( (int) $member_id );
+	}
+
+	/**
+	 * Prices for new members. Stage 3 launch prices use their own option and defaults (P3-60, FR3-62).
+	 */
+	private static function price_option() {
+		return (string) apply_filters( 'lld_members_price_option', 'lld_prices' );
+	}
+
 	private static function prices() {
-		$stored = get_option( 'lld_prices' );
-		$yearly = 5999;
-		$monthly = 799;
+		$stored  = get_option( self::price_option() );
+		$default = (array) apply_filters( 'lld_members_default_prices', array( 'yearly' => 5999, 'monthly' => 799 ) );
+		$yearly  = (int) $default['yearly'];
+		$monthly = (int) $default['monthly'];
 		if ( is_array( $stored ) ) {
 			$yearly  = isset( $stored['yearly'] ) ? (int) $stored['yearly'] : $yearly;
 			$monthly = isset( $stored['monthly'] ) ? (int) $stored['monthly'] : $monthly;
@@ -2355,7 +2391,7 @@ class LLD_Members_Billing {
 			return new WP_Error( 'lld_free', 'A price of 0 or a 100 % code needs the confirm box ticked. Nothing was saved.' );
 		}
 		$before = self::prices();
-		update_option( 'lld_prices', array( 'monthly' => $monthly, 'yearly' => $yearly ), false );
+		update_option( self::price_option(), array( 'monthly' => $monthly, 'yearly' => $yearly ), false );
 		$changes = array();
 		foreach ( array( 'monthly' => $monthly, 'yearly' => $yearly ) as $plan => $cents ) {
 			if ( (int) $before[ $plan ] !== $cents ) {

@@ -406,6 +406,69 @@ class LLD_Members_Stripe_API {
 	}
 
 	/**
+	 * Pause a monthly subscription (P3-63, FR3-65). Collection is paused with behaviour "void" until an hour before
+	 * the renewal that follows the pause: the renewal at the start is not charged, the next one is, at the
+	 * subscription's own price. A failed payment then follows Stripe's retries as in Stage 2.
+	 *
+	 * @param string $ref    Stripe subscription.
+	 * @param int    $months 1, 2 or 3.
+	 * @return true|WP_Error
+	 */
+	public static function pause( $ref, $months ) {
+		$sub = self::request( 'GET', 'subscriptions/' . rawurlencode( $ref ) );
+		if ( is_wp_error( $sub ) ) {
+			return $sub;
+		}
+		$resumes = self::resumes_at( isset( $sub['current_period_end'] ) ? (int) $sub['current_period_end'] : ( isset( $sub['items']['data'][0]['current_period_end'] ) ? (int) $sub['items']['data'][0]['current_period_end'] : 0 ), (int) $months );
+		if ( $resumes < 1 ) {
+			return new WP_Error( 'lld_stripe', 'Stripe did not give the end of the paid month.' );
+		}
+		$done = self::request(
+			'POST',
+			'subscriptions/' . rawurlencode( $ref ),
+			array(
+				'pause_collection' => array(
+					'behavior'   => 'void',
+					'resumes_at' => $resumes,
+				),
+			),
+			'lld-pause-' . $ref . '-' . $resumes
+		);
+		return is_wp_error( $done ) ? $done : true;
+	}
+
+	/**
+	 * The moment collection resumes: the paid month's end moved on by the pause, less an hour, so the renewal
+	 * that falls on that day is charged (TC-FR3-65-AS-01).
+	 *
+	 * @param int $period_end Unix time the paid month ends.
+	 * @param int $months     Months paused.
+	 */
+	public static function resumes_at( $period_end, $months ) {
+		if ( $period_end < 1 || $months < 1 ) {
+			return 0;
+		}
+		// Calendar months kept to the month's last day, as Stripe moves a monthly renewal (31 Jan, then 28 Feb).
+		list( $y, $m, $d ) = array_map( 'intval', explode( '-', gmdate( 'Y-n-j', $period_end ) ) );
+		$m   += (int) $months;
+		$y   += intdiv( $m - 1, 12 );
+		$m    = ( ( $m - 1 ) % 12 ) + 1;
+		$day  = min( $d, (int) gmdate( 't', gmmktime( 0, 0, 0, $m, 1, $y ) ) );
+		return gmmktime( 0, 0, 0, $m, $day, $y ) + ( $period_end % 86400 ) - 3600;
+	}
+
+	/**
+	 * Undo a pause that has not started.
+	 *
+	 * @param string $ref Stripe subscription.
+	 * @return true|WP_Error
+	 */
+	public static function unpause( $ref ) {
+		$done = self::request( 'POST', 'subscriptions/' . rawurlencode( $ref ), array( 'pause_collection' => '' ) );
+		return is_wp_error( $done ) ? $done : true;
+	}
+
+	/**
 	 * Filter: refund the order at Stripe and return Stripe's refund reference.
 	 *
 	 * @param string|WP_Error $ref   Stage 2 simulated reference.

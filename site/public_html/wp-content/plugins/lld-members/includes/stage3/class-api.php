@@ -303,6 +303,16 @@ class LLD_Members_Stage3_API {
 				'permission_callback' => '__return_true',
 			)
 		);
+		// Free or Premium, pause, and what is open to this member (P3-61, FR3-63): screens show an upgrade prompt from it.
+		register_rest_route(
+			'lld-members/v1',
+			'/me/access',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'access' ),
+				'permission_callback' => '__return_true',
+			)
+		);
 		// Calculators (P3-55 onwards): the engine runs for a signed-in member; "save" writes the nutrition target.
 		register_rest_route(
 			'lld-members/v1',
@@ -362,6 +372,20 @@ class LLD_Members_Stage3_API {
 			$out[ $feature ] = $member_id > 0 && LLD_Members_Features::enabled( $feature, $member_id );
 		}
 		return new WP_REST_Response( array( 'features' => $out ), 200 );
+	}
+
+	/**
+	 * The member's plan and Premium features (LLD_Members_Access_Tiers::summary()). Behind access_tiers.
+	 */
+	public static function access() {
+		$member_id = LLD_Members_Access::current_member_id();
+		if ( ! LLD_Members_Features::enabled( 'access_tiers', $member_id ) ) {
+			return self::refuse( 404, 'Not available.' );
+		}
+		if ( $member_id < 1 ) {
+			return self::refuse( 401, 'Sign in.' );
+		}
+		return new WP_REST_Response( LLD_Members_Access_Tiers::summary( $member_id ), 200 );
 	}
 
 	/**
