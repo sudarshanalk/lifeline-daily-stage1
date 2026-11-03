@@ -5,8 +5,8 @@
     "python": "3.14.6",
     "sheet": "P3-59 v1.0 signed 2026-11-03"
   },
-  "source_hash": "8d0bedf934760a62aa30d362fd72d5793151a094aa93aa9d659bd19d87d03f01",
-  "run_at": "2026-11-03T22:26:22Z",
+  "source_hash": "584ca801a3bf0884cd0137f1f68ab6165f33d9ead1ca4a797d8234f00913e722",
+  "run_at": "2026-11-03T22:38:15Z",
   "results": [
     {
       "fixture_id": "FX-MET-CRIT-01",
@@ -150,7 +150,9 @@
         "count": 2,
         "result": "results.notMet.waistBelow",
         "missing": [],
-        "flags": [],
+        "flags": [
+          "notes.talkToDoctor"
+        ],
         "lifestyleWaistShown": false
       }
     },
@@ -382,6 +384,7 @@
     }
   ],
   "notes": [
-    "Fixtures are read, never written; differences are printed and listed here."
+    "Fixtures are read, never written; differences are printed and listed here.",
+    "FX-MET-CRIT-08.flags: oracle ['notes.talkToDoctor'] != fixture []"
   ]
 }

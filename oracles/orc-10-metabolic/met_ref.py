@@ -13,8 +13,8 @@ Exact decimal comparisons, in the unit entered (no conversion before comparison)
                     results.partial (missing = the unknown criteria); else results.notMet.
   Flags           : BP >= 180 or >= 120 -> flags.bpUrgent; glucose >= 15 mmol/L / 270 mg/dL or < 3.0 / 54 ->
                     flags.glucoseUrgent; else >= 11.1 / 200 -> flags.glucoseDiagnostic; else < 3.9 / 70 ->
-                    flags.glucoseLow; triglycerides >= 10 / 885 -> flags.triglyceridesHigh; waist below with >= 3
-                    raised -> notes.talkToDoctor (the fixture rows MS-06 and MS-14; the sheet's prose says 2);
+                    flags.glucoseLow; triglycerides >= 10 / 885 -> flags.triglyceridesHigh; waist below with >= 2
+                    raised -> notes.talkToDoctor (sheet section 3; owner, 3 Nov 2026, Owner_Questions 90);
                     "prefer not to say" -> notes.sex.
   Stops           : age < 18 -> stops.under18; pregnant or breastfeeding yes / not sure -> stops.pregnancy.
   Lifestyle       : the waist (weight-loss) suggestion shows only with central obesity and no eating-disorder answer.
@@ -96,7 +96,7 @@ def assess(i: dict) -> dict:
         elif g < G_LOW[u]: flags.append("flags.glucoseLow")
     t = num(i.get("triglycerides"))
     if t is not None and t >= TG_HIGH[i["triglyceridesUnit"]]: flags.append("flags.triglyceridesHigh")
-    if not central and met >= 3: flags.append("notes.talkToDoctor")
+    if not central and met >= 2: flags.append("notes.talkToDoctor")
     if sex == "PNTS": flags.append("notes.sex")
 
     out.update({"central": central, "criteria": crit, "count": met, "result": result, "flags": flags,

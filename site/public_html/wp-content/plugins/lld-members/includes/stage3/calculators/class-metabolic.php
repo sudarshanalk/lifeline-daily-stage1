@@ -17,7 +17,7 @@
  * rules or the wording needs a new decision and a new version of the approval record (NFR3-14).
  *
  * The rows of the sheet's fixture table decide where they differ from section 3's prose
- * (`Transcription-Open-Points-2026-11-03.md`, MS-12 and MS-14); see TALK_TO_DOCTOR_MIN.
+ * (`Transcription-Open-Points-2026-11-03.md`, MS-12), except the "talk to your doctor" line (see TALK_TO_DOCTOR_MIN).
  *
  * @package LLD_Members
  */
@@ -87,12 +87,10 @@ class LLD_Members_Metabolic {
 	);
 
 	/**
-	 * With a waist below the cut-off, the "talk to your doctor" line is shown from this many raised results. The
-	 * sheet's section 3 prose says 2; its fixture rows show the line at 4 raised (MS-06) and not at 2 (MS-14), and
-	 * the engine follows the rows (Transcription-Open-Points, MS-14). 3 is the lowest value both rows allow.
-	 * Reported to the lead for an owner decision.
+	 * With a waist below the cut-off, the "talk to your doctor" line is shown from this many raised results: 2, as
+	 * the sheet's section 3 says (owner, 3 Nov 2026, Owner_Questions 90; fixture MS-14 re-derived by ORC-10).
 	 */
-	const TALK_TO_DOCTOR_MIN = 3;
+	const TALK_TO_DOCTOR_MIN = 2;
 
 	/** The labels the signed partial wording names, in its order. */
 	const MISSING_LABELS = array(
