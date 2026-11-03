@@ -87,10 +87,14 @@ class LLD_Members_Account_Hub {
 			$saved = self::handle_post( $member_id, $row );
 			if ( is_wp_error( $saved ) ) {
 				$error = $saved->get_error_message();
-			} elseif ( is_string( $saved ) && '' !== $saved ) {
-				$notice = $saved;
-				$row    = self::member_row( $member_id );
+			} elseif ( true === $saved ) {
+				// Post-redirect-get: a reload never posts the form again.
+				wp_safe_redirect( home_url( '/members/settings/?section=profile&saved=1' ) );
+				exit;
 			}
+		}
+		if ( '' === $error && 'profile' === $section && isset( $_GET['saved'] ) ) {
+			$notice = 'Profile saved.';
 		}
 
 		ob_start();
@@ -155,7 +159,7 @@ class LLD_Members_Account_Hub {
 	 *
 	 * @param int    $member_id Member id.
 	 * @param object $row       Member row.
-	 * @return string|WP_Error|null Confirmation text, error, or null when nothing was posted.
+	 * @return true|WP_Error|null True once saved, an error when the save failed, or null when nothing was posted.
 	 */
 	private static function handle_post( $member_id, $row ) {
 		if ( ! isset( $_POST['lld_profile_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_profile_nonce'] ) ), 'lld_profile_save' ) ) {
@@ -164,7 +168,7 @@ class LLD_Members_Account_Hub {
 		global $wpdb;
 		// Only the profile fields of this section, the same columns and sanitising as the Stage 2 form.
 		// TODO lead: public writer (LLD_Members_Account::save_profile() is private and saves the whole form).
-		$wpdb->update(
+		$updated = $wpdb->update(
 			LLD_Members_Schema::table( 'member' ),
 			array(
 				'display_name' => isset( $_POST['lld_display'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_display'] ) ) : $row->display_name,
@@ -176,7 +180,11 @@ class LLD_Members_Account_Hub {
 			array( '%s', '%s', '%s', '%s' ),
 			array( '%d' )
 		);
-		return 'Profile saved.';
+		// update() gives the number of rows changed (0 when nothing changed) or false on a database error.
+		if ( false === $updated ) {
+			return new WP_Error( 'lld_profile_save', 'Try again' );
+		}
+		return true;
 	}
 
 	/**
@@ -198,8 +206,13 @@ class LLD_Members_Account_Hub {
 		);
 		$html  = '<div class="lld-stage3-account-hub" data-active-section="' . esc_attr( $section ) . '"';
 		$html .= ' data-lld-menu="' . esc_attr( (string) wp_json_encode( $menu ) ) . '"';
-		$html .= ' data-lld-sign-out="' . esc_attr( wp_logout_url( home_url( '/' ) ) ) . '">';
+		$html .= ' data-lld-sign-out="lld-hub-sign-out">';
 		$html .= '<h1>Account</h1>';
+		// The menu's Sign out submits this form to the Stage 2 sign-out (the More screen), which closes the member's
+		// session line, signs this browser out and goes to /members/sign-in/?signed_out=1.
+		$html .= '<form method="post" action="' . esc_url( home_url( '/members/more/' ) ) . '" id="lld-hub-sign-out" class="lld-sign-out" hidden>';
+		$html .= wp_nonce_field( 'lld_sign_out', 'lld_sign_out_nonce', true, false );
+		$html .= '<button type="submit">Sign out</button></form>';
 
 		if ( '' !== $error ) {
 			$html .= '<div class="lld-error-box" role="alert"><p>' . esc_html( $error ) . '</p></div>';
@@ -361,15 +374,16 @@ class LLD_Members_Account_Hub {
 	 */
 	private static function section_privacy( $member_id ) {
 		$consents = array(
-			'terms'   => 'Terms of use',
-			'privacy' => 'Privacy policy',
-			'health'  => 'Store my health information',
+			'terms'     => 'Terms of use',
+			'privacy'   => 'Privacy policy',
+			'health'    => 'Store my health information',
+			'marketing' => 'Marketing emails',
 		);
 		$dates = self::consent_dates( $member_id );
 
 		$html  = '<section class="lld-account-section lld-card" aria-labelledby="lld-section-privacy">';
 		$html .= '<h2 id="lld-section-privacy">Privacy &amp; consents</h2>';
-		$html .= '<p class="lld-muted">Every consent you have given is listed below with its date, and can be withdrawn.</p>';
+		$html .= '<p class="lld-muted">Every consent you have given is listed below with its date, and how to change it.</p>';
 		$html .= '<ul class="lld-consent-list">';
 		foreach ( $consents as $type => $label ) {
 			$is_given = LLD_Members_Account::has_consent( $member_id, $type );
@@ -380,7 +394,11 @@ class LLD_Members_Account_Hub {
 			$html .= '<strong>' . esc_html( $label ) . '</strong>';
 			$html .= '<span class="lld-consent-date">Status: ' . ( $is_given && '' !== $date_str ? 'Accepted on ' . esc_html( $date_str ) : 'Withdrawn / Not given' ) . '</span>';
 			$html .= '</div>';
-			if ( 'health' === $type && $is_given ) {
+			if ( 'terms' === $type || 'privacy' === $type ) {
+				$html .= '<p class="lld-hint">Needed for your account. <a href="' . esc_url( home_url( '/members/delete/' ) ) . '">Delete my account</a> to end it.</p>';
+			} elseif ( 'marketing' === $type ) {
+				$html .= '<p class="lld-hint"><a href="' . esc_url( self::all_settings_url() ) . '">Change marketing emails in all settings</a></p>';
+			} elseif ( 'health' === $type && $is_given ) {
 				// The Stage 2 screen shows what will be deleted, then withdraws and deletes the health data.
 				$html .= lld_button(
 					array(
@@ -412,9 +430,6 @@ class LLD_Members_Account_Hub {
 		$html .= '<p class="lld-muted">Your current membership status and subscription management.</p>';
 		$html .= '<div class="lld-membership-status">';
 		$html .= '<p><strong>Current plan:</strong> ' . esc_html( $state ) . '</p>';
-		if ( $is_prem ) {
-			$html .= '<p>Rate: US$9.99 / month (locked launch rate)</p>';
-		}
 		$html .= '</div>';
 
 		if ( $is_prem ) {
