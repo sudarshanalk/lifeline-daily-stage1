@@ -3,7 +3,8 @@
  * Email codes for sign-up, sign-in and sensitive changes (P3-21: FR3-03, FR3-04, FR3-05, NFR3-18).
  *
  * A code is six digits, lasts 10 minutes, works once and allows five wrong tries. At most five codes an hour
- * are issued for one address. The code itself is never stored: only its hash (data model, Email code).
+ * are issued for one address, and at most thirty from one connection, so the forms cannot be used to flood other
+ * people's inboxes. The code itself is never stored: only its hash (data model, Email code).
  *
  * @package LLD_Members
  */
@@ -22,6 +23,9 @@ class LLD_Members_Email_Codes {
 	const HOURLY_LIMIT = 5;
 	const KEEP_HOURS   = 24;
 	const PURPOSES     = array( 'sign_up', 'sign_in', 'delete' );
+
+	/** Codes one connection may ask for in an hour, across every address. */
+	const IP_HOURLY_LIMIT = 30;
 
 	/**
 	 * Shown when more than five codes were asked for in an hour (emails/stage3-emails.md, EM-23).
@@ -44,7 +48,7 @@ class LLD_Members_Email_Codes {
 		$table = LLD_Members_Stage3_Schema::table( 'email_codes' );
 		self::sweep();
 		$recent = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE email = %s AND created_at > %s", $email, gmdate( 'Y-m-d H:i:s', time() - HOUR_IN_SECONDS ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		if ( $recent >= self::HOURLY_LIMIT ) {
+		if ( $recent >= self::HOURLY_LIMIT || ! self::count_connection() ) {
 			return new WP_Error( 'lld_code_limit', self::LIMIT_MESSAGE );
 		}
 		$code = str_pad( (string) random_int( 0, 999999 ), 6, '0', STR_PAD_LEFT );
@@ -65,6 +69,31 @@ class LLD_Members_Email_Codes {
 			return new WP_Error( 'lld_code_store', 'That code could not be sent.' );
 		}
 		return $code;
+	}
+
+	/**
+	 * Count a code against the connection that asked for it: false once it has asked for IP_HOURLY_LIMIT in the
+	 * hour. Only a keyed hash of the address is kept, in a transient that ends with the hour.
+	 *
+	 * @return bool
+	 */
+	private static function count_connection() {
+		$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? (string) $_SERVER['REMOTE_ADDR'] : ''; // never a forwarded header, which anyone can set
+		if ( '' === $ip ) {
+			return true;
+		}
+		$key   = 'lld_s3_code_ip_' . substr( hash_hmac( 'sha256', $ip, wp_salt( 'nonce' ) ), 0, 32 );
+		$count = get_transient( $key );
+		if ( is_array( $count ) && isset( $count['n'], $count['until'] ) && (int) $count['until'] > time() ) {
+			if ( (int) $count['n'] >= self::IP_HOURLY_LIMIT ) {
+				return false;
+			}
+			$count['n'] = (int) $count['n'] + 1;
+		} else {
+			$count = array( 'n' => 1, 'until' => time() + HOUR_IN_SECONDS );
+		}
+		set_transient( $key, $count, max( 1, (int) $count['until'] - time() ) );
+		return true;
 	}
 
 	/**
