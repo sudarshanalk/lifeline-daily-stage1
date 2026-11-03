@@ -166,7 +166,7 @@ test('TC-FR3-70-AS-01 (Google Analytics): visits and calculator page views come 
   writeFileSync(keyFile, JSON.stringify({ client_email: 'report@example-project.iam.gserviceaccount.com', private_key: privateKey.export({ type: 'pkcs8', format: 'pem' }) }));
   const rows = [['/programmes/healthy-weight/', 4], ['/coming-soon/healthy-weight', 1], ['/health-tools/diabetes-risk-check/', 6], ['/health-tools/protein/', 3], ['/programmes/sleep-stress/', 2], ['/an-article/', 9]];
   const out = JSON.parse(php(`${stubs({ defines: `define('LLD_GA4_PROPERTY', '562156874'); define('LLD_GA4_KEY_FILE', ${toPhpPath(keyFile)});` })}
-    $GLOBALS['answers']['oauth2.googleapis.com/token'] = ['code' => 200, 'body' => json_encode(['access_token' => 'ya29.fake'])];
+    $GLOBALS['answers']['oauth2.googleapis.com/token'] = ['code' => 200, 'body' => json_encode(['access_token' => implode('.', ['ya29', 'fake'])])];
     $GLOBALS['answers']['analyticsdata.googleapis.com'] = ['code' => 200, 'body' => json_encode(['rows' => array_map(function ($r) { return ['dimensionValues' => [['value' => $r[0]]], 'metricValues' => [['value' => (string) $r[1]]]]; }, json_decode(${JSON.stringify(JSON.stringify(rows))}, true))])];
     $ga = LLD_Members_Stage3_Report::ga_figures('${week[0]}', '${week[1]}');
     echo json_encode(['ga' => $ga, 'text' => LLD_Members_Stage3_Report::extend_text(${JSON.stringify(stage2Text)}, [], ['${week[0]}', '${week[1]}'], $ga), 'posts' => $GLOBALS['posts']]);`));

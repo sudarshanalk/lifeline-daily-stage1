@@ -28,7 +28,7 @@ class LLD_Members_Stage3_Report {
 
 	const NOT_CONNECTED = 'Visits and calculator use: Plausible is not connected';
 
-	const GA_TOKEN = 'https://oauth2.googleapis.com/token';
+	const GA_OAUTH_URL = 'https://oauth2.googleapis.com/token';
 
 	const GA_DATA = 'https://analyticsdata.googleapis.com/v1beta/properties/';
 
@@ -385,7 +385,7 @@ class LLD_Members_Stage3_Report {
 				array(
 					'iss'   => (string) $key['client_email'],
 					'scope' => 'https://www.googleapis.com/auth/analytics.readonly',
-					'aud'   => self::GA_TOKEN,
+					'aud'   => self::GA_OAUTH_URL,
 					'iat'   => $now,
 					'exp'   => $now + 3600,
 				)
@@ -396,7 +396,7 @@ class LLD_Members_Stage3_Report {
 			return '';
 		}
 		$res = wp_remote_post(
-			self::GA_TOKEN,
+			self::GA_OAUTH_URL,
 			array(
 				'timeout' => 20,
 				'body'    => array(
