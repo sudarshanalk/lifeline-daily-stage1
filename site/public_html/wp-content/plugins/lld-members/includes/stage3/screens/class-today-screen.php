@@ -578,7 +578,15 @@ class LLD_Members_Today_Screen {
 		if ( isset( $_GET['level'] ) && in_array( $_GET['level'], array( 'urgent', 'check', 'caution' ), true ) ) {
 			$html .= self::level_html( sanitize_key( (string) wp_unslash( $_GET['level'] ) ) );
 		}
-		$html .= '<section class="lld-card" data-lld-section="goal-progress">' . self::progress_block( $member_id, $goal, $facts, 'Main goal' ) . '</section>';
+		$html .= '<section class="lld-card" data-lld-section="goal-progress">' . self::progress_block( $member_id, $goal, $facts, 'Main goal' );
+		if ( ! $facts['premium'] ) {
+			// FR3-14 AS-03: a Free member sees the check-in result; adjustments are Premium.
+			$trend = LLD_Members_Goal_Journey::progress( $member_id, $goal, $facts );
+			if ( 'behind' === $trend['trend']['status'] ) {
+				$html .= lld_membership_lock( 'Premium offers an adjusted plan when you fall behind: a later date, an easier week or a different meal plan.' );
+			}
+		}
+		$html .= '</section>';
 
 		// The engine's offers (FR3-14 AS-01): accepted only by the member; adjustments are Premium (AS-03).
 		foreach ( LLD_Members_Goal_Journey::pending_adjustments( $member_id ) as $adj ) {

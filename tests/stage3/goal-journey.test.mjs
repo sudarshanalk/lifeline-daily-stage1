@@ -257,7 +257,7 @@ test('goal journey: no Stage 2 plugin file changed, and no requirement or test I
   const stage2 = changed.filter((f) => f.startsWith('site/public_html/wp-content/plugins/lld-members/includes/') && !f.includes('/includes/stage3/'));
   expect(stage2).toEqual([]);
   for (const file of [...SCREENS.map((f) => `screens/${f}`), 'class-goal-journey.php', 'class-goal-rules.php']) {
-    const s = src(`includes/stage3/${file}`);
+    const s = src(`includes/stage3/${file}`).replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '');
     const strings = [...s.matchAll(/'((?:[^'\\]|\\.)*)'/g)].map((m) => m[1]).filter((t) => /[A-Za-z]{3,}\s[A-Za-z]{2,}/.test(t));
     for (const t of strings) expect(t, `${file}: ${t}`).not.toMatch(ID);
   }
