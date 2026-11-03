@@ -59,8 +59,10 @@ export function classify(title = '') {
 }
 
 function toolsFor(ids) {
-  const tools = new Set(['claude']);
-  for (const id of ids) for (const t of PACKAGE_TOOLS[id] || []) tools.add(t);
+  // A package not listed is the lead's; a listed package stays within its tools' files, so a builder's PR cannot reach
+  // the lead's deploy, workflow or document files. The lead joins branches under its own titles.
+  const tools = new Set();
+  for (const id of ids) for (const t of PACKAGE_TOOLS[id] || ['claude']) tools.add(t);
   return [...tools];
 }
 

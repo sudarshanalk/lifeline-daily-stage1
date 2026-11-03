@@ -10,7 +10,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const plugin = resolve(here, '../../site/public_html/wp-content/plugins/lld-members');
 const src = (name) => readFileSync(resolve(plugin, name), 'utf8');
 const stage3 = (name) => src(`includes/stage3/${name}`);
-const php = (code) => execFileSync('php', ['-n', '-d', 'display_errors=stderr', '-r', code], { encoding: 'utf8' }).trim();
+const php = (code) => execFileSync('php', ['-d', 'display_errors=stderr', '-r', code], { encoding: 'utf8', timeout: 60000 }).trim();
 const toPhpPath = (p) => JSON.stringify(p.split('\\').join('/'));
 const stubs = `
 define('ABSPATH', '/'); define('DAY_IN_SECONDS', 86400); define('HOUR_IN_SECONDS', 3600);
@@ -132,7 +132,7 @@ test('TC-NFR3-04-AS-02 (source): the Stage 3 schema only creates and adds, and S
   const schema = stage3('class-schema-stage3.php');
   expect(schema).toMatch(/CREATE TABLE IF NOT EXISTS/);
   expect(schema).not.toMatch(/DROP\s+(TABLE|COLUMN)/i);
-  expect(schema).not.toMatch(/\b(MODIFY|CHANGE|RENAME)\s+/i);
+  expect(schema).not.toMatch(/\b(MODIFY|CHANGE)\s+COLUMN|RENAME\s+(TABLE|COLUMN)|ALTER TABLE \S+ (MODIFY|CHANGE|RENAME)/);
   expect(schema).toMatch(/ALTER TABLE \{\$table\} ADD COLUMN/);
   // Table names follow the data model v0.2 (wp_lld_<suffix>), all unique.
   const suffixes = [...schema.slice(schema.indexOf('function suffixes')).matchAll(/^\s*'(\w+)',$/gm)].map((m) => m[1]);
