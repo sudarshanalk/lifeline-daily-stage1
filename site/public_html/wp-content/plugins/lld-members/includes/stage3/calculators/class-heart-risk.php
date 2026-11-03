@@ -364,9 +364,9 @@ class LLD_Members_Heart_Risk {
 	 * The frozen urgent-care text, or null when the Blood Pressure Reading Check is not loaded.
 	 */
 	private static function urgent_text() {
-		if ( defined( 'LLD_Members_BP_Check::MESSAGES' ) ) {
-			$m = constant( 'LLD_Members_BP_Check::MESSAGES' );
-			if ( is_array( $m ) && isset( $m['urgent.alert'] ) ) {
+		if ( class_exists( 'LLD_Members_BP_Check' ) ) {
+			$m = LLD_Members_BP_Check::signed_text();
+			if ( isset( $m['urgent.alert'] ) ) {
 				return $m['urgent.alert'];
 			}
 		}

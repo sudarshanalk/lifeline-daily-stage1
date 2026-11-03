@@ -189,14 +189,9 @@ test('TC-FR3-46-AS-03 (heart risk): the urgent level points at the frozen global
   expect(Object.keys(W)).toEqual(['global_urgent', 'headline']);
   // With the Blood Pressure Reading Check loaded, the text is its signed urgent alert (approval bp-check urgent.alert).
   const bp = resolve(calcDir, 'class-bp-check.php');
-  let bpText = null;
-  try {
-    bpText = JSON.parse(execFileSync('php', ['-d', 'display_errors=stderr', '-r', `define('ABSPATH', '/'); require ${toPhpPath(bp)}; require ${toPhpPath(engine)}; echo json_encode(${H}::wording(['global_urgent'])['global_urgent']);`], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }));
-  } catch {
-    bpText = undefined; // P3-58 not merged in this tree yet
-  }
-  if (bpText !== undefined) expect(sha(Buffer.from(bpText, 'utf8'))).toBe(json('approvals/stage3/bp-check.json').copy_hashes['urgent.alert']);
-  else expect(W.global_urgent).toBeNull();
+  const bpText = JSON.parse(execFileSync('php', ['-d', 'display_errors=stderr', '-r', `define('ABSPATH', '/'); require ${toPhpPath(bp)}; require ${toPhpPath(engine)}; echo json_encode(${H}::wording(['global_urgent'])['global_urgent']);`], { encoding: 'utf8' }));
+  expect(typeof bpText).toBe('string');
+  expect(sha(Buffer.from(bpText, 'utf8'))).toBe(json('approvals/stage3/bp-check.json').copy_hashes['urgent.alert']);
 });
 
 test('TC-NFR3-14-AS-02 (heart risk): every signed string and both WHO data files hash to the approval record', () => {
