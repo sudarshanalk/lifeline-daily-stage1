@@ -41,8 +41,8 @@ export const PACKAGE_TOOLS = {
   // started them (3 Nov 2026), as with the calculator engines below; the listed tools keep their files.
   11: ['codex'], 30: ['antigravity', 'claude'], 31: ['cursor', 'antigravity', 'claude'], 32: ['cursor', 'antigravity', 'claude'], 33: ['antigravity', 'claude'],
   40: ['cursor'], 41: ['cursor'], 42: ['cursor'], 43: ['cursor'], 44: ['antigravity'], 50: ['cursor'], 51: ['cursor'],
-  // The calculator engines: Cursor's in the plan; the lead builds them from the signed sheets while Cursor has not started (3 Nov 2026).
-  55: ['cursor', 'claude'], 56: ['cursor', 'claude'], 57: ['cursor', 'claude'], 58: ['cursor', 'claude'], 59: ['cursor', 'claude'], '5A': ['cursor', 'claude'], '5B': ['cursor', 'claude'],
+  // The calculator engines: P3-55 was built by the lead; P3-56 to P3-5B are delegated to Cursor in full (owner, 3 Nov 2026).
+  55: ['cursor', 'claude'], 56: ['cursor'], 57: ['cursor'], 58: ['cursor'], 59: ['cursor'], '5A': ['cursor'], '5B': ['cursor'],
   80: ['codex'], 81: ['codex'], 82: ['codex'], 83: ['antigravity'], 85: ['cursor'], 86: ['cursor'],
 };
 

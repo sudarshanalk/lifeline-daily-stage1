@@ -55,6 +55,22 @@ test('TC-NFR3-06-AS-02', () => {
   expect(out).toBe('off,on,off,off,refused,on,off,Owner, 2 Nov 2026');
 });
 
+test('switches retired (owner, 3 Nov 2026): with lld_features_all_on set, every catalogue feature is on for everyone', () => {
+  const out = php(`${stubs}
+    class LLD_Members_Schema { static function table($s) { return 'wp_lld_' . $s; } }
+    class LLD_Members_Access { static function own_member_id() { return 0; } }
+    $r = [];
+    $r[] = LLD_Members_Features::enabled('food_tracker', 8) ? 'on' : 'off';            // unset: the switch decides (off)
+    update_option('lld_features_all_on', 1);
+    $r[] = LLD_Members_Features::enabled('food_tracker', 8) ? 'on' : 'off';            // all on: an ordinary member sees it
+    $r[] = LLD_Members_Features::enabled('food_tracker', 0) ? 'on' : 'off';            // and a visitor
+    $r[] = LLD_Members_Features::state('pause');
+    $r[] = LLD_Members_Features::enabled('no_such_feature', 8) ? 'on' : 'off';         // unknown names stay off
+    echo implode(',', $r);
+  `);
+  expect(out).toBe('off,on,on,everyone,off');
+});
+
 test('TC-NFR3-06-AS-01 (source): every Stage 3 class is loaded through the loader and acts only behind a switch', () => {
   // With all switches off the plugin registers only its own routes and hooks; no screen, rewrite or filter changes Stage 2.
   const loader = stage3('loader.php');
