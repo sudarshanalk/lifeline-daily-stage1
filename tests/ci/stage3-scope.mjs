@@ -28,7 +28,7 @@ export const TOOL_FILES = {
   antigravity: [`${STAGE3}/screens/**`, `${PLUGIN}/assets/stage3.css`, `${PLUGIN}/assets/stage3.js`, 'tests/stage3/look/**', 'tests/stage3/e2e/screens/**'],
   codex: ['tests/stage3/**', 'tests/ci/**', '.github/workflows/**'],
   claude: ['.github/**', 'deploy/**', 'docs/**', '.cursor/**', 'AGENTS.md', 'CLAUDE.md', 'README.md', 'Makefile', 'package.json', 'package-lock.json',
-    '.gitignore', '.gitattributes', `${STAGE3}/**`, `${PLUGIN}/assets/stage3.css`, `${PLUGIN}/assets/stage3.js`, 'tests/stage3/**', 'tests/ci/**', 'tests/lib/**', 'tools/**', 'content/**', 'reports/**',
+    '.gitignore', '.gitattributes', `${STAGE3}/**`, `${PLUGIN}/assets/stage3.css`, `${PLUGIN}/assets/stage3.js`, 'tests/**', 'tools/**', 'content/**', 'reports/**',
     'site/public_html/wp-content/mu-plugins/lld-tools/**', 'site/public_html/wp-content/mu-plugins/lld-tools-loader.php', 'schemas/**', 'registry/**', 'design/**', 'fixtures/**'],
 };
 
