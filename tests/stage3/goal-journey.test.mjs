@@ -162,6 +162,33 @@ test('TC-FR3-15-AS-01', () => {
   expect(call('reached', { [D]: 150 }, 150, D, 'up')).toBe(true);
 });
 
+test('TC-FR3-10-AS-03', () => {
+  // Owner decision Q79 = B (3 Nov 2026): a blood pressure goal holds both targets and is reached only when the 7-day
+  // means of both numbers are at or below them. Daily values are [top, bottom], as the members' readings give them.
+  const week = (top, bottom) => Object.fromEntries([-6, -4, -2, 0].map((n) => [day(n), [top, bottom]]));
+  expect(call('bp_reached', week(128, 82), 135, 85, D)).toBe(true);
+  expect(call('bp_reached', week(128, 88), 135, 85, D)).toBe(false); // top on target, bottom not
+  expect(call('bp_reached', week(138, 80), 135, 85, D)).toBe(false); // bottom on target, top not
+  expect(call('bp_reached', week(129, 79), 130, 80, D)).toBe(true); // the doctor's 130/80
+  expect(call('bp_reached', week(129, 81), 130, 80, D)).toBe(false);
+  expect(call('bp_reached', week(135, 85), 135, 85, D)).toBe(true); // "at or below"
+  expect(call('bp_reached', week(128, 84), 135, null, D)).toBe(true); // an older goal without a bottom target: 85
+  expect(call('bp_reached', week(128, 86), 135, null, D)).toBe(false);
+  expect(call('bp_reached', { [day(-10)]: [120, 70] }, 135, 85, D)).toBe(false); // outside the window
+  expect(call('bp_reached', { [D]: 128 }, 135, 85, D)).toBe(false); // no bottom number: not yet reached
+  // The goal stores both targets, sealed, and the goal-reached check uses both.
+  const journey = src('includes/stage3/class-goal-journey.php');
+  expect(journey).toMatch(/const SEALED_GOAL\s*= array\( 'start_value', 'target_value', 'start_value_2', 'target_value_2' \)/);
+  expect(journey).toMatch(/\$row\['target_value_2'\] = \$dia;/);
+  expect(journey).toMatch(/\$dia = \(float\) LLD_Members_Goal_Rules::BP_DEFAULT\[1\];/);
+  expect(journey).toMatch(/LLD_Members_Goal_Rules::bp_reached\( \$points, \(float\) \$goal\['target_value'\]/);
+  const api = src('includes/stage3/class-api.php');
+  expect(api).toMatch(/'sealed'  => array\( 'start_value', 'target_value', 'start_value_2', 'target_value_2' \)/);
+  // The nightly engine gets the bottom target too, so R-INS-10 checks both numbers the same way.
+  const runner = src('includes/stage3/engine/class-insights-runner.php');
+  expect(runner).toMatch(/\$target_2 = is_numeric\( \$goal\['target_value_2'\] \)/);
+});
+
 test('TC-FR3-12-AS-04', () => {
   // A missed day lowers the weekly count and touches nothing else.
   const full = [day(0), day(1), day(2)];

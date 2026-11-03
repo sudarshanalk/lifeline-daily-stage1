@@ -127,7 +127,8 @@ When a goal is set, the member records the starting measurements that matter for
 |---|---|
 | TC-FR3-10-AS-01 | Set a weight-loss goal: the member is asked for starting weight and waist, and these are saved as the baseline. |
 | TC-FR3-10-AS-02 | Set a blood pressure goal: the member is asked for a starting reading. |
-| TC-FR3-10-AS-03 | The member can skip a measurement and add it later; progress is shown once it exists. |
+| TC-FR3-10-AS-03 | A blood pressure goal holds both a top and a bottom target (the doctor's, or the defaults 135 and 85), and is reached only when the 7-day averages of both numbers are at or below their targets (owner decision, 3 Nov 2026). |
+| TC-FR3-10-AS-04 | The member can skip a measurement and add it later; progress is shown once it exists. |
 
 #### FR3-11 Personal plan from the goal
 

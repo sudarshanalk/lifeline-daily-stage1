@@ -466,6 +466,28 @@ class LLD_Members_Goal_Rules {
 		return 'up' === $direction ? $mean >= (float) $target - 1e-9 : $mean <= (float) $target + 1e-9;
 	}
 
+	/**
+	 * Blood pressure goal reached (owner decision Q79 = B, 3 Nov 2026): the 7-day means of both the top and the bottom
+	 * number are at or below their targets. A day without a bottom number counts for the top number only.
+	 *
+	 * @param array<string,array|float> $points     Daily readings by local date: array( top, bottom ) or the top alone.
+	 * @param float                     $target     Top-number target.
+	 * @param float|null                $target_2   Bottom-number target; null means the guideline default.
+	 * @param string                    $today      Local date.
+	 */
+	public static function bp_reached( array $points, $target, $target_2, $today ) {
+		$top    = array();
+		$bottom = array();
+		foreach ( $points as $date => $v ) {
+			$top[ $date ] = is_array( $v ) ? $v[0] : $v;
+			if ( is_array( $v ) && isset( $v[1] ) && is_numeric( $v[1] ) ) {
+				$bottom[ $date ] = (float) $v[1];
+			}
+		}
+		$target_2 = is_numeric( $target_2 ) ? (float) $target_2 : (float) self::BP_DEFAULT[1];
+		return self::reached( $top, $target, $today, 'down' ) && self::reached( $bottom, $target_2, $today, 'down' );
+	}
+
 	// ---- Weekly ring, streaks and bars (FR3-12 AS-02/04, FR3-16 AS-01) -------------------------------------------
 
 	/**

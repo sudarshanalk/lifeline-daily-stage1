@@ -269,7 +269,7 @@ class LLD_Members_Insights_Runner {
 
 		// Goal and plan (FR3-09, FR3-11); targets (FR3-28).
 		$goal = null;
-		foreach ( LLD_Members_Stage3_Data::rows( 'goals', $member_id, array( 'start_value', 'target_value' ), '', 50 ) as $g ) {
+		foreach ( LLD_Members_Stage3_Data::rows( 'goals', $member_id, array( 'start_value', 'target_value', 'start_value_2', 'target_value_2' ), '', 50 ) as $g ) {
 			if ( ! empty( $g['deleted_at'] ) || 'active' !== (string) $g['status'] ) {
 				continue;
 			}
@@ -279,7 +279,11 @@ class LLD_Members_Insights_Runner {
 		}
 		$plan = null;
 		if ( $goal ) {
+			// A blood pressure goal's bottom number (owner decision Q79 = B); older goals without one use the guideline 85.
 			$target_2 = null;
+			if ( 'blood_pressure' === (string) $goal['measure'] ) {
+				$target_2 = is_numeric( $goal['target_value_2'] ) ? (float) $goal['target_value_2'] : (float) LLD_Members_Goal_Rules::BP_DEFAULT[1];
+			}
 			$detail   = array();
 			$state['goal'] = array(
 				'id'             => (int) $goal['id'],

@@ -240,10 +240,51 @@ test.describe.serial('P3-31 goal setting, starting measurements and the plan', (
     expect([bp.value_1, bp.value_2]).toEqual([142, 88]);
     const goal = (await rows(page, 'goals')).find((g) => g.role === 'main');
     expect(goal.target_value).toBe(135);
+    expect(goal.target_value_2).toBe(85);
+    expect(goal.start_value_2).toBe(88);
     expect(goal.target_source).toBe('guideline_default');
   });
 
-  test('TC-FR3-10-AS-03 The member can skip a measurement and add it later; progress is shown once it exists', async ({ page }) => {
+  test('TC-FR3-10-AS-03 A blood pressure goal holds both targets and is reached only when both 7-day averages are on target', async ({ page }) => {
+    const m = await fresh(page, A);
+    await profile(page, m.member_id);
+    // The doctor's target needs both numbers.
+    await page.goto('/members/goal/?type=lower_blood_pressure');
+    await page.locator('input[name="lld_source"][value="doctor"]').check();
+    await page.locator('#lld_target').fill('130');
+    await page.getByRole('button', { name: 'Save my goal' }).click();
+    await expect(page.locator('[data-lld-goal-step="details"] [role="alert"]')).toContainText("Enter both numbers of your doctor's target.");
+    await page.locator('input[name="lld_source"][value="doctor"]').check();
+    await page.locator('#lld_target').fill('130');
+    await page.locator('#lld_target_2').fill('80');
+    await page.getByRole('button', { name: 'Save my goal' }).click();
+    const plan = page.locator('[data-lld-goal-step="plan"]');
+    await expect(plan).toBeVisible();
+    await expect(plan.locator('[data-lld-section="goal"]')).toContainText('Blood pressure below 130/80');
+    const goal = (await rows(page, 'goals')).find((g) => g.role === 'main');
+    expect([goal.target_value, goal.target_value_2, goal.target_source]).toEqual([130, 80, 'doctor']);
+    // A week with the top number on target and the bottom number above it: not reached.
+    const me = await api(page);
+    for (let d = 1; d <= 7; d++) {
+      const res = await me.post('readings', { reading_type: 'blood_pressure', taken_at: at(d, 8), value_1: 126, value_2: 84, source: 'manual' });
+      expect(res.ok(), await res.text()).toBeTruthy();
+    }
+    await clock(page, A, 7);
+    await page.goto('/members/home/');
+    await expect(page.locator('[data-lld-section="goal-reached"]')).toHaveCount(0);
+    expect((await rows(page, 'goals')).find((g) => g.id === goal.id).status).toBe('active');
+    // A week with both numbers at or below the doctor's 130/80: reached.
+    for (let d = 8; d <= 14; d++) {
+      const res = await me.post('readings', { reading_type: 'blood_pressure', taken_at: at(d, 8), value_1: 126, value_2: 78, source: 'manual' });
+      expect(res.ok(), await res.text()).toBeTruthy();
+    }
+    await clock(page, A, 14);
+    await page.goto('/members/home/');
+    await expect(page.locator('[data-lld-section="goal-reached"]')).toBeVisible();
+    expect((await rows(page, 'goals')).find((g) => g.id === goal.id).status).toBe('reached');
+  });
+
+  test('TC-FR3-10-AS-04 The member can skip a measurement and add it later; progress is shown once it exists', async ({ page }) => {
     const m = await fresh(page, A);
     await profile(page, m.member_id);
     await weightGoal(page); // no waist
