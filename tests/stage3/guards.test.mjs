@@ -78,6 +78,12 @@ test('TC-NFR3-05-AS-02', () => {
   const r = stage3Scope({ title: 'S3-P30: account hub', files: [file, `${PLUGIN}/includes/stage3/screens/hub.php`] });
   expect(r.ok).toBe(true);
   expect(r.review).toEqual([file]);
+  // The Stage 2 payment files are open to the lead's payment packages only, and still labelled for review.
+  const billing = `${PLUGIN}/includes/class-billing.php`;
+  const lead = stage3Scope({ title: 'S3-P60: real Stripe checkout', files: [billing] });
+  expect(lead.ok).toBe(true);
+  expect(lead.review).toEqual([billing]);
+  expect(stage3Scope({ title: 'S3-P40: food search', files: [billing] }).ok).toBe(false);
 });
 
 test('every Stage 3 test id in tests/stage3 is a check in docs/stage3/03', () => {

@@ -46,6 +46,7 @@ class LLD_Members_Features {
 			'health_logging'   => 'P3-50, P3-51 health logging and urgent-care warnings',
 			'calculators_new'  => 'P3-55 to P3-5B new calculators and saved results',
 			'prices_launch'    => 'P3-60 launch prices',
+			'stripe_api'       => 'D2 real Stripe checkout, cancellation and refunds (Managed Payments)',
 			'access_tiers'     => 'P3-61 Free and Premium access, downgrade rules',
 			'membership_card'  => 'P3-62 membership card',
 			'pause'            => 'P3-63 pause subscription',
