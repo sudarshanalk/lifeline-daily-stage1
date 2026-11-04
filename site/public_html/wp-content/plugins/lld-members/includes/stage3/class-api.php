@@ -656,7 +656,7 @@ class LLD_Members_Stage3_API {
 				'date'       => (string) $request->get_param( 'date' ),
 				'q'          => (string) $request->get_param( 'q' ),
 				'week_start' => (string) $request->get_param( 'week_start' ),
-				'type'       => (string) $request->get_param( 'type' ),
+				'type'       => self::query_type( $request ),
 				'from'       => (string) $request->get_param( 'from' ),
 				'to'         => (string) $request->get_param( 'to' ),
 				'unit'       => (string) $request->get_param( 'unit' ),
@@ -686,7 +686,7 @@ class LLD_Members_Stage3_API {
 				$rows    = LLD_Members_Health_Log::limit_history( $rows, $premium, gmdate( 'Y-m-d' ) );
 				$rows    = LLD_Members_Health_Log::filter(
 					$rows,
-					(string) $request->get_param( 'type' ),
+					self::query_type( $request ),
 					(string) $request->get_param( 'from' ),
 					(string) $request->get_param( 'to' )
 				);
@@ -703,6 +703,17 @@ class LLD_Members_Stage3_API {
 			),
 			200
 		);
+	}
+
+	/**
+	 * The reading type asked for in the query string (?type=weight). Never get_param( 'type' ): with no query value it
+	 * falls back to the route's own {type} ("readings"), which matches no reading and empties every list.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
+	private static function query_type( $request ) {
+		$query = $request->get_query_params();
+		return isset( $query['type'] ) && is_scalar( $query['type'] ) ? (string) $query['type'] : '';
 	}
 
 	/**
