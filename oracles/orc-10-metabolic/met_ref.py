@@ -152,6 +152,8 @@ def main(root: Path) -> int:
             expected = assess(c["inputs"])
             if expected["stop"] is not None:
                 expected.pop("lifestyleWaistShown", None)
+            if not expected["refused"]:
+                expected.pop("refused")  # the frozen fixtures carry no "refused" key (oracle-guard compares whole objects)
             results.append({"fixture_id": c["id"], "expected": expected})
             for k, v in (c.get("expected") or {}).items():
                 if k in expected and expected[k] != v:
