@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Stage3_Schema {
 
-	const VERSION = 4;
+	const VERSION = 5;
 
 	/**
 	 * Every Stage 3 table suffix, in creation order. Stage 2's all_suffixes() is left as it is; the
@@ -453,6 +453,10 @@ class LLD_Members_Stage3_Schema {
 		// Version 4 (P3-31, owner decision Q79 = B): a blood pressure goal holds the bottom number too, sealed.
 		self::ensure_column( 'goals', 'start_value_2_ct', 'TEXT NULL' );
 		self::ensure_column( 'goals', 'target_value_2_ct', 'TEXT NULL' );
+		// Version 5 (P3-5B): sealed inputs and result on the Stage 2 calculator_result table (D3-33).
+		// engine_version maps to the existing calculator_version column (never rename, NFR3-04).
+		self::ensure_column( 'calculator_result', 'inputs_ct', 'LONGTEXT NULL' );
+		self::ensure_column( 'calculator_result', 'result_ct', 'LONGTEXT NULL' );
 	}
 
 	/**
