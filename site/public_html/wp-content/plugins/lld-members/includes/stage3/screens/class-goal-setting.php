@@ -443,7 +443,7 @@ class LLD_Members_Goal_Setting {
 			case 'keep_weight':
 				return 'Keep my weight steady at about ' . LLD_Members_Goal_Rules::show_weight( $goal['target_value'], $imp );
 			case 'lower_blood_pressure':
-				return 'Blood pressure below ' . (int) $goal['target_value'] . '/' . (int) LLD_Members_Goal_Rules::BP_DEFAULT[1] . $date;
+				return 'Blood pressure below ' . (int) $goal['target_value'] . '/' . (int) ( isset( $goal['target_value_2'] ) && is_numeric( $goal['target_value_2'] ) ? $goal['target_value_2'] : LLD_Members_Goal_Rules::BP_DEFAULT[1] ) . $date;
 			case 'blood_sugar':
 				return 'Fasting glucose at or below ' . LLD_Members_Goal_Rules::plain( (float) $goal['target_value'] ) . ' mmol/L' . $date;
 			case 'activity':

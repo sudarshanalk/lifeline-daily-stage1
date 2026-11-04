@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Stage3_Schema {
 
-	const VERSION = 3;
+	const VERSION = 4;
 
 	/**
 	 * Every Stage 3 table suffix, in creation order. Stage 2's all_suffixes() is left as it is; the
@@ -144,6 +144,8 @@ class LLD_Members_Stage3_Schema {
 			measure VARCHAR(32) NOT NULL,
 			start_value_ct TEXT NULL,
 			target_value_ct TEXT NULL,
+			start_value_2_ct TEXT NULL,
+			target_value_2_ct TEXT NULL,
 			unit VARCHAR(16) NOT NULL,
 			target_date DATE NULL,
 			target_source VARCHAR(24) NOT NULL DEFAULT "member",
@@ -448,6 +450,9 @@ class LLD_Members_Stage3_Schema {
 		// Version 2 (P3-40): the food search key. Later packages add ensure_column() and ensure_key() lines
 		// here and leave every Stage 2 statement as it is.
 		self::ensure_key( 'foods', 'food_search', 'FULLTEXT KEY food_search (name, search_names)' );
+		// Version 4 (P3-31, owner decision Q79 = B): a blood pressure goal holds the bottom number too, sealed.
+		self::ensure_column( 'goals', 'start_value_2_ct', 'TEXT NULL' );
+		self::ensure_column( 'goals', 'target_value_2_ct', 'TEXT NULL' );
 	}
 
 	/**

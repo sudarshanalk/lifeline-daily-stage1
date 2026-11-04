@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Goal_Journey {
 
-	const SEALED_GOAL    = array( 'start_value', 'target_value' );
+	const SEALED_GOAL    = array( 'start_value', 'target_value', 'start_value_2', 'target_value_2' );
 	const SEALED_READING = array( 'value_1', 'value_2', 'value_3', 'detail' );
 	const OPTION_REWRITE = 'lld_members_stage3_goal_rewrites';
 	const REWRITE_VERSION = '1';
@@ -278,17 +278,25 @@ class LLD_Members_Goal_Journey {
 				$row['target_date']  = $check['target_date'];
 				break;
 			case 'lower_blood_pressure':
+				// Both numbers (owner decision Q79 = B): the doctor's top and bottom targets, or the guideline 135/85.
 				$sys = $number( 'target' );
+				$dia = $number( 'target_2' );
 				$src = isset( $in['source'] ) && 'doctor' === $in['source'] ? 'doctor' : 'guideline_default';
+				if ( 'doctor' === $src && null !== $sys && null === $dia ) {
+					return new WP_Error( 'lld_goal', "Enter both numbers of your doctor's target." );
+				}
 				if ( 'guideline_default' === $src || null === $sys ) {
 					$sys = (float) LLD_Members_Goal_Rules::BP_DEFAULT[0];
+					$dia = (float) LLD_Members_Goal_Rules::BP_DEFAULT[1];
 					$src = 'guideline_default';
 				}
-				if ( $sys < 90 || $sys > 200 ) {
+				if ( $sys < 90 || $sys > 200 || $dia < 50 || $dia > 130 || $dia >= $sys ) {
 					return new WP_Error( 'lld_goal', 'Check the blood pressure target.' );
 				}
-				$row['start_value']   = $number( 'current' );
-				$row['target_value']  = $sys;
+				$row['start_value']    = $number( 'current' );
+				$row['target_value']   = $sys;
+				$row['start_value_2']  = null !== $number( 'current' ) ? $number( 'current_2' ) : null;
+				$row['target_value_2'] = $dia;
 				$row['target_source'] = $src;
 				$row['target_date']   = $date ? $date : LLD_Members_Goal_Rules::add_days( $today, 7 * self::DEFAULT_WEEKS );
 				break;
@@ -391,7 +399,11 @@ class LLD_Members_Goal_Journey {
 		if ( $saved['id'] > 0 ) {
 			LLD_Members_Stage3_Data::insert( 'goal_baselines', $member_id, array( 'goal_id' => (int) $goal['id'], 'measure' => $measure, 'reading_id' => $saved['id'] ) );
 			if ( (string) $goal['measure'] === $measure && ! is_numeric( $goal['start_value'] ) ) {
-				LLD_Members_Stage3_Data::update( 'goals', $member_id, (int) $goal['id'], array( 'start_value' => $values['value_1'] ), self::SEALED_GOAL );
+				$start = array( 'start_value' => $values['value_1'] );
+				if ( 'blood_pressure' === $measure && isset( $values['value_2'] ) && is_numeric( $values['value_2'] ) ) {
+					$start['start_value_2'] = $values['value_2'];
+				}
+				LLD_Members_Stage3_Data::update( 'goals', $member_id, (int) $goal['id'], $start, self::SEALED_GOAL );
 			}
 		}
 		return $saved;
@@ -810,9 +822,17 @@ class LLD_Members_Goal_Journey {
 		if ( ! $type || 'hold' === $type['direction'] ) {
 			return false;
 		}
-		$p = self::progress( $member_id, $goal, $facts );
-		if ( ! $p['points'] || ! LLD_Members_Goal_Rules::reached( $p['points'], (float) $goal['target_value'], (string) $facts['today'], $type['direction'] ) ) {
-			return false;
+		if ( 'blood_pressure' === (string) $goal['measure'] ) {
+			// Both 7-day means at or below their targets (owner decision Q79 = B); progress() keeps the top number only.
+			$points = self::daily( $member_id, 'blood_pressure' );
+			if ( ! $points || ! LLD_Members_Goal_Rules::bp_reached( $points, (float) $goal['target_value'], isset( $goal['target_value_2'] ) ? $goal['target_value_2'] : null, (string) $facts['today'] ) ) {
+				return false;
+			}
+		} else {
+			$p = self::progress( $member_id, $goal, $facts );
+			if ( ! $p['points'] || ! LLD_Members_Goal_Rules::reached( $p['points'], (float) $goal['target_value'], (string) $facts['today'], $type['direction'] ) ) {
+				return false;
+			}
 		}
 		LLD_Members_Stage3_Data::update( 'goals', $member_id, (int) $goal['id'], array( 'status' => 'reached', 'reached_at' => lld_members_now_mysql( $member_id ) ) );
 		return true;

@@ -105,6 +105,8 @@ test('TC-NFR3-10-AS-01', () => {
   expect(table('readings')).toMatch(/value_1_ct TEXT/);
   expect(table('readings')).not.toMatch(/\bvalue_1 (DECIMAL|INT|SMALLINT|FLOAT)/);
   expect(table('goals')).toMatch(/target_value_ct TEXT/);
+  expect(table('goals')).toMatch(/start_value_2_ct TEXT[\s\S]*target_value_2_ct TEXT/);
+  expect(table('goals')).not.toMatch(/\btarget_value_2 (DECIMAL|INT|SMALLINT|FLOAT)/);
   expect(table('insights')).toMatch(/values_ct TEXT/);
   // Nothing in the Stage 3 layer writes a value to a log or an error.
   for (const file of ['class-data.php', 'class-api.php', 'class-erasure-stage3.php']) {
