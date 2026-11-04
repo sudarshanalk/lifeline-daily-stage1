@@ -66,6 +66,9 @@ class LLD_Members_Heart_Risk {
 		'whatif'                  => 'The change that would lower your risk most: {factor}. {Stopping smoking | Bringing your blood pressure under {band top} | Bringing your cholesterol under {band top} mmol/L | Bringing your BMI under {band top}} would take it to about {new_risk} %.',
 		'whatif.diabetes'         => 'Keeping blood sugar well controlled also lowers risk.',
 		'whatif.none'             => 'Your changeable risk factors are already in the lowest bands. Keeping them there is the goal.',
+		'whatif.noFall'           => 'No single change would lower this estimate on the WHO chart right now. Not smoking, staying active and keeping your blood pressure and cholesterol in check still protect your heart over the years.', // CW-20 (Owner_Questions 95)
+		'headline.under1'         => 'Your estimated chance of a heart attack or stroke in the next 10 years is less than 1 %', // CW-22 (Owner_Questions 100)
+		'comparison.under1'       => 'For comparison, fewer than 1 in 100 people like you would be expected to have a heart attack or stroke in the next 10 years', // CW-22
 		'always'                  => "This is an estimate for people without known heart disease, from the World Health Organization's 2019 risk charts for {region}. It doesn't replace an assessment by your doctor, who may use a method made for your country.",
 		'model.lab'               => 'Based on a blood test (total cholesterol)',
 		'model.nolab'             => 'Without a blood test (uses BMI instead). Ask your doctor for a cholesterol test for a closer estimate.',
@@ -90,9 +93,15 @@ class LLD_Members_Heart_Risk {
 
 	/**
 	 * Other names and ISO 3166 two-letter codes for countries, folded as fold() folds them, => the appendix-1 name
-	 * whose region applies. The site's own extension (sheet 1.2): a territory takes the region of the country it
-	 * belongs to; a small state the appendix leaves out takes its neighbour's (Liechtenstein, Monaco, San Marino,
-	 * Vatican City, Saint Kitts and Nevis, Nauru, Palau, Tuvalu, Kosovo). Antarctica has none.
+	 * whose region applies. The site's own extension: a small state the appendix leaves out takes its neighbour's
+	 * (Liechtenstein, Monaco, San Marino, Vatican City, Saint Kitts and Nevis, Nauru, Palau, Tuvalu, Kosovo), and a
+	 * territory takes the region of the part of the world it is in, as the appendix places its own territories
+	 * (Puerto Rico, Guam, Bermuda) by geography (Owner_Questions 99, decided 4 Nov 2026, as shown to the owner:
+	 * "Puerto Rico in the Americas, Réunion in Africa"; written into sheet 1.2 the same day). Each territory points
+	 * at an appendix country in that area: the Caribbean islands at a Caribbean country (so Aruba, Curaçao and
+	 * Bonaire go to Trinidad and Tobago, not Venezuela on the mainland), the Indian Ocean islands off Africa at an
+	 * African one (Réunion at Madagascar; Mauritius, nearer, sits in the WHO's Southeast Asia region), the Pacific
+	 * islands at a Pacific one (Pitcairn at Tonga). Antarctica has none.
 	 */
 	const ALIASES = array(
 		// Other names.
@@ -110,44 +119,44 @@ class LLD_Members_Heart_Risk {
 		// Small states the appendix leaves out: the neighbour's region.
 		'liechtenstein' => 'Switzerland', 'monaco' => 'France', 'san marino' => 'Italy', 'vatican city' => 'Italy', 'holy see' => 'Italy', 'saint kitts and nevis' => 'Antigua and Barbuda',
 		'nauru' => 'Kiribati', 'palau' => 'Micronesia (Federated States of)', 'tuvalu' => 'Fiji', 'kosovo' => 'Serbia',
-		// Territories: the region of the country they belong to.
+		// Territories: the region of where they are (Owner_Questions 99), by their nearest appendix country.
 		'hong kong' => 'China', 'hong kong sar' => 'China', 'macao' => 'China', 'macau' => 'China', 'macao sar' => 'China',
-		'anguilla' => 'United Kingdom', 'british virgin islands' => 'United Kingdom', 'cayman islands' => 'United Kingdom', 'montserrat' => 'United Kingdom', 'turks and caicos islands' => 'United Kingdom', 'falkland islands' => 'United Kingdom',
-		'gibraltar' => 'United Kingdom', 'jersey' => 'United Kingdom', 'guernsey' => 'United Kingdom', 'isle of man' => 'United Kingdom', 'saint helena' => 'United Kingdom', 'pitcairn islands' => 'United Kingdom', 'british indian ocean territory' => 'United Kingdom', 'south georgia and the south sandwich islands' => 'United Kingdom',
-		'aruba' => 'Netherlands', 'curacao' => 'Netherlands', 'sint maarten' => 'Netherlands', 'bonaire' => 'Netherlands', 'caribbean netherlands' => 'Netherlands',
-		'guadeloupe' => 'France', 'martinique' => 'France', 'french guiana' => 'France', 'reunion' => 'France', 'mayotte' => 'France', 'french polynesia' => 'France', 'new caledonia' => 'France', 'wallis and futuna' => 'France', 'saint pierre and miquelon' => 'France', 'saint barthelemy' => 'France', 'saint martin' => 'France', 'french southern territories' => 'France',
+		'anguilla' => 'Antigua and Barbuda', 'british virgin islands' => 'Antigua and Barbuda', 'cayman islands' => 'Jamaica', 'montserrat' => 'Antigua and Barbuda', 'turks and caicos islands' => 'Bahamas', 'falkland islands' => 'Chile',
+		'gibraltar' => 'Spain', 'jersey' => 'United Kingdom', 'guernsey' => 'United Kingdom', 'isle of man' => 'United Kingdom', 'saint helena' => 'Angola', 'pitcairn islands' => 'Tonga', 'british indian ocean territory' => 'Maldives', 'south georgia and the south sandwich islands' => 'Chile',
+		'aruba' => 'Trinidad and Tobago', 'curacao' => 'Trinidad and Tobago', 'sint maarten' => 'Antigua and Barbuda', 'bonaire' => 'Trinidad and Tobago', 'caribbean netherlands' => 'Trinidad and Tobago',
+		'guadeloupe' => 'Dominica', 'martinique' => 'Saint Lucia', 'french guiana' => 'Suriname', 'reunion' => 'Madagascar', 'mayotte' => 'Comoros', 'french polynesia' => 'Samoa', 'new caledonia' => 'Vanuatu', 'wallis and futuna' => 'Samoa', 'saint pierre and miquelon' => 'Canada', 'saint barthelemy' => 'Antigua and Barbuda', 'saint martin' => 'Antigua and Barbuda', 'french southern territories' => 'Madagascar',
 		'aland islands' => 'Finland', 'aland' => 'Finland', 'faroe islands' => 'Denmark', 'svalbard' => 'Norway', 'svalbard and jan mayen' => 'Norway', 'western sahara' => 'Morocco',
-		'cook islands' => 'New Zealand', 'niue' => 'New Zealand', 'tokelau' => 'New Zealand', 'norfolk island' => 'Australia', 'christmas island' => 'Australia', 'cocos keeling islands' => 'Australia', 'cocos islands' => 'Australia',
-		'united states minor outlying islands' => 'United States of America',
+		'cook islands' => 'Samoa', 'niue' => 'Tonga', 'tokelau' => 'Samoa', 'norfolk island' => 'Australia', 'christmas island' => 'Indonesia', 'cocos keeling islands' => 'Indonesia', 'cocos islands' => 'Indonesia',
+		'united states minor outlying islands' => 'Marshall Islands',
 		// ISO 3166 two-letter codes (the time-zone country a signed-in member's page is pre-filled from).
-		'ad' => 'Andorra', 'ae' => 'United Arab Emirates', 'af' => 'Afghanistan', 'ag' => 'Antigua and Barbuda', 'ai' => 'United Kingdom', 'al' => 'Albania', 'am' => 'Armenia', 'ao' => 'Angola',
-		'ar' => 'Argentina', 'as' => 'American Samoa', 'at' => 'Austria', 'au' => 'Australia', 'aw' => 'Netherlands', 'ax' => 'Finland', 'az' => 'Azerbaijan', 'ba' => 'Bosnia and Herzegovina',
-		'bb' => 'Barbados', 'bd' => 'Bangladesh', 'be' => 'Belgium', 'bf' => 'Burkina Faso', 'bg' => 'Bulgaria', 'bh' => 'Bahrain', 'bi' => 'Burundi', 'bj' => 'Benin', 'bl' => 'France',
-		'bm' => 'Bermuda', 'bn' => 'Brunei Darussalam', 'bo' => 'Bolivia', 'bq' => 'Netherlands', 'br' => 'Brazil', 'bs' => 'Bahamas', 'bt' => 'Bhutan', 'bw' => 'Botswana', 'by' => 'Belarus',
-		'bz' => 'Belize', 'ca' => 'Canada', 'cc' => 'Australia', 'cd' => 'DR Congo', 'cf' => 'Central African Republic', 'cg' => 'Congo', 'ch' => 'Switzerland', 'ci' => "Cote d'Ivoire",
-		'ck' => 'New Zealand', 'cl' => 'Chile', 'cm' => 'Cameroon', 'cn' => 'China', 'co' => 'Colombia', 'cr' => 'Costa Rica', 'cu' => 'Cuba', 'cv' => 'Cabo Verde', 'cw' => 'Netherlands',
-		'cx' => 'Australia', 'cy' => 'Cyprus', 'cz' => 'Czech Republic', 'de' => 'Germany', 'dj' => 'Djibouti', 'dk' => 'Denmark', 'dm' => 'Dominica', 'do' => 'Dominican Republic', 'dz' => 'Algeria',
-		'ec' => 'Ecuador', 'ee' => 'Estonia', 'eg' => 'Egypt', 'eh' => 'Morocco', 'er' => 'Eritrea', 'es' => 'Spain', 'et' => 'Ethiopia', 'fi' => 'Finland', 'fj' => 'Fiji', 'fk' => 'United Kingdom',
-		'fm' => 'Micronesia (Federated States of)', 'fo' => 'Denmark', 'fr' => 'France', 'ga' => 'Gabon', 'gb' => 'United Kingdom', 'gd' => 'Grenada', 'ge' => 'Georgia', 'gf' => 'France',
-		'gg' => 'United Kingdom', 'gh' => 'Ghana', 'gi' => 'United Kingdom', 'gl' => 'Greenland', 'gm' => 'Gambia', 'gn' => 'Guinea', 'gp' => 'France', 'gq' => 'Equatorial Guinea', 'gr' => 'Greece',
-		'gs' => 'United Kingdom', 'gt' => 'Guatemala', 'gu' => 'Guam', 'gw' => 'Guinea Bissau', 'gy' => 'Guyana', 'hk' => 'China', 'hn' => 'Honduras', 'hr' => 'Croatia', 'ht' => 'Haiti',
-		'hu' => 'Hungary', 'id' => 'Indonesia', 'ie' => 'Ireland', 'il' => 'Israel', 'im' => 'United Kingdom', 'in' => 'India', 'io' => 'United Kingdom', 'iq' => 'Iraq', 'ir' => 'Iran', 'is' => 'Iceland',
+		'ad' => 'Andorra', 'ae' => 'United Arab Emirates', 'af' => 'Afghanistan', 'ag' => 'Antigua and Barbuda', 'ai' => 'Antigua and Barbuda', 'al' => 'Albania', 'am' => 'Armenia', 'ao' => 'Angola',
+		'ar' => 'Argentina', 'as' => 'American Samoa', 'at' => 'Austria', 'au' => 'Australia', 'aw' => 'Trinidad and Tobago', 'ax' => 'Finland', 'az' => 'Azerbaijan', 'ba' => 'Bosnia and Herzegovina',
+		'bb' => 'Barbados', 'bd' => 'Bangladesh', 'be' => 'Belgium', 'bf' => 'Burkina Faso', 'bg' => 'Bulgaria', 'bh' => 'Bahrain', 'bi' => 'Burundi', 'bj' => 'Benin', 'bl' => 'Antigua and Barbuda',
+		'bm' => 'Bermuda', 'bn' => 'Brunei Darussalam', 'bo' => 'Bolivia', 'bq' => 'Trinidad and Tobago', 'br' => 'Brazil', 'bs' => 'Bahamas', 'bt' => 'Bhutan', 'bw' => 'Botswana', 'by' => 'Belarus',
+		'bz' => 'Belize', 'ca' => 'Canada', 'cc' => 'Indonesia', 'cd' => 'DR Congo', 'cf' => 'Central African Republic', 'cg' => 'Congo', 'ch' => 'Switzerland', 'ci' => "Cote d'Ivoire",
+		'ck' => 'Samoa', 'cl' => 'Chile', 'cm' => 'Cameroon', 'cn' => 'China', 'co' => 'Colombia', 'cr' => 'Costa Rica', 'cu' => 'Cuba', 'cv' => 'Cabo Verde', 'cw' => 'Trinidad and Tobago',
+		'cx' => 'Indonesia', 'cy' => 'Cyprus', 'cz' => 'Czech Republic', 'de' => 'Germany', 'dj' => 'Djibouti', 'dk' => 'Denmark', 'dm' => 'Dominica', 'do' => 'Dominican Republic', 'dz' => 'Algeria',
+		'ec' => 'Ecuador', 'ee' => 'Estonia', 'eg' => 'Egypt', 'eh' => 'Morocco', 'er' => 'Eritrea', 'es' => 'Spain', 'et' => 'Ethiopia', 'fi' => 'Finland', 'fj' => 'Fiji', 'fk' => 'Chile',
+		'fm' => 'Micronesia (Federated States of)', 'fo' => 'Denmark', 'fr' => 'France', 'ga' => 'Gabon', 'gb' => 'United Kingdom', 'gd' => 'Grenada', 'ge' => 'Georgia', 'gf' => 'Suriname',
+		'gg' => 'United Kingdom', 'gh' => 'Ghana', 'gi' => 'Spain', 'gl' => 'Greenland', 'gm' => 'Gambia', 'gn' => 'Guinea', 'gp' => 'Dominica', 'gq' => 'Equatorial Guinea', 'gr' => 'Greece',
+		'gs' => 'Chile', 'gt' => 'Guatemala', 'gu' => 'Guam', 'gw' => 'Guinea Bissau', 'gy' => 'Guyana', 'hk' => 'China', 'hn' => 'Honduras', 'hr' => 'Croatia', 'ht' => 'Haiti',
+		'hu' => 'Hungary', 'id' => 'Indonesia', 'ie' => 'Ireland', 'il' => 'Israel', 'im' => 'United Kingdom', 'in' => 'India', 'io' => 'Maldives', 'iq' => 'Iraq', 'ir' => 'Iran', 'is' => 'Iceland',
 		'it' => 'Italy', 'je' => 'United Kingdom', 'jm' => 'Jamaica', 'jo' => 'Jordan', 'jp' => 'Japan', 'ke' => 'Kenya', 'kg' => 'Kyrgyzstan', 'kh' => 'Cambodia', 'ki' => 'Kiribati', 'km' => 'Comoros',
-		'kn' => 'Antigua and Barbuda', 'kp' => 'North Korea', 'kr' => 'South Korea', 'kw' => 'Kuwait', 'ky' => 'United Kingdom', 'kz' => 'Kazakhstan', 'la' => 'Lao PDR', 'lb' => 'Lebanon',
+		'kn' => 'Antigua and Barbuda', 'kp' => 'North Korea', 'kr' => 'South Korea', 'kw' => 'Kuwait', 'ky' => 'Jamaica', 'kz' => 'Kazakhstan', 'la' => 'Lao PDR', 'lb' => 'Lebanon',
 		'lc' => 'Saint Lucia', 'li' => 'Switzerland', 'lk' => 'Sri Lanka', 'lr' => 'Liberia', 'ls' => 'Lesotho', 'lt' => 'Lithuania', 'lu' => 'Luxembourg', 'lv' => 'Latvia', 'ly' => 'Libya',
-		'ma' => 'Morocco', 'mc' => 'France', 'md' => 'Moldova', 'me' => 'Montenegro', 'mf' => 'France', 'mg' => 'Madagascar', 'mh' => 'Marshall Islands', 'mk' => 'Macedonia (TFYR)', 'ml' => 'Mali',
-		'mm' => 'Myanmar', 'mn' => 'Mongolia', 'mo' => 'China', 'mp' => 'Northern Mariana Islands', 'mq' => 'France', 'mr' => 'Mauritania', 'ms' => 'United Kingdom', 'mt' => 'Malta', 'mu' => 'Mauritius',
-		'mv' => 'Maldives', 'mw' => 'Malawi', 'mx' => 'Mexico', 'my' => 'Malaysia', 'mz' => 'Mozambique', 'na' => 'Namibia', 'nc' => 'France', 'ne' => 'Niger', 'nf' => 'Australia', 'ng' => 'Nigeria',
-		'ni' => 'Nicaragua', 'nl' => 'Netherlands', 'no' => 'Norway', 'np' => 'Nepal', 'nr' => 'Kiribati', 'nu' => 'New Zealand', 'nz' => 'New Zealand', 'om' => 'Oman', 'pa' => 'Panama', 'pe' => 'Peru',
-		'pf' => 'France', 'pg' => 'Papua New Guinea', 'ph' => 'Philippines', 'pk' => 'Pakistan', 'pl' => 'Poland', 'pm' => 'France', 'pn' => 'United Kingdom', 'pr' => 'Puerto Rico',
-		'ps' => 'Occupied Palestinian Territory', 'pt' => 'Portugal', 'pw' => 'Micronesia (Federated States of)', 'py' => 'Paraguay', 'qa' => 'Qatar', 're' => 'France', 'ro' => 'Romania', 'rs' => 'Serbia',
+		'ma' => 'Morocco', 'mc' => 'France', 'md' => 'Moldova', 'me' => 'Montenegro', 'mf' => 'Antigua and Barbuda', 'mg' => 'Madagascar', 'mh' => 'Marshall Islands', 'mk' => 'Macedonia (TFYR)', 'ml' => 'Mali',
+		'mm' => 'Myanmar', 'mn' => 'Mongolia', 'mo' => 'China', 'mp' => 'Northern Mariana Islands', 'mq' => 'Saint Lucia', 'mr' => 'Mauritania', 'ms' => 'Antigua and Barbuda', 'mt' => 'Malta', 'mu' => 'Mauritius',
+		'mv' => 'Maldives', 'mw' => 'Malawi', 'mx' => 'Mexico', 'my' => 'Malaysia', 'mz' => 'Mozambique', 'na' => 'Namibia', 'nc' => 'Vanuatu', 'ne' => 'Niger', 'nf' => 'Australia', 'ng' => 'Nigeria',
+		'ni' => 'Nicaragua', 'nl' => 'Netherlands', 'no' => 'Norway', 'np' => 'Nepal', 'nr' => 'Kiribati', 'nu' => 'Tonga', 'nz' => 'New Zealand', 'om' => 'Oman', 'pa' => 'Panama', 'pe' => 'Peru',
+		'pf' => 'Samoa', 'pg' => 'Papua New Guinea', 'ph' => 'Philippines', 'pk' => 'Pakistan', 'pl' => 'Poland', 'pm' => 'Canada', 'pn' => 'Tonga', 'pr' => 'Puerto Rico',
+		'ps' => 'Occupied Palestinian Territory', 'pt' => 'Portugal', 'pw' => 'Micronesia (Federated States of)', 'py' => 'Paraguay', 'qa' => 'Qatar', 're' => 'Madagascar', 'ro' => 'Romania', 'rs' => 'Serbia',
 		'ru' => 'Russian Federation', 'rw' => 'Rwanda', 'sa' => 'Saudi Arabia', 'sb' => 'Solomon Islands', 'sc' => 'Seychelles', 'sd' => 'Sudan', 'se' => 'Sweden', 'sg' => 'Singapore',
-		'sh' => 'United Kingdom', 'si' => 'Slovenia', 'sj' => 'Norway', 'sk' => 'Slovakia', 'sl' => 'Sierra Leone', 'sm' => 'Italy', 'sn' => 'Senegal', 'so' => 'Somalia', 'sr' => 'Suriname',
-		'ss' => 'South Sudan', 'st' => 'Sao Tome and Principe', 'sv' => 'El Salvador', 'sx' => 'Netherlands', 'sy' => 'Syrian Arab Republic', 'sz' => 'Swaziland', 'tc' => 'United Kingdom', 'td' => 'Chad',
-		'tf' => 'France', 'tg' => 'Togo', 'th' => 'Thailand', 'tj' => 'Tajikistan', 'tk' => 'New Zealand', 'tl' => 'Timor-Leste', 'tm' => 'Turkmenistan', 'tn' => 'Tunisia', 'to' => 'Tonga',
-		'tr' => 'Turkey', 'tt' => 'Trinidad and Tobago', 'tv' => 'Fiji', 'tw' => 'Taiwan', 'tz' => 'Tanzania', 'ua' => 'Ukraine', 'ug' => 'Uganda', 'um' => 'United States of America',
-		'us' => 'United States of America', 'uy' => 'Uruguay', 'uz' => 'Uzbekistan', 'va' => 'Italy', 'vc' => 'Saint Vincent and the Grenadines', 've' => 'Venezuela', 'vg' => 'United Kingdom',
-		'vi' => 'Virgin Islands, U.S.', 'vn' => 'Viet Nam', 'vu' => 'Vanuatu', 'wf' => 'France', 'ws' => 'Samoa', 'xk' => 'Serbia', 'ye' => 'Yemen', 'yt' => 'France', 'za' => 'South Africa',
+		'sh' => 'Angola', 'si' => 'Slovenia', 'sj' => 'Norway', 'sk' => 'Slovakia', 'sl' => 'Sierra Leone', 'sm' => 'Italy', 'sn' => 'Senegal', 'so' => 'Somalia', 'sr' => 'Suriname',
+		'ss' => 'South Sudan', 'st' => 'Sao Tome and Principe', 'sv' => 'El Salvador', 'sx' => 'Antigua and Barbuda', 'sy' => 'Syrian Arab Republic', 'sz' => 'Swaziland', 'tc' => 'Bahamas', 'td' => 'Chad',
+		'tf' => 'Madagascar', 'tg' => 'Togo', 'th' => 'Thailand', 'tj' => 'Tajikistan', 'tk' => 'Samoa', 'tl' => 'Timor-Leste', 'tm' => 'Turkmenistan', 'tn' => 'Tunisia', 'to' => 'Tonga',
+		'tr' => 'Turkey', 'tt' => 'Trinidad and Tobago', 'tv' => 'Fiji', 'tw' => 'Taiwan', 'tz' => 'Tanzania', 'ua' => 'Ukraine', 'ug' => 'Uganda', 'um' => 'Marshall Islands',
+		'us' => 'United States of America', 'uy' => 'Uruguay', 'uz' => 'Uzbekistan', 'va' => 'Italy', 'vc' => 'Saint Vincent and the Grenadines', 've' => 'Venezuela', 'vg' => 'Antigua and Barbuda',
+		'vi' => 'Virgin Islands, U.S.', 'vn' => 'Viet Nam', 'vu' => 'Vanuatu', 'wf' => 'Samoa', 'ws' => 'Samoa', 'xk' => 'Serbia', 'ye' => 'Yemen', 'yt' => 'Comoros', 'za' => 'South Africa',
 		'zm' => 'Zambia', 'zw' => 'Zimbabwe',
 	);
 
@@ -255,7 +264,7 @@ class LLD_Members_Heart_Risk {
 		// "Not sure" counts as pregnant, so the pregnancy thresholds and wording apply.
 		$out['sbp']       = $sbp;
 		$out['urgentKey'] = self::urgent_key( $sbp, 'no' !== $preg );
-		$out['urgent']    = null !== $out['urgentKey'];
+		$out['urgent']    = null !== $out['urgentKey'] && 'bp-check.pregnancy.same-day' !== $out['urgentKey'];
 		if ( $age < 40 ) {
 			return self::stop( $out, 'under40' );
 		}
@@ -387,17 +396,18 @@ class LLD_Members_Heart_Risk {
 		if ( $out['urgent'] ) {
 			$keys[] = $out['urgentKey']; // before any result (sheet section 4); the result is still shown below it
 		}
-		$keys[] = 'headline';
+		// A 0 % chart cell reads "less than 1 %" and "fewer than 1 in 100" (CW-22, Owner_Questions 100).
+		$keys[] = 0 === $out['risk'] ? 'headline.under1' : 'headline';
 		$keys[] = 'band.' . $out['band'];
-		$keys[] = 'comparison';
+		$keys[] = 0 === $out['risk'] ? 'comparison.under1' : 'comparison';
 		$keys[] = 'model.' . $model;
 		if ( $whatif ) {
 			$keys[] = 'whatif';
 		} elseif ( $lowest ) {
 			$keys[] = 'whatif.none';
 		} elseif ( null === $hidden || $hidden['fall'] <= 0 ) {
-			// A factor could move a band but no move lowers the printed figure: neither signed line is true, so a key
-			// with no wording yet (owner wording pending). When only the hidden weight move would lower it, no line.
+			// A factor could move a band but no move lowers the printed figure: neither of the other lines is true, so
+			// CW-20 (Owner_Questions 95). When only the hidden weight move would lower it, no line.
 			$keys[] = 'whatif.noFall';
 		}
 		if ( 'yes' === $diabetes ) {
@@ -414,8 +424,8 @@ class LLD_Members_Heart_Risk {
 	/**
 	 * The signed text for each wording key. The urgent keys (`bp-check.urgent.alert`, `bp-check.pregnancy.urgent`) take
 	 * the frozen text from the safety layer's signed blood-pressure lines (P3-58, FR3-46); a key with no signed text
-	 * (`whatif.noFall`, whose exact words are not in the approval record) maps to null, so no unsigned text is ever
-	 * shown. The pregnancy and "prefer not to say" stops carry CW-01 and CW-02.
+	 * maps to null, so no unsigned text is ever shown. The pregnancy and "prefer not to say" stops carry CW-01 and
+	 * CW-02; `whatif.noFall`, `headline.under1` and `comparison.under1` carry CW-20 and CW-22.
 	 *
 	 * @param string[] $keys   Wording keys from compute().
 	 * @param array    $result The compute() result (unused; the screen fills the placeholders from its `fill`).
@@ -471,7 +481,12 @@ class LLD_Members_Heart_Risk {
 	 */
 	private static function urgent_key( $sbp, $pregnant ) {
 		$level = call_user_func( array( self::safety_class(), 'warning_level' ), 'blood_pressure', array( 'sys' => $sbp, 'dia' => self::NEUTRAL_DIA ), array( 'pregnancy' => $pregnant ) );
-		return 'urgent' === $level['level'] ? $level['key'] : null;
+		if ( 'urgent' === $level['level'] ) {
+			return $level['key'];
+		}
+		// Owner_Questions 98 (decided 4 Nov 2026): in pregnancy, 140 to 159 shows the safety matrix's same-day line
+		// first, as the metabolic check does; it is not the urgent level, so `urgent` stays false.
+		return 'bp-check.pregnancy.same-day' === $level['key'] ? $level['key'] : null;
 	}
 
 	/** The Stage 3 safety layer, loaded on first use when the engine runs on its own (tests, CLI). */

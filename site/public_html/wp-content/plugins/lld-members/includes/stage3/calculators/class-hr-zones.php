@@ -184,8 +184,15 @@ class LLD_Members_HR_Zones {
 					? (int) self::half_up( $f['max'][ $j ] * $max / 100 )
 					: (int) self::half_up( $rhr + $f['hrr'][ $j ] * ( $max - $rhr ) / 100 );
 			}
+			// Owner_Questions 97 (decided 4 Nov 2026): each edge is rounded on its own, so a zone's bottom can equal the
+			// zone below's top; it then starts 1 bpm higher, so no number belongs to two zones.
+			if ( isset( $previous ) && $bounds[0] <= $previous ) {
+				$bounds[0] = $previous + 1;
+			}
+			$previous     = $bounds[1];
 			$out[ $zone ] = $bounds;
 		}
+		unset( $previous );
 		if ( $age > 75 && 'no' === $history ) {
 			$out['notes'][] = 'over75NoHistory';
 		}

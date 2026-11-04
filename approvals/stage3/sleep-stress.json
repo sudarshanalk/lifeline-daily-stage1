@@ -1,7 +1,7 @@
 {
   "approval_id": "APR-SLEEP-STRESS-2026-11-03",
   "tool_slug": "sleep-stress",
-  "version_hash": "20170b87fe7d84e8bc9653e84a948d5b612dd08118f03eddedc58313064633a1",
+  "version_hash": "99b802ef0c776f54933b47961c56bd57edcf1f3939359d75159875176c644ad2",
   "engine_name": "Sleep and Stress Check: GAD-2 (stress and worry, 0–6, ≥ 3 worth attention) and PHQ-2 (low mood, 0–6, ≥ 3 worth attention), scored exactly as published, plus a 4-item insomnia-symptom count (0–4) written from the ICSD-3 / DSM-5 insomnia criteria and not called a validated test (0–1 no major concern, 2 some concern, 3–4 needs attention; Q6 counts only with Q5), with the Stage 2 FR2-38 self-harm question first (Yes: Stage 2 Response 1 only, no scores) (D3-28, D3-29)",
   "intended_use": "Screens and signposts: shows 'in the usual range', 'worth attention' or 'needs attention' for stress and worry, low mood and sleep, with the doctor, insomnia (CBT-I) and help-line lines and a pointer to the Sleep and Stress track weeks. It does not diagnose. Answers are never stored; only the scores and the date are saved if the member chooses to save (D3-30).",
   "eligibility": "Adults. A Yes to the self-harm question shows Stage 2 Response 1 verbatim and no score in that session, with no track offer (FR2-38). 'Needs attention' or 'worth attention' shows the support wording and the NFR2-07 'Need help now?' footer (FR3-54 AS-02).",

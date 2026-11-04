@@ -82,14 +82,15 @@ test('TC-FR3-49-AS-01', () => {
   expect(urgent.risk).toBe(66);
 
   // Countries: other names, accents, straight and curly apostrophes, case and spacing, ISO codes, and the site's own
-  // extension (territories take the region of the country they belong to; left-out small states their neighbour's).
+  // extension (left-out small states take their neighbour's region; territories the region of where they are,
+  // Owner_Questions 99, 4 Nov 2026; more cases in owner-decisions-calculators.test.mjs).
   const names = {
     'United States': 'High-income North America', USA: 'High-income North America', 'u.s.a.': 'High-income North America', US: 'High-income North America',
     Eswatini: 'Southern Sub-Saharan Africa', 'North Macedonia': 'Central Europe', Czechia: 'Central Europe', 'T\u00fcrkiye': 'North Africa and Middle East',
     Turkiye: 'North Africa and Middle East', Vietnam: 'Southeast Asia', 'C\u00f4te d\u2019Ivoire': 'Western Sub-Saharan Africa', "C\u00f4te d'Ivoire": 'Western Sub-Saharan Africa',
     "cote d'ivoire": 'Western Sub-Saharan Africa', 'Hong Kong': 'East Asia', Macao: 'East Asia', Macau: 'East Asia', '  united   kingdom ': 'Western Europe', UK: 'Western Europe',
     'Timor-Leste': 'Southeast Asia', 'S\u00e3o Tom\u00e9 and Pr\u00edncipe': 'Western Sub-Saharan Africa', 'St Lucia': 'Caribbean', 'The Gambia': 'Western Sub-Saharan Africa',
-    'Trinidad & Tobago': 'Caribbean', 'Cura\u00e7ao': 'Western Europe', 'R\u00e9union': 'Western Europe', 'Puerto Rico': 'Caribbean', Liechtenstein: 'Western Europe', Kosovo: 'Central Europe',
+    'Trinidad & Tobago': 'Caribbean', 'Cura\u00e7ao': 'Caribbean', 'R\u00e9union': 'Eastern Sub-Saharan Africa', 'Puerto Rico': 'Caribbean', Liechtenstein: 'Western Europe', Kosovo: 'Central Europe',
     GB: 'Western Europe', DE: 'Western Europe', gb: 'Western Europe',
   };
   const got = JSON.parse(php(`echo json_encode(array_map(fn($n) => ${H}::region_for_country($n), json_decode(${JSON.stringify(JSON.stringify(Object.keys(names)))}, true)));`));
@@ -136,7 +137,7 @@ test('TC-FR3-49-AS-02', () => {
   expect(hr22.messages).toContain('whatif');
   // A move that leaves the printed figure unchanged is never offered (review of PR #191): UK man 42, non-smoker,
   // SBP 150, TC 3.5 is 2 %, and the band below 140-159 is 2 % too. With no factor left that lowers it and a factor
-  // not in its lowest band, neither signed line is true: whatif.noFall (no wording until the owner signs it).
+  // not in its lowest band, neither of the other lines is true: whatif.noFall, with wording CW-20 (Owner_Questions 95).
   const [flat] = compute([{ ...base, age: 42, sbp: 150, tc: 3.5 }]);
   expect(flat.risk).toBe(2);
   expect(flat.whatif).toEqual([]);
@@ -144,7 +145,7 @@ test('TC-FR3-49-AS-02', () => {
   expect(flat.messages).toContain('whatif.noFall');
   expect(flat.messages).not.toContain('whatif.none');
   expect(flat.messages).not.toContain('whatif');
-  expect(JSON.parse(php(`echo json_encode(${H}::wording(['whatif.noFall']));`))).toEqual({ 'whatif.noFall': null });
+  expect(JSON.parse(php(`echo json_encode(${H}::wording(['whatif.noFall']));`))).toEqual({ 'whatif.noFall': 'No single change would lower this estimate on the WHO chart right now. Not smoking, staying active and keeping your blood pressure and cholesterol in check still protect your heart over the years.' });
   // The same answers without the eating-disorder answer show the BMI what-if (25-29 -> 21 %, the cell the fixture
   // notes); "prefer not to say" hides it too; the member's profile flag hides it whatever the page said.
   const prof = JSON.parse(php(`echo json_encode(${H}::apply_profile(json_decode(${JSON.stringify(JSON.stringify({ ...byId['FX-HR-WHATIF-22'].inputs, eat: 'no' }))}, true), ['eating_disorder']));`));
@@ -233,7 +234,8 @@ test('TC-FR3-49-AS-03', () => {
     ['under40', true, ['bp-check.urgent.alert', 'stops.under40']], ['over74', true, ['bp-check.urgent.alert', 'stops.over74']],
     ['cvd', true, ['bp-check.urgent.alert', 'stops.cvd']], ['pregnancy', true, ['bp-check.pregnancy.urgent', 'stops.pregnancy']],
     ['sex', true, ['bp-check.urgent.alert', 'stops.sex']], ['pregnancy', true, ['bp-check.pregnancy.urgent', 'stops.pregnancy']],
-    ['pregnancy', false, ['stops.pregnancy']], ['under40', false, ['stops.under40']],
+    // 159 in pregnancy: the safety matrix's same-day line first, not urgent (Owner_Questions 98, 4 Nov 2026).
+    ['pregnancy', false, ['bp-check.pregnancy.same-day', 'stops.pregnancy']], ['under40', false, ['stops.under40']],
   ]);
   for (const r of urgentStops) for (const k of ['risk', 'band', 'model', 'first']) expect(r[k]).toBeNull();
   const UW = JSON.parse(php(`echo json_encode(${H}::wording(['bp-check.urgent.alert', 'bp-check.pregnancy.urgent']));`));
@@ -304,10 +306,10 @@ test('TC-NFR3-14-AS-02 (heart risk): every signed string and both WHO data files
     expect(Buffer.compare(shipped, frozen), name).toBe(0);
     expect(sha(shipped), name).toBe(approval.copy_hashes[`data.${name}`]);
   }
-  // Every key a result can show is signed, an urgent key of the safety layer, or one of the three still unsigned
-  // (the pregnancy and "prefer not to say" stops and whatif.noFall, which show no text).
+  // Every key a result can show is signed, a safety-layer key (urgent or pregnancy same-day), or one of the two
+  // stops whose text is CW-01 and CW-02.
   const keys = new Set(compute([...fixtures.map((f) => f.inputs), { ...base, sex: 'pnts' }, { ...base, age: 42, sbp: 150, tc: 3.5 }]).flatMap((r) => r.messages));
-  for (const k of keys) expect(k in M || ['bp-check.urgent.alert', 'bp-check.pregnancy.urgent', 'stops.pregnancy', 'stops.sex', 'whatif.noFall'].includes(k), k).toBe(true);
+  for (const k of keys) expect(k in M || ['bp-check.urgent.alert', 'bp-check.pregnancy.urgent', 'bp-check.pregnancy.same-day', 'stops.pregnancy', 'stops.sex'].includes(k), k).toBe(true);
   // No medicine advice: "statin" never appears in the wording.
   expect(Object.values(M).join(' ')).not.toMatch(/statin/i);
 });

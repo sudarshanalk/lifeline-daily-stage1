@@ -68,9 +68,54 @@ class LLD_Members_Stage3_Report {
 	private static $week = null;
 
 	public static function boot() {
+		add_action( LLD_Members_Growth::REPORT_HOOK, array( __CLASS__, 'quiet_scheduled_run' ), 1 );
 		add_action( LLD_Members_Growth::REPORT_HOOK, array( __CLASS__, 'before_report' ), 5 );
 		add_action( LLD_Members_Growth::REPORT_HOOK, array( __CLASS__, 'after_report' ), 20 );
+		add_action( LLD_Members_Growth::REPORT_HOOK, array( __CLASS__, 'end_quiet_run' ), 99 );
 		add_filter( 'wp_mail', array( __CLASS__, 'extend_mail' ) );
+	}
+
+	/**
+	 * The owner stopped the Monday email (Owner_Questions 85, 4 Nov 2026; FR2-17 and FR3-70 removed). The scheduled
+	 * run still closes the week, so the week's totals are kept for the admin "Weekly report" page, but no email
+	 * leaves: while the cron run is under way the report email loses its recipients (on `wp_mail`, which runs before
+	 * every `pre_wp_mail` callback, so the staging mail catcher has no one to forward it to), and is then answered as
+	 * sent without sending it. A run started any other way (the CI test route) is left as it was, so the Stage 2
+	 * report tests run unchanged.
+	 */
+	public static function quiet_scheduled_run() {
+		if ( function_exists( 'wp_doing_cron' ) && wp_doing_cron() ) {
+			add_filter( 'wp_mail', array( __CLASS__, 'drop_report_recipients' ), 20 );
+			add_filter( 'pre_wp_mail', array( __CLASS__, 'skip_report_mail' ), 10, 2 );
+		}
+	}
+
+	public static function end_quiet_run() {
+		remove_filter( 'wp_mail', array( __CLASS__, 'drop_report_recipients' ), 20 );
+		remove_filter( 'pre_wp_mail', array( __CLASS__, 'skip_report_mail' ), 10 );
+	}
+
+	/**
+	 * @param array<string,mixed> $mail wp_mail arguments (after extend_mail has written the week's totals).
+	 * @return array<string,mixed> The report email with no recipients; any other email unchanged.
+	 */
+	public static function drop_report_recipients( $mail ) {
+		if ( is_array( $mail ) && self::SUBJECT === ( $mail['subject'] ?? '' ) ) {
+			$mail['to'] = array();
+		}
+		return $mail;
+	}
+
+	/**
+	 * @param null|bool           $short Earlier answer.
+	 * @param array<string,mixed> $atts  wp_mail arguments.
+	 * @return null|bool True (taken as sent) for the report email only.
+	 */
+	public static function skip_report_mail( $short, $atts ) {
+		if ( is_array( $atts ) && self::SUBJECT === ( $atts['subject'] ?? '' ) ) {
+			return true;
+		}
+		return $short;
 	}
 
 	public static function before_report() {

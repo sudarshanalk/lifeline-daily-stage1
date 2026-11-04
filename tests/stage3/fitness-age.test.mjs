@@ -66,7 +66,8 @@ test('TC-FR3-52-AS-01', () => {
   expect(floor.stop).toBe('cannotEstimate');
   for (const k of ['vo2', 'fitnessAge', 'fitnessAgeRaw', 'paIndex']) expect(floor[k]).toBeNull();
   expect(floor.messages).toEqual(['stops.cannotEstimate']);
-  expect(JSON.parse(php("echo json_encode(LLD_Members_Fitness_Age::wording(['stops.cannotEstimate']));"))).toEqual({ 'stops.cannotEstimate': null });
+  // Its wording is CW-21, approved by the owner on 4 Nov 2026 (Owner_Questions 95, 96).
+  expect(JSON.parse(php("echo json_encode(LLD_Members_Fitness_Age::wording(['stops.cannotEstimate']));"))).toEqual({ 'stops.cannotEstimate': "We can't give a reliable fitness estimate from these answers. Your doctor or a supervised fitness test can give a better picture." });
   expect(justAbove.stop).toBeNull();
   expect(justAbove.vo2).toBeGreaterThanOrEqual(10);
 });

@@ -365,8 +365,13 @@ class LLD_Members_Metabolic {
 			$result = 'results.notMet';
 		}
 
-		// The check's own flags and notes (sheet section 4), after the urgent levels above. A non-fasting glucose gets
-		// only the urgent level: the diagnostic-range and low lines are about a fasting result.
+		// The check's own flags and notes (sheet section 4), after the urgent levels above. A non-fasting glucose of
+		// 11.1 (200) or more gets its own diagnostic-range line, since 11.1 is the random-glucose level too
+		// (Owner_Questions 101, decided 4 Nov 2026); its wording, CW-23 (Owner_Questions 104), waits for the owner, so it maps to no text
+		// until then. The low line stays about a fasting result.
+		if ( null !== $fpg['value'] && ! $fasting && null === $out['glucoseUrgent'] && $fpg['value'] >= self::FLAG_LEVELS['glucose_diagnostic'][ $fpg['unit'] ] ) {
+			$flags[] = 'flags.glucoseDiagnosticNonFasting';
+		}
 		if ( $fpg_used && null === $out['glucoseUrgent'] ) {
 			if ( $fpg['value'] >= self::FLAG_LEVELS['glucose_diagnostic'][ $fpg['unit'] ] ) {
 				$flags[] = 'flags.glucoseDiagnostic';

@@ -20,7 +20,8 @@ Exact decimal comparisons, in the unit entered (no conversion before comparison)
                     1 dp half-up) < 3.0 or >= 15 mmol/L -> flags.glucoseUrgent; below 1 or above 35 is not possible
                     (an error); outside the sheet's input range (2-30 mmol/L, 36-540 mg/dL) but possible -> the
                     urgent wording and refused, with no result (after the stops).
-  Flags           : otherwise, for a fasting glucose, >= 11.1 / 200 -> flags.glucoseDiagnostic; < 3.9 / 70 ->
+  Flags           : a non-fasting glucose >= 11.1 / 200 -> flags.glucoseDiagnosticNonFasting (Owner_Questions 101);
+                    otherwise, for a fasting glucose, >= 11.1 / 200 -> flags.glucoseDiagnostic; < 3.9 / 70 ->
                     flags.glucoseLow; triglycerides >= 10 / 885 -> flags.triglyceridesHigh; waist below with >= 2
                     raised -> notes.talkToDoctor (sheet section 3; owner, 3 Nov 2026, Owner_Questions 90);
                     "prefer not to say" -> notes.sex.
@@ -129,6 +130,10 @@ def assess(i: dict) -> dict:
     else:
         result = "results.notMet"
 
+    # Owner_Questions 101 (4 Nov 2026): a non-fasting glucose of 11.1 / 200 or more has its own diagnostic-range line,
+    # placed before the fasting flags, as the engine places it.
+    if g is not None and not fasting and not g_urgent and g >= G_DIAG[i["fastingGlucoseUnit"]]:
+        flags.append("flags.glucoseDiagnosticNonFasting")
     if g is not None and fasting and not g_urgent:
         u = i["fastingGlucoseUnit"]
         if g >= G_DIAG[u]: flags.append("flags.glucoseDiagnostic")
