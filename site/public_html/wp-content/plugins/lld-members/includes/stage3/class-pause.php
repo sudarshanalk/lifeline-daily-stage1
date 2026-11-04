@@ -32,6 +32,7 @@ class LLD_Members_Pause {
 	public static function boot() {
 		add_filter( 'lld_members_paid_open', array( __CLASS__, 'paid_open' ), 10, 2 );
 		add_filter( 'lld_members_cancel_offer', array( __CLASS__, 'cancel_offer' ), 10, 3 );
+		add_filter( 'lld_members_can_switch_yearly', array( __CLASS__, 'can_switch_yearly' ), 20, 2 );
 		add_action( 'lld_members_subscription_post', array( __CLASS__, 'post' ), 10, 2 );
 	}
 
@@ -106,6 +107,7 @@ class LLD_Members_Pause {
 		return 'monthly' === (string) $sub->plan
 			&& 'premium' === strtolower( (string) $sub->access_state )
 			&& empty( $sub->pending_yearly_on )
+			&& 'past_due' !== (string) ( $sub->stripe_state ?? '' )
 			&& ! empty( $sub->period_ends_on );
 	}
 
@@ -154,7 +156,58 @@ class LLD_Members_Pause {
 		if ( ! $open || (int) $member_id < 1 || ! self::on( $member_id ) ) {
 			return $open;
 		}
-		return ! self::paused_now( $member_id );
+		$sub = LLD_Members_Billing::subscription_for( $member_id );
+		if ( self::paused_now( $member_id ) && self::same_subscription( self::open( $member_id ), $sub ) ) {
+			return false;
+		}
+		// Cancelled during a pause: Premium does not come back when the pause ends. The paid period Stripe moved on
+		// while collection was paused (the voided month) is not paid for, so it opens nothing.
+		$last = ( $sub && 'cancelled' === strtolower( (string) $sub->access_state ) ) ? self::latest( $member_id ) : null;
+		if ( $last && self::same_subscription( $last, $sub )
+			&& LLD_Members_Programme::local_today( $member_id ) >= (string) $last->starts_at
+			&& (string) $sub->period_ends_on <= (string) $last->ends_at ) {
+			return false;
+		}
+		return $open;
+	}
+
+	/**
+	 * A pause belongs to the subscription it was made for. A later subscription (bought after the old one ended)
+	 * is never closed by an old pause.
+	 *
+	 * @param object|null $pause Pause row.
+	 * @param object|null $sub   Stage 2 subscription row.
+	 */
+	public static function same_subscription( $pause, $sub ) {
+		if ( ! $pause || ! $sub ) {
+			return false;
+		}
+		$ref = (string) $sub->stripe_subscription;
+		return (string) $pause->subscription_ref === ( '' !== $ref ? $ref : 'member:' . (int) $pause->member_id );
+	}
+
+	/**
+	 * The member's most recent pause that was not undone, whatever its dates.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function latest( $member_id ) {
+		global $wpdb;
+		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Stage3_Schema::table( 'pauses' ) . " WHERE member_id = %d AND status <> 'cancelled' ORDER BY id DESC LIMIT 1", (int) $member_id ) );
+		return $row ? $row : null;
+	}
+
+	/**
+	 * Filter: no switch to yearly while a pause is scheduled or running; the voided renewal would never apply it.
+	 *
+	 * @param bool $allowed   Earlier answer.
+	 * @param int  $member_id Member number.
+	 */
+	public static function can_switch_yearly( $allowed, $member_id ) {
+		if ( ! $allowed || ! self::on( $member_id ) ) {
+			return $allowed;
+		}
+		return null === self::open( $member_id );
 	}
 
 	/**
@@ -174,15 +227,10 @@ class LLD_Members_Pause {
 			return new WP_Error( 'lld_pause', 'Choose 1, 2 or 3 months.' );
 		}
 		$ref = (string) $sub->stripe_subscription;
-		if ( LLD_Members_Stripe_API::on( $member_id ) && 0 === strpos( $ref, 'sub_' ) ) {
-			$done = LLD_Members_Stripe_API::pause( $ref, (int) $months );
-			if ( is_wp_error( $done ) ) {
-				return $done;
-			}
-		}
 		global $wpdb;
 		$now = gmdate( 'Y-m-d H:i:s' );
-		$wpdb->insert(
+		// The row first, so Stripe is never paused without a record here; if Stripe refuses, the row is undone.
+		$saved = $wpdb->insert(
 			LLD_Members_Stage3_Schema::table( 'pauses' ),
 			array(
 				'member_id'        => (int) $member_id,
@@ -195,7 +243,17 @@ class LLD_Members_Pause {
 				'updated_at'       => $now,
 			)
 		);
+		if ( ! $saved ) {
+			return new WP_Error( 'lld_pause', 'The pause could not be saved.' );
+		}
 		unset( self::$memo[ (int) $member_id ] );
+		if ( LLD_Members_Stripe_API::on( $member_id ) && 0 === strpos( $ref, 'sub_' ) ) {
+			$done = LLD_Members_Stripe_API::pause( $ref, (int) $months );
+			if ( is_wp_error( $done ) ) {
+				$wpdb->update( LLD_Members_Stage3_Schema::table( 'pauses' ), array( 'status' => 'cancelled', 'updated_at' => gmdate( 'Y-m-d H:i:s' ) ), array( 'id' => (int) $wpdb->insert_id ) );
+				return $done;
+			}
+		}
 		do_action( 'lld_members_event', 'paused', (int) $member_id, array( 'months' => (int) $months ) );
 		return true;
 	}
@@ -287,6 +345,10 @@ class LLD_Members_Pause {
 	 * @param object|null $sub       Stage 2 subscription row.
 	 */
 	public static function cancel_offer( $html, $member_id, $sub ) {
+		if ( self::on( $member_id ) && self::paused_now( $member_id ) ) {
+			$row = self::open( $member_id );
+			return $html . '<p data-lld-pause="cancel-while-paused">' . esc_html( 'Your plan is paused until ' . self::day( (string) $row->ends_at ) . '. If you cancel, you keep Free access, Premium does not come back and you are not charged again.' ) . '</p>';
+		}
 		if ( ! self::on( $member_id ) || ! self::may_pause( $sub, LLD_Members_Billing::has_premium( $member_id ), self::open( $member_id ) ) ) {
 			return $html;
 		}

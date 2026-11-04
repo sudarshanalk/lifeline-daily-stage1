@@ -1007,7 +1007,8 @@ class LLD_Members_Billing {
 			LLD_Members_Personal::render( 'Checkout', $main );
 			return;
 		}
-		if ( self::has_premium( $member_id ) ) {
+		// paid_state: a paused member still has a subscription, so a second checkout would charge twice (P3-63).
+		if ( $member_id > 0 && self::paid_state( $member_id ) ) {
 			// A second checkout would start a second subscription while the first keeps charging.
 			$main .= '<p>You already have Premium. No payment was taken.</p>';
 			$main .= lld_button( array( 'label' => 'My subscription', 'href' => home_url( '/members/subscription/' ) ) );
@@ -1480,7 +1481,7 @@ class LLD_Members_Billing {
 			if ( ! in_array( $country, array( 'GB', 'DE', 'US' ), true ) ) {
 				$country = 'US';
 			}
-			if ( self::has_premium( $member_id ) ) {
+			if ( $member_id > 0 && self::paid_state( $member_id ) ) {
 				return new WP_REST_Response( array( 'message' => 'You already have Premium.' ), 409 );
 			}
 			if ( empty( $params['sale_terms'] ) ) {
@@ -1816,7 +1817,7 @@ class LLD_Members_Billing {
 			$email = self::email_of( $member_id );
 		}
 		$current  = self::subscription_row( $member_id );
-		if ( self::has_premium( $member_id ) && $current && '' !== (string) $current->stripe_subscription && (string) $current->stripe_subscription !== $stripe ) {
+		if ( $member_id > 0 && self::paid_state( $member_id ) && $current && '' !== (string) $current->stripe_subscription && (string) $current->stripe_subscription !== $stripe ) {
 			// Paid twice: keep the first subscription, record the payment so the owner can refund it, and flag it.
 			self::insert_order( $member_id, 'payment', $quote, $payment, $email, $fingerprint );
 			self::flag_mismatch( $member_id, $today );

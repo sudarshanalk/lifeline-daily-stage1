@@ -48,7 +48,8 @@ class FakeDb { public $queries = []; public $pause = null; public $counts = ['wo
   function get_row($q) { $this->queries[] = $q; return $this->pause ? (object) $this->pause : null; }
   function get_var($q) { $this->queries[] = $q; return strpos($q, "context_type = 'workout'") !== false ? $this->counts['workout'] : $this->counts['days']; }
   function update($t, $f, $w) { $this->queries[] = 'UPDATE ' . $t; if ($this->pause) { $this->pause = array_merge($this->pause, $f); } return 1; }
-  function insert($t, $f) { $this->queries[] = 'INSERT ' . $t; $this->pause = $f + ['id' => 1]; return 1; }
+  public $insert_id = 0;
+  function insert($t, $f) { $this->queries[] = 'INSERT ' . $t; $this->pause = $f + ['id' => 1]; $this->insert_id = 1; return 1; }
 }
 $GLOBALS['wpdb'] = new FakeDb();
 require ${path('includes/stage3/class-access-tiers.php')};
@@ -56,7 +57,10 @@ require ${path('includes/stage3/class-membership.php')};
 require ${path('includes/stage3/class-pause.php')};
 LLD_Members_Access_Tiers::boot(); LLD_Members_Membership::boot(); LLD_Members_Pause::boot();
 function sub($plan, $state = 'Premium', $ends = '2027-03-10', $locked = null) { return (object) ['plan' => $plan, 'access_state' => $state, 'period_ends_on' => $ends, 'pending_yearly_on' => null, 'locked_amount' => $locked, 'locked_currency' => 'usd', 'stripe_subscription' => 'sub_TEST1']; }
+class Req { public $m; function __construct($m) { $this->m = $m; } function get_method() { return $this->m; } }
+function refuse($type, $method, $m = 5) { return apply_filters('lld_members_stage3_api_refuse', null, $type, $m, new Req($method)); }
 function fresh() { $r = new ReflectionProperty('LLD_Members_Pause', 'memo'); $r->setAccessible(true); $r->setValue(null, []); }
+LLD_Members_Billing::$sub = sub('monthly');
 `;
 
 // --- P3-60 launch prices (FR3-62) -----------------------------------------------------------------------------
@@ -102,10 +106,10 @@ test('TC-FR3-62-AS-04: a member on an older price keeps it when the price for ne
 // --- P3-61 Free and Premium access (FR3-63, FR3-68) -------------------------------------------------------------
 
 test('TC-FR3-63-AS-01: a Free member can log food and health data on any day', () => {
-  const out = php(`${stubs} $GLOBALS['premium'] = false; $_SERVER['REQUEST_METHOD'] = 'POST';
+  const out = php(`${stubs} $GLOBALS['premium'] = false; 
     echo json_encode([
       'food' => LLD_Members_Access_Tiers::allows(5, 'food_log'), 'health' => LLD_Members_Access_Tiers::allows(5, 'health_logging'),
-      'food_api' => apply_filters('lld_members_stage3_api_refuse', null, 'food-log', 5), 'readings_api' => apply_filters('lld_members_stage3_api_refuse', null, 'readings', 5),
+      'food_api' => refuse('food-log', 'POST'), 'readings_api' => refuse('readings', 'POST'),
     ]);`);
   expect(out).toEqual({ food: true, health: true, food_api: null, readings_api: null });
 });
@@ -131,8 +135,8 @@ test('TC-FR3-63-AS-03: a Free member keeps goal progress and On track or Behind,
 });
 
 test('TC-FR3-63-AS-04: a Free member reaching a Premium feature sees a short explanation and an upgrade button', () => {
-  const out = php(`${stubs} $GLOBALS['premium'] = false; $_SERVER['REQUEST_METHOD'] = 'POST';
-    $r = apply_filters('lld_members_stage3_api_refuse', null, 'recipes', 5);
+  const out = php(`${stubs} $GLOBALS['premium'] = false;
+    $r = refuse('recipes', 'POST');
     echo json_encode(['prompt' => LLD_Members_Access_Tiers::upgrade_prompt('barcode'), 'api' => $r->data, 'status' => $r->status]);`);
   expect(out.prompt).toContain('Barcode scanning is part of Premium.');
   expect(out.prompt).toMatch(/<a class="lld-button" href="https:\/\/stg\.example\.test\/pricing\/">See Premium<\/a>/);
@@ -141,9 +145,9 @@ test('TC-FR3-63-AS-04: a Free member reaching a Premium feature sees a short exp
 });
 
 test('TC-FR3-63-AS-05: a Premium member can use every Stage 3 feature', () => {
-  const out = php(`${stubs} $_SERVER['REQUEST_METHOD'] = 'POST';
+  const out = php(`${stubs}
     $all = array_map(fn($f) => LLD_Members_Access_Tiers::allows(5, $f), array_keys(LLD_Members_Access_Tiers::PREMIUM));
-    echo json_encode(['all' => array_unique($all), 'api' => apply_filters('lld_members_stage3_api_refuse', null, 'custom-foods', 5), 'summary' => LLD_Members_Access_Tiers::summary(5)]);`);
+    echo json_encode(['all' => array_unique($all), 'api' => refuse('custom-foods', 'POST'), 'summary' => LLD_Members_Access_Tiers::summary(5)]);`);
   expect(out.all).toEqual([true]);
   expect(out.api).toBeNull();
   expect(out.summary).toMatchObject({ plan: 'premium', paused: false, history_days: null, reminders: null });
@@ -168,9 +172,12 @@ test('TC-FR3-68-AS-01: on downgrade nothing is deleted, the first reminder runs 
 test('TC-FR3-68-AS-02: after downgrade, custom foods and recipes can be viewed but not added to a new day', () => {
   const out = php(`${stubs} $GLOBALS['premium'] = false;
     $r = [];
-    foreach (['GET', 'POST', 'PATCH'] as $m) { $_SERVER['REQUEST_METHOD'] = $m; foreach (['custom-foods', 'recipes'] as $t) { $x = apply_filters('lld_members_stage3_api_refuse', null, $t, 5); $r[$m . ' ' . $t] = $x ? $x->status : 200; } }
+    foreach (['GET', 'POST', 'PATCH'] as $m) { foreach (['custom-foods', 'recipes'] as $t) { $x = refuse($t, $m); $r[$m . ' ' . $t] = $x ? $x->status : 200; } }
+    // The route runs the request's own method: a GET carrying ?_method=POST is a POST, whatever the server saw.
+    $_SERVER['REQUEST_METHOD'] = 'GET'; $x = refuse('custom-foods', 'POST'); $r['override'] = $x ? $x->status : 200;
+    $x = apply_filters('lld_members_stage3_api_refuse', null, 'custom-foods', 5); $r['no request'] = $x ? $x->status : 200;
     echo json_encode($r);`);
-  expect(out).toEqual({ 'GET custom-foods': 200, 'GET recipes': 200, 'POST custom-foods': 403, 'POST recipes': 403, 'PATCH custom-foods': 403, 'PATCH recipes': 403 });
+  expect(out).toEqual({ 'GET custom-foods': 200, 'GET recipes': 200, 'POST custom-foods': 403, 'POST recipes': 403, 'PATCH custom-foods': 403, 'PATCH recipes': 403, override: 403, 'no request': 403 });
 });
 
 test('TC-FR3-68-AS-03: upgrading again brings back every custom food, recipe, reminder and saved result', () => {
@@ -178,8 +185,8 @@ test('TC-FR3-68-AS-03: upgrading again brings back every custom food, recipe, re
     $rem = [['id' => 9, 'active' => 1, 'deleted_at' => null], ['id' => 12, 'active' => 1, 'deleted_at' => null], ['id' => 15, 'active' => 1, 'deleted_at' => null]];
     $res = [['id' => 1, 'tool' => 'calorie-target', 'created_at' => '2027-01-01 10:00:00'], ['id' => 2, 'tool' => 'calorie-target', 'created_at' => '2027-02-01 10:00:00']];
     $GLOBALS['premium'] = false; $free = ['rem' => LLD_Members_Access_Tiers::reminders_for(5, $rem), 'res' => array_column(apply_filters('lld_members_stage3_api_rows', $res, 'calculator-results', 5), 'id')];
-    $GLOBALS['premium'] = true; $_SERVER['REQUEST_METHOD'] = 'POST';
-    echo json_encode(['free' => $free, 'rem' => LLD_Members_Access_Tiers::reminders_for(5, $rem), 'res' => array_column(apply_filters('lld_members_stage3_api_rows', $res, 'calculator-results', 5), 'id'), 'add' => apply_filters('lld_members_stage3_api_refuse', null, 'custom-foods', 5)]);`);
+    $GLOBALS['premium'] = true;
+    echo json_encode(['free' => $free, 'rem' => LLD_Members_Access_Tiers::reminders_for(5, $rem), 'res' => array_column(apply_filters('lld_members_stage3_api_rows', $res, 'calculator-results', 5), 'id'), 'add' => refuse('custom-foods', 'POST')]);`);
   expect(out.free).toEqual({ rem: [9], res: [2] });
   expect(out.rem).toEqual([9, 12, 15]);
   expect(out.res).toEqual([1, 2]);
@@ -195,7 +202,7 @@ test('TC-FR3-64-AS-01: a yearly member\'s card shows the yearly plan, price, ren
   expect(out.card).toContain('data-lld-card-renews="2027-11-03">Renews on 3 November 2027');
   expect(out.card).toContain('You save US$49.89 a year compared with paying monthly.');
   expect(out.card).toContain('What Premium includes');
-  expect(out.card).toContain('href="https://stg.example.test/members/subscription/?confirm=1">Manage my plan');
+  expect(out.card).toContain('href="https://stg.example.test/members/subscription/#lld-plan-actions">Manage my plan');
 });
 
 test('TC-FR3-64-AS-02: the card shows the member\'s own counts of completed workouts and logged days', () => {
@@ -320,4 +327,75 @@ test('TC-FR3-65-AS-06: starting to cancel shows the pause option before the fina
   const offer = billing.indexOf("apply_filters( 'lld_members_cancel_offer'");
   expect(offer).toBeGreaterThan(billing.indexOf('<h2>Cancel Premium?</h2>'));
   expect(offer).toBeLessThan(billing.indexOf('value="cancel">Confirm cancellation</button>'));
+});
+
+// --- Review fixes: pause against the rest of billing --------------------------------------------------------------
+
+test('TC-FR3-65-AS-02 (no second subscription): a paused member cannot start a second checkout', () => {
+  const out = php(`${stubs}
+    $GLOBALS['wpdb']->pause = ['id' => 1, 'member_id' => 5, 'months' => 2, 'starts_at' => '2027-03-10', 'ends_at' => '2027-05-10', 'status' => 'active', 'subscription_ref' => 'sub_TEST1'];
+    $GLOBALS['today'] = '2027-04-01';
+    echo json_encode(['premium' => LLD_Members_Billing::has_premium(5), 'subscribed' => LLD_Members_Billing::paid_state(5)]);`);
+  expect(out).toEqual({ premium: false, subscribed: true });
+  // The three Stage 2 double-subscription guards (checkout page, checkout route, paid twice) ask paid_state, not has_premium.
+  const billing = src('includes/class-billing.php');
+  expect(billing.match(/\$member_id > 0 && self::paid_state\( \$member_id \)/g)).toHaveLength(3);
+  expect(billing).not.toMatch(/if \( self::has_premium\( \$member_id \)/);
+});
+
+test('TC-FR3-65-AS-03 (new subscription): an old pause never closes a later subscription', () => {
+  const out = php(`${stubs}
+    $GLOBALS['wpdb']->pause = ['id' => 1, 'member_id' => 5, 'months' => 2, 'starts_at' => '2027-03-10', 'ends_at' => '2027-05-10', 'status' => 'active', 'subscription_ref' => 'sub_OLD'];
+    $GLOBALS['today'] = '2027-04-01';
+    $new = LLD_Members_Billing::has_premium(5);
+    $GLOBALS['wpdb']->pause['subscription_ref'] = 'sub_TEST1'; fresh();
+    echo json_encode(['new' => $new, 'same' => LLD_Members_Billing::has_premium(5)]);`);
+  expect(out).toEqual({ new: true, same: false });
+});
+
+test('TC-FR3-65-AS-05 (switch to yearly): no switch to yearly while a pause is open, and no pause in arrears', () => {
+  const out = php(`${stubs}
+    $none = apply_filters('lld_members_can_switch_yearly', true, 5);
+    $GLOBALS['wpdb']->pause = ['id' => 1, 'member_id' => 5, 'months' => 1, 'starts_at' => '2027-03-10', 'ends_at' => '2027-04-10', 'status' => 'scheduled', 'subscription_ref' => 'sub_TEST1'];
+    fresh(); $scheduled = apply_filters('lld_members_can_switch_yearly', true, 5);
+    $GLOBALS['today'] = '2027-04-10'; fresh(); $after = apply_filters('lld_members_can_switch_yearly', true, 5);
+    $s = sub('monthly'); $s->stripe_state = 'past_due';
+    echo json_encode(['none' => $none, 'scheduled' => $scheduled, 'after' => $after, 'past_due' => LLD_Members_Pause::may_pause($s, true, null)]);`);
+  expect(out).toEqual({ none: true, scheduled: false, after: true, past_due: false });
+});
+
+test('TC-FR3-65-AS-06 (cancel while paused): Premium does not return, and no free day after the pause', () => {
+  const out = php(`${stubs}
+    // Stripe moved the paid period to the end of the voided month while collection was paused.
+    LLD_Members_Billing::$sub = sub('monthly', 'cancelled', '2027-04-10');
+    $GLOBALS['wpdb']->pause = ['id' => 1, 'member_id' => 5, 'months' => 1, 'starts_at' => '2027-03-10', 'ends_at' => '2027-04-10', 'status' => 'active', 'subscription_ref' => 'sub_TEST1'];
+    $r = [];
+    foreach (['2027-03-09', '2027-03-20', '2027-04-10', '2027-04-11'] as $d) { $GLOBALS['today'] = $d; fresh(); $r[$d] = LLD_Members_Billing::has_premium(5); }
+    $GLOBALS['today'] = '2027-03-20'; $GLOBALS['wpdb']->pause['status'] = 'active'; fresh();
+    $offer = LLD_Members_Pause::cancel_offer('', 5, LLD_Members_Billing::$sub); $card = LLD_Members_Membership::card(5, LLD_Members_Billing::$sub);
+    // Paid again after the pause, then cancelled: Premium to the end of that paid month, as in Stage 2.
+    LLD_Members_Billing::$sub = sub('monthly', 'cancelled', '2027-05-10'); $GLOBALS['today'] = '2027-04-20'; fresh();
+    echo json_encode(['days' => $r, 'offer' => $offer, 'card' => $card, 'paid_again' => LLD_Members_Billing::has_premium(5)]);`);
+  expect(out.days).toEqual({ '2027-03-09': true, '2027-03-20': false, '2027-04-10': false, '2027-04-11': false });
+  expect(out.offer).toContain('If you cancel, you keep Free access, Premium does not come back and you are not charged again.');
+  expect(out.card).toContain('Paused, and cancelled: Premium will not return after the pause.');
+  expect(out.paid_again).toBe(true);
+});
+
+test('TC-FR3-65-AS-01 (pause, undo, pause again): each pause reaches Stripe, with no reused request key', () => {
+  const out = php(`
+    define('ABSPATH', '/'); define('HOUR_IN_SECONDS', 3600); define('LLD_STRIPE_SECRET', '${FAKE_KEY}'); define('LLD_STRIPE_WEBHOOK', '${WEBHOOK}');
+    class WP_Error { public $message; function __construct($c = '', $m = '', $d = '') { $this->message = $m; } function get_error_message() { return $this->message; } }
+    function is_wp_error($t) { return $t instanceof WP_Error; } function sanitize_text_field($s) { return (string) $s; } function add_filter() {} function add_action() {}
+    $GLOBALS['sent'] = [];
+    function wp_remote_request($url, $args) { $GLOBALS['sent'][] = [$args['method'], $args['body'] ?? '', $args['headers']['Idempotency-Key'] ?? '']; return ['code' => 200, 'body' => json_encode(['id' => 'sub_TEST1', 'current_period_end' => gmmktime(14, 0, 0, 3, 10, 2027)])]; }
+    function wp_remote_retrieve_response_code($r) { return $r['code']; } function wp_remote_retrieve_body($r) { return $r['body']; }
+    class LLD_Members_Billing { static function stripe_key($k) { return LLD_STRIPE_SECRET; } }
+    require ${path('includes/stage3/class-stripe-api.php')};
+    LLD_Members_Stripe_API::pause('sub_TEST1', 1); LLD_Members_Stripe_API::unpause('sub_TEST1'); LLD_Members_Stripe_API::pause('sub_TEST1', 1);
+    echo json_encode(array_values(array_filter($GLOBALS['sent'], fn($s) => $s[0] === 'POST')));`);
+  expect(out).toHaveLength(3);
+  expect(out.map((s) => s[2])).toEqual(['', '', '']);
+  expect(new URLSearchParams(out[1][1]).get('pause_collection')).toBe('');
+  expect(new URLSearchParams(out[2][1]).get('pause_collection[behavior]')).toBe('void');
 });

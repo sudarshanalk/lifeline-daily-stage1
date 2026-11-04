@@ -293,6 +293,9 @@ class LLD_Members_Stage3_API {
 		);
 	}
 
+	/** @var WP_REST_Request|null The request being checked by gate(). */
+	public static $request = null;
+
 	public static function register() {
 		register_rest_route(
 			'lld-members/v1',
@@ -413,6 +416,7 @@ class LLD_Members_Stage3_API {
 			return self::refuse( 403, 'Health consent is needed first.' );
 		}
 		// The safety matrix may refuse a type for this member (P3-03; FR3-69 AS-02): safety before access.
+		self::$request = $request; // read by the access rules: the method the route runs (P3-61)
 		$refusal = apply_filters( 'lld_members_stage3_api_refuse', null, $type, $member_id );
 		if ( $refusal instanceof WP_REST_Response ) {
 			return $refusal;

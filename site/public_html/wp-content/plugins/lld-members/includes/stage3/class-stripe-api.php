@@ -431,8 +431,7 @@ class LLD_Members_Stripe_API {
 					'behavior'   => 'void',
 					'resumes_at' => $resumes,
 				),
-			),
-			'lld-pause-' . $ref . '-' . $resumes
+			)
 		);
 		return is_wp_error( $done ) ? $done : true;
 	}

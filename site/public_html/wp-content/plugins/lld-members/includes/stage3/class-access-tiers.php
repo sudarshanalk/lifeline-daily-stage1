@@ -60,7 +60,7 @@ class LLD_Members_Access_Tiers {
 	);
 
 	public static function boot() {
-		add_filter( 'lld_members_stage3_api_refuse', array( __CLASS__, 'api_refuse' ), 20, 3 );
+		add_filter( 'lld_members_stage3_api_refuse', array( __CLASS__, 'api_refuse' ), 20, 4 );
 		add_filter( 'lld_members_stage3_api_rows', array( __CLASS__, 'api_rows' ), 20, 3 );
 	}
 
@@ -240,12 +240,23 @@ class LLD_Members_Access_Tiers {
 	 * @param WP_REST_Response|null $refusal   An earlier refusal (safety comes first).
 	 * @param string                $type      API type.
 	 * @param int                   $member_id Member number.
+	 * @param WP_REST_Request|null  $request   The request; by default the one the members' API is checking. Its
+	 *                                         method, after any _method or override header, is what the route
+	 *                                         runs; the server's own method may differ.
 	 */
-	public static function api_refuse( $refusal, $type, $member_id ) {
+	public static function api_refuse( $refusal, $type, $member_id, $request = null ) {
 		if ( null !== $refusal || ! isset( self::READ_ONLY_TYPES[ $type ] ) ) {
 			return $refusal;
 		}
-		$method = strtoupper( (string) ( $_SERVER['REQUEST_METHOD'] ?? 'GET' ) );
+		if ( null === $request && class_exists( 'LLD_Members_Stage3_API' ) ) {
+			$request = LLD_Members_Stage3_API::$request;
+		}
+		if ( ! is_object( $request ) || ! method_exists( $request, 'get_method' ) ) {
+			// Without the request the method cannot be trusted: treat it as a change.
+			$method = 'POST';
+		} else {
+			$method = strtoupper( (string) $request->get_method() );
+		}
 		if ( in_array( $method, array( 'GET', 'HEAD', 'DELETE' ), true ) ) {
 			// Reading is open, and deleting your own item is always allowed.
 			return $refusal;

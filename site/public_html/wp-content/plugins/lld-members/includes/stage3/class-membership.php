@@ -173,7 +173,9 @@ class LLD_Members_Membership {
 		$html     = '<section class="lld-card lld-membership-card" data-lld-membership="' . esc_attr( $plan ) . '"><h2>Your membership</h2>';
 		$html    .= '<p class="lld-plan-name" data-lld-card-plan>' . esc_html( ucfirst( $plan ) . ' Premium' ) . '</p>';
 		$html    .= '<p class="lld-plan-price" data-lld-card-price="' . $amount . '">' . esc_html( self::money( $amount, $currency ) . ( 'yearly' === $plan ? ' a year' : ' a month' ) . ', tax included' ) . '</p>';
-		if ( 'cancelled' === strtolower( (string) $sub->access_state ) ) {
+		if ( 'cancelled' === strtolower( (string) $sub->access_state ) && $pause && 'active' === (string) $pause->status ) {
+			$html .= '<p data-lld-card-renews="">' . esc_html( 'Paused, and cancelled: Premium will not return after the pause.' ) . '</p>';
+		} elseif ( 'cancelled' === strtolower( (string) $sub->access_state ) ) {
 			$html .= '<p data-lld-card-renews="">' . esc_html( 'Premium until ' . LLD_Members_Pause::day( (string) $sub->period_ends_on ) . '. It will not renew.' ) . '</p>';
 		} else {
 			$renews = $pause ? (string) $pause->ends_at : (string) $sub->period_ends_on;
@@ -194,7 +196,7 @@ class LLD_Members_Membership {
 		$html .= '<p class="lld-row">' . lld_button(
 			array(
 				'label'   => 'Manage my plan',
-				'href'    => home_url( '/members/subscription/?confirm=1' ),
+				'href'    => home_url( '/members/subscription/#lld-plan-actions' ),
 				'variant' => 'secondary',
 			)
 		) . '</p></section>';
