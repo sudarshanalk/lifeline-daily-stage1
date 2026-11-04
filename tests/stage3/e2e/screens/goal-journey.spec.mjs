@@ -62,7 +62,18 @@ async function weighIn(page, day, kg) {
   expect(res.ok(), await res.text()).toBeTruthy();
 }
 
-/** Set a weight-loss goal on the screen: current, target, a rate or a date. Lands on the plan page. */
+/**
+ * Press "Save my goal" and wait for the server's answer (the plan, or the form again with a refusal). Without the wait,
+ * the next page.goto can cancel the form's POST in webkit before it reaches the server, so the goal is never saved.
+ */
+async function saveGoal(page) {
+  const answered = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/members/goal/');
+  await page.getByRole('button', { name: 'Save my goal' }).click();
+  await answered;
+  await page.waitForLoadState('load');
+}
+
+/** Set a weight-loss goal on the screen: current, target, a rate or a date. Lands on the plan page (or a refusal). */
 async function weightGoal(page, { current = 90, target = 84, rate = '0.5', date = '', waist = '' } = {}) {
   await page.goto('/members/goal/?type=lose_weight');
   await expect(page.locator('[data-lld-goal-step="details"]')).toBeVisible();
@@ -70,7 +81,7 @@ async function weightGoal(page, { current = 90, target = 84, rate = '0.5', date 
   await page.locator('#lld_target').fill(String(target));
   if (date) { await page.locator('input[name="lld_rate"][value="date"]').check(); await page.locator('#lld_date').fill(date); } else { await page.locator(`input[name="lld_rate"][value="${rate}"]`).check(); }
   if (waist) await page.locator('#lld_waist').fill(String(waist));
-  await page.getByRole('button', { name: 'Save my goal' }).click();
+  await saveGoal(page);
 }
 
 /** The weekly check-in with this week's numbers; lands back on the check-in with the result. */
@@ -380,7 +391,8 @@ test.describe.serial('P3-32 Today, goal progress, check-in and goal reached', ()
     const m = await fresh(page, B);
     await profile(page, m.member_id);
     await page.goto('/members/goal/?type=lower_blood_pressure');
-    await page.getByRole('button', { name: 'Save my goal' }).click(); // no starting reading
+    await saveGoal(page); // no starting reading
+    await expect(page.locator('[data-lld-goal-step="plan"]')).toBeVisible();
     await clock(page, B, 8);
     await page.goto('/members/home/');
     const card = page.locator('[data-lld-section="next-step"]');
