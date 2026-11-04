@@ -188,11 +188,13 @@ class LLD_Members_Privacy {
 	 * @return string[]
 	 */
 	public static function download_tables() {
-		return array_merge(
+		$tables = array_merge(
 			array( 'member', 'email_pref', 'consent' ),
 			LLD_Members_Schema::health_tables(),
 			array( 'enrolment_period', 'workout_change', 'subscription', 'order', 'referral', 'reward', 'contact_request', 'support', 'survey' )
 		);
+		// Stage 3 adds food, readings, goals and related tables (P3-86, FR3-60).
+		return apply_filters( 'lld_members_download_tables', $tables );
 	}
 
 	/**
@@ -210,6 +212,10 @@ class LLD_Members_Privacy {
 				continue;
 			}
 			$out[ $suffix ] = self::linked_rows( $suffix, $how, (int) $member_id, (string) $email );
+		}
+		// Download passes an $only list; Stage 3 then opens sealed columns (P3-86, FR3-60 AS-02).
+		if ( is_array( $only ) ) {
+			return apply_filters( 'lld_members_download_rows', $out, (int) $member_id, (string) $email );
 		}
 		return $out;
 	}
