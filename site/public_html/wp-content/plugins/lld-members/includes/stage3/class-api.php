@@ -455,8 +455,8 @@ class LLD_Members_Stage3_API {
 	public static function calculate( $request ) {
 		$tool      = (string) $request['tool'];
 		$member_id = LLD_Members_Access::current_member_id();
-		$known     = array( 'calorie-target', 'goal-timeline' );
-		if ( ! in_array( $tool, $known, true ) || ! LLD_Members_Features::enabled( 'calculators_new', $member_id ) ) {
+		$engines   = self::calculator_engines();
+		if ( ! isset( $engines[ $tool ] ) || ! class_exists( $engines[ $tool ] ) || ! LLD_Members_Features::enabled( 'calculators_new', $member_id ) ) {
 			return self::refuse( 404, 'Not available.' );
 		}
 		if ( $member_id < 1 ) {
@@ -464,6 +464,9 @@ class LLD_Members_Stage3_API {
 		}
 		$params = $request->get_json_params();
 		$params = is_array( $params ) ? $params : array();
+		if ( ! in_array( $tool, array( 'calorie-target', 'goal-timeline' ), true ) ) { // these two run below, with the Stage 2 profile flags
+			return self::calculate_engine( $engines[ $tool ], $params, $member_id );
+		}
 		// The member's health profile applies as well as the answers on the page (sheet section 2, FR3-69 AS-03/04):
 		// an eating-disorder flag stops the calculator; kidney disease removes the protein target; diabetes adds its note.
 		if ( class_exists( 'LLD_Members_Safety' ) ) {
@@ -539,6 +542,97 @@ class LLD_Members_Stage3_API {
 	}
 
 	/**
+	 * The Stage 3 calculator engines by tool slug (the approval record's tool_slug). A tool whose class is not loaded
+	 * looks absent.
+	 */
+	private static function calculator_engines() {
+		return array(
+			'calorie-target' => 'LLD_Members_Calorie_Target',
+			'goal-timeline'  => 'LLD_Members_Goal_Timeline',
+			'heart-risk'     => 'LLD_Members_Heart_Risk',
+			'bp-check'       => 'LLD_Members_BP_Check',
+			'metabolic'      => 'LLD_Members_Metabolic',
+			'fitness-age'    => 'LLD_Members_Fitness_Age',
+			'hr-zones'       => 'LLD_Members_HR_Zones',
+			'sleep-stress'   => 'LLD_Members_Sleep_Stress',
+		);
+	}
+
+	/**
+	 * Run a pure engine (P3-57 to P3-5A): the member's health profile is passed to the engine's apply_profile() when it
+	 * has one (sheet section 2 of each tool), then compute(), then the signed wording for the keys it returned. Nothing
+	 * is stored here; saving results over time is P3-5B.
+	 *
+	 * @param string $class     Engine class.
+	 * @param array  $params    The answers on the page.
+	 * @param int    $member_id Member number.
+	 */
+	private static function calculate_engine( $class, array $params, $member_id ) {
+		// The Blood Pressure Reading Check's 7-day average reads the member's own logged readings (P3-58 sheet section 5):
+		// whatever readings or date the page sent are ignored.
+		if ( 'LLD_Members_BP_Check' === $class && LLD_Members_BP_Check::home_mode( isset( $params['mode'] ) ? $params['mode'] : null ) ) {
+			$params = array_merge( $params, self::bp_home_readings( $member_id ) );
+		}
+		if ( method_exists( $class, 'apply_profile' ) && class_exists( 'LLD_Members_Stage3_Safety' ) ) {
+			$params = $class::apply_profile( $params, LLD_Members_Stage3_Safety::situations( $member_id ) );
+		}
+		$result = $class::compute( $params );
+		if ( isset( $result['error'] ) ) {
+			return self::refuse( 422, 'Check ' . $result['error'] . '.' );
+		}
+		$result['wording'] = $class::wording( isset( $result['messages'] ) ? $result['messages'] : array(), $result );
+		return new WP_REST_Response( $result, 200 );
+	}
+
+	/**
+	 * The member's blood-pressure readings for the 7-day average (P3-58 sheet section 5): the Stage 3 readings table,
+	 * type blood_pressure, not deleted, taken in the 7 calendar days ending today in the member's time zone (the
+	 * programme's zone in force; the site's zone when that is unavailable), sealed values opened in memory only, at
+	 * most LLD_Members_BP_Check::MAX_READINGS (the newest). Without health consent there are no readings to read.
+	 *
+	 * @param int $member_id Member number.
+	 * @return array{today:string,readings:array<int,array{date:string,systolic:float,diastolic:float}>}
+	 */
+	private static function bp_home_readings( $member_id ) {
+		global $wpdb;
+		$member_id = (int) $member_id;
+		$name      = class_exists( 'LLD_Members_Programme' ) ? (string) LLD_Members_Programme::timezone( $member_id ) : '';
+		try {
+			$zone = '' !== $name ? new DateTimeZone( $name ) : wp_timezone();
+		} catch ( Exception $e ) {
+			$zone = wp_timezone();
+		}
+		$utc      = new DateTimeZone( 'UTC' );
+		$now      = class_exists( 'LLD_Members_Clock' ) ? LLD_Members_Clock::now( $member_id ) : new DateTimeImmutable( 'now', $utc );
+		$today    = $now->setTimezone( $zone )->format( 'Y-m-d' );
+		$midnight = new DateTimeImmutable( $today . ' 00:00:00', $zone );
+		$from     = $midnight->modify( '-' . ( LLD_Members_BP_Check::WINDOW_DAYS - 1 ) . ' days' )->setTimezone( $utc )->format( 'Y-m-d H:i:s' );
+		$to       = $midnight->modify( '+1 day' )->setTimezone( $utc )->format( 'Y-m-d H:i:s' );
+		$readings = array();
+		if ( $member_id > 0 && LLD_Members_Access::has_health_consent( $member_id ) ) {
+			$table = LLD_Members_Stage3_Schema::table( 'readings' );
+			$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT taken_at, value_1_ct, value_2_ct FROM {$table} WHERE member_id = %d AND reading_type = %s AND deleted_at IS NULL AND taken_at >= %s AND taken_at < %s ORDER BY taken_at DESC, id DESC LIMIT %d", $member_id, 'blood_pressure', $from, $to, LLD_Members_BP_Check::MAX_READINGS ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- internal table name.
+			foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+				$at  = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', (string) $row['taken_at'], $utc );
+				$sys = LLD_Members_Stage3_Data::open( $member_id, $row['value_1_ct'] );
+				$dia = LLD_Members_Stage3_Data::open( $member_id, $row['value_2_ct'] );
+				if ( ! $at || ! is_numeric( $sys ) || ! is_numeric( $dia ) ) {
+					continue; // a value that does not open for this member is not theirs to count
+				}
+				$readings[] = array(
+					'date'      => $at->setTimezone( $zone )->format( 'Y-m-d' ),
+					'systolic'  => (float) $sys,
+					'diastolic' => (float) $dia,
+				);
+			}
+		}
+		return array(
+			'today'    => $today,
+			'readings' => $readings,
+		);
+	}
+
+	/**
 	 * The member's Daily Protein Target (Stage 1 tool), read from the saved result's headline; null when none is
 	 * saved. Never recomputed here (D3-06).
 	 *
@@ -581,7 +675,7 @@ class LLD_Members_Stage3_API {
 				'date'       => (string) $request->get_param( 'date' ),
 				'q'          => (string) $request->get_param( 'q' ),
 				'week_start' => (string) $request->get_param( 'week_start' ),
-				'type'       => (string) $request->get_param( 'type' ),
+				'type'       => self::query_type( $request ),
 				'from'       => (string) $request->get_param( 'from' ),
 				'to'         => (string) $request->get_param( 'to' ),
 				'unit'       => (string) $request->get_param( 'unit' ),
@@ -608,10 +702,10 @@ class LLD_Members_Stage3_API {
 			}
 			if ( 'readings' === $def['table'] ) {
 				$premium = LLD_Members_Food_Log::premium( $member_id );
-				$rows    = LLD_Members_Health_Log::limit_history( $rows, $premium, gmdate( 'Y-m-d' ) );
+				$rows    = LLD_Members_Health_Log::limit_history( $rows, $premium, substr( lld_members_now_mysql( $member_id ), 0, 10 ) ); // the member's own today, as the readings were saved by it
 				$rows    = LLD_Members_Health_Log::filter(
 					$rows,
-					(string) $request->get_param( 'type' ),
+					self::query_type( $request ),
 					(string) $request->get_param( 'from' ),
 					(string) $request->get_param( 'to' )
 				);
@@ -628,6 +722,17 @@ class LLD_Members_Stage3_API {
 			),
 			200
 		);
+	}
+
+	/**
+	 * The reading type asked for in the query string (?type=weight). Never get_param( 'type' ): with no query value it
+	 * falls back to the route's own {type} ("readings"), which matches no reading and empties every list.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
+	private static function query_type( $request ) {
+		$query = $request->get_query_params();
+		return isset( $query['type'] ) && is_scalar( $query['type'] ) ? (string) $query['type'] : '';
 	}
 
 	/**
