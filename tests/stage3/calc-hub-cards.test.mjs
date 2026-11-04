@@ -15,7 +15,7 @@ const STAGE3 = resolve(plugin, 'includes/stage3');
 const SLUGS = ['heart-risk-check', 'blood-pressure-check', 'metabolic-health-check', 'fitness-age', 'heart-rate-zones', 'sleep-and-stress-check'];
 
 /** Render the hub (or the homepage row) with lld-tools and, when withPlugin, the calculator pages hooked in. */
-function render({ withPlugin = true, enabled = true, compact = false } = {}) {
+function render({ withPlugin = true, enabled = true, compact = false, closed = false } = {}) {
   const tmp = mkdtempSync(join(tmpdir(), 'lld-hub3-'));
   try {
     const status = join(tmp, 'status.json');
@@ -24,6 +24,7 @@ function render({ withPlugin = true, enabled = true, compact = false } = {}) {
 class LLD_Members_Features { static function state($f) { return 'on'; } static function enabled($f, $m = 0) { return ${enabled ? 'true' : 'false'}; } }
 $GLOBALS['lld_filters'] = [];
 function add_action() {}
+function current_user_can($c) { return false; }
 function add_filter($h, $cb) { $GLOBALS['lld_filters'][$h][] = $cb; }
 function apply_filters($h, $v) { foreach ($GLOBALS['lld_filters'][$h] ?? [] as $cb) $v = call_user_func($cb, $v); return $v; }
 require_once ${toPhp(resolve(STAGE3, 'class-safety-stage3.php'))};
@@ -35,7 +36,7 @@ define('ABSPATH', '/');
 function home_url($p = '') { return 'https://lld.test' . $p; }
 function untrailingslashit($s) { return rtrim($s, '/'); }
 function trailingslashit($s) { return rtrim($s, '/') . '/'; }
-function get_option($k, $d = false) { return $k === 'lld_tools_settings' ? ['status_path' => ${toPhp(status)}] : $d; }
+function get_option($k, $d = false) { if ($k === 'lld_members_closed') return ${closed ? 'true' : 'false'}; return $k === 'lld_tools_settings' ? ['status_path' => ${toPhp(status)}] : $d; }
 function shortcode_atts($d, $a) { return array_merge($d, (array)$a); }
 function esc_html($s) { return htmlspecialchars((string)$s, ENT_QUOTES); }
 function esc_attr($s) { return htmlspecialchars((string)$s, ENT_QUOTES); }
@@ -71,11 +72,12 @@ test('TC-FR3-49-AS-01 (hub): the six calculator pages are on the Health Tools hu
   expect(heart.querySelector('[data-test=card-purpose]').textContent).toBe('Estimates your chance of a heart attack or stroke in the next 10 years, and which change would lower it most.');
 });
 
-test('TC-FR3-49-AS-01 (hub, unchanged): switched off, without the plugin, or on the homepage row, the Stage 1 cards only', () => {
+test('TC-FR3-49-AS-01 (hub, unchanged): switched off, without the plugin, on the homepage row, or with the site closed, the Stage 1 cards only', () => {
   const stage1 = ['protein:active', 'diabetes:active', 'healthy-weight:active'];
   expect(cardsOf(render({ enabled: false }))).toEqual(stage1);
   expect(cardsOf(render({ withPlugin: false }))).toEqual(stage1);
   expect(cardsOf(render({ compact: true }))).toEqual(stage1);
+  expect(cardsOf(render({ closed: true })), 'site closed: the pages do not render').toEqual(stage1);
   // The Stage 1 card data is untouched (TC-FR1-04, TC-FR2-39-AS-16).
   const data = JSON.parse(readFileSync(resolve(root, 'site/public_html/wp-content/mu-plugins/lld-tools/data/tool-cards.json'), 'utf8'));
   expect(data.cards.map((c) => c.tool_slug)).toEqual(['protein', 'diabetes', 'healthy-weight']);

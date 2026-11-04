@@ -80,7 +80,7 @@ class LLD_Members_Calculator_Pages {
 		'heart-risk-check'       => array(
 			'time_minutes' => 3,
 			'inputs'       => array( 'Age, sex and country', 'Smoking and diabetes', 'Blood pressure (top number)', 'Cholesterol, or height and weight' ),
-			'eligibility'  => 'Adults aged 40 to 74 who have not had a heart attack or stroke. Not a diagnosis.',
+			'eligibility'  => 'Adults aged 40 to 74 who have not had a heart attack, stroke or heart surgery. Not a diagnosis.',
 			'cta_label'    => 'Check my heart risk',
 			'icon'         => '&#10084;&#65039;',
 			'check'        => 'Shows which change would lower your risk most',
@@ -134,7 +134,10 @@ class LLD_Members_Calculator_Pages {
 	 * @return array
 	 */
 	public static function hub_cards( $cards ) {
-		$cards     = is_array( $cards ) ? $cards : array();
+		$cards = is_array( $cards ) ? $cards : array();
+		if ( get_option( 'lld_members_closed' ) && ! current_user_can( 'manage_options' ) ) {
+			return $cards; // the Stage 2 maintenance screen: the pages do not render, so no cards
+		}
 		$member_id = class_exists( 'LLD_Members_Access' ) ? (int) LLD_Members_Access::current_member_id() : 0;
 		if ( ! LLD_Members_Features::enabled( self::FEATURE, $member_id ) ) {
 			return $cards;

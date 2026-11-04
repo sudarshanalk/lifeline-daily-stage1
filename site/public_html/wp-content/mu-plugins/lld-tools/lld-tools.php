@@ -182,6 +182,7 @@ function lld_tools_render_hub(array $atts = []): string {
   if (!$compact && function_exists('apply_filters')) foreach ((array)apply_filters('lld_tools_hub_more_cards', []) as $c) {
     if (!is_array($c) || empty($c['tool_slug']) || empty($c['name']) || empty($c['landing_url']) || lld_tools_card((string)$c['tool_slug'])) continue;
     $c += ['purpose' => '', 'time_minutes' => 1, 'inputs' => [], 'eligibility' => '', 'cta_label' => 'Open'];
+    $c['inputs'] = array_map('strval', array_filter((array)$c['inputs'], 'is_scalar'));
     $icon = (string)($c['icon'] ?? '');
     $look = ['icon' => preg_match('/^(&#[0-9]+;){1,3}$/', $icon) ? $icon : '&#10010;', 'check' => (string)($c['check'] ?? 'Free, and nothing you enter is stored')];
     $out .= lld_tools_card_markup((string)$c['tool_slug'], $c, 'active', $look, false) . '</li>';
