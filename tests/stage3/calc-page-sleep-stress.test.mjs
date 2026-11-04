@@ -72,7 +72,7 @@ test('TC-FR3-55-AS-01 (sleep and stress page): the saved row holds the scores on
   // the result, and the history list shows its words.
   expect(out.saved).toMatchObject({ calculator: 'sleep_stress', headline: '3/0/0', unit: 'scores', band: 'attention',
     result: { stressScore: 3, moodScore: 0, sleepCount: 0, headline: 'result.stress.attention' } });
-  expect(JSON.parse(php(`echo json_encode(${P}::history_line(['headline' => '3/0/0', 'result_detail' => ['headline' => 'result.stress.attention']]));`))).toBe(signed('result.stress.attention'));
+  expect(JSON.parse(php(`echo json_encode(${P}::history_line(['headline' => '3/0/0', 'result' => json_encode(['stressScore' => 3, 'moodScore' => 0, 'sleepCount' => 0, 'headline' => 'result.stress.attention'])]));`))).toBe(signed('result.stress.attention'));
   // A Yes to the self-harm question keeps the page quiet: no save and no saved results beside Response 1.
   expect(JSON.parse(php(`echo json_encode(${P}::quiet(['response1' => true]));`))).toBe(true);
   // And the save path itself never stores answers for this check, whatever a caller sends.

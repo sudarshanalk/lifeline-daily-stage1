@@ -44,6 +44,13 @@ test.describe.serial('calculator pages', () => {
     await page.context().clearCookies();
     const res = await page.goto('/health-tools/heart-risk-check/');
     expect(res.status()).toBe(404);
+    // An ordinary signed-in member (not a listed test account) gets the same.
+    const ordinary = `p357-ordinary-${Date.now()}@test.lifelinedaily.invalid`;
+    await createMember(page.request, { email: ordinary, password, first_name: 'Robin', health_consent: true, consents: ['terms'] });
+    await signIn(page, ordinary, password);
+    for (const slug of ['heart-risk-check', 'blood-pressure-check', 'sleep-and-stress-check']) {
+      expect((await page.goto(`/health-tools/${slug}/`)).status(), slug).toBe(404);
+    }
   });
 
   test('TC-FR3-49-AS-02 (screen): the heart risk page shows the figure and the change that lowers it most', async ({ page }) => {

@@ -583,10 +583,6 @@ class LLD_Members_Stage3_API {
 	}
 
 	/**
-	 * The Stage 3 calculator engines by tool slug (the approval record's tool_slug). A tool whose class is not loaded
-	 * looks absent.
-	 */
-	/**
 	 * The calculator pages (P3-57 to P3-5A screens, includes/stage3/screens/class-calculator-pages.php) run an engine
 	 * the same way the calculate route does: for a signed-in member through calculate_engine() (profile pre-fills,
 	 * the blood-pressure 7-day readings); for a visitor, the engine alone, with no profile and no readings.
@@ -662,6 +658,10 @@ class LLD_Members_Stage3_API {
 		return is_array( $data ) ? $data : null;
 	}
 
+	/**
+	 * The Stage 3 calculator engines by tool slug (the approval record's tool_slug). A tool whose class is not loaded
+	 * looks absent.
+	 */
 	private static function calculator_engines() {
 		return array(
 			'calorie-target' => 'LLD_Members_Calorie_Target',
@@ -1330,7 +1330,6 @@ class LLD_Members_Stage3_API {
 				)
 			);
 		}
-		$rows    = array_map( array( __CLASS__, 'comparable_row' ), $rows );
 		$premium = LLD_Members_Food_Log::premium( $member_id );
 		$plan    = $premium ? 'premium' : 'free';
 		$consent = class_exists( 'LLD_Members_Account' ) ? LLD_Members_Account::has_consent( $member_id, 'health' ) : true;
@@ -1338,31 +1337,6 @@ class LLD_Members_Stage3_API {
 		$view['rows'] = array_map( array( __CLASS__, 'present' ), $view['rows'] );
 		$view         = apply_filters( 'lld_members_stage3_api_rows', $view, 'calculator-results', $member_id );
 		return new WP_REST_Response( $view, 200 );
-	}
-
-	/**
-	 * A saved row as the P3-5B compare rules read it: the fields a calculator page keeps in the sealed `result`
-	 * (systolic and diastolic, vo2 and fitness_age, criteria_met and outcome …) lifted to the top level, and
-	 * `result` itself the headline number, which is what the heart risk and scalar rules compare. A row whose
-	 * `result` is not a JSON object is left as it is.
-	 *
-	 * @param array $row Saved row, sealed fields opened.
-	 * @return array
-	 */
-	public static function comparable_row( $row ) {
-		$row  = (array) $row;
-		$data = isset( $row['result'] ) && is_string( $row['result'] ) ? json_decode( $row['result'], true ) : ( isset( $row['result'] ) && is_array( $row['result'] ) ? $row['result'] : null );
-		if ( ! is_array( $data ) ) {
-			return $row;
-		}
-		foreach ( $data as $key => $value ) {
-			if ( 'result' !== $key && ! array_key_exists( $key, $row ) ) {
-				$row[ $key ] = $value;
-			}
-		}
-		$row['result_detail'] = $data;
-		$row['result']        = isset( $row['headline'] ) && is_numeric( $row['headline'] ) ? (float) $row['headline'] : ( isset( $data['risk'] ) ? (float) $data['risk'] : 0.0 );
-		return $row;
 	}
 
 	/**

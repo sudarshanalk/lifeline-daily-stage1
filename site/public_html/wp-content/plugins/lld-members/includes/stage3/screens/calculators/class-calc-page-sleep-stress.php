@@ -263,10 +263,11 @@ class LLD_Members_Calc_Page_Sleep_Stress {
 	/**
 	 * A saved row in the history list: the engine's signed headline for that result.
 	 *
-	 * @param array $row Saved row (comparable_row lifted the result's fields).
+	 * @param array $row Saved row (its `result` the opened sealed JSON).
 	 */
 	public static function history_line( array $row ) {
-		$key  = isset( $row['result_detail']['headline'] ) ? (string) $row['result_detail']['headline'] : '';
+		$data = isset( $row['result'] ) && is_string( $row['result'] ) ? json_decode( $row['result'], true ) : ( isset( $row['result'] ) && is_array( $row['result'] ) ? $row['result'] : array() );
+		$key  = is_array( $data ) && isset( $data['headline'] ) ? (string) $data['headline'] : '';
 		$text = '' !== $key ? LLD_Members_Sleep_Stress::wording( array( $key ) ) : array();
 		return ! empty( $text[ $key ] ) ? (string) $text[ $key ] : (string) ( $row['headline'] ?? '' );
 	}

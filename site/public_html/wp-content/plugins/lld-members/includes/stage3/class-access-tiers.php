@@ -292,6 +292,12 @@ class LLD_Members_Access_Tiers {
 			return self::limit_rows( $rows, 'taken_at', self::history_from( $member_id, LLD_Members_Programme::local_today( $member_id ) ) );
 		}
 		if ( 'calculator-results' === $type && ! self::allows( $member_id, 'calculator_history' ) ) {
+			// The list route sends the P3-5B view (rows, latest_only, upgrade_text …), which already shows Free the
+			// latest only: limit its rows, never flatten the view itself.
+			if ( isset( $rows['rows'] ) && is_array( $rows['rows'] ) ) {
+				$rows['rows'] = self::latest_results( $rows['rows'] );
+				return $rows;
+			}
 			return self::latest_results( $rows );
 		}
 		return $rows;

@@ -69,6 +69,7 @@ class LLD_Members_Calculator_Pages {
 		'disclaimer'   => 'Medical disclaimer',
 		'all_tools'    => 'All health tools',
 		'not_stored'   => 'Your answers are used to work out this result. They are not stored unless you save the result.',
+		'expired'      => 'This page was open too long. Please press Check again.',
 	);
 
 	public static function boot() {
@@ -76,15 +77,32 @@ class LLD_Members_Calculator_Pages {
 			return;
 		}
 		add_action( 'init', array( __CLASS__, 'rewrites' ), 20 );
+		add_action( 'init', array( __CLASS__, 'flush_if_needed' ), 999 );
 		add_action( 'template_redirect', array( __CLASS__, 'maybe_render' ), 5 );
 	}
 
 	/**
-	 * The six addresses, flushed once per rewrite version (as LLD_Members_Goal_Journey does).
+	 * The six addresses' rule, added with the other Stage 3 rules.
 	 */
 	public static function rewrites() {
-		add_rewrite_rule( '^health-tools/(' . implode( '|', array_keys( self::PAGES ) ) . ')/?$', 'index.php?lld_screen=' . self::SCREEN . '&lld_track=$matches[1]', 'top' );
-		if ( get_option( self::OPTION_REWRITE ) !== self::REWRITE_VERSION ) {
+		add_rewrite_rule( self::rule(), 'index.php?lld_screen=' . self::SCREEN . '&lld_track=$matches[1]', 'top' );
+	}
+
+	/**
+	 * @return string The rewrite pattern for the six addresses.
+	 */
+	public static function rule() {
+		return '^health-tools/(' . implode( '|', array_keys( self::PAGES ) ) . ')/?$';
+	}
+
+	/**
+	 * Flush the stored rules once per rewrite version, or when this rule is missing from them, and only at the end of
+	 * init, after every plugin (the goal journey's /members/goal/ and /members/progress/ included) has added its
+	 * rules: a flush at priority 20 before those were added would store the rules without them.
+	 */
+	public static function flush_if_needed() {
+		$stored = get_option( 'rewrite_rules' );
+		if ( get_option( self::OPTION_REWRITE ) !== self::REWRITE_VERSION || ! is_array( $stored ) || ! isset( $stored[ self::rule() ] ) ) {
 			flush_rewrite_rules( false );
 			update_option( self::OPTION_REWRITE, self::REWRITE_VERSION, true );
 		}
@@ -133,6 +151,8 @@ class LLD_Members_Calculator_Pages {
 	 * @param int    $member_id Member number, or 0.
 	 */
 	public static function render( $slug, $member_id ) {
+		// The answers and the nonce are per visitor: the page is never cached (LiteSpeed ignores no-store for guests).
+		do_action( 'litespeed_control_set_nocache', 'lld calculator page' );
 		$page   = self::PAGES[ $slug ];
 		$ctx    = self::context( $member_id );
 		$values = $page::defaults( $ctx );
@@ -140,7 +160,11 @@ class LLD_Members_Calculator_Pages {
 		$error  = '';
 		$notice = '';
 		$post   = 'POST' === ( isset( $_SERVER['REQUEST_METHOD'] ) ? $_SERVER['REQUEST_METHOD'] : '' );
-		if ( $post && isset( $_POST['lld_calc3_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_calc3_nonce'] ) ), 'lld_calc3_' . $slug ) ) {
+		$valid = $post && isset( $_POST['lld_calc3_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_calc3_nonce'] ) ), 'lld_calc3_' . $slug );
+		if ( $post && ! $valid ) {
+			$error = self::UI['expired'];
+		}
+		if ( $valid ) {
 			$values = array_merge( $values, self::posted() );
 			$inputs = $page::inputs( $values, $ctx );
 			$result = LLD_Members_Stage3_API::run_page_calculator( $page::ENGINE, $inputs, $member_id );
@@ -175,6 +199,8 @@ class LLD_Members_Calculator_Pages {
 			if ( ! $quiet ) {
 				$html .= self::history_block( $page, $ctx );
 			}
+		} else {
+			$html .= self::history_block( $page, $ctx );
 		}
 		$html .= '<form method="post" class="lld-form lld-card lld-form-card lld-calc-form" action="' . esc_url( home_url( '/health-tools/' . $slug . '/' ) ) . '#lld-calc-result" novalidate>';
 		$html .= wp_nonce_field( 'lld_calc3_' . $slug, 'lld_calc3_nonce', true, false );

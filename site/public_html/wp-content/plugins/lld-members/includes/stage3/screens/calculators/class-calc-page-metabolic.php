@@ -100,7 +100,7 @@ class LLD_Members_Calc_Page_Metabolic {
 	 * @param array $ctx Context.
 	 */
 	public static function defaults( array $ctx ) {
-		$v = array( 'triglyceridesUnit' => 'mmol/L', 'hdlUnit' => 'mmol/L', 'fastingGlucoseUnit' => 'mmol/L', 'pregnantOrBreastfeeding' => '', 'eatingDisorder' => 'no' );
+		$v = array( 'triglyceridesUnit' => 'mmol/L', 'hdlUnit' => 'mmol/L', 'fastingGlucoseUnit' => 'mmol/L', 'pregnantOrBreastfeeding' => '', 'eatingDisorder' => 'no', 'fastingGlucoseFasting' => 'yes' ); // the engine reads a blank as fasting, so the form shows it
 		$f = $ctx['facts'];
 		if ( ! is_array( $f ) ) {
 			return $v;

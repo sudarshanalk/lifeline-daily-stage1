@@ -223,7 +223,7 @@ class LLD_Members_Saved_Results {
 		$out['shown']     = self::format_shown( $rows[0] );
 		if ( count( $rows ) >= 2 ) {
 			// Present expects chronological older→newer for compare(); rows are newest first.
-			$chron = array_reverse( $rows );
+			$chron = array_map( array( __CLASS__, 'comparable_row' ), array_reverse( $rows ) );
 			$cmp   = self::compare(
 				array(
 					'calculator' => isset( $chron[0]['calculator'] ) ? $chron[0]['calculator'] : '',
@@ -266,6 +266,31 @@ class LLD_Members_Saved_Results {
 	 */
 	public static function api_refuses( $calculator, array $flags = array() ) {
 		return self::is_hidden( $calculator, $flags );
+	}
+
+	/**
+	 * A saved row as the compare rules read it: the fields a calculator page keeps in the sealed `result` (systolic
+	 * and diastolic, vo2 and fitness_age, criteria_met and outcome …) lifted to the top level, and `result` the
+	 * headline number, which is what the heart risk and scalar rules compare. Used for the comparison only; the
+	 * rows the list returns keep their shape. A row whose `result` is not a JSON object is left as it is.
+	 *
+	 * @param array $row Saved row, sealed fields opened.
+	 * @return array
+	 */
+	public static function comparable_row( $row ) {
+		$row  = (array) $row;
+		$data = isset( $row['result'] ) && is_string( $row['result'] ) ? json_decode( $row['result'], true ) : ( isset( $row['result'] ) && is_array( $row['result'] ) ? $row['result'] : null );
+		if ( ! is_array( $data ) ) {
+			return $row;
+		}
+		foreach ( $data as $key => $value ) {
+			if ( 'result' !== $key && ! array_key_exists( $key, $row ) ) {
+				$row[ $key ] = $value;
+			}
+		}
+		$row['result_detail'] = $data;
+		$row['result']        = isset( $row['headline'] ) && is_numeric( $row['headline'] ) ? (float) $row['headline'] : ( isset( $data['risk'] ) ? (float) $data['risk'] : 0.0 );
+		return $row;
 	}
 
 	/**
