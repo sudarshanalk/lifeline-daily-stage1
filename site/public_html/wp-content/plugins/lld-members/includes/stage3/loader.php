@@ -28,6 +28,11 @@ require_once __DIR__ . '/calculators/class-fitness-age.php';
 require_once __DIR__ . '/calculators/class-hr-zones.php';
 require_once __DIR__ . '/calculators/class-sleep-stress.php';
 require_once __DIR__ . '/class-saved-results.php';
+require_once __DIR__ . '/class-reminders.php';
+require_once __DIR__ . '/class-shares.php';
+require_once __DIR__ . '/class-installable.php';
+require_once __DIR__ . '/class-consent-stage3.php';
+require_once __DIR__ . '/class-export-stage3.php';
 require_once __DIR__ . '/class-content-stage3.php';
 require_once __DIR__ . '/class-safety-stage3.php';
 require_once __DIR__ . '/engine/class-rule-catalogue.php';
@@ -65,6 +70,11 @@ function lld_members_stage3_boot() {
 	LLD_Members_Calculator_Count::boot();
 	LLD_Members_Sign_In::boot();
 	LLD_Members_Goal_Journey::boot();
+	LLD_Members_Reminders::boot();
+	LLD_Members_Shares::boot();
+	LLD_Members_Installable::boot();
+	LLD_Members_Stage3_Consent::boot();
+	LLD_Members_Stage3_Export::boot();
 	add_action( 'rest_api_init', array( 'LLD_Members_Stage3_API', 'register' ) );
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		require_once __DIR__ . '/class-cli-stage3.php';

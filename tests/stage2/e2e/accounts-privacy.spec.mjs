@@ -740,6 +740,12 @@ const DOWNLOAD_TABLES = [
   'diary_day', 'meal_plan', 'suggestion', 'badge',
   'subscription', 'order', 'referral', 'reward', 'contact_request', 'support', 'survey',
 ];
+// FR3-60 (TC-FR3-60-AS-01): the same file also holds the Stage 3 food and health logs, goals, plans and related
+// records (P3-86, LLD_Members_Stage3_Export::download_suffixes()). Each is counted against the database like the rest.
+const STAGE3_DOWNLOAD_TABLES = [
+  'goals', 'goal_baselines', 'plans', 'plan_adjustments', 'today_steps', 'insights', 'custom_foods', 'food_log',
+  'food_favourites', 'nutrition_targets', 'recipes', 'food_preferences', 'readings', 'reminders', 'shares',
+];
 // Never in the download: A4 security records, unsubscribe codes, the test clock, operations records.
 const NEVER_DOWNLOADED = ['security_code', 'sign_in_lock', 'session', 'app_key', 'unsubscribe_code', 'test_clock', 'erasure', 'admin_log', 'fb_removal', 'contact', 'contact_consent', 'error_log', 'stripe_notice'];
 
@@ -791,8 +797,8 @@ test('TC-FR2-04-AS-01', async ({ page }) => {
   // Table by table against the database, using the erasure checker's list.
   const meta = ['format', 'version', 'made_at_utc', 'member_number', 'photos'];
   expect(data.format).toBe('lifeline-daily-member-data');
-  expect(Object.keys(data).filter((key) => !meta.includes(key)).sort()).toEqual(DOWNLOAD_TABLES.slice().sort());
-  for (const name of DOWNLOAD_TABLES) {
+  expect(Object.keys(data).filter((key) => !meta.includes(key)).sort()).toEqual([...DOWNLOAD_TABLES, ...STAGE3_DOWNLOAD_TABLES].sort());
+  for (const name of [...DOWNLOAD_TABLES, ...STAGE3_DOWNLOAD_TABLES]) {
     expect(data[name].length, name).toBe(db.records[name]);
   }
   for (const name of NEVER_DOWNLOADED) expect(data[name], name).toBeUndefined();

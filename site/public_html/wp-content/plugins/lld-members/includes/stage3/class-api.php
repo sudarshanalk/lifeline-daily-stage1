@@ -814,6 +814,9 @@ class LLD_Members_Stage3_API {
 			}
 			return new WP_REST_Response( array( 'rows' => self::stage2_rows( $def['table'], $member_id, $since ) ), 200 );
 		} else {
+			if ( 'reminders' === $def['table'] ) {
+				LLD_Members_Reminders::migrate_stage2_pref( $member_id );
+			}
 			$since = self::clean_datetime( (string) $request->get_param( 'since' ) );
 			$limit = (int) $request->get_param( 'limit' );
 			$rows  = LLD_Members_Stage3_Data::rows( $def['table'], $member_id, $def['sealed'], null === $since ? '' : $since, $limit > 0 ? $limit : 500 );
@@ -904,6 +907,34 @@ class LLD_Members_Stage3_API {
 			// Stage 1 tools never store inputs (D51); drop if a client sent them.
 			if ( ! LLD_Members_Saved_Results::stores_inputs( $filled['calculator'] ) ) {
 				unset( $filled['inputs'] );
+			}
+			$params = $filled;
+		}
+		if ( 'reminders' === $def['table'] ) {
+			$flags  = self::reminder_flags( $member_id );
+			$filled = LLD_Members_Reminders::for_save( $params, $flags );
+			if ( isset( $filled['error'] ) ) {
+				return self::refuse( isset( $filled['status'] ) ? (int) $filled['status'] : 422, $filled['error'] );
+			}
+			$params   = $filled;
+			$existing = LLD_Members_Stage3_Data::rows( 'reminders', $member_id, array(), '', 50 );
+			$premium  = class_exists( 'LLD_Members_Access_Tiers' ) ? LLD_Members_Access_Tiers::allows( $member_id, 'more_reminders' ) : true;
+			$denied   = LLD_Members_Reminders::gate_create( $member_id, $existing, $premium );
+			if ( null !== $denied ) {
+				return new WP_REST_Response(
+					array(
+						'message'      => $denied,
+						'upgrade_url'  => home_url( '/pricing/' ),
+					),
+					403
+				);
+			}
+		}
+		if ( 'shares' === $def['table'] ) {
+			$flags  = self::reminder_flags( $member_id );
+			$filled = LLD_Members_Shares::for_save( $member_id, $params, $flags );
+			if ( isset( $filled['error'] ) ) {
+				return self::refuse( isset( $filled['status'] ) ? (int) $filled['status'] : 422, $filled['error'] );
 			}
 			$params = $filled;
 		}
@@ -1352,6 +1383,23 @@ class LLD_Members_Stage3_API {
 			$flags['eating_disorder'] = in_array( 'eating_disorder', isset( $applies['situations'] ) ? $applies['situations'] : array(), true )
 				|| in_array( 'calorie-target', isset( $applies['refused'] ) ? $applies['refused'] : array(), true )
 				|| in_array( 'goal-timeline', isset( $applies['refused'] ) ? $applies['refused'] : array(), true );
+		}
+		return $flags;
+	}
+
+	/**
+	 * Safety flags for reminders and shares (weigh-in / weight tick hidden for eating-disorder).
+	 *
+	 * @param int $member_id Member number.
+	 * @return array<string,bool>
+	 */
+	private static function reminder_flags( $member_id ) {
+		$flags = array( 'eating_disorder' => false, 'hide_weight' => false );
+		if ( class_exists( 'LLD_Members_Stage3_Safety' ) ) {
+			$applies = LLD_Members_Stage3_Safety::applies( $member_id, 'reminders' );
+			$flags['eating_disorder'] = in_array( 'eating_disorder', isset( $applies['situations'] ) ? $applies['situations'] : array(), true );
+			$flags['hide_weight']     = in_array( 'share:weight_tick', isset( $applies['hidden'] ) ? $applies['hidden'] : array(), true )
+				|| in_array( 'reminder:weigh_in', isset( $applies['hidden'] ) ? $applies['hidden'] : array(), true );
 		}
 		return $flags;
 	}
