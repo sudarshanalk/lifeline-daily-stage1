@@ -66,6 +66,7 @@ class LLD_Members_Sleep_Stress {
 		'result.sleep.some'       => 'Sleep: some concern',
 		'result.sleep.needs'      => 'Sleep: needs attention',
 		'result.sleep.insomnia'   => "Sleep problems on 3 or more nights a week for 3 months are what doctors call insomnia. It's treatable; your doctor can help, often without medicines (CBT-I).",
+		'result.sleep.shortSleep' => "Under 5 hours a night is very short sleep: most adults need 7 to 9 hours. If you often feel very sleepy during the day, tell your doctor, and don't drive or use machinery when you feel drowsy.", // CW-19
 	);
 
 	/**
@@ -204,6 +205,9 @@ class LLD_Members_Sleep_Stress {
 		$keys[] = $out['sleepResult'];
 		if ( $out['insomniaLine'] ) {
 			$keys[] = 'result.sleep.insomnia';
+		}
+		if ( $out['shortSleepNote'] ) {
+			$keys[] = 'result.sleep.shortSleep'; // CW-19, after the insomnia line
 		}
 		if ( $out['helpline'] ) {
 			$keys[] = 'quoted.helpFooter';

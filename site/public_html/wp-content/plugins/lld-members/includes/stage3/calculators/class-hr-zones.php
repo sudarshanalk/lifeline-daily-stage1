@@ -52,6 +52,8 @@ class LLD_Members_HR_Zones {
 		'safety.medicine'       => "Beta-blockers and some other medicines lower your heart rate, so heart-rate zones don't apply. Talk to your doctor about exercise, and use the talk test instead: moderate means you can talk but not sing.",
 		'safety.heartCondition' => 'Ask your doctor or cardiac rehab team for your safe heart-rate range.',
 		'safety.pregnancy'      => 'In pregnancy, use the talk test rather than heart-rate targets, and check with your midwife.',
+		'safety.under18'        => "These heart-rate zones are for adults. The formula we use to estimate maximum heart rate was made for adults and doesn't fit children and teenagers. To judge effort, use the talk test: moderate means you can talk but not sing. Your doctor or school nurse can advise on exercise.", // CW-17
+		'refused.reserve'       => "Please check the numbers: your maximum heart rate should be at least 30 beats a minute higher than your resting heart rate, so we can't work out zones from these. If you're not sure of your maximum, leave it blank and we'll estimate it from your age. If you measured both and they're right, talk to your doctor before doing hard exercise.", // CW-18
 	);
 
 	/**
@@ -149,7 +151,7 @@ class LLD_Members_HR_Zones {
 			return self::invalid( 'rhr' );
 		}
 		if ( $age < 18 ) {
-			return self::stop( $out, 'under18' );
+			return self::stop( $out, 'under18', 'safety.under18' );
 		}
 		if ( 'no' !== $pregnant ) {
 			return self::stop( $out, 'pregnancy', 'safety.pregnancy' );
@@ -162,7 +164,8 @@ class LLD_Members_HR_Zones {
 		}
 		if ( null !== $measured ) {
 			if ( null !== $rhr && $measured - $rhr < self::RESERVE_MIN ) {
-				$out['stop'] = 'refused'; // the measured maximum must be at least 30 above resting (sheet 2.2)
+				$out['stop']     = 'refused'; // the measured maximum must be at least 30 above resting (sheet 2.2)
+				$out['messages'] = array( 'refused.reserve' ); // CW-18
 				return $out;
 			}
 			if ( $measured < self::MEASURED_MIN || $measured > self::MEASURED_MAX ) {
@@ -234,7 +237,7 @@ class LLD_Members_HR_Zones {
 	/**
 	 * @param array  $out  Result so far.
 	 * @param string $what under18, pregnancy, heartCondition or medicine.
-	 * @param string $key  Signed wording key for the stop, when the sheet gives one.
+	 * @param string $key  Signed wording key for the stop (the sheet's, or CW-17).
 	 */
 	private static function stop( array $out, $what, $key = '' ) {
 		$out['stop']     = $what;

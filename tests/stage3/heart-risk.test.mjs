@@ -219,9 +219,10 @@ test('TC-FR3-49-AS-03', () => {
   expect(W['stops.under40']).toMatch(/^This check isn't suitable under 40\./);
   expect(W['stops.over74']).toMatch(/^This check isn't suitable over 74\./);
   expect(W['stops.cvd']).toMatch(/haven't had a heart attack, stroke or heart surgery/);
-  // The sheet describes these two stops but the approval record holds no signed words for them: no text is shown
-  // until the owner signs it.
-  expect([W['stops.pregnancy'], W['stops.sex']]).toEqual([null, null]);
+  // The sheet describes these two stops without quoting them; their words are CW-01 and CW-02 (approved by the owner
+  // on 3 November 2026, hashed in the approval record).
+  expect(W['stops.pregnancy']).toMatch(/^This check isn't suitable right now\. .*Your midwife or doctor can check your blood pressure/);
+  expect(W['stops.sex']).toMatch(/^We can't work out this estimate without knowing your sex\. .*Your doctor can also assess your heart risk with you\.$/);
   // Diabetes is pre-filled from the profile only when the page left it unanswered.
   expect([profiled[2].diabetes, profiled[3].diabetes]).toEqual(['yes', 'no']);
   // The urgent level is never lost to a stop (safety matrix A1, D5): the safety layer's key comes first, then the

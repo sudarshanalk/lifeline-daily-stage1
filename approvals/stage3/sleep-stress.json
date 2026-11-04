@@ -46,7 +46,8 @@
     "result.sleep.none": "d394e951c38ec63002f38563d534937bea40fd88618e150f130df1b0aa899186",
     "result.sleep.some": "18dc0001d640f6874594bf6c805edcfa75fd3f04fc053c58587ea70ba660bb25",
     "result.sleep.needs": "1973319887c5c5c8073e774ea7fd4fa69f8d3c5d06a1931d8d6447fc8457f84e",
-    "result.sleep.insomnia": "b1455c62a2cd5b5eabc8052f72f68acc2b0f16ade29676e99b9e5569eaaa1d4d"
+    "result.sleep.insomnia": "b1455c62a2cd5b5eabc8052f72f68acc2b0f16ade29676e99b9e5569eaaa1d4d",
+    "result.sleep.shortSleep": "74eaf4ee507890e6ae52decbd19c174b7a5bc9e1915f98d5ea26fdbc8aceb581"
   },
   "oracle_report": "oracles/orc-13-sleep-stress/results.json",
   "decisions_ratified": [
@@ -58,7 +59,7 @@
     "name": "Product owner (sudarshanalk), acting as clinical reviewer",
     "date": "2026-11-03",
     "decision": "approved",
-    "notes": "Signed 3 November 2026: 'Approved (\"Approve all, D3-10 = B\", in chat with the clinical session)'. D3-28 decided by the owner 3 Nov 2026: GAD-2 (+ PHQ-2) + 4-item insomnia-symptom count; D3-29 PHQ-2 included with the Stage 2 low-mood response; D3-30 scores and date only if the member saves, answers never stored. Fixture table 3.5 (12 cases) is the frozen reference (FR3-54 AS-01). Sheet hash refreshed after the owner's decisions of 3 Nov 2026 (Owner_Questions 62-65) were written into the sheet."
+    "notes": "Signed 3 November 2026: 'Approved (\"Approve all, D3-10 = B\", in chat with the clinical session)'. D3-28 decided by the owner 3 Nov 2026: GAD-2 (+ PHQ-2) + 4-item insomnia-symptom count; D3-29 PHQ-2 included with the Stage 2 low-mood response; D3-30 scores and date only if the member saves, answers never stored. Fixture table 3.5 (12 cases) is the frozen reference (FR3-54 AS-01). Sheet hash refreshed after the owner's decisions of 3 Nov 2026 (Owner_Questions 62-65) were written into the sheet. Wording CW-19 (02 Content/Programme content/calculators/stage3-calculator-wording-draft.md v0.1, approved by the owner on 3 Nov 2026, Owner_Questions 92) added to MESSAGES and hashed here on 4 Nov 2026."
   },
   "review_date": "2026-11-03",
   "next_review_date": "2027-11-03"
