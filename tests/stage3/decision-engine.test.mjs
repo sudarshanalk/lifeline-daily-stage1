@@ -270,7 +270,7 @@ test('TC-NFR3-17-AS-03', () => {
   // frozen, the catalogue's strings are hashed against it (AS-02 above), the fixtures' expected values are protected by
   // oracle-guard and validated by validate-artefacts, and the engine holds no second copy of any wording.
   expect(approval.clinical_signoff.decision).toBe('approved');
-  expect(approval.decisions_ratified).toEqual(['D3-43', 'D3-44', 'D3-45', 'D3-46', 'D3-47', 'D3-48']);
+  expect(approval.decisions_ratified).toEqual(['D3-43', 'D3-44', 'D3-45', 'D3-46', 'D3-47', 'D3-48', 'D3-49']); // D3-49: version 1.1, R-ADJ-03 for every calorie plan (Owner Q68)
   expect(approval.regulatory_statement).toMatch(/Frozen: any change needs a new decision/);
   expect(approval.version_hash).toMatch(/^[0-9a-f]{64}$/); // SHA-256 of the signed catalogue file (outside the repository)
   const validator = readFileSync(resolve(root, 'tests/ci/validate-artefacts.py'), 'utf8');
@@ -505,6 +505,40 @@ test('TC-FR3-14-AS-02', () => {
   behind.goal.rate_kg_week = 1.5; // the member's own rate is above the cap: the new date uses the cap
   const [capped] = evaluate([behind]);
   expect(capped.adjustments[0].values.new_date).toBe(day(63)); // 7 kg / 0.8 cap = 9 weeks
+});
+
+test('TC-FR3-14-AS-02 (Owner Q68): the too-fast safety adjustment reaches every member with a calorie target', () => {
+  // Catalogue v1.1 (D3-49, Owner_Questions 68 = B): R-ADJ-03 is a safety adjustment (FR3-69: safety is never paid for).
+  // It applies to Free members too, R-SAFE-04 never suppresses it (the gentle wording T-ADJ-03g during the 7 low-mood
+  // days), and an eating-disorder member gets the raise with no message and no calorie number. Test data ADJ-03-Q1
+  // to Q5 of the change draft.
+  const fast = builders['R-ADJ-03']({ goal_type: 'lose_weight', cap_kg_per_week: 0.9, slope_kg_per_week: 1.2, weigh_ins_in_28_days: '>= 4' });
+  const lowMood = builders['R-SAFE-04']({ mood_daily: { 'D-3': 2, 'D-2': 1, 'D-1': 2 } });
+  const gentle = "We've given your daily food target a small lift, so your body has a little more energy. There's nothing you need to do. If you feel unwell, please see your doctor.";
+  const behind = builders['R-ADJ-01']({ goal_type: 'lose_weight', check_ins: { 'D-7': { projected_late_days: 21, weigh_ins_in_28_days: '>= 3' }, D: { projected_late_days: 21, weigh_ins_in_28_days: '>= 3' } } });
+  const [free, moodToday, moodRecent, ed, noTarget, behindLow] = evaluate([
+    { ...fast, premium: false },                                                                   // Q1
+    { ...fast, daily: { ...fast.daily, ...lowMood.daily } },                                       // Q2: R-SAFE-04 fires today
+    { ...fast, shown: { 'R-SAFE-04': day(-3) } },                                                  // Q3: R-SAFE-04 shown 3 days ago
+    { ...fast, situations: ['eating_disorder'] },                                                  // Q4
+    { ...fast, premium: false, plan: { started: day(-56), calorie_target: 0, cap_kg_week: 0.9 } }, // Q5
+    { ...behind, shown: { 'R-SAFE-04': day(-3) } },                                                // R-ADJ-01 still suppressed
+  ]);
+  expect(free.adjustments[0]).toMatchObject({ rule: 'R-ADJ-03', outcome: 'applied', automatic: true, template: 'rule.R-ADJ-03', values: { cap: 0.9, kcal: 1950 } });
+  expect(free.adjustments[0].text).toBe("You're losing weight faster than the safe rate of about **0.9 kg** a week. We've raised your daily target to **1950 kcal** so your body keeps muscle and energy. If you're not trying to lose this fast, or feel unwell, please see your doctor.");
+  for (const r of [moodToday, moodRecent]) {
+    expect(r.suppressed).toBe(true);
+    expect(r.adjustments[0]).toMatchObject({ rule: 'R-ADJ-03', outcome: 'applied', template: 'rule.R-ADJ-03.gentle', text: gentle, notes: ['gentle_low_mood'] });
+    expect(r.adjustments[0].values.kcal).toBe(1950); // the raise itself is unchanged; the wording carries no number
+  }
+  expect(moodToday.safety.map((o) => o.rule)).toEqual(['R-SAFE-04']);
+  expect(ed.adjustments[0]).toMatchObject({ rule: 'R-ADJ-03', outcome: 'applied', template: null, text: null, notes: ['no_message_eating_disorder'] });
+  expect(noTarget.rules['R-ADJ-03']).toMatchObject({ fires: false, reason: 'no_calorie_target' });
+  expect(noTarget.adjustments).toEqual([]);
+  expect(behindLow.adjustments[0]).toMatchObject({ rule: 'R-ADJ-01', outcome: 'suppressed' }); // the other adjustments keep the v1 rule
+  // The gentle template has its own stored id (200 + the rule's), and the runner stores no insight for the ED case.
+  expect(JSON.parse(php("echo json_encode(LLD_Members_Rule_Catalogue::template_ids()['rule.R-ADJ-03.gentle']);"))).toBe(223);
+  expect(readFileSync(resolve(engineDir, 'class-insights-runner.php'), 'utf8')).toMatch(/null === \$o\['template'\] \? 0 : self::write_insight/);
 });
 
 test('TC-FR3-15-AS-01', () => {

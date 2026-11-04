@@ -272,6 +272,55 @@ class LLD_Members_Stage3_API {
 				),
 				'required' => array( 'from_date', 'to_date' ),
 			),
+			// Weekly summary and suggestions (P3-43).
+			'food-week'          => array(
+				'table'    => 'food_log',
+				'feature'  => 'food_tracker',
+				'health'   => true,
+				'computed' => 'week',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
+			'recipe-suggestions' => array(
+				'table'    => 'recipes',
+				'feature'  => 'food_tracker',
+				'health'   => false,
+				'computed' => 'suggest',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
+			'food-preferences'   => array(
+				'table'   => 'food_preferences',
+				'feature' => 'food_tracker',
+				'health'  => true,
+				'sealed'  => array(),
+				'fields'  => array(
+					'allergies' => 'json',
+					'dislikes'  => 'json',
+				),
+				'required' => array(),
+			),
+			// Health logging views (P3-50).
+			'readings-trend'         => array(
+				'table'    => 'readings',
+				'feature'  => 'health_logging',
+				'health'   => true,
+				'computed' => 'trend',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
+			'readings-activity-week' => array(
+				'table'    => 'readings',
+				'feature'  => 'health_logging',
+				'health'   => true,
+				'computed' => 'activity-week',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
 		);
 	}
 
@@ -434,7 +483,8 @@ class LLD_Members_Stage3_API {
 	public static function calculate( $request ) {
 		$tool      = (string) $request['tool'];
 		$member_id = LLD_Members_Access::current_member_id();
-		if ( 'calorie-target' !== $tool || ! LLD_Members_Features::enabled( 'calculators_new', $member_id ) ) {
+		$engines   = self::calculator_engines();
+		if ( ! isset( $engines[ $tool ] ) || ! class_exists( $engines[ $tool ] ) || ! LLD_Members_Features::enabled( 'calculators_new', $member_id ) ) {
 			return self::refuse( 404, 'Not available.' );
 		}
 		if ( $member_id < 1 ) {
@@ -442,12 +492,16 @@ class LLD_Members_Stage3_API {
 		}
 		$params = $request->get_json_params();
 		$params = is_array( $params ) ? $params : array();
+		if ( ! in_array( $tool, array( 'calorie-target', 'goal-timeline' ), true ) ) { // these two run below, with the Stage 2 profile flags
+			return self::calculate_engine( $engines[ $tool ], $params, $member_id );
+		}
 		// The member's health profile applies as well as the answers on the page (sheet section 2, FR3-69 AS-03/04):
 		// an eating-disorder flag stops the calculator; kidney disease removes the protein target; diabetes adds its note.
 		if ( class_exists( 'LLD_Members_Safety' ) ) {
 			$flags = LLD_Members_Safety::situations( $member_id );
 			if ( in_array( 'eating-disorder', $flags, true ) ) {
 				$params['eatingDisorder'] = 'yes';
+				$params['eat']            = 'yes';
 			}
 			if ( in_array( 'kidney', $flags, true ) ) {
 				$params['kidneyDisease'] = true;
@@ -455,6 +509,23 @@ class LLD_Members_Stage3_API {
 			if ( in_array( 'diabetes', $flags, true ) ) {
 				$params['type2Diabetes'] = true;
 			}
+			if ( in_array( 'pregnancy', $flags, true ) || in_array( 'pregnant', $flags, true ) ) {
+				$params['preg'] = 'yes';
+			}
+		}
+		if ( 'goal-timeline' === $tool ) {
+			// Safety matrix may refuse the goal-timeline tool for this member (FR3-69).
+			if ( class_exists( 'LLD_Members_Stage3_Safety' ) && LLD_Members_Stage3_Safety::forbids( LLD_Members_Stage3_Safety::situations( $member_id ), 'calculators_new', 'goal-timeline' ) ) {
+				return self::refuse( 403, 'Not available.' );
+			}
+			$result = LLD_Members_Goal_Timeline::compute( $params );
+			$result['wording'] = array();
+			foreach ( isset( $result['messages'] ) ? $result['messages'] : array() as $key ) {
+				if ( isset( LLD_Members_Goal_Timeline::MESSAGES[ $key ] ) ) {
+					$result['wording'][ $key ] = LLD_Members_Goal_Timeline::MESSAGES[ $key ];
+				}
+			}
+			return new WP_REST_Response( $result, 200 );
 		}
 		$result = LLD_Members_Calorie_Target::compute( $params );
 		if ( isset( $result['error'] ) ) {
@@ -499,6 +570,97 @@ class LLD_Members_Stage3_API {
 	}
 
 	/**
+	 * The Stage 3 calculator engines by tool slug (the approval record's tool_slug). A tool whose class is not loaded
+	 * looks absent.
+	 */
+	private static function calculator_engines() {
+		return array(
+			'calorie-target' => 'LLD_Members_Calorie_Target',
+			'goal-timeline'  => 'LLD_Members_Goal_Timeline',
+			'heart-risk'     => 'LLD_Members_Heart_Risk',
+			'bp-check'       => 'LLD_Members_BP_Check',
+			'metabolic'      => 'LLD_Members_Metabolic',
+			'fitness-age'    => 'LLD_Members_Fitness_Age',
+			'hr-zones'       => 'LLD_Members_HR_Zones',
+			'sleep-stress'   => 'LLD_Members_Sleep_Stress',
+		);
+	}
+
+	/**
+	 * Run a pure engine (P3-57 to P3-5A): the member's health profile is passed to the engine's apply_profile() when it
+	 * has one (sheet section 2 of each tool), then compute(), then the signed wording for the keys it returned. Nothing
+	 * is stored here; saving results over time is P3-5B.
+	 *
+	 * @param string $class     Engine class.
+	 * @param array  $params    The answers on the page.
+	 * @param int    $member_id Member number.
+	 */
+	private static function calculate_engine( $class, array $params, $member_id ) {
+		// The Blood Pressure Reading Check's 7-day average reads the member's own logged readings (P3-58 sheet section 5):
+		// whatever readings or date the page sent are ignored.
+		if ( 'LLD_Members_BP_Check' === $class && LLD_Members_BP_Check::home_mode( isset( $params['mode'] ) ? $params['mode'] : null ) ) {
+			$params = array_merge( $params, self::bp_home_readings( $member_id ) );
+		}
+		if ( method_exists( $class, 'apply_profile' ) && class_exists( 'LLD_Members_Stage3_Safety' ) ) {
+			$params = $class::apply_profile( $params, LLD_Members_Stage3_Safety::situations( $member_id ) );
+		}
+		$result = $class::compute( $params );
+		if ( isset( $result['error'] ) ) {
+			return self::refuse( 422, 'Check ' . $result['error'] . '.' );
+		}
+		$result['wording'] = $class::wording( isset( $result['messages'] ) ? $result['messages'] : array(), $result );
+		return new WP_REST_Response( $result, 200 );
+	}
+
+	/**
+	 * The member's blood-pressure readings for the 7-day average (P3-58 sheet section 5): the Stage 3 readings table,
+	 * type blood_pressure, not deleted, taken in the 7 calendar days ending today in the member's time zone (the
+	 * programme's zone in force; the site's zone when that is unavailable), sealed values opened in memory only, at
+	 * most LLD_Members_BP_Check::MAX_READINGS (the newest). Without health consent there are no readings to read.
+	 *
+	 * @param int $member_id Member number.
+	 * @return array{today:string,readings:array<int,array{date:string,systolic:float,diastolic:float}>}
+	 */
+	private static function bp_home_readings( $member_id ) {
+		global $wpdb;
+		$member_id = (int) $member_id;
+		$name      = class_exists( 'LLD_Members_Programme' ) ? (string) LLD_Members_Programme::timezone( $member_id ) : '';
+		try {
+			$zone = '' !== $name ? new DateTimeZone( $name ) : wp_timezone();
+		} catch ( Exception $e ) {
+			$zone = wp_timezone();
+		}
+		$utc      = new DateTimeZone( 'UTC' );
+		$now      = class_exists( 'LLD_Members_Clock' ) ? LLD_Members_Clock::now( $member_id ) : new DateTimeImmutable( 'now', $utc );
+		$today    = $now->setTimezone( $zone )->format( 'Y-m-d' );
+		$midnight = new DateTimeImmutable( $today . ' 00:00:00', $zone );
+		$from     = $midnight->modify( '-' . ( LLD_Members_BP_Check::WINDOW_DAYS - 1 ) . ' days' )->setTimezone( $utc )->format( 'Y-m-d H:i:s' );
+		$to       = $midnight->modify( '+1 day' )->setTimezone( $utc )->format( 'Y-m-d H:i:s' );
+		$readings = array();
+		if ( $member_id > 0 && LLD_Members_Access::has_health_consent( $member_id ) ) {
+			$table = LLD_Members_Stage3_Schema::table( 'readings' );
+			$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT taken_at, value_1_ct, value_2_ct FROM {$table} WHERE member_id = %d AND reading_type = %s AND deleted_at IS NULL AND taken_at >= %s AND taken_at < %s ORDER BY taken_at DESC, id DESC LIMIT %d", $member_id, 'blood_pressure', $from, $to, LLD_Members_BP_Check::MAX_READINGS ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- internal table name.
+			foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+				$at  = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', (string) $row['taken_at'], $utc );
+				$sys = LLD_Members_Stage3_Data::open( $member_id, $row['value_1_ct'] );
+				$dia = LLD_Members_Stage3_Data::open( $member_id, $row['value_2_ct'] );
+				if ( ! $at || ! is_numeric( $sys ) || ! is_numeric( $dia ) ) {
+					continue; // a value that does not open for this member is not theirs to count
+				}
+				$readings[] = array(
+					'date'      => $at->setTimezone( $zone )->format( 'Y-m-d' ),
+					'systolic'  => (float) $sys,
+					'diastolic' => (float) $dia,
+				);
+			}
+		}
+		return array(
+			'today'    => $today,
+			'readings' => $readings,
+		);
+	}
+
+	/**
 	 * The member's Daily Protein Target (Stage 1 tool), read from the saved result's headline; null when none is
 	 * saved. Never recomputed here (D3-06).
 	 *
@@ -537,16 +699,24 @@ class LLD_Members_Stage3_API {
 		list( $member_id, $def ) = $gate;
 		$computed = ! empty( $def['computed'] );
 		if ( $computed ) {
-			$rows = LLD_Members_Food_Log::view(
-				$def['computed'],
-				$member_id,
-				array(
-					'date' => (string) $request->get_param( 'date' ),
-					'q'    => (string) $request->get_param( 'q' ),
-				)
+			$query = array(
+				'date'       => (string) $request->get_param( 'date' ),
+				'q'          => (string) $request->get_param( 'q' ),
+				'week_start' => (string) $request->get_param( 'week_start' ),
+				'type'       => self::query_type( $request ),
+				'from'       => (string) $request->get_param( 'from' ),
+				'to'         => (string) $request->get_param( 'to' ),
+				'unit'       => (string) $request->get_param( 'unit' ),
 			);
+			if ( in_array( $def['computed'], array( 'trend', 'activity-week' ), true ) ) {
+				$rows = LLD_Members_Health_Log::view( $def['computed'], $member_id, $query );
+			} elseif ( in_array( $def['computed'], array( 'week', 'suggest' ), true ) ) {
+				$rows = LLD_Members_Recipes::view( $def['computed'], $member_id, $query );
+			} else {
+				$rows = LLD_Members_Food_Log::view( $def['computed'], $member_id, $query );
+			}
 			if ( isset( $rows['error'] ) ) {
-				return self::refuse( 400, $rows['error'] );
+				return self::refuse( isset( $rows['status'] ) ? (int) $rows['status'] : 400, $rows['error'] );
 			}
 		} elseif ( ! empty( $def['stage2'] ) ) {
 			$since = self::clean_datetime( (string) $request->get_param( 'since' ) );
@@ -557,6 +727,16 @@ class LLD_Members_Stage3_API {
 			$rows  = LLD_Members_Stage3_Data::rows( $def['table'], $member_id, $def['sealed'], null === $since ? '' : $since, $limit > 0 ? $limit : 500 );
 			if ( 'food_log' === $def['table'] ) {
 				$rows = LLD_Members_Food_Log::limit_history( $rows, LLD_Members_Food_Log::premium( $member_id ), gmdate( 'Y-m-d' ) );
+			}
+			if ( 'readings' === $def['table'] ) {
+				$premium = LLD_Members_Food_Log::premium( $member_id );
+				$rows    = LLD_Members_Health_Log::limit_history( $rows, $premium, substr( lld_members_now_mysql( $member_id ), 0, 10 ) ); // the member's own today, as the readings were saved by it
+				$rows    = LLD_Members_Health_Log::filter(
+					$rows,
+					self::query_type( $request ),
+					(string) $request->get_param( 'from' ),
+					(string) $request->get_param( 'to' )
+				);
 			}
 		}
 		$rows = apply_filters( 'lld_members_stage3_api_rows', $rows, (string) $request['type'], $member_id ); // the safety matrix strips what the member must not see (FR3-69)
@@ -570,6 +750,17 @@ class LLD_Members_Stage3_API {
 			),
 			200
 		);
+	}
+
+	/**
+	 * The reading type asked for in the query string (?type=weight). Never get_param( 'type' ): with no query value it
+	 * falls back to the route's own {type} ("readings"), which matches no reading and empties every list.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
+	private static function query_type( $request ) {
+		$query = $request->get_query_params();
+		return isset( $query['type'] ) && is_scalar( $query['type'] ) ? (string) $query['type'] : '';
 	}
 
 	/**
@@ -606,6 +797,9 @@ class LLD_Members_Stage3_API {
 		}
 		$params = $request->get_json_params();
 		$params = is_array( $params ) ? $params : array();
+		if ( 'readings' === $def['table'] ) {
+			$params = LLD_Members_Health_Log::accept_input( $params );
+		}
 		$clean  = self::validate( $def, $params, true );
 		if ( $clean instanceof WP_REST_Response ) {
 			return $clean;
@@ -626,6 +820,38 @@ class LLD_Members_Stage3_API {
 				return self::refuse( 403, $denied );
 			}
 		}
+		if ( 'recipes' === $def['table'] ) {
+			$denied = LLD_Members_Recipes::gate_premium( LLD_Members_Food_Log::premium( $member_id ) );
+			if ( null !== $denied ) {
+				return self::refuse( 403, $denied );
+			}
+			$filled = LLD_Members_Recipes::for_member( $member_id, $clean );
+			if ( isset( $filled['error'] ) ) {
+				return self::refuse( 422, $filled['error'] );
+			}
+			$clean = $filled;
+		}
+		if ( 'food_preferences' === $def['table'] ) {
+			$raw = array(
+				'allergies' => isset( $params['allergies'] ) ? $params['allergies'] : array(),
+				'dislikes'  => isset( $params['dislikes'] ) ? $params['dislikes'] : array(),
+			);
+			if ( is_string( $raw['allergies'] ) ) {
+				$decoded = json_decode( $raw['allergies'], true );
+				$raw['allergies'] = is_array( $decoded ) ? $decoded : array();
+			}
+			if ( is_string( $raw['dislikes'] ) ) {
+				$decoded = json_decode( $raw['dislikes'], true );
+				$raw['dislikes'] = is_array( $decoded ) ? $decoded : array();
+			}
+			$clean = LLD_Members_Recipes::prefs_for( $raw );
+			$existing = LLD_Members_Stage3_Data::rows( 'food_preferences', $member_id, array(), '', 1 );
+			if ( $existing ) {
+				LLD_Members_Stage3_Data::update( 'food_preferences', $member_id, (int) $existing[0]['id'], $clean, array() );
+				$row = LLD_Members_Stage3_Data::row( 'food_preferences', $member_id, (int) $existing[0]['id'], array() );
+				return new WP_REST_Response( self::present( $row ), 200 );
+			}
+		}
 		// A target the member types is Premium, and one below the safe minimum is never saved (FR3-28).
 		if ( 'nutrition_targets' === $def['table'] ) {
 			$denied = LLD_Members_Food_Log::gate_member_target( isset( $clean['set_by'] ) ? (string) $clean['set_by'] : 'plan', LLD_Members_Food_Log::premium( $member_id ) );
@@ -643,11 +869,34 @@ class LLD_Members_Stage3_API {
 			}
 			$clean = $filled;
 		}
+		$warning = null;
+		if ( 'readings' === $def['table'] ) {
+			$extras = array();
+			foreach ( array( 'bedtime', 'dizzy', 'self_harm', 'symptoms' ) as $extra ) {
+				if ( array_key_exists( $extra, $params ) ) {
+					$extras[ $extra ] = $params[ $extra ];
+				}
+			}
+			$filled = LLD_Members_Health_Log::for_member( $member_id, array_merge( $clean, $extras ) );
+			if ( isset( $filled['error'] ) ) {
+				return self::refuse( isset( $filled['status'] ) ? (int) $filled['status'] : 400, $filled['error'] );
+			}
+			$clean   = $filled['row'];
+			$warning = $filled['warning'];
+		}
 		$id = LLD_Members_Stage3_Data::insert( $def['table'], $member_id, $clean, $def['sealed'] );
 		if ( $id < 1 ) {
 			return self::refuse( 409, 'Could not save.' );
 		}
 		$row = LLD_Members_Stage3_Data::row( $def['table'], $member_id, $id, $def['sealed'] );
+		if ( 'readings' === $def['table'] ) {
+			do_action( 'lld_members_reading_saved', $member_id, is_array( $row ) ? $row : $clean );
+			$out = self::present( $row );
+			if ( is_array( $warning ) ) {
+				$out['warning'] = $warning;
+			}
+			return new WP_REST_Response( $out, 201 );
+		}
 		return new WP_REST_Response( self::present( $row ), 201 );
 	}
 
@@ -674,10 +923,22 @@ class LLD_Members_Stage3_API {
 				return self::refuse( 403, $denied );
 			}
 		}
+		if ( 'recipes' === $def['table'] ) {
+			$denied = LLD_Members_Recipes::gate_premium( LLD_Members_Food_Log::premium( $member_id ) );
+			if ( null !== $denied ) {
+				return self::refuse( 403, $denied );
+			}
+		}
 		$params = $request->get_json_params();
 		$params = is_array( $params ) ? $params : array();
 		if ( ! empty( $def['patch'] ) ) {
 			$params = array_intersect_key( $params, array_flip( $def['patch'] ) );
+		}
+		if ( 'readings' === $def['table'] ) {
+			$filled_sleep = LLD_Members_Health_Log::accept_input( array_merge( array( 'reading_type' => $row['reading_type'] ), $params ) );
+			if ( isset( $filled_sleep['value_1'] ) && ! array_key_exists( 'value_1', $params ) && isset( $params['bedtime'] ) ) {
+				$params['value_1'] = $filled_sleep['value_1'];
+			}
 		}
 		$clean = self::validate( $def, $params, false );
 		if ( $clean instanceof WP_REST_Response ) {
@@ -685,6 +946,29 @@ class LLD_Members_Stage3_API {
 		}
 		if ( ! $clean ) {
 			return self::refuse( 400, 'Nothing to change.' );
+		}
+		if ( 'recipes' === $def['table'] ) {
+			$merged = array_merge( $row, $clean );
+			$filled = LLD_Members_Recipes::for_member( $member_id, $merged );
+			if ( isset( $filled['error'] ) ) {
+				return self::refuse( 422, $filled['error'] );
+			}
+			$clean = $filled;
+		}
+		if ( 'food_preferences' === $def['table'] ) {
+			$raw = array(
+				'allergies' => array_key_exists( 'allergies', $params ) ? $params['allergies'] : ( isset( $row['allergies'] ) ? $row['allergies'] : array() ),
+				'dislikes'  => array_key_exists( 'dislikes', $params ) ? $params['dislikes'] : ( isset( $row['dislikes'] ) ? $row['dislikes'] : array() ),
+			);
+			if ( is_string( $raw['allergies'] ) ) {
+				$decoded = json_decode( $raw['allergies'], true );
+				$raw['allergies'] = is_array( $decoded ) ? $decoded : array();
+			}
+			if ( is_string( $raw['dislikes'] ) ) {
+				$decoded = json_decode( $raw['dislikes'], true );
+				$raw['dislikes'] = is_array( $decoded ) ? $decoded : array();
+			}
+			$clean = LLD_Members_Recipes::prefs_for( $raw );
 		}
 		if ( 'nutrition_targets' === $def['table'] && isset( $clean['kcal'] ) && (float) $clean['kcal'] < self::kcal_floor( $member_id ) ) {
 			return self::refuse( 422, LLD_Members_Calorie_Target::MESSAGES['floor_note'] );
@@ -698,8 +982,32 @@ class LLD_Members_Stage3_API {
 				$clean[ $key ] = $scaled[ $key ];
 			}
 		}
+		$warning = null;
+		if ( 'readings' === $def['table'] ) {
+			$extras = array();
+			foreach ( array( 'bedtime', 'dizzy', 'self_harm', 'symptoms' ) as $extra ) {
+				if ( array_key_exists( $extra, $params ) ) {
+					$extras[ $extra ] = $params[ $extra ];
+				}
+			}
+			$filled = LLD_Members_Health_Log::for_member( $member_id, array_merge( $clean, $extras ), $row );
+			if ( isset( $filled['error'] ) ) {
+				return self::refuse( isset( $filled['status'] ) ? (int) $filled['status'] : 400, $filled['error'] );
+			}
+			$clean   = $filled['row'];
+			$warning = $filled['warning'];
+		}
 		LLD_Members_Stage3_Data::update( $def['table'], $member_id, $id, $clean, $def['sealed'] );
-		return new WP_REST_Response( self::present( LLD_Members_Stage3_Data::row( $def['table'], $member_id, $id, $def['sealed'] ) ), 200 );
+		$updated = LLD_Members_Stage3_Data::row( $def['table'], $member_id, $id, $def['sealed'] );
+		if ( 'readings' === $def['table'] ) {
+			do_action( 'lld_members_reading_saved', $member_id, is_array( $updated ) ? $updated : $clean );
+			$out = self::present( $updated );
+			if ( is_array( $warning ) ) {
+				$out['warning'] = $warning;
+			}
+			return new WP_REST_Response( $out, 200 );
+		}
+		return new WP_REST_Response( self::present( $updated ), 200 );
 	}
 
 	/**
@@ -721,6 +1029,12 @@ class LLD_Members_Stage3_API {
 		}
 		if ( 'custom_foods' === $def['table'] ) {
 			$denied = LLD_Members_Food_Log::gate_custom( LLD_Members_Food_Log::premium( $member_id ) );
+			if ( null !== $denied ) {
+				return self::refuse( 403, $denied );
+			}
+		}
+		if ( 'recipes' === $def['table'] ) {
+			$denied = LLD_Members_Recipes::gate_premium( LLD_Members_Food_Log::premium( $member_id ) );
 			if ( null !== $denied ) {
 				return self::refuse( 403, $denied );
 			}
@@ -768,15 +1082,17 @@ class LLD_Members_Stage3_API {
 			}
 		}
 		if ( 'readings' === $def['table'] ) {
-			$type   = isset( $clean['reading_type'] ) ? $clean['reading_type'] : '';
+			// Ranges apply to stored metric values; convert display units first. warning_level() still decides impossible.
+			$type  = isset( $clean['reading_type'] ) ? $clean['reading_type'] : ( isset( $params['reading_type'] ) ? (string) $params['reading_type'] : '' );
+			$probe = LLD_Members_Health_Log::normalise( array_merge( array( 'reading_type' => $type ), $clean, array_intersect_key( $params, array_flip( array( 'bedtime' ) ) ) ) );
 			$ranges = self::reading_ranges();
-			if ( isset( $ranges[ $type ] ) ) {
+			if ( '' !== $type && isset( $ranges[ $type ] ) ) {
 				foreach ( $ranges[ $type ] as $field => $range ) {
-					if ( isset( $clean[ $field ] ) && ( $clean[ $field ] < $range[0] || $clean[ $field ] > $range[1] ) ) {
-						return self::refuse( 400, 'Check the value of ' . $field . '.' );
+					if ( isset( $probe[ $field ] ) && is_numeric( $probe[ $field ] ) && ( $probe[ $field ] < $range[0] || $probe[ $field ] > $range[1] ) ) {
+						return self::refuse( 400, 'Check the numbers.' );
 					}
 				}
-				if ( 'blood_pressure' === $type && isset( $clean['value_1'], $clean['value_2'] ) && $clean['value_2'] >= $clean['value_1'] ) {
+				if ( 'blood_pressure' === $type && isset( $probe['value_1'], $probe['value_2'] ) && $probe['value_2'] >= $probe['value_1'] ) {
 					return self::refuse( 400, 'The bottom number must be lower than the top number.' );
 				}
 			}

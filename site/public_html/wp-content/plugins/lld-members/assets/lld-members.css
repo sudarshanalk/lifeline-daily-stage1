@@ -551,6 +551,10 @@ th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--lld-line
 .lld-caution { color: var(--lld-caution); background: var(--lld-caution-bg); border: 1px solid var(--lld-caution-line); padding: 12px 16px; border-radius: var(--lld-radius-sm); font-weight: 500; }
 .lld-info { background: var(--lld-info-bg); border: 1px solid var(--lld-mint-line); padding: 12px 16px; border-radius: var(--lld-radius-sm); }
 .lld-info p:last-child { margin-bottom: 0; }
+/* A caution note with a heading (Sleep and Stress Responses 2 and 3, screening-sleep-and-stress.md); two stack apart. */
+div.lld-caution { margin: 0 0 16px; }
+div.lld-caution h2 { color: inherit; margin-top: 0; }
+div.lld-caution p:last-child { margin-bottom: 0; }
 
 /* Membership lock (section 5): a faded outline of the item, a lock icon, the price and one upgrade button. */
 .lld-lock { display: grid; gap: 16px; }

@@ -141,6 +141,16 @@
     screenForm.addEventListener("change", screenReady);
     screenReady();
   }
+  // The approved hint beside "Continue" (screening-sleep-and-stress.md, Owner_Questions 93 = B), shown while it is disabled.
+  var screenHint = screenForm && screenForm.querySelector("[data-lld-screen-hint]");
+  if (screenHint) {
+    function screenHintPaint() {
+      var button = screenForm.querySelector("button");
+      screenHint.hidden = !(button && button.disabled);
+    }
+    screenForm.addEventListener("change", screenHintPaint);
+    screenHintPaint();
+  }
 
   var imperial = document.querySelector("[data-lld-imperial]");
   var imperialFields = document.querySelector("[data-lld-imperial-fields]");

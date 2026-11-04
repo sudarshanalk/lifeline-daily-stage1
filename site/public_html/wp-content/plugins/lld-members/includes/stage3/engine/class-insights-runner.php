@@ -7,7 +7,7 @@
  * Runs once a night per member at 02:00 in the member's time zone (D3-48) from an hourly WP-Cron event that is
  * registered only while the `insights` switch is not off, and again at save time for the safety rules through the
  * `lld_members_reading_saved` action the logging packages call. Safety rules run for every member, Free and
- * Premium (FR3-69); insights and adjustments are Premium. The runner never sends an email (EM-* are P3-85's).
+ * Premium (FR3-69); insights and adjustments are Premium, except the safety adjustment R-ADJ-03 (Owner Q68). The runner never sends an email (EM-* are P3-85's).
  *
  * @package LLD_Members
  */
@@ -289,7 +289,7 @@ class LLD_Members_Insights_Runner {
 				'target_value_2' => $target_2,
 				'unit'           => (string) $goal['unit'],
 				'target_date'    => $goal['target_date'] ? (string) $goal['target_date'] : null,
-				'reached'        => false,
+				'reached'        => 'keep_weight' === (string) $goal['goal_type'], // a maintain goal has no finish line (P3-31: R-INS-10 never fires for it)
 				'rate_kg_week'   => null,
 			);
 			foreach ( LLD_Members_Stage3_Data::rows( 'plans', $member_id, array(), '', 50 ) as $p ) {
@@ -414,7 +414,7 @@ class LLD_Members_Insights_Runner {
 			return 0;
 		}
 		$plan_id    = (int) $state['plan']['id'];
-		$insight_id = self::write_insight( $member_id, $o );
+		$insight_id = null === $o['template'] ? 0 : self::write_insight( $member_id, $o ); // no message for an eating-disorder member (Q68)
 		$new_plan   = $plan_id;
 		$applied    = LLD_Members_Decision_Engine::OUTCOME_APPLIED === $o['outcome'];
 		if ( $applied ) {

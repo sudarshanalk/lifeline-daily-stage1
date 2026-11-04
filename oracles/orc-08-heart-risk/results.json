@@ -1,0 +1,1669 @@
+{
+  "oracle_id": "ORC-08",
+  "implementation": "Python decimal reference for the Heart Attack and Stroke Risk Check (FR3-49): WHO 2019 chart look-up (D3-10 = B), cell boundaries and rounding, mg/dL conversion, the safety stops, the urgent level (with the stops too) and the adjacent-cell what-if ranking (falls above 0 only), from the signed sheet of 3 November 2026",
+  "versions": {
+    "python": "3.14.6",
+    "sheet": "P3-57 v1.0 signed 2026-11-03"
+  },
+  "source_hash": "eaf1ded0d6f74a07cfbda326fbdc95b2c4aff5c396151ce79bd31566c719a5e1",
+  "run_at": "2026-11-04T07:20:47Z",
+  "results": [
+    {
+      "fixture_id": "FX-HR-LAB-01",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 7,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 5,
+            "fall": 2
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 6,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-LAB-02",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "smoker",
+          "age": "55-59",
+          "sbp": "160-179",
+          "tc": ">=7"
+        },
+        "risk": 26,
+        "band": "very-high",
+        "urgent": false,
+        "tcMmolL": 7.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "smoking",
+            "to": "non-smoker",
+            "risk": 16,
+            "fall": 10
+          },
+          {
+            "factor": "blood-pressure",
+            "to": "140-159",
+            "risk": 20,
+            "fall": 6
+          },
+          {
+            "factor": "cholesterol",
+            "to": "6-6.9",
+            "risk": 22,
+            "fall": 4
+          }
+        ],
+        "first": "smoking",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-LAB-03",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "women",
+          "smoking": "non-smoker",
+          "age": "45-49",
+          "sbp": "120-139",
+          "tc": "4-4.9"
+        },
+        "risk": 1,
+        "band": "low",
+        "urgent": false,
+        "tcMmolL": 4.5,
+        "bmiShown": 23.0,
+        "whatif": [],
+        "first": null,
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-LAB-04",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "South Asia",
+        "cell": {
+          "diabetes": "yes",
+          "sex": "men",
+          "smoking": "smoker",
+          "age": "60-64",
+          "sbp": "160-179",
+          "tc": "6-6.9"
+        },
+        "risk": 35,
+        "band": "very-high",
+        "urgent": false,
+        "tcMmolL": 6.5,
+        "bmiShown": 27.0,
+        "whatif": [
+          {
+            "factor": "smoking",
+            "to": "non-smoker",
+            "risk": 24,
+            "fall": 11
+          },
+          {
+            "factor": "blood-pressure",
+            "to": "140-159",
+            "risk": 28,
+            "fall": 7
+          },
+          {
+            "factor": "cholesterol",
+            "to": "5-5.9",
+            "risk": 30,
+            "fall": 5
+          }
+        ],
+        "first": "smoking",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-LAB-05",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "South Asia",
+        "cell": {
+          "diabetes": "no",
+          "sex": "women",
+          "smoking": "non-smoker",
+          "age": "50-54",
+          "sbp": "140-159",
+          "tc": "5-5.9"
+        },
+        "risk": 5,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.5,
+        "bmiShown": 28.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "120-139",
+            "risk": 4,
+            "fall": 1
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 4,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-LAB-06",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "High-income North America",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "65-69",
+          "sbp": "140-159",
+          "tc": "6-6.9"
+        },
+        "risk": 21,
+        "band": "very-high",
+        "urgent": false,
+        "tcMmolL": 6.0,
+        "bmiShown": 30.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "120-139",
+            "risk": 18,
+            "fall": 3
+          },
+          {
+            "factor": "cholesterol",
+            "to": "5-5.9",
+            "risk": 19,
+            "fall": 2
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-LAB-07",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "High-income North America",
+        "cell": {
+          "diabetes": "yes",
+          "sex": "women",
+          "smoking": "smoker",
+          "age": "70-74",
+          "sbp": "160-179",
+          "tc": "6-6.9"
+        },
+        "risk": 45,
+        "band": "very-high",
+        "urgent": false,
+        "tcMmolL": 6.0,
+        "bmiShown": 24.0,
+        "whatif": [
+          {
+            "factor": "smoking",
+            "to": "non-smoker",
+            "risk": 33,
+            "fall": 12
+          },
+          {
+            "factor": "blood-pressure",
+            "to": "140-159",
+            "risk": 39,
+            "fall": 6
+          },
+          {
+            "factor": "cholesterol",
+            "to": "5-5.9",
+            "risk": 43,
+            "fall": 2
+          }
+        ],
+        "first": "smoking",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-LAB-08",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "East Asia",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "smoker",
+          "age": "50-54",
+          "sbp": "140-159",
+          "tc": "5-5.9"
+        },
+        "risk": 12,
+        "band": "high",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 25.0,
+        "whatif": [
+          {
+            "factor": "smoking",
+            "to": "non-smoker",
+            "risk": 8,
+            "fall": 4
+          },
+          {
+            "factor": "blood-pressure",
+            "to": "120-139",
+            "risk": 9,
+            "fall": 3
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 11,
+            "fall": 1
+          }
+        ],
+        "first": "smoking",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-LAB-09",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Southern Sub-Saharan Africa",
+        "cell": {
+          "diabetes": "yes",
+          "sex": "women",
+          "smoking": "non-smoker",
+          "age": "60-64",
+          "sbp": "140-159",
+          "tc": "5-5.9"
+        },
+        "risk": 14,
+        "band": "high",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 32.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "120-139",
+            "risk": 11,
+            "fall": 3
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 13,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-LAB-10",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Australasia",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "70-74",
+          "sbp": "120-139",
+          "tc": "4-4.9"
+        },
+        "risk": 17,
+        "band": "high",
+        "urgent": false,
+        "tcMmolL": 4.0,
+        "bmiShown": 24.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 14,
+            "fall": 3
+          },
+          {
+            "factor": "cholesterol",
+            "to": "<4",
+            "risk": 15,
+            "fall": 2
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-LAB-11",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "40-44",
+          "sbp": "<120",
+          "tc": "4-4.9"
+        },
+        "risk": 1,
+        "band": "low",
+        "urgent": false,
+        "tcMmolL": 4.0,
+        "bmiShown": 22.0,
+        "whatif": [],
+        "first": null,
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-LAB-14",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "North Africa and Middle East",
+        "cell": {
+          "diabetes": "yes",
+          "sex": "men",
+          "smoking": "smoker",
+          "age": "60-64",
+          "sbp": ">=180",
+          "tc": ">=7"
+        },
+        "risk": 66,
+        "band": "very-high",
+        "urgent": true,
+        "tcMmolL": 7.5,
+        "bmiShown": 29.0,
+        "whatif": [
+          {
+            "factor": "smoking",
+            "to": "non-smoker",
+            "risk": 51,
+            "fall": 15
+          },
+          {
+            "factor": "blood-pressure",
+            "to": "160-179",
+            "risk": 57,
+            "fall": 9
+          },
+          {
+            "factor": "cholesterol",
+            "to": "6-6.9",
+            "risk": 61,
+            "fall": 5
+          }
+        ],
+        "first": "smoking",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-LAB-20",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 7,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 5,
+            "fall": 2
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 6,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-LAB-23",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Central Latin America",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 5,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 4,
+            "fall": 1
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 4,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-LAB-24",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 7,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.9,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 5,
+            "fall": 2
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 6,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-LAB-25",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "140-159",
+          "tc": "6-6.9"
+        },
+        "risk": 11,
+        "band": "high",
+        "urgent": false,
+        "tcMmolL": 6.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "120-139",
+            "risk": 8,
+            "fall": 3
+          },
+          {
+            "factor": "cholesterol",
+            "to": "5-5.9",
+            "risk": 9,
+            "fall": 2
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-NOLAB-12",
+      "expected": {
+        "stop": null,
+        "model": "nolab",
+        "region": "Western Europe",
+        "cell": {
+          "sex": "men",
+          "smoking": "smoker",
+          "age": "55-59",
+          "sbp": "160-179",
+          "bmi": "30-35"
+        },
+        "risk": 24,
+        "band": "very-high",
+        "urgent": false,
+        "tcMmolL": null,
+        "bmiShown": 31.0,
+        "whatif": [
+          {
+            "factor": "smoking",
+            "to": "non-smoker",
+            "risk": 14,
+            "fall": 10
+          },
+          {
+            "factor": "blood-pressure",
+            "to": "140-159",
+            "risk": 18,
+            "fall": 6
+          },
+          {
+            "factor": "weight",
+            "to": "25-29",
+            "risk": 21,
+            "fall": 3
+          }
+        ],
+        "first": "smoking",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-NOLAB-13",
+      "expected": {
+        "stop": null,
+        "model": "nolab",
+        "region": "Western Europe",
+        "cell": {
+          "sex": "women",
+          "smoking": "non-smoker",
+          "age": "45-49",
+          "sbp": "120-139",
+          "bmi": "20-24"
+        },
+        "risk": 1,
+        "band": "low",
+        "urgent": false,
+        "tcMmolL": null,
+        "bmiShown": 22.0,
+        "whatif": [],
+        "first": null,
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-NOLAB-26",
+      "expected": {
+        "stop": null,
+        "model": "nolab",
+        "region": "Western Europe",
+        "cell": {
+          "sex": "men",
+          "smoking": "smoker",
+          "age": "55-59",
+          "sbp": "160-179",
+          "bmi": ">=35"
+        },
+        "risk": 27,
+        "band": "very-high",
+        "urgent": false,
+        "tcMmolL": null,
+        "bmiShown": 35.0,
+        "whatif": [
+          {
+            "factor": "smoking",
+            "to": "non-smoker",
+            "risk": 16,
+            "fall": 11
+          },
+          {
+            "factor": "blood-pressure",
+            "to": "140-159",
+            "risk": 21,
+            "fall": 6
+          },
+          {
+            "factor": "weight",
+            "to": "30-35",
+            "risk": 24,
+            "fall": 3
+          }
+        ],
+        "first": "smoking",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-NOLAB-27",
+      "expected": {
+        "stop": null,
+        "model": "nolab",
+        "region": "Western Europe",
+        "cell": {
+          "sex": "men",
+          "smoking": "smoker",
+          "age": "55-59",
+          "sbp": "160-179",
+          "bmi": ">=35"
+        },
+        "risk": 27,
+        "band": "very-high",
+        "urgent": false,
+        "tcMmolL": null,
+        "bmiShown": 35.0,
+        "whatif": [
+          {
+            "factor": "smoking",
+            "to": "non-smoker",
+            "risk": 16,
+            "fall": 11
+          },
+          {
+            "factor": "blood-pressure",
+            "to": "140-159",
+            "risk": 21,
+            "fall": 6
+          },
+          {
+            "factor": "weight",
+            "to": "30-35",
+            "risk": 24,
+            "fall": 3
+          }
+        ],
+        "first": "smoking",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-01",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Andean Latin America",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 5,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 4,
+            "fall": 1
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 4,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-02",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Australasia",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 8,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 6,
+            "fall": 2
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 7,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-03",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Caribbean",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 6,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 4,
+            "fall": 2
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 5,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-04",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Central Asia",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 8,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 6,
+            "fall": 2
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 7,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-05",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Central Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 7,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 5,
+            "fall": 2
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 6,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-06",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Central Latin America",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 5,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 4,
+            "fall": 1
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 4,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-07",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Central Sub-Saharan Africa",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 6,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 5,
+            "fall": 1
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 5,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-08",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "East Asia",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 8,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 6,
+            "fall": 2
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 7,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-09",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Eastern Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 12,
+        "band": "high",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 9,
+            "fall": 3
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 10,
+            "fall": 2
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-10",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Eastern Sub-Saharan Africa",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 6,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 5,
+            "fall": 1
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 5,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-11",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "High-income Asia Pacific",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 7,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 6,
+            "fall": 1
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 6,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-12",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "High-income North America",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 9,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 7,
+            "fall": 2
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 8,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-13",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "North Africa and Middle East",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 11,
+        "band": "high",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 8,
+            "fall": 3
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 9,
+            "fall": 2
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-14",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Oceania",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 7,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 6,
+            "fall": 1
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 6,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-15",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "South Asia",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 6,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 5,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-16",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Southeast Asia",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 6,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 4,
+            "fall": 2
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 5,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-17",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Southern Latin America",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 7,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 6,
+            "fall": 1
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 6,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-18",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Southern Sub-Saharan Africa",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 6,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 4,
+            "fall": 2
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 5,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-19",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Tropical Latin America",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 5,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 4,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-20",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 7,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 5,
+            "fall": 2
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 6,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-REG-21",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Sub-Saharan Africa",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 6,
+        "band": "moderate",
+        "urgent": false,
+        "tcMmolL": 5.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "<120",
+            "risk": 4,
+            "fall": 2
+          },
+          {
+            "factor": "cholesterol",
+            "to": "4-4.9",
+            "risk": 5,
+            "fall": 1
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-STOP-17",
+      "expected": {
+        "stop": "under40",
+        "urgent": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-STOP-18",
+      "expected": {
+        "stop": "over74",
+        "urgent": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-STOP-19",
+      "expected": {
+        "stop": "cvd",
+        "urgent": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-STOP-21",
+      "expected": {
+        "stop": "pregnancy",
+        "urgent": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-WHATIF-15",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "smoker",
+          "age": "55-59",
+          "sbp": "160-179",
+          "tc": ">=7"
+        },
+        "risk": 26,
+        "band": "very-high",
+        "urgent": false,
+        "tcMmolL": 7.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "smoking",
+            "to": "non-smoker",
+            "risk": 16,
+            "fall": 10
+          },
+          {
+            "factor": "blood-pressure",
+            "to": "140-159",
+            "risk": 20,
+            "fall": 6
+          },
+          {
+            "factor": "cholesterol",
+            "to": "6-6.9",
+            "risk": 22,
+            "fall": 4
+          }
+        ],
+        "first": "smoking",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-WHATIF-16",
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "160-179",
+          "tc": ">=7"
+        },
+        "risk": 16,
+        "band": "high",
+        "urgent": false,
+        "tcMmolL": 7.0,
+        "bmiShown": 26.0,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "140-159",
+            "risk": 12,
+            "fall": 4
+          },
+          {
+            "factor": "cholesterol",
+            "to": "6-6.9",
+            "risk": 14,
+            "fall": 2
+          }
+        ],
+        "first": "blood-pressure",
+        "weightWhatifHidden": false
+      }
+    },
+    {
+      "fixture_id": "FX-HR-WHATIF-22",
+      "expected": {
+        "stop": null,
+        "model": "nolab",
+        "region": "Western Europe",
+        "cell": {
+          "sex": "men",
+          "smoking": "smoker",
+          "age": "55-59",
+          "sbp": "160-179",
+          "bmi": "30-35"
+        },
+        "risk": 24,
+        "band": "very-high",
+        "urgent": false,
+        "tcMmolL": null,
+        "bmiShown": 31.0,
+        "whatif": [
+          {
+            "factor": "smoking",
+            "to": "non-smoker",
+            "risk": 14,
+            "fall": 10
+          },
+          {
+            "factor": "blood-pressure",
+            "to": "140-159",
+            "risk": 18,
+            "fall": 6
+          }
+        ],
+        "first": "smoking",
+        "weightWhatifHidden": true
+      }
+    }
+  ],
+  "notes": [
+    "Fixtures are read, never written; differences are printed and listed here."
+  ]
+}

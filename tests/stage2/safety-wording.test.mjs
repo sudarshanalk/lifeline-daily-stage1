@@ -48,11 +48,13 @@ test('TC-FR2-25-AS-05 the runner rows exclude exactly the tags of each 8.2 row',
 test('TC-FR2-38-AS-01 self-harm is checked before the other answers and holds the track for the session', () => {
   const body = personal.slice(personal.indexOf('private static function screening()'), personal.indexOf('private static function emergency_html()'));
   expect(body.indexOf("'yes' === $harm")).toBeGreaterThan(-1);
-  expect(body.indexOf("'yes' === $harm")).toBeLessThan(body.indexOf('Answer all three questions'));
+  expect(body.indexOf("'yes' === $harm")).toBeLessThan(body.indexOf('Please answer all three questions to continue.'));
   expect(body).toContain("self::session_mark( $member_id, 'lld_hold', 'sleep-stress' )");
+  // The approved wording (screening-sleep-and-stress.md Response 1, Owner_Questions 93 = B, 3 Nov 2026).
   expect(personal).toContain('If you are in danger now, call your local emergency number');
-  expect(personal).toContain('999 UK, 911 US and Canada, 112 EU and India, 000 Australia');
+  expect(personal).toContain('for example 999 in the UK, 911 in the US and Canada, 112 in the EU and India, or 000 in Australia');
   expect(personal).toContain('https://findahelpline.com');
+  expect(personal).toContain("'Have you had any thoughts of harming yourself or ending your life?'");
   for (const fn of ['private static function tracks()', 'private static function enrol(']) {
     const start = personal.indexOf(fn);
     expect(personal.slice(start, start + 1600), fn).toContain('track_held( $member_id )');
