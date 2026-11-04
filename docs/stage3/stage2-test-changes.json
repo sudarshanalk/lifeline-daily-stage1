@@ -3,6 +3,16 @@
   "changes": [
     {
       "file": "tests/stage2/e2e/personal.spec.mjs",
+      "decision": "Owner_Questions 93 = B (owner, 3 Nov 2026): the Sleep and Stress safety check uses the approved wording of 02 Content/Programme content/safety/screening-sleep-and-stress.md in both the Stage 2 screen (class-personal.php) and the Stage 3 engine, with its Stage 2 tests updated under this decision",
+      "change": "TC-FR2-38-AS-01, AS-02, AS-03 and AS-05 assert the approved question, Response 1, Response 2, Response 3 and 'Please answer all three questions to continue.' in place of the old shorter text. No assertion is removed or loosened: each old text check is the same check on the new text, and AS-01 also checks the rest of Response 1 (heading, helpline line, the two closing paragraphs, 'Back to my dashboard'), AS-03 the findahelpline.com link."
+    },
+    {
+      "file": "tests/stage2/safety-wording.test.mjs",
+      "decision": "Owner_Questions 93 = B (owner, 3 Nov 2026), as above",
+      "change": "TC-FR2-38-AS-01: the order check (self-harm before the 'answer all three' check) and the example-numbers check use the approved wording ('Please answer all three questions to continue.'; 'for example 999 in the UK, 911 in the US and Canada, 112 in the EU and India, or 000 in Australia'), and the approved self-harm question is checked too."
+    },
+    {
+      "file": "tests/stage2/e2e/personal.spec.mjs",
       "decision": "Owner decision, 4 Nov 2026: fix the intermittent TC-FR2-06-AS-02 (tracker P3-11b) without weakening it",
       "change": "TC-FR2-06-AS-02 only: each 'Not for me' click now waits for its form post to finish (submitAndWait) before the next page.goto. In WebKit the next navigation could cancel the post, so an unwanted item stayed and pushed the second opened item off the list. No assertion, count or expected value changes"
     }
