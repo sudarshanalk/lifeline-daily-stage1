@@ -117,6 +117,16 @@ class LLD_Members_Metabolic {
 		'flags.glucoseLow'                 => "That's a low fasting glucose. If you take diabetes medicine, talk to your doctor; if you had symptoms (shaky, sweaty, confused), see your doctor.",
 		'flags.triglyceridesHigh'          => 'Very high triglycerides need medical review soon: please contact your doctor.',
 		'notes.diabetes'                   => 'With diabetes, your diabetes team already monitors these results.',
+		'stops.under18'                    => 'This check is for adults. Waist and blood test results are judged differently in children and teenagers, because healthy levels change with age and growth. Your doctor or school nurse can advise.', // CW-03
+		'notes.talkToDoctor'               => "Even though the definition isn't met, having two or more of these results above their thresholds is worth talking to your doctor about. Please share these results with them.", // CW-04
+		'notes.sex'                        => "We've used the more cautious of the two sets of cut-offs: a waist of 80 cm (31.5 in) and HDL cholesterol below 1.29 mmol/L (50 mg/dL). This means a result may show as raised when it wouldn't for some people. Choose a sex above for a closer check.", // CW-05
+		'notes.background'                 => "We've used the general waist cut-off: 94 cm (37 in) for men and 80 cm (31.5 in) for women. For men of South Asian, Chinese, Japanese, or South or Central American background, the cut-off is lower, 90 cm (35.4 in). If that applies to you, choose that background above, or ask your doctor which cut-off suits you.", // CW-06
+		'notes.useFasting'                 => "This check needs a fasting glucose result, so we haven't used the one you entered. A fasting test is taken after at least 8 hours with nothing to eat or drink except water. If you have a fasting result, enter it above, or ask your doctor about having one.", // CW-07
+		'lifestyle.activitySleep'          => 'Regular activity and enough sleep help with all of these results. Aim for about 150 minutes of moderate activity a week, such as brisk walking, spread over most days, and 7 to 9 hours of sleep a night.', // CW-08
+		'lifestyle.triglycerides'          => 'Triglycerides can come down with a few everyday changes: less alcohol, fewer sugary drinks and sweet foods, whole grains in place of refined ones (for example brown rice or wholemeal bread instead of white), oily fish such as salmon, sardines or mackerel once or twice a week, and regular activity. If you take medicine for this, keep taking it as prescribed.', // CW-09
+		'lifestyle.hdl'                    => 'HDL is sometimes called "good" cholesterol. Regular activity that leaves you a little out of breath, such as brisk walking, cycling or swimming, is one of the best ways to raise it. If you smoke, stopping helps too. So does swapping saturated fats (butter, ghee, coconut or palm oil, fatty meat) for unsaturated ones (olive, rapeseed (canola) or sunflower oil, nuts and seeds). If you take medicine for your cholesterol, keep taking it as prescribed.', // CW-10
+		'lifestyle.bloodPressure'          => 'Blood pressure can improve with everyday changes: less salt, more vegetables, fruit and pulses (beans, lentils, chickpeas), regular activity such as brisk walking, and less alcohol. If you have kidney disease, or have been told to limit potassium, ask your doctor before eating much more fruit, vegetables or pulses. If you take blood pressure medicine, keep taking it as prescribed.', // CW-11
+		'lifestyle.fastingGlucose'         => 'Fasting blood sugar can improve with a short walk after meals, more fibre (vegetables, pulses, whole grains, and whole fruit rather than juice) and fewer sugary drinks. The Blood Sugar Balance track builds these habits step by step. If you take diabetes medicine, keep taking it as prescribed.', // CW-12
 	);
 
 	/**
@@ -424,10 +434,9 @@ class LLD_Members_Metabolic {
 
 	/**
 	 * The signed text for wording keys: this check's own, the Blood Pressure Check's (BP_TEXT) and the safety
-	 * matrix's glucose urgent wording (low or high, from the result). Keys whose text the sheet describes but does
-	 * not quote (the per-component and other lifestyle paragraphs, the "talk to your doctor" line, the D3-23 sex
-	 * note, the background note, the fasting note, the under-18 stop) come from the approved content library and are
-	 * left out here.
+	 * matrix's glucose urgent wording (low or high, from the result). The texts the sheet describes but does not
+	 * quote (the under-18 stop, the four notes and the five lifestyle paragraphs) are CW-03 to CW-12, approved by
+	 * the owner on 3 November 2026 and held in MESSAGES with the rest.
 	 *
 	 * @param string[] $keys   Wording keys, as compute() returned them.
 	 * @param array    $result The compute() result (decides low or high glucose urgent wording).

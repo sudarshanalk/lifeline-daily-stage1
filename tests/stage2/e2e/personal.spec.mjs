@@ -556,7 +556,8 @@ test('TC-FR2-06-AS-02', async ({ page }) => {
     const text = await page.locator('main').innerText();
     const title = unwanted.find((item) => text.includes(item));
     if (!title) break;
-    await page.locator('.lld-suggestion', { hasText: title }).getByRole('button', { name: 'Not for me' }).click();
+    // Wait for the form post to finish; going to the next page first can cancel it (P3-11b).
+    await submitAndWait(page, page.locator('.lld-suggestion', { hasText: title }).getByRole('button', { name: 'Not for me' }));
   }
   await page.goto('/members/suggestions/');
   const text = await page.locator('main').innerText();

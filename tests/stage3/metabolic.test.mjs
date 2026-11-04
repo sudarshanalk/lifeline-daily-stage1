@@ -284,13 +284,14 @@ test('NFR3-14 (wording): every signed string in the engine hashes to the approva
     LLD_Members_Metabolic::wording(['flags.glucoseUrgent', 'results.meets.headline', 'flags.bpUrgent', 'notes.talkToDoctor'], ['glucoseUrgent' => 'low']),
     LLD_Members_Metabolic::wording(['flags.glucoseUrgent'], ['glucoseUrgent' => 'high']),
   ]);`));
-  expect(w[0]).toEqual({ 'flags.glucoseUrgent': S['glucose.urgent-low'], 'results.meets.headline': M['results.meets.headline'], 'flags.bpUrgent': Q['flags.bpUrgent'] });
+  expect(w[0]).toEqual({ 'flags.glucoseUrgent': S['glucose.urgent-low'], 'results.meets.headline': M['results.meets.headline'], 'flags.bpUrgent': Q['flags.bpUrgent'], 'notes.talkToDoctor': M['notes.talkToDoctor'] });
   expect(w[1]).toEqual({ 'flags.glucoseUrgent': S['glucose.urgent-high'] });
-  // Every key a fixture result shows is either signed here, quoted, or a content-library key (described in the
-  // sheet but not quoted, so it carries no text in the engine).
-  const library = new Set(['notes.talkToDoctor', 'notes.sex', 'notes.background', 'notes.useFasting', 'stops.under18', 'lifestyle.activitySleep', 'lifestyle.triglycerides', 'lifestyle.hdl', 'lifestyle.bloodPressure', 'lifestyle.fastingGlucose']);
+  // Every key a fixture result shows is signed here or quoted: the texts the sheet describes without quoting are
+  // CW-03 to CW-12 (approved 3 November 2026), so no key is left without words.
+  const cw = ['stops.under18', 'notes.talkToDoctor', 'notes.sex', 'notes.background', 'notes.useFasting', 'lifestyle.activitySleep', 'lifestyle.triglycerides', 'lifestyle.hdl', 'lifestyle.bloodPressure', 'lifestyle.fastingGlucose'];
+  for (const k of cw) expect(typeof M[k], k).toBe('string');
   const keys = new Set(compute(fixtures.map((f) => f.inputs)).flatMap((r) => r.messages));
-  for (const k of keys) expect(k in M || k in Q || k === 'flags.glucoseUrgent' || library.has(k), k).toBe(true);
+  for (const k of keys) expect(k in M || k in Q || k === 'flags.glucoseUrgent', k).toBe(true);
   // The engine is reached through the members' calculate route by its tool slug.
   expect(readFileSync(resolve(plugin, 'includes/stage3/class-api.php'), 'utf8')).toMatch(/'metabolic'\s+=> 'LLD_Members_Metabolic'/);
 });

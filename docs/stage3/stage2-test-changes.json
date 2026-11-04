@@ -10,6 +10,11 @@
       "file": "tests/stage2/safety-wording.test.mjs",
       "decision": "Owner_Questions 93 = B (owner, 3 Nov 2026), as above",
       "change": "TC-FR2-38-AS-01: the order check (self-harm before the 'answer all three' check) and the example-numbers check use the approved wording ('Please answer all three questions to continue.'; 'for example 999 in the UK, 911 in the US and Canada, 112 in the EU and India, or 000 in Australia'), and the approved self-harm question is checked too."
+    },
+    {
+      "file": "tests/stage2/e2e/personal.spec.mjs",
+      "decision": "Owner decision, 4 Nov 2026: fix the intermittent TC-FR2-06-AS-02 (tracker P3-11b) without weakening it",
+      "change": "TC-FR2-06-AS-02 only: each 'Not for me' click now waits for its form post to finish (submitAndWait) before the next page.goto. In WebKit the next navigation could cancel the post, so an unwanted item stayed and pushed the second opened item off the list. No assertion, count or expected value changes"
     }
   ]
 }
