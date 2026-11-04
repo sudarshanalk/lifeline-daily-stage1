@@ -254,3 +254,13 @@ test('TC-NFR3-16-AS-02 (completions): the page sends only the calculator name, w
   expect(js).toContain('done[which]=1');
   for (const banned of ['headline', 'band', 'unit', 'gtag', 'dataLayer', 'google', 'cookie']) expect(js).not.toContain(banned);
 });
+
+test('TC-FR3-70-AS-01 (completions, pages): the count script is on every calculator landing page, the Stage 1 theme pages included, and nowhere else', () => {
+  const cases = [
+    ['/health-tools/protein/', '', true], ['/health-tools/diabetes-risk-check/', '', true], ['/health-tools/healthy-weight-check', '', true],
+    ['/health-tools/protein/', 'landing', true], ['/anything/', 'landing', true],
+    ['/health-tools/', '', false], ['/health-tools/protein/extra/', '', false], ['/pricing/', 'pricing', false], ['/members/home/', 'home', false], ['/', '', false],
+  ];
+  const out = JSON.parse(php(`${stubs()} $r = []; foreach (json_decode(${JSON.stringify(JSON.stringify(cases))}, true) as $c) { $r[] = LLD_Members_Calculator_Count::landing($c[0], $c[1]); } echo json_encode($r);`));
+  cases.forEach(([path, screen, want], i) => expect(out[i], `${path} ${screen}`).toBe(want));
+});
