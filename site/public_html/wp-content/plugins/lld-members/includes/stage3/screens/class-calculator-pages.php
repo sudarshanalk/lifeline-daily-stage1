@@ -314,7 +314,8 @@ class LLD_Members_Calculator_Pages {
 				$text = str_replace( '{' . $name . '}', (string) $value, $text );
 			}
 		}
-		return esc_html( $text );
+		// "17 %" stays on one line (layout only; the words are unchanged).
+		return str_replace( ' %', '&nbsp;%', esc_html( $text ) );
 	}
 
 	/**

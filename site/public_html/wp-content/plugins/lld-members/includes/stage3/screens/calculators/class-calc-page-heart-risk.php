@@ -241,7 +241,7 @@ class LLD_Members_Calc_Page_Heart_Risk {
 				$out = str_replace( '{' . $name . '}', (string) $value, $out );
 			}
 		}
-		return '<p class="lld-calc-whatif" data-lld-key="' . esc_attr( $key ) . '" data-lld-factor="' . esc_attr( $factor ) . '">' . esc_html( $out ) . '</p>';
+		return '<p class="lld-calc-whatif" data-lld-key="' . esc_attr( $key ) . '" data-lld-factor="' . esc_attr( $factor ) . '">' . str_replace( ' %', '&nbsp;%', esc_html( $out ) ) . '</p>';
 	}
 
 	/**

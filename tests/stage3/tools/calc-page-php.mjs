@@ -67,4 +67,4 @@ export function run(cls, engine, values, ctx = {}) {
 }
 
 /** Visible text of an HTML fragment (tags dropped, entities decoded, spaces collapsed). */
-export const textOf = (html) => html.replace(/<[^>]+>/g, ' ').replace(/&#0?39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim();
+export const textOf = (html) => html.replace(/<[^>]+>/g, ' ').replace(/&nbsp;/g, ' ').replace(/&#0?39;/g, "'").replace(/&quot;/g, '"').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\s+/g, ' ').trim();
