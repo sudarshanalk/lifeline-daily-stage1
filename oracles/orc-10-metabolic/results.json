@@ -6,7 +6,7 @@
     "sheet": "P3-59 v1.0 signed 2026-11-03"
   },
   "source_hash": "584ca801a3bf0884cd0137f1f68ab6165f33d9ead1ca4a797d8234f00913e722",
-  "run_at": "2026-11-03T22:38:15Z",
+  "run_at": "2026-11-04T07:16:29Z",
   "results": [
     {
       "fixture_id": "FX-MET-CRIT-01",
@@ -384,7 +384,6 @@
     }
   ],
   "notes": [
-    "Fixtures are read, never written; differences are printed and listed here.",
-    "FX-MET-CRIT-08.flags: oracle ['notes.talkToDoctor'] != fixture []"
+    "Fixtures are read, never written; differences are printed and listed here."
   ]
 }

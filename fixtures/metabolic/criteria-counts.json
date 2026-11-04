@@ -325,7 +325,7 @@
       },
       "oracle": "clinical",
       "status": "recorded",
-      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range). Sheet row lists 'Not met (no central obesity)' only; section 3 says the 'talk to your doctor' line is shown when >= 2 are raised. Owner decided 3 Nov 2026 (Owner_Questions 90) that section 3 applies, so the flag is shown; expected re-derived by ORC-10."
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range). Sheet row lists 'Not met (no central obesity)' only; section 3 says the 'talk to your doctor' line is shown when >= 2 are raised. Owner decided 3 Nov 2026 (Owner_Questions 90 = b) that section 3 applies, so the flag is shown; expected re-derived by ORC-10. Old value (the signed sheet v1.0 row): flags [] (no 'talk to your doctor' line), with no lifestyleWaistShown key."
     }
   ]
 }

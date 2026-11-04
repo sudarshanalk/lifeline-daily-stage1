@@ -62,6 +62,17 @@ test('TC-FR3-51-AS-01', () => {
     { ...base, sex: 'female', background: 'Europid' }, { ...base, sex: 'female', background: 'Chinese' },
   ]).map((r) => [r.waistCutoffCm, r.flags.includes('notes.background')]);
   expect(cut).toEqual([[94, false], [94, false], [90, false], [90, false], [90, false], [90, false], [90, false], [90, false], [90, false], [94, false], [94, false], [94, false], [94, true], [94, true], [94, true], [94, true], [80, false], [80, false]]);
+  // With a waist below the cut-off, "talk to your doctor" shows from 2 raised results, as sheet section 3 says (owner,
+  // 3 Nov 2026, Owner_Questions 90; MS-14 re-derived by ORC-10): not at 1, at 2 (MS-14) and at 4 (MS-06), and not
+  // with central obesity, where the "meets" body already asks the member to share the results with their doctor.
+  const below = byId['FX-MET-CRIT-08'].inputs;
+  const [one, two, four, centralTwo] = compute([
+    { ...below, triglycerides: 1.0 }, below, byId['FX-MET-CRIT-04'].inputs, { ...below, background: 'Indian' },
+  ]);
+  const doctor = (r) => [r.count, r.flags.includes('notes.talkToDoctor'), r.messages.includes('notes.talkToDoctor')];
+  expect([doctor(one), doctor(two), doctor(four)]).toEqual([[1, false, false], [2, true, true], [4, true, true]]);
+  expect([centralTwo.central, centralTwo.result, doctor(centralTwo)]).toEqual([true, 'results.meets', [2, false, false]]);
+  expect(Number(php('echo LLD_Members_Metabolic::TALK_TO_DOCTOR_MIN;'))).toBe(2);
 });
 
 test('TC-FR3-51-AS-02', () => {
