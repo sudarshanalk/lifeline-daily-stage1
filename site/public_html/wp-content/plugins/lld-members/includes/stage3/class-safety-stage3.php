@@ -548,6 +548,12 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 		if ( 'food-day' === $type && isset( $rows['meals'] ) && is_array( $rows['meals'] ) ) {
 			return self::strip_food_day( $rows, $member_id );
 		}
+		if ( 'food-week' === $type ) {
+			return self::strip_food_week( $rows, $member_id );
+		}
+		if ( 'recipe-suggestions' === $type ) {
+			return self::strip_suggestions( $rows, $member_id );
+		}
 		if ( ! in_array( $type, array( 'food-log', 'food-recent', 'recipes', 'custom-foods', 'targets', 'plans' ), true ) ) {
 			return $rows;
 		}
@@ -647,6 +653,50 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 			$day['note'] = self::MESSAGES['ed.food-tracker.calorie-total'];
 		}
 		return $day;
+	}
+
+	/**
+	 * Weekly summary: hide calorie and nutrient averages when the matrix says so.
+	 *
+	 * @param array<string,mixed> $week      Week document.
+	 * @param int                 $member_id Member number.
+	 * @return array<string,mixed>
+	 */
+	private static function strip_food_week( array $week, $member_id ) {
+		$a = self::applies( $member_id, 'food_tracker' );
+		if ( ! $a['active'] ) {
+			return $week;
+		}
+		if ( in_array( 'weekly_nutrition_numbers', $a['hidden'], true ) || in_array( 'calories', $a['hidden'], true ) || in_array( 'nutrient_totals', $a['hidden'], true ) ) {
+			$week['averages'] = null;
+			if ( isset( $week['days'] ) && is_array( $week['days'] ) ) {
+				foreach ( $week['days'] as $i => $day ) {
+					if ( is_array( $day ) ) {
+						$week['days'][ $i ]['totals'] = null;
+						$week['days'][ $i ]['target'] = null;
+					}
+				}
+			}
+		}
+		return $week;
+	}
+
+	/**
+	 * Recipe suggestions: calorie-based suggestions are hidden for an eating-disorder flag.
+	 *
+	 * @param array<string,mixed> $doc       Suggestions document.
+	 * @param int                 $member_id Member number.
+	 * @return array<string,mixed>
+	 */
+	private static function strip_suggestions( array $doc, $member_id ) {
+		$a = self::applies( $member_id, 'food_tracker' );
+		if ( ! $a['active'] ) {
+			return $doc;
+		}
+		if ( in_array( 'calorie_recipe_suggestions', $a['hidden'], true ) || in_array( 'recipe_calories', $a['hidden'], true ) ) {
+			$doc['recipes'] = array();
+		}
+		return $doc;
 	}
 
 	// ---- Helpers -------------------------------------------------------------------------------------------------

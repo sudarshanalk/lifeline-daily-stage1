@@ -29,10 +29,11 @@ test('screens loader: every class-<name>.php is required and its LLD_Members_<Na
     expect(r.classes).toEqual(['LLD_Members_Account_Hub', 'LLD_Members_Goal_Setting', 'LLD_Members_No_Boot']);
     expect(r.booted).toEqual(['hub', 'goal', 'hub', 'goal']); // boot() runs per call; the files are required once
   } finally { rmSync(dir, { recursive: true, force: true }); }
-  // The real folder: today it holds the account hub (P3-30) only. Its boot() hooks nothing while the switch is off.
+  // The real folder: the account hub (P3-30) and the goal journey screens (P3-31 to P3-33). Each boot() hooks nothing
+  // while its switch is off.
   expect(php(`define('ABSPATH', '/'); class LLD_Members_Features { static function state($f) { return 'off'; } }
     function add_action() { echo 'HOOKED'; } require ${p(join(stage3, 'screens', 'screens.php'))};
-    lld_members_stage3_screens_boot(); echo json_encode(lld_members_stage3_screens());`)).toBe('["LLD_Members_Account_Hub"]');
+    lld_members_stage3_screens_boot(); echo json_encode(lld_members_stage3_screens());`)).toBe('["LLD_Members_Account_Hub","LLD_Members_Goal_Setting","LLD_Members_Progress_Page","LLD_Members_Today_Screen"]');
   // The lead's loader requires it and calls it right after the switches boot, and still registers no route itself.
   const loader = readFileSync(join(stage3, 'loader.php'), 'utf8');
   expect(loader).toMatch(/require_once __DIR__ \. '\/screens\/screens\.php';/);
