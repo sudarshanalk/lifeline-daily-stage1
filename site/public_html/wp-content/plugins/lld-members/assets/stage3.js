@@ -150,3 +150,20 @@
     initDesktopUserMenu();
   }
 })();
+
+/*
+ * Calculator pages (P3-57 to P3-5A): pressing an answer or a button must not move focus to the page's main area. The
+ * Stage 2 script brings a newly focused element into view (lld-members.js keepInView), so focusing a tall <main> on
+ * press scrolled the page under the pointer and the release missed the answer. Preventing the press's default keeps
+ * focus where it is; the click still reaches the label, which checks its radio and focuses it.
+ */
+(function () {
+  'use strict';
+  document.addEventListener('mousedown', function (e) {
+    // The radio and the buttons too: WebKit focuses neither on click, so focus would still fall to <main>.
+    var hit = e.target && e.target.closest ? e.target.closest('.lld-calc-option, .lld-stage3-calc button') : null;
+    if (hit) {
+      e.preventDefault();
+    }
+  });
+})();

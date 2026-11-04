@@ -583,6 +583,82 @@ class LLD_Members_Stage3_API {
 	}
 
 	/**
+	 * The calculator pages (P3-57 to P3-5A screens, includes/stage3/screens/class-calculator-pages.php) run an engine
+	 * the same way the calculate route does: for a signed-in member through calculate_engine() (profile pre-fills,
+	 * the blood-pressure 7-day readings); for a visitor, the engine alone, with no profile and no readings.
+	 *
+	 * @param string $tool      Engine slug from calculator_engines().
+	 * @param array  $params    The answers on the page.
+	 * @param int    $member_id Member number, or 0 for a visitor.
+	 * @return array The engine's result plus `wording`, or array( 'error' => field ).
+	 */
+	public static function run_page_calculator( $tool, array $params, $member_id ) {
+		$engines = self::calculator_engines();
+		if ( ! isset( $engines[ $tool ] ) || ! class_exists( $engines[ $tool ] ) ) {
+			return array( 'error' => 'tool' );
+		}
+		$class = $engines[ $tool ];
+		if ( $member_id < 1 ) {
+			if ( 'LLD_Members_BP_Check' === $class && LLD_Members_BP_Check::home_mode( isset( $params['mode'] ) ? $params['mode'] : null ) ) {
+				return array( 'error' => 'mode' ); // the 7-day average needs the member's own logged readings
+			}
+			$result = $class::compute( $params );
+			if ( isset( $result['error'] ) ) {
+				return $result;
+			}
+			$result['wording'] = $class::wording( isset( $result['messages'] ) ? $result['messages'] : array(), $result );
+			return $result;
+		}
+		$response = self::calculate_engine( $class, $params, (int) $member_id );
+		$data     = $response->get_data();
+		if ( 200 !== $response->get_status() ) {
+			$message = isset( $data['message'] ) ? (string) $data['message'] : '';
+			return array( 'error' => preg_match( '/^Check (\w+)\.$/', $message, $m ) ? $m[1] : 'input' );
+		}
+		return $data;
+	}
+
+	/**
+	 * Save a calculator page's result for the signed-in member through the same path as
+	 * POST /me/calculator-results (gate, safety refusals, P3-5B for_save, sealing): the page never writes the table
+	 * itself.
+	 *
+	 * @param array $payload calculator, headline, unit, band, calculator_version, result, inputs.
+	 * @return true|string True, or the refusal message.
+	 */
+	public static function save_page_result( array $payload ) {
+		$request = new WP_REST_Request( 'POST', '/lld-members/v1/me/calculator-results' );
+		$request->set_url_params( array( 'type' => 'calculator-results' ) );
+		$request->set_header( 'content-type', 'application/json' );
+		$request->set_body( (string) wp_json_encode( $payload ) );
+		$response = self::create( $request );
+		if ( $response instanceof WP_REST_Response && in_array( $response->get_status(), array( 200, 201 ), true ) ) {
+			return true;
+		}
+		$data = $response instanceof WP_REST_Response ? $response->get_data() : array();
+		return isset( $data['message'] ) ? (string) $data['message'] : 'That result could not be saved.';
+	}
+
+	/**
+	 * The signed-in member's saved results for one calculator, as GET /me/calculator-results?calculator= returns them
+	 * (P3-5B present_list: Free the latest only, Premium the history and the change).
+	 *
+	 * @param string $calculator Saved-results calculator name (heart_risk, bp_check …).
+	 * @return array|null The list view, or null when the member may not read them.
+	 */
+	public static function page_saved_results( $calculator ) {
+		$request = new WP_REST_Request( 'GET', '/lld-members/v1/me/calculator-results' );
+		$request->set_url_params( array( 'type' => 'calculator-results' ) );
+		$request->set_query_params( array( 'calculator' => (string) $calculator ) );
+		$response = self::list_rows( $request );
+		if ( ! $response instanceof WP_REST_Response || 200 !== $response->get_status() ) {
+			return null;
+		}
+		$data = $response->get_data();
+		return is_array( $data ) ? $data : null;
+	}
+
+	/**
 	 * The Stage 3 calculator engines by tool slug (the approval record's tool_slug). A tool whose class is not loaded
 	 * looks absent.
 	 */
