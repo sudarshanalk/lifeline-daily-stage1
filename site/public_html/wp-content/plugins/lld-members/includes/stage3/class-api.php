@@ -455,7 +455,8 @@ class LLD_Members_Stage3_API {
 	public static function calculate( $request ) {
 		$tool      = (string) $request['tool'];
 		$member_id = LLD_Members_Access::current_member_id();
-		if ( 'calorie-target' !== $tool || ! LLD_Members_Features::enabled( 'calculators_new', $member_id ) ) {
+		$known     = array( 'calorie-target', 'goal-timeline' );
+		if ( ! in_array( $tool, $known, true ) || ! LLD_Members_Features::enabled( 'calculators_new', $member_id ) ) {
 			return self::refuse( 404, 'Not available.' );
 		}
 		if ( $member_id < 1 ) {
@@ -469,6 +470,7 @@ class LLD_Members_Stage3_API {
 			$flags = LLD_Members_Safety::situations( $member_id );
 			if ( in_array( 'eating-disorder', $flags, true ) ) {
 				$params['eatingDisorder'] = 'yes';
+				$params['eat']            = 'yes';
 			}
 			if ( in_array( 'kidney', $flags, true ) ) {
 				$params['kidneyDisease'] = true;
@@ -476,6 +478,23 @@ class LLD_Members_Stage3_API {
 			if ( in_array( 'diabetes', $flags, true ) ) {
 				$params['type2Diabetes'] = true;
 			}
+			if ( in_array( 'pregnancy', $flags, true ) || in_array( 'pregnant', $flags, true ) ) {
+				$params['preg'] = 'yes';
+			}
+		}
+		if ( 'goal-timeline' === $tool ) {
+			// Safety matrix may refuse the goal-timeline tool for this member (FR3-69).
+			if ( class_exists( 'LLD_Members_Stage3_Safety' ) && LLD_Members_Stage3_Safety::forbids( LLD_Members_Stage3_Safety::situations( $member_id ), 'calculators_new', 'goal-timeline' ) ) {
+				return self::refuse( 403, 'Not available.' );
+			}
+			$result = LLD_Members_Goal_Timeline::compute( $params );
+			$result['wording'] = array();
+			foreach ( isset( $result['messages'] ) ? $result['messages'] : array() as $key ) {
+				if ( isset( LLD_Members_Goal_Timeline::MESSAGES[ $key ] ) ) {
+					$result['wording'][ $key ] = LLD_Members_Goal_Timeline::MESSAGES[ $key ];
+				}
+			}
+			return new WP_REST_Response( $result, 200 );
 		}
 		$result = LLD_Members_Calorie_Target::compute( $params );
 		if ( isset( $result['error'] ) ) {
