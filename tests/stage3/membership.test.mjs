@@ -83,6 +83,13 @@ test('TC-FR3-62-AS-01: the pricing page shows US$9.99 a month and US$69.99 a yea
   // The page prints both prices through the filtered prices and marks each 'tax included'.
   const billing = src('includes/class-billing.php');
   expect(billing).toContain("LLD_Members_Membership::yearly_line( $prices )");
+  // Both the pricing page and each track's sales page set $launch themselves and print the launch line through it.
+  const body = (name) => billing.slice(billing.indexOf(`public static function ${name}(`), billing.indexOf('public static function', billing.indexOf(`public static function ${name}(`) + 10));
+  for (const name of ['pricing', 'sales']) {
+    expect(body(name)).toContain("$launch = class_exists( 'LLD_Members_Membership' ) && LLD_Members_Membership::launch_on();");
+    expect(body(name)).toContain("$launch ? LLD_Members_Membership::yearly_line( $prices ) : 'tax included. That is US$5 a month, a saving of 37 %.'");
+    expect(body(name)).not.toContain('tax included. That is US$5 a month, a saving of 37 %.</p>');
+  }
   expect(billing).toMatch(/self::money\( \$prices\['monthly'\], 'usd' \) \. ' a month' \) \. '<\/p><p class="lld-plan-tax">tax included<\/p>'/);
 });
 
