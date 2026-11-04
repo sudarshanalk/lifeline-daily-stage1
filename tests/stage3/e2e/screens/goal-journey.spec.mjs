@@ -70,7 +70,13 @@ async function weightGoal(page, { current = 90, target = 84, rate = '0.5', date 
   await page.locator('#lld_target').fill(String(target));
   if (date) { await page.locator('input[name="lld_rate"][value="date"]').check(); await page.locator('#lld_date').fill(date); } else { await page.locator(`input[name="lld_rate"][value="${rate}"]`).check(); }
   if (waist) await page.locator('#lld_waist').fill(String(waist));
-  await page.getByRole('button', { name: 'Save my goal' }).click();
+  // Wait for the server's answer to the save (the plan, or a refusal): without it WebKit can still be submitting when the
+  // next step navigates, which cancels the save and leaves no goal and no starting weight.
+  await Promise.all([
+    page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/members/goal/'),
+    page.getByRole('button', { name: 'Save my goal' }).click(),
+  ]);
+  await page.waitForLoadState();
 }
 
 /** The weekly check-in with this week's numbers; lands back on the check-in with the result. */
