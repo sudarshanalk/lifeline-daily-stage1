@@ -87,9 +87,13 @@ test('TC-FR3-69-AS-01', () => {
   expect(r.recipe).toEqual({ id: 3, name: 'Soup', servings: 4, kcal_per_serving: null, protein_per_serving: null });
   expect(r.plan[0]).toEqual({ id: 2, goal_id: 1, calorie_target: null, protein_g: null, activity_minutes_week: 150 });
   expect(r.noEd[0].kcal).toBe(310); // a member the matrix is off for sees Stage 2 behaviour (nothing stripped)
-  // The interface applies the rows filter on every list and single read (class-api.php, one line each).
+  // The interface applies the rows filter on every list and single read, and on the saved calculator results
+  // history (P5B, #204): class-api.php, one line each.
   const api = src('class-api.php');
-  expect(api.match(/apply_filters\( 'lld_members_stage3_api_rows'/g)).toHaveLength(2);
+  expect(api.match(/apply_filters\( 'lld_members_stage3_api_rows'/g)).toHaveLength(3);
+  expect(api).toMatch(/apply_filters\( 'lld_members_stage3_api_rows', \$rows, \(string\) \$request\['type'\], \$member_id \)/);
+  expect(api).toMatch(/apply_filters\( 'lld_members_stage3_api_rows', \$row, \(string\) \$request\['type'\], \$member_id \)/);
+  expect(api).toMatch(/apply_filters\( 'lld_members_stage3_api_rows', \$view, 'calculator-results', \$member_id \)/);
   expect(src('loader.php')).toMatch(/LLD_Members_Stage3_Safety::boot\(\)/);
   expect(src('class-safety-stage3.php')).toMatch(/add_filter\( 'lld_members_stage3_api_rows'/);
 });
