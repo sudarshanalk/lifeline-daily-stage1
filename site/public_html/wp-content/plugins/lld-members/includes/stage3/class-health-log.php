@@ -82,6 +82,9 @@ class LLD_Members_Health_Log {
 				'warning' => $warn,
 			);
 		}
+		if ( ! empty( $warn['pulse_left_out'] ) ) {
+			$norm['value_3'] = null; // D3-50: an impossible pulse is left out, never saved
+		}
 		$norm['urgent_shown'] = ( 'urgent' === $warn['level'] ) ? 1 : 0;
 		if ( ! isset( $norm['source'] ) || '' === (string) $norm['source'] ) {
 			$norm['source'] = 'manual';

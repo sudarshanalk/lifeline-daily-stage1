@@ -1235,6 +1235,9 @@ class LLD_Members_Stage3_API {
 			$ranges = self::reading_ranges();
 			if ( '' !== $type && isset( $ranges[ $type ] ) ) {
 				foreach ( $ranges[ $type ] as $field => $range ) {
+					if ( 'blood_pressure' === $type && 'value_3' === $field ) {
+						continue; // D3-50: an impossible pulse is left out by warning_level() at save, never refused
+					}
 					if ( isset( $probe[ $field ] ) && is_numeric( $probe[ $field ] ) && ( $probe[ $field ] < $range[0] || $probe[ $field ] > $range[1] ) ) {
 						return self::refuse( 400, 'Check the numbers.' );
 					}

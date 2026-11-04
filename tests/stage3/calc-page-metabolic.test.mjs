@@ -169,3 +169,35 @@ test('Metabolic page: every error names its answer, the form keeps the answers, 
   const visitor = JSON.parse(php(`echo json_encode(${P}::defaults(['member' => 0, 'facts' => null]));`));
   expect(visitor.age).toBeUndefined();
 });
+
+test('TC-FR3-51-AS-01 (page, sheet inputs 5 and 6): the waist measuring guide, and the 7-day average for members', () => {
+  // The guide is the Healthy Weight Check's approved text, on every form.
+  const form = run(P, E, ms01).form;
+  expect(form).toContain('data-lld-guide="waist"');
+  expect(textOf(form)).toContain('How to measure your waist Stand up straight and breathe out normally.');
+  // "Use my 7-day average" is offered only to a signed-in member with health information on.
+  expect(form).not.toContain('lld_c[bpAverage]');
+  const stub = (avg) => `if (!class_exists('LLD_Members_Stage3_API')) { class LLD_Members_Stage3_API { static $avg; static $calls = 0;
+    static function run_page_calculator($t, $p, $m) { self::$calls++; return $t === 'bp-check' && $p['mode'] === '7-day' && $m === 7 && self::$avg ? ['average_shown' => true, 'average' => self::$avg] : ['average_shown' => false, 'average' => null]; } } }
+    LLD_Members_Stage3_API::$avg = ${avg ? arr(avg) : 'null'};`;
+  const member = { member: 7, facts: null, health: true, imperial: false, premium: false };
+  const out = JSON.parse(php(`${stub({ systolic: 141, diastolic: 87 })}
+    $values = ${arr({ ...ms01, bpSystolic: '', bpDiastolic: '', bpAverage: 'yes' })};
+    $in = ${P}::inputs($values, ${arr(member)});
+    echo json_encode(['form' => ${P}::form($values, ${arr(member)}), 'guest' => ${P}::form($values, ${arr({ ...member, member: 0, health: false })}),
+      'in' => $in, 'r' => ${E}::compute($in), 'again' => ${P}::inputs($values, ${arr(member)}), 'calls' => LLD_Members_Stage3_API::$calls]);`));
+  expect(out.form).toContain('lld_c[bpAverage]');
+  expect(textOf(out.form)).toContain('Use my 7-day average The 7-day average uses the blood pressure readings you have logged in the last 7 days.');
+  expect(out.guest).not.toContain('lld_c[bpAverage]');
+  expect(out.in).toMatchObject({ bpSystolic: 141, bpDiastolic: 87 });
+  expect(out.in).not.toHaveProperty('_error');
+  expect(out.calls).toBe(1); // worked out once per request
+  expect(out.r.error).toBeUndefined();
+  // Fewer than 3 days of readings: the page says so and nothing is worked out from a guess.
+  const none = JSON.parse(php(`${stub(null)}
+    echo json_encode(${P}::inputs(${arr({ ...ms01, bpAverage: 'yes' })}, ${arr(member)}));`));
+  expect(none._error).toBe('bpAverage');
+  expect(JSON.parse(php(`echo json_encode(${P}::error_text('bpAverage'));`))).toBe('Please check your logged readings. Add readings on at least 3 days for a 7-day average.');
+  // A visitor who posts the box anyway gets the same message, never a reading.
+  expect(JSON.parse(php(`echo json_encode(${P}::inputs(${arr({ ...ms01, bpAverage: 'yes' })}, ${arr({ ...member, member: 0, health: false })}));`))._error).toBe('bpAverage');
+});

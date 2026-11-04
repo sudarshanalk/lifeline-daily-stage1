@@ -25,7 +25,17 @@ class LLD_Members_Calc_Page_Metabolic {
 	const INTRO  = 'Checks your waist, blood pressure and blood test results against the International Diabetes Federation definition of metabolic syndrome.';
 
 	/** Engine field => how the error message names it. */
+	/** The Healthy Weight Check's approved waist instructions (healthy-weight-tool.html, howWaist), word for word. */
+	const WAIST_GUIDE = array(
+		'title' => 'How to measure your waist',
+		'body'  => 'Stand up straight and breathe out normally. Find the point halfway between your lowest rib and the top of your hip bone, usually just above your belly button. Wrap a tape measure around your body at that level, keeping it level and snug but not tight, and read it without pulling your stomach in.',
+	);
+
+	/** The Blood Pressure Reading Check's approved 7-day hint (stage3-calculator-page-wording.md). */
+	const AVERAGE_HINT = 'The 7-day average uses the blood pressure readings you have logged in the last 7 days.';
+
 	const FIELDS = array(
+		'bpAverage'               => 'your logged readings. Add readings on at least 3 days for a 7-day average',
 		'age'                     => 'your age',
 		'sex'                     => 'your sex',
 		'pregnantOrBreastfeeding' => 'the pregnancy answer',
@@ -126,7 +136,6 @@ class LLD_Members_Calc_Page_Metabolic {
 	 * @param array $ctx    Context.
 	 */
 	public static function form( array $values, array $ctx ) {
-		unset( $ctx );
 		$p      = 'LLD_Members_Calculator_Pages';
 		$v      = function ( $k ) use ( $values ) {
 			return isset( $values[ $k ] ) ? (string) $values[ $k ] : '';
@@ -137,10 +146,17 @@ class LLD_Members_Calc_Page_Metabolic {
 		$html  .= $p::select( 'background', 'Family background', self::BACKGROUNDS, $v( 'background' ) );
 		$html  .= $p::choice( 'pregnantOrBreastfeeding', 'Are you pregnant or breastfeeding?', array( 'yes' => 'Yes', 'no' => 'No', 'notsure' => 'Not sure' ), $v( 'pregnantOrBreastfeeding' ) );
 		$html  .= $p::number( 'waistCm', 'Waist', $v( 'waistCm' ), array( 'min' => 40, 'max' => 250, 'step' => '0.1', 'unit' => 'cm' ) );
+		// The measuring guide (sheet 2, input 5): the Healthy Weight Check's approved instructions, word for word.
+		$html  .= '<details class="lld-calc-guide" data-lld-guide="waist"><summary>' . esc_html( self::WAIST_GUIDE['title'] ) . '</summary><p>' . esc_html( self::WAIST_GUIDE['body'] ) . '</p></details>';
 		$html  .= '<fieldset class="lld-field lld-calc-group"><legend>Blood pressure</legend><div class="lld-field-row">';
 		$html  .= $p::number( 'bpSystolic', 'Systolic (the top number)', $v( 'bpSystolic' ), array( 'min' => 60, 'max' => 260, 'step' => 1, 'unit' => 'mmHg' ) );
 		$html  .= $p::number( 'bpDiastolic', 'Diastolic (the bottom number)', $v( 'bpDiastolic' ), array( 'min' => 30, 'max' => 160, 'step' => 1, 'unit' => 'mmHg' ) );
-		$html  .= '</div>' . self::tick( 'bpMedicine', 'I take blood pressure medicine', $v( 'bpMedicine' ) ) . '</fieldset>';
+		$html  .= '</div>';
+		if ( self::average_offered( $ctx ) ) {
+			// Signed-in members with health information on (sheet 2, input 6): the 7-day average of their own readings.
+			$html .= self::tick( 'bpAverage', 'Use my 7-day average', $v( 'bpAverage' ) ) . '<p class="lld-hint">' . esc_html( self::AVERAGE_HINT ) . '</p>';
+		}
+		$html  .= self::tick( 'bpMedicine', 'I take blood pressure medicine', $v( 'bpMedicine' ) ) . '</fieldset>';
 		$labels = array(
 			'triglycerides'  => array( 'Triglycerides', 'From a fasting blood test. Leave blank if you don\'t know it.', 'I take medicine for high triglycerides' ),
 			'hdl'            => array( 'HDL cholesterol', 'Leave blank if you don\'t know it.', 'I take medicine to raise HDL' ),
@@ -180,7 +196,6 @@ class LLD_Members_Calc_Page_Metabolic {
 	 * @param array $ctx    Context.
 	 */
 	public static function inputs( array $values, array $ctx ) {
-		unset( $ctx );
 		$p   = 'LLD_Members_Calculator_Pages';
 		$s   = function ( $k ) use ( $values ) {
 			return isset( $values[ $k ] ) && '' !== (string) $values[ $k ] ? (string) $values[ $k ] : null;
@@ -203,7 +218,42 @@ class LLD_Members_Calc_Page_Metabolic {
 		}
 		$in['fastingGlucoseFasting'] = $s( 'fastingGlucoseFasting' );
 		$in['eatingDisorder']        = null !== $s( 'eatingDisorder' ) ? $s( 'eatingDisorder' ) : 'no';
+		if ( 'yes' === $s( 'bpAverage' ) ) {
+			$average = self::average_offered( $ctx ) ? self::seven_day_average( (int) $ctx['member'] ) : null;
+			if ( null === $average ) {
+				$in['_error'] = 'bpAverage'; // fewer than 3 days of readings, or not available: say so, never guess
+				return $in;
+			}
+			$in['bpSystolic']  = $average['systolic'];
+			$in['bpDiastolic'] = $average['diastolic'];
+		}
 		return $in;
+	}
+
+	/**
+	 * @param array $ctx Context.
+	 * @return bool The 7-day average is offered: a signed-in member with health information on.
+	 */
+	private static function average_offered( array $ctx ) {
+		return ! empty( $ctx['member'] ) && ! empty( $ctx['health'] ) && class_exists( 'LLD_Members_Stage3_API' );
+	}
+
+	/**
+	 * The member's 7-day blood pressure average, worked out exactly as the Blood Pressure Reading Check does it (the
+	 * same engine and the same readings, through the members' interface), or null without one.
+	 *
+	 * @param int $member_id Member number.
+	 * @return array{systolic:int,diastolic:int}|null
+	 */
+	private static function seven_day_average( $member_id ) {
+		static $cache = array();
+		if ( ! array_key_exists( $member_id, $cache ) ) {
+			$r                    = LLD_Members_Stage3_API::run_page_calculator( 'bp-check', array( 'mode' => '7-day', 'pregnant' => 'no' ), $member_id );
+			$cache[ $member_id ] = ( ! isset( $r['error'] ) && ! empty( $r['average_shown'] ) && isset( $r['average']['systolic'], $r['average']['diastolic'] ) )
+				? array( 'systolic' => (int) $r['average']['systolic'], 'diastolic' => (int) $r['average']['diastolic'] )
+				: null;
+		}
+		return $cache[ $member_id ];
 	}
 
 	/**

@@ -117,6 +117,19 @@ test.describe.serial('calculator pages', () => {
     await expect(page.locator('.lld-calc-result')).toContainText('High (grade 1)');
   });
 
+  test('TC-FR3-38-AS-04 (screen, D3-50): an impossible pulse is left out and the reading still checked, urgent first', async ({ page }) => {
+    await signIn(page, B, password);
+    await page.goto('/health-tools/blood-pressure-check/');
+    await answer(page, { mode: 'single', systolic: 190, diastolic: 125, pulse: 225, age: 60, pregnant: 'no', medicine: 'no' });
+    await check(page);
+    const result = page.locator('.lld-calc-result');
+    await expect(result.locator('[role="alert"]').first()).toContainText('Your reading is very high.');
+    await expect(result).toContainText("We left out the pulse: 225 isn't possible for a resting pulse. Please check it and add it again.");
+    await expect(result).not.toContainText("that reading isn't possible");
+    const text = await result.innerText();
+    expect(text.indexOf('Your reading is very high.')).toBeLessThan(text.indexOf('We left out the pulse'));
+  });
+
   test('TC-FR3-50-AS-03 (screen): the 7-day average uses the member\'s own logged readings', async ({ page }) => {
     // A member who has answered the health questions ("no conditions"): the safety matrix refuses readings for a
     // member whose answers are unknown.
@@ -198,6 +211,10 @@ test.describe.serial('calculator pages', () => {
     const result = page.locator('.lld-calc-result');
     await expect(result).toContainText('findahelpline.com');
     await expect(page.getByRole('button', { name: 'Save this result' })).toBeVisible();
+    // D3-52: the track link sits below the result, never inside it, with no price.
+    await expect(result.locator('a[href*="/programmes/sleep-stress/"]')).toHaveCount(0);
+    await expect(page.locator('[data-lld-onward="sleep-stress"] a')).toHaveText('The Sleep and Stress track');
+    await expect(result).not.toContainText('You can still start the track');
     await page.locator('.lld-calc-form [name="lld_c[q0]"][value="yes"]').check();
     await check(page);
     await expect(result.locator('[role="alert"]')).toBeVisible();

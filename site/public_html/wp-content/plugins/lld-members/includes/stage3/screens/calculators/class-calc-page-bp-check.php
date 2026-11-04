@@ -28,7 +28,7 @@ class LLD_Members_Calc_Page_BP_Check {
 	const SAFETY_FIRST = array( 'urgent.alert', 'pregnancy.urgent', 'pregnancy.same-day', 'low.dizzy' );
 
 	/** Notes after the category, in the engine's order (sheet sections 3, 4.3 and 5). */
-	const NOTES = array( 'category.normal-low.body', 'pulse.note', 'home.min-days', 'age80.note', 'medicine.note' );
+	const NOTES = array( 'category.normal-low.body', 'pulse.note', 'pulse.left-out', 'home.min-days', 'age80.note', 'medicine.note' );
 
 	/** Engine field => how the error message names it. */
 	const FIELDS = array(
@@ -83,7 +83,8 @@ class LLD_Members_Calc_Page_BP_Check {
 		$html .= $p::number( 'systolic', 'Systolic (top number)', $v( 'systolic' ), array( 'min' => 60, 'max' => 260, 'step' => 1, 'unit' => 'mmHg' ) );
 		$html .= $p::number( 'diastolic', 'Diastolic (bottom number)', $v( 'diastolic' ), array( 'min' => 30, 'max' => 160, 'step' => 1, 'unit' => 'mmHg' ) );
 		$html .= '</div>';
-		$html .= $p::number( 'pulse', 'Pulse (optional)', $v( 'pulse' ), array( 'min' => 30, 'max' => 220, 'step' => 1, 'unit' => 'beats a minute' ) );
+		// No min or max: a pulse the browser would block is left out by the engine instead, and the reading still checked (D3-50).
+		$html .= $p::number( 'pulse', 'Pulse (optional)', $v( 'pulse' ), array( 'step' => 1, 'unit' => 'beats a minute' ) );
 		$html .= $p::number( 'age', 'Age', $v( 'age' ), array( 'min' => 18, 'max' => 99, 'step' => 1, 'unit' => 'years' ) );
 		$html .= $p::choice( 'pregnant', 'Pregnant?', array( 'yes' => 'Yes', 'no' => 'No', 'notsure' => 'Not sure' ), $v( 'pregnant' ) );
 		$html .= $p::choice( 'medicine', 'Do you take blood pressure medicine?', array( 'yes' => 'Yes', 'no' => 'No' ), $v( 'medicine' ) );

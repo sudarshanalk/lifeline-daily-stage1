@@ -102,3 +102,26 @@ test('Sleep and stress page: errors name their answer, the form asks Q0 first, a
   expect(blank.form).not.toMatch(/\{|\}|\|/);
   expect(JSON.parse(php(`echo json_encode(${P}::defaults(['member'=>5,'facts'=>['age'=>40]]));`))).toEqual([]);
 });
+
+test('TC-FR3-54-AS-02 (page, D3-52): page versions of Responses 1 and 3, and the track link below the result', () => {
+  // Response 1 on the page has no track sentence; the Stage 2 text it quotes still has it (the track-start screen).
+  const yes = run(P, E, { ...high, q0: 'yes' });
+  const yesText = textOf(yes.html);
+  expect(yesText).not.toContain("We won't start Sleep and Stress today");
+  expect(yesText).toContain("You don't have to cope with these thoughts alone");
+  expect(yes.result.wording['quoted.response1']).toContain("We won't start Sleep and Stress today.");
+  expect(JSON.parse(php(`echo json_encode(${P}::after_result(['response1' => true, 'trackOffer' => false, 'trackWeeks' => []], []));`))).toBe('');
+  // Response 3 on the page has no "You can still start the track" and no Continue.
+  const hi = run(P, E, high);
+  const hiText = textOf(hi.html);
+  expect(hiText).toContain('Please talk to a doctor about your mood');
+  expect(hiText).not.toContain("You can still start the track");
+  expect(hi.result.wording['quoted.response3']).toContain("You can still start the track if you'd like to.");
+  // The weeks are text in the result; the link is only below it, with no price.
+  expect(hi.html).toContain('data-lld-track="1,2,3"');
+  expect(hi.html).not.toContain('programmes/sleep-stress');
+  const below = JSON.parse(php(`$r = ${E}::compute(${P}::inputs(json_decode(${JSON.stringify(JSON.stringify(high))}, true), [])); echo json_encode(${P}::after_result($r, []));`));
+  expect(below).toContain('href="https://example.test/programmes/sleep-stress/"');
+  expect(textOf(below)).toBe('The Sleep and Stress track');
+  expect(below).not.toMatch(/\$|£|€|price|Premium|month|year/i);
+});
