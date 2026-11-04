@@ -275,7 +275,7 @@ class LLD_Members_Saved_Results {
 	 */
 	public static function stores_inputs( $calculator ) {
 		$c = str_replace( '-', '_', (string) $calculator );
-		return ! in_array( $c, array( 'protein', 'diabetes_risk', 'healthy_weight' ), true )
+		return ! in_array( $c, array( 'protein', 'diabetes_risk', 'healthy_weight', 'sleep_stress' ), true ) // sleep_stress: answers never stored (P3-5A sheet 3.4)
 			&& ! in_array( (string) $calculator, self::STAGE1_NO_INPUTS, true );
 	}
 

@@ -147,7 +147,7 @@ class LLD_Members_Calculator_Pages {
 			if ( isset( $result['error'] ) ) {
 				$error  = $page::error_text( (string) $result['error'] );
 				$result = null;
-			} elseif ( isset( $_POST['lld_calc3_action'] ) && 'save' === $_POST['lld_calc3_action'] ) {
+			} elseif ( isset( $_POST['lld_calc3_action'] ) && 'save' === $_POST['lld_calc3_action'] && ! ( method_exists( $page, 'quiet' ) && $page::quiet( $result ) ) ) {
 				$notice = self::save( $page, $result, $inputs, $ctx );
 			}
 		}
@@ -165,9 +165,16 @@ class LLD_Members_Calculator_Pages {
 			$html .= '<section class="lld-card lld-calc-result" aria-labelledby="lld-calc-result-h" data-lld-result="shown" tabindex="-1" id="lld-calc-result">';
 			$html .= '<h2 id="lld-calc-result-h">' . esc_html( self::UI['result'] ) . '</h2>';
 			$html .= $page::result( $result, $ctx );
-			$html .= self::save_block( $slug, $page, $result, $values, $ctx, $notice );
+			// A page may keep a result quiet: the Sleep and Stress Check's self-harm answer shows only its support
+			// wording (FR2-38), with no save and no saved results beside it.
+			$quiet = method_exists( $page, 'quiet' ) && $page::quiet( $result );
+			if ( ! $quiet ) {
+				$html .= self::save_block( $slug, $page, $result, $values, $ctx, $notice );
+			}
 			$html .= '</section>';
-			$html .= self::history_block( $page, $ctx );
+			if ( ! $quiet ) {
+				$html .= self::history_block( $page, $ctx );
+			}
 		}
 		$html .= '<form method="post" class="lld-form lld-card lld-form-card lld-calc-form" action="' . esc_url( home_url( '/health-tools/' . $slug . '/' ) ) . '#lld-calc-result" novalidate>';
 		$html .= wp_nonce_field( 'lld_calc3_' . $slug, 'lld_calc3_nonce', true, false );
@@ -273,8 +280,9 @@ class LLD_Members_Calculator_Pages {
 		foreach ( $view['rows'] as $row ) {
 			$row   = (array) $row;
 			$date  = isset( $row['saved_at'] ) ? substr( (string) $row['saved_at'], 0, 10 ) : '';
-			$shown = isset( $row['shown'] ) ? (string) $row['shown'] : ( (string) ( $row['headline'] ?? '' ) . ( isset( $row['unit'] ) && '' !== (string) $row['unit'] ? ' ' . (string) $row['unit'] : '' ) );
-			$html .= '<li><span class="lld-muted">' . esc_html( $date ) . '</span> ' . esc_html( $shown ) . ( ! empty( $row['band'] ) ? ' · ' . esc_html( (string) $row['band'] ) : '' ) . '</li>';
+			$unit  = isset( $row['unit'] ) && ! in_array( (string) $row['unit'], array( '', 'result' ), true ) ? ' ' . (string) $row['unit'] : '';
+			$shown = method_exists( $page, 'history_line' ) ? (string) $page::history_line( $row ) : (string) ( $row['headline'] ?? '' ) . $unit;
+			$html .= '<li><span class="lld-muted">' . esc_html( $date ) . '</span> ' . esc_html( $shown ) . '</li>';
 		}
 		$html .= '</ul>';
 		if ( ! empty( $view['comparison']['wording'] ) ) {
