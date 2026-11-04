@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'LLD_MEMBERS_VERSION', '0.2.2' );   // bumped whenever the stylesheet or script changes, so browsers fetch the new files
+define( 'LLD_MEMBERS_VERSION', '0.2.3' );   // bumped whenever the stylesheet or script changes, so browsers fetch the new files
 define( 'LLD_MEMBERS_FILE', __FILE__ );
 define( 'LLD_MEMBERS_DIR', plugin_dir_path( __FILE__ ) );
 
