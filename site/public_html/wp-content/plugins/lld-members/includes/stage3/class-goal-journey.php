@@ -436,7 +436,7 @@ class LLD_Members_Goal_Journey {
 			'taken_at'     => lld_members_now_mysql( $member_id ),
 			'value_1'      => isset( $values['value_1'] ) ? (float) $values['value_1'] : null,
 			'value_2'      => isset( $values['value_2'] ) ? (float) $values['value_2'] : null,
-			'value_3'      => isset( $values['value_3'] ) ? (float) $values['value_3'] : null,
+			'value_3'      => isset( $values['value_3'] ) && empty( $level['pulse_left_out'] ) ? (float) $values['value_3'] : null, // D3-50
 			'urgent_shown' => 'urgent' === $level['level'] ? 1 : 0,
 			'source'       => $source,
 		);

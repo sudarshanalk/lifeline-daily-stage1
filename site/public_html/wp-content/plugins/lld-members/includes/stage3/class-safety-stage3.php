@@ -248,8 +248,10 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 		// D3-50 (P3-58 v1.1): a pulse outside 30-220 never refuses a reading. The two numbers are checked without it
 		// (the urgent alert first), and the result says the pulse was left out, with the line to show and the number
 		// typed (never stored). Impossible numbers are still refused, whatever the pulse.
-		if ( 'blood_pressure' === $reading_type && null !== $v3 && ( $v3 < $L['pulse_impossible'][0] || $v3 > $L['pulse_impossible'][1] ) ) {
-			$without = array_diff_key( $values, array_flip( array( 'value_3', 'pulse' ) ) );
+		// The pulse is judged in whole beats, half-up, as the calculator rounds it (220.4 is 220, a possible pulse).
+		$whole_pulse = null === $v3 ? null : floor( $v3 + 0.5 );
+		if ( 'blood_pressure' === $reading_type && null !== $whole_pulse && ( $whole_pulse < $L['pulse_impossible'][0] || $whole_pulse > $L['pulse_impossible'][1] ) ) {
+			$without = array_diff_key( $values, array_flip( array( 'value_3', 'pulse', 'effort' ) ) );
 			$result  = self::warning_level( $reading_type, $without, $flags );
 			if ( 'impossible' !== $result['level'] ) {
 				$typed                    = floor( $v3 ) === (float) $v3 ? (string) (int) $v3 : (string) $v3;

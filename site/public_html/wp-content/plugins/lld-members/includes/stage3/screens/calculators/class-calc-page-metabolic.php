@@ -24,7 +24,6 @@ class LLD_Members_Calc_Page_Metabolic {
 	const TITLE  = 'Metabolic health check';
 	const INTRO  = 'Checks your waist, blood pressure and blood test results against the International Diabetes Federation definition of metabolic syndrome.';
 
-	/** Engine field => how the error message names it. */
 	/** The Healthy Weight Check's approved waist instructions (healthy-weight-tool.html, howWaist), word for word. */
 	const WAIST_GUIDE = array(
 		'title' => 'How to measure your waist',
@@ -34,6 +33,10 @@ class LLD_Members_Calc_Page_Metabolic {
 	/** The Blood Pressure Reading Check's approved 7-day hint (stage3-calculator-page-wording.md). */
 	const AVERAGE_HINT = 'The 7-day average uses the blood pressure readings you have logged in the last 7 days.';
 
+	/** @var bool A reading in the 7-day window used for this check reached the urgent level (sheet P3-58 section 5). */
+	private static $average_urgent = false;
+
+	/** Engine field => how the error message names it. */
 	const FIELDS = array(
 		'bpAverage'               => 'your logged readings. Add readings on at least 3 days for a 7-day average',
 		'age'                     => 'your age',
@@ -224,8 +227,9 @@ class LLD_Members_Calc_Page_Metabolic {
 				$in['_error'] = 'bpAverage'; // fewer than 3 days of readings, or not available: say so, never guess
 				return $in;
 			}
-			$in['bpSystolic']  = $average['systolic'];
-			$in['bpDiastolic'] = $average['diastolic'];
+			$in['bpSystolic']     = $average['systolic'];
+			$in['bpDiastolic']    = $average['diastolic'];
+			self::$average_urgent = $average['urgent'];
 		}
 		return $in;
 	}
@@ -250,7 +254,7 @@ class LLD_Members_Calc_Page_Metabolic {
 		if ( ! array_key_exists( $member_id, $cache ) ) {
 			$r                    = LLD_Members_Stage3_API::run_page_calculator( 'bp-check', array( 'mode' => '7-day', 'pregnant' => 'no' ), $member_id );
 			$cache[ $member_id ] = ( ! isset( $r['error'] ) && ! empty( $r['average_shown'] ) && isset( $r['average']['systolic'], $r['average']['diastolic'] ) )
-				? array( 'systolic' => (int) $r['average']['systolic'], 'diastolic' => (int) $r['average']['diastolic'] )
+				? array( 'systolic' => (int) $r['average']['systolic'], 'diastolic' => (int) $r['average']['diastolic'], 'urgent' => ! empty( $r['urgent'] ) )
 				: null;
 		}
 		return $cache[ $member_id ];
@@ -277,6 +281,11 @@ class LLD_Members_Calc_Page_Metabolic {
 		$fill     = isset( $r['placeholders'] ) && is_array( $r['placeholders'] ) ? $r['placeholders'] : array();
 		$messages = isset( $r['messages'] ) && is_array( $r['messages'] ) ? $r['messages'] : array();
 		$html     = '';
+		// A reading in the 7-day window reached the urgent level although the average did not: the urgent alert comes
+		// first, as on the Blood Pressure Reading Check ("regardless of the average", P3-58 section 5, BP-32).
+		if ( self::$average_urgent && ! in_array( 'flags.bpUrgent', $messages, true ) && class_exists( 'LLD_Members_Stage3_Safety' ) ) {
+			$html .= $p::safety_key( 'bp-check.urgent.alert', LLD_Members_Stage3_Safety::BP_MESSAGES['urgent.alert'] );
+		}
 		foreach ( $messages as $key ) {
 			if ( in_array( $key, LLD_Members_Metabolic::SAFETY_FIRST, true ) ) {
 				$html .= $p::safety_key( self::safety_name( $key, $r ), isset( $w[ $key ] ) ? $w[ $key ] : '' );
