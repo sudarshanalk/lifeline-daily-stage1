@@ -161,6 +161,7 @@ JS;
 	 * @param array<string,mixed> $data Manifest.
 	 */
 	private static function send_json( array $data ) {
+		status_header( 200 );
 		nocache_headers();
 		header( 'Content-Type: application/manifest+json; charset=utf-8' );
 		echo wp_json_encode( $data );
@@ -171,6 +172,7 @@ JS;
 	 * @param string $js Service worker source.
 	 */
 	private static function send_js( $js ) {
+		status_header( 200 );
 		nocache_headers();
 		header( 'Content-Type: application/javascript; charset=utf-8' );
 		header( 'Service-Worker-Allowed: /members/' );
@@ -179,6 +181,7 @@ JS;
 	}
 
 	private static function send_offline_html() {
+		status_header( 200 );
 		nocache_headers();
 		header( 'Content-Type: text/html; charset=utf-8' );
 		$title = esc_html( self::MESSAGES['offline.heading'] );
