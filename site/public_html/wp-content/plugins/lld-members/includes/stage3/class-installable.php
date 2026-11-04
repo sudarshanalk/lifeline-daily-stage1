@@ -115,7 +115,7 @@ class LLD_Members_Installable {
 /* Lifeline Daily member service worker (P3-85, FR3-58). */
 const OFFLINE = {$offline_js};
 const SCOPE = {$scope_js};
-const CACHE = 'lld-members-v1';
+const CACHE = 'lld-members-v2';
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((c) => c.addAll([OFFLINE])).then(() => self.skipWaiting()));
 });
@@ -124,9 +124,8 @@ self.addEventListener('activate', (event) => {
 });
 self.addEventListener('fetch', (event) => {
   const req = event.request;
-  if (req.method !== 'GET') return;
-  const url = new URL(req.url);
-  if (!url.href.startsWith(SCOPE) && url.pathname.indexOf('/members/') === -1) return;
+  // Only member page loads fall back to the offline page; images, scripts and data fail as normal.
+  if (req.method !== 'GET' || req.mode !== 'navigate' || !req.url.startsWith(SCOPE)) return;
   event.respondWith(
     fetch(req).then((res) => res).catch(() => caches.match(OFFLINE).then((r) => r || new Response('You are offline', { status: 503, headers: { 'Content-Type': 'text/plain' } })))
   );
@@ -163,7 +162,7 @@ JS;
 	private static function send_json( array $data ) {
 		// The paths have no rewrite rule, so WordPress has already marked the request 404.
 		status_header( 200 );
-		nocache_headers();
+		self::no_cache();
 		header( 'Content-Type: application/manifest+json; charset=utf-8' );
 		echo wp_json_encode( $data );
 		exit;
@@ -175,17 +174,25 @@ JS;
 	private static function send_js( $js ) {
 		// The paths have no rewrite rule, so WordPress has already marked the request 404.
 		status_header( 200 );
-		nocache_headers();
+		self::no_cache();
 		header( 'Content-Type: application/javascript; charset=utf-8' );
-		header( 'Service-Worker-Allowed: /members/' );
+		header( 'Service-Worker-Allowed: ' . (string) wp_parse_url( home_url( '/members/' ), PHP_URL_PATH ) );
 		echo $js; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- JS source.
 		exit;
+	}
+
+	/**
+	 * No browser or LiteSpeed page caching: a cached copy would outlive a fix or a new service worker.
+	 */
+	private static function no_cache() {
+		nocache_headers();
+		header( 'X-LiteSpeed-Cache-Control: no-cache' );
 	}
 
 	private static function send_offline_html() {
 		// The paths have no rewrite rule, so WordPress has already marked the request 404.
 		status_header( 200 );
-		nocache_headers();
+		self::no_cache();
 		header( 'Content-Type: text/html; charset=utf-8' );
 		$title = esc_html( self::MESSAGES['offline.heading'] );
 		$body  = esc_html( self::MESSAGES['offline.body'] );
