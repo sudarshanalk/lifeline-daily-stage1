@@ -448,6 +448,10 @@ class LLD_Members_Stage3_Schema {
 		// Version 2 (P3-40): the food search key. Later packages add ensure_column() and ensure_key() lines
 		// here and leave every Stage 2 statement as it is.
 		self::ensure_key( 'foods', 'food_search', 'FULLTEXT KEY food_search (name, search_names)' );
+		// Version 3 (P3-5B): sealed inputs and result on the Stage 2 calculator_result table (D3-33).
+		// engine_version maps to the existing calculator_version column (never rename, NFR3-04).
+		self::ensure_column( 'calculator_result', 'inputs_ct', 'LONGTEXT NULL' );
+		self::ensure_column( 'calculator_result', 'result_ct', 'LONGTEXT NULL' );
 	}
 
 	/**
