@@ -20,6 +20,7 @@ require_once __DIR__ . '/class-food-log.php';
 require_once __DIR__ . '/class-recipes.php';
 require_once __DIR__ . '/class-health-log.php';
 require_once __DIR__ . '/calculators/class-calorie-target.php';
+require_once __DIR__ . '/calculators/class-goal-timeline.php';
 require_once __DIR__ . '/calculators/class-heart-risk.php';
 require_once __DIR__ . '/calculators/class-bp-check.php';
 require_once __DIR__ . '/calculators/class-metabolic.php';
