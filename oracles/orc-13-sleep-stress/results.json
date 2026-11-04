@@ -1,0 +1,219 @@
+{
+  "oracle_id": "ORC-13",
+  "implementation": "Python reference for the Sleep and Stress Check (FR3-54): the self-harm question first, GAD-2 and PHQ-2 scored as published, the 4-item insomnia-symptom count, the result bands and the help-line rule, from the signed sheet of 3 November 2026",
+  "versions": {
+    "python": "3.14.6",
+    "sheet": "P3-5A v1.0 signed 2026-11-03"
+  },
+  "source_hash": "098c8244a39813049195e460af0f93e41f690f8ae4a57b5aa09d19933d2289c4",
+  "run_at": "2026-11-03T22:29:44Z",
+  "results": [
+    {
+      "fixture_id": "FX-SS-01",
+      "expected": {
+        "response1": false,
+        "stressScore": 0,
+        "moodScore": 0,
+        "sleepCount": 0,
+        "stressResult": "result.stress.usual",
+        "moodResult": null,
+        "sleepResult": "result.sleep.none",
+        "stressDoctorLine": false,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": false,
+        "trackOffer": true
+      }
+    },
+    {
+      "fixture_id": "FX-SS-02",
+      "expected": {
+        "response1": false,
+        "stressScore": 2,
+        "moodScore": 1,
+        "sleepCount": 1,
+        "stressResult": "result.stress.usual",
+        "moodResult": null,
+        "sleepResult": "result.sleep.none",
+        "stressDoctorLine": false,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": false,
+        "trackOffer": true
+      }
+    },
+    {
+      "fixture_id": "FX-SS-03",
+      "expected": {
+        "response1": false,
+        "stressScore": 3,
+        "moodScore": 0,
+        "sleepCount": 0,
+        "stressResult": "result.stress.attention",
+        "moodResult": null,
+        "sleepResult": "result.sleep.none",
+        "stressDoctorLine": true,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": true,
+        "trackOffer": true
+      }
+    },
+    {
+      "fixture_id": "FX-SS-04",
+      "expected": {
+        "response1": false,
+        "stressScore": 6,
+        "moodScore": 6,
+        "sleepCount": 4,
+        "stressResult": "result.stress.attention",
+        "moodResult": "result.mood.attention",
+        "sleepResult": "result.sleep.needs",
+        "stressDoctorLine": true,
+        "insomniaLine": true,
+        "shortSleepNote": false,
+        "helpline": true,
+        "trackOffer": true
+      }
+    },
+    {
+      "fixture_id": "FX-SS-05",
+      "expected": {
+        "response1": false,
+        "stressScore": 0,
+        "moodScore": 0,
+        "sleepCount": 4,
+        "stressResult": "result.stress.usual",
+        "moodResult": null,
+        "sleepResult": "result.sleep.needs",
+        "stressDoctorLine": false,
+        "insomniaLine": true,
+        "shortSleepNote": false,
+        "helpline": true,
+        "trackOffer": true
+      }
+    },
+    {
+      "fixture_id": "FX-SS-06",
+      "expected": {
+        "response1": false,
+        "stressScore": 0,
+        "moodScore": 0,
+        "sleepCount": 2,
+        "stressResult": "result.stress.usual",
+        "moodResult": null,
+        "sleepResult": "result.sleep.some",
+        "stressDoctorLine": false,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": false,
+        "trackOffer": true
+      }
+    },
+    {
+      "fixture_id": "FX-SS-07",
+      "expected": {
+        "response1": false,
+        "stressScore": 0,
+        "moodScore": 0,
+        "sleepCount": 2,
+        "stressResult": "result.stress.usual",
+        "moodResult": null,
+        "sleepResult": "result.sleep.some",
+        "stressDoctorLine": false,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": false,
+        "trackOffer": true
+      }
+    },
+    {
+      "fixture_id": "FX-SS-08",
+      "expected": {
+        "response1": false,
+        "stressScore": 0,
+        "moodScore": 3,
+        "sleepCount": 0,
+        "stressResult": "result.stress.usual",
+        "moodResult": "result.mood.attention",
+        "sleepResult": "result.sleep.none",
+        "stressDoctorLine": false,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": true,
+        "trackOffer": true
+      }
+    },
+    {
+      "fixture_id": "FX-SS-09",
+      "expected": {
+        "response1": true,
+        "stressScore": null,
+        "moodScore": null,
+        "sleepCount": null,
+        "stressResult": null,
+        "moodResult": null,
+        "sleepResult": null,
+        "stressDoctorLine": false,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": false,
+        "trackOffer": false
+      }
+    },
+    {
+      "fixture_id": "FX-SS-10",
+      "expected": {
+        "response1": false,
+        "stressScore": 3,
+        "moodScore": 0,
+        "sleepCount": 3,
+        "stressResult": "result.stress.attention",
+        "moodResult": null,
+        "sleepResult": "result.sleep.needs",
+        "stressDoctorLine": true,
+        "insomniaLine": true,
+        "shortSleepNote": true,
+        "helpline": true,
+        "trackOffer": true
+      }
+    },
+    {
+      "fixture_id": "FX-SS-11",
+      "expected": {
+        "response1": false,
+        "stressScore": 0,
+        "moodScore": 0,
+        "sleepCount": 0,
+        "stressResult": "result.stress.usual",
+        "moodResult": null,
+        "sleepResult": "result.sleep.none",
+        "stressDoctorLine": false,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": false,
+        "trackOffer": true
+      }
+    },
+    {
+      "fixture_id": "FX-SS-12",
+      "expected": {
+        "response1": false,
+        "stressScore": 0,
+        "moodScore": 0,
+        "sleepCount": 2,
+        "stressResult": "result.stress.usual",
+        "moodResult": null,
+        "sleepResult": "result.sleep.some",
+        "stressDoctorLine": false,
+        "insomniaLine": false,
+        "shortSleepNote": false,
+        "helpline": false,
+        "trackOffer": true
+      }
+    }
+  ],
+  "notes": [
+    "Fixtures are read, never written; differences are printed and listed here."
+  ]
+}

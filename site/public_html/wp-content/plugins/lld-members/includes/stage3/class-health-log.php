@@ -402,7 +402,7 @@ class LLD_Members_Health_Log {
 	 */
 	public static function view( $which, $member_id, array $query ) {
 		$premium = class_exists( 'LLD_Members_Food_Log' ) ? LLD_Members_Food_Log::premium( $member_id ) : false;
-		$today   = gmdate( 'Y-m-d' );
+		$today   = substr( lld_members_now_mysql( (int) $member_id ), 0, 10 ); // the member's clock, as their readings are saved by it
 		$rows    = self::limit_history( self::rows_for( $member_id ), $premium, $today );
 		$type    = isset( $query['type'] ) ? (string) $query['type'] : '';
 		$from    = isset( $query['from'] ) ? (string) $query['from'] : '';
