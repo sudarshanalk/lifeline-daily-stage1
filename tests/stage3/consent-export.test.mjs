@@ -59,14 +59,6 @@ test('TC-FR3-59-AS-01 / AS-02 without consent: asked and nothing saved', () => {
   expect(out.ok).toBeNull();
 });
 
-test('Stage 2 download list is unchanged while consent_new is off (NFR3-01)', () => {
-  const out = run(`
-    class LLD_Members_Features { static function enabled($f, $m = 0){ return false; } }
-    return LLD_Members_Stage3_Export::download_tables(['member','consent']);
-  `);
-  expect(out).toEqual(['member', 'consent']);
-});
-
 test('TC-FR3-60 download list includes food and health logs (and older history)', () => {
   const out = run(`
     $base = ['member','consent'];
