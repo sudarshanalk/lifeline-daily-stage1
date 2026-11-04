@@ -124,6 +124,12 @@ test('NFR3-14 (sleep and stress wording): every signed string hashes to the appr
   const QS = JSON.parse(php('echo json_encode(LLD_Members_Sleep_Stress::QUESTIONS);'));
   const W = JSON.parse(php(`echo json_encode(LLD_Members_Sleep_Stress::wording(${phpArr([...keys, ...QS])}));`));
   for (const k of [...keys, ...QS]) expect(W[k], k).toBeTruthy();
+  // The short-sleep note (CW-19, approved 3 November 2026) shows exactly when the engine sets it, after the insomnia line.
+  for (const r of results.filter((x) => x.messages.includes('result.sleep.needs') || x.shortSleepNote)) {
+    expect(r.messages.includes('result.sleep.shortSleep')).toBe(r.shortSleepNote);
+    if (r.shortSleepNote) expect(r.messages.indexOf('result.sleep.shortSleep')).toBe(r.messages.indexOf('result.sleep.insomnia') + 1);
+  }
+  expect(results.filter((r) => r.shortSleepNote).length).toBeGreaterThan(0);
   // The engine is pure and stores or logs nothing (the answers are never stored, D3-30).
   expect(readFileSync(engine, 'utf8')).not.toMatch(/add_action|add_filter|\$wpdb|get_option|wp_remote|error_log|update_option|set_transient/);
 });

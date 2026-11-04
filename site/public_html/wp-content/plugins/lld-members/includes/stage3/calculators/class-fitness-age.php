@@ -99,6 +99,10 @@ class LLD_Members_Fitness_Age {
 		'safety.rhrOver100'     => "A resting pulse over 100 is worth mentioning to your doctor, especially if it's new.",
 		'safety.rhrUnder40'     => 'A resting pulse under 40 is common in very fit people, but if you feel faint or dizzy, see your doctor.',
 		'safety.heartCondition' => 'Ask your doctor or cardiac rehab team about exercise.',
+		'safety.under18'        => 'This estimate is for adults. The formula was made from adults, and fitness changes a lot as children and teenagers grow. Your doctor or school nurse can advise on staying active.', // CW-13
+		'safety.pregnancy'      => "This estimate isn't suitable right now. Heart rate and waist change during pregnancy and breastfeeding, so the result wouldn't be reliable. Your midwife or doctor can advise you on staying active. The talk test is a good guide: moderate activity means you can talk but not sing.", // CW-14
+		'safety.sexNotSaid'     => "We can't work out a fitness age without knowing your sex. The estimate uses separate formulas for men and women, which give quite different results, so there's no fair middle value. If you'd like a result, you can choose a sex above. A fitness test with a trained professional can also measure your fitness directly.", // CW-15
+		'note.age18to19'        => 'This estimate comes from a study of adults aged 20 and over, so it may be less accurate at 18 or 19.', // CW-16
 	);
 
 	/**
@@ -180,10 +184,10 @@ class LLD_Members_Fitness_Age {
 			}
 		}
 		if ( $age < 18 ) {
-			return self::stop( $out, 'under18' );
+			return self::stop( $out, 'under18', 'safety.under18' );
 		}
 		if ( 'no' !== $pregnant ) {
-			return self::stop( $out, 'pregnancy' );
+			return self::stop( $out, 'pregnancy', 'safety.pregnancy' );
 		}
 		if ( 'no' !== $condition ) {
 			return self::stop( $out, 'heartCondition', 'safety.heartCondition' );
@@ -192,7 +196,7 @@ class LLD_Members_Fitness_Age {
 			return self::stop( $out, 'medicine', 'safety.medicine' );
 		}
 		if ( 'PNTS' === $sex ) {
-			return self::stop( $out, 'sexNotSaid' ); // the two equations differ by about 7 points (D3-27)
+			return self::stop( $out, 'sexNotSaid', 'safety.sexNotSaid' ); // the two equations differ by about 7 points (D3-27)
 		}
 		$waist = self::waist_cm( $in );
 		if ( null === $waist || $waist < 40 || $waist > 250 ) {
@@ -337,6 +341,8 @@ class LLD_Members_Fitness_Age {
 		foreach ( $out['notes'] as $note ) {
 			if ( 0 === strpos( $note, 'safety.' ) ) {
 				$keys[] = $note;
+			} elseif ( 'age18to19' === $note ) {
+				$keys[] = 'note.age18to19'; // CW-16
 			}
 		}
 		if ( null !== $out['change'] ) {
@@ -375,7 +381,7 @@ class LLD_Members_Fitness_Age {
 	/**
 	 * @param array  $out      Result so far.
 	 * @param string $what     under18, pregnancy, heartCondition, medicine or sexNotSaid.
-	 * @param string $key      Signed wording key for the stop, when the sheet gives one.
+	 * @param string $key      Signed wording key for the stop (the sheet's, or CW-13 to CW-15).
 	 */
 	private static function stop( array $out, $what, $key = '' ) {
 		$out['stop']     = $what;

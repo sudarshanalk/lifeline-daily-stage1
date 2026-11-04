@@ -143,5 +143,11 @@ test('NFR3-14 (heart-rate zones wording): every signed string hashes to the appr
   const results = compute([...fixtures.map((f) => f.inputs), { ...base, age: 80, exerciseHistory: 'no' }]);
   const W = JSON.parse(php(`echo json_encode(LLD_Members_HR_Zones::wording(${phpArr([...new Set(results.flatMap((r) => r.messages))])}));`));
   for (const r of results) for (const k of r.messages) expect(W[k], k).toBeTruthy();
+  // The under-18 stop and the measured-maximum refusal carry the approved words CW-17 and CW-18 (3 November 2026).
+  const cw = compute([{ ...base, age: 16 }, { ...base, measuredHrMax: 85 }, { ...base, measuredHrMax: 150 }]);
+  expect(cw.slice(0, 2).map((r) => [r.stop, r.messages])).toEqual([['under18', ['safety.under18']], ['refused', ['refused.reserve']]]);
+  expect([cw[2].stop, cw[2].messages.includes('refused.reserve'), cw[2].messages[0]]).toEqual([null, false, 'talk.easy']);
+  const CW = JSON.parse(php(`echo json_encode(LLD_Members_HR_Zones::wording(['safety.under18', 'refused.reserve']));`));
+  expect(CW).toEqual({ 'safety.under18': M['safety.under18'], 'refused.reserve': M['refused.reserve'] });
   expect(readFileSync(engine, 'utf8')).not.toMatch(/add_action|add_filter|\$wpdb|get_option|wp_remote/);
 });
