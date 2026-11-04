@@ -38,6 +38,7 @@ require_once __DIR__ . '/class-membership.php';
 require_once __DIR__ . '/class-pause.php';
 require_once __DIR__ . '/class-analytics.php';
 require_once __DIR__ . '/class-weekly-report-stage3.php';
+require_once __DIR__ . '/class-calculator-count.php';
 require_once __DIR__ . '/signin/class-email-codes.php';
 require_once __DIR__ . '/signin/class-identity-provider.php';
 require_once __DIR__ . '/signin/class-sign-in.php';
@@ -60,6 +61,7 @@ function lld_members_stage3_boot() {
 	LLD_Members_Pause::boot();
 	LLD_Members_Analytics::boot();
 	LLD_Members_Stage3_Report::boot();
+	LLD_Members_Calculator_Count::boot();
 	LLD_Members_Sign_In::boot();
 	LLD_Members_Goal_Journey::boot();
 	add_action( 'rest_api_init', array( 'LLD_Members_Stage3_API', 'register' ) );

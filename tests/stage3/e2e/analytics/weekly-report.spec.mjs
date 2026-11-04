@@ -105,5 +105,5 @@ test('TC-FR3-70-AS-02', async ({ request }) => {
   const lines = mail.split(/\r?\n/).map((l) => l.trimEnd());
   const part = lines.slice(lines.indexOf('Totals for the week') + 1).filter((l) => l !== '');
   expect(part.length).toBeGreaterThan(10);
-  for (const line of part) expect(line).toMatch(/^[A-Za-z :-]+( [A-Z]{3} \d+\.\d{2} \(\d+\)| \d+| none|: Stripe is not connected)$/);
+  for (const line of part) expect(line).toMatch(/^[A-Za-z :-]+( [A-Z]{3} \d+\.\d{2} \(\d+\)| \d+| none| not connected|: Stripe is not connected)$/);
 });
