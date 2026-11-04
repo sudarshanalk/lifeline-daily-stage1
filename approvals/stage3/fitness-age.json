@@ -36,7 +36,11 @@
     "safety.medicine": "7e130cc434d66ec75e9e0854f1e504e62968c32319167ebb0a5cd3ed8a7ce44d",
     "safety.rhrOver100": "ac0a8e4941da0ee43d382fab073a1ac185b856ea46518cae5db1550abd9852da",
     "safety.rhrUnder40": "b94b21acc629ef1fda9a657eac4794645c44908de8f06a83c396bae7e9050d89",
-    "safety.heartCondition": "d427006c816dc7a75ec4e7f88089bc129f809a30b32359de2eec2eff3c0bf65b"
+    "safety.heartCondition": "d427006c816dc7a75ec4e7f88089bc129f809a30b32359de2eec2eff3c0bf65b",
+    "safety.under18": "3111b85314d5e8db3d71144c72d0422a70a3b58f394ed4431f2822e347ff57b8",
+    "safety.pregnancy": "cefac058df1c322286700be30475af0a9ec003716b205a1da95b2d9fbd32bf14",
+    "safety.sexNotSaid": "c1bfb15bba4f9522f452da25fa44c78201f19f3504203b2f72ff6619a200fdbc",
+    "note.age18to19": "72349db78f5d46d380a47d083ef0ca48d29a367ac83391b6db65260888eaf4f0"
   },
   "oracle_report": "oracles/orc-11-fitness-age/results.json",
   "decisions_ratified": [
@@ -48,7 +52,7 @@
     "name": "Product owner (sudarshanalk), acting as clinical reviewer",
     "date": "2026-11-03",
     "decision": "approved",
-    "notes": "Signed 3 November 2026: 'Approved (\"Approve all, D3-10 = B\", in chat with the clinical session)'. Coefficient status: the sheet's fixture table heading (section 1.6) still reads 'provisional until the coefficients are verified', and the verification note says 'one independent reproduction, not the paper, is the source; the owner or lead should check the paper itself before the fixtures are frozen (D3-32)'. The sign-off record (D3-32) says 'Abstract verified (Europe PMC); coefficients from one independent reproduction (Peterman et al., JAHA 2020). The paper's own table 3 (MSSE 2011;43:2024–30) is paywalled and has not been seen; the owner accepted the reproduction on 3 November 2026. If the paper is obtained later and differs, that is a new decision and a new version'. The fixtures are therefore recorded as pending. Owner decided 3 Nov 2026 (Owner_Questions 65): the reproduction is accepted and the fixture table is no longer provisional. Sheet hash refreshed after the owner's decisions of 3 Nov 2026 (Owner_Questions 62-65) were written into the sheet."
+    "notes": "Signed 3 November 2026: 'Approved (\"Approve all, D3-10 = B\", in chat with the clinical session)'. Coefficient status: the sheet's fixture table heading (section 1.6) still reads 'provisional until the coefficients are verified', and the verification note says 'one independent reproduction, not the paper, is the source; the owner or lead should check the paper itself before the fixtures are frozen (D3-32)'. The sign-off record (D3-32) says 'Abstract verified (Europe PMC); coefficients from one independent reproduction (Peterman et al., JAHA 2020). The paper's own table 3 (MSSE 2011;43:2024–30) is paywalled and has not been seen; the owner accepted the reproduction on 3 November 2026. If the paper is obtained later and differs, that is a new decision and a new version'. The fixtures are therefore recorded as pending. Owner decided 3 Nov 2026 (Owner_Questions 65): the reproduction is accepted and the fixture table is no longer provisional. Sheet hash refreshed after the owner's decisions of 3 Nov 2026 (Owner_Questions 62-65) were written into the sheet. Wording CW-13 to CW-16 (02 Content/Programme content/calculators/stage3-calculator-wording-draft.md v0.1, approved by the owner on 3 Nov 2026, Owner_Questions 92) added to MESSAGES and hashed here on 4 Nov 2026."
   },
   "review_date": "2026-11-03",
   "next_review_date": "2027-11-03"

@@ -25,7 +25,9 @@
     "result.hrmax": "5f3f5ee36b871ba2b1547cc384e33c28b389cc826ba39a300cfffbe40548b05d",
     "safety.medicine": "d0d1938c6554b82d1e8ecedde45e9a2a7d9910afae41e90d068dae1fd397d046",
     "safety.heartCondition": "bfbedcec26df93a71871a97d1438cde3546455ccac07e294b3f1bae0eabaa53b",
-    "safety.pregnancy": "10344b39a625ff42136aef304a508418d0e258f5e02e339b6220a1e1ecbe62a3"
+    "safety.pregnancy": "10344b39a625ff42136aef304a508418d0e258f5e02e339b6220a1e1ecbe62a3",
+    "safety.under18": "66c3c6f04ec754acd2c81991cb836c2dc84a55af3814ba981b740df50f05f35d",
+    "refused.reserve": "c733e02f0b93d208a0c2e5ef2161b11fe8d789313afff6011ea4a05b6c702555"
   },
   "oracle_report": "oracles/orc-12-hr-zones/results.json",
   "decisions_ratified": [
@@ -35,7 +37,7 @@
     "name": "Product owner (sudarshanalk), acting as clinical reviewer",
     "date": "2026-11-03",
     "decision": "approved",
-    "notes": "Signed 3 November 2026: 'Approved (\"Approve all, D3-10 = B\", in chat with the clinical session)'. D3-31 decided: Tanaka HRmax = 208 − 0.7 × age; Karvonen with resting HR when given; Easy 30–39 % HRR (57–63 % HRmax), Moderate 40–59 % (64–76 %), Hard 60–89 % (77–95 %); whole bpm half-up. Fixture table 2.4 (12 cases) is the frozen reference. Sheet hash refreshed after the owner's decisions of 3 Nov 2026 (Owner_Questions 62-65) were written into the sheet."
+    "notes": "Signed 3 November 2026: 'Approved (\"Approve all, D3-10 = B\", in chat with the clinical session)'. D3-31 decided: Tanaka HRmax = 208 − 0.7 × age; Karvonen with resting HR when given; Easy 30–39 % HRR (57–63 % HRmax), Moderate 40–59 % (64–76 %), Hard 60–89 % (77–95 %); whole bpm half-up. Fixture table 2.4 (12 cases) is the frozen reference. Sheet hash refreshed after the owner's decisions of 3 Nov 2026 (Owner_Questions 62-65) were written into the sheet. Wording CW-17 to CW-18 (02 Content/Programme content/calculators/stage3-calculator-wording-draft.md v0.1, approved by the owner on 3 Nov 2026, Owner_Questions 92) added to MESSAGES and hashed here on 4 Nov 2026."
   },
   "review_date": "2026-11-03",
   "next_review_date": "2027-11-03"

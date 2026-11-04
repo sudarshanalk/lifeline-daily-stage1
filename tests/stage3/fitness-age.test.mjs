@@ -145,6 +145,14 @@ test('NFR3-14 (fitness age wording): every signed string hashes to the approval 
   const W = JSON.parse(php(`echo json_encode(LLD_Members_Fitness_Age::wording(${phpArr([...new Set(results.flatMap((r) => r.messages))])}));`));
   for (const r of results) for (const k of r.messages) expect(W[k], k).toBeTruthy();
   expect(results.some((r) => r.stop === 'cannotEstimate')).toBe(false); // no frozen fixture is below the floor
+  // The stops and the 18-19 note carry the approved words CW-13 to CW-16 (3 November 2026).
+  const cw = compute([{ ...base, age: 17 }, { ...base, pregnant: 'yes' }, { ...base, pregnant: 'notsure' }, { ...base, sex: 'prefer not to say' }, { ...base, age: 19 }, { ...base, age: 20 }]);
+  expect(cw.slice(0, 4).map((r) => [r.stop, r.messages])).toEqual([
+    ['under18', ['safety.under18']], ['pregnancy', ['safety.pregnancy']], ['pregnancy', ['safety.pregnancy']], ['sexNotSaid', ['safety.sexNotSaid']],
+  ]);
+  expect([cw[4].messages.includes('note.age18to19'), cw[5].messages.includes('note.age18to19')]).toEqual([true, false]);
+  const CW = JSON.parse(php(`echo json_encode(LLD_Members_Fitness_Age::wording(${phpArr(['safety.under18', 'safety.pregnancy', 'safety.sexNotSaid', 'note.age18to19'])}));`));
+  for (const k of ['safety.under18', 'safety.pregnancy', 'safety.sexNotSaid', 'note.age18to19']) expect(CW[k], k).toBe(M[k]);
   // The engine is pure: no hooks, no database.
   expect(readFileSync(engine, 'utf8')).not.toMatch(/add_action|add_filter|\$wpdb|get_option|wp_remote/);
 });

@@ -75,6 +75,8 @@ class LLD_Members_Heart_Risk {
 		'stops.cvd'               => "This check is for people who haven't had a heart attack, stroke or heart surgery. Your doctor uses different methods for you, and treatment is usually already recommended.",
 		'notes.diabetes'          => 'With diabetes, your doctor may use a diabetes-specific assessment and recommend treatment whatever the number.',
 		'limits.other-conditions' => "The WHO charts don't include family history, kidney disease or some other conditions. If any of these apply, your real risk may be higher; your doctor can assess it.",
+		'stops.pregnancy'         => "This check isn't suitable right now. Blood pressure and cholesterol change during pregnancy and breastfeeding, so the WHO charts can't give a reliable estimate at this time. Your midwife or doctor can check your blood pressure and advise you. You can come back to this check after pregnancy and breastfeeding.", // CW-01
+		'stops.sex'               => "We can't work out this estimate without knowing your sex. The WHO charts are separate for men and women, because risk differs between them at the same age and blood pressure, and there's no chart in between. If you'd like an estimate, you can choose a sex above. Your doctor can also assess your heart risk with you.", // CW-02
 	);
 
 	/**
@@ -412,8 +414,8 @@ class LLD_Members_Heart_Risk {
 	/**
 	 * The signed text for each wording key. The urgent keys (`bp-check.urgent.alert`, `bp-check.pregnancy.urgent`) take
 	 * the frozen text from the safety layer's signed blood-pressure lines (P3-58, FR3-46); a key with no signed text
-	 * (the pregnancy and "prefer not to say" stops and `whatif.noFall`, whose exact words are not in the approval
-	 * record) maps to null, so no unsigned text is ever shown.
+	 * (`whatif.noFall`, whose exact words are not in the approval record) maps to null, so no unsigned text is ever
+	 * shown. The pregnancy and "prefer not to say" stops carry CW-01 and CW-02.
 	 *
 	 * @param string[] $keys   Wording keys from compute().
 	 * @param array    $result The compute() result (unused; the screen fills the placeholders from its `fill`).
