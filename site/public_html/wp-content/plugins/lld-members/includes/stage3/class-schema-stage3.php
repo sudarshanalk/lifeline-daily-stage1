@@ -109,7 +109,7 @@ class LLD_Members_Stage3_Schema {
 	 */
 	public static function definitions() {
 		return array(
-			// Linked sign-in (FR3-01, FR3-02, FR3-05).
+			// Linked sign-in (FR3-01, FR3-05; Apple FR4-30).
 			'identities' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
 			member_id BIGINT UNSIGNED NOT NULL,

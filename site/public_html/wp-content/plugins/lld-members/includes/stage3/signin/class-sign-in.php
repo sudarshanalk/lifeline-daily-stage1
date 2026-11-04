@@ -127,7 +127,7 @@ class LLD_Members_Sign_In {
 
 	/**
 	 * Join: the Stage 2 form, but the email is confirmed with a code and the account is created only when the
-	 * code is right (FR3-03), and a new provider account finishes here with name and age (FR3-01, FR3-02).
+	 * code is right (FR3-03), and a new provider account finishes here with name and age (FR3-01, Apple FR4-30).
 	 */
 	private static function join() {
 		if ( is_user_logged_in() && LLD_Members_Access::current_member_id() ) {
@@ -274,7 +274,7 @@ class LLD_Members_Sign_In {
 	}
 
 	/**
-	 * Sign in: password (as Stage 2), or a code by email (FR3-04), or Google and Apple (FR3-01, FR3-02).
+	 * Sign in: password (as Stage 2), or a code by email (FR3-04), or Google and Apple (FR3-01, Apple FR4-30).
 	 */
 	private static function sign_in() {
 		if ( is_user_logged_in() && LLD_Members_Access::current_member_id() ) {
