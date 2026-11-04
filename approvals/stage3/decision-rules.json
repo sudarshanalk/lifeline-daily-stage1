@@ -1,10 +1,10 @@
 {
-  "approval_id": "APR-DECISION-RULES-V1-2026-11-03",
+  "approval_id": "APR-DECISION-RULES-V1-1-2026-11-03",
   "tool_slug": "decision-rules",
-  "version_hash": "f9fecf110f7500c2d8bfc521338be9a3b9293604a1953b7ac950fce6d761df77",
-  "engine_name": "Decision engine rule catalogue version 1 (P3-02, FR3-17, NFR3-17): 23 rules (5 safety, 5 Today steps, 3 plan adjustments, 10 insights) with exact conditions, minimum data, minimum differences, cooldowns, safety checks and message templates; precedence safety > Today step > plan adjustment > insight; insights Premium, at most 3 per rolling 7 days and 1 per night, the same rule not repeated within 28 days (56 for habit praise); the low-mood safety rule R-SAFE-04 suppresses every non-safety insight and adjustment for 7 days; no AI.",
+  "version_hash": "e9b41cc81b7169dc4314be3b5201467cd99f73982a25b0f1fd4fd1c2e9a44287",
+  "engine_name": "Decision engine rule catalogue version 1.1 (P3-02, FR3-17, NFR3-17): 23 rules (5 safety, 5 Today steps, 3 plan adjustments, 10 insights) with exact conditions, minimum data, minimum differences, cooldowns, safety checks and message templates; precedence safety > Today step > plan adjustment > insight; insights Premium, at most 3 per rolling 7 days and 1 per night, the same rule not repeated within 28 days (56 for habit praise); the low-mood safety rule R-SAFE-04 suppresses every non-safety insight and adjustment for 7 days, except the safety adjustment R-ADJ-03, which applies to every member with a calorie target and carries the gentle wording T-ADJ-03g during those days (version 1.1, Owner Q68); no AI.",
   "intended_use": "Rule-based insights, Today steps, plan adjustments and safety notices for members, run once a night at 02:00 in the member's time zone and on demand after a profile change, a warning-level reading or opening Today. Every message is an owner-approved template in which the engine fills only numbers and dates; no template names a diagnosis or a medicine, none praises kilograms lost, and emails and notifications never carry an insight's text or numbers (NFR3-16, FR3-56 AS-02).",
-  "eligibility": "Members with health consent and a profile. Safety rules run first for every member, Free and Premium, and always show. Insights and plan adjustments are Premium. The safety matrix (P3-03) is evaluated before any rule and again at display time; the engine never fires a rule the matrix forbids for that member, and a rule never fires below its minimum data.",
+  "eligibility": "Members with health consent and a profile. Safety rules run first for every member, Free and Premium, and always show. Insights and plan adjustments are Premium, except R-ADJ-03 (losing faster than the safe rate), a safety adjustment applied to every member with a calorie target, Free or Premium, never suppressed by R-SAFE-04; a member with an eating-disorder flag gets the raise with no message and no calorie number (version 1.1, Owner Q68). The safety matrix (P3-03) is evaluated before any rule and again at display time; the engine never fires a rule the matrix forbids for that member, and a rule never fires below its minimum data.",
   "sources": [
     "ISH 2020 home BP thresholds and the >= 5 mmHg meaningful difference; Stergiou 2021 (home protocol).",
     "NICE CG189 (weight-loss rate, plateaus); Hall 2011; P3-56 for the cap.",
@@ -22,7 +22,7 @@
     "An insight already shown is not withdrawn when its data is later edited.",
     "Message wording is drafted jointly with the content session's safety/stage3-messages.md (P3-77); where the two differ, the catalogue's template IDs are the ones the engine uses and the content file is aligned to them before approval."
   ],
-  "regulatory_statement": "Signed off by the owner as clinical reviewer on 3 November 2026 (D3-43 to D3-48; record Signoff-P3-02-Decision-Engine-Rule-Catalogue.md). General health information, not a diagnosis or a medical device. Frozen: any change needs a new decision and a new version (NFR3-14, NFR3-17).",
+  "regulatory_statement": "Signed off by the owner as clinical reviewer on 3 November 2026 (D3-43 to D3-48; version 1.1 with D3-49 the same day; record Signoff-P3-02-Decision-Engine-Rule-Catalogue.md). General health information, not a diagnosis or a medical device. Frozen: any change needs a new decision and a new version (NFR3-14, NFR3-17).",
   "licence": "Lifeline Daily's own rules",
   "copy_hashes": {
     "rule.R-SAFE-01": "9b0dd9646960b05f559be6719e770fd1092ed7d9db5623b385ba19b848a702ce",
@@ -38,6 +38,7 @@
     "rule.R-ADJ-01": "90f9fcf06a164e2ba5a7b7552cd023a74b2ce668689637e8c4b13ff03542c999",
     "rule.R-ADJ-02": "97177bd35c5dd41c1610956896bd327e94cc1b2527325cddb486d43bfeadce74",
     "rule.R-ADJ-03": "75bfc6e1ef2b85e858b3bf8bf6c24fa5dd616e4b41d5bb53e7778aece4b3af2a",
+    "rule.R-ADJ-03.gentle": "1d8eb79b57c70978a25ee62ca7fcc5f2ca16c5d20d516589c6d61097351ccc91",
     "rule.R-INS-01": "95700add66ff40abfdd18a6fcc97aea18cca2bd3922e0482c25f1274cbf4682b",
     "rule.R-INS-02": "84100a616a5ae561cb3a44d58bbf27874043ed23c72ed13c7f02916c0324b5b3",
     "rule.R-INS-03": "953c7c102df81cc8511649d6ed4466a0f7709f1e8cdf30877a85f83af57effd2",
@@ -57,13 +58,14 @@
     "D3-45",
     "D3-46",
     "D3-47",
-    "D3-48"
+    "D3-48",
+    "D3-49"
   ],
   "clinical_signoff": {
     "name": "Product owner (sudarshanalk), acting as clinical reviewer",
     "date": "2026-11-03",
     "decision": "approved",
-    "notes": "Signed 3 November 2026 ('Approve all, D3-10 = B', in chat with the clinical session). D3-43 the 23 rules and templates as drafted; D3-44 Skip after a low-mood day does not lower the weekly ring that week; D3-45 plateau never lowers calories, offers a logging focus and a meal-plan swap; D3-46 too fast: calorie target raised by 250 kcal automatically, member told, doctor line if the 7-day rule triggered; D3-47 sleep vs BP: >= 5 mmHg systolic difference, >= 14 paired days with >= 4 short (< 6 h) and >= 4 long (>= 7 h) nights, 42-day window; D3-48 run at 02:00 local nightly plus on demand after profile changes and warning-level readings. Quota 3 insights per rolling 7 days, 1 per night, 28-day cooldown (56 for habit praise); R-SAFE-04 suppresses all non-safety insights and adjustments for 7 days. Wording sign-off (every template T-SAFE-01, 01p, 03, 04, 04s; T-STEP-01 to 05; T-ADJ-01 to 03; T-INS-01 to 10; T-GEN-01) is joint with the P3-77 content approval of 3 November 2026."
+    "notes": "Version 1.1 signed 3 November 2026 ('Yes, A and A', in chat): D3-49, Owner_Questions 68 = B. R-ADJ-03 applies to every member with a calorie target, Free or Premium, and is never suppressed by R-SAFE-04; during the 7 low-mood days it shows the gentle wording T-ADJ-03g (A); a member with an eating-disorder flag gets the raise with no message and no insight (A). Record P3-02-R-ADJ-03-Q68-Change-Draft.md and a v1.1 row in Signoff-P3-02-Decision-Engine-Rule-Catalogue.md. Version 1: Signed 3 November 2026 ('Approve all, D3-10 = B', in chat with the clinical session). D3-43 the 23 rules and templates as drafted; D3-44 Skip after a low-mood day does not lower the weekly ring that week; D3-45 plateau never lowers calories, offers a logging focus and a meal-plan swap; D3-46 too fast: calorie target raised by 250 kcal automatically, member told, doctor line if the 7-day rule triggered; D3-47 sleep vs BP: >= 5 mmHg systolic difference, >= 14 paired days with >= 4 short (< 6 h) and >= 4 long (>= 7 h) nights, 42-day window; D3-48 run at 02:00 local nightly plus on demand after profile changes and warning-level readings. Quota 3 insights per rolling 7 days, 1 per night, 28-day cooldown (56 for habit praise); R-SAFE-04 suppresses all non-safety insights and adjustments for 7 days. Wording sign-off (every template T-SAFE-01, 01p, 03, 04, 04s; T-STEP-01 to 05; T-ADJ-01 to 03; T-INS-01 to 10; T-GEN-01) is joint with the P3-77 content approval of 3 November 2026."
   },
   "review_date": "2026-11-03",
   "next_review_date": "2027-11-03"

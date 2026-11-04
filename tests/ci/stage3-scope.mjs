@@ -41,8 +41,9 @@ export const PACKAGE_TOOLS = {
   // started them (3 Nov 2026), as with the calculator engines below; the listed tools keep their files.
   11: ['codex'], 30: ['antigravity', 'claude'], 31: ['cursor', 'antigravity', 'claude'], 32: ['cursor', 'antigravity', 'claude'], 33: ['antigravity', 'claude'],
   40: ['cursor'], 41: ['cursor'], 42: ['cursor'], 43: ['cursor'], 44: ['antigravity'], 50: ['cursor'], 51: ['cursor'],
-  // The calculator engines: P3-55 was built by the lead; P3-56 to P3-5B are delegated to Cursor in full (owner, 3 Nov 2026).
-  55: ['cursor', 'claude'], 56: ['cursor'], 57: ['cursor'], 58: ['cursor'], 59: ['cursor'], '5A': ['cursor'], '5B': ['cursor'],
+  // The calculator engines: P3-55 was built by the lead; P3-56 and P3-5B are delegated to Cursor in full (owner, 3 Nov 2026);
+  // P3-57 to P3-5A were taken over by the lead (owner, 3 Nov 2026) before Cursor started them.
+  55: ['cursor', 'claude'], 56: ['cursor'], 57: ['cursor', 'claude'], 58: ['cursor', 'claude'], 59: ['cursor', 'claude'], '5A': ['cursor', 'claude'], '5B': ['cursor'],
   80: ['codex'], 81: ['codex'], 82: ['codex'], 83: ['antigravity'], 85: ['cursor'], 86: ['cursor'],
 };
 
@@ -55,6 +56,10 @@ export const DECLARED_STAGE2 = [
 ];
 // Stage 2 payment files only the lead's packages may touch (D2, P3-60 to P3-63); the change labels the PR for review.
 export const LEAD_STAGE2 = [`${PLUGIN}/includes/class-billing.php`, `${PLUGIN}/includes/class-stripe.php`];
+// Owner decisions that open a named Stage 2 file to one lead package (as Stage 2's LEAD_EXTRA); the change labels the PR
+// for review. P3-03: Owner_Questions 93 = B (3 Nov 2026), the Sleep and Stress screening in class-personal.php uses the
+// approved wording file (screening-sleep-and-stress.md), as the Stage 3 engine does.
+export const DECISION_STAGE2 = { '03': [`${PLUGIN}/includes/class-personal.php`] };
 const STAGE2_TESTS = ['tests/stage2/**'];
 // The Stage 1 and 2 calculators and their approvals. Stage 3 sign-offs live in approvals/stage3/ (Build Method §7.4).
 const PROTECTED = ['site/public_html/tools/**', 'approvals/*', 'manifests/**', 'copy/**'];
@@ -86,6 +91,7 @@ export function stage3Scope({ title, files, decisions = loadDecisions() }) {
     if (matches(f, PROTECTED)) { problems.push(`${f} is a Stage 1 calculator, approval, manifest or copy file: owner decision needed`); continue; }
     if (DECLARED_STAGE2.includes(f)) { review.push(f); continue; }
     if (LEAD_STAGE2.includes(f) && toolsFor(c.ids).every((t) => t === 'claude')) { review.push(f); continue; }
+    if (c.ids.some((id) => (DECISION_STAGE2[id] || []).includes(f)) && toolsFor(c.ids).every((t) => t === 'claude')) { review.push(f); continue; }
     if (matches(f, STAGE2_TESTS)) {
       if (decisions.some((d) => d.file === f)) { review.push(f); continue; }
       problems.push(`${f} is a Stage 2 test: it may change only with a decision in docs/stage3/stage2-test-changes.json (NFR3-02)`);

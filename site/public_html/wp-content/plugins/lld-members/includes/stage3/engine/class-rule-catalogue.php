@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Rule_Catalogue {
 
-	const VERSION = '1.0';
+	const VERSION = '1.1';
 
 	const CLASS_SAFETY     = 'safety';
 	const CLASS_STEP       = 'today_step';
@@ -50,6 +50,7 @@ class LLD_Members_Rule_Catalogue {
 		'rule.R-ADJ-01'             => "Your trend shows you'd reach **{goal} kg** around **{projected}** rather than **{target}**. That's normal: bodies don't lose weight in a straight line. Would you like to move your date to **{new_date}**, keep the plan as it is, or try a different meal plan this week?",
 		'rule.R-ADJ-02'             => 'Your weight has held steady at about **{weight} kg** for three weeks. Plateaus are normal and usually pass. This week, logging every meal and drink often shows where a few extra calories hide. Try that, or swap to a different meal plan?',
 		'rule.R-ADJ-03'             => "You're losing weight faster than the safe rate of about **{cap} kg** a week. We've raised your daily target to **{kcal} kcal** so your body keeps muscle and energy. If you're not trying to lose this fast, or feel unwell, please see your doctor.",
+		'rule.R-ADJ-03.gentle'      => "We've given your daily food target a small lift, so your body has a little more energy. There's nothing you need to do. If you feel unwell, please see your doctor.",
 		'rule.R-INS-01'             => 'After nights under 6 hours, your blood pressure averaged **{bp_short}**, compared with **{bp_long}** after 7 hours or more. Better sleep may be helping your blood pressure. Week 1 of Sleep and Stress has three habits that help.',
 		'rule.R-INS-02'             => "Your average blood pressure over the last four weeks is **{now}**, down from **{before}** the four weeks before. Keep going with what you're doing, and keep sharing readings with your doctor.",
 		'rule.R-INS-03'             => 'On days you were active, you rated your mood **{mood_active}** out of 5 on average; on other days **{mood_rest}**. Movement seems to lift your mood. Even a 10-minute walk counts.',
@@ -67,6 +68,8 @@ class LLD_Members_Rule_Catalogue {
 	 * The 23 rules (catalogue section 6). `id` is the stable number stored in insights.rule_id and today_steps.rule_id;
 	 * `template` the key in TEMPLATES; `silenced_by` the safety-matrix situations that silence the rule for a member
 	 * (P3-03 "Safety check" column); `tags` the content tags the eating-disorder row forbids (calorie, weight, portion).
+	 * `every_member` marks the safety adjustment R-ADJ-03: every member with a calorie target, Free or Premium, never
+	 * suppressed by R-SAFE-04, with `gentle_template` during the low-mood days (Owner Q68 = B, catalogue v1.1).
 	 *
 	 * @return array<string,array<string,mixed>>
 	 */
@@ -84,7 +87,7 @@ class LLD_Members_Rule_Catalogue {
 			'R-STEP-05'  => array( 'id' => 15, 'key' => 'step_welcome_back', 'class' => self::CLASS_STEP, 'priority' => 5, 'cooldown_days' => 1, 'template' => 'rule.R-STEP-05', 'silenced_by' => array(), 'tags' => array(), 'action' => 'log_food' ),
 			'R-ADJ-01'   => array( 'id' => 21, 'key' => 'adj_behind_two_weeks', 'class' => self::CLASS_ADJUSTMENT, 'priority' => 1, 'cooldown_days' => 0, 'template' => 'rule.R-ADJ-01', 'silenced_by' => array( 'eating_disorder', 'pregnancy' ), 'tags' => array( 'weight', 'calorie' ), 'at_check_in' => true ),
 			'R-ADJ-02'   => array( 'id' => 22, 'key' => 'adj_plateau', 'class' => self::CLASS_ADJUSTMENT, 'priority' => 2, 'cooldown_days' => 28, 'template' => 'rule.R-ADJ-02', 'silenced_by' => array( 'eating_disorder', 'pregnancy', 'bmi_under_18_5' ), 'tags' => array( 'weight', 'calorie' ), 'at_check_in' => true ),
-			'R-ADJ-03'   => array( 'id' => 23, 'key' => 'adj_too_fast', 'class' => self::CLASS_ADJUSTMENT, 'priority' => 0, 'cooldown_days' => 14, 'template' => 'rule.R-ADJ-03', 'silenced_by' => array(), 'tags' => array(), 'automatic' => true ),
+			'R-ADJ-03'   => array( 'id' => 23, 'key' => 'adj_too_fast', 'class' => self::CLASS_ADJUSTMENT, 'priority' => 0, 'cooldown_days' => 14, 'template' => 'rule.R-ADJ-03', 'gentle_template' => 'rule.R-ADJ-03.gentle', 'silenced_by' => array(), 'tags' => array(), 'automatic' => true, 'every_member' => true ),
 			'R-INS-01'   => array( 'id' => 31, 'key' => 'ins_sleep_vs_bp', 'class' => self::CLASS_INSIGHT, 'priority' => 1, 'cooldown_days' => 28, 'template' => 'rule.R-INS-01', 'silenced_by' => array( 'pregnancy' ), 'tags' => array() ),
 			'R-INS-02'   => array( 'id' => 32, 'key' => 'ins_bp_trend_down', 'class' => self::CLASS_INSIGHT, 'priority' => 2, 'cooldown_days' => 28, 'template' => 'rule.R-INS-02', 'silenced_by' => array( 'pregnancy' ), 'tags' => array() ),
 			'R-INS-03'   => array( 'id' => 33, 'key' => 'ins_activity_mood', 'class' => self::CLASS_INSIGHT, 'priority' => 3, 'cooldown_days' => 28, 'template' => 'rule.R-INS-03', 'silenced_by' => array(), 'tags' => array() ),
@@ -100,7 +103,7 @@ class LLD_Members_Rule_Catalogue {
 
 	/**
 	 * Numeric ids of the templates (insights.template_id): the rule's id for its message, 100 + id for a rule's
-	 * second (Today step) template, 99 for T-GEN-01.
+	 * second (Today step) template, 200 + id for its gentle low-mood template, 99 for T-GEN-01.
 	 *
 	 * @return array<string,int>
 	 */
@@ -112,6 +115,9 @@ class LLD_Members_Rule_Catalogue {
 			}
 			if ( ! empty( $rule['step_template'] ) ) {
 				$ids[ $rule['step_template'] ] = 100 + (int) $rule['id'];
+			}
+			if ( ! empty( $rule['gentle_template'] ) ) {
+				$ids[ $rule['gentle_template'] ] = 200 + (int) $rule['id'];
 			}
 		}
 		return $ids;

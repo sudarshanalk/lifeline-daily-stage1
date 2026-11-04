@@ -16,7 +16,7 @@ Stage 3 (goal journey, food tracker, health logging, new calculators, decision e
 P3-40 to P3-43 (food database import and search, logging, targets, custom foods, recipes), P3-50 (health logging), P3-31 and P3-32 (goal, baseline, plan and check-in logic), P3-85 and P3-86 (reminders, consent, export and deletion), and the calculator engines P3-55 to P3-5B only once each method sheet in `04 Health Tools/Stage 3/` is signed off by the owner (NFR3-14).
 
 ## Delegated in full (owner, 3 Nov 2026)
-P3-31, P3-32 (logic), P3-41 to P3-43, P3-50, P3-56 to P3-5B, P3-85 and P3-86 are yours from start to staging (build method §7 rule 6):
+P3-31, P3-32 (logic), P3-41 to P3-43, P3-50, P3-56, P3-5B, P3-85 and P3-86 are yours (P3-57 to P3-5A were taken over by the lead on 3 Nov 2026) from start to staging (build method §7 rule 6):
 - You decide when to merge your own pull request into `staging` and deploy it. The all-checks-passed merge rule does not bind these packages; read the CI results and Codex's review and judge for yourself.
 - Merging deploys to staging automatically (`deploy-staging`); you may also run it by hand with `gh workflow run deploy-staging.yml --ref staging`. Then: the deploy run is green; `curl -sI https://stg.lifelinedaily.com/` and your screens' routes answer 200 or 302; over SSH (`ssh -i ~/.ssh/lifelinedaily_staging -p 65002 u406593106@212.85.30.82`, docroot `domains/stg.lifelinedaily.com/public_html`) `wp lld-members db-update` is clean, `wp lld-members feature list` shows your switch, and `deploy/key-journeys.sh` passes. Take a backup into `~/lld-backups/staging/` before any manual database change.
 - Never touch production.

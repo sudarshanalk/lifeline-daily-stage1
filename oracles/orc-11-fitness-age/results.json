@@ -1,0 +1,155 @@
+{
+  "oracle_id": "ORC-11",
+  "implementation": "Python decimal reference for Fitness Age (FR3-52): the HUNT non-exercise VO2peak model (Nes 2011, JAHA 2020 reproduction), the HUNT activity index, the reference-person fitness age with its clamp, rounding and the safety order, from the signed sheet of 3 November 2026",
+  "versions": {
+    "python": "3.14.6",
+    "sheet": "P3-5A v1.0 signed 2026-11-03"
+  },
+  "source_hash": "94f62e6e77450b2091545a01d4d10be26f1ef6bb5b45b354394e4c08cfdad7f6",
+  "run_at": "2026-11-04T07:18:17Z",
+  "results": [
+    {
+      "fixture_id": "FX-FA-01",
+      "expected": {
+        "stop": null,
+        "paIndex": 3.75,
+        "vo2": 42.3,
+        "fitnessAgeRaw": 45.0,
+        "fitnessAge": 45,
+        "notes": [],
+        "clamped": null
+      }
+    },
+    {
+      "fixture_id": "FX-FA-02",
+      "expected": {
+        "stop": null,
+        "paIndex": 3.75,
+        "vo2": 35.7,
+        "fitnessAgeRaw": 45.0,
+        "fitnessAge": 45,
+        "notes": [],
+        "clamped": null
+      }
+    },
+    {
+      "fixture_id": "FX-FA-03",
+      "expected": {
+        "stop": null,
+        "paIndex": 0.0,
+        "vo2": 36.1,
+        "fitnessAgeRaw": 65.8,
+        "fitnessAge": 66,
+        "notes": [],
+        "clamped": null
+      }
+    },
+    {
+      "fixture_id": "FX-FA-04",
+      "expected": {
+        "stop": null,
+        "paIndex": 15.0,
+        "vo2": 45.4,
+        "fitnessAgeRaw": 5.7,
+        "fitnessAge": 18,
+        "notes": [
+          "clampedLow"
+        ],
+        "clamped": "low"
+      }
+    },
+    {
+      "fixture_id": "FX-FA-05",
+      "expected": {
+        "stop": null,
+        "paIndex": 7.5,
+        "vo2": 42.4,
+        "fitnessAgeRaw": 44.4,
+        "fitnessAge": 44,
+        "notes": [],
+        "clamped": null
+      }
+    },
+    {
+      "fixture_id": "FX-FA-06",
+      "expected": {
+        "stop": null,
+        "paIndex": 0.0,
+        "vo2": 25.0,
+        "fitnessAgeRaw": 88.4,
+        "fitnessAge": 88,
+        "notes": [],
+        "clamped": null
+      }
+    },
+    {
+      "fixture_id": "FX-FA-07",
+      "expected": {
+        "stop": null,
+        "paIndex": 15.0,
+        "vo2": 59.0,
+        "fitnessAgeRaw": -11.5,
+        "fitnessAge": 18,
+        "notes": [
+          "clampedLow"
+        ],
+        "clamped": "low"
+      }
+    },
+    {
+      "fixture_id": "FX-FA-08",
+      "expected": {
+        "stop": null,
+        "paIndex": 0.76,
+        "vo2": 33.8,
+        "fitnessAgeRaw": 52.4,
+        "fitnessAge": 52,
+        "notes": [],
+        "clamped": null
+      }
+    },
+    {
+      "fixture_id": "FX-FA-09",
+      "expected": {
+        "stop": "medicine",
+        "paIndex": null,
+        "vo2": null,
+        "fitnessAgeRaw": null,
+        "fitnessAge": null,
+        "notes": [
+          "safety.medicine"
+        ],
+        "clamped": null
+      }
+    },
+    {
+      "fixture_id": "FX-FA-10",
+      "expected": {
+        "stop": null,
+        "paIndex": 3.75,
+        "vo2": 31.7,
+        "fitnessAgeRaw": 61.2,
+        "fitnessAge": 61,
+        "notes": [
+          "safety.rhrOver100"
+        ],
+        "clamped": null
+      }
+    },
+    {
+      "fixture_id": "FX-FA-11",
+      "expected": {
+        "stop": null,
+        "paIndex": 3.75,
+        "vo2": 42.3,
+        "fitnessAgeRaw": 45.0,
+        "fitnessAge": 45,
+        "notes": [],
+        "clamped": null
+      }
+    }
+  ],
+  "notes": [
+    "Fixtures are read, never written; differences are printed and listed here."
+  ]
+}
