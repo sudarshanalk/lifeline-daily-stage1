@@ -1,7 +1,7 @@
 {
   "approval_id": "APR-FITNESS-AGE-2026-11-03",
   "tool_slug": "fitness-age",
-  "version_hash": "20170b87fe7d84e8bc9653e84a948d5b612dd08118f03eddedc58313064633a1",
+  "version_hash": "99b802ef0c776f54933b47961c56bd57edcf1f3939359d75159875176c644ad2",
   "engine_name": "Fitness Age: HUNT non-exercise VO₂peak model (Nes 2011; men 100.27 − 0.296 age + 0.226 PA − 0.369 waist − 0.155 RHR; women 74.736 − 0.247 age + 0.198 PA − 0.259 waist − 0.114 RHR), HUNT activity index (frequency × intensity × duration), and a transparent fitness-age definition on the model's own age slope against a reference person (waist 94 cm men / 80 cm women, resting HR 70, activity index 3.75), clamped 18–90 and rounded half-up (D3-26)",
   "intended_use": "Estimates VO₂peak (1 dp) with the age-and-sex band, shows the age at which the reference person of the same sex has that VO₂peak, and shows how activity, resting heart rate and waist can improve it. An estimate from a questionnaire, not a fitness test. Premium, signed in: the change since the last saved check (FR3-52 AS-02).",
   "eligibility": "Adults aged 18 to 99 (model derived 20–90; 18–19 use the equation and get a note). Sex 'prefer not to say' cannot calculate (D3-27). No result for heart-rate-lowering medicine Yes or Not sure; not suitable for a declared heart condition, pregnancy or breastfeeding; under 18 stops. Waist lever hidden with an eating-disorder answer or flag.",
@@ -40,7 +40,8 @@
     "safety.under18": "3111b85314d5e8db3d71144c72d0422a70a3b58f394ed4431f2822e347ff57b8",
     "safety.pregnancy": "cefac058df1c322286700be30475af0a9ec003716b205a1da95b2d9fbd32bf14",
     "safety.sexNotSaid": "c1bfb15bba4f9522f452da25fa44c78201f19f3504203b2f72ff6619a200fdbc",
-    "note.age18to19": "72349db78f5d46d380a47d083ef0ca48d29a367ac83391b6db65260888eaf4f0"
+    "note.age18to19": "72349db78f5d46d380a47d083ef0ca48d29a367ac83391b6db65260888eaf4f0",
+    "stops.cannotEstimate": "c4b3d0640b6ae2e26a7aa34b0fa84373eecbaeb20a87f6214164a4db118d2c40"
   },
   "oracle_report": "oracles/orc-11-fitness-age/results.json",
   "decisions_ratified": [
@@ -52,7 +53,7 @@
     "name": "Product owner (sudarshanalk), acting as clinical reviewer",
     "date": "2026-11-03",
     "decision": "approved",
-    "notes": "Signed 3 November 2026: 'Approved (\"Approve all, D3-10 = B\", in chat with the clinical session)'. Coefficient status: the sheet's fixture table heading (section 1.6) still reads 'provisional until the coefficients are verified', and the verification note says 'one independent reproduction, not the paper, is the source; the owner or lead should check the paper itself before the fixtures are frozen (D3-32)'. The sign-off record (D3-32) says 'Abstract verified (Europe PMC); coefficients from one independent reproduction (Peterman et al., JAHA 2020). The paper's own table 3 (MSSE 2011;43:2024–30) is paywalled and has not been seen; the owner accepted the reproduction on 3 November 2026. If the paper is obtained later and differs, that is a new decision and a new version'. The fixtures are therefore recorded as pending. Owner decided 3 Nov 2026 (Owner_Questions 65): the reproduction is accepted and the fixture table is no longer provisional. Sheet hash refreshed after the owner's decisions of 3 Nov 2026 (Owner_Questions 62-65) were written into the sheet. Wording CW-13 to CW-16 (02 Content/Programme content/calculators/stage3-calculator-wording-draft.md v0.1, approved by the owner on 3 Nov 2026, Owner_Questions 92) added to MESSAGES and hashed here on 4 Nov 2026."
+    "notes": "Signed 3 November 2026: 'Approved (\"Approve all, D3-10 = B\", in chat with the clinical session)'. Coefficient status: the sheet's fixture table heading (section 1.6) still reads 'provisional until the coefficients are verified', and the verification note says 'one independent reproduction, not the paper, is the source; the owner or lead should check the paper itself before the fixtures are frozen (D3-32)'. The sign-off record (D3-32) says 'Abstract verified (Europe PMC); coefficients from one independent reproduction (Peterman et al., JAHA 2020). The paper's own table 3 (MSSE 2011;43:2024–30) is paywalled and has not been seen; the owner accepted the reproduction on 3 November 2026. If the paper is obtained later and differs, that is a new decision and a new version'. The fixtures are therefore recorded as pending. Owner decided 3 Nov 2026 (Owner_Questions 65): the reproduction is accepted and the fixture table is no longer provisional. Sheet hash refreshed after the owner's decisions of 3 Nov 2026 (Owner_Questions 62-65) were written into the sheet. Wording CW-13 to CW-16 (02 Content/Programme content/calculators/stage3-calculator-wording-draft.md v0.1, approved by the owner on 3 Nov 2026, Owner_Questions 92) added to MESSAGES and hashed here on 4 Nov 2026. Owner_Questions 95 to 101: stops.cannotEstimate added as approved wording (2026-11-04, Owner_Questions 95 to 101; wording CW-20 to CW-22 in stage3-calculator-wording-draft.md). Sheet hash refreshed on 4 Nov 2026 after the owner's decisions of that day were written into the sheet."
   },
   "review_date": "2026-11-03",
   "next_review_date": "2027-11-03"

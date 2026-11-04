@@ -168,22 +168,6 @@ test('TC-NFR3-04-AS-02 (source): the Stage 3 schema only creates and adds, and S
   for (const s of suffixes) expect(s2suffixes, s).not.toContain(s);
 });
 
-test('TC-NFR3-04-AS-02 (source): every column Stage 3 adds to a Stage 2 table is listed, and only those leave the Stage 2 column check', () => {
-  const schema = stage3('class-schema-stage3.php');
-  const s2 = src('includes/class-schema.php');
-  const s2suffixes = [...s2.slice(s2.indexOf('function all_suffixes')).matchAll(/^\s*'(\w+)',$/gm)].map((m) => m[1]);
-  const added = [...schema.matchAll(/self::ensure_column\( '(\w+)', '(\w+)'/g)]
-    .filter((m) => s2suffixes.includes(m[1]))
-    .map((m) => `${m[1]}.${m[2]}`);
-  const block = schema.slice(schema.indexOf('function stage2_additions'), schema.indexOf('function stage2_columns'));
-  const listed = [...block.matchAll(/'(\w+)' => array\(([^)]*)\)/g)]
-    .flatMap((m) => [...m[2].matchAll(/'(\w+)'/g)].map((c) => `${m[1]}.${c[1]}`));
-  expect(added.length).toBeGreaterThan(0);
-  expect(listed.sort()).toEqual([...added].sort());
-  expect(src('includes/class-rest.php')).toMatch(/\$body\['columns'\] = apply_filters\( 'lld_members_stage2_columns', \$columns \);/);
-  expect(stage3('class-erasure-stage3.php')).toMatch(/add_filter\( 'lld_members_stage2_columns', array\( 'LLD_Members_Stage3_Schema', 'stage2_columns' \) \)/);
-});
-
 test('P3-15: the erasure checker covers the payment data kept in wp_options and the Stage 3 tables', () => {
   const privacy = src('includes/class-privacy.php');
   expect(privacy).toMatch(/LLD_Members_Billing::member_options\( \$member_id \)/);

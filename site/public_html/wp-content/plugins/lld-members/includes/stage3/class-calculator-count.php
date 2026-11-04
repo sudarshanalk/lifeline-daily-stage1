@@ -36,7 +36,10 @@ class LLD_Members_Calculator_Count {
 
 	public static function boot() {
 		add_action( 'rest_api_init', array( __CLASS__, 'register' ) );
+		// The plugin's own landing screen (CI) prints through its layout; a published Stage 1 page at the same address
+		// (staging, production) is a theme page and prints through wp_footer.
 		add_action( 'lld_members_layout_foot', array( __CLASS__, 'print_script' ) );
+		add_action( 'wp_footer', array( __CLASS__, 'print_script' ), 99 );
 	}
 
 	public static function register() {
@@ -137,10 +140,23 @@ class LLD_Members_Calculator_Count {
 	 * calculator name alone, and sends no cookie.
 	 */
 	public static function print_script() {
-		if ( 'landing' !== (string) get_query_var( 'lld_screen' ) ) {
+		static $done = false;
+		$path = (string) wp_parse_url( isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '/', PHP_URL_PATH ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- path only, compared below.
+		if ( $done || is_admin() || ! self::landing( $path, (string) get_query_var( 'lld_screen' ) ) ) {
 			return;
 		}
+		$done = true;
 		echo '<script>' . self::script( rest_url( 'lld-members/v1/calculator-count' ) ) . '</script>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- the address is JSON-encoded.
+	}
+
+	/**
+	 * A calculator landing page: the plugin's landing screen, or the Stage 1 page at one of the three addresses.
+	 *
+	 * @param string $path   Request path.
+	 * @param string $screen Plugin screen, or ''.
+	 */
+	public static function landing( $path, $screen ) {
+		return 'landing' === $screen || 1 === preg_match( '#^/health-tools/(protein|diabetes-risk-check|healthy-weight-check)/?$#', $path );
 	}
 
 	/**

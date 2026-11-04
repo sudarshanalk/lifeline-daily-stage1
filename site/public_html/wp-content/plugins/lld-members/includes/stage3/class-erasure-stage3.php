@@ -19,7 +19,6 @@ class LLD_Members_Stage3_Erasure {
 		add_action( 'lld_members_erase_account', array( __CLASS__, 'erase_account' ) );
 		add_action( 'lld_members_withdraw_health', array( __CLASS__, 'withdraw_health' ) );
 		add_filter( 'lld_members_known_tables', array( __CLASS__, 'known_tables' ) );
-		add_filter( 'lld_members_stage2_columns', array( 'LLD_Members_Stage3_Schema', 'stage2_columns' ) );
 		add_filter( 'lld_members_member_links', array( __CLASS__, 'member_links' ) );
 		add_filter( 'lld_members_health_tables', array( __CLASS__, 'health_tables' ) );
 		add_action( 'lld_members_daily', array( 'LLD_Members_Stage3_Data', 'sweep_deleted' ) );

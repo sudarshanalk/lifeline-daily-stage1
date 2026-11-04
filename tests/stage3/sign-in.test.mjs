@@ -53,7 +53,7 @@ test('TC-FR3-01-AS-02', () => {
   expect(claims('google', jwt({ ...good, iss: 'accounts.google.com' }), 'n1', 1900000000).sub).toBe('g-123');
 });
 
-test('TC-FR3-02-AS-01', () => {
+test('TC-FR4-30-AS-01', () => {
   // Apple: the client secret is an ES256 JWT with the team, key and services IDs. The key pair is made here in
   // Node, and Node verifies the signature (IEEE P1363, the raw r||s form JOSE uses), independently of PHP's OpenSSL;
   // and the name arrives separately, once, as the `user` field.

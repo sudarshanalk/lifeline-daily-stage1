@@ -50,11 +50,23 @@ def assess(i: dict) -> dict:
         out["method"] = "pctHrMax"
         for z, (lo, hi) in PCT.items():
             out[z] = [r0(D(lo) * hrmax), r0(D(hi) * hrmax)]
+        no_shared_edges(out)
     else:
         out["method"] = "hrr"
         for z, (lo, hi) in HRR.items():
             out[z] = [r0(rhr + D(lo) * (hrmax - rhr)), r0(rhr + D(hi) * (hrmax - rhr))]
+        no_shared_edges(out)
     return out
+
+
+def no_shared_edges(out: dict) -> None:
+    """Owner_Questions 97 (decided 4 Nov 2026): a zone whose rounded bottom is at or below the zone below's top starts
+    1 bpm above it, so no heart rate is in two zones."""
+    prev = None
+    for z in ("easy", "moderate", "hard"):
+        if prev is not None and out[z][0] <= prev:
+            out[z][0] = prev + 1
+        prev = out[z][1]
 
 
 def main(root: Path) -> int:

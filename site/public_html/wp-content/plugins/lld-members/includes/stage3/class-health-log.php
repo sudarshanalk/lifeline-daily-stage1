@@ -53,6 +53,12 @@ class LLD_Members_Health_Log {
 		if ( '' === $type ) {
 			return array( 'error' => 'Add a reading type.', 'status' => 400 );
 		}
+		if ( class_exists( 'LLD_Members_Stage3_Consent' ) ) {
+			$consent = LLD_Members_Stage3_Consent::gate_store( (int) $member_id );
+			if ( null !== $consent ) {
+				return $consent;
+			}
+		}
 		if ( class_exists( 'LLD_Members_Stage3_Safety' ) ) {
 			$a = LLD_Members_Stage3_Safety::applies( (int) $member_id, 'health_logging' );
 			// Unknown / no consent: the matrix refuses every store (I-12 allows glucose for everyone else).

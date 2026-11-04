@@ -1,4 +1,4 @@
-// Google and Apple sign-in and one account per email (P3-20, P3-22: FR3-01, FR3-02, FR3-05), live on the CI
+// Google and Apple sign-in and one account per email (P3-20, P3-22: FR3-01, FR3-05; Apple: FR4-30, moved to Stage 4 by the owner on 3 Nov 2026), live on the CI
 // WordPress. Google and Apple are never reached from CI: the provider's verified claims arrive through the test
 // route /test/sign-in/provider (open only where the Stage 2 test routes are, with the test secret), which runs the
 // same completion as the real callback. The start route is checked for real against the CI-only Google client.
@@ -155,7 +155,7 @@ test.describe.serial('provider sign-in', () => {
     await expect(page.locator('[data-lld-provider="google"]')).not.toContainText('google-sub-unverified');
   });
 
-  test('TC-FR3-02-AS-01', async ({ page }) => {
+  test('TC-FR4-30-AS-01', async ({ page }) => {
     // Apple sign-up: the account is created and the Agreements step shown next.
     await signedOut(page);
     const H = 'p3-signin-h@test.lifelinedaily.invalid';
@@ -168,7 +168,7 @@ test.describe.serial('provider sign-in', () => {
     await expect(page.getByRole('heading', { name: 'Agreements', exact: true })).toBeVisible();
   });
 
-  test('TC-FR3-02-AS-02', async ({ page }) => {
+  test('TC-FR4-30-AS-02', async ({ page }) => {
     // Apple with 'Hide my email': the relay address is the account's email, the account works, and emails reach the relay.
     const MAILPIT = process.env.MAILPIT_URL || 'http://127.0.0.1:8025';
     await signedOut(page);

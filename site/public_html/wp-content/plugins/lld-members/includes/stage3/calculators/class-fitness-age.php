@@ -103,6 +103,7 @@ class LLD_Members_Fitness_Age {
 		'safety.pregnancy'      => "This estimate isn't suitable right now. Heart rate and waist change during pregnancy and breastfeeding, so the result wouldn't be reliable. Your midwife or doctor can advise you on staying active. The talk test is a good guide: moderate activity means you can talk but not sing.", // CW-14
 		'safety.sexNotSaid'     => "We can't work out a fitness age without knowing your sex. The estimate uses separate formulas for men and women, which give quite different results, so there's no fair middle value. If you'd like a result, you can choose a sex above. A fitness test with a trained professional can also measure your fitness directly.", // CW-15
 		'note.age18to19'        => 'This estimate comes from a study of adults aged 20 and over, so it may be less accurate at 18 or 19.', // CW-16
+		'stops.cannotEstimate'  => "We can't give a reliable fitness estimate from these answers. Your doctor or a supervised fitness test can give a better picture.", // CW-21 (Owner_Questions 95, 96)
 	);
 
 	/**
@@ -291,8 +292,6 @@ class LLD_Members_Fitness_Age {
 				$out[ $key ] = self::QUOTED[ substr( $key, 7 ) ];
 			} elseif ( isset( self::MESSAGES[ $key ] ) ) {
 				$out[ $key ] = self::MESSAGES[ $key ];
-			} elseif ( 'stops.cannotEstimate' === $key ) {
-				$out[ $key ] = null; // no signed wording yet
 			}
 		}
 		return $out;

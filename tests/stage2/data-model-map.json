@@ -186,7 +186,9 @@
         "headline": "headline result",
         "unit": "unit",
         "band": "band",
-        "calculator_version": "calculator version"
+        "calculator_version": "calculator version",
+        "inputs_ct": "saved inputs and the saved result are also kept, sealed",
+        "result_ct": "saved inputs and the saved result are also kept, sealed"
       }
     },
     "enrolment": {

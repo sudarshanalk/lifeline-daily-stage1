@@ -1,6 +1,6 @@
 <?php
 /**
- * Google and Apple sign-in through OpenID Connect (P3-20: FR3-01, FR3-02; P3-22: FR3-05).
+ * Google and Apple sign-in through OpenID Connect (P3-20: FR3-01, Apple FR4-30; P3-22: FR3-05).
  *
  * The authorisation-code flow with a server-side exchange: the browser only ever sees the state value. The
  * ID token comes straight from the provider's token endpoint over TLS, authenticated with our client secret,

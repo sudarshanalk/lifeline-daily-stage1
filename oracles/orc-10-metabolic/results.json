@@ -5,8 +5,8 @@
     "python": "3.14.6",
     "sheet": "P3-59 v1.0 signed 2026-11-03"
   },
-  "source_hash": "cc40ed9a5a0e27056c59623bd16c94650dcd907db1293cf7e887a34aaf31e02f",
-  "run_at": "2026-11-04T07:26:40Z",
+  "source_hash": "5c3d6c1ae1d86c89131d5361d610fc13c519997b1f8156795340557fb27f5f3a",
+  "run_at": "2026-11-04T14:24:31Z",
   "results": [
     {
       "fixture_id": "FX-MET-CRIT-01",

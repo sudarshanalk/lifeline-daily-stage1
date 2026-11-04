@@ -1,6 +1,6 @@
 # Stage 3 test criteria (extract)
 
-Extracted on 2 November 2026 from `01 Requirements/Lifeline_Daily_Requirements_All_Stages.md` v0.3 by the lead. Every `TC-FR3-nn-AS-nn` and `TC-NFR3-nn-AS-nn` used under `tests/stage3/` must appear here (`stage3-guards`). Do not edit by hand: re-extract from the requirements when they change.
+Extracted on 4 November 2026 from `01 Requirements/Lifeline_Daily_Requirements_All_Stages.md` v0.3 by the lead. Every `TC-FR3-nn-AS-nn` and `TC-NFR3-nn-AS-nn` used under `tests/stage3/` must appear here (`stage3-guards`). Do not edit by hand: re-extract from the requirements when they change.
 
 #### FR3-01 Sign in with Google
 
@@ -13,17 +13,6 @@ Members can create an account and sign in with their Google account. Only their 
 | TC-FR3-01-AS-01 | Sign up with a test Google account: an account is created with the Google name and email, and the Agreements step is shown next. |
 | TC-FR3-01-AS-02 | Sign out, then sign in with the same Google account: the member returns to the same account. |
 | TC-FR3-01-AS-03 | No Google data other than name, email and Google's account ID is stored. |
-
-#### FR3-02 Sign in with Apple
-
-Stage 3 · Sign-in and account · Must · Status: To be built
-
-Members can create an account and sign in with their Apple account, including when they choose Apple's 'Hide my email'. The agreements and health consent are still asked for.
-
-| Test ID | What the test checks |
-|---|---|
-| TC-FR3-02-AS-01 | Sign up with a test Apple account: an account is created and the Agreements step is shown next. |
-| TC-FR3-02-AS-02 | Sign up with 'Hide my email': the account works and emails reach the Apple relay address. |
 
 #### FR3-03 Email code at sign-up
 
@@ -55,7 +44,7 @@ Members can sign in by asking for a 6-digit code by email, as well as with their
 
 Stage 3 · Sign-in and account · Must · Status: To be built
 
-A Google or Apple sign-in is matched to an existing account only when Google or Apple confirms the email is verified; otherwise the member must sign in the usual way first and link it from the Account hub. The account is recognised by the provider's account ID, so a later change of email at Google or Apple keeps the same account. A member cannot remove their last way to sign in. A member with no password confirms account deletion or other sensitive changes with an email code. Signing out everywhere ends all sessions, on the website and the app.
+A Google sign-in (and an Apple sign-in, once FR4-30 is built) is matched to an existing account only when the provider confirms the email is verified; otherwise the member must sign in the usual way first and link it from the Account hub. The account is recognised by the provider's account ID, so a later change of email at the provider keeps the same account. A member cannot remove their last way to sign in. A member with no password confirms account deletion or other sensitive changes with an email code. Signing out everywhere ends all sessions, on the website and the app.
 
 | Test ID | What the test checks |
 |---|---|
@@ -774,14 +763,16 @@ When a member deletes their account, all their food and health logs, goals, cust
 
 Stage 3 · Paid membership · Must · Status: To be built
 
-Lifeline Daily launches after Stage 3. Premium costs US$9.99 a month or US$69.99 a year (about 42% cheaper, a saving of US$49.89). Prices include any sales tax, so customers pay exactly the price shown (carried forward from FR2-13). The same price applies on the website and, later, in the app. Members who join keep their price if it rises later, including after a pause. This replaces the Stage 2 prices in FR2-13.
+Lifeline Daily launches after Stage 3. Premium costs US$9.99 a month or US$69.99 a year (about 42% cheaper, a saving of US$49.89). Prices are in US dollars and include any sales tax, so a member paying in US dollars pays exactly the price shown (carried forward from FR2-13). Payments run through Stripe Managed Payments, where Stripe's partner Onelink is the seller and handles sales tax worldwide (owner decision, 3 November 2026). On Stripe's page a member may choose to pay in their own currency, at a converted amount that includes a conversion fee, so the pricing page says 'Prices in US$; your bank or Stripe may convert'. Receipts, invoices and refund notes come from Onelink, and statements show 'Sold through Onelink'; the site's own confirmation email says the receipt comes from Onelink and is not called a receipt. The same price applies on the website and, later, in the app. Members who join keep their price if it rises later, including after a pause. This replaces the Stage 2 prices in FR2-13.
 
 | Test ID | What the test checks |
 |---|---|
 | TC-FR3-62-AS-01 | The pricing page shows US$9.99 a month and US$69.99 a year, with the yearly saving, both marked 'tax included'. |
-| TC-FR3-62-AS-02 | For test customers in the UK, Germany and the US, the amount charged equals the amount shown. |
+| TC-FR3-62-AS-02 | For test customers in the UK, Germany and the US paying in US dollars, the amount charged equals the amount shown. |
 | TC-FR3-62-AS-03 | A Stripe test checkout for each plan charges the price shown. |
 | TC-FR3-62-AS-04 | A test member on an older price keeps it when the price for new members is changed. |
+| TC-FR3-62-AS-05 | The pricing page shows the line 'Prices in US$; your bank or Stripe may convert'. |
+| TC-FR3-62-AS-06 | The confirmation email after a test checkout says the receipt comes from Onelink and does not use the words 'Your receipt'. |
 
 #### FR3-63 Free and Premium access
 
@@ -889,6 +880,195 @@ The Monday report from Stage 2 (FR2-17) continues after the switch to Google Ana
 | TC-FR3-70-AS-01 | On a Monday, a test report is caught by the mail catcher with sign-ups, upgrades, renewals, pauses, cancellations, revenue and member numbers matching the test data. |
 | TC-FR3-70-AS-02 | The report contains no names, emails or health values. |
 
+#### FR3-71 Owner and Support admin roles
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+The admin panel has two roles. The Owner can do everything. A Support helper can find members, see their account details, resend account emails, add private notes, and pause or resume a membership when the member asks. Support cannot delete a member, send a data download, give or remove Premium, end a membership, issue refunds or change payments, mark test accounts, block or unblock, change features, approve content, manage admins, or see other admins' actions and payment counts. Only the Owner adds or removes Support helpers, and each helper has their own account. Every action checks the role on the server, not only by hiding buttons.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-71-AS-01 | A Support test account can search members, open an account, resend a sign-in email, add a note, and pause and resume a membership. |
+| TC-FR3-71-AS-02 | For each Owner-only action, a Support test account sees no button, and a direct request to the action is refused. |
+| TC-FR3-71-AS-03 | Only an Owner account can add or remove a Support helper. |
+
+#### FR3-72 One Lifeline Daily admin menu
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+All owner screens sit under one 'Lifeline Daily' menu in wp-admin: the new Overview, Features, Members and Activity log pages, and the existing Payments, Content, Approvals, Safety matrix, Live Q&A, Testimonials, Weekly report, Group removals and Preview screens. The existing screens keep their addresses. A Support helper sees only the pages their role allows.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-72-AS-01 | The Lifeline Daily menu lists every page named above, and the old separate Payments and Content menus are gone. |
+| TC-FR3-72-AS-02 | Each existing screen still opens at its old address (for example admin.php?page=lld-payments). |
+| TC-FR3-72-AS-03 | A Support test account sees only Overview and Members in the menu. |
+
+#### FR3-73 Overview page with counts only
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+The first admin page shows counts only: members in total, new this week and signed in within 7 and 30 days; Free, Premium, paused and cancelled members; monthly and yearly plans; open failed payments; content waiting for approval; unanswered Live Q&A questions; each feature and its state; and the last 10 admin actions. It never shows health figures, even as totals. Support sees the same page without the payment counts and the activity log.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-73-AS-01 | With known test data, every count on the Overview matches the test data. |
+| TC-FR3-73-AS-02 | The Overview page contains none of the test members' health values, goals or track names. |
+| TC-FR3-73-AS-03 | A Support test account sees no payment counts and no activity log on the Overview. |
+
+#### FR3-74 Emergency off for a feature
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+Every Stage 3 feature is on (decision of 3 Nov 2026). The Features page lists each feature with a one-line description and its state. The Owner can turn a feature off with one click, a confirmation and a short reason, and members stop seeing it at once; or limit it to test accounts while it is fixed. Turning a feature back on for everyone needs the feature's name typed, an approval note and the Owner's two-step code again. Each feature shows its change history (who, when, from and to, note), including changes made on the command line. The list of test-account emails is edited on this page. Full administrators (the Owner) count as test accounts automatically; Support helpers do not, unless their email is added to the list. Support can view the page but not change it.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-74-AS-01 | Turn a feature off: an ordinary test member no longer sees it on the next page load, and the change appears in its history with the reason. |
+| TC-FR3-74-AS-02 | Turning a feature back on for everyone is refused without the typed feature name, the note and a fresh two-step code. |
+| TC-FR3-74-AS-03 | A change made with 'wp lld-members feature' on the command line appears in the feature's history. |
+| TC-FR3-74-AS-04 | An email added to the test-account list on the page is treated as a test account. |
+| TC-FR3-74-AS-05 | A Support test account cannot change any feature or the test-account list. |
+| TC-FR3-74-AS-06 | With a feature limited to test accounts, the Owner's account sees it and a Support account not on the list does not. |
+
+#### FR3-75 Find a member
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+Owner and Support can search members by email, name or member number, and filter by plan (Free, Premium), status (active, paused, cancelled, blocked) and test account.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-75-AS-01 | Searching by part of an email, a name and a member number each finds the matching test member. |
+| TC-FR3-75-AS-02 | Each filter returns only the matching test members. |
+
+#### FR3-76 Member account page without health data
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+A member's admin page shows name, email, sign-in methods (email, Google, and Apple from Stage 4), date joined, last sign-in, plan, status, renewal date, payment status from Stripe (never card details), whether it is a test account, Premium grants, AI allowance use (Stage 5) and private notes. It never shows the member's goal, track, health answers, health readings, food diary or calculator results, because even a track choice hints at a health condition. There is no way to sign in as the member.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-76-AS-01 | For a test member with health data, the page shows each listed account detail correctly. |
+| TC-FR3-76-AS-02 | The page contains none of that member's health values, goal, track names, diary entries or calculator results. |
+| TC-FR3-76-AS-03 | No admin page offers to sign in as, or view the site as, a member. |
+
+#### FR3-77 Resend account emails
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+Owner and Support can resend a member's sign-in code, email confirmation or welcome email. The emails are the standard ones and contain no health details.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-77-AS-01 | Resend each email type for a test member: the email is caught by the mail catcher and the action appears in the activity log. |
+
+#### FR3-78 Private notes on a member
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+Owner and Support can add private notes to a member, for example about a support request. Members never see them. The note box reminds the writer not to include health details. Notes are deleted with the account.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-78-AS-01 | Add a note: it shows on the member's admin page with who wrote it and when, and is never shown to the member. |
+| TC-FR3-78-AS-02 | The note box shows the reminder 'No health details in notes'. |
+
+#### FR3-79 Pause or resume a membership for a member
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+Owner and Support can pause or resume a Premium membership when the member asks, with the same rules as the member's own pause (FR3-65). Stripe is updated to match.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-79-AS-01 | Pause a monthly test member for 1 month: the pause follows the FR3-65 rules and Stripe's renewal date moves to match. |
+| TC-FR3-79-AS-02 | Resume the member: Premium returns and Stripe matches. |
+
+#### FR3-80 Give or remove free Premium
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+The Owner can give a member free Premium with an end date and a reason, kept separate from Stripe, and remove it again. When it ends, the member returns to Free with the downgrade rules (FR3-68).
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-80-AS-01 | Give a Free test member Premium until a set date: they get Premium at once, and no Stripe charge or subscription is created. |
+| TC-FR3-80-AS-02 | On the end date the member returns to Free, with nothing deleted. |
+| TC-FR3-80-AS-03 | Giving or removing Premium is refused without a reason. |
+
+#### FR3-81 End a membership
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+The Owner can end a member's Premium either at the end of the paid period or straight away, with a reason. The Stripe subscription is cancelled to match. Refunds stay in Stripe: the member's page has no refund button, only a link that opens this member's customer page in the Stripe dashboard (Owner only).
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-81-AS-01 | End a test membership at the end of the period: Stripe shows it cancelling on that date and the member keeps Premium until then. |
+| TC-FR3-81-AS-02 | End a test membership now: Premium stops at once and Stripe shows it cancelled. |
+| TC-FR3-81-AS-03 | A paying test member's page shows the Stripe link to the Owner, no refund button to anyone, and no Stripe link to Support. |
+
+#### FR3-82 Mark or unmark a test account
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+The Owner can mark a member as a test account, or unmark them, with a reason. This updates the same test-account list as the Features page.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-82-AS-01 | Mark a member as a test account: features limited to test accounts appear for them, and the email appears in the Features page list. |
+
+#### FR3-83 Block or unblock a member
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+The Owner can block a member with a reason. A blocked member cannot sign in and is signed out at once, on the website and through the programming interface. While a paying member is blocked their billing is paused, using the same pause as FR3-65 but with no time limit and not counting towards the member's own pauses. Unblocking restores sign-in and restarts billing. The Owner can still end the membership separately (FR3-81).
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-83-AS-01 | Block a signed-in test member: their next page load and programming-interface request are refused, and sign-in is refused. |
+| TC-FR3-83-AS-02 | Block a paying test member: Stripe shows the subscription paused; unblock: Stripe shows it active again and the member's own pauses are unchanged. |
+| TC-FR3-83-AS-03 | Unblock the member: they can sign in again with nothing else changed. |
+
+#### FR3-84 Delete a member
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+The Owner can delete a member. It runs exactly the same erasure as the member's own deletion request (FR2-04, extended by FR3-61), after the Owner types the member's email, gives a reason and enters the two-step code again.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-84-AS-01 | Delete a test member from the panel: the erasure checker finds nothing left, the same as after the member's own request. |
+| TC-FR3-84-AS-02 | Deleting is refused without the typed email, the reason and a fresh two-step code. |
+
+#### FR3-85 Send the member their data download
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+The Owner can send a member a link to their own data download. The member signs in to download it. The admin never sees the file or its contents.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-85-AS-01 | Send the link: an email with the link is caught by the mail catcher, and the download needs the member to sign in. |
+| TC-FR3-85-AS-02 | No admin page or request returns the member's download file. |
+
+#### FR3-86 Admin activity log
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+The Stage 2 admin log is extended so that every admin action, from both roles and from the command line, is recorded: admin sign-ins and failed attempts, every member action, feature and test-account changes, and adding or removing helpers. Each entry has who, when, what, the member number, the before and after state and the reason. A reason is required for deleting, giving or removing Premium, ending a membership, blocking or unblocking, test-account changes, turning a feature off or back on, and adding or removing a helper. Entries can never be edited or deleted, contain no health data, and do not copy note text. The Owner sees the whole log and can download it as a CSV file; Support sees only their own actions. Entries are kept for 2 years. When a member is deleted, their entries keep only the member number.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-86-AS-01 | Each action listed above creates one log entry with who, when, what, member number, before and after, and reason. |
+| TC-FR3-86-AS-02 | Each risky action listed above is refused without a reason. |
+| TC-FR3-86-AS-03 | No admin page, request or command can edit or delete a log entry. |
+| TC-FR3-86-AS-04 | A Support test account sees only its own entries; the Owner's CSV download matches the log. |
+| TC-FR3-86-AS-05 | After a test member is deleted, their log entries show the member number and no name or email. |
+| TC-FR3-86-AS-06 | Entries older than 2 years are removed automatically. |
+
 #### NFR3-01 Stage 2 keeps working
 
 Stage 3 · Protecting Stage 2 · Must · Status: To be built
@@ -948,7 +1128,7 @@ Stage 3 work may only change its own files, plus a short declared list of Stage 
 
 Stage 3 · Protecting Stage 2 · Must · Status: To be built
 
-Each Stage 3 feature can be switched on or off on its own. On staging it is visible only to test accounts until the owner approves it, so the Stage 2 screens the owner is checking stay as they are.
+Since 3 November 2026 every Stage 3 feature is on, because the whole system launches together (owner decision); features added later are on too. Each feature keeps its own switch (off, test accounts, everyone) only so that it can be turned off in an emergency from the admin panel (FR3-74). The tests below check that the switch still works.
 
 | Test ID | What the test checks |
 |---|---|
@@ -1088,11 +1268,67 @@ Every decision-engine rule has a minimum amount of data and a minimum difference
 
 Stage 3 · Data and privacy · Must · Status: To be built
 
-Email codes are random 6-digit numbers that last 10 minutes, work once and are limited to a few tries and requests. Google and Apple sign-in use their official secure methods and only ask for name and email.
+Email codes are random 6-digit numbers that last 10 minutes, work once and are limited to a few tries and requests. Google sign-in, and Apple sign-in when FR4-30 is built, use their official secure methods and only ask for name and email.
 
 | Test ID | What the test checks |
 |---|---|
 | TC-NFR3-18-AS-01 | Codes are produced by the system's secure random generator (checked in code review and by an automated check that the insecure generators are not used). |
 | TC-NFR3-18-AS-02 | Replaying a used code fails, and two simultaneous attempts with the same code let only one succeed. |
 | TC-NFR3-18-AS-03 | Code tries and requests beyond the limits are refused. |
-| TC-NFR3-18-AS-04 | The Google and Apple sign-in requests ask only for name and email. |
+| TC-NFR3-18-AS-04 | The Google sign-in request (and Apple's, once FR4-30 is built) asks only for name and email. |
+
+#### NFR3-19 No health data in the admin panel
+
+Stage 3 · Data and privacy · Must · Status: To be built
+
+No admin page, count, export, log entry or admin request shows members' health readings, food diaries, health answers, goals, tracks or calculator results, for any role, the Owner included. A member's data leaves their account only through their own download.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-NFR3-19-AS-01 | After a full test run with seeded health data, a search of every admin page, the activity log and its CSV download finds none of the seeded health values, goals or track names. |
+| TC-NFR3-19-AS-02 | A check of every admin request finds none that reads the health, food, goal or calculator tables. |
+
+#### NFR3-20 Secure admin sign-in
+
+Stage 3 · Security · Must · Status: To be built
+
+Every admin role (Owner and Support) enters an emailed 6-digit code at every sign-in, extending NFR2-02. The code is asked for again before deleting a member, turning a feature back on for everyone, and adding or removing a helper. Admin sessions end after 30 minutes without activity and always after 12 hours. After 5 wrong passwords or codes the account is locked for 15 minutes and the Owner is emailed.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-NFR3-20-AS-01 | A Support test account must enter an email code to sign in. |
+| TC-NFR3-20-AS-02 | Each of the three risky actions asks for a fresh code. |
+| TC-NFR3-20-AS-03 | An admin session is signed out after 30 minutes idle, and after 12 hours even when active. |
+| TC-NFR3-20-AS-04 | The 6th failed attempt is refused for 15 minutes and an alert email is caught by the mail catcher. |
+
+#### NFR3-21 Limits and alerts on admin actions
+
+Stage 3 · Security · Must · Status: To be built
+
+Each admin can delete at most 5 members an hour; further deletions wait. The Owner is emailed when a helper is added or removed and when any admin signs in from a new device or browser.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-NFR3-21-AS-01 | A 6th deletion within an hour by the same admin is refused with a message saying when it is allowed again. |
+| TC-NFR3-21-AS-02 | Adding a helper, removing a helper, and signing in from a new browser each send an alert email to the Owner. |
+
+#### NFR3-22 Admin panel works on a phone and is hidden
+
+Stage 3 · Quality · Must · Status: To be built
+
+Every new admin page works on a phone from 360 pixels wide and meets WCAG 2.2 AA, as the member pages do. Admin pages never load Google Analytics and are never indexed by search engines.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-NFR3-22-AS-01 | At 360 pixels wide, no new admin page scrolls sideways, and an automated accessibility scan finds no serious or critical problems. |
+| TC-NFR3-22-AS-02 | No admin page sends a request to Google Analytics, and each is marked noindex. |
+
+#### NFR3-23 Erasure checker covers the admin records
+
+Stage 3 · Data and privacy · Must · Status: To be built
+
+The erasure checker that confirms a deleted member leaves nothing behind also covers private notes and Premium grants, and checks that activity log entries keep only the member number.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-NFR3-23-AS-01 | After a test member with notes, a Premium grant and log entries is deleted, the erasure checker finds no note or grant, and log entries with only the member number. |

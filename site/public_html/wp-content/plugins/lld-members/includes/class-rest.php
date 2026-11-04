@@ -796,8 +796,7 @@ class LLD_Members_Rest {
 			$columns[ $suffix ] = is_array( $names ) ? array_values( $names ) : array();
 		}
 		$body = LLD_Members_Privacy::stores();
-		// Columns a later stage adds to these tables are checked against that stage's data model.
-		$body['columns'] = apply_filters( 'lld_members_stage2_columns', $columns );
+		$body['columns'] = $columns;
 		return new WP_REST_Response( $body, 200 );
 	}
 
