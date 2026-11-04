@@ -160,7 +160,34 @@ test('TC-FR3-58-AS-01 manifest is installable (name, start_url, display, icons)'
   const sw = php(`echo LLD_Members_Installable::service_worker();`);
   expect(sw).toContain('offline');
   expect(sw).toContain('fetch');
-  expect(readFileSync(stage3('class-installable.php'), 'utf8')).toContain('You are offline');
+  const src = readFileSync(stage3('class-installable.php'), 'utf8');
+  expect(src).toContain('You are offline');
+  expect(src).toContain('status_header( 200 )');
+});
+
+test('TC-FR3-58-AS-01 manifest, service worker and offline page are sent with status 200', () => {
+  // Browsers reject a manifest or service worker served with an error status.
+  const serve = (path) => php(`
+      ob_start();
+      function status_header($c){ echo "STATUS:$c\n"; }
+      function nocache_headers(){}
+      $_SERVER['REQUEST_URI'] = '${path}';
+      LLD_Members_Installable::serve();
+      echo 'NOT SERVED';`);
+  for (const path of ['/members/app.webmanifest', '/members/sw.js', '/members/offline/', '/members/offline']) {
+    expect(serve(path).startsWith('STATUS:200'), path).toBe(true);
+  }
+  for (const path of ['/members/offline/x', '/members/myoffline/', '/x/members/offline/', '/members/sw.jsx']) {
+    expect(serve(path), path).toBe('NOT SERVED');
+  }
+  const src = readFileSync(stage3('class-installable.php'), 'utf8');
+  expect(src).toContain("X-LiteSpeed-Cache-Control: no-cache");
+});
+
+test('TC-FR3-58-AS-01 service worker falls back to the offline page only for member page loads', () => {
+  const sw = php(`echo LLD_Members_Installable::service_worker();`);
+  expect(sw).toContain("req.mode !== 'navigate'");
+  expect(sw).toContain('req.url.startsWith(SCOPE)');
 });
 
 test('Free/Premium running reminders (FR3-68) still only runs the first for Free', () => {
