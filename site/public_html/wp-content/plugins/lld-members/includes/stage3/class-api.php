@@ -590,7 +590,7 @@ class LLD_Members_Stage3_API {
 			}
 			if ( 'readings' === $def['table'] ) {
 				$premium = LLD_Members_Food_Log::premium( $member_id );
-				$rows    = LLD_Members_Health_Log::limit_history( $rows, $premium, gmdate( 'Y-m-d' ) );
+				$rows    = LLD_Members_Health_Log::limit_history( $rows, $premium, LLD_Members_Health_Log::today( $member_id ) );
 				$rows    = LLD_Members_Health_Log::filter(
 					$rows,
 					(string) $request->get_param( 'reading_type' ), // not 'type': that is the route's resource name, 'readings'
