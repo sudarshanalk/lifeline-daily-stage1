@@ -1,4 +1,15 @@
 {
   "_about": "NFR3-02: a Stage 3 pull request may change a file under tests/stage2/ only when an owner decision recorded here covers it. Each entry: the file (repository path), the decision (requirements v0.3 section 6 or a dated owner decision) and what changes. CI stage3-guards fails any other change, and any skip, to a Stage 2 test.",
-  "changes": []
+  "changes": [
+    {
+      "file": "tests/stage2/e2e/personal.spec.mjs",
+      "decision": "Owner_Questions 93 = B (owner, 3 Nov 2026): the Sleep and Stress safety check uses the approved wording of 02 Content/Programme content/safety/screening-sleep-and-stress.md in both the Stage 2 screen (class-personal.php) and the Stage 3 engine, with its Stage 2 tests updated under this decision",
+      "change": "TC-FR2-38-AS-01, AS-02, AS-03 and AS-05 assert the approved question, Response 1, Response 2, Response 3 and 'Please answer all three questions to continue.' in place of the old shorter text. No assertion is removed or loosened: each old text check is the same check on the new text, and AS-01 also checks the rest of Response 1 (heading, helpline line, the two closing paragraphs, 'Back to my dashboard'), AS-03 the findahelpline.com link."
+    },
+    {
+      "file": "tests/stage2/safety-wording.test.mjs",
+      "decision": "Owner_Questions 93 = B (owner, 3 Nov 2026), as above",
+      "change": "TC-FR2-38-AS-01: the order check (self-harm before the 'answer all three' check) and the example-numbers check use the approved wording ('Please answer all three questions to continue.'; 'for example 999 in the UK, 911 in the US and Canada, 112 in the EU and India, or 000 in Australia'), and the approved self-harm question is checked too."
+    }
+  ]
 }

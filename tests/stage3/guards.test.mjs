@@ -84,6 +84,15 @@ test('TC-NFR3-05-AS-02', () => {
   expect(lead.ok).toBe(true);
   expect(lead.review).toEqual([billing]);
   expect(stage3Scope({ title: 'S3-P40: food search', files: [billing] }).ok).toBe(false);
+  // An owner decision opens one named Stage 2 file to one lead package only (Owner_Questions 93 = B: the Sleep and
+  // Stress screening wording in class-personal.php, S3-P03), still labelled for review; every other package is refused.
+  const personal = `${PLUGIN}/includes/class-personal.php`;
+  const decided = stage3Scope({ title: 'S3-P03: Sleep and Stress screening wording', files: [personal] });
+  expect(decided.ok).toBe(true);
+  expect(decided.review).toEqual([personal]);
+  for (const title of ['S3-P40: food search', 'S3-P30: account hub', 'S3-P60: real Stripe checkout', 'S3-P03-P40: joined']) {
+    expect(stage3Scope({ title, files: [personal] }).ok, title).toBe(false);
+  }
 });
 
 test('every Stage 3 test id in tests/stage3 is a check in docs/stage3/03', () => {
