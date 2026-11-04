@@ -44,7 +44,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Decision_Engine {
 
-	const VERSION = '1.0';
+	const VERSION = '1.1';
 
 	const OUTCOME_SHOWN      = 'shown';
 	const OUTCOME_APPLIED    = 'applied';
@@ -128,8 +128,11 @@ class LLD_Members_Decision_Engine {
 			$out['today_step'] = self::fallback_step( $state );
 		}
 
-		// 3. Plan adjustments (Premium): R-ADJ-03 applies automatically on any night (D3-46); the others are offered
-		//    at the weekly check-in only and applied only when the member accepts (FR3-14).
+		// 3. Plan adjustments: R-ADJ-03 is a safety adjustment applied automatically on any night (D3-46) for every
+		//    member with a calorie target, Free or Premium, and never suppressed by R-SAFE-04: during the low-mood days
+		//    it carries the gentle wording, and an eating-disorder member gets the raise with no message (Owner Q68).
+		//    R-ADJ-01 and R-ADJ-02 are Premium, offered at the weekly check-in only and applied only when accepted
+		//    (FR3-14).
 		foreach ( array( 'R-ADJ-03', 'R-ADJ-01', 'R-ADJ-02' ) as $name ) {
 			$rule                  = LLD_Members_Rule_Catalogue::rule( $name );
 			$r                     = self::rule( $name, $state );
@@ -140,15 +143,25 @@ class LLD_Members_Decision_Engine {
 				}
 				continue;
 			}
-			$o = self::outcome( $name, $r );
-			if ( ! $state['premium'] ) {
+			$o     = self::outcome( $name, $r );
+			$every = ! empty( $rule['every_member'] );
+			if ( ! $state['premium'] && ! $every ) {
 				$o['outcome'] = self::OUTCOME_PREMIUM;
-			} elseif ( $out['suppressed'] ) {
+			} elseif ( $out['suppressed'] && ! $every ) {
 				$o['outcome'] = self::OUTCOME_SUPPRESSED;
 			} elseif ( ! empty( $rule['at_check_in'] ) && ! $state['at_check_in'] ) {
 				$o['outcome'] = self::OUTCOME_NOT_NOW;
 			} else {
 				$o['outcome'] = ! empty( $rule['automatic'] ) ? self::OUTCOME_APPLIED : self::OUTCOME_OFFERED;
+			}
+			if ( $every && in_array( 'eating_disorder', $state['situations'], true ) ) {
+				$o['template'] = null; // the raise only: no message, no calorie number (P3-03 ED row, TC-FR3-69-AS-01)
+				$o['text']     = null;
+				$o['notes'][]  = 'no_message_eating_disorder';
+			} elseif ( $every && $out['suppressed'] ) {
+				$o['template'] = $rule['gentle_template'];
+				$o['text']     = LLD_Members_Rule_Catalogue::fill( $rule['gentle_template'], $r['values'] );
+				$o['notes'][]  = 'gentle_low_mood';
 			}
 			$out['adjustments'][] = $o;
 		}
