@@ -18,8 +18,16 @@ function safJobFor(sha) {
   const runs = ghApi(`repos/${repo}/actions/runs?head_sha=${sha}&per_page=20`, '[.workflow_runs[] | select(.name == "ci-guards")] | sort_by(.created_at) | last | .id');
   const runId = (runs.stdout || '').trim();
   if (!runId || runId === 'null') return null;
-  const jobs = ghApi(`repos/${repo}/actions/runs/${runId}/jobs?per_page=100`, '.jobs[] | select(.name == "saf") | {conclusion, steps: [.steps[] | {name, conclusion}]}');
-  return jobs.stdout ? JSON.parse(jobs.stdout) : null;
+  // GitHub's jobs API sometimes answers a read for this old run with an incomplete job (no conclusion or steps), which
+  // failed AS-01 and AS-02 on runs whose saf job had succeeded; read it again before judging. The assertions are unchanged.
+  let saf = null;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    if (attempt) spawnSync(process.execPath, ['-e', 'setTimeout(() => {}, 3000)']);
+    const jobs = ghApi(`repos/${repo}/actions/runs/${runId}/jobs?per_page=100`, '.jobs[] | select(.name == "saf") | {conclusion, steps: [.steps[] | {name, conclusion}]}');
+    try { saf = jobs.stdout ? JSON.parse(jobs.stdout) : null; } catch { saf = null; }
+    if (saf && saf.conclusion && Array.isArray(saf.steps) && saf.steps.length) return saf;
+  }
+  return saf;
 }
 const mailerCommit = () => execSync('git log -1 --format=%H -- site/public_html/tools/api/mailer.php', { cwd: ROOT, encoding: 'utf8' }).trim();
 
