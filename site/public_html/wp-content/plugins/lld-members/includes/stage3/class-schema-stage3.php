@@ -51,6 +51,34 @@ class LLD_Members_Stage3_Schema {
 	}
 
 	/**
+	 * Columns Stage 3 adds to Stage 2 tables, by table suffix. They belong to the all-stages data model
+	 * (D3-33 for calculator_result), not the Stage 2 one, so the Stage 2 column check leaves them out
+	 * through the lld_members_stage2_columns filter. Every ensure_column() on a Stage 2 table is listed here.
+	 *
+	 * @return array<string,string[]>
+	 */
+	public static function stage2_additions() {
+		return array(
+			'calculator_result' => array( 'inputs_ct', 'result_ct' ),
+		);
+	}
+
+	/**
+	 * The Stage 2 test route's live columns without the Stage 3 additions.
+	 *
+	 * @param array<string,string[]> $columns Live columns by table suffix.
+	 * @return array<string,string[]>
+	 */
+	public static function stage2_columns( $columns ) {
+		foreach ( self::stage2_additions() as $suffix => $added ) {
+			if ( isset( $columns[ $suffix ] ) ) {
+				$columns[ $suffix ] = array_values( array_diff( $columns[ $suffix ], $added ) );
+			}
+		}
+		return $columns;
+	}
+
+	/**
 	 * Stage 3 tables whose rows go when health consent is withdrawn (data model: "deleted with the
 	 * account or consent withdrawal").
 	 *
