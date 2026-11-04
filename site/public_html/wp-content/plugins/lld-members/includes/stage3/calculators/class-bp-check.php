@@ -173,6 +173,8 @@ class LLD_Members_BP_Check {
 			'diastolic'         => null,
 			'pulse'             => null,
 			'pulse_direction'   => null,
+			'pulse_left_out'    => false,
+			'pulse_typed'       => null,
 			'average'           => null,
 			'average_unrounded' => null,
 			'average_shown'     => false,
@@ -203,6 +205,9 @@ class LLD_Members_BP_Check {
 			}
 			if ( 'pulse.note' === $key ) {
 				$text = str_replace( '{high|low}', isset( $result['pulse_direction'] ) && 'low' === $result['pulse_direction'] ? 'low' : 'high', $text );
+			}
+			if ( 'pulse.left-out' === $key ) {
+				$text = str_replace( '{n}', isset( $result['pulse_typed'] ) ? (string) $result['pulse_typed'] : '', $text );
 			}
 			$out[ $key ] = $text;
 		}
@@ -285,6 +290,12 @@ class LLD_Members_BP_Check {
 		if ( 'impossible' === $safety['level'] ) {
 			return self::refuse( $out );
 		}
+		if ( ! empty( $safety['pulse_left_out'] ) ) {
+			// D3-50: the pulse typed isn't possible. It is left out (no note, never saved) and the line says so.
+			$out['pulse']          = null;
+			$out['pulse_left_out'] = true;
+			$out['pulse_typed']    = $safety['pulse_typed'];
+		}
 		$out['urgent'] = 'urgent' === $safety['level'];
 		$label         = self::label( $safety );
 		$low           = in_array( $label, array( 'low_note', 'low_dizzy' ), true );
@@ -316,6 +327,9 @@ class LLD_Members_BP_Check {
 		if ( null !== $out['pulse'] && ( $out['pulse'] < $pulse_range[0] || $out['pulse'] > $pulse_range[1] ) ) {
 			$out['pulse_direction'] = $out['pulse'] > $pulse_range[1] ? 'high' : 'low';
 			$keys[]                 = 'pulse.note';
+		}
+		if ( ! empty( $out['pulse_left_out'] ) ) {
+			$keys[] = 'pulse.left-out'; // under the urgent alert and the result, never before them
 		}
 		if ( 'pulse' === $label ) {
 			$label = 'pulse_' . $out['pulse_direction'];

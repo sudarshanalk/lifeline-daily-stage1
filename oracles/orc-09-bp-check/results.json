@@ -3,10 +3,10 @@
   "implementation": "Python exact-fraction reference for the Blood Pressure Reading Check (FR3-50, FR3-38, FR3-46): ISH 2020 office categories, the home-average categories and the 7-day average of daily means, the urgent, pregnancy, low and pulse levels and refused readings, from the signed sheet of 3 November 2026",
   "versions": {
     "python": "3.14.6",
-    "sheet": "P3-58 v1.0 signed 2026-11-03"
+    "sheet": "P3-58 v1.1 signed 2026-11-04 (D3-50)"
   },
-  "source_hash": "16ff31854b51e7885535c3b7072a5d4f2c570da0eba816a576ac0d4e0de611de",
-  "run_at": "2026-11-04T07:17:51Z",
+  "source_hash": "3498380dc1ae3d5957796a690914fe85818de5584e49bede8a6404e963baf90d",
+  "run_at": "2026-11-04T21:18:54Z",
   "results": [
     {
       "fixture_id": "FX-BP-HOME-01",
@@ -122,7 +122,8 @@
           "category.normal-low.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -137,7 +138,8 @@
           "category.normal-low.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -152,7 +154,8 @@
           "category.normal.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -166,7 +169,8 @@
           "pregnancy.same-day"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -180,7 +184,8 @@
           "pregnancy.urgent"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -194,7 +199,8 @@
           "pregnancy.urgent"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -206,6 +212,106 @@
         "urgent": false,
         "wording_keys": [
           "pregnancy.neutral"
+        ],
+        "average": null,
+        "average_shown": false,
+        "pulse_left_out": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-PULSE-01",
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "urgent",
+        "urgent": true,
+        "wording_keys": [
+          "urgent.alert",
+          "category.grade2.headline",
+          "category.grade2.body",
+          "pulse.left-out"
+        ],
+        "average": null,
+        "average_shown": false,
+        "pulse_left_out": true
+      }
+    },
+    {
+      "fixture_id": "FX-BP-PULSE-02",
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal.headline",
+          "category.normal.body",
+          "pulse.left-out"
+        ],
+        "average": null,
+        "average_shown": false,
+        "pulse_left_out": true
+      }
+    },
+    {
+      "fixture_id": "FX-BP-PULSE-03",
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal.headline",
+          "category.normal.body",
+          "pulse.left-out"
+        ],
+        "average": null,
+        "average_shown": false,
+        "pulse_left_out": true
+      }
+    },
+    {
+      "fixture_id": "FX-BP-PULSE-04",
+      "expected": {
+        "refused": false,
+        "category": null,
+        "warning_level": "pregnancy_urgent",
+        "urgent": true,
+        "wording_keys": [
+          "pregnancy.urgent",
+          "pulse.left-out"
+        ],
+        "average": null,
+        "average_shown": false,
+        "pulse_left_out": true
+      }
+    },
+    {
+      "fixture_id": "FX-BP-PULSE-05",
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "pulse_high",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal.headline",
+          "category.normal.body",
+          "pulse.note"
+        ],
+        "average": null,
+        "average_shown": false,
+        "pulse_left_out": false
+      }
+    },
+    {
+      "fixture_id": "FX-BP-PULSE-06",
+      "expected": {
+        "refused": true,
+        "category": null,
+        "warning_level": "refused",
+        "urgent": false,
+        "wording_keys": [
+          "refused.impossible"
         ],
         "average": null,
         "average_shown": false
@@ -223,7 +329,8 @@
           "category.normal.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -238,7 +345,8 @@
           "category.normal.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -253,7 +361,8 @@
           "category.high-normal.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -268,7 +377,8 @@
           "category.high-normal.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -283,7 +393,8 @@
           "category.high-normal.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -298,7 +409,8 @@
           "category.grade1.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -313,7 +425,8 @@
           "category.grade1.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -328,7 +441,8 @@
           "category.grade1.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -343,7 +457,8 @@
           "category.grade2.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -358,7 +473,8 @@
           "category.grade2.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -373,7 +489,8 @@
           "category.grade2.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -388,7 +505,8 @@
           "category.grade2.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -431,7 +549,8 @@
           "category.normal.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -447,7 +566,8 @@
           "pulse.note"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -463,7 +583,8 @@
           "age80.note"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -479,7 +600,8 @@
           "category.grade2.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -495,7 +617,8 @@
           "category.grade2.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -511,7 +634,8 @@
           "category.grade2.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {
@@ -527,7 +651,8 @@
           "category.grade2.body"
         ],
         "average": null,
-        "average_shown": false
+        "average_shown": false,
+        "pulse_left_out": false
       }
     },
     {

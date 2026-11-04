@@ -48,7 +48,8 @@ class LLD_Members_HR_Zones {
 		'talk.moderate'         => 'You can talk but not sing',
 		'talk.hard'             => 'Only a few words at a time',
 		'result.weekly'         => "Most of your weekly 150 minutes should be in Moderate; Hard sessions are for when you're used to exercise.",
-		'result.hrmax'          => 'Your estimated maximum is about {HRmax}. Formulas like this can be 10 to 12 beats out for an individual, so use how you feel (the talk test) as the final guide.',
+		'result.hrmax'          => 'Your estimated maximum is about {HRmax} beats a minute. Formulas like this can be 10 to 12 beats out for an individual, so use how you feel (the talk test) as the final guide.', // v1.1, D3-51
+		'result.hrmax-measured' => 'These zones use your measured maximum of {HRmax} beats a minute.', // v1.1, D3-51
 		'safety.medicine'       => "Beta-blockers and some other medicines lower your heart rate, so heart-rate zones don't apply. Talk to your doctor about exercise, and use the talk test instead: moderate means you can talk but not sing.",
 		'safety.heartCondition' => 'Ask your doctor or cardiac rehab team for your safe heart-rate range.',
 		'safety.pregnancy'      => 'In pregnancy, use the talk test rather than heart-rate targets, and check with your midwife.',
@@ -200,7 +201,7 @@ class LLD_Members_HR_Zones {
 			$out['notes'][] = 'bloodPressure';
 		}
 		$out['fill']     = array( 'HRmax' => (string) $max );
-		$out['messages'] = array( 'talk.easy', 'talk.moderate', 'talk.hard', 'result.weekly', 'result.hrmax' );
+		$out['messages'] = array( 'talk.easy', 'talk.moderate', 'talk.hard', 'result.weekly', null === $measured ? 'result.hrmax' : 'result.hrmax-measured' ); // D3-51
 		if ( $out['notes'] ) {
 			$out['messages'][] = 'quoted.intenseExercise';
 		}

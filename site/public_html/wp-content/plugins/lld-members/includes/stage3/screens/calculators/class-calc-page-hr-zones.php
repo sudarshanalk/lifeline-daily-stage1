@@ -179,7 +179,7 @@ class LLD_Members_Calc_Page_HR_Zones {
 		}
 		$html .= '</tbody></table>';
 		$html .= $p::para( $w, 'result.weekly' );
-		$html .= $p::para( $w, 'result.hrmax', $fill, 'lld-hint' );
+		$html .= $p::para( $w, empty( $r['hrMaxEstimated'] ) ? 'result.hrmax-measured' : 'result.hrmax', $fill, 'lld-hint' ); // D3-51
 		$html .= $p::para( $w, 'quoted.workoutSafety', array(), 'lld-calc-note' );
 		return $html;
 	}

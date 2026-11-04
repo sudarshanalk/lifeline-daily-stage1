@@ -35,6 +35,15 @@ class LLD_Members_Calc_Page_Sleep_Stress {
 		'q7' => 'the question about how sleep affects your day', 'q8' => 'your hours of sleep',
 	);
 
+	/**
+	 * Lines of Stage 2 Responses 1 and 3 that are about starting the track, left out on the calculator page only
+	 * (D3-52, P3-5A v1.1); the Stage 2 track-start screens keep them. Each must be a whole line of the quoted text.
+	 */
+	const NOT_ON_PAGE = array(
+		"We won't start Sleep and Stress today. Your account and everything else on Lifeline Daily are still here for you.",
+		"You can still start the track if you'd like to.",
+	);
+
 	/** Track week => what it covers (sheet 3.3). */
 	const WEEKS = array( 1 => 'Week 1: sleep basics', 2 => 'Week 2: stress habits', 3 => 'Week 3: sleep routine' );
 
@@ -43,6 +52,7 @@ class LLD_Members_Calc_Page_Sleep_Stress {
 		'q6_hint'   => 'Answer this only if you said Yes to the question above.',
 		'q8_hint'   => 'Your usual sleep, from 0 to 16 hours.',
 		'track'     => 'In the Sleep and Stress track:',
+		'trackLink' => 'The Sleep and Stress track',
 		'dashboard' => 'Back to my dashboard',
 	);
 
@@ -171,7 +181,7 @@ class LLD_Members_Calc_Page_Sleep_Stress {
 		$html = '';
 		foreach ( preg_split( '/\r\n|\n/', $text ) as $line ) {
 			$line = trim( $line );
-			if ( '' === $line || '[Continue]' === $line ) {
+			if ( '' === $line || '[Continue]' === $line || in_array( $line, self::NOT_ON_PAGE, true ) ) {
 				continue;
 			}
 			if ( '[Back to my dashboard]' === $line ) {
@@ -214,7 +224,23 @@ class LLD_Members_Calc_Page_Sleep_Stress {
 		if ( '' === $items ) {
 			return '';
 		}
-		return '<div class="lld-calc-track" data-lld-track="' . esc_attr( implode( ',', array_map( 'intval', $r['trackWeeks'] ) ) ) . '"><p><a href="' . esc_url( home_url( '/programmes/sleep-stress/' ) ) . '">' . esc_html( self::UI['track'] ) . '</a></p><ul>' . $items . '</ul></div>';
+		// The weeks as text in the result; the link is below the result (after_result), with no price (D3-52).
+		return '<div class="lld-calc-track" data-lld-track="' . esc_attr( implode( ',', array_map( 'intval', $r['trackWeeks'] ) ) ) . '"><p>' . esc_html( self::UI['track'] ) . '</p><ul>' . $items . '</ul></div>';
+	}
+
+	/**
+	 * Below the result (D3-52, P3-5A v1.1): the link to the Sleep and Stress track, only when the result offers the
+	 * track (never after a self-harm Yes, which is quiet). No price or upsell in or beside the result (FR2-16).
+	 *
+	 * @param array $r   Engine result.
+	 * @param array $ctx Context.
+	 */
+	public static function after_result( array $r, array $ctx ) {
+		unset( $ctx );
+		if ( empty( $r['trackOffer'] ) || empty( $r['trackWeeks'] ) || ! empty( $r['response1'] ) ) {
+			return '';
+		}
+		return '<p class="lld-calc-onward" data-lld-onward="sleep-stress"><a href="' . esc_url( home_url( '/programmes/sleep-stress/' ) ) . '">' . esc_html( self::UI['trackLink'] ) . '</a></p>';
 	}
 
 	/**

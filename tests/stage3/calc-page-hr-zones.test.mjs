@@ -9,6 +9,18 @@ const base = { age: '40', rhr: '60', measuredHrMax: '', heartMedicine: 'no', hea
 const signed = (key) => JSON.parse(php(`echo json_encode(${E}::wording(['${key}']));`))[key];
 const zoneRow = (html, zone) => textOf(html.match(new RegExp(`<tr data-lld-zone="${zone}"[\\s\\S]*?</tr>`))[0]);
 
+test('TC-FR3-53-AS-01 (page, D3-51): the maximum line says estimated or measured, with the unit', () => {
+  const est = textOf(run(P, E, base).html);
+  expect(est).toContain("Your estimated maximum is about 180 beats a minute.");
+  expect(est).not.toContain('measured maximum of');
+  const meas = run(P, E, { ...base, measuredHrMax: '185' });
+  expect(meas.result.hrMaxEstimated).toBe(false);
+  const text = textOf(meas.html);
+  expect(text).toContain(signed('result.hrmax-measured').replace('{HRmax}', '185'));
+  expect(text).toContain('These zones use your measured maximum of 185 beats a minute.');
+  expect(text).not.toContain('estimated maximum');
+});
+
 test('TC-FR3-53-AS-01 (page): the three zones show the engine bpm with the signed talk-test lines', () => {
   // HZ-01: heart-rate reserve.
   const out = run(P, E, base);
@@ -32,7 +44,7 @@ test('TC-FR3-53-AS-01 (page): the three zones show the engine bpm with the signe
   const measured = run(P, E, { ...base, measuredHrMax: '190' });
   expect(measured.result.hrMax).toBe(190);
   expect(zoneRow(measured.html, 'hard')).toContain('138–176');
-  expect(textOf(measured.html)).toContain('about 190.');
+  expect(textOf(measured.html)).toContain('These zones use your measured maximum of 190 beats a minute.'); // D3-51
   for (const o of [out, pct, measured]) expect(o.html).not.toMatch(/\{|\}|\|/);
 });
 

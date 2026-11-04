@@ -1216,6 +1216,9 @@ class LLD_Members_Stage3_API {
 				continue;
 			}
 			$checked = self::check( $rule, $value );
+			if ( null === $checked && 'value_3' === $name && isset( $params['reading_type'] ) && 'blood_pressure' === $params['reading_type'] && is_numeric( $value ) ) {
+				$checked = (float) $value; // D3-50: any impossible pulse (a negative one too) is left out at save, never refused
+			}
 			if ( null === $checked ) {
 				return self::refuse( 400, 'Check the value of ' . $name . '.' );
 			}
@@ -1235,6 +1238,9 @@ class LLD_Members_Stage3_API {
 			$ranges = self::reading_ranges();
 			if ( '' !== $type && isset( $ranges[ $type ] ) ) {
 				foreach ( $ranges[ $type ] as $field => $range ) {
+					if ( 'blood_pressure' === $type && 'value_3' === $field ) {
+						continue; // D3-50: an impossible pulse is left out by warning_level() at save, never refused
+					}
 					if ( isset( $probe[ $field ] ) && is_numeric( $probe[ $field ] ) && ( $probe[ $field ] < $range[0] || $probe[ $field ] > $range[1] ) ) {
 						return self::refuse( 400, 'Check the numbers.' );
 					}

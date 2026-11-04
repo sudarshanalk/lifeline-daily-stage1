@@ -273,7 +273,8 @@ test('TC-FR3-46-AS-01', () => {
   expect(r[9]).toMatchObject({ level: 'impossible', key: 'bp-check.refused.impossible' });
   expect(r[10]).toEqual({ level: 'caution', key: 'bp-check.low.dizzy', message: BP['low.dizzy'], emergency_numbers: true }); // D3-17
   expect(r[11]).toMatchObject({ level: 'caution', message: BP['pulse.note'].replace('{high|low}', 'low') }); // D3-20
-  expect(r[12]).toMatchObject({ level: 'impossible', key: 'bp-check.refused.impossible' }); // pulse outside 30-220 (P3-58 §4.4)
+  // A pulse outside 30-220 is left out and the reading checked without it (P3-58 v1.1 §4.4, D3-50): 120/80 is no warning.
+  expect(r[12]).toMatchObject({ level: 'none', key: null, pulse_left_out: true, pulse_typed: '230', pulse_message: "We left out the pulse: 230 isn't possible for a resting pulse. Please check it and add it again." });
   // No category wording in pregnancy (D3-19): a low reading gives no note, but feeling dizzy still gets its line.
   expect(r[14]).toEqual({ level: 'none', key: null, message: null, emergency_numbers: false });
   expect(r[15]).toMatchObject({ level: 'caution', key: 'bp-check.low.dizzy', emergency_numbers: true });
@@ -301,7 +302,7 @@ test('TC-FR3-46-AS-03', () => {
   const L = run('return LLD_Members_Stage3_Safety::LEVELS;');
   expect(L.blood_pressure).toMatchObject({ impossible: { sys: [60, 260], dia: [30, 160], gap: 10 }, urgent: { sys: 180, dia: 120 }, urgent_pregnancy: { sys: 160, dia: 110 }, same_day_pregnancy: { sys: 140, dia: 90 }, low: { sys: 90, dia: 60 }, pulse: [40, 120], pulse_impossible: [30, 220] });
   const BP = run('return LLD_Members_Stage3_Safety::BP_MESSAGES;');
-  expect(Object.keys(BP).sort()).toEqual(['category.normal-low.body', 'low.dizzy', 'pregnancy.same-day', 'pregnancy.urgent', 'pulse.note', 'refused.impossible', 'urgent.alert']);
+  expect(Object.keys(BP).sort()).toEqual(['category.normal-low.body', 'low.dizzy', 'pregnancy.same-day', 'pregnancy.urgent', 'pulse.left-out', 'pulse.note', 'refused.impossible', 'urgent.alert']);
   for (const [key, text] of Object.entries(BP)) {
     expect(bpApproval.copy_hashes[key], key).toMatch(/^[0-9a-f]{64}$/);
     expect(createHash('sha256').update(text, 'utf8').digest('hex'), key).toBe(bpApproval.copy_hashes[key]);

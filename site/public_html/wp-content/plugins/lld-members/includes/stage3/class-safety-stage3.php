@@ -71,6 +71,7 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 		'low.dizzy'                => "If you feel faint or dizzy now, sit or lie down and ask someone to stay with you. If it doesn't pass in a few minutes, or you have chest pain or trouble breathing, call your local emergency number.",
 		'pulse.note'               => "Your pulse is {high|low} for a resting reading. If this is usual for you, fine; if it's new, or you feel unwell, dizzy or breathless, contact your doctor.",
 		'refused.impossible'       => "Please check the numbers: that reading isn't possible. The top number is usually 30 to 60 higher than the bottom one.",
+		'pulse.left-out'           => "We left out the pulse: {n} isn't possible for a resting pulse. Please check it and add it again.", // D3-50, P3-58 v1.1
 	);
 
 	/**
@@ -244,11 +245,26 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 		if ( ! $L || null === $v1 ) {
 			return self::level( 'impossible', 'blood_pressure' === $reading_type ? 'bp-check.refused.impossible' : 'check_the_number' );
 		}
+		// D3-50 (P3-58 v1.1): a pulse outside 30-220 never refuses a reading. The two numbers are checked without it
+		// (the urgent alert first), and the result says the pulse was left out, with the line to show and the number
+		// typed (never stored). Impossible numbers are still refused, whatever the pulse.
+		// The pulse is judged in whole beats, half-up, as the calculator rounds it (220.4 is 220, a possible pulse).
+		$whole_pulse = null === $v3 ? null : floor( $v3 + 0.5 );
+		if ( 'blood_pressure' === $reading_type && null !== $whole_pulse && ( $whole_pulse < $L['pulse_impossible'][0] || $whole_pulse > $L['pulse_impossible'][1] ) ) {
+			$without = array_diff_key( $values, array_flip( array( 'value_3', 'pulse', 'effort' ) ) );
+			$result  = self::warning_level( $reading_type, $without, $flags );
+			if ( 'impossible' !== $result['level'] ) {
+				$typed                    = floor( $v3 ) === (float) $v3 ? (string) (int) $v3 : (string) $v3;
+				$result['pulse_left_out'] = true;
+				$result['pulse_typed']    = $typed;
+				$result['pulse_message']  = str_replace( '{n}', $typed, self::BP_MESSAGES['pulse.left-out'] );
+			}
+			return $result;
+		}
 		$pregnant = self::flag( $flags, 'pregnancy' );
 		switch ( $reading_type ) {
 			case 'blood_pressure':
-				if ( null === $v2 || $v1 < $L['impossible']['sys'][0] || $v1 > $L['impossible']['sys'][1] || $v2 < $L['impossible']['dia'][0] || $v2 > $L['impossible']['dia'][1] || $v2 > $v1 - $L['impossible']['gap']
-					|| ( null !== $v3 && ( $v3 < $L['pulse_impossible'][0] || $v3 > $L['pulse_impossible'][1] ) ) ) {
+				if ( null === $v2 || $v1 < $L['impossible']['sys'][0] || $v1 > $L['impossible']['sys'][1] || $v2 < $L['impossible']['dia'][0] || $v2 > $L['impossible']['dia'][1] || $v2 > $v1 - $L['impossible']['gap'] ) {
 					return self::level( 'impossible', 'bp-check.refused.impossible' );
 				}
 				$u = $pregnant ? $L['urgent_pregnancy'] : $L['urgent'];

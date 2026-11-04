@@ -256,7 +256,8 @@ class LLD_Members_Calculator_Pages {
 		if ( $valid ) {
 			$values = array_merge( $values, self::posted() );
 			$inputs = $page::inputs( $values, $ctx );
-			$result = LLD_Members_Stage3_API::run_page_calculator( $page::ENGINE, $inputs, $member_id );
+			// A page may name a problem with an answer before the engine runs (the metabolic check's 7-day average).
+			$result = isset( $inputs['_error'] ) ? array( 'error' => (string) $inputs['_error'] ) : LLD_Members_Stage3_API::run_page_calculator( $page::ENGINE, $inputs, $member_id );
 			if ( isset( $result['error'] ) ) {
 				$error  = $page::error_text( (string) $result['error'] );
 				$result = null;
@@ -285,6 +286,10 @@ class LLD_Members_Calculator_Pages {
 				$html .= self::save_block( $slug, $page, $result, $values, $ctx, $notice );
 			}
 			$html .= '</section>';
+			if ( ! $quiet && method_exists( $page, 'after_result' ) ) {
+				// Below the result, never inside it: a link onward (the Sleep and Stress track, D3-52), never a price.
+				$html .= $page::after_result( $result, $ctx );
+			}
 			if ( ! $quiet ) {
 				$html .= self::history_block( $page, $ctx );
 			}

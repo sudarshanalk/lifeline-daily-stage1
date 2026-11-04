@@ -1,0 +1,166 @@
+{
+  "group": "Impossible pulse left out (D3-50)",
+  "tool": "bp-check",
+  "fixtures": [
+    {
+      "id": "FX-BP-PULSE-01",
+      "purpose": "190/125 pulse 225: urgent first, pulse left out",
+      "inputs": {
+        "systolic": 190,
+        "diastolic": 125,
+        "mode": "single",
+        "pregnant": "no",
+        "pulse": 225
+      },
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "urgent",
+        "urgent": true,
+        "wording_keys": [
+          "urgent.alert",
+          "category.grade2.headline",
+          "category.grade2.body",
+          "pulse.left-out"
+        ],
+        "average": null,
+        "pulse_left_out": true
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-35 (v1.1, D3-50)"
+    },
+    {
+      "id": "FX-BP-PULSE-02",
+      "purpose": "128/82 pulse 225: Normal, pulse left out",
+      "inputs": {
+        "systolic": 128,
+        "diastolic": 82,
+        "mode": "single",
+        "pregnant": "no",
+        "pulse": 225
+      },
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal.headline",
+          "category.normal.body",
+          "pulse.left-out"
+        ],
+        "average": null,
+        "pulse_left_out": true
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-36 (v1.1, D3-50)"
+    },
+    {
+      "id": "FX-BP-PULSE-03",
+      "purpose": "128/82 pulse 25: Normal, pulse left out",
+      "inputs": {
+        "systolic": 128,
+        "diastolic": 82,
+        "mode": "single",
+        "pregnant": "no",
+        "pulse": 25
+      },
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal.headline",
+          "category.normal.body",
+          "pulse.left-out"
+        ],
+        "average": null,
+        "pulse_left_out": true
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-37 (v1.1, D3-50)"
+    },
+    {
+      "id": "FX-BP-PULSE-04",
+      "purpose": "Pregnant 165/112 pulse 230: pregnancy urgent first, pulse left out",
+      "inputs": {
+        "systolic": 165,
+        "diastolic": 112,
+        "mode": "single",
+        "pregnant": "yes",
+        "pulse": 230
+      },
+      "expected": {
+        "refused": false,
+        "category": null,
+        "warning_level": "pregnancy_urgent",
+        "urgent": true,
+        "wording_keys": [
+          "pregnancy.urgent",
+          "pulse.left-out"
+        ],
+        "average": null,
+        "pulse_left_out": true
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-38 (v1.1, D3-50)"
+    },
+    {
+      "id": "FX-BP-PULSE-05",
+      "purpose": "128/82 pulse 220: Normal + high-pulse note (220 is possible)",
+      "inputs": {
+        "systolic": 128,
+        "diastolic": 82,
+        "mode": "single",
+        "pregnant": "no",
+        "pulse": 220
+      },
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "pulse_high",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal.headline",
+          "category.normal.body",
+          "pulse.note"
+        ],
+        "average": null,
+        "pulse_left_out": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-39 (v1.1, D3-50)"
+    },
+    {
+      "id": "FX-BP-PULSE-06",
+      "purpose": "400/20 pulse 225: refused, the numbers decide",
+      "inputs": {
+        "systolic": 400,
+        "diastolic": 20,
+        "mode": "single",
+        "pregnant": "no",
+        "pulse": 225
+      },
+      "expected": {
+        "refused": true,
+        "category": null,
+        "warning_level": "refused",
+        "urgent": false,
+        "wording_keys": [
+          "refused.impossible"
+        ],
+        "average": null,
+        "pulse_left_out": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-40 (v1.1, D3-50)"
+    }
+  ]
+}

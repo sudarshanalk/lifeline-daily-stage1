@@ -1,10 +1,10 @@
 {
   "approval_id": "APR-BP-CHECK-2026-11-03",
   "tool_slug": "bp-check",
-  "version_hash": "fd27d56f0029876c018ca540e6ce8ee83a129c004c350af5333e65966f026729",
-  "engine_name": "Blood Pressure Reading Check: ISH 2020 office categories for a single reading (Normal < 130 and < 85; High-normal 130-139 and/or 85-89; Grade 1 140-159 and/or 90-99; Grade 2 >= 160 and/or >= 100, the higher number deciding), ISH home thresholds for a 7-day average of logged readings (within range < 135 and < 85; above threshold >= 135 or >= 85; well above >= 155 or >= 95; daily means first, then the mean of days, at least 3 days, rounded half-up), a frozen urgent level at systolic >= 180 or diastolic >= 120 on any single reading, pregnancy levels (>= 160 or >= 110 urgent; >= 140 or >= 90 same-day; no categories in pregnancy), a low note at systolic < 90 or diastolic < 60, a resting-pulse note at < 40 or > 120, and refusal of impossible readings",
+  "version_hash": "c6aba377d4cf008c21579062fa06719933686a858759794a4560db32357b4d5d",
+  "engine_name": "Blood Pressure Reading Check: ISH 2020 office categories for a single reading (Normal < 130 and < 85; High-normal 130-139 and/or 85-89; Grade 1 140-159 and/or 90-99; Grade 2 >= 160 and/or >= 100, the higher number deciding), ISH home thresholds for a 7-day average of logged readings (within range < 135 and < 85; above threshold >= 135 or >= 85; well above >= 155 or >= 95; daily means first, then the mean of days, at least 3 days, rounded half-up), a frozen urgent level at systolic >= 180 or diastolic >= 120 on any single reading, pregnancy levels (>= 160 or >= 110 urgent; >= 140 or >= 90 same-day; no categories in pregnancy), a low note at systolic < 90 or diastolic < 60, a resting-pulse note at < 40 or > 120, and refusal of impossible readings (a pulse outside 30-220 is left out with the pulse line, never refused: version 1.1, D3-50)",
   "intended_use": "Free educational check for adults that places a single blood pressure reading, or a signed-in member's 7-day home average, in the ISH 2020 categories with plain guidance, and shows the frozen urgent-care wording before anything else when a reading reaches the urgent level. The urgent wording is free for everyone, always, on the calculator and on the logging screen. It does not diagnose high blood pressure; a single reading is a snapshot and nothing here replaces a doctor's assessment.",
-  "eligibility": "Adults aged 18 to 99. Pregnant or not sure: the pregnancy levels and wording are shown and categories are not shown (D3-19). Readings outside systolic 60-260, diastolic 30-160, diastolic not at least 10 below systolic, or pulse outside 30-220 are refused with no category. Members taking blood pressure medicine see the treated-reading wording; the category is unchanged. The 7-day average needs readings on at least 3 different days in the 7 calendar days ending today.",
+  "eligibility": "Adults aged 18 to 99. Pregnant or not sure: the pregnancy levels and wording are shown and categories are not shown (D3-19). Readings outside systolic 60-260, diastolic 30-160, or diastolic not at least 10 below systolic are refused with no category; a pulse outside 30-220 is left out (not saved) and the reading checked as usual (D3-50). Members taking blood pressure medicine see the treated-reading wording; the category is unchanged. The 7-day average needs readings on at least 3 different days in the 7 calendar days ending today.",
   "sources": [
     "Unger T, et al. 2020 International Society of Hypertension global hypertension practice guidelines. Hypertension 2020;75:1334-57 and J Hypertens 2020;38:982-1004 (ISH 2020; categories, home thresholds and the urgent level; decision I-08).",
     "Whelton PK, et al. 2017 ACC/AHA guideline. Hypertension 2018;71:e13-115; Jones DW, et al. 2025 AHA/ACC guideline. Circulation 2025 (ACC/AHA 2017, reaffirmed 2025: hypertensive crisis > 180/120; shown in the guidelines-differ note).",
@@ -26,7 +26,7 @@
     "Pulse never changes the category.",
     "Nothing here replaces a doctor's assessment; the member's own doctor's advice comes first."
   ],
-  "regulatory_statement": "Approved by the owner as clinical reviewer on 3 November 2026 (NFR3-14; D3-16 to D3-21). General health information, not a diagnosis or a medical device. The urgent-care level and its exact text are frozen by CI (FR3-46 AS-03) and are never paid for.",
+  "regulatory_statement": "Approved by the owner as clinical reviewer on 3 November 2026 (NFR3-14; D3-16 to D3-21); version 1.1 approved on 4 November 2026 (D3-50). General health information, not a diagnosis or a medical device. The urgent-care level and its exact text are frozen by CI (FR3-46 AS-03) and are never paid for.",
   "licence": "Lifeline Daily's own implementation of the published ISH 2020 categories and thresholds, with NICE NG133 / ISSHP pregnancy levels.",
   "copy_hashes": {
     "category.normal.headline": "a7248eeb45eb1ce247f81693283e22e8b39e8a50890cecd22d02e75025547d90",
@@ -55,7 +55,8 @@
     "refused.impossible": "e9cf1f54fbb2e90461218b3f61d05115b868154e9889513149bd2cdf18de38e6",
     "age80.note": "14de332d4e5f0ed32c850f6f8112b50cc5033976e2afedd3e3c691d53ec58128",
     "medicine.note": "a48b473c85572dca6f13c6d209f22932c97e1e8107ca9bd30b1a1ac94920015e",
-    "about.guidelines-differ": "5041aebbf05591b30097dd986f4f49a40a0937ddd79d9fba89b7499879fffca9"
+    "about.guidelines-differ": "5041aebbf05591b30097dd986f4f49a40a0937ddd79d9fba89b7499879fffca9",
+    "pulse.left-out": "bcd3df8e4d7e69e5bd12caa1a5f4c1b0561e34c782ed1c1ddde3ef46552f4611"
   },
   "oracle_report": "oracles/orc-09-bp-check/results.json",
   "decisions_ratified": [
@@ -64,13 +65,14 @@
     "D3-18",
     "D3-19",
     "D3-20",
-    "D3-21"
+    "D3-21",
+    "D3-50"
   ],
   "clinical_signoff": {
     "name": "Product owner (sudarshanalk), acting as clinical reviewer",
-    "date": "2026-11-03",
+    "date": "2026-11-04",
     "decision": "approved",
-    "notes": "The warning levels (D3-16 to D3-21: urgent, low, home average, pregnancy, pulse and 7-day average) were approved as drafted on 3 November 2026 after the guideline summary, together with the ISH 2020 categories, the exact wording and the 34-case fixture table (Signoff-P3-58-Blood-Pressure-Check-and-Warning-Levels.md)."
+    "notes": "The warning levels (D3-16 to D3-21: urgent, low, home average, pregnancy, pulse and 7-day average) were approved as drafted on 3 November 2026 after the guideline summary, together with the ISH 2020 categories, the exact wording and the 34-case fixture table (Signoff-P3-58-Blood-Pressure-Check-and-Warning-Levels.md). Version 1.1 approved on 4 November 2026 ('2a A + 2b A', in chat with the lead session): D3-50, Owner_Questions 89 = A. A pulse outside 30-220 is left out and the reading checked as usual, with the line \"We left out the pulse: {n} isn't possible for a resting pulse. Please check it and add it again.\"; fixtures BP-35 to BP-40 (fixtures/bp-check/pulse-left-out.json)."
   },
   "review_date": "2026-11-03",
   "next_review_date": "2027-11-03"
