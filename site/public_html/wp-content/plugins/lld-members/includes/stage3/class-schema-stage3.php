@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Stage3_Schema {
 
-	const VERSION = 3;
+	const VERSION = 4;
 
 	/**
 	 * Every Stage 3 table suffix, in creation order. Stage 2's all_suffixes() is left as it is; the
@@ -448,6 +448,9 @@ class LLD_Members_Stage3_Schema {
 		// Version 2 (P3-40): the food search key. Later packages add ensure_column() and ensure_key() lines
 		// here and leave every Stage 2 statement as it is.
 		self::ensure_key( 'foods', 'food_search', 'FULLTEXT KEY food_search (name, search_names)' );
+		// Version 4 (P3-5B): Stage 3 calculators keep the answers, sealed, on the Stage 2 saved-result row (D3-33).
+		// Stage 1 tools leave this column empty (D51).
+		self::ensure_column( 'calculator_result', 'inputs_ct', 'TEXT NULL' );
 	}
 
 	/**
