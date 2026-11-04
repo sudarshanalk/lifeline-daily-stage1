@@ -551,16 +551,24 @@ class LLD_Members_Personal {
 					return;
 				}
 				if ( ! in_array( $harm, array( 'yes', 'no' ), true ) || ! in_array( $panic, array( 'yes', 'no' ), true ) || ! in_array( $mood, array( 'yes', 'no' ), true ) ) {
-					self::layout( 'Before you start', self::screen_form( 'Answer all three questions before continuing.' ) );
+					self::layout( 'Before you start', self::screen_form( 'Please answer all three questions to continue.' ) );
 					return;
 				}
 				self::session_mark( $member_id, 'lld_pass', time() + 10 * MINUTE_IN_SECONDS );
+				// The approved wording (screening-sleep-and-stress.md, Owner_Questions 93 = B): Response 2 and Response 3, both
+				// together when both are yes (Response 4), then one "Continue". All three no: no extra message (Response 5).
 				$main = '<h1>Before you start</h1>';
 				if ( 'yes' === $panic ) {
-					$main .= '<p class="lld-caution">Panic attacks can have a physical cause. See a doctor before you start this track.</p>';
+					$main .= '<div class="lld-caution"><h2>Please talk to a doctor about panic attacks</h2>';
+					$main .= '<p>Panic attacks can be very frightening. A doctor can check what\'s causing them and talk to you about treatments and support that can help. This track offers general sleep and stress habits and isn\'t a treatment for panic attacks.</p></div>';
 				}
 				if ( 'yes' === $mood ) {
-					$main .= '<p class="lld-caution">Low mood that lasts this long is worth a doctor\'s visit. See a doctor, then come back and continue.</p>';
+					$main .= '<div class="lld-caution"><h2>Please talk to a doctor about your mood</h2>';
+					$main .= '<p>Feeling low most days for 2 weeks or more is worth talking to a doctor about. They can help you find out what\'s going on and what support is available. This track offers general sleep and stress habits and isn\'t a treatment for low mood or depression.</p>';
+					$main .= '<p>If things get worse, or you have thoughts of harming yourself, get help straight away: call your local emergency number or visit <a href="https://findahelpline.com">findahelpline.com</a>.</p></div>';
+				}
+				if ( 'yes' === $panic || 'yes' === $mood ) {
+					$main .= '<p>You can still start the track if you\'d like to.</p>';
 				}
 				$main .= '<form method="post" class="lld-form">';
 				$main .= wp_nonce_field( 'lld_screen', 'lld_screen_nonce', true, false );
@@ -575,13 +583,19 @@ class LLD_Members_Personal {
 	}
 
 	/**
-	 * The self-harm response (FR2-38, SCR-08). Never shortened, hidden or skippable.
+	 * The self-harm response (FR2-38, SCR-08). Never shortened, hidden or skippable. The approved wording of
+	 * screening-sleep-and-stress.md Response 1 (Owner_Questions 93 = B, 3 Nov 2026), all shown at once in the red banner;
+	 * the helpline button and "Back to my dashboard" are the only actions, and no track is offered.
 	 */
 	private static function emergency_html() {
 		$main  = '<h1>Before you start</h1>';
-		$main .= '<div class="lld-safety" role="alert"><h2>If you are in danger now, call your local emergency number</h2>';
-		$main .= '<p>Examples: 999 UK, 911 US and Canada, 112 EU and India, 000 Australia.</p>';
-		$main .= '<p><a href="https://findahelpline.com">Find support in your country</a></p></div>';
+		$main .= '<div class="lld-safety" role="alert"><h2>Please get support now</h2>';
+		$main .= '<p><strong>If you are in danger now, call your local emergency number</strong>, for example 999 in the UK, 911 in the US and Canada, 112 in the EU and India, or 000 in Australia.</p>';
+		$main .= '<p>To find a free, confidential helpline in your country, by phone, text or chat:</p>';
+		$main .= '<p>' . lld_button( array( 'label' => 'Find support in your country', 'href' => 'https://findahelpline.com' ) ) . '</p>';
+		$main .= '<p>Thank you for telling us. You don\'t have to cope with these thoughts alone, and talking to someone can help. A doctor can also help you find the right support.</p>';
+		$main .= '<p>We won\'t start Sleep and Stress today. Your account and everything else on Lifeline Daily are still here for you.</p>';
+		$main .= '<p><a href="' . esc_url( home_url( '/members/home/' ) ) . '">Back to my dashboard</a></p></div>';
 		return $main;
 	}
 
@@ -1787,16 +1801,26 @@ class LLD_Members_Personal {
 	}
 
 	/**
+	 * The Sleep and Stress safety check (FR2-38, SCR-08) in the approved wording of
+	 * 02 Content/Programme content/safety/screening-sleep-and-stress.md (Owner_Questions 93 = B, 3 Nov 2026), the same
+	 * text the Stage 3 Sleep and Stress Check uses. The hint beside "Continue" shows while the button is disabled.
+	 *
 	 * @param string $error Error text.
 	 */
 	private static function screen_form( $error ) {
 		$main  = '<h1>Before you start</h1>' . self::fail( $error );
+		$main .= '<h2>A quick safety check</h2>';
+		$main .= '<p>Before you start Sleep and Stress, we ask three short questions. They help us make sure this track is right for you today, and point you to the right support if it isn\'t.</p>';
+		$main .= '<p>Your answers are used only on this screen. <strong>We don\'t store them.</strong> We\'ll ask again each time you start this track.</p>';
 		$main .= '<form method="post" class="lld-form" data-lld-screen>';
 		$main .= wp_nonce_field( 'lld_screen', 'lld_screen_nonce', true, false );
-		$main .= self::yes_no( 'lld_harm', 'Are you currently having thoughts of harming yourself?' );
-		$main .= self::yes_no( 'lld_panic', 'Are you currently having panic attacks?' );
-		$main .= self::yes_no( 'lld_mood', 'Has your mood been very low for most of the day, most days, for two weeks or more?' );
+		$main .= self::yes_no( 'lld_harm', 'Have you had any thoughts of harming yourself or ending your life?' );
+		$main .= self::yes_no( 'lld_panic', 'Do you have panic attacks?' );
+		$main .= self::yes_no( 'lld_mood', 'Have you had low mood most days for 2 weeks or more?' );
 		$main .= lld_button( array( 'label' => 'Continue' ) );
+		if ( '' === $error ) {
+			$main .= '<p class="lld-hint" data-lld-screen-hint hidden>Please answer all three questions to continue.</p>';
+		}
 		$main .= '</form>';
 		return $main;
 	}
