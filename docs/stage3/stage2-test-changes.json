@@ -1,4 +1,10 @@
 {
   "_about": "NFR3-02: a Stage 3 pull request may change a file under tests/stage2/ only when an owner decision recorded here covers it. Each entry: the file (repository path), the decision (requirements v0.3 section 6 or a dated owner decision) and what changes. CI stage3-guards fails any other change, and any skip, to a Stage 2 test.",
-  "changes": []
+  "changes": [
+    {
+      "file": "tests/stage2/e2e/personal.spec.mjs",
+      "decision": "Owner decision, 4 Nov 2026: fix the intermittent TC-FR2-06-AS-02 (tracker P3-11b) without weakening it",
+      "change": "TC-FR2-06-AS-02 only: each 'Not for me' click now waits for its form post to finish (submitAndWait) before the next page.goto. In WebKit the next navigation could cancel the post, so an unwanted item stayed and pushed the second opened item off the list. No assertion, count or expected value changes"
+    }
+  ]
 }
