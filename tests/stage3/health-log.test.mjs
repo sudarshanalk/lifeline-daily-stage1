@@ -41,6 +41,14 @@ test('P3-50 wiring: loader and API call Health_Log', () => {
   expect(api).toContain("do_action( 'lld_members_reading_saved'");
   expect(api).toContain('readings-trend');
   expect(api).toContain('readings-activity-week');
+  // The route's {type} is the resource name ("readings"), so the reading-type filter never reads it: doing so emptied
+  // every readings list (TC-NFR3-09-AS-01, TC-FR3-10-AS-01 after #194).
+  expect(api).not.toContain("get_param( 'type' )");
+  expect(api.match(/get_param\( 'reading_type' \)/g) || []).toHaveLength(2);
+  // The Free 14-day window counts from the member's own clock, the one that dates their readings, not the server's date.
+  expect(api).toContain('LLD_Members_Health_Log::limit_history( $rows, $premium, LLD_Members_Health_Log::today( $member_id ) )');
+  expect(src('class-health-log.php')).toContain('$today   = self::today( $member_id );');
+  expect(src('class-health-log.php')).toContain("lld_members_now_mysql( (int) $member_id )");
   expect(src('class-health-log.php')).toContain('warning_level');
   // Warning strings are never authored in the logging class.
   expect(src('class-health-log.php')).not.toMatch(/Very low blood sugar|Very high blood sugar/);

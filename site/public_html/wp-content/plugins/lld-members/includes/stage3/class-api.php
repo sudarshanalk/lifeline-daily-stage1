@@ -581,7 +581,8 @@ class LLD_Members_Stage3_API {
 				'date'       => (string) $request->get_param( 'date' ),
 				'q'          => (string) $request->get_param( 'q' ),
 				'week_start' => (string) $request->get_param( 'week_start' ),
-				'type'       => (string) $request->get_param( 'type' ),
+				// The route's own {type} is the resource name (readings-trend), so the reading type has its own query name (P3-50).
+				'type'       => (string) $request->get_param( 'reading_type' ),
 				'from'       => (string) $request->get_param( 'from' ),
 				'to'         => (string) $request->get_param( 'to' ),
 				'unit'       => (string) $request->get_param( 'unit' ),
@@ -608,10 +609,10 @@ class LLD_Members_Stage3_API {
 			}
 			if ( 'readings' === $def['table'] ) {
 				$premium = LLD_Members_Food_Log::premium( $member_id );
-				$rows    = LLD_Members_Health_Log::limit_history( $rows, $premium, gmdate( 'Y-m-d' ) );
+				$rows    = LLD_Members_Health_Log::limit_history( $rows, $premium, LLD_Members_Health_Log::today( $member_id ) );
 				$rows    = LLD_Members_Health_Log::filter(
 					$rows,
-					(string) $request->get_param( 'type' ),
+					(string) $request->get_param( 'reading_type' ), // not 'type': that is the route's resource name, 'readings'
 					(string) $request->get_param( 'from' ),
 					(string) $request->get_param( 'to' )
 				);
