@@ -171,6 +171,7 @@ test('TC-FR3-58-AS-01 manifest, service worker and offline page are sent with st
       ob_start();
       function status_header($c){ echo "STATUS:$c\n"; }
       function nocache_headers(){}
+      $GLOBALS['actions'] = []; function do_action($h){ $GLOBALS['actions'][] = $h; }
       $_SERVER['REQUEST_URI'] = '${path}';
       LLD_Members_Installable::serve();
       echo 'NOT SERVED';`);
@@ -182,6 +183,7 @@ test('TC-FR3-58-AS-01 manifest, service worker and offline page are sent with st
   }
   const src = readFileSync(stage3('class-installable.php'), 'utf8');
   expect(src).toContain("X-LiteSpeed-Cache-Control: no-cache");
+  expect(src).toContain("do_action( 'litespeed_control_set_nocache'");
 });
 
 test('TC-FR3-58-AS-01 service worker falls back to the offline page only for member page loads', () => {
