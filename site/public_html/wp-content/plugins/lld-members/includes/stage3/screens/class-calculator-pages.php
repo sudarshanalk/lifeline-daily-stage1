@@ -72,6 +72,91 @@ class LLD_Members_Calculator_Pages {
 		'expired'      => 'This page was open too long. Please press Check again.',
 	);
 
+	/**
+	 * The six cards on the Health Tools hub (Owner_Questions 107, approved 4 Nov 2026), in the Stage 1 card fields plus the
+	 * icon and the one-line check. Name and purpose are each page's approved title and introduction.
+	 */
+	const HUB_CARDS = array(
+		'heart-risk-check'       => array(
+			'time_minutes' => 3,
+			'inputs'       => array( 'Age, sex and country', 'Smoking and diabetes', 'Blood pressure (top number)', 'Cholesterol, or height and weight' ),
+			'eligibility'  => 'Adults aged 40 to 74 who have not had a heart attack or stroke. Not a diagnosis.',
+			'cta_label'    => 'Check my heart risk',
+			'icon'         => '&#10084;&#65039;',
+			'check'        => 'Shows which change would lower your risk most',
+		),
+		'blood-pressure-check'   => array(
+			'time_minutes' => 1,
+			'inputs'       => array( 'Your reading (top and bottom numbers)', 'Pulse (optional)', 'Pregnancy and blood pressure medicine' ),
+			'eligibility'  => 'Adults aged 18 and over. Not a diagnosis.',
+			'cta_label'    => 'Check my reading',
+			'icon'         => '&#129656;',
+			'check'        => 'Says when to get your reading checked',
+		),
+		'metabolic-health-check' => array(
+			'time_minutes' => 3,
+			'inputs'       => array( 'Age, sex and family background', 'Waist', 'Blood pressure', 'Blood test results, if you have them' ),
+			'eligibility'  => 'Adults aged 18 and over. Not a diagnosis.',
+			'cta_label'    => 'Check my results',
+			'icon'         => '&#129514;',
+			'check'        => 'Explains each result against its threshold',
+		),
+		'fitness-age'            => array(
+			'time_minutes' => 2,
+			'inputs'       => array( 'Age and sex', 'Waist', 'Resting heart rate', 'How often, how hard and how long you exercise' ),
+			'eligibility'  => 'Adults aged 18 and over. Not a diagnosis.',
+			'cta_label'    => 'Find my fitness age',
+			'icon'         => '&#127939;',
+			'check'        => 'Shows what would raise your fitness',
+		),
+		'heart-rate-zones'       => array(
+			'time_minutes' => 1,
+			'inputs'       => array( 'Age', 'Resting heart rate (optional)', 'Measured maximum heart rate (optional)' ),
+			'eligibility'  => 'Adults aged 18 and over.',
+			'cta_label'    => 'Work out my zones',
+			'icon'         => '&#128147;',
+			'check'        => 'Includes a talk test for each zone',
+		),
+		'sleep-and-stress-check' => array(
+			'time_minutes' => 2,
+			'inputs'       => array( 'Stress and worry', 'Mood', 'Sleep' ),
+			'eligibility'  => 'Adults. Not a diagnosis.',
+			'cta_label'    => 'Start the check',
+			'icon'         => '&#127769;',
+			'check'        => 'If you save it, only the scores are kept',
+		),
+	);
+
+	/**
+	 * Cards for the Stage 1 hub (filter lld_tools_hub_more_cards), only while the pages exist for this visitor.
+	 *
+	 * @param array $cards Cards added so far.
+	 * @return array
+	 */
+	public static function hub_cards( $cards ) {
+		$cards     = is_array( $cards ) ? $cards : array();
+		$member_id = class_exists( 'LLD_Members_Access' ) ? (int) LLD_Members_Access::current_member_id() : 0;
+		if ( ! LLD_Members_Features::enabled( self::FEATURE, $member_id ) ) {
+			return $cards;
+		}
+		foreach ( self::HUB_CARDS as $slug => $card ) {
+			$page = self::PAGES[ $slug ];
+			if ( ! class_exists( $page ) ) {
+				continue;
+			}
+			$cards[] = array_merge(
+				array(
+					'tool_slug'   => $slug,
+					'name'        => $page::TITLE,
+					'purpose'     => $page::INTRO,
+					'landing_url' => '/health-tools/' . $slug . '/',
+				),
+				$card
+			);
+		}
+		return $cards;
+	}
+
 	public static function boot() {
 		if ( ! class_exists( 'LLD_Members_Features' ) || 'off' === LLD_Members_Features::state( self::FEATURE ) ) {
 			return;
@@ -79,6 +164,7 @@ class LLD_Members_Calculator_Pages {
 		add_action( 'init', array( __CLASS__, 'rewrites' ), 20 );
 		add_action( 'init', array( __CLASS__, 'flush_if_needed' ), 999 );
 		add_action( 'template_redirect', array( __CLASS__, 'maybe_render' ), 5 );
+		add_filter( 'lld_tools_hub_more_cards', array( __CLASS__, 'hub_cards' ) );
 	}
 
 	/**

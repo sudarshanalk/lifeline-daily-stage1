@@ -137,6 +137,29 @@ function lld_tools_card_look(string $slug): array {
   ];
   return $looks[$slug] ?? ['icon' => '&#10010;', 'check' => 'Free, and nothing you enter is stored'];
 }
+/** One card's markup up to its call to action (the related-article line and the closing </li> are the caller's): the
+ *  Stage 1 cards, and the cards the lld-members plugin adds through lld_tools_hub_more_cards, share it. */
+function lld_tools_card_markup(string $slug, array $c, string $status, array $look, bool $compact): string {
+  $out = '<li class="lld-tool-card lld-tool-card--' . esc_attr($status) . '" data-tool-card data-tool="' . esc_attr($slug) . '" data-status="' . esc_attr($status) . '">';
+  $h = $compact ? 'h3' : 'h2';   // NFR1-05 AS-06: on the hub the cards follow the page h1; on the homepage they sit under the h2 "Tools"
+  // Interface Pack card head (owner-approved style, 28 Oct 2026): icon tile and time pill. On the hub the pill repeats the
+  // spoken "About N minutes" line, so it is hidden from screen readers there.
+  $out .= '<div class="lld-tool-card__head"><span class="lld-tool-card__icon" aria-hidden="true">' . $look['icon'] . '</span>';
+  $out .= '<span class="lld-tool-card__pill"' . ($compact ? '' : ' aria-hidden="true"') . '>&#9201; ' . (int)$c['time_minutes'] . ' min check</span></div>';
+  $out .= '<' . $h . ' class="lld-tool-card__name" data-test="card-name">' . esc_html($c['name']) . '</' . $h . '>';
+  $out .= '<p class="lld-tool-card__purpose" data-test="card-purpose">' . esc_html($c['purpose']) . '</p>';
+  $out .= '<span class="lld-tool-card__status" data-test="status-label">' . esc_html(lld_tools_status_label($status)) . '</span>';
+  if (!$compact) {
+    $out .= '<p class="lld-tool-card__time" data-test="card-time">About ' . (int)$c['time_minutes'] . ' minute' . ((int)$c['time_minutes'] === 1 ? '' : 's') . '</p>';
+    $out .= '<ul class="lld-tool-card__inputs" data-test="card-inputs">';
+    foreach ($c['inputs'] as $i) $out .= '<li>' . esc_html($i) . '</li>';
+    $out .= '</ul>';
+    $out .= '<p class="lld-tool-card__eligibility" data-test="card-eligibility">' . esc_html($c['eligibility']) . '</p>';
+  }
+  $out .= '<p class="lld-tool-card__check"><svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>' . esc_html($look['check']) . '</p>';
+  $out .= '<a class="lld-tool-card__cta" data-test="cta" href="' . esc_url($c['landing_url']) . '">' . esc_html($c['cta_label']) . '</a>';
+  return $out;
+}
 function lld_tools_render_hub(array $atts = []): string {
   $atts = shortcode_atts(['compact' => '0'], $atts, 'lld_tools_hub');
   $compact = $atts['compact'] === '1';
@@ -148,28 +171,20 @@ function lld_tools_render_hub(array $atts = []): string {
     // (`wp lld status set <slug> active --version=…`, after the owner's sign-off on production); until then it is not shown
     if (!in_array($slug, ['protein', 'diabetes'], true) && !isset($installed[$slug])) continue;
     $status = lld_tools_tool_status($slug);
-    $out .= '<li class="lld-tool-card lld-tool-card--' . esc_attr($status) . '" data-tool-card data-tool="' . esc_attr($slug) . '" data-status="' . esc_attr($status) . '">';
-    $h = $compact ? 'h3' : 'h2';   // NFR1-05 AS-06: on the hub the cards follow the page h1; on the homepage they sit under the h2 "Tools"
-    $look = lld_tools_card_look($slug);
-    // Interface Pack card head (owner-approved style, 28 Oct 2026): icon tile and time pill. On the hub the pill repeats the
-    // spoken "About N minutes" line, so it is hidden from screen readers there.
-    $out .= '<div class="lld-tool-card__head"><span class="lld-tool-card__icon" aria-hidden="true">' . $look['icon'] . '</span>';
-    $out .= '<span class="lld-tool-card__pill"' . ($compact ? '' : ' aria-hidden="true"') . '>&#9201; ' . (int)$c['time_minutes'] . ' min check</span></div>';
-    $out .= '<' . $h . ' class="lld-tool-card__name" data-test="card-name">' . esc_html($c['name']) . '</' . $h . '>';
-    $out .= '<p class="lld-tool-card__purpose" data-test="card-purpose">' . esc_html($c['purpose']) . '</p>';
-    $out .= '<span class="lld-tool-card__status" data-test="status-label">' . esc_html(lld_tools_status_label($status)) . '</span>';
-    if (!$compact) {
-      $out .= '<p class="lld-tool-card__time" data-test="card-time">About ' . (int)$c['time_minutes'] . ' minute' . ((int)$c['time_minutes'] === 1 ? '' : 's') . '</p>';
-      $out .= '<ul class="lld-tool-card__inputs" data-test="card-inputs">';
-      foreach ($c['inputs'] as $i) $out .= '<li>' . esc_html($i) . '</li>';
-      $out .= '</ul>';
-      $out .= '<p class="lld-tool-card__eligibility" data-test="card-eligibility">' . esc_html($c['eligibility']) . '</p>';
-    }
-    $out .= '<p class="lld-tool-card__check"><svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>' . esc_html($look['check']) . '</p>';
-    $out .= '<a class="lld-tool-card__cta" data-test="cta" href="' . esc_url($c['landing_url']) . '">' . esc_html($c['cta_label']) . '</a>';
+    $out .= lld_tools_card_markup($slug, $c, $status, lld_tools_card_look($slug), $compact);
     $post = get_post((int)$c['related_post_id']);
     if ($post && $post->post_status === 'publish') $out .= '<p class="lld-tool-card__related" data-test="card-related"><a href="' . esc_url(get_permalink($post)) . '">' . esc_html(get_the_title($post)) . '</a></p>';
     $out .= '</li>';
+  }
+  // Stage 3 calculator pages (P3-57 to P3-5A, Owner_Questions 107): the lld-members plugin adds their cards on the hub only,
+  // while their switch is on for this visitor. Each card has the Stage 1 card fields (tool_slug, name, purpose, time_minutes,
+  // inputs, eligibility, cta_label, landing_url) plus icon and check; it is always active and never reads status.json.
+  if (!$compact && function_exists('apply_filters')) foreach ((array)apply_filters('lld_tools_hub_more_cards', []) as $c) {
+    if (!is_array($c) || empty($c['tool_slug']) || empty($c['name']) || empty($c['landing_url']) || lld_tools_card((string)$c['tool_slug'])) continue;
+    $c += ['purpose' => '', 'time_minutes' => 1, 'inputs' => [], 'eligibility' => '', 'cta_label' => 'Open'];
+    $icon = (string)($c['icon'] ?? '');
+    $look = ['icon' => preg_match('/^(&#[0-9]+;){1,3}$/', $icon) ? $icon : '&#10010;', 'check' => (string)($c['check'] ?? 'Free, and nothing you enter is stored')];
+    $out .= lld_tools_card_markup((string)$c['tool_slug'], $c, 'active', $look, false) . '</li>';
   }
   // planned tools: label-only chips, never a link (DEC-24, DEC-26); the compact homepage row shows the two active cards only
   foreach (($compact ? [] : (lld_tools_status()['labels'] ?? [])) as $l) {
