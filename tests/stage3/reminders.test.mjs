@@ -163,6 +163,18 @@ test('TC-FR3-58-AS-01 manifest is installable (name, start_url, display, icons)'
   expect(readFileSync(stage3('class-installable.php'), 'utf8')).toContain('You are offline');
 });
 
+test('TC-FR3-58-AS-01 manifest, service worker and offline page are sent with status 200', () => {
+  // Browsers reject a manifest or service worker served with an error status.
+  for (const path of ['/members/app.webmanifest', '/members/sw.js', '/members/offline/']) {
+    const out = php(`
+      function status_header($c){ echo "STATUS:$c\n"; }
+      function nocache_headers(){}
+      $_SERVER['REQUEST_URI'] = '${path}';
+      LLD_Members_Installable::serve();`);
+    expect(out.startsWith('STATUS:200'), path).toBe(true);
+  }
+});
+
 test('Free/Premium running reminders (FR3-68) still only runs the first for Free', () => {
   const out = run(`
     $rows = [
