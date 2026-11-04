@@ -51,6 +51,10 @@ class LLD_Members_Stage3_Export {
 	 */
 	public static function download_tables( $tables ) {
 		$tables = is_array( $tables ) ? $tables : array();
+		// Behind its feature like every Stage 3 change, so the Stage 2 download is unchanged while it is off (NFR3-01).
+		if ( class_exists( 'LLD_Members_Features' ) && ! LLD_Members_Features::enabled( 'consent_new' ) ) {
+			return $tables;
+		}
 		return array_values( array_unique( array_merge( $tables, self::download_suffixes() ) ) );
 	}
 
