@@ -355,6 +355,8 @@ At most one per member.
 
 The answers entered into a calculator are **never** stored.
 
+Stage 3 extends this table (data model v0.2, "Saved calculator result (new calculators)"; FR3-55, P3-5B sheet signed 3 November 2026): for the new Stage 3 calculators the saved inputs and the saved result are also kept, sealed (encrypted) and visible only to the member, so Premium members can see the change between checks. They are deleted with the account or on health-consent withdrawal. The Stage 2 calculators still store no answers.
+
 ### C5. Track enrolments
 
 One record each time a member starts or repeats a track.
