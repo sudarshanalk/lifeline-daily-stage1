@@ -465,7 +465,7 @@ class LLD_Members_Stage3_API {
 		$params = $request->get_json_params();
 		$params = is_array( $params ) ? $params : array();
 		if ( ! in_array( $tool, array( 'calorie-target', 'goal-timeline' ), true ) ) { // these two run below, with the Stage 2 profile flags
-			return self::calculate_engine( $engines[ $tool ], $params, $member_id );
+			return self::maybe_save_result( $member_id, $tool, $params, self::calculate_engine( $engines[ $tool ], $params, $member_id ) );
 		}
 		// The member's health profile applies as well as the answers on the page (sheet section 2, FR3-69 AS-03/04):
 		// an eating-disorder flag stops the calculator; kidney disease removes the protein target; diabetes adds its note.
@@ -497,7 +497,7 @@ class LLD_Members_Stage3_API {
 					$result['wording'][ $key ] = LLD_Members_Goal_Timeline::MESSAGES[ $key ];
 				}
 			}
-			return new WP_REST_Response( $result, 200 );
+			return self::maybe_save_result( $member_id, $tool, $params, new WP_REST_Response( $result, 200 ) );
 		}
 		$result = LLD_Members_Calorie_Target::compute( $params );
 		if ( isset( $result['error'] ) ) {
@@ -538,7 +538,36 @@ class LLD_Members_Stage3_API {
 			);
 			$result['saved'] = $id > 0 ? $id : null;
 		}
-		return new WP_REST_Response( $result, 200 );
+		return self::maybe_save_result( $member_id, $tool, $params, new WP_REST_Response( $result, 200 ) );
+	}
+
+	/**
+	 * When the member asks to save, keep the headline (and, for a Stage 3 calculator, the sealed answers).
+	 * A refusal leaves the calculator's own answer unchanged. The saved id is a number, never the answers.
+	 *
+	 * @param int                 $member_id Member number.
+	 * @param string              $tool      Tool slug.
+	 * @param array<string,mixed> $params    Page answers.
+	 * @param WP_REST_Response    $response  The calculator's answer.
+	 * @return WP_REST_Response
+	 */
+	private static function maybe_save_result( $member_id, $tool, array $params, $response ) {
+		if ( ! $response instanceof WP_REST_Response || 200 !== $response->get_status() || empty( $params['save'] ) ) {
+			return $response;
+		}
+		if ( ! class_exists( 'LLD_Members_Saved_Results' ) ) {
+			return $response;
+		}
+		$data = $response->get_data();
+		if ( ! is_array( $data ) ) {
+			return $response;
+		}
+		$saved = LLD_Members_Saved_Results::store( (int) $member_id, $tool, $data, $params );
+		if ( is_array( $saved ) && isset( $saved['id'] ) ) {
+			$data['saved_result'] = (int) $saved['id'];
+			$response->set_data( $data );
+		}
+		return $response;
 	}
 
 	/**
@@ -560,8 +589,8 @@ class LLD_Members_Stage3_API {
 
 	/**
 	 * Run a pure engine (P3-57 to P3-5A): the member's health profile is passed to the engine's apply_profile() when it
-	 * has one (sheet section 2 of each tool), then compute(), then the signed wording for the keys it returned. Nothing
-	 * is stored here; saving results over time is P3-5B.
+	 * has one (sheet section 2 of each tool), then compute(), then the signed wording for the keys it returned.
+	 * Saving the headline over time is LLD_Members_Saved_Results (P3-5B), and only when the member asks.
 	 *
 	 * @param string $class     Engine class.
 	 * @param array  $params    The answers on the page.
@@ -691,6 +720,9 @@ class LLD_Members_Stage3_API {
 				return self::refuse( isset( $rows['status'] ) ? (int) $rows['status'] : 400, $rows['error'] );
 			}
 		} elseif ( ! empty( $def['stage2'] ) ) {
+			if ( 'calculator_result' === $def['table'] && class_exists( 'LLD_Members_Saved_Results' ) ) {
+				return new WP_REST_Response( LLD_Members_Saved_Results::api_list( $member_id ), 200 );
+			}
 			$since = self::clean_datetime( (string) $request->get_param( 'since' ) );
 			return new WP_REST_Response( array( 'rows' => self::stage2_rows( $def['table'], $member_id, $since ) ), 200 );
 		} else {
@@ -745,6 +777,16 @@ class LLD_Members_Stage3_API {
 		}
 		list( $member_id, $def ) = $gate;
 		if ( ! empty( $def['stage2'] ) ) {
+			if ( 'calculator_result' === $def['table'] && class_exists( 'LLD_Members_Saved_Results' ) ) {
+				$row = LLD_Members_Saved_Results::api_one( $member_id, (int) $request['id'] );
+				if ( is_array( $row ) && isset( $row['error'] ) ) {
+					return self::refuse( isset( $row['status'] ) ? (int) $row['status'] : 403, (string) $row['error'] );
+				}
+				if ( ! is_array( $row ) ) {
+					return self::refuse( 404, 'Not found.' );
+				}
+				return new WP_REST_Response( $row, 200 );
+			}
 			return self::refuse( 404, 'Not available.' );
 		}
 		$row = LLD_Members_Stage3_Data::row( $def['table'], $member_id, (int) $request['id'], $def['sealed'] );
