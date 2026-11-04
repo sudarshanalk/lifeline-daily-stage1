@@ -500,6 +500,11 @@ class LLD_Members_Stage3_API {
 	 * @param int    $member_id Member number.
 	 */
 	private static function calculate_engine( $class, array $params, $member_id ) {
+		// The Blood Pressure Reading Check's 7-day average reads the member's own logged readings (P3-58 sheet section 5):
+		// whatever readings or date the page sent are ignored.
+		if ( 'LLD_Members_BP_Check' === $class && LLD_Members_BP_Check::home_mode( isset( $params['mode'] ) ? $params['mode'] : null ) ) {
+			$params = array_merge( $params, self::bp_home_readings( $member_id ) );
+		}
 		if ( method_exists( $class, 'apply_profile' ) && class_exists( 'LLD_Members_Stage3_Safety' ) ) {
 			$params = $class::apply_profile( $params, LLD_Members_Stage3_Safety::situations( $member_id ) );
 		}
@@ -509,6 +514,54 @@ class LLD_Members_Stage3_API {
 		}
 		$result['wording'] = $class::wording( isset( $result['messages'] ) ? $result['messages'] : array(), $result );
 		return new WP_REST_Response( $result, 200 );
+	}
+
+	/**
+	 * The member's blood-pressure readings for the 7-day average (P3-58 sheet section 5): the Stage 3 readings table,
+	 * type blood_pressure, not deleted, taken in the 7 calendar days ending today in the member's time zone (the
+	 * programme's zone in force; the site's zone when that is unavailable), sealed values opened in memory only, at
+	 * most LLD_Members_BP_Check::MAX_READINGS (the newest). Without health consent there are no readings to read.
+	 *
+	 * @param int $member_id Member number.
+	 * @return array{today:string,readings:array<int,array{date:string,systolic:float,diastolic:float}>}
+	 */
+	private static function bp_home_readings( $member_id ) {
+		global $wpdb;
+		$member_id = (int) $member_id;
+		$name      = class_exists( 'LLD_Members_Programme' ) ? (string) LLD_Members_Programme::timezone( $member_id ) : '';
+		try {
+			$zone = '' !== $name ? new DateTimeZone( $name ) : wp_timezone();
+		} catch ( Exception $e ) {
+			$zone = wp_timezone();
+		}
+		$utc      = new DateTimeZone( 'UTC' );
+		$now      = class_exists( 'LLD_Members_Clock' ) ? LLD_Members_Clock::now( $member_id ) : new DateTimeImmutable( 'now', $utc );
+		$today    = $now->setTimezone( $zone )->format( 'Y-m-d' );
+		$midnight = new DateTimeImmutable( $today . ' 00:00:00', $zone );
+		$from     = $midnight->modify( '-' . ( LLD_Members_BP_Check::WINDOW_DAYS - 1 ) . ' days' )->setTimezone( $utc )->format( 'Y-m-d H:i:s' );
+		$to       = $midnight->modify( '+1 day' )->setTimezone( $utc )->format( 'Y-m-d H:i:s' );
+		$readings = array();
+		if ( $member_id > 0 && LLD_Members_Access::has_health_consent( $member_id ) ) {
+			$table = LLD_Members_Stage3_Schema::table( 'readings' );
+			$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT taken_at, value_1_ct, value_2_ct FROM {$table} WHERE member_id = %d AND reading_type = %s AND deleted_at IS NULL AND taken_at >= %s AND taken_at < %s ORDER BY taken_at DESC, id DESC LIMIT %d", $member_id, 'blood_pressure', $from, $to, LLD_Members_BP_Check::MAX_READINGS ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- internal table name.
+			foreach ( is_array( $rows ) ? $rows : array() as $row ) {
+				$at  = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', (string) $row['taken_at'], $utc );
+				$sys = LLD_Members_Stage3_Data::open( $member_id, $row['value_1_ct'] );
+				$dia = LLD_Members_Stage3_Data::open( $member_id, $row['value_2_ct'] );
+				if ( ! $at || ! is_numeric( $sys ) || ! is_numeric( $dia ) ) {
+					continue; // a value that does not open for this member is not theirs to count
+				}
+				$readings[] = array(
+					'date'      => $at->setTimezone( $zone )->format( 'Y-m-d' ),
+					'systolic'  => (float) $sys,
+					'diastolic' => (float) $dia,
+				);
+			}
+		}
+		return array(
+			'today'    => $today,
+			'readings' => $readings,
+		);
 	}
 
 	/**

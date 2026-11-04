@@ -56,6 +56,10 @@ test('TC-FR3-54-AS-01', () => {
   // Answers outside the scales are refused; Q6 is required once Q5 is Yes.
   const bad = compute([{ ...calm, q1: 4 }, { ...calm, q3: 1.5 }, { ...calm, q8: 17 }, { ...calm, q5: 'yes', q6: null }, { ...calm, q0: 'maybe' }, { ...calm, q7: [] }]);
   expect(bad.map((r) => r.error)).toEqual(['q1', 'q3', 'q8', 'q6', 'q0', 'q7']);
+  // Yes / no answers read the same as true / false and "true" / "false"; "no" never counts as yes.
+  const yn = compute([{ ...calm, q0: true }, { ...calm, q0: 'TRUE' }, { ...calm, q0: false }, { ...calm, q0: 'false' }, { ...calm, q5: true, q6: 'true', q7: 'yes' }, { ...calm, q5: 'no', q7: false }, { ...calm, q0: 1 }]);
+  expect(yn.map((r) => r.response1 ?? r.error)).toEqual([true, true, false, false, false, false, 'q0']);
+  expect([yn[4].sleepCount, yn[5].sleepCount]).toEqual([3, 0]);
 });
 
 test('TC-FR3-54-AS-02', () => {
@@ -78,6 +82,17 @@ test('TC-FR3-54-AS-02', () => {
     // Only the scores are offered for saving (D3-30); the answers are never in the result to keep.
     expect(Object.keys(r.toSave).sort(), id).toEqual(['moodScore', 'sleepCount', 'stressScore']);
   });
+  // The reused Stage 2 safety text is pinned byte for byte. Source: 02 Content/Programme content/safety/
+  // screening-sleep-and-stress.md (outside the repository, so CI cannot read it): each value is that file's quoted
+  // block under "Response 1.", "Response 3." and "Urgent-help link on every stress and mood page", with only the
+  // leading "> " of each line removed and the lines joined with a line feed. Not in the approval's copy_hashes.
+  const pinned = {
+    response1: '8a2e6b49f71ff20206ace1da08820903f114c4cd635943920d0989c0ee3b8de1',
+    response3: '307b97faaf5ed8c1b3d0e0b004987a428464ea856379dd03fe634dd1a12061b4',
+    helpFooter: '8ed4248443499b2bfd2f7d13e900e550795d94fa74c25533b78535e07c3cf4fe',
+  };
+  expect(Object.keys(Q).sort()).toEqual(Object.keys(pinned).sort());
+  for (const [k, h] of Object.entries(pinned)) expect(createHash('sha256').update(Q[k], 'utf8').digest('hex'), k).toBe(h);
   const [harmOnly] = compute([{ q0: 'yes' }]);
   expect(harmOnly.response1).toBe(true);
   expect(harmOnly.trackOffer).toBe(false);

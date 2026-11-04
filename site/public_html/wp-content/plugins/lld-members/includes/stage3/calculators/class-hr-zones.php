@@ -102,7 +102,7 @@ class LLD_Members_HR_Zones {
 	 * Work out the result.
 	 *
 	 * @param array $in age, rhr (optional), measuredHrMax (optional), heartMedicine (yes|no|notsure), heartCondition
-	 *                  (yes|no|notsure), pregnant (yes|no|notsure), exerciseHistory (yes|no, optional), bloodPressure.
+	 *                  (yes|no|notsure), pregnant (yes|no|notsure), exerciseHistory (yes|no, optional), bloodPressure (yes|no, optional).
 	 * @return array stop, hrMax, hrMaxEstimated, method (hrr|pctHrMax), easy, moderate, hard ([low, high] bpm),
 	 *               notes[], fill, messages (the wording keys to show, in order), version; or error.
 	 */
@@ -124,10 +124,15 @@ class LLD_Members_HR_Zones {
 		if ( null === $age || $age < 0 || $age > 99 ) {
 			return self::invalid( 'age' );
 		}
-		$medicine  = self::answer( isset( $in['heartMedicine'] ) ? $in['heartMedicine'] : 'no', array( 'yes', 'no', 'notsure' ) );
-		$condition = self::answer( isset( $in['heartCondition'] ) ? $in['heartCondition'] : 'no', array( 'yes', 'no', 'notsure' ) );
-		$pregnant  = self::answer( isset( $in['pregnant'] ) ? $in['pregnant'] : 'no', array( 'yes', 'no', 'notsure' ) );
-		foreach ( array( 'heartMedicine' => $medicine, 'heartCondition' => $condition, 'pregnant' => $pregnant ) as $field => $value ) {
+		// The three safety answers are required: a missing answer is refused, never read as "no" (sheet 2.2, FR3-53
+		// AS-02). Exercise history and the profile's blood-pressure flag are optional (missing = no), but an answer
+		// that is not yes or no is refused.
+		$medicine  = self::answer( isset( $in['heartMedicine'] ) ? $in['heartMedicine'] : null, array( 'notsure' ) );
+		$condition = self::answer( isset( $in['heartCondition'] ) ? $in['heartCondition'] : null, array( 'notsure' ) );
+		$pregnant  = self::answer( isset( $in['pregnant'] ) ? $in['pregnant'] : null, array( 'notsure' ) );
+		$history   = self::answer( isset( $in['exerciseHistory'] ) ? $in['exerciseHistory'] : 'yes' );
+		$bp        = self::answer( isset( $in['bloodPressure'] ) ? $in['bloodPressure'] : 'no' );
+		foreach ( array( 'heartMedicine' => $medicine, 'heartCondition' => $condition, 'pregnant' => $pregnant, 'exerciseHistory' => $history, 'bloodPressure' => $bp ) as $field => $value ) {
 			if ( null === $value ) {
 				return self::invalid( $field );
 			}
@@ -178,10 +183,10 @@ class LLD_Members_HR_Zones {
 			}
 			$out[ $zone ] = $bounds;
 		}
-		if ( $age > 75 && isset( $in['exerciseHistory'] ) && 'no' === self::answer( $in['exerciseHistory'], array( 'yes', 'no' ) ) ) {
+		if ( $age > 75 && 'no' === $history ) {
 			$out['notes'][] = 'over75NoHistory';
 		}
-		if ( ! empty( $in['bloodPressure'] ) ) {
+		if ( 'yes' === $bp ) {
 			$out['notes'][] = 'bloodPressure';
 		}
 		$out['fill']     = array( 'HRmax' => (string) $max );
@@ -249,15 +254,25 @@ class LLD_Members_HR_Zones {
 	}
 
 	/**
-	 * @param mixed    $value   Answer.
-	 * @param string[] $allowed Accepted answers.
+	 * A yes-or-no answer, the same in all three P3-5A engines: "yes" / "no", true / false or "true" / "false" (any
+	 * case), plus the extra answers a question allows ("notsure"); anything else, including a missing answer, is
+	 * null (refused), so "no" never counts as yes.
+	 *
+	 * @param mixed    $value Answer.
+	 * @param string[] $extra Accepted answers besides yes and no.
+	 * @return string|null yes, no, one of $extra, or null.
 	 */
-	private static function answer( $value, array $allowed ) {
-		if ( ! is_scalar( $value ) ) {
+	private static function answer( $value, array $extra = array() ) {
+		if ( is_bool( $value ) ) {
+			return $value ? 'yes' : 'no';
+		}
+		if ( ! is_string( $value ) ) {
 			return null;
 		}
-		$v = strtolower( str_replace( array( ' ', '-', '_' ), '', trim( (string) $value ) ) );
-		return in_array( $v, $allowed, true ) ? $v : null;
+		$v   = strtolower( str_replace( array( ' ', '-', '_' ), '', trim( $value ) ) );
+		$map = array( 'yes' => 'yes', 'true' => 'yes', 'no' => 'no', 'false' => 'no' );
+		$v   = isset( $map[ $v ] ) ? $map[ $v ] : $v;
+		return in_array( $v, array_merge( array( 'yes', 'no' ), $extra ), true ) ? $v : null;
 	}
 
 	/** Whole number half-up, after removing binary noise. */

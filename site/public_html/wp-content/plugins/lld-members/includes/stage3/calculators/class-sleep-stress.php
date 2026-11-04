@@ -71,13 +71,15 @@ class LLD_Members_Sleep_Stress {
 	/**
 	 * Wording reused verbatim from the Stage 2 screening (FR2-38, NFR2-07), drafted in
 	 * `02 Content/Programme content/safety/screening-sleep-and-stress.md` and approved with this sheet (sign-off
-	 * section 4): Response 1 (self-harm: yes), Response 3 (low mood) and the "Need help now?" footer. The screen's
-	 * buttons are written as links; the track-start lines of Response 3 ("You can still start the track", Continue)
-	 * belong to the Stage 2 screen and are left out here.
+	 * section 4): Response 1 (self-harm: yes), Response 3 (low mood) and the "Need help now?" footer. Each is that
+	 * file's quoted block byte for byte, with only the leading "> " of each line removed and lines joined with "\n";
+	 * the button lines are kept as the file writes them ("**[Find support in your country]** (button, opens
+	 * https://findahelpline.com)", "[Back to my dashboard]", "[Continue]") for the screen to render as buttons.
+	 * The test pins each one's SHA-256.
 	 */
 	const QUOTED = array(
-		'response1'  => "**Please get support now**\n\n**If you are in danger now, call your local emergency number**, for example 999 in the UK, 911 in the US and Canada, 112 in the EU and India, or 000 in Australia.\n\nTo find a free, confidential helpline in your country, by phone, text or chat:\n\n**[Find support in your country](https://findahelpline.com)**\n\nThank you for telling us. You don't have to cope with these thoughts alone, and talking to someone can help. A doctor can also help you find the right support.\n\nWe won't start Sleep and Stress today. Your account and everything else on Lifeline Daily are still here for you.",
-		'response3'  => "**Please talk to a doctor about your mood**\nFeeling low most days for 2 weeks or more is worth talking to a doctor about. They can help you find out what's going on and what support is available. This track offers general sleep and stress habits and isn't a treatment for low mood or depression.\n\nIf things get worse, or you have thoughts of harming yourself, get help straight away: call your local emergency number or visit findahelpline.com.",
+		'response1'  => "**Please get support now**\n\n**If you are in danger now, call your local emergency number**, for example 999 in the UK, 911 in the US and Canada, 112 in the EU and India, or 000 in Australia.\n\nTo find a free, confidential helpline in your country, by phone, text or chat:\n\n**[Find support in your country]** (button, opens https://findahelpline.com)\n\nThank you for telling us. You don't have to cope with these thoughts alone, and talking to someone can help. A doctor can also help you find the right support.\n\nWe won't start Sleep and Stress today. Your account and everything else on Lifeline Daily are still here for you.\n\n[Back to my dashboard]",
+		'response3'  => "**Please talk to a doctor about your mood**\nFeeling low most days for 2 weeks or more is worth talking to a doctor about. They can help you find out what's going on and what support is available. This track offers general sleep and stress habits and isn't a treatment for low mood or depression.\n\nIf things get worse, or you have thoughts of harming yourself, get help straight away: call your local emergency number or visit findahelpline.com.\n\nYou can still start the track if you'd like to.\n\n[Continue]",
 		'helpFooter' => '**Need help now?** If you are in danger now, call your local emergency number (for example 999 in the UK, 911 in the US and Canada, 112 in the EU and India, 000 in Australia), or find support in your country at findahelpline.com.',
 	);
 
@@ -230,6 +232,9 @@ class LLD_Members_Sleep_Stress {
 	}
 
 	/**
+	 * A yes-or-no answer, the same in all three P3-5A engines: "yes" / "no", true / false or "true" / "false" (any
+	 * case); anything else, including a missing answer, is null (refused), so "no" never counts as yes.
+	 *
 	 * @param mixed $value Answer.
 	 * @return string|null yes, no or null.
 	 */
@@ -237,11 +242,12 @@ class LLD_Members_Sleep_Stress {
 		if ( is_bool( $value ) ) {
 			return $value ? 'yes' : 'no';
 		}
-		if ( ! is_scalar( $value ) ) {
+		if ( ! is_string( $value ) ) {
 			return null;
 		}
-		$v = strtolower( trim( (string) $value ) );
-		return in_array( $v, array( 'yes', 'no' ), true ) ? $v : null;
+		$v = strtolower( trim( $value ) );
+		$map = array( 'yes' => 'yes', 'true' => 'yes', 'no' => 'no', 'false' => 'no' );
+		return isset( $map[ $v ] ) ? $map[ $v ] : null;
 	}
 
 	/**

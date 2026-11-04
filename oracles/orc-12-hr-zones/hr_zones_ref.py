@@ -5,7 +5,7 @@ engine. Exact decimal arithmetic, so rounding ties are decided exactly.
   HRmax  = round half-up (208 - 0.7 x age) (Tanaka 2001), or the measured maximum when given
   Zones  : with resting HR, RHR + f x (HRmax - RHR) (Karvonen); without, f x HRmax; each bound whole bpm half-up
            Easy 0.30-0.39 HRR / 0.57-0.63 HRmax; Moderate 0.40-0.59 / 0.64-0.76; Hard 0.60-0.89 / 0.77-0.95
-  Stops  : age < 18; pregnant; heart condition; heart-rate medicine yes / not sure (FR3-53 AS-02);
+  Stops  : a heart-rate-medicine, heart-condition or pregnancy answer missing -> refused (error); age < 18; pregnant; heart condition; heart-rate medicine yes / not sure (FR3-53 AS-02);
            measured HRmax less than 30 above resting -> refused
 
 Reads fixtures/hr-zones/*.json (inputs only), writes oracles/orc-12-hr-zones/results.json and prints every fixture
@@ -31,13 +31,16 @@ def assess(i: dict) -> dict:
     age = D(str(i["age"]))
     rhr = None if i.get("rhr") is None else D(str(i["rhr"]))
     measured = None if i.get("measuredHrMax") is None else D(str(i["measuredHrMax"]))
+    for field in ("heartMedicine", "heartCondition", "pregnant"):
+        if i.get(field) is None:
+            return {"error": field}
     if age < 18:
         out["stop"] = "under18"; return out
-    if (i.get("pregnant") or "no") != "no":
+    if i["pregnant"] != "no":
         out["stop"] = "pregnancy"; out["notes"] = ["safety.pregnancy"]; return out
-    if (i.get("heartCondition") or "no") != "no":
+    if i["heartCondition"] != "no":
         out["stop"] = "heartCondition"; out["notes"] = ["safety.heartCondition"]; return out
-    if (i.get("heartMedicine") or "no") != "no":
+    if i["heartMedicine"] != "no":
         out["stop"] = "medicine"; out["notes"] = ["safety.medicine"]; return out
     if measured is not None and rhr is not None and measured - rhr < 30:
         out["stop"] = "refused"; return out

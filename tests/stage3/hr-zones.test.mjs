@@ -45,7 +45,7 @@ test('TC-FR3-53-AS-01', () => {
       $t = LLD_Members_HR_Zones::tanaka($age); $exact = 208 - 0.7 * $age;
       if (abs($t - $exact) > 0.5 + 1e-9) $bad[] = "tanaka $age";
       foreach ([null, 30, 50, 70, 90, 120] as $rhr) {
-        $r = LLD_Members_HR_Zones::compute(['age' => $age, 'rhr' => $rhr]);
+        $r = LLD_Members_HR_Zones::compute(['age' => $age, 'rhr' => $rhr, 'heartMedicine' => 'no', 'heartCondition' => 'no', 'pregnant' => 'no']);
         if ($r['stop'] !== null) { if ($rhr === null || $t - $rhr >= 30) $bad[] = "$age $rhr stop"; continue; }
         if (!($r['easy'][0] <= $r['easy'][1] && $r['easy'][1] <= $r['moderate'][0] && $r['moderate'][0] <= $r['moderate'][1] && $r['moderate'][1] <= $r['hard'][0] && $r['hard'][0] <= $r['hard'][1] && $r['hard'][1] <= $r['hrMax'])) $bad[] = "$age $rhr order";
         if (array_slice($r['messages'], 0, 5) !== ['talk.easy', 'talk.moderate', 'talk.hard', 'result.weekly', 'result.hrmax'] || end($r['messages']) !== 'quoted.workoutSafety') $bad[] = "$age $rhr messages";
@@ -57,6 +57,20 @@ test('TC-FR3-53-AS-01', () => {
   // Out-of-range and non-numeric answers are refused.
   const bad = compute([{ ...base, rhr: 20 }, { ...base, rhr: null, measuredHrMax: 230 }, { ...base, rhr: 'fast' }, { ...base, age: 'x' }, { ...base, heartMedicine: ['yes'] }]);
   expect(bad.map((r) => r.error)).toEqual(['rhr', 'measuredHrMax', 'rhr', 'age', 'heartMedicine']);
+  // Zones never invert and are never under 1 bpm wide; adjacent bounds can only meet, and only when the reserve is
+  // under 100 bpm (each bound is rounded on its own, sheet 2.1).
+  const shape = JSON.parse(php(`
+    $bad = [];
+    for ($age = 18; $age <= 99; $age++) for ($rhr = 30; $rhr <= 120; $rhr++) foreach ([null, 150, 220] as $m) {
+      $r = LLD_Members_HR_Zones::compute(['age' => $age, 'rhr' => $rhr, 'measuredHrMax' => $m, 'heartMedicine' => 'no', 'heartCondition' => 'no', 'pregnant' => 'no']);
+      if ($r['stop'] !== null) continue;
+      foreach (['easy', 'moderate', 'hard'] as $z) if ($r[$z][1] - $r[$z][0] < 1) $bad[] = "$age $rhr $m $z width";
+      if ($r['easy'][1] > $r['moderate'][0] || $r['moderate'][1] > $r['hard'][0]) $bad[] = "$age $rhr $m inverted";
+      if (($r['easy'][1] === $r['moderate'][0] || $r['moderate'][1] === $r['hard'][0]) && $r['hrMax'] - $rhr >= 100) $bad[] = "$age $rhr $m shared at reserve >= 100";
+    }
+    echo json_encode($bad);
+  `));
+  expect(shape).toEqual([]);
 });
 
 test('TC-FR3-53-AS-02', () => {
@@ -96,6 +110,19 @@ test('TC-FR3-53-AS-02 (safety): heart condition, pregnancy, under 18 and the int
   expect(out[6].notes).toEqual(['bloodPressure']);
   for (const r of out.slice(5, 7)) expect(r.messages).toContain('quoted.intenseExercise');
   expect(out[7].messages).not.toContain('quoted.intenseExercise');
+  // The three safety answers are required: a missing one is refused (no zones without the beta-blocker answer).
+  const missing = compute(['heartMedicine', 'heartCondition', 'pregnant'].map((k) => { const i = { ...base }; delete i[k]; return i; }));
+  expect(missing.map((r) => r.error)).toEqual(['heartMedicine', 'heartCondition', 'pregnant']);
+  for (const r of missing) expect(r.easy).toBeUndefined();
+  // Yes / no answers read the same as true / false and "true" / "false"; "no" never counts as yes.
+  const yn = compute([
+    { ...base, bloodPressure: 'no' }, { ...base, bloodPressure: false }, { ...base, bloodPressure: 'false' }, { ...base, bloodPressure: 'yes' },
+    { ...base, bloodPressure: true }, { ...base, bloodPressure: 'TRUE' }, { ...base, age: 80, exerciseHistory: false }, { ...base, age: 80, exerciseHistory: 'true' },
+    { ...base, heartMedicine: true }, { ...base, heartMedicine: 'false' }, { ...base, bloodPressure: 'maybe' }, { ...base, exerciseHistory: 1 },
+  ]);
+  expect(yn.slice(0, 8).map((r) => r.messages.includes('quoted.intenseExercise'))).toEqual([false, false, false, true, true, true, true, false]);
+  expect([yn[8].stop, yn[9].stop]).toEqual(['medicine', null]);
+  expect([yn[10].error, yn[11].error]).toEqual(['bloodPressure', 'exerciseHistory']);
 });
 
 test('NFR3-14 (heart-rate zones wording): every signed string hashes to the approval record', () => {

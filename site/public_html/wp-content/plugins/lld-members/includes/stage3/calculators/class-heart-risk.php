@@ -45,9 +45,6 @@ class LLD_Members_Heart_Risk {
 	const TC_BOUNDS  = array( 4.0, 5.0, 6.0, 7.0 );
 	const BMI_BOUNDS = array( 20.0, 25.0, 30.0, 35.0 );
 
-	/** SBP at or above which the frozen urgent-care wording comes first (sheet section 4, FR3-46). */
-	const URGENT_SBP = 180;
-
 	/** What-if factors in tie order (sheet section 3.2). */
 	const FACTORS = array( 'smoking', 'blood-pressure', 'cholesterol', 'weight' );
 
@@ -81,11 +78,84 @@ class LLD_Members_Heart_Risk {
 	);
 
 	/**
-	 * The key of the frozen global urgent-care wording (FR3-46), as the Stage 3 safety layer names it
-	 * (LLD_Members_Stage3_Safety::warning_level). It is never retyped here: wording() takes the text from the Blood
-	 * Pressure Reading Check's signed `urgent.alert` (P3-58 section 4.1) when that engine is loaded.
+	 * The check asks for the systolic reading only (sheet section 2). The urgent level is decided by the safety layer
+	 * (LLD_Members_Stage3_Safety::warning_level, decision D5: any blood-pressure input), which needs a diastolic too:
+	 * this one is inside the possible range for every systolic the page accepts and can set no level on its own, so the
+	 * systolic alone decides. The urgent key and its text are the safety layer's (`bp-check.urgent.alert`, or
+	 * `bp-check.pregnancy.urgent` with the pregnancy thresholds), never retyped here.
 	 */
-	const URGENT_KEY = 'global_urgent';
+	const NEUTRAL_DIA = 60;
+
+	/**
+	 * Other names and ISO 3166 two-letter codes for countries, folded as fold() folds them, => the appendix-1 name
+	 * whose region applies. The site's own extension (sheet 1.2): a territory takes the region of the country it
+	 * belongs to; a small state the appendix leaves out takes its neighbour's (Liechtenstein, Monaco, San Marino,
+	 * Vatican City, Saint Kitts and Nevis, Nauru, Palau, Tuvalu, Kosovo). Antarctica has none.
+	 */
+	const ALIASES = array(
+		// Other names.
+		'united states' => 'United States of America', 'usa' => 'United States of America', 'u s' => 'United States of America', 'u s a' => 'United States of America', 'america' => 'United States of America',
+		'uk' => 'United Kingdom', 'u k' => 'United Kingdom', 'great britain' => 'United Kingdom', 'britain' => 'United Kingdom', 'england' => 'United Kingdom', 'scotland' => 'United Kingdom', 'wales' => 'United Kingdom', 'northern ireland' => 'United Kingdom',
+		'uae' => 'United Arab Emirates', 'eswatini' => 'Swaziland', 'kingdom of eswatini' => 'Swaziland', 'north macedonia' => 'Macedonia (TFYR)', 'macedonia' => 'Macedonia (TFYR)',
+		'czechia' => 'Czech Republic', 'turkiye' => 'Turkey', 'vietnam' => 'Viet Nam', 'ivory coast' => "Cote d'Ivoire", 'russia' => 'Russian Federation',
+		'korea republic of' => 'South Korea', 'republic of korea' => 'South Korea', 'korea south' => 'South Korea', 'korea north' => 'North Korea', 'dprk' => 'North Korea', 'democratic peoples republic of korea' => 'North Korea',
+		'laos' => 'Lao PDR', 'lao peoples democratic republic' => 'Lao PDR', 'syria' => 'Syrian Arab Republic', 'iran islamic republic of' => 'Iran',
+		'bolivia plurinational state of' => 'Bolivia', 'venezuela bolivarian republic of' => 'Venezuela', 'tanzania united republic of' => 'Tanzania', 'united republic of tanzania' => 'Tanzania',
+		'moldova republic of' => 'Moldova', 'republic of moldova' => 'Moldova', 'brunei' => 'Brunei Darussalam', 'cape verde' => 'Cabo Verde',
+		'democratic republic of the congo' => 'DR Congo', 'congo democratic republic of the' => 'DR Congo', 'drc' => 'DR Congo', 'congo kinshasa' => 'DR Congo', 'republic of the congo' => 'Congo', 'congo brazzaville' => 'Congo',
+		'palestine' => 'Occupied Palestinian Territory', 'state of palestine' => 'Occupied Palestinian Territory', 'micronesia' => 'Micronesia (Federated States of)', 'east timor' => 'Timor-Leste', 'burma' => 'Myanmar',
+		'holland' => 'Netherlands', 'us virgin islands' => 'Virgin Islands, U.S.', 'virgin islands' => 'Virgin Islands, U.S.', 'bosnia' => 'Bosnia and Herzegovina', 'taiwan province of china' => 'Taiwan',
+		// Small states the appendix leaves out: the neighbour's region.
+		'liechtenstein' => 'Switzerland', 'monaco' => 'France', 'san marino' => 'Italy', 'vatican city' => 'Italy', 'holy see' => 'Italy', 'saint kitts and nevis' => 'Antigua and Barbuda',
+		'nauru' => 'Kiribati', 'palau' => 'Micronesia (Federated States of)', 'tuvalu' => 'Fiji', 'kosovo' => 'Serbia',
+		// Territories: the region of the country they belong to.
+		'hong kong' => 'China', 'hong kong sar' => 'China', 'macao' => 'China', 'macau' => 'China', 'macao sar' => 'China',
+		'anguilla' => 'United Kingdom', 'british virgin islands' => 'United Kingdom', 'cayman islands' => 'United Kingdom', 'montserrat' => 'United Kingdom', 'turks and caicos islands' => 'United Kingdom', 'falkland islands' => 'United Kingdom',
+		'gibraltar' => 'United Kingdom', 'jersey' => 'United Kingdom', 'guernsey' => 'United Kingdom', 'isle of man' => 'United Kingdom', 'saint helena' => 'United Kingdom', 'pitcairn islands' => 'United Kingdom', 'british indian ocean territory' => 'United Kingdom', 'south georgia and the south sandwich islands' => 'United Kingdom',
+		'aruba' => 'Netherlands', 'curacao' => 'Netherlands', 'sint maarten' => 'Netherlands', 'bonaire' => 'Netherlands', 'caribbean netherlands' => 'Netherlands',
+		'guadeloupe' => 'France', 'martinique' => 'France', 'french guiana' => 'France', 'reunion' => 'France', 'mayotte' => 'France', 'french polynesia' => 'France', 'new caledonia' => 'France', 'wallis and futuna' => 'France', 'saint pierre and miquelon' => 'France', 'saint barthelemy' => 'France', 'saint martin' => 'France', 'french southern territories' => 'France',
+		'aland islands' => 'Finland', 'aland' => 'Finland', 'faroe islands' => 'Denmark', 'svalbard' => 'Norway', 'svalbard and jan mayen' => 'Norway', 'western sahara' => 'Morocco',
+		'cook islands' => 'New Zealand', 'niue' => 'New Zealand', 'tokelau' => 'New Zealand', 'norfolk island' => 'Australia', 'christmas island' => 'Australia', 'cocos keeling islands' => 'Australia', 'cocos islands' => 'Australia',
+		'united states minor outlying islands' => 'United States of America',
+		// ISO 3166 two-letter codes (the time-zone country a signed-in member's page is pre-filled from).
+		'ad' => 'Andorra', 'ae' => 'United Arab Emirates', 'af' => 'Afghanistan', 'ag' => 'Antigua and Barbuda', 'ai' => 'United Kingdom', 'al' => 'Albania', 'am' => 'Armenia', 'ao' => 'Angola',
+		'ar' => 'Argentina', 'as' => 'American Samoa', 'at' => 'Austria', 'au' => 'Australia', 'aw' => 'Netherlands', 'ax' => 'Finland', 'az' => 'Azerbaijan', 'ba' => 'Bosnia and Herzegovina',
+		'bb' => 'Barbados', 'bd' => 'Bangladesh', 'be' => 'Belgium', 'bf' => 'Burkina Faso', 'bg' => 'Bulgaria', 'bh' => 'Bahrain', 'bi' => 'Burundi', 'bj' => 'Benin', 'bl' => 'France',
+		'bm' => 'Bermuda', 'bn' => 'Brunei Darussalam', 'bo' => 'Bolivia', 'bq' => 'Netherlands', 'br' => 'Brazil', 'bs' => 'Bahamas', 'bt' => 'Bhutan', 'bw' => 'Botswana', 'by' => 'Belarus',
+		'bz' => 'Belize', 'ca' => 'Canada', 'cc' => 'Australia', 'cd' => 'DR Congo', 'cf' => 'Central African Republic', 'cg' => 'Congo', 'ch' => 'Switzerland', 'ci' => "Cote d'Ivoire",
+		'ck' => 'New Zealand', 'cl' => 'Chile', 'cm' => 'Cameroon', 'cn' => 'China', 'co' => 'Colombia', 'cr' => 'Costa Rica', 'cu' => 'Cuba', 'cv' => 'Cabo Verde', 'cw' => 'Netherlands',
+		'cx' => 'Australia', 'cy' => 'Cyprus', 'cz' => 'Czech Republic', 'de' => 'Germany', 'dj' => 'Djibouti', 'dk' => 'Denmark', 'dm' => 'Dominica', 'do' => 'Dominican Republic', 'dz' => 'Algeria',
+		'ec' => 'Ecuador', 'ee' => 'Estonia', 'eg' => 'Egypt', 'eh' => 'Morocco', 'er' => 'Eritrea', 'es' => 'Spain', 'et' => 'Ethiopia', 'fi' => 'Finland', 'fj' => 'Fiji', 'fk' => 'United Kingdom',
+		'fm' => 'Micronesia (Federated States of)', 'fo' => 'Denmark', 'fr' => 'France', 'ga' => 'Gabon', 'gb' => 'United Kingdom', 'gd' => 'Grenada', 'ge' => 'Georgia', 'gf' => 'France',
+		'gg' => 'United Kingdom', 'gh' => 'Ghana', 'gi' => 'United Kingdom', 'gl' => 'Greenland', 'gm' => 'Gambia', 'gn' => 'Guinea', 'gp' => 'France', 'gq' => 'Equatorial Guinea', 'gr' => 'Greece',
+		'gs' => 'United Kingdom', 'gt' => 'Guatemala', 'gu' => 'Guam', 'gw' => 'Guinea Bissau', 'gy' => 'Guyana', 'hk' => 'China', 'hn' => 'Honduras', 'hr' => 'Croatia', 'ht' => 'Haiti',
+		'hu' => 'Hungary', 'id' => 'Indonesia', 'ie' => 'Ireland', 'il' => 'Israel', 'im' => 'United Kingdom', 'in' => 'India', 'io' => 'United Kingdom', 'iq' => 'Iraq', 'ir' => 'Iran', 'is' => 'Iceland',
+		'it' => 'Italy', 'je' => 'United Kingdom', 'jm' => 'Jamaica', 'jo' => 'Jordan', 'jp' => 'Japan', 'ke' => 'Kenya', 'kg' => 'Kyrgyzstan', 'kh' => 'Cambodia', 'ki' => 'Kiribati', 'km' => 'Comoros',
+		'kn' => 'Antigua and Barbuda', 'kp' => 'North Korea', 'kr' => 'South Korea', 'kw' => 'Kuwait', 'ky' => 'United Kingdom', 'kz' => 'Kazakhstan', 'la' => 'Lao PDR', 'lb' => 'Lebanon',
+		'lc' => 'Saint Lucia', 'li' => 'Switzerland', 'lk' => 'Sri Lanka', 'lr' => 'Liberia', 'ls' => 'Lesotho', 'lt' => 'Lithuania', 'lu' => 'Luxembourg', 'lv' => 'Latvia', 'ly' => 'Libya',
+		'ma' => 'Morocco', 'mc' => 'France', 'md' => 'Moldova', 'me' => 'Montenegro', 'mf' => 'France', 'mg' => 'Madagascar', 'mh' => 'Marshall Islands', 'mk' => 'Macedonia (TFYR)', 'ml' => 'Mali',
+		'mm' => 'Myanmar', 'mn' => 'Mongolia', 'mo' => 'China', 'mp' => 'Northern Mariana Islands', 'mq' => 'France', 'mr' => 'Mauritania', 'ms' => 'United Kingdom', 'mt' => 'Malta', 'mu' => 'Mauritius',
+		'mv' => 'Maldives', 'mw' => 'Malawi', 'mx' => 'Mexico', 'my' => 'Malaysia', 'mz' => 'Mozambique', 'na' => 'Namibia', 'nc' => 'France', 'ne' => 'Niger', 'nf' => 'Australia', 'ng' => 'Nigeria',
+		'ni' => 'Nicaragua', 'nl' => 'Netherlands', 'no' => 'Norway', 'np' => 'Nepal', 'nr' => 'Kiribati', 'nu' => 'New Zealand', 'nz' => 'New Zealand', 'om' => 'Oman', 'pa' => 'Panama', 'pe' => 'Peru',
+		'pf' => 'France', 'pg' => 'Papua New Guinea', 'ph' => 'Philippines', 'pk' => 'Pakistan', 'pl' => 'Poland', 'pm' => 'France', 'pn' => 'United Kingdom', 'pr' => 'Puerto Rico',
+		'ps' => 'Occupied Palestinian Territory', 'pt' => 'Portugal', 'pw' => 'Micronesia (Federated States of)', 'py' => 'Paraguay', 'qa' => 'Qatar', 're' => 'France', 'ro' => 'Romania', 'rs' => 'Serbia',
+		'ru' => 'Russian Federation', 'rw' => 'Rwanda', 'sa' => 'Saudi Arabia', 'sb' => 'Solomon Islands', 'sc' => 'Seychelles', 'sd' => 'Sudan', 'se' => 'Sweden', 'sg' => 'Singapore',
+		'sh' => 'United Kingdom', 'si' => 'Slovenia', 'sj' => 'Norway', 'sk' => 'Slovakia', 'sl' => 'Sierra Leone', 'sm' => 'Italy', 'sn' => 'Senegal', 'so' => 'Somalia', 'sr' => 'Suriname',
+		'ss' => 'South Sudan', 'st' => 'Sao Tome and Principe', 'sv' => 'El Salvador', 'sx' => 'Netherlands', 'sy' => 'Syrian Arab Republic', 'sz' => 'Swaziland', 'tc' => 'United Kingdom', 'td' => 'Chad',
+		'tf' => 'France', 'tg' => 'Togo', 'th' => 'Thailand', 'tj' => 'Tajikistan', 'tk' => 'New Zealand', 'tl' => 'Timor-Leste', 'tm' => 'Turkmenistan', 'tn' => 'Tunisia', 'to' => 'Tonga',
+		'tr' => 'Turkey', 'tt' => 'Trinidad and Tobago', 'tv' => 'Fiji', 'tw' => 'Taiwan', 'tz' => 'Tanzania', 'ua' => 'Ukraine', 'ug' => 'Uganda', 'um' => 'United States of America',
+		'us' => 'United States of America', 'uy' => 'Uruguay', 'uz' => 'Uzbekistan', 'va' => 'Italy', 'vc' => 'Saint Vincent and the Grenadines', 've' => 'Venezuela', 'vg' => 'United Kingdom',
+		'vi' => 'Virgin Islands, U.S.', 'vn' => 'Viet Nam', 'vu' => 'Vanuatu', 'wf' => 'France', 'ws' => 'Samoa', 'xk' => 'Serbia', 'ye' => 'Yemen', 'yt' => 'France', 'za' => 'South Africa',
+		'zm' => 'Zambia', 'zw' => 'Zimbabwe',
+	);
+
+	/** Accented letters folded to plain ones for name matching (no intl extension needed). */
+	const PLAIN = array(
+		'á' => 'a', 'à' => 'a', 'â' => 'a', 'ä' => 'a', 'ã' => 'a', 'å' => 'a', 'ā' => 'a', 'Á' => 'a', 'À' => 'a', 'Â' => 'a', 'Ä' => 'a', 'Ã' => 'a', 'Å' => 'a',
+		'é' => 'e', 'è' => 'e', 'ê' => 'e', 'ë' => 'e', 'É' => 'e', 'È' => 'e', 'Ê' => 'e', 'Ë' => 'e', 'í' => 'i', 'ì' => 'i', 'î' => 'i', 'ï' => 'i', 'Í' => 'i', 'Î' => 'i',
+		'ó' => 'o', 'ò' => 'o', 'ô' => 'o', 'ö' => 'o', 'õ' => 'o', 'ø' => 'o', 'Ó' => 'o', 'Ô' => 'o', 'Ö' => 'o', 'Ø' => 'o', 'ú' => 'u', 'ù' => 'u', 'û' => 'u', 'ü' => 'u', 'Ú' => 'u', 'Ü' => 'u',
+		'ç' => 'c', 'Ç' => 'c', 'ñ' => 'n', 'Ñ' => 'n', 'ý' => 'y', 'ÿ' => 'y', 'ş' => 's', 'Ş' => 's', 'ğ' => 'g', 'ı' => 'i', 'İ' => 'i', 'æ' => 'ae', 'Æ' => 'ae', 'ß' => 'ss',
+	);
 
 	/** @var array|null The chart cells, decoded once. */
 	private static $cells = null;
@@ -140,6 +210,7 @@ class LLD_Members_Heart_Risk {
 			'risk'               => null,
 			'band'               => null,
 			'urgent'             => false,
+			'urgentKey'          => null,
 			'sbp'                => null,
 			'tcMmolL'            => null,
 			'bmiShown'           => null,
@@ -151,7 +222,8 @@ class LLD_Members_Heart_Risk {
 			'version'            => self::VERSION,
 		);
 
-		// Answers that decide the stops first (sheet section 2 and 4), then the stops, then the measurements.
+		// Answers that decide the stops and the urgent level first (sheet sections 2 and 4), then the urgent level,
+		// then the stops (each still shown after the urgent alert), then the measurements.
 		$age = isset( $in['age'] ) && is_numeric( $in['age'] ) ? (float) $in['age'] : null;
 		if ( null === $age || $age < 18 || $age > 99 || floor( $age ) !== $age ) {
 			return self::invalid( 'age' );
@@ -161,14 +233,27 @@ class LLD_Members_Heart_Risk {
 		if ( '' === $sex ) {
 			return self::invalid( 'sex' );
 		}
-		$cvd  = self::answer( isset( $in['cvd'] ) ? $in['cvd'] : 'no', array( 'yes', 'no' ) );
-		$preg = self::answer( isset( $in['preg'] ) ? $in['preg'] : 'no', array( 'yes', 'no', 'notsure' ) );
+		// The two safety answers must be given (a missing answer is never taken as "no"); eating defaults to "no".
+		$cvd  = self::answer( isset( $in['cvd'] ) ? $in['cvd'] : null, array( 'yes', 'no' ) );
+		$preg = self::answer( isset( $in['preg'] ) ? $in['preg'] : null, array( 'yes', 'no', 'notsure' ) );
 		$eat  = self::answer( isset( $in['eat'] ) ? $in['eat'] : 'no', array( 'yes', 'no', 'pnts' ) );
 		foreach ( array( 'cvd' => $cvd, 'preg' => $preg, 'eat' => $eat ) as $field => $value ) {
 			if ( null === $value ) {
 				return self::invalid( $field );
 			}
 		}
+		if ( ! isset( $in['sbp'] ) || ! is_numeric( $in['sbp'] ) ) {
+			return self::invalid( 'sbp' );
+		}
+		$sbp = (int) round( (float) $in['sbp'], 0, PHP_ROUND_HALF_UP );
+		if ( $sbp < 80 || $sbp > 250 ) {
+			return self::invalid( 'sbp' );
+		}
+		// The urgent level on any blood-pressure input (D5; safety matrix A1), before anything else, stops included;
+		// "Not sure" counts as pregnant, so the pregnancy thresholds and wording apply.
+		$out['sbp']       = $sbp;
+		$out['urgentKey'] = self::urgent_key( $sbp, 'no' !== $preg );
+		$out['urgent']    = null !== $out['urgentKey'];
 		if ( $age < 40 ) {
 			return self::stop( $out, 'under40' );
 		}
@@ -197,14 +282,6 @@ class LLD_Members_Heart_Risk {
 		if ( null === $diabetes ) {
 			return self::invalid( 'diabetes' );
 		}
-		if ( ! isset( $in['sbp'] ) || ! is_numeric( $in['sbp'] ) ) {
-			return self::invalid( 'sbp' );
-		}
-		$sbp = (int) round( (float) $in['sbp'], 0, PHP_ROUND_HALF_UP );
-		if ( $sbp < 80 || $sbp > 250 ) {
-			return self::invalid( 'sbp' );
-		}
-
 		$tc = self::cholesterol( $in );
 		if ( false === $tc ) {
 			return self::invalid( 'tc' );
@@ -237,38 +314,51 @@ class LLD_Members_Heart_Risk {
 		$out['cell']     = $cell;
 		$out['risk']     = $risk;
 		$out['band']     = self::band( $risk );
-		$out['urgent']   = $sbp >= self::URGENT_SBP;
-		$out['sbp']      = $sbp;
 		$out['tcMmolL']  = $tc;
 		$out['bmiShown'] = $bmi;
 
-		// What would lower it most (sheet section 3.2): one adjacent cell per factor, on its own.
+		// What would lower it most (sheet section 3.2): one adjacent cell per factor, on its own. Only a factor whose
+		// move lowers the printed figure is offered; $lowest says whether every factor is already in its lowest band.
 		$hide_weight = 'no' !== $eat;
-		$movable     = false;
-		$whatif      = array();
+		$lowest      = true;
+		$hidden      = null;
+		$options     = array();
 		if ( 'smoker' === $cell['smoking'] ) {
-			$whatif[] = self::whatif( $region, $model, $cell, 'smoking', 'smoking', 'non-smoker', null, $risk );
+			$lowest    = false;
+			$options[] = self::whatif( $region, $model, $cell, 'smoking', 'smoking', 'non-smoker', null, $risk );
 		}
 		$i = array_search( $cell['sbp'], self::SBP_BANDS, true );
 		if ( $i > 0 ) {
-			$whatif[] = self::whatif( $region, $model, $cell, 'blood-pressure', 'sbp', self::SBP_BANDS[ $i - 1 ], self::SBP_BOUNDS[ $i - 1 ], $risk );
+			$lowest    = false;
+			$options[] = self::whatif( $region, $model, $cell, 'blood-pressure', 'sbp', self::SBP_BANDS[ $i - 1 ], self::SBP_BOUNDS[ $i - 1 ], $risk );
 		}
 		if ( 'lab' === $model ) {
 			$i = array_search( $cell['tc'], self::TC_BANDS, true );
 			if ( $i > 0 ) {
-				$whatif[] = self::whatif( $region, $model, $cell, 'cholesterol', 'tc', self::TC_BANDS[ $i - 1 ], self::TC_BOUNDS[ $i - 1 ], $risk );
+				$lowest    = false;
+				$options[] = self::whatif( $region, $model, $cell, 'cholesterol', 'tc', self::TC_BANDS[ $i - 1 ], self::TC_BOUNDS[ $i - 1 ], $risk );
 			}
 		} else {
 			$i = array_search( $cell['bmi'], self::BMI_BANDS, true );
 			if ( $i > 1 ) { // only above 20-24
+				$lowest = false;
+				$weight = self::whatif( $region, $model, $cell, 'weight', 'bmi', self::BMI_BANDS[ $i - 1 ], self::BMI_BOUNDS[ $i - 1 ], $risk );
 				if ( $hide_weight ) {
 					$out['weightWhatifHidden'] = true;
-					$movable                   = true;
+					$hidden                    = $weight;
 				} else {
-					$whatif[] = self::whatif( $region, $model, $cell, 'weight', 'bmi', self::BMI_BANDS[ $i - 1 ], self::BMI_BOUNDS[ $i - 1 ], $risk );
+					$options[] = $weight;
 				}
 			}
 		}
+		$whatif = array_values(
+			array_filter(
+				$options,
+				function ( $w ) {
+					return $w['fall'] > 0;
+				}
+			)
+		);
 		// Rank by the fall; the build order above is the tie order (smoking, blood pressure, cholesterol, weight).
 		$order = array_flip( self::FACTORS );
 		usort(
@@ -279,7 +369,6 @@ class LLD_Members_Heart_Risk {
 		);
 		$out['whatif'] = $whatif;
 		$out['first']  = $whatif ? $whatif[0]['factor'] : null;
-		$movable       = $movable || (bool) $whatif;
 
 		$out['fill'] = array(
 			'risk'   => 0 === $risk ? 'less than 1' : (string) $risk,
@@ -294,7 +383,7 @@ class LLD_Members_Heart_Risk {
 
 		$keys = array();
 		if ( $out['urgent'] ) {
-			$keys[] = self::URGENT_KEY; // before any result (sheet section 4)
+			$keys[] = $out['urgentKey']; // before any result (sheet section 4); the result is still shown below it
 		}
 		$keys[] = 'headline';
 		$keys[] = 'band.' . $out['band'];
@@ -302,8 +391,12 @@ class LLD_Members_Heart_Risk {
 		$keys[] = 'model.' . $model;
 		if ( $whatif ) {
 			$keys[] = 'whatif';
-		} elseif ( ! $movable ) {
+		} elseif ( $lowest ) {
 			$keys[] = 'whatif.none';
+		} elseif ( null === $hidden || $hidden['fall'] <= 0 ) {
+			// A factor could move a band but no move lowers the printed figure: neither signed line is true, so a key
+			// with no wording yet (owner wording pending). When only the hidden weight move would lower it, no line.
+			$keys[] = 'whatif.noFall';
 		}
 		if ( 'yes' === $diabetes ) {
 			$keys[] = 'whatif.diabetes';
@@ -317,10 +410,10 @@ class LLD_Members_Heart_Risk {
 	}
 
 	/**
-	 * The signed text for each wording key. The urgent-care key takes the frozen global text from the Blood Pressure
-	 * Reading Check (P3-58) when it is loaded; a key with no signed text here (the pregnancy and "prefer not to say"
-	 * stops, which the sheet describes but whose exact words are not in the approval record) maps to null, so no
-	 * unsigned text is ever shown.
+	 * The signed text for each wording key. The urgent keys (`bp-check.urgent.alert`, `bp-check.pregnancy.urgent`) take
+	 * the frozen text from the safety layer's signed blood-pressure lines (P3-58, FR3-46); a key with no signed text
+	 * (the pregnancy and "prefer not to say" stops and `whatif.noFall`, whose exact words are not in the approval
+	 * record) maps to null, so no unsigned text is ever shown.
 	 *
 	 * @param string[] $keys   Wording keys from compute().
 	 * @param array    $result The compute() result (unused; the screen fills the placeholders from its `fill`).
@@ -330,8 +423,9 @@ class LLD_Members_Heart_Risk {
 		unset( $result );
 		$out = array();
 		foreach ( $keys as $key ) {
-			if ( self::URGENT_KEY === $key ) {
-				$out[ $key ] = self::urgent_text();
+			if ( 0 === strpos( $key, 'bp-check.' ) ) {
+				$bp          = constant( self::safety_class() . '::BP_MESSAGES' );
+				$out[ $key ] = isset( $bp[ substr( $key, 9 ) ] ) ? $bp[ substr( $key, 9 ) ] : null;
 			} elseif ( isset( self::MESSAGES[ $key ] ) ) {
 				$out[ $key ] = self::MESSAGES[ $key ];
 			} else {
@@ -352,7 +446,14 @@ class LLD_Members_Heart_Risk {
 		}
 		$map = self::countries();
 		$key = self::fold( (string) $country );
-		return isset( $map[ $key ] ) ? $map[ $key ] : null;
+		if ( isset( $map[ $key ] ) ) {
+			return $map[ $key ];
+		}
+		if ( isset( self::ALIASES[ $key ] ) ) {
+			$to = self::fold( self::ALIASES[ $key ] );
+			return isset( $map[ $to ] ) ? $map[ $to ] : null;
+		}
+		return null;
 	}
 
 	/** The 21 region names, as the chart file names them. */
@@ -361,16 +462,22 @@ class LLD_Members_Heart_Risk {
 	}
 
 	/**
-	 * The frozen urgent-care text, or null when the Blood Pressure Reading Check is not loaded.
+	 * The safety layer's urgent key for this systolic reading, or null below the urgent level.
+	 *
+	 * @param int  $sbp      Systolic, whole mmHg.
+	 * @param bool $pregnant Pregnant or breastfeeding, "yes" or "not sure".
 	 */
-	private static function urgent_text() {
-		if ( class_exists( 'LLD_Members_BP_Check' ) ) {
-			$m = LLD_Members_BP_Check::signed_text();
-			if ( isset( $m['urgent.alert'] ) ) {
-				return $m['urgent.alert'];
-			}
+	private static function urgent_key( $sbp, $pregnant ) {
+		$level = call_user_func( array( self::safety_class(), 'warning_level' ), 'blood_pressure', array( 'sys' => $sbp, 'dia' => self::NEUTRAL_DIA ), array( 'pregnancy' => $pregnant ) );
+		return 'urgent' === $level['level'] ? $level['key'] : null;
+	}
+
+	/** The Stage 3 safety layer, loaded on first use when the engine runs on its own (tests, CLI). */
+	private static function safety_class() {
+		if ( ! class_exists( 'LLD_Members_Stage3_Safety' ) ) {
+			require_once dirname( __DIR__ ) . '/class-safety-stage3.php';
 		}
-		return null;
+		return 'LLD_Members_Stage3_Safety';
 	}
 
 	/**
@@ -524,9 +631,17 @@ class LLD_Members_Heart_Risk {
 		return self::$countries;
 	}
 
-	/** Lower case, with any dash spelling and spaces made the same, for name matching. */
+	/**
+	 * A name folded for matching: accents dropped, lower case, apostrophes (straight or curly) removed, "&" as "and",
+	 * every other mark and run of spaces as one space, a leading "the" dropped and "St" as "Saint".
+	 */
 	private static function fold( $s ) {
-		return strtolower( preg_replace( '/[\s\x{2010}\x{2011}\x{2012}\x{2013}\x{2014}-]+/u', '-', trim( $s ) ) );
+		$s = strtr( (string) $s, self::PLAIN );
+		$s = strtolower( str_replace( array( "'", "\u{2019}", "\u{2018}", '`', "\u{00B4}", "\u{02BC}" ), '', $s ) );
+		$s = str_replace( '&', ' and ', $s );
+		$s = trim( preg_replace( '/[^a-z0-9]+/', ' ', $s ) );
+		$s = preg_replace( '/^the /', '', $s );
+		return preg_replace( '/^st /', 'saint ', $s );
 	}
 
 	/**
@@ -535,7 +650,7 @@ class LLD_Members_Heart_Risk {
 	 */
 	private static function stop( array $out, $what ) {
 		$out['stop']     = $what;
-		$out['messages'] = array( 'stops.' . $what );
+		$out['messages'] = null === $out['urgentKey'] ? array( 'stops.' . $what ) : array( $out['urgentKey'], 'stops.' . $what );
 		return $out;
 	}
 
@@ -585,6 +700,7 @@ class LLD_Members_Heart_Risk {
 		if ( 'prefernottosay' === $v || 'prefernot' === $v ) {
 			$v = 'pnts';
 		}
+		$v = 'true' === $v ? 'yes' : ( 'false' === $v ? 'no' : $v ); // true / false, as booleans or as text
 		return in_array( $v, $allowed, true ) ? $v : null;
 	}
 }

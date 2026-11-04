@@ -73,12 +73,39 @@ test('TC-FR3-49-AS-01', () => {
   expect(b.slice(7, 10).map((r) => [r.bmiShown, r.cell.bmi])).toEqual([[25, '25-29'], [24.9, '20-24'], [20, '20-24']]);
   expect(b.slice(10).map((r) => r.cell.age)).toEqual(['40-44', '45-49', '40-44', '70-74']);
 
-  // The urgent level: SBP 180 or more puts the frozen global urgent-care key first, before the result, which is
-  // still shown below it (HR-14, 66 %).
+  // The urgent level: SBP 180 or more puts the safety layer's urgent key first, before the result, which is still
+  // shown below it (HR-14, 66 %).
   const [urgent] = compute([byId['FX-HR-LAB-14'].inputs]);
-  expect(urgent.messages[0]).toBe('global_urgent');
+  expect(urgent.messages[0]).toBe('bp-check.urgent.alert');
+  expect(urgent.urgentKey).toBe('bp-check.urgent.alert');
   expect(urgent.messages[1]).toBe('headline');
   expect(urgent.risk).toBe(66);
+
+  // Countries: other names, accents, straight and curly apostrophes, case and spacing, ISO codes, and the site's own
+  // extension (territories take the region of the country they belong to; left-out small states their neighbour's).
+  const names = {
+    'United States': 'High-income North America', USA: 'High-income North America', 'u.s.a.': 'High-income North America', US: 'High-income North America',
+    Eswatini: 'Southern Sub-Saharan Africa', 'North Macedonia': 'Central Europe', Czechia: 'Central Europe', 'T\u00fcrkiye': 'North Africa and Middle East',
+    Turkiye: 'North Africa and Middle East', Vietnam: 'Southeast Asia', 'C\u00f4te d\u2019Ivoire': 'Western Sub-Saharan Africa', "C\u00f4te d'Ivoire": 'Western Sub-Saharan Africa',
+    "cote d'ivoire": 'Western Sub-Saharan Africa', 'Hong Kong': 'East Asia', Macao: 'East Asia', Macau: 'East Asia', '  united   kingdom ': 'Western Europe', UK: 'Western Europe',
+    'Timor-Leste': 'Southeast Asia', 'S\u00e3o Tom\u00e9 and Pr\u00edncipe': 'Western Sub-Saharan Africa', 'St Lucia': 'Caribbean', 'The Gambia': 'Western Sub-Saharan Africa',
+    'Trinidad & Tobago': 'Caribbean', 'Cura\u00e7ao': 'Western Europe', 'R\u00e9union': 'Western Europe', 'Puerto Rico': 'Caribbean', Liechtenstein: 'Western Europe', Kosovo: 'Central Europe',
+    GB: 'Western Europe', DE: 'Western Europe', gb: 'Western Europe',
+  };
+  const got = JSON.parse(php(`echo json_encode(array_map(fn($n) => ${H}::region_for_country($n), json_decode(${JSON.stringify(JSON.stringify(Object.keys(names)))}, true)));`));
+  expect(Object.fromEntries(Object.keys(names).map((n, i) => [n, got[i]]))).toEqual(names);
+  expect(compute([{ ...base, country: 'United States' }])[0]).toMatchObject({ region: 'High-income North America', risk: 9 });
+  // The site's own country lists: the billing page's GB, DE and US, and every country PHP's time-zone database names
+  // (the time-zone country a signed-in member's page is pre-filled from) resolves to a chart region; Antarctica, which
+  // has no country, is the only exception.
+  const tz = JSON.parse(php(`
+    $codes = []; foreach (DateTimeZone::listIdentifiers() as $id) { $l = (new DateTimeZone($id))->getLocation(); if ($l && '??' !== $l['country_code']) $codes[$l['country_code']] = 1; }
+    $bad = []; foreach (array_keys($codes) as $c) { $r = ${H}::region_for_country($c); if ('AQ' !== $c && !in_array($r, ${H}::regions(), true)) $bad[] = $c; }
+    foreach (['GB', 'DE', 'US'] as $c) if (null === ${H}::region_for_country($c)) $bad[] = "billing $c";
+    echo json_encode(['n' => count($codes), 'bad' => $bad]);
+  `));
+  expect(tz.n).toBeGreaterThan(240);
+  expect(tz.bad).toEqual([]);
 
   // Every country in the region map resolves to one of the 21 chart regions, and every region has its 1,750 cells.
   const map = JSON.parse(php(`
@@ -107,6 +134,17 @@ test('TC-FR3-49-AS-02', () => {
   expect(hr22.weightWhatifHidden).toBe(true);
   expect(hr22.whatif.some((w) => w.factor === 'weight')).toBe(false);
   expect(hr22.messages).toContain('whatif');
+  // A move that leaves the printed figure unchanged is never offered (review of PR #191): UK man 42, non-smoker,
+  // SBP 150, TC 3.5 is 2 %, and the band below 140-159 is 2 % too. With no factor left that lowers it and a factor
+  // not in its lowest band, neither signed line is true: whatif.noFall (no wording until the owner signs it).
+  const [flat] = compute([{ ...base, age: 42, sbp: 150, tc: 3.5 }]);
+  expect(flat.risk).toBe(2);
+  expect(flat.whatif).toEqual([]);
+  expect(flat.first).toBeNull();
+  expect(flat.messages).toContain('whatif.noFall');
+  expect(flat.messages).not.toContain('whatif.none');
+  expect(flat.messages).not.toContain('whatif');
+  expect(JSON.parse(php(`echo json_encode(${H}::wording(['whatif.noFall']));`))).toEqual({ 'whatif.noFall': null });
   // The same answers without the eating-disorder answer show the BMI what-if (25-29 -> 21 %, the cell the fixture
   // notes); "prefer not to say" hides it too; the member's profile flag hides it whatever the page said.
   const prof = JSON.parse(php(`echo json_encode(${H}::apply_profile(json_decode(${JSON.stringify(JSON.stringify({ ...byId['FX-HR-WHATIF-22'].inputs, eat: 'no' }))}, true), ['eating_disorder']));`));
@@ -129,11 +167,13 @@ test('TC-FR3-49-AS-02', () => {
   // Only the hidden weight factor could move: no "already in the lowest bands" line, which would not be true.
   expect(hiddenOnly.messages).not.toContain('whatif.none');
   expect(hiddenOnly.messages).not.toContain('whatif');
+  expect(hiddenOnly.messages).not.toContain('whatif.noFall');
 
   // A sweep over every region, chart and band: the first factor always has the largest fall, ties go in the signed
-  // order, each what-if is exactly one band down, and the fall is never negative (the charts are monotonic).
+  // order, every offered fall is above 0 (so first.fall > 0 whenever first is set), a factor is left out only when
+  // its move would not lower the figure, and exactly one what-if line (or none) is shown.
   const sweep = JSON.parse(php(`
-    $bad = []; $n = 0; $tie = ['smoking' => 0, 'blood-pressure' => 1, 'cholesterol' => 2, 'weight' => 3];
+    $bad = []; $n = 0; $flat = 0; $tie = ['smoking' => 0, 'blood-pressure' => 1, 'cholesterol' => 2, 'weight' => 3];
     foreach (${H}::regions() as $region) foreach (['male', 'female'] as $sex) foreach (['yes', 'no'] as $smoke) foreach ([42, 57, 72] as $age)
       foreach ([110, 130, 150, 170, 190] as $sbp) foreach ([3.5, 4.5, 5.5, 6.5, 7.5, null] as $tc) {
         $r = ${H}::compute(['age' => $age, 'sex' => $sex, 'region' => $region, 'smoke' => $smoke, 'sbp' => $sbp, 'diabetes' => 'no', 'tc' => $tc, 'bmi' => 33, 'cvd' => 'no', 'preg' => 'no', 'eat' => 'no']);
@@ -142,15 +182,23 @@ test('TC-FR3-49-AS-02', () => {
         for ($i = 1; $i < count($w); $i++) {
           if ($w[$i]['fall'] > $w[$i - 1]['fall'] || ($w[$i]['fall'] === $w[$i - 1]['fall'] && $tie[$w[$i]['factor']] < $tie[$w[$i - 1]['factor']])) $bad[] = "$region $sex $smoke $age $sbp $tc: order";
         }
-        foreach ($w as $x) { if ($x['fall'] < 0 || $x['fall'] !== $r['risk'] - $x['risk']) $bad[] = "$region $sex $smoke $age $sbp $tc: fall"; }
-        if (($smoke === 'yes') !== in_array('smoking', array_column($w, 'factor'), true)) $bad[] = "$region $sex $smoke $age $sbp $tc: smoking";
-        if (($sbp >= 120) !== in_array('blood-pressure', array_column($w, 'factor'), true)) $bad[] = "$region $sex $age $sbp: bp";
+        foreach ($w as $x) { if ($x['fall'] <= 0 || $x['fall'] !== $r['risk'] - $x['risk']) $bad[] = "$region $sex $smoke $age $sbp $tc: fall"; }
+        if ($r['first'] !== null && $w[0]['fall'] <= 0) $bad[] = "$region $sex $smoke $age $sbp $tc: first.fall";
+        if ($smoke === 'yes' && !in_array('smoking', array_column($w, 'factor'), true)) { $ns = ${H}::compute(['smoke' => 'no'] + ['age' => $age, 'sex' => $sex, 'region' => $region, 'sbp' => $sbp, 'diabetes' => 'no', 'tc' => $tc, 'bmi' => 33, 'cvd' => 'no', 'preg' => 'no']); if ($ns['risk'] < $r['risk']) $bad[] = "$region $sex $age $sbp $tc: smoking dropped"; }
+        if ($smoke === 'no' && in_array('smoking', array_column($w, 'factor'), true)) $bad[] = "$region: smoking offered to a non-smoker";
+        if ($sbp < 120 && in_array('blood-pressure', array_column($w, 'factor'), true)) $bad[] = "$region $sbp: bp below 120";
         if ($r['first'] !== ($w ? $w[0]['factor'] : null)) $bad[] = "$region: first";
+        $lines = array_values(array_intersect($r['messages'], ['whatif', 'whatif.none', 'whatif.noFall']));
+        $lowest = $smoke === 'no' && $sbp < 120 && null !== $tc && $tc < 4; // BMI 33 is never the lowest band
+        $want = $w ? ['whatif'] : ($lowest ? ['whatif.none'] : ['whatif.noFall']);
+        if ($lines !== $want) $bad[] = "$region $sex $smoke $age $sbp $tc: lines " . implode(',', $lines);
+        if (!$w) $flat++;
       }
-    echo json_encode(['n' => $n, 'bad' => array_slice($bad, 0, 20)]);
+    echo json_encode(['n' => $n, 'flat' => $flat, 'bad' => array_slice($bad, 0, 20)]);
   `));
   expect(sweep.n).toBe(21 * 2 * 2 * 3 * 5 * 6);
   expect(sweep.bad).toEqual([]);
+  expect(sweep.flat).toBeGreaterThan(0); // the sweep does reach results with no what-if
 });
 
 test('TC-FR3-49-AS-03', () => {
@@ -176,22 +224,64 @@ test('TC-FR3-49-AS-03', () => {
   expect([W['stops.pregnancy'], W['stops.sex']]).toEqual([null, null]);
   // Diabetes is pre-filled from the profile only when the page left it unanswered.
   expect([profiled[2].diabetes, profiled[3].diabetes]).toEqual(['yes', 'no']);
+  // The urgent level is never lost to a stop (safety matrix A1, D5): the safety layer's key comes first, then the
+  // stop; pregnancy ("yes" or "not sure") uses the pregnancy threshold (160) and its own urgent line.
+  const urgentStops = compute([{ ...base, age: 30, sbp: 200 }, { ...base, age: 80, sbp: 200 }, { ...base, cvd: 'yes', sbp: 220 }, { ...base, preg: 'yes', sbp: 190 },
+    { ...base, sex: 'pnts', sbp: 190 }, { ...base, preg: 'not sure', sbp: 165 }, { ...base, preg: 'yes', sbp: 159 }, { ...base, age: 30, sbp: 179 }]);
+  expect(urgentStops.map((r) => [r.stop, r.urgent, r.messages])).toEqual([
+    ['under40', true, ['bp-check.urgent.alert', 'stops.under40']], ['over74', true, ['bp-check.urgent.alert', 'stops.over74']],
+    ['cvd', true, ['bp-check.urgent.alert', 'stops.cvd']], ['pregnancy', true, ['bp-check.pregnancy.urgent', 'stops.pregnancy']],
+    ['sex', true, ['bp-check.urgent.alert', 'stops.sex']], ['pregnancy', true, ['bp-check.pregnancy.urgent', 'stops.pregnancy']],
+    ['pregnancy', false, ['stops.pregnancy']], ['under40', false, ['stops.under40']],
+  ]);
+  for (const r of urgentStops) for (const k of ['risk', 'band', 'model', 'first']) expect(r[k]).toBeNull();
+  const UW = JSON.parse(php(`echo json_encode(${H}::wording(['bp-check.urgent.alert', 'bp-check.pregnancy.urgent']));`));
+  const bpHashes = json('approvals/stage3/bp-check.json').copy_hashes;
+  expect(sha(Buffer.from(UW['bp-check.urgent.alert'], 'utf8'))).toBe(bpHashes['urgent.alert']);
+  expect(sha(Buffer.from(UW['bp-check.pregnancy.urgent'], 'utf8'))).toBe(bpHashes['pregnancy.urgent']);
+  // The two safety answers are required: missing is refused, never taken as "no".
+  const { cvd, preg, ...noSafety } = base;
+  const missing = compute([{ ...noSafety, preg }, { ...noSafety, cvd }, { ...base, cvd: null }, { ...base, preg: '' }]);
+  expect(missing.map((r) => r.error)).toEqual(['cvd', 'preg', 'cvd', 'preg']);
+  // Every yes / no answer takes "yes" / "no", true / false and "true" / "false" alike, in any case; "no" never counts
+  // as yes; anything else is refused.
+  const spell = compute([
+    { ...base, cvd: true }, { ...base, cvd: 'true' }, { ...base, cvd: 'YES' }, { ...base, cvd: false }, { ...base, cvd: 'false' }, { ...base, cvd: 'No' },
+    { ...base, preg: true }, { ...base, preg: 'false' }, { ...base, smoke: true }, { ...base, smoke: 'false' }, { ...base, diabetes: 'true' }, { ...base, diabetes: false },
+    { ...base, eat: true, tc: null }, { ...base, cvd: 'maybe' }, { ...base, smoke: 1 },
+  ]);
+  expect(spell.map((r) => r.error || r.stop || 'result')).toEqual(['cvd', 'cvd', 'cvd', 'result', 'result', 'result', 'pregnancy', 'result', 'result', 'result', 'result', 'result', 'result', 'cvd', 'smoke']);
+  expect([spell[8].cell.smoking, spell[9].cell.smoking, spell[10].cell.diabetes, spell[11].cell.diabetes]).toEqual(['smoker', 'non-smoker', 'yes', 'no']);
   // Outside the page's accepted range (18 to 99), or not a whole number, is refused as bad input.
   const errs = compute([{ ...base, age: 17 }, { ...base, age: 100 }, { ...base, age: 55.5 }, { ...base, sex: 'x' }, { ...base, sbp: 79 }, { ...base, sbp: 251 }, { ...base, country: 'Atlantis' }, { ...base, country: undefined, region: 'Mars' }, { ...base, tc: null, bmi: null }, { ...base, tc: null, bmi: 14 }, { ...base, smoke: 'sometimes' }, { ...base, cvd: ['yes'] }]);
   expect(errs.map((r) => r.error)).toEqual(['age', 'age', 'age', 'sex', 'sbp', 'sbp', 'country', 'region', 'bmi', 'bmi', 'smoke', 'cvd']);
+  // The reading is checked before the stops, so the urgent level can always be decided.
+  expect(compute([{ ...base, age: 30, sbp: undefined }])[0].error).toBe('sbp');
 });
 
-test('TC-FR3-46-AS-03 (heart risk): the urgent level points at the frozen global urgent-care wording, never retyped', () => {
+test('TC-FR3-46-AS-03 (heart risk): the urgent level and its wording come from the safety layer, never retyped', () => {
   const src = readFileSync(engine, 'utf8');
-  expect(src).not.toMatch(/Your reading is very high|call your local emergency number/i);
-  expect(src).toMatch(/const URGENT_SBP = 180;/);
-  const W = JSON.parse(php(`echo json_encode(${H}::wording(['global_urgent', 'headline']));`));
-  expect(Object.keys(W)).toEqual(['global_urgent', 'headline']);
-  // With the Blood Pressure Reading Check loaded, the text is its signed urgent alert (approval bp-check urgent.alert).
+  expect(src).not.toMatch(/Your reading is very high|call your local emergency number|maternity unit/i);
+  expect(src).not.toMatch(/URGENT_SBP|\$sbp >= \d/);
+  expect(src).toMatch(/warning_level' \), 'blood_pressure'/);
+  const W = JSON.parse(php(`echo json_encode(${H}::wording(['bp-check.urgent.alert', 'headline']));`));
+  expect(Object.keys(W)).toEqual(['bp-check.urgent.alert', 'headline']);
+  // Loaded with the Blood Pressure Reading Check, as on the site, the text is the same signed alert.
   const bp = resolve(calcDir, 'class-bp-check.php');
-  const bpText = JSON.parse(execFileSync('php', ['-d', 'display_errors=stderr', '-r', `define('ABSPATH', '/'); require ${toPhpPath(bp)}; require ${toPhpPath(engine)}; echo json_encode(${H}::wording(['global_urgent'])['global_urgent']);`], { encoding: 'utf8' }));
-  expect(typeof bpText).toBe('string');
+  const bpText = JSON.parse(execFileSync('php', ['-d', 'display_errors=stderr', '-r', `define('ABSPATH', '/'); require ${toPhpPath(bp)}; require ${toPhpPath(engine)}; echo json_encode(${H}::wording(['bp-check.urgent.alert'])['bp-check.urgent.alert']);`], { encoding: 'utf8' }));
   expect(sha(Buffer.from(bpText, 'utf8'))).toBe(json('approvals/stage3/bp-check.json').copy_hashes['urgent.alert']);
+  // The safety layer and the engine agree on every systolic the page accepts, pregnant or not.
+  const agree = JSON.parse(php(`
+    $bad = [];
+    foreach ([false, true] as $p) for ($s = 80; $s <= 250; $s++) {
+      $r = ${H}::compute(['age' => 55, 'sex' => 'male', 'country' => 'United Kingdom', 'smoke' => 'no', 'sbp' => $s, 'diabetes' => 'no', 'tc' => 5, 'cvd' => 'no', 'preg' => $p ? 'yes' : 'no']);
+      $w = LLD_Members_Stage3_Safety::warning_level('blood_pressure', ['sys' => $s, 'dia' => 60], ['pregnancy' => $p]); // loaded by the engine
+      if ($r['urgent'] !== ('urgent' === $w['level']) || ($r['urgent'] && $r['messages'][0] !== $w['key'])) $bad[] = ($p ? 'p' : '') . $s;
+      if ($r['urgent'] !== ($s >= ($p ? 160 : 180))) $bad[] = "threshold $s";
+    }
+    echo json_encode($bad);
+  `));
+  expect(agree).toEqual([]);
 });
 
 test('TC-NFR3-14-AS-02 (heart risk): every signed string and both WHO data files hash to the approval record', () => {
@@ -213,9 +303,10 @@ test('TC-NFR3-14-AS-02 (heart risk): every signed string and both WHO data files
     expect(Buffer.compare(shipped, frozen), name).toBe(0);
     expect(sha(shipped), name).toBe(approval.copy_hashes[`data.${name}`]);
   }
-  // Every key a result can show is signed, the urgent key or one of the two unsigned stops.
-  const keys = new Set(compute([...fixtures.map((f) => f.inputs), { ...base, sex: 'pnts' }]).flatMap((r) => r.messages));
-  for (const k of keys) expect(k in M || ['global_urgent', 'stops.pregnancy', 'stops.sex'].includes(k), k).toBe(true);
+  // Every key a result can show is signed, an urgent key of the safety layer, or one of the three still unsigned
+  // (the pregnancy and "prefer not to say" stops and whatif.noFall, which show no text).
+  const keys = new Set(compute([...fixtures.map((f) => f.inputs), { ...base, sex: 'pnts' }, { ...base, age: 42, sbp: 150, tc: 3.5 }]).flatMap((r) => r.messages));
+  for (const k of keys) expect(k in M || ['bp-check.urgent.alert', 'bp-check.pregnancy.urgent', 'stops.pregnancy', 'stops.sex', 'whatif.noFall'].includes(k), k).toBe(true);
   // No medicine advice: "statin" never appears in the wording.
   expect(Object.values(M).join(' ')).not.toMatch(/statin/i);
 });

@@ -43,6 +43,9 @@ class LLD_Members_Fitness_Age {
 	const AGE_MIN = 18;
 	const AGE_MAX = 90;
 
+	/** Below this estimate (mL/kg/min, shown 1 dp) no result is given: stop cannotEstimate (lead review, P3-5A). */
+	const VO2_FLOOR = 10;
+
 	/** "Almost every day, sweating, 30-60 minutes" (5 x 2 x 0.75), the activity lever's target (sheet 1.4). */
 	const PA_TARGET = 7.5;
 
@@ -165,10 +168,12 @@ class LLD_Members_Fitness_Age {
 		if ( '' === $sex ) {
 			return self::invalid( 'sex' );
 		}
-		$medicine  = self::answer( isset( $in['heartMedicine'] ) ? $in['heartMedicine'] : 'no', array( 'yes', 'no', 'notsure' ) );
-		$condition = self::answer( isset( $in['heartCondition'] ) ? $in['heartCondition'] : 'no', array( 'yes', 'no', 'notsure' ) );
-		$pregnant  = self::answer( isset( $in['pregnant'] ) ? $in['pregnant'] : 'no', array( 'yes', 'no', 'notsure' ) );
-		$eating    = self::answer( isset( $in['eatingDisorder'] ) ? $in['eatingDisorder'] : 'no', array( 'yes', 'no', 'pnts' ) );
+		// The three safety answers are required: a missing answer is refused, never read as "no" (sheet 1.3, 1.5).
+		// The eating-disorder answer is optional (it only hides the waist lever) and the profile sets it.
+		$medicine  = self::answer( isset( $in['heartMedicine'] ) ? $in['heartMedicine'] : null, array( 'notsure' ) );
+		$condition = self::answer( isset( $in['heartCondition'] ) ? $in['heartCondition'] : null, array( 'notsure' ) );
+		$pregnant  = self::answer( isset( $in['pregnant'] ) ? $in['pregnant'] : null, array( 'notsure' ) );
+		$eating    = self::answer( isset( $in['eatingDisorder'] ) ? $in['eatingDisorder'] : 'no', array( 'pnts' ) );
 		foreach ( array( 'heartMedicine' => $medicine, 'heartCondition' => $condition, 'pregnant' => $pregnant, 'eatingDisorder' => $eating ) as $field => $value ) {
 			if ( null === $value ) {
 				return self::invalid( $field );
@@ -207,6 +212,16 @@ class LLD_Members_Fitness_Age {
 		$ref0    = $k['c'] - $k['waist'] * self::REF_WAIST[ $sex ] - $k['rhr'] * self::REF_RHR + $k['pa'] * self::REF_PA;
 		$raw_age = ( $ref0 - $vo2 ) / $k['age'];
 		$shown   = (int) self::rnd( $raw_age, 0 );
+
+		// The sheet's input ranges allow combinations far outside the model (for example 99, waist 250, resting 120,
+		// no exercise: about -28 mL/kg/min). Below a plausible floor no number is shown (lead review, P3-5A); the
+		// stop has no signed wording yet, so wording() returns null for its key.
+		if ( self::rnd( $vo2, 1 ) < self::VO2_FLOOR ) {
+			$out['stop']     = 'cannotEstimate';
+			$out['notes']    = array( 'stops.cannotEstimate' );
+			$out['messages'] = array( 'stops.cannotEstimate' );
+			return $out;
+		}
 
 		$out['paIndex']       = self::rnd( $pa, 2 );
 		$out['vo2']           = self::rnd( $vo2, 1 );
@@ -272,6 +287,8 @@ class LLD_Members_Fitness_Age {
 				$out[ $key ] = self::QUOTED[ substr( $key, 7 ) ];
 			} elseif ( isset( self::MESSAGES[ $key ] ) ) {
 				$out[ $key ] = self::MESSAGES[ $key ];
+			} elseif ( 'stops.cannotEstimate' === $key ) {
+				$out[ $key ] = null; // no signed wording yet
 			}
 		}
 		return $out;
@@ -412,18 +429,25 @@ class LLD_Members_Fitness_Age {
 	}
 
 	/**
-	 * @param mixed    $value   Answer.
-	 * @param string[] $allowed Accepted answers.
+	 * A yes-or-no answer, the same in all three P3-5A engines: "yes" / "no", true / false or "true" / "false" (any
+	 * case), plus the extra answers a question allows ("notsure", "pnts"); anything else, including a missing
+	 * answer, is null (refused), so "no" never counts as yes.
+	 *
+	 * @param mixed    $value Answer.
+	 * @param string[] $extra Accepted answers besides yes and no.
+	 * @return string|null yes, no, one of $extra, or null.
 	 */
-	private static function answer( $value, array $allowed ) {
-		if ( ! is_scalar( $value ) ) {
+	private static function answer( $value, array $extra = array() ) {
+		if ( is_bool( $value ) ) {
+			return $value ? 'yes' : 'no';
+		}
+		if ( ! is_string( $value ) ) {
 			return null;
 		}
-		$v = strtolower( str_replace( array( ' ', '-', '_' ), '', trim( (string) $value ) ) );
-		if ( 'prefernottosay' === $v || 'prefernot' === $v ) {
-			$v = 'pnts';
-		}
-		return in_array( $v, $allowed, true ) ? $v : null;
+		$v   = strtolower( str_replace( array( ' ', '-', '_' ), '', trim( $value ) ) );
+		$map = array( 'yes' => 'yes', 'true' => 'yes', 'no' => 'no', 'false' => 'no', 'prefernottosay' => 'pnts', 'prefernot' => 'pnts' );
+		$v   = isset( $map[ $v ] ) ? $map[ $v ] : $v;
+		return in_array( $v, array_merge( array( 'yes', 'no' ), $extra ), true ) ? $v : null;
 	}
 
 	/**

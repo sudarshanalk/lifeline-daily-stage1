@@ -5,13 +5,14 @@
     "python": "3.14.6",
     "sheet": "P3-59 v1.0 signed 2026-11-03"
   },
-  "source_hash": "584ca801a3bf0884cd0137f1f68ab6165f33d9ead1ca4a797d8234f00913e722",
-  "run_at": "2026-11-04T07:16:29Z",
+  "source_hash": "cd677ef56e2e72c62e6af1b14635fafe75f7d056320664b579bda464242ec564",
+  "run_at": "2026-11-04T07:23:36Z",
   "results": [
     {
       "fixture_id": "FX-MET-CRIT-01",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": true,
         "criteria": {
           "triglycerides": "met",
@@ -30,6 +31,7 @@
       "fixture_id": "FX-MET-CRIT-02",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": false,
         "criteria": {
           "triglycerides": "not-met",
@@ -48,6 +50,7 @@
       "fixture_id": "FX-MET-CRIT-03",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": true,
         "criteria": {
           "triglycerides": "not-met",
@@ -66,6 +69,7 @@
       "fixture_id": "FX-MET-CRIT-04",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": false,
         "criteria": {
           "triglycerides": "met",
@@ -86,6 +90,7 @@
       "fixture_id": "FX-MET-CRIT-05",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": true,
         "criteria": {
           "triglycerides": "not-met",
@@ -104,6 +109,7 @@
       "fixture_id": "FX-MET-CRIT-06",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": true,
         "criteria": {
           "triglycerides": "not-met",
@@ -122,6 +128,7 @@
       "fixture_id": "FX-MET-CRIT-07",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": true,
         "criteria": {
           "triglycerides": "met",
@@ -140,6 +147,7 @@
       "fixture_id": "FX-MET-CRIT-08",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": false,
         "criteria": {
           "triglycerides": "met",
@@ -160,6 +168,7 @@
       "fixture_id": "FX-MET-PART-01",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": true,
         "criteria": {
           "triglycerides": "unknown",
@@ -182,6 +191,7 @@
       "fixture_id": "FX-MET-PART-02",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": true,
         "criteria": {
           "triglycerides": "unknown",
@@ -204,6 +214,7 @@
       "fixture_id": "FX-MET-PART-03",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": true,
         "criteria": {
           "triglycerides": "not-met",
@@ -222,6 +233,7 @@
       "fixture_id": "FX-MET-SAFE-01",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": true,
         "criteria": {
           "triglycerides": "not-met",
@@ -242,6 +254,7 @@
       "fixture_id": "FX-MET-SAFE-02",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": true,
         "criteria": {
           "triglycerides": "not-met",
@@ -262,6 +275,7 @@
       "fixture_id": "FX-MET-SAFE-03",
       "expected": {
         "stop": "stops.pregnancy",
+        "refused": false,
         "central": null,
         "criteria": null,
         "count": null,
@@ -274,6 +288,7 @@
       "fixture_id": "FX-MET-SAFE-04",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": true,
         "criteria": {
           "triglycerides": "not-met",
@@ -294,6 +309,7 @@
       "fixture_id": "FX-MET-SAFE-05",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": true,
         "criteria": {
           "triglycerides": "not-met",
@@ -314,6 +330,7 @@
       "fixture_id": "FX-MET-SAFE-06",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": true,
         "criteria": {
           "triglycerides": "met",
@@ -332,6 +349,7 @@
       "fixture_id": "FX-MET-UNIT-01",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": true,
         "criteria": {
           "triglycerides": "met",
@@ -350,6 +368,7 @@
       "fixture_id": "FX-MET-UNIT-02",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": true,
         "criteria": {
           "triglycerides": "met",
@@ -368,6 +387,7 @@
       "fixture_id": "FX-MET-UNIT-03",
       "expected": {
         "stop": null,
+        "refused": false,
         "central": true,
         "criteria": {
           "triglycerides": "not-met",

@@ -57,6 +57,18 @@ test('TC-FR3-52-AS-01', () => {
   // Out-of-range and non-scalar answers are refused without a PHP notice.
   const bad = compute([{ ...base, waistCm: 30 }, { ...base, rhr: 130 }, { ...base, frequency: 'sometimes' }, { ...base, sex: ['m'] }, { ...base, age: 120 }]);
   expect(bad.map((r) => r.error)).toEqual(['waist', 'rhr', 'frequency', 'sex', 'age']);
+
+  // Below a plausible VO2 (10 mL/kg/min, shown 1 dp) no number is given: stop cannotEstimate, no signed wording yet.
+  const [floor, justAbove] = compute([
+    { ...base, sex: 'female', age: 99, waistCm: 250, rhr: 120, frequency: 'never', intensity: null, duration: null },
+    { ...base, sex: 'female', age: 70, waistCm: 120, rhr: 100, frequency: 'never', intensity: null, duration: null },
+  ]);
+  expect(floor.stop).toBe('cannotEstimate');
+  for (const k of ['vo2', 'fitnessAge', 'fitnessAgeRaw', 'paIndex']) expect(floor[k]).toBeNull();
+  expect(floor.messages).toEqual(['stops.cannotEstimate']);
+  expect(JSON.parse(php("echo json_encode(LLD_Members_Fitness_Age::wording(['stops.cannotEstimate']));"))).toEqual({ 'stops.cannotEstimate': null });
+  expect(justAbove.stop).toBeNull();
+  expect(justAbove.vo2).toBeGreaterThanOrEqual(10);
 });
 
 test('TC-FR3-52-AS-02', () => {
@@ -103,6 +115,16 @@ test('TC-FR3-52-AS-01 (safety): stops, the profile and the eating-disorder flag'
   ]);`));
   expect(prof.map((r) => r.stop)).toEqual(['medicine', 'heartCondition', 'pregnancy', null, 'medicine']);
   expect(prof[3].waistLeverHidden).toBe(true);
+  // The three safety answers are required: a missing one is refused, never read as "no".
+  const missing = compute(['heartMedicine', 'heartCondition', 'pregnant'].map((k) => { const i = { ...base }; delete i[k]; return i; }));
+  expect(missing.map((r) => r.error)).toEqual(['heartMedicine', 'heartCondition', 'pregnant']);
+  // Yes / no answers read the same as true / false and "true" / "false"; "no" never counts as yes.
+  const yn = compute([
+    { ...base, heartMedicine: true }, { ...base, heartMedicine: 'TRUE' }, { ...base, heartMedicine: false }, { ...base, heartMedicine: 'false' },
+    { ...base, eatingDisorder: 'no' }, { ...base, eatingDisorder: false }, { ...base, eatingDisorder: 'true' }, { ...base, pregnant: 1 },
+  ]);
+  expect(yn.map((r) => r.stop ?? r.error ?? null)).toEqual(['medicine', 'medicine', null, null, null, null, null, 'pregnant']);
+  expect(yn.slice(4, 7).map((r) => r.waistLeverHidden)).toEqual([false, false, true]);
 });
 
 test('NFR3-14 (fitness age wording): every signed string hashes to the approval record', () => {
@@ -122,6 +144,7 @@ test('NFR3-14 (fitness age wording): every signed string hashes to the approval 
   const results = compute([...fixtures.map((f) => f.inputs), { ...base, previousVo2: 40 }]);
   const W = JSON.parse(php(`echo json_encode(LLD_Members_Fitness_Age::wording(${phpArr([...new Set(results.flatMap((r) => r.messages))])}));`));
   for (const r of results) for (const k of r.messages) expect(W[k], k).toBeTruthy();
+  expect(results.some((r) => r.stop === 'cannotEstimate')).toBe(false); // no frozen fixture is below the floor
   // The engine is pure: no hooks, no database.
   expect(readFileSync(engine, 'utf8')).not.toMatch(/add_action|add_filter|\$wpdb|get_option|wp_remote/);
 });

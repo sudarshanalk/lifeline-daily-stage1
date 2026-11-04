@@ -2,6 +2,9 @@
 sheet (04 Health Tools/Stage 3/P3-58-Blood-Pressure-Reading-Check-Method-Sheet.md, decisions D3-16 to D3-21), not
 from the engine or the safety matrix code. Exact fractions, so rounding ties are decided exactly.
 
+  Rounding : every reading and pulse to whole numbers, half-up, before any level or category
+  Answers  : pregnant yes / not sure (or true / "true" / 1) is pregnant; dizzy and medicine are yes only for yes /
+             true / "true" / 1 / "on", so "no" and "false" never count as yes
   Refused  : systolic outside 60-260, diastolic outside 30-160, diastolic not at least 10 below systolic, pulse
              outside 30-220 (sheet 4.4)
   Urgent   : not pregnant, systolic >= 180 or diastolic >= 120 on any single reading (4.1), shown first
@@ -29,6 +32,21 @@ from pathlib import Path
 def half_up(x: F) -> int:
     # Readings are positive: floor(x + 1/2)
     return int((x + F(1, 2)) // 1)
+
+
+def whole(v) -> F:
+    return F(half_up(F(str(v))))
+
+
+def truthy(v) -> bool:
+    if isinstance(v, bool): return v
+    return str(v).strip().lower() in ("yes", "true", "1", "on") if v is not None else False
+
+
+def is_pregnant(v) -> bool:
+    if isinstance(v, bool): return v
+    t = str(v if v is not None else "no").strip().lower().replace(" ", "").replace("-", "").replace("_", "")
+    return t in ("yes", "notsure", "true", "1")
 
 
 def impossible(s, d, pulse=None) -> bool:
@@ -69,10 +87,10 @@ def result(refused=False, category=None, level="none", urgent=False, keys=(), av
 
 
 def single(i: dict) -> dict:
-    s, d = F(str(i["systolic"])), F(str(i["diastolic"]))
-    pulse = F(str(i["pulse"])) if i.get("pulse") is not None else None
-    pregnant = i.get("pregnant", "no") != "no"
-    dizzy = bool(i.get("dizzy"))
+    s, d = whole(i["systolic"]), whole(i["diastolic"])
+    pulse = whole(i["pulse"]) if i.get("pulse") is not None else None
+    pregnant = is_pregnant(i.get("pregnant", "no"))
+    dizzy = truthy(i.get("dizzy"))
     age80 = i.get("age") is not None and int(i["age"]) >= 80
     if impossible(s, d, pulse):
         return result(refused=True, level="refused", keys=["refused.impossible"])
@@ -103,7 +121,7 @@ def single(i: dict) -> dict:
     if age80 and not pregnant:
         keys.append("age80.note")
         if level == "none": level = "age80_note"
-    if i.get("medicine") in (True, "yes"):
+    if truthy(i.get("medicine")):
         keys.append("medicine.note")
     return result(category=category, level=level, urgent=urgent, keys=keys)
 
@@ -111,14 +129,14 @@ def single(i: dict) -> dict:
 def seven_day(i: dict) -> dict:
     today = date.fromisoformat(i["today"])
     first = today - timedelta(days=6)
-    pregnant = i.get("pregnant", "no") != "no"
+    pregnant = is_pregnant(i.get("pregnant", "no"))
     by_day: dict[str, list] = {}
     any_urgent, worst_preg = False, "pregnancy_neutral"
     order = ["pregnancy_neutral", "pregnancy_same_day", "pregnancy_urgent"]
     for r in i["readings"]:
         day = date.fromisoformat(r["date"][:10])
         if not (first <= day <= today): continue
-        s, d = F(str(r["systolic"])), F(str(r["diastolic"]))
+        s, d = whole(r["systolic"]), whole(r["diastolic"])
         if impossible(s, d): continue
         by_day.setdefault(day.isoformat(), []).append((s, d))
         if s >= 180 or d >= 120: any_urgent = True
@@ -138,7 +156,7 @@ def seven_day(i: dict) -> dict:
         urgent = level == "pregnancy_urgent"
         keys.append({"pregnancy_urgent": "pregnancy.urgent", "pregnancy_same_day": "pregnancy.same-day", "pregnancy_neutral": "pregnancy.neutral"}[level])
         if level == "pregnancy_neutral":
-            if average is not None and is_low(average["systolic"], average["diastolic"]) and i.get("dizzy"):
+            if average is not None and is_low(average["systolic"], average["diastolic"]) and truthy(i.get("dizzy")):
                 level = "low_dizzy"; keys.append("low.dizzy")
     elif any_urgent:
         urgent, level = True, "urgent"
@@ -148,14 +166,14 @@ def seven_day(i: dict) -> dict:
         keys += [f"home.{category}.headline", f"home.{category}.body"]
         if is_low(average["systolic"], average["diastolic"]):
             keys.append("category.normal-low.body")
-            level = "low_dizzy" if i.get("dizzy") else "low_note"
-            if i.get("dizzy"): keys.append("low.dizzy")
+            level = "low_dizzy" if truthy(i.get("dizzy")) else "low_note"
+            if truthy(i.get("dizzy")): keys.append("low.dizzy")
     if average is None:
         keys.append("home.min-days")
     if i.get("age") is not None and int(i["age"]) >= 80 and not pregnant:
         keys.append("age80.note")
         if level == "none": level = "age80_note"
-    if i.get("medicine") in (True, "yes"):
+    if truthy(i.get("medicine")):
         keys.append("medicine.note")
     return result(category=category, level=level, urgent=urgent, keys=keys, average=average, unrounded=unrounded)
 

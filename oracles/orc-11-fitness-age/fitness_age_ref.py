@@ -10,7 +10,9 @@ not from the engine. Exact decimal arithmetic, so rounding ties are decided exac
   Fitness age (D3-26): (VO2_ref(0) - VO2) / b_age, VO2_ref(0) = intercept - b_waist ref_waist - b_RHR 70 + b_PA 3.75,
               reference waist 94 cm men / 80 cm women; shown = round half-up to whole years, clamped 18..90
   VO2 1 dp half-up; raw fitness age 1 dp half-up; waist in inches x 2.54
-  Stops     : age < 18; pregnant yes / not sure; heart condition; heart-rate medicine yes / not sure; sex not said
+  Stops     : a heart-rate-medicine, heart-condition or pregnancy answer missing -> refused (error);
+              age < 18; pregnant yes / not sure; heart condition; heart-rate medicine yes / not sure; sex not said;
+              VO2 (1 dp) below 10 mL/kg/min -> cannotEstimate, no number (lead review, P3-5A)
   Notes     : clampedLow / clampedHigh; RHR > 100 safety.rhrOver100; RHR < 40 safety.rhrUnder40; age 18-19 age18to19
 
 Reads fixtures/fitness-age/*.json (inputs only), writes oracles/orc-11-fitness-age/results.json and prints every
@@ -44,13 +46,16 @@ def assess(i: dict) -> dict:
     out = {"stop": None, "paIndex": None, "vo2": None, "fitnessAgeRaw": None, "fitnessAge": None, "notes": [], "clamped": None}
     age = D(str(i["age"]))
     sex = {"male": "M", "m": "M", "female": "F", "f": "F"}.get(norm(i.get("sex")), "PNTS")
+    for field in ("heartMedicine", "heartCondition", "pregnant"):
+        if i.get(field) is None:
+            return {"error": field}
     if age < 18:
         out["stop"] = "under18"; return out
-    if norm(i.get("pregnant") or "no") != "no":
+    if norm(i["pregnant"]) != "no":
         out["stop"] = "pregnancy"; return out
-    if norm(i.get("heartCondition") or "no") != "no":
+    if norm(i["heartCondition"]) != "no":
         out["stop"] = "heartCondition"; out["notes"] = ["safety.heartCondition"]; return out
-    if norm(i.get("heartMedicine") or "no") != "no":
+    if norm(i["heartMedicine"]) != "no":
         out["stop"] = "medicine"; out["notes"] = ["safety.medicine"]; return out
     if sex == "PNTS":
         out["stop"] = "sexNotSaid"; return out
@@ -63,6 +68,8 @@ def assess(i: dict) -> dict:
     ref0 = k["c"] - k["waist"] * k["ref_waist"] - k["rhr"] * 70 + k["pa"] * D("3.75")
     raw = (ref0 - vo2) / k["age"]
     shown = int(q(raw, "1"))
+    if q(vo2, "0.1") < 10:
+        out["stop"] = "cannotEstimate"; out["notes"] = ["stops.cannotEstimate"]; return out
     out["paIndex"] = float(q(pa, "0.01"))
     out["vo2"] = float(q(vo2, "0.1"))
     out["fitnessAgeRaw"] = float(q(raw, "0.1"))

@@ -60,30 +60,27 @@ class LLD_Members_Metabolic {
 		'fastingGlucose' => 18.016,
 	);
 
-	/** Accepted ranges in each unit (sheet section 2); outside them the answer is refused. */
+	/**
+	 * Accepted ranges in each unit (sheet section 2); outside them the answer is refused. Blood pressure and waist use
+	 * the safety matrix's impossible ranges (LLD_Members_Stage3_Safety::LEVELS, P3-51), never retyped here.
+	 */
 	const RANGES = array(
 		'triglycerides'  => array( 'mmol' => array( 0.2, 20 ), 'mg' => array( 18, 1770 ) ),
 		'hdl'            => array( 'mmol' => array( 0.3, 5 ), 'mg' => array( 12, 195 ) ),
 		'fastingGlucose' => array( 'mmol' => array( 2, 30 ), 'mg' => array( 36, 540 ) ),
-		'waistCm'        => array( 40, 250 ),
-		'sys'            => array( 60, 260 ),
-		'dia'            => array( 30, 160 ),
 		'age'            => array( 18, 99 ),
 	);
 
 	/**
-	 * Safety levels (sheet section 4), in each unit. Blood pressure urgent at 180 systolic or 120 diastolic (P3-58
-	 * section 4.1). Glucose: 11.1 mmol/L (200 mg/dL) or more is the diagnostic-range line, 15 (270) or more the
-	 * urgent wording; below 3.9 (70) the low note, below 3.0 (54, the standard paired value) the urgent wording.
-	 * Triglycerides 10 mmol/L (885 mg/dL) or more: medical review soon.
+	 * The metabolic check's own flags (sheet section 4), in each unit: 11.1 mmol/L (200 mg/dL) or more is the
+	 * diagnostic-range line, below 3.9 (70) the low note, triglycerides 10 mmol/L (885 mg/dL) or more "medical review
+	 * soon". The urgent levels (blood pressure, and glucose below 3.0 or at 15 or more) are decided by the safety
+	 * matrix, LLD_Members_Stage3_Safety::warning_level() (P3-03, D5), so they are the logging screen's answer too.
 	 */
 	const FLAG_LEVELS = array(
-		'bp_urgent'           => array( 'sys' => 180, 'dia' => 120 ),
-		'glucose_diagnostic'  => array( 'mmol' => 11.1, 'mg' => 200 ),
-		'glucose_urgent_high' => array( 'mmol' => 15, 'mg' => 270 ),
-		'glucose_low'         => array( 'mmol' => 3.9, 'mg' => 70 ),
-		'glucose_urgent_low'  => array( 'mmol' => 3.0, 'mg' => 54 ),
-		'triglycerides_high'  => array( 'mmol' => 10, 'mg' => 885 ),
+		'glucose_diagnostic' => array( 'mmol' => 11.1, 'mg' => 200 ),
+		'glucose_low'        => array( 'mmol' => 3.9, 'mg' => 70 ),
+		'triglycerides_high' => array( 'mmol' => 10, 'mg' => 885 ),
 	);
 
 	/**
@@ -123,12 +120,33 @@ class LLD_Members_Metabolic {
 	);
 
 	/**
-	 * Wording this check quotes unchanged from another signed tool (sheet section 4): the Blood Pressure Check's
-	 * frozen urgent alert (P3-58 section 4.1, hashed in approvals/stage3/bp-check.json as urgent.alert). The glucose
-	 * urgent wording is read from the safety matrix (LLD_Members_Stage3_Safety::MESSAGES, P3-03), not copied.
+	 * Blood-pressure wording quoted from the Blood Pressure Reading Check (P3-58, LLD_Members_BP_Check::signed_text(),
+	 * hashed in approvals/stage3/bp-check.json), never retyped: this check's key => the BP check's key.
 	 */
-	const QUOTED = array(
-		'flags.bpUrgent' => "Your reading is very high.\nSit quietly for 5 minutes and take it again. If it is still 180/120 or more, contact a doctor today.\nIf you also have chest pain, shortness of breath, a severe headache, weakness or numbness, trouble speaking or seeing, or feel confused or very unwell, call your local emergency number now — for example 999 in the UK, 911 in the US and Canada, 112 in the EU and India, or 000 in Australia. [When to seek urgent care]",
+	const BP_TEXT = array(
+		'flags.bpUrgent'           => 'urgent.alert',
+		'flags.bpUrgentPregnancy'  => 'pregnancy.urgent',
+		'flags.bpSameDayPregnancy' => 'pregnancy.same-day',
+		'refused.impossible'       => 'refused.impossible',
+	);
+
+	/** warning_level() blood-pressure keys (P3-51) and this check's flag for each; other levels add nothing here. */
+	const BP_FLAGS = array(
+		'bp-check.urgent.alert'       => 'flags.bpUrgent',
+		'bp-check.pregnancy.urgent'   => 'flags.bpUrgentPregnancy',
+		'bp-check.pregnancy.same-day' => 'flags.bpSameDayPregnancy',
+	);
+
+	/** The safety wording shown before anything else, a stop included (P3-03 A1). */
+	const SAFETY_FIRST = array( 'flags.bpUrgent', 'flags.bpUrgentPregnancy', 'flags.bpSameDayPregnancy', 'flags.glucoseUrgent' );
+
+	/** The yes/no answers and ticks, with the value used when left out. */
+	const YES_NO = array(
+		'bpMedicine'            => false,
+		'triglyceridesMedicine' => false,
+		'hdlMedicine'           => false,
+		'type2Diabetes'         => false,
+		'fastingGlucoseFasting' => true,
 	);
 
 	/**
@@ -162,13 +180,17 @@ class LLD_Members_Metabolic {
 	 *                  (yes|no|not-sure), eatingDisorder (yes|no|pnts), waistCm or waistIn, bpSystolic and bpDiastolic,
 	 *                  bpMedicine, triglycerides + triglyceridesUnit (mmol/L|mg/dL), triglyceridesMedicine, hdl +
 	 *                  hdlUnit, hdlMedicine, fastingGlucose + fastingGlucoseUnit, fastingGlucoseFasting (default
-	 *                  true), type2Diabetes, kidneyDisease. A blood value left empty (or "don't know") is unknown.
-	 * @return array stop (null, stops.under18 or stops.pregnancy), central, waistCutoffCm, criteria, count, result, missing, flags, notes, components,
-	 *               lifestyle, lifestyleWaistShown, glucoseUrgent, placeholders, messages, version; or error.
+	 *                  true), type2Diabetes, kidneyDisease. Yes/no answers: yes, no, true, false, 1, 0. A blood value
+	 *                  left empty (or "don't know") is unknown.
+	 * @return array stop (null, stops.under18 or stops.pregnancy), refused, refusedField, central, waistCm, waistCutoffCm, criteria,
+	 *               count, result, missing, flags, notes, components, lifestyle, lifestyleWaistShown, glucoseUrgent,
+	 *               placeholders, messages, version; or error (the field to check).
 	 */
 	public static function compute( array $in ) {
-		$out = array(
+		$out    = array(
 			'stop'                => null,
+			'refused'             => false,
+			'refusedField'        => null,
 			'central'             => null,
 			'waistCm'             => null,
 			'waistCutoffCm'       => null,
@@ -186,8 +208,9 @@ class LLD_Members_Metabolic {
 			'messages'            => array(),
 			'version'             => self::VERSION,
 		);
+		$safety = self::safety_class();
 
-		// Answers first: age, sex, pregnancy, eating; then the stops; then the measurements.
+		// Answers first: age, sex, pregnancy, eating and the yes/no ticks.
 		$age = null;
 		if ( isset( $in['age'] ) && null !== $in['age'] && '' !== $in['age'] ) {
 			if ( ! is_numeric( $in['age'] ) || (float) $in['age'] < 0 || (float) $in['age'] > self::RANGES['age'][1] ) {
@@ -208,60 +231,96 @@ class LLD_Members_Metabolic {
 		if ( null === $eating ) {
 			return self::invalid( 'eatingDisorder' );
 		}
+		$ticks = array();
+		foreach ( self::YES_NO as $field => $default ) {
+			$ticks[ $field ] = self::yes_no( array_key_exists( $field, $in ) ? $in[ $field ] : null, $default );
+			if ( null === $ticks[ $field ] ) {
+				return self::invalid( $field );
+			}
+		}
+		$bp_med  = $ticks['bpMedicine'];
+		$tg_med  = $ticks['triglyceridesMedicine'];
+		$hdl_med = $ticks['hdlMedicine'];
+		$t2d     = $ticks['type2Diabetes'];
+		$fasting = $ticks['fastingGlucoseFasting'];
+
+		// Blood pressure and glucose before the stops: their urgent wording comes before anything else, a stop included
+		// (P3-03 A1; D5: the urgent level applies on any blood-pressure input). Whole mmHg, half-up, before the levels.
+		$sys = self::number( $in, 'bpSystolic' );
+		$dia = self::number( $in, 'bpDiastolic' );
+		if ( false === $sys || false === $dia || ( null === $sys ) !== ( null === $dia ) ) {
+			return self::invalid( 'bloodPressure' );
+		}
+		$fpg = self::lab( $in, 'fastingGlucose' );
+		if ( isset( $fpg['error'] ) ) {
+			return self::invalid( $fpg['error'] );
+		}
+		$flags   = array();
+		$refused = false;
+		if ( null !== $sys ) {
+			$sys   = self::half_up( $sys );
+			$dia   = self::half_up( $dia );
+			$level = $safety::warning_level( 'blood_pressure', array( 'sys' => $sys, 'dia' => $dia ), 'no' !== $pregnant ? array( 'pregnancy' ) : array() );
+			if ( 'impossible' === $level['level'] ) {
+				$refused = true;
+			} elseif ( isset( self::BP_FLAGS[ $level['key'] ] ) ) {
+				$flags[] = self::BP_FLAGS[ $level['key'] ];
+			}
+		}
+		if ( null !== $fpg['value'] ) {
+			$level = $safety::warning_level( 'glucose', array( 'value_1' => $fpg['value'], 'unit' => 'mg' === $fpg['unit'] ? 'mg/dL' : 'mmol/L' ) );
+			if ( 'urgent' === $level['level'] ) {
+				$flags[]              = 'flags.glucoseUrgent';
+				$out['glucoseUrgent'] = 'glucose.urgent-low' === $level['key'] ? 'low' : 'high';
+			}
+		}
+		$out['flags'] = $flags;
+		if ( $refused ) {
+			// A reading that isn't possible is refused as the Blood Pressure Check refuses it (P3-58 section 4.4).
+			$out['refused']      = true;
+			$out['refusedField'] = 'bloodPressure';
+			$out['messages']     = array_merge( $flags, array( 'refused.impossible' ) );
+			return $out;
+		}
 		if ( null !== $age && $age < self::RANGES['age'][0] ) {
 			return self::stop( $out, 'under18' );
 		}
 		if ( 'no' !== $pregnant ) {
 			return self::stop( $out, 'pregnancy' );
 		}
+		if ( $fpg['outOfRange'] ) {
+			// A glucose the safety matrix accepts but outside the sheet's input range (2-30 mmol/L, 36-540 mg/dL): its
+			// urgent wording is shown, and no metabolic result is given from it.
+			$out['refused']      = true;
+			$out['refusedField'] = 'fastingGlucose';
+			$out['messages']     = $flags;
+			return $out;
+		}
 
 		// Waist (required) and its cut-off.
-		$waist = self::waist_cm( $in );
-		if ( null === $waist || $waist < self::RANGES['waistCm'][0] || $waist > self::RANGES['waistCm'][1] ) {
+		$waist  = self::waist_cm( $in );
+		$wrange = $safety::LEVELS['waist']['impossible'];
+		if ( null === $waist || $waist < $wrange[0] || $waist > $wrange[1] ) {
 			return self::invalid( 'waist' );
 		}
-		$group  = self::background( isset( $in['background'] ) ? $in['background'] : '' );
-		$cutoff = 'M' === $sex ? ( in_array( $group, self::WAIST_MALE_90, true ) ? 90 : self::WAIST_MALE ) : self::WAIST_FEMALE;
+		$group   = self::background( isset( $in['background'] ) ? $in['background'] : '' );
+		$cutoff  = 'M' === $sex ? ( in_array( $group, self::WAIST_MALE_90, true ) ? 90 : self::WAIST_MALE ) : self::WAIST_FEMALE;
 		$central = $waist >= $cutoff;
 
-		// Blood pressure: required unless the medicine box is ticked (then counted as met).
-		$bp_med = ! empty( $in['bpMedicine'] );
-		$sys    = self::number( $in, 'bpSystolic' );
-		$dia    = self::number( $in, 'bpDiastolic' );
-		if ( false === $sys || false === $dia ) {
-			return self::invalid( 'bloodPressure' );
-		}
-		if ( ( null === $sys ) !== ( null === $dia ) || ( null === $sys && ! $bp_med ) ) {
-			return self::invalid( 'bloodPressure' );
-		}
-		if ( null !== $sys && ( $sys < self::RANGES['sys'][0] || $sys > self::RANGES['sys'][1] || $dia < self::RANGES['dia'][0] || $dia > self::RANGES['dia'][1] ) ) {
+		// Blood pressure is required unless the medicine box is ticked (then counted as met).
+		if ( null === $sys && ! $bp_med ) {
 			return self::invalid( 'bloodPressure' );
 		}
 
-		// The three blood values: each in its own unit, or unknown.
+		// The other two blood values: each in its own unit, or unknown.
 		$labs = array();
-		foreach ( array( 'triglycerides', 'hdl', 'fastingGlucose' ) as $field ) {
-			$value = self::number( $in, $field );
-			if ( false === $value ) {
-				return self::invalid( $field );
+		foreach ( array( 'triglycerides', 'hdl' ) as $field ) {
+			$labs[ $field ] = self::lab( $in, $field );
+			if ( isset( $labs[ $field ]['error'] ) ) {
+				return self::invalid( $labs[ $field ]['error'] );
 			}
-			$unit = null;
-			if ( null !== $value ) {
-				$unit = self::unit( isset( $in[ $field . 'Unit' ] ) ? $in[ $field . 'Unit' ] : null );
-				if ( null === $unit ) {
-					return self::invalid( $field . 'Unit' );
-				}
-				$range = self::RANGES[ $field ][ $unit ];
-				if ( $value < $range[0] || $value > $range[1] ) {
-					return self::invalid( $field );
-				}
-			}
-			$labs[ $field ] = array( 'value' => $value, 'unit' => $unit );
 		}
-		$fasting = ! array_key_exists( 'fastingGlucoseFasting', $in ) || null === $in['fastingGlucoseFasting'] || ! empty( $in['fastingGlucoseFasting'] );
-		$t2d     = ! empty( $in['type2Diabetes'] );
-		$tg_med  = ! empty( $in['triglyceridesMedicine'] );
-		$hdl_med = ! empty( $in['hdlMedicine'] );
+		$labs['fastingGlucose'] = $fpg;
 
 		// Criteria (sheet section 1, applied in the unit entered).
 		$criteria = array();
@@ -271,7 +330,6 @@ class LLD_Members_Metabolic {
 		$hdl_sex  = 'M' === $sex ? 'M' : 'F';
 		$criteria['hdl'] = $hdl_med ? 'met' : ( null === $hdl['value'] ? 'unknown' : ( $hdl['value'] < self::THRESHOLDS['hdl'][ $hdl_sex ][ $hdl['unit'] ] ? 'met' : 'not-met' ) );
 		$criteria['bloodPressure'] = $bp_med || ( null !== $sys && ( $sys >= self::THRESHOLDS['bloodPressure']['sys'] || $dia >= self::THRESHOLDS['bloodPressure']['dia'] ) ) ? 'met' : 'not-met';
-		$fpg      = $labs['fastingGlucose'];
 		$fpg_used = null !== $fpg['value'] && $fasting;
 		$criteria['fastingGlucose'] = $t2d ? 'met' : ( ! $fpg_used ? 'unknown' : ( $fpg['value'] >= self::THRESHOLDS['fastingGlucose'][ $fpg['unit'] ] ? 'met' : 'not-met' ) );
 
@@ -297,23 +355,12 @@ class LLD_Members_Metabolic {
 			$result = 'results.notMet';
 		}
 
-		// Flags and notes (sheet section 4).
-		$flags = array();
-		if ( null !== $sys && ( $sys >= self::FLAG_LEVELS['bp_urgent']['sys'] || $dia >= self::FLAG_LEVELS['bp_urgent']['dia'] ) ) {
-			$flags[] = 'flags.bpUrgent';
-		}
-		if ( null !== $fpg['value'] ) {
-			$u = $fpg['unit'];
-			$v = $fpg['value'];
-			if ( $v >= self::FLAG_LEVELS['glucose_urgent_high'][ $u ] ) {
-				$flags[]              = 'flags.glucoseUrgent';
-				$out['glucoseUrgent'] = 'high';
-			} elseif ( $v < self::FLAG_LEVELS['glucose_urgent_low'][ $u ] ) {
-				$flags[]              = 'flags.glucoseUrgent';
-				$out['glucoseUrgent'] = 'low';
-			} elseif ( $fasting && $v >= self::FLAG_LEVELS['glucose_diagnostic'][ $u ] ) {
+		// The check's own flags and notes (sheet section 4), after the urgent levels above. A non-fasting glucose gets
+		// only the urgent level: the diagnostic-range and low lines are about a fasting result.
+		if ( $fpg_used && null === $out['glucoseUrgent'] ) {
+			if ( $fpg['value'] >= self::FLAG_LEVELS['glucose_diagnostic'][ $fpg['unit'] ] ) {
 				$flags[] = 'flags.glucoseDiagnostic';
-			} elseif ( $fasting && $v < self::FLAG_LEVELS['glucose_low'][ $u ] ) {
+			} elseif ( $fpg['value'] < self::FLAG_LEVELS['glucose_low'][ $fpg['unit'] ] ) {
 				$flags[] = 'flags.glucoseLow';
 			}
 		}
@@ -339,7 +386,7 @@ class LLD_Members_Metabolic {
 
 		// Lifestyle suggestions, one per raised component (sheet 3.3). An eating-disorder answer (or "prefer not to
 		// say", cautiously) hides the weight-loss line and shows activity and sleep instead (D3-25).
-		$lifestyle = array();
+		$lifestyle   = array();
 		$waist_shown = false;
 		if ( $central ) {
 			if ( 'no' === $eating ) {
@@ -356,7 +403,7 @@ class LLD_Members_Metabolic {
 		}
 
 		$out['central']             = $central;
-		$out['waistCm']             = self::r1( $waist );
+		$out['waistCm']             = self::r2( $waist ); // 2 dp: a converted waist shows as it was compared (37 in = 93.98)
 		$out['waistCutoffCm']       = $cutoff;
 		$out['criteria']            = $criteria;
 		$out['count']               = $count;
@@ -367,8 +414,8 @@ class LLD_Members_Metabolic {
 		$out['lifestyleWaistShown'] = $waist_shown;
 		$out['components']          = self::components( $criteria, $labs, $sys, $dia, $bp_med, $tg_med, $hdl_med, $t2d, $fpg_used, $hdl_sex );
 		$out['placeholders']        = array(
-			'n'                                              => $count,
-			'missing list'                                   => self::list_labels( $out['missing'] ),
+			'n'                                               => $count,
+			'missing list'                                    => self::list_labels( $out['missing'] ),
 			'triglycerides, HDL cholesterol, fasting glucose' => self::list_labels( $out['missing'] ),
 		);
 		$out['messages'] = self::messages_for( $out );
@@ -376,45 +423,47 @@ class LLD_Members_Metabolic {
 	}
 
 	/**
-	 * The signed text for wording keys. Keys whose text the sheet describes but does not quote (the per-component
-	 * and other lifestyle paragraphs, the "talk to your doctor" line, the D3-23 sex note, the background note, the
-	 * fasting note, the under-18 stop) come from the approved content library and are left out here.
+	 * The signed text for wording keys: this check's own, the Blood Pressure Check's (BP_TEXT) and the safety
+	 * matrix's glucose urgent wording (low or high, from the result). Keys whose text the sheet describes but does
+	 * not quote (the per-component and other lifestyle paragraphs, the "talk to your doctor" line, the D3-23 sex
+	 * note, the background note, the fasting note, the under-18 stop) come from the approved content library and are
+	 * left out here.
 	 *
 	 * @param string[] $keys   Wording keys, as compute() returned them.
 	 * @param array    $result The compute() result (decides low or high glucose urgent wording).
 	 * @return array<string,string>
 	 */
-	public static function wording( array $keys, array $result ) {
+	public static function wording( array $keys, array $result = array() ) {
 		$out = array();
 		foreach ( $keys as $key ) {
 			if ( isset( self::MESSAGES[ $key ] ) ) {
 				$out[ $key ] = self::MESSAGES[ $key ];
-			} elseif ( isset( self::QUOTED[ $key ] ) ) {
-				$out[ $key ] = self::QUOTED[ $key ];
-			} elseif ( 'flags.glucoseUrgent' === $key && class_exists( 'LLD_Members_Stage3_Safety' ) ) {
-				$which = isset( $result['glucoseUrgent'] ) && 'low' === $result['glucoseUrgent'] ? 'glucose.urgent-low' : 'glucose.urgent-high';
-				$out[ $key ] = LLD_Members_Stage3_Safety::MESSAGES[ $which ];
+			} elseif ( isset( self::BP_TEXT[ $key ] ) ) {
+				$bp = self::bp_text();
+				if ( isset( $bp[ self::BP_TEXT[ $key ] ] ) ) {
+					$out[ $key ] = $bp[ self::BP_TEXT[ $key ] ];
+				}
+			} elseif ( 'flags.glucoseUrgent' === $key ) {
+				$which       = isset( $result['glucoseUrgent'] ) && 'low' === $result['glucoseUrgent'] ? 'glucose.urgent-low' : 'glucose.urgent-high';
+				$messages    = self::safety_class()::MESSAGES;
+				$out[ $key ] = $messages[ $which ];
 			}
 		}
 		return $out;
 	}
 
 	/**
-	 * The wording keys a result shows, in order: the stop alone; or the urgent wording first, then the headline and
-	 * body, the other flags and notes, the lifestyle paragraphs and the "about" line.
+	 * The wording keys a result shows, in order: the urgent wording first, then the headline and body, the other
+	 * flags and notes, the lifestyle paragraphs and the "about" line.
 	 *
 	 * @param array $out A compute() result.
 	 * @return string[]
 	 */
 	private static function messages_for( array $out ) {
-		if ( null !== $out['stop'] ) {
-			return array( $out['stop'] );
-		}
-		$urgent = array( 'flags.bpUrgent', 'flags.glucoseUrgent' );
-		$keys   = array_values( array_intersect( $out['flags'], $urgent ) );
+		$keys   = array_values( array_intersect( $out['flags'], self::SAFETY_FIRST ) );
 		$keys[] = $out['result'] . '.headline';
 		$keys[] = $out['result'] . '.body';
-		foreach ( array_merge( array_diff( $out['flags'], $urgent ), $out['notes'], $out['lifestyle'] ) as $key ) {
+		foreach ( array_merge( array_diff( $out['flags'], self::SAFETY_FIRST ), $out['notes'], $out['lifestyle'] ) as $key ) {
 			$keys[] = $key;
 		}
 		$keys[] = 'about.definition';
@@ -485,7 +534,7 @@ class LLD_Members_Metabolic {
 	 */
 	private static function stop( array $out, $what ) {
 		$out['stop']     = 'stops.' . $what;
-		$out['messages'] = array( $out['stop'] );
+		$out['messages'] = array_merge( $out['flags'], array( $out['stop'] ) ); // the urgent wording first (P3-03 A1)
 		return $out;
 	}
 
@@ -626,17 +675,102 @@ class LLD_Members_Metabolic {
 		$v = strtolower( str_replace( array( ' ', '-', '_' ), '', trim( (string) $value ) ) );
 		if ( 'prefernottosay' === $v || 'prefernot' === $v ) {
 			$v = 'pnts';
+		} elseif ( 'true' === $v || '1' === $v ) {
+			$v = 'yes';
+		} elseif ( 'false' === $v || '0' === $v ) {
+			$v = 'no';
 		}
 		return in_array( $v, $allowed, true ) ? $v : null;
+	}
+
+	/**
+	 * One yes/no parser for every tick (bpMedicine, triglyceridesMedicine, hdlMedicine, type2Diabetes,
+	 * fastingGlucoseFasting): yes, no, true, false (strings or booleans), 1, 0.
+	 *
+	 * @param mixed $value   Answer.
+	 * @param bool  $default Used when the answer is left out (null or empty).
+	 * @return bool|null null when the answer is not a yes/no.
+	 */
+	private static function yes_no( $value, $default ) {
+		if ( null === $value || '' === $value ) {
+			return $default;
+		}
+		if ( is_bool( $value ) ) {
+			return $value;
+		}
+		if ( ! is_scalar( $value ) ) {
+			return null;
+		}
+		$v = strtolower( trim( (string) $value ) );
+		if ( in_array( $v, array( 'yes', 'true', '1' ), true ) ) {
+			return true;
+		}
+		return in_array( $v, array( 'no', 'false', '0' ), true ) ? false : null;
+	}
+
+	/**
+	 * A blood value in its own unit: value and unit (mmol or mg), both null when not given; or error.
+	 *
+	 * Fasting glucose is the exception: a value outside the sheet's input range that the safety matrix still treats
+	 * as possible (LLD_Members_Stage3_Safety::warning_level(), P3-51) is returned with outOfRange set, so its urgent
+	 * wording can be shown; only a value the matrix calls impossible is an error.
+	 *
+	 * @param array  $in    Answers.
+	 * @param string $field triglycerides, hdl or fastingGlucose.
+	 */
+	private static function lab( array $in, $field ) {
+		$value = self::number( $in, $field );
+		if ( false === $value ) {
+			return array( 'error' => $field );
+		}
+		$unit  = null;
+		$outside = false;
+		if ( null !== $value ) {
+			$unit = self::unit( isset( $in[ $field . 'Unit' ] ) ? $in[ $field . 'Unit' ] : null );
+			if ( null === $unit ) {
+				return array( 'error' => $field . 'Unit' );
+			}
+			$range = self::RANGES[ $field ][ $unit ];
+			if ( $value < $range[0] || $value > $range[1] ) {
+				if ( 'fastingGlucose' !== $field ) {
+					return array( 'error' => $field );
+				}
+				$level = self::safety_class()::warning_level( 'glucose', array( 'value_1' => $value, 'unit' => 'mg' === $unit ? 'mg/dL' : 'mmol/L' ) );
+				if ( 'impossible' === $level['level'] ) {
+					return array( 'error' => $field );
+				}
+				$outside = true;
+			}
+		}
+		return array( 'value' => $value, 'unit' => $unit, 'outOfRange' => $outside );
+	}
+
+	/**
+	 * The safety matrix class, loaded on first use when the engine runs on its own (PHP CLI tests); in WordPress the
+	 * Stage 3 loader has already loaded it.
+	 */
+	private static function safety_class() {
+		if ( ! class_exists( 'LLD_Members_Stage3_Safety' ) ) {
+			require_once dirname( __DIR__ ) . '/class-safety-stage3.php';
+		}
+		return 'LLD_Members_Stage3_Safety';
+	}
+
+	/** The Blood Pressure Reading Check's signed text (P3-58), loaded on first use as safety_class() is. */
+	private static function bp_text() {
+		if ( ! class_exists( 'LLD_Members_BP_Check' ) ) {
+			require_once __DIR__ . '/class-bp-check.php';
+		}
+		return LLD_Members_BP_Check::signed_text();
+	}
+
+	/** Whole mmHg, half-up, as the heart-risk check rounds systolic (the numbers are positive). */
+	private static function half_up( $x ) {
+		return (int) round( $x, 0, PHP_ROUND_HALF_UP );
 	}
 
 	/** Two decimals, half-up (display only). */
 	private static function r2( $x ) {
 		return round( $x, 2, PHP_ROUND_HALF_UP );
-	}
-
-	/** One decimal, half-up (display only). */
-	private static function r1( $x ) {
-		return round( $x, 1, PHP_ROUND_HALF_UP );
 	}
 }

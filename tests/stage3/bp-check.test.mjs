@@ -101,6 +101,38 @@ test('TC-FR3-50-AS-02', () => {
   expect(W[0]['pulse.note']).toBe(W[1]['pulse.note'].replace('{high|low}', 'high'));
   expect(W[2]['pulse.note']).toBe(W[1]['pulse.note'].replace('{high|low}', 'low'));
   expect(readFileSync(engine, 'utf8')).not.toMatch(/has_premium|is_premium|LLD_Members_Billing|LLD_Members_Access::/);
+  // Readings and the pulse are whole numbers, half-up, before any level or category (as the heart risk check):
+  // 179.5 is 180 and urgent, 179.4 is not; 89.5/59.5 is 90/60 with no low note; a pulse of 120.5 is 121.
+  const r5 = (d, s, di) => ({ date: `2026-11-0${d}`, systolic: s, diastolic: di });
+  const [up, down, low, pulseUp, pulseIn, homeUp] = compute([
+    { mode: 'single', systolic: 179.5, diastolic: 100 }, { mode: 'single', systolic: 179.4, diastolic: 119.4 },
+    { mode: 'single', systolic: 89.5, diastolic: 59.5 }, { mode: 'single', systolic: 120, diastolic: 80, pulse: 120.5 },
+    { mode: 'single', systolic: 120, diastolic: 80, pulse: 120.4 },
+    { mode: '7-day', today: '2026-11-03', readings: [r5(1, 120, 80), r5(2, 120, 80), r5(3, 179.5, 80)] },
+  ]);
+  expect(up).toMatchObject({ systolic: 180, diastolic: 100, urgent: true, warning_level: 'urgent' });
+  expect(down).toMatchObject({ systolic: 179, diastolic: 119, urgent: false, category: 'grade2' });
+  expect(low).toMatchObject({ systolic: 90, diastolic: 60, warning_level: 'none', messages: ['category.normal.headline', 'category.normal.body'] });
+  expect(pulseUp).toMatchObject({ pulse: 121, warning_level: 'pulse_high' });
+  expect(pulseIn).toMatchObject({ pulse: 120, warning_level: 'none' });
+  expect(homeUp).toMatchObject({ urgent: true, messages: ['urgent.alert'] });
+  expect(homeUp.used[2].systolic).toBe(180);
+  // Yes/no answers read the same in every spelling, and "no" or "false" never counts as yes; anything else is refused.
+  const base = { mode: 'single', systolic: 85, diastolic: 55 };
+  const yesNo = compute([
+    ...[true, 'yes', 'true', 'TRUE', 1, '1'].map((v) => ({ ...base, dizzy: v, medicine: v })),
+    ...[false, 'no', 'false', 'FALSE', 0, '0', null, ''].map((v) => ({ ...base, dizzy: v, medicine: v })),
+    ...[true, 'yes', 'true', 'not sure', 'notsure'].map((v) => ({ ...base, pregnant: v })),
+    ...[false, 'no', 'false', null].map((v) => ({ ...base, pregnant: v })),
+    { ...base, dizzy: 'maybe' }, { ...base, medicine: 'sometimes' }, { ...base, pregnant: 'perhaps' }, { ...base, dizzy: [] },
+  ]);
+  for (const r of yesNo.slice(0, 6)) expect(r.messages).toEqual(['category.normal-low.headline', 'category.normal-low.body', 'low.dizzy', 'medicine.note']);
+  for (const r of yesNo.slice(6, 14)) expect(r.messages).toEqual(['category.normal-low.headline', 'category.normal-low.body']);
+  for (const r of yesNo.slice(14, 19)) expect(r).toMatchObject({ category: null, messages: ['pregnancy.neutral'] });
+  for (const r of yesNo.slice(19, 23)) expect(r.category).toBe('normal');
+  expect(yesNo.slice(23).map((r) => r.error)).toEqual(['dizzy', 'medicine', 'pregnant', 'dizzy']);
+  const prof = JSON.parse(php(`echo json_encode([LLD_Members_BP_Check::apply_profile(['pregnant' => false], ['pregnancy']), LLD_Members_BP_Check::apply_profile(['pregnant' => 'not sure'], ['pregnancy'])]);`));
+  expect(prof).toEqual([{ pregnant: 'yes' }, { pregnant: 'not sure' }]);
 });
 
 test('TC-FR3-50-AS-03', () => {
@@ -131,6 +163,51 @@ test('TC-FR3-50-AS-03', () => {
   // The members' route runs the engine through apply_profile(), compute() and wording() (P3-57 to P3-5A route).
   const api = readFileSync(resolve(plugin, 'includes/stage3/class-api.php'), 'utf8');
   expect(api).toMatch(/'bp-check'\s+=> 'LLD_Members_BP_Check'/);
+  // The engine accepts at most MAX_READINGS (200) readings, so a direct call can't send a huge array.
+  const many = (n) => Array.from({ length: n }, (_, k) => r(`2026-11-0${1 + (k % 3)}`, 120, 80));
+  const [cap, over] = compute([{ mode: '7-day', today: '2026-11-03', readings: many(200) }, { mode: '7-day', today: '2026-11-03', readings: many(201) }]);
+  expect(cap).toMatchObject({ days: 3, average: { systolic: 120, diastolic: 80 } });
+  expect(over.error).toBe('readings');
+  // The members' route reads the member's own readings and ignores what the page sent: calculate_engine() and its
+  // helper run in PHP CLI with the database, clock, zone, consent and seal stubbed (the real query runs on a site).
+  const route = (zone, consent) => JSON.parse(execFileSync('php', ['-d', 'display_errors=stderr', '-d', 'error_reporting=E_ALL', '-r', `
+    define('ABSPATH', '/'); define('ARRAY_A', 'ARRAY_A');
+    class WP_REST_Response { public $data; public $status; function __construct($d, $s = 200) { $this->data = $d; $this->status = $s; } }
+    function wp_timezone() { return new DateTimeZone('Europe/London'); }
+    class LLD_Members_Programme { static function timezone($m) { return ${JSON.stringify(zone)}; } }
+    class LLD_Members_Clock { static function now($m = 0) { return new DateTimeImmutable('2026-11-04 03:30:00', new DateTimeZone('UTC')); } }
+    class LLD_Members_Access { static function has_health_consent($m) { return ${consent ? 'true' : 'false'}; } }
+    class LLD_Members_Stage3_Schema { static function table($s) { return 'wp_lld3_' . $s; } }
+    class LLD_Members_Stage3_Data { static function open($m, $t) { return is_string($t) && 0 === strpos($t, "m$m:") ? substr($t, strlen("m$m:")) : null; } }
+    class Fake_Wpdb { public $args = null; public $sql = '';
+      function prepare($sql, ...$a) { $this->sql = $sql; $this->args = $a; return $sql; }
+      function get_results($q, $o) { return [
+        ['taken_at' => '2026-11-04 02:00:00', 'value_1_ct' => 'm7:150.4', 'value_2_ct' => 'm7:95'],
+        ['taken_at' => '2026-11-01 12:00:00', 'value_1_ct' => 'm7:140', 'value_2_ct' => 'm7:90'],
+        ['taken_at' => '2026-10-28 05:00:00', 'value_1_ct' => 'm7:130', 'value_2_ct' => 'm7:85'],
+        ['taken_at' => '2026-11-02 12:00:00', 'value_1_ct' => 'm8:200', 'value_2_ct' => 'm8:130'],
+      ]; } }
+    $wpdb = new Fake_Wpdb();
+    require ${toPhpPath(resolve(plugin, 'includes/stage3/class-api.php'))};
+    require ${toPhpPath(engine)};
+    $run = new ReflectionMethod('LLD_Members_Stage3_API', 'calculate_engine'); $run->setAccessible(true);
+    $res = $run->invoke(null, 'LLD_Members_BP_Check', ['mode' => '7-day', 'today' => '2030-01-01', 'readings' => array_fill(0, 5, ['date' => '2029-12-31', 'systolic' => 190, 'diastolic' => 125])], 7);
+    echo json_encode(['status' => $res->status, 'data' => $res->data, 'sql' => $wpdb->sql, 'args' => $wpdb->args]);
+  `], { encoding: 'utf8', timeout: 120000 }));
+  const ny = route('America/New_York', true);
+  // 03:30 UTC on 4 Nov is 22:30 on 3 Nov in New York (EST): the 7 days run from 28 Oct (EDT, 04:00 UTC) to 3 Nov.
+  expect(ny.status).toBe(200);
+  expect(ny.args).toEqual([7, 'blood_pressure', '2026-10-28 04:00:00', '2026-11-04 05:00:00', 200]);
+  expect(ny.sql).toMatch(/reading_type = %s AND deleted_at IS NULL AND taken_at >= %s AND taken_at < %s ORDER BY taken_at DESC, id DESC LIMIT %d/);
+  expect(ny.data.used.map((u) => u.date)).toEqual(['2026-11-03', '2026-11-01', '2026-10-28']); // another member's seal does not open
+  expect(ny.data).toMatchObject({ days: 3, urgent: false, average: { systolic: 140, diastolic: 90 }, category: 'above' });
+  expect(ny.data.wording['home.above.headline']).toBe('Above the home threshold');
+  // No zone in force: the site's zone (Europe/London, already 4 Nov). No health consent: nothing is read.
+  const site = route('', true);
+  expect(site.args.slice(2, 4)).toEqual(['2026-10-29 00:00:00', '2026-11-05 00:00:00']);
+  const none = route('Europe/London', false);
+  expect(none.sql).toBe('');
+  expect(none.data).toMatchObject({ days: 0, average: null, messages: ['home.min-days'] });
 });
 
 test('TC-FR3-38-AS-04', () => {

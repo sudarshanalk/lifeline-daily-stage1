@@ -1,12 +1,12 @@
 {
   "oracle_id": "ORC-08",
-  "implementation": "Python decimal reference for the Heart Attack and Stroke Risk Check (FR3-49): WHO 2019 chart look-up (D3-10 = B), cell boundaries and rounding, mg/dL conversion, the safety stops, the urgent level and the adjacent-cell what-if ranking, from the signed sheet of 3 November 2026",
+  "implementation": "Python decimal reference for the Heart Attack and Stroke Risk Check (FR3-49): WHO 2019 chart look-up (D3-10 = B), cell boundaries and rounding, mg/dL conversion, the safety stops, the urgent level (with the stops too) and the adjacent-cell what-if ranking (falls above 0 only), from the signed sheet of 3 November 2026",
   "versions": {
     "python": "3.14.6",
     "sheet": "P3-57 v1.0 signed 2026-11-03"
   },
-  "source_hash": "816738e2951c5cf4160f1e2f6582dd19b96b86d7c362d3176b0a25e2908b0ed3",
-  "run_at": "2026-11-03T22:28:54Z",
+  "source_hash": "eaf1ded0d6f74a07cfbda326fbdc95b2c4aff5c396151ce79bd31566c719a5e1",
+  "run_at": "2026-11-04T07:20:47Z",
   "results": [
     {
       "fixture_id": "FX-HR-LAB-01",
@@ -107,21 +107,8 @@
         "urgent": false,
         "tcMmolL": 4.5,
         "bmiShown": 23.0,
-        "whatif": [
-          {
-            "factor": "blood-pressure",
-            "to": "<120",
-            "risk": 1,
-            "fall": 0
-          },
-          {
-            "factor": "cholesterol",
-            "to": "<4",
-            "risk": 1,
-            "fall": 0
-          }
-        ],
-        "first": "blood-pressure",
+        "whatif": [],
+        "first": null,
         "weightWhatifHidden": false
       }
     },
@@ -421,15 +408,8 @@
         "urgent": false,
         "tcMmolL": 4.0,
         "bmiShown": 22.0,
-        "whatif": [
-          {
-            "factor": "cholesterol",
-            "to": "<4",
-            "risk": 1,
-            "fall": 0
-          }
-        ],
-        "first": "cholesterol",
+        "whatif": [],
+        "first": null,
         "weightWhatifHidden": false
       }
     },
@@ -684,15 +664,8 @@
         "urgent": false,
         "tcMmolL": null,
         "bmiShown": 22.0,
-        "whatif": [
-          {
-            "factor": "blood-pressure",
-            "to": "<120",
-            "risk": 1,
-            "fall": 0
-          }
-        ],
-        "first": "blood-pressure",
+        "whatif": [],
+        "first": null,
         "weightWhatifHidden": false
       }
     },
@@ -1323,12 +1296,6 @@
             "to": "<120",
             "risk": 5,
             "fall": 1
-          },
-          {
-            "factor": "cholesterol",
-            "to": "4-4.9",
-            "risk": 6,
-            "fall": 0
           }
         ],
         "first": "blood-pressure",
@@ -1471,12 +1438,6 @@
             "to": "<120",
             "risk": 4,
             "fall": 1
-          },
-          {
-            "factor": "cholesterol",
-            "to": "4-4.9",
-            "risk": 5,
-            "fall": 0
           }
         ],
         "first": "blood-pressure",
@@ -1560,25 +1521,29 @@
     {
       "fixture_id": "FX-HR-STOP-17",
       "expected": {
-        "stop": "under40"
+        "stop": "under40",
+        "urgent": false
       }
     },
     {
       "fixture_id": "FX-HR-STOP-18",
       "expected": {
-        "stop": "over74"
+        "stop": "over74",
+        "urgent": false
       }
     },
     {
       "fixture_id": "FX-HR-STOP-19",
       "expected": {
-        "stop": "cvd"
+        "stop": "cvd",
+        "urgent": false
       }
     },
     {
       "fixture_id": "FX-HR-STOP-21",
       "expected": {
-        "stop": "pregnancy"
+        "stop": "pregnancy",
+        "urgent": false
       }
     },
     {

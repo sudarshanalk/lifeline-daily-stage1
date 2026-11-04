@@ -3,17 +3,20 @@
 engine. Exact decimal arithmetic, so rounding ties are decided exactly.
 
   Stops    : age < 40 (under40); age > 74 (over74); existing CVD yes (cvd); pregnant yes / not sure (pregnancy);
-             sex "prefer not to say" cannot calculate (sex, D3-11). No number with any stop.
+             sex "prefer not to say" cannot calculate (sex, D3-11). No number with any stop, but the urgent level
+             below still applies and is reported with the stop (safety matrix A1, decision D5).
   Region   : `region` as given (the sweep), else the country's GBD region from who2019-country-to-region.json
   Model    : total cholesterol given -> laboratory chart; "don't know" -> non-laboratory (BMI) chart (D3-15)
   Bands    : age 40-44 ... 70-74; SBP (whole mmHg, half-up) <120, 120-139, 140-159, 160-179, >=180;
              TC mmol/L (mg/dL / 38.67 unrounded, then 1 dp half-up) <4, 4-4.9, 5-5.9, 6-6.9, >=7;
              BMI (1 dp half-up) <20, 20-24, 25-29, 30-35, >=35 (35.0 is >=35)
   Result   : the printed whole number in that cell of who2019-chart-cells.json; band on that number (D3-13):
-             <5 low, 5-9 moderate, 10-19 high, >=20 very-high. Urgent: SBP >= 180.
+             <5 low, 5-9 moderate, 10-19 high, >=20 very-high.
+  Urgent   : SBP >= 180 (FR3-46); pregnant yes / not sure: SBP >= 160 (P3-58 section 4.2).
   What-if  : smoker -> non-smoker; SBP band above <120 -> the band below; lab and TC band above <4 -> the band below;
              non-lab and BMI band above 20-24 -> the band below, hidden with an eating-disorder answer.
-             Ranked by the fall (current - new), ties smoking, blood pressure, cholesterol, weight.
+             Only a move whose fall (current - new) is above 0 is offered; ranked by the fall, ties smoking,
+             blood pressure, cholesterol, weight.
 
 Reads fixtures/heart-risk/*.json (inputs only; the two who2019-* files are the data), writes
 oracles/orc-08-heart-risk/results.json with the expected values it derives, and prints every fixture whose recorded
@@ -56,11 +59,13 @@ def risk_band(r: int) -> str:
 def assess(i: dict, charts: dict, countries: dict) -> dict:
     age = int(i["age"])
     sex = str(i["sex"]).strip().lower()
-    if age < 40: return {"stop": "under40"}
-    if age > 74: return {"stop": "over74"}
-    if yes(i.get("cvd", "no")): return {"stop": "cvd"}
-    if str(i.get("preg", "no")).strip().lower() != "no": return {"stop": "pregnancy"}
-    if sex not in ("male", "female", "m", "f"): return {"stop": "sex"}
+    pregnant = str(i["preg"]).strip().lower() != "no"
+    urgent = q(D(str(i["sbp"])), "1") >= (160 if pregnant else 180)
+    if age < 40: return {"stop": "under40", "urgent": urgent}
+    if age > 74: return {"stop": "over74", "urgent": urgent}
+    if yes(i["cvd"]): return {"stop": "cvd", "urgent": urgent}
+    if pregnant: return {"stop": "pregnancy", "urgent": urgent}
+    if sex not in ("male", "female", "m", "f"): return {"stop": "sex", "urgent": urgent}
     region = i.get("region") or countries[i["country"]]["gbd_region"]
     men = sex in ("male", "m")
     smoker = yes(i["smoke"])
@@ -103,12 +108,13 @@ def assess(i: dict, charts: dict, countries: dict) -> dict:
             hidden = True
         else:
             options.append(("weight", BMI[third - 1][1], cell_value(smoker, sbp_i, third - 1)))
+    options = [o for o in options if risk - o[2] > 0]
     options.sort(key=lambda o: (-(risk - o[2]), TIE.index(o[0])))
     whatif = [{"factor": f, "to": to, "risk": r, "fall": risk - r} for f, to, r in options]
 
     return {
         "stop": None, "model": "lab" if lab else "nolab", "region": region, "cell": cell,
-        "risk": risk, "band": risk_band(risk), "urgent": sbp >= 180,
+        "risk": risk, "band": risk_band(risk), "urgent": urgent,
         "tcMmolL": float(tc) if lab else None, "bmiShown": float(bmi) if bmi is not None else None,
         "whatif": whatif, "first": whatif[0]["factor"] if whatif else None, "weightWhatifHidden": hidden,
     }
@@ -132,7 +138,7 @@ def main(root: Path) -> int:
                     mismatches.append(f"{c['id']}.{k}: oracle {expected[k]!r} != fixture {v!r}")
     out = {
         "oracle_id": "ORC-08",
-        "implementation": "Python decimal reference for the Heart Attack and Stroke Risk Check (FR3-49): WHO 2019 chart look-up (D3-10 = B), cell boundaries and rounding, mg/dL conversion, the safety stops, the urgent level and the adjacent-cell what-if ranking, from the signed sheet of 3 November 2026",
+        "implementation": "Python decimal reference for the Heart Attack and Stroke Risk Check (FR3-49): WHO 2019 chart look-up (D3-10 = B), cell boundaries and rounding, mg/dL conversion, the safety stops, the urgent level (with the stops too) and the adjacent-cell what-if ranking (falls above 0 only), from the signed sheet of 3 November 2026",
         "versions": {"python": platform.python_version(), "sheet": "P3-57 v1.0 signed 2026-11-03"},
         "source_hash": hashlib.sha256(me.read_bytes()).hexdigest(),
         "run_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),

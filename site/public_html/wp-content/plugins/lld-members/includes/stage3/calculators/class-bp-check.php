@@ -45,6 +45,9 @@ class LLD_Members_BP_Check {
 	const WINDOW_DAYS = 7;
 	const MIN_DAYS    = 3;
 
+	/** Most readings one 7-day check accepts (a member logging 4 a day logs 28 a week); more is refused, not read. */
+	const MAX_READINGS = 200;
+
 	/** Age range and the 80-plus note (sheet sections 2 and 3). */
 	const AGE_RANGE = array( 18, 99 );
 	const AGE_NOTE  = 80;
@@ -96,19 +99,32 @@ class LLD_Members_BP_Check {
 	 * @param string[] $situations LLD_Members_Stage3_Safety::situations() keys.
 	 */
 	public static function apply_profile( array $in, array $situations ) {
-		if ( in_array( 'pregnancy', $situations, true ) && 'notsure' !== self::answer( isset( $in['pregnant'] ) ? $in['pregnant'] : 'no', array( 'yes', 'no', 'notsure' ) ) ) {
+		if ( in_array( 'pregnancy', $situations, true ) && 'notsure' !== self::pregnancy_answer( isset( $in['pregnant'] ) ? $in['pregnant'] : 'no' ) ) {
 			$in['pregnant'] = 'yes';
 		}
 		return $in;
 	}
 
 	/**
+	 * Whether a mode answer asks for the 7-day home average (the members' route then reads the member's own logged
+	 * readings, sheet section 5).
+	 *
+	 * @param mixed $value Mode answer.
+	 */
+	public static function home_mode( $value ) {
+		return '7-day' === self::mode( $value );
+	}
+
+	/**
 	 * Work out the result.
 	 *
-	 * @param array $in mode (single | 7-day), pregnant (yes | no | notsure), age (18-99, optional), medicine (bool or
-	 *                  yes/no, optional), dizzy (the "I feel dizzy or faint" tick, optional); single: systolic,
-	 *                  diastolic, pulse (optional); 7-day: readings [{date Y-m-d, systolic, diastolic}] (the member's
-	 *                  logged blood-pressure readings, not deleted) and today (Y-m-d in the member's time zone).
+	 * @param array $in mode (single | 7-day), pregnant (yes | no | notsure, or true / false), age (18-99, optional),
+	 *                  medicine and dizzy (the "I feel dizzy or faint" tick), optional: yes / no, true / false,
+	 *                  "true" / "false" or 1 / 0, anything else refused; single: systolic, diastolic, pulse (optional);
+	 *                  7-day: readings [{date Y-m-d, systolic, diastolic}] (at most MAX_READINGS: the member's logged
+	 *                  blood-pressure readings, not deleted, which the members' route reads itself) and today (Y-m-d
+	 *                  in the member's time zone). Every reading and pulse is rounded to whole numbers, half-up, before
+	 *                  any level or category (as the heart risk check does).
 	 * @return array mode, refused, category, warning_level, urgent, messages (wording keys in order), average,
 	 *               average_unrounded, average_shown, days, daily_means, used, skipped, pulse_direction, safety,
 	 *               version; or error (the field to check).
@@ -118,9 +134,17 @@ class LLD_Members_BP_Check {
 		if ( null === $mode ) {
 			return self::invalid( 'mode' );
 		}
-		$pregnant = self::answer( isset( $in['pregnant'] ) ? $in['pregnant'] : 'no', array( 'yes', 'no', 'notsure' ) );
+		$pregnant = self::pregnancy_answer( isset( $in['pregnant'] ) ? $in['pregnant'] : 'no' );
 		if ( null === $pregnant ) {
 			return self::invalid( 'pregnant' );
+		}
+		$dizzy    = self::yes_no( isset( $in['dizzy'] ) ? $in['dizzy'] : null );
+		$medicine = self::yes_no( isset( $in['medicine'] ) ? $in['medicine'] : null );
+		if ( null === $dizzy ) {
+			return self::invalid( 'dizzy' );
+		}
+		if ( null === $medicine ) {
+			return self::invalid( 'medicine' );
 		}
 		$age = null;
 		if ( isset( $in['age'] ) && '' !== $in['age'] ) {
@@ -131,12 +155,12 @@ class LLD_Members_BP_Check {
 		}
 		$flags = array(
 			'pregnancy' => 'no' !== $pregnant, // "Not sure" is treated as pregnant (sheet section 4.2)
-			'dizzy'     => self::yes( isset( $in['dizzy'] ) ? $in['dizzy'] : false ),
+			'dizzy'     => $dizzy,
 		);
 		$ctx   = array(
 			'pregnant' => $flags['pregnancy'],
 			'age80'    => null !== $age && $age >= self::AGE_NOTE,
-			'medicine' => self::yes( isset( $in['medicine'] ) ? $in['medicine'] : false ),
+			'medicine' => $medicine,
 		);
 		$out   = array(
 			'mode'              => $mode,
@@ -243,14 +267,14 @@ class LLD_Members_BP_Check {
 			}
 		}
 		$values = array(
-			'sys' => (float) $in['systolic'],
-			'dia' => (float) $in['diastolic'],
+			'sys' => self::whole( $in['systolic'] ),
+			'dia' => self::whole( $in['diastolic'] ),
 		);
 		if ( isset( $in['pulse'] ) && '' !== $in['pulse'] && null !== $in['pulse'] ) {
 			if ( ! is_numeric( $in['pulse'] ) ) {
 				return self::invalid( 'pulse' );
 			}
-			$values['pulse'] = (float) $in['pulse'];
+			$values['pulse'] = self::whole( $in['pulse'] );
 		}
 		$out['systolic']  = $values['sys'] + 0;
 		$out['diastolic'] = $values['dia'] + 0;
@@ -309,7 +333,7 @@ class LLD_Members_BP_Check {
 		if ( null === $today ) {
 			return self::invalid( 'today' );
 		}
-		if ( ! isset( $in['readings'] ) || ! is_array( $in['readings'] ) ) {
+		if ( ! isset( $in['readings'] ) || ! is_array( $in['readings'] ) || count( $in['readings'] ) > self::MAX_READINGS ) {
 			return self::invalid( 'readings' );
 		}
 		$from = $today->modify( '-' . ( self::WINDOW_DAYS - 1 ) . ' days' )->format( 'Y-m-d' );
@@ -331,7 +355,9 @@ class LLD_Members_BP_Check {
 			if ( null === $date || null === $sys || null === $dia ) {
 				return self::invalid( 'readings' );
 			}
-			$d = $date->format( 'Y-m-d' );
+			$sys = self::whole( $sys ); // whole mmHg before any level, as a single reading
+			$dia = self::whole( $dia );
+			$d   = $date->format( 'Y-m-d' );
 			if ( $d < $from || $d > $to ) {
 				continue;
 			}
@@ -517,24 +543,51 @@ class LLD_Members_BP_Check {
 		return in_array( $v, array( '7day', '7dayaverage', 'sevenday', 'home', 'average' ), true ) ? '7-day' : null;
 	}
 
-	/**
-	 * @param mixed    $value   Answer.
-	 * @param string[] $allowed Accepted answers.
-	 */
-	private static function answer( $value, array $allowed ) {
-		if ( ! is_scalar( $value ) ) {
-			return null;
-		}
-		$v = strtolower( str_replace( array( ' ', '-', '_' ), '', trim( (string) $value ) ) );
-		return in_array( $v, $allowed, true ) ? $v : null;
+	/** A reading or pulse in whole numbers, half-up (they are positive). */
+	private static function whole( $x ) {
+		return (int) round( (float) $x, 0, PHP_ROUND_HALF_UP );
 	}
 
-	/** A yes/no answer or tick as a boolean. */
-	private static function yes( $value ) {
+	/**
+	 * The pregnancy answer: yes, no or notsure. true / "true" / 1 is yes, false / "false" / 0 is no; anything else is
+	 * refused (null), so "no" can never count as yes.
+	 *
+	 * @param mixed $value Answer.
+	 * @return string|null
+	 */
+	private static function pregnancy_answer( $value ) {
+		if ( 'notsure' === self::token( $value ) ) {
+			return 'notsure';
+		}
+		$yes = self::yes_no( $value, false );
+		return null === $yes ? null : ( $yes ? 'yes' : 'no' );
+	}
+
+	/**
+	 * A yes/no answer or tick as a boolean: yes / true / "true" / 1 / "1" / "on" is true; no / false / "false" / 0 /
+	 * "0" / "off" is false; not given (null or "") is $missing; anything else is refused (null).
+	 *
+	 * @param mixed     $value   Answer.
+	 * @param bool|null $missing What an answer not given means.
+	 * @return bool|null
+	 */
+	private static function yes_no( $value, $missing = false ) {
 		if ( is_bool( $value ) ) {
 			return $value;
 		}
-		return is_scalar( $value ) && in_array( strtolower( trim( (string) $value ) ), array( '1', 'yes', 'true', 'on' ), true );
+		if ( null === $value || '' === $value ) {
+			return $missing;
+		}
+		$v = self::token( $value );
+		if ( in_array( $v, array( 'yes', 'true', '1', 'on' ), true ) ) {
+			return true;
+		}
+		return in_array( $v, array( 'no', 'false', '0', 'off' ), true ) ? false : null;
+	}
+
+	/** An answer lower-cased, without spaces, hyphens or underscores; '' for a non-scalar. */
+	private static function token( $value ) {
+		return is_scalar( $value ) && ! is_bool( $value ) ? strtolower( str_replace( array( ' ', '-', '_' ), '', trim( (string) $value ) ) ) : '';
 	}
 
 	/**
