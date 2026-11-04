@@ -160,7 +160,9 @@ test('TC-FR3-58-AS-01 manifest is installable (name, start_url, display, icons)'
   const sw = php(`echo LLD_Members_Installable::service_worker();`);
   expect(sw).toContain('offline');
   expect(sw).toContain('fetch');
-  expect(readFileSync(stage3('class-installable.php'), 'utf8')).toContain('You are offline');
+  const src = readFileSync(stage3('class-installable.php'), 'utf8');
+  expect(src).toContain('You are offline');
+  expect(src).toContain('status_header( 200 )');
 });
 
 test('Free/Premium running reminders (FR3-68) still only runs the first for Free', () => {
