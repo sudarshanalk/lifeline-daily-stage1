@@ -397,7 +397,7 @@ class LLD_Members_Billing {
 			$main .= '<p class="lld-info" data-lld-premium-now>You\'re Premium. Everything below is already open to you. <a href="' . esc_url( home_url( '/members/subscription/' ) ) . '">My subscription</a></p>';
 		}
 		$main  .= '<div class="lld-plans"><article class="lld-card lld-plan is-yearly" data-lld-plan="yearly"><p class="lld-plan-best">best value</p>';
-		$main  .= '<p class="lld-plan-name">Yearly</p><p class="lld-plan-price">' . esc_html( self::money( $prices['yearly'], 'usd' ) . ' a year' ) . '</p><p class="lld-plan-tax">tax included. That is US$5 a month, a saving of 37 %.</p>';
+		$main  .= '<p class="lld-plan-name">Yearly</p><p class="lld-plan-price">' . esc_html( self::money( $prices['yearly'], 'usd' ) . ' a year' ) . '</p><p class="lld-plan-tax">' . esc_html( $launch ? LLD_Members_Membership::yearly_line( $prices ) : 'tax included. That is US$5 a month, a saving of 37 %.' ) . '</p>';
 		$main  .= '<p class="lld-plan-line">What\'s included: weeks 2 to 4, meal plans, workouts and the food diary.</p>';
 		$main  .= '<p class="lld-plan-line lld-plan-cancel">How to cancel: cancel in 3 clicks from My subscription. Access continues to the end of the paid period.</p>';
 		$main  .= ( $premium ? '' : lld_button( array( 'label' => 'Choose yearly', 'href' => home_url( '/members/checkout/?plan=yearly' ) ) ) ) . '</article>';
@@ -577,6 +577,7 @@ class LLD_Members_Billing {
 		}
 		$page   = $pages[ $key ];
 		$prices = self::prices();
+		$launch = class_exists( 'LLD_Members_Membership' ) && LLD_Members_Membership::launch_on();
 
 		$icons = array(
 			'healthy-weight' => '&#9878;&#65039;',

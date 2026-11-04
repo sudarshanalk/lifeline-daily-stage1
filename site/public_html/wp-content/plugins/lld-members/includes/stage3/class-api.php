@@ -204,9 +204,20 @@ class LLD_Members_Stage3_API {
 				'feature' => 'calculators_new',
 				'health'  => true,
 				'stage2'  => true,
-				'write'   => false,
-				'sealed'  => array(),
-				'fields'  => array(),
+				'write'   => true,
+				'sealed'  => array( 'inputs', 'result' ),
+				'fields'  => array(
+					'calculator'         => 'choice:protein|diabetes_risk|healthy_weight|calorie_target|goal_timeline|heart_risk|bp_check|metabolic|fitness_age|hr_zones|sleep_stress|diabetes|healthy-weight',
+					'headline'           => 'text[64]',
+					'unit'               => 'text[64]',
+					'band'               => 'text[64]',
+					'calculator_version' => 'text[64]',
+					'engine_version'     => 'text[64]',
+					'saved_at'           => 'datetime',
+					'inputs'             => 'json',
+					'result'             => 'json',
+				),
+				'required' => array( 'calculator', 'headline', 'band' ),
 			),
 			'reminders'          => array(
 				'table'   => 'reminders',
@@ -722,6 +733,9 @@ class LLD_Members_Stage3_API {
 			}
 		} elseif ( ! empty( $def['stage2'] ) ) {
 			$since = self::clean_datetime( (string) $request->get_param( 'since' ) );
+			if ( 'calculator_result' === $def['table'] ) {
+				return self::list_calculator_results( $request, $member_id, $def, $since );
+			}
 			return new WP_REST_Response( array( 'rows' => self::stage2_rows( $def['table'], $member_id, $since ) ), 200 );
 		} else {
 			$since = self::clean_datetime( (string) $request->get_param( 'since' ) );
@@ -802,9 +816,33 @@ class LLD_Members_Stage3_API {
 		if ( 'readings' === $def['table'] ) {
 			$params = LLD_Members_Health_Log::accept_input( $params );
 		}
+		if ( 'calculator_result' === $def['table'] ) {
+			$flags = self::saved_result_flags( $member_id );
+			$filled = LLD_Members_Saved_Results::for_save( $params, $flags );
+			if ( isset( $filled['error'] ) ) {
+				return self::refuse( isset( $filled['status'] ) ? (int) $filled['status'] : 422, $filled['error'] );
+			}
+			if ( '' === $filled['saved_at'] ) {
+				$filled['saved_at'] = lld_members_now_mysql( $member_id );
+			}
+			// Stage 1 tools never store inputs (D51); drop if a client sent them.
+			if ( ! LLD_Members_Saved_Results::stores_inputs( $filled['calculator'] ) ) {
+				unset( $filled['inputs'] );
+			}
+			$params = $filled;
+		}
 		$clean  = self::validate( $def, $params, true );
 		if ( $clean instanceof WP_REST_Response ) {
 			return $clean;
+		}
+		if ( 'calculator_result' === $def['table'] ) {
+			// Keep sealed fields validate may have dropped when the body used engine_version.
+			foreach ( array( 'inputs', 'result', 'saved_at', 'calculator_version' ) as $keep ) {
+				if ( array_key_exists( $keep, $params ) && ! array_key_exists( $keep, $clean ) ) {
+					$clean[ $keep ] = $params[ $keep ];
+				}
+			}
+			unset( $clean['engine_version'] );
 		}
 		if ( 'shares' === $def['table'] ) {
 			$clean['token'] = bin2hex( random_bytes( 16 ) );
@@ -1021,11 +1059,11 @@ class LLD_Members_Stage3_API {
 			return $gate;
 		}
 		list( $member_id, $def ) = $gate;
-		if ( ! empty( $def['stage2'] ) || ( isset( $def['write'] ) && false === $def['write'] ) ) {
+		if ( ( ! empty( $def['stage2'] ) && 'calculator_result' !== $def['table'] ) || ( isset( $def['write'] ) && false === $def['write'] ) ) {
 			return self::refuse( 405, 'This type is read-only here.' );
 		}
 		$id  = (int) $request['id'];
-		$row = LLD_Members_Stage3_Data::row( $def['table'], $member_id, $id, $def['sealed'] );
+		$row = LLD_Members_Stage3_Data::row( $def['table'], $member_id, $id, isset( $def['sealed'] ) ? $def['sealed'] : array() );
 		if ( ! $row ) {
 			return self::refuse( 404, 'Not found.' );
 		}
@@ -1169,7 +1207,8 @@ class LLD_Members_Stage3_API {
 	}
 
 	/**
-	 * Saved calculator results (Stage 2 table), read-only here.
+	 * Saved calculator results (Stage 2 table). Metadata only for the generic stage2 path; calculator-results
+	 * uses list_calculator_results() so Free / Premium and sealed fields are applied (P3-5B).
 	 *
 	 * @param string      $suffix    Stage 2 table suffix.
 	 * @param int         $member_id Member number.
@@ -1182,6 +1221,63 @@ class LLD_Members_Stage3_API {
 		$table = LLD_Members_Schema::table( $suffix );
 		$rows  = $wpdb->get_results( $wpdb->prepare( "SELECT id, calculator, saved_at FROM {$table} WHERE member_id = %d ORDER BY id DESC LIMIT 500", $member_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
+	 * List saved calculator results with Free/Premium presentation and ED hiding (FR3-55, FR3-69).
+	 *
+	 * @param WP_REST_Request     $request   Request.
+	 * @param int                 $member_id Member number.
+	 * @param array<string,mixed> $def       Type definition.
+	 * @param string|null         $since     Unused (no updated_at on the Stage 2 table).
+	 * @return WP_REST_Response
+	 */
+	private static function list_calculator_results( $request, $member_id, array $def, $since ) {
+		unset( $since );
+		$calc = (string) $request->get_param( 'calculator' );
+		if ( '' === $calc ) {
+			$calc = (string) $request->get_param( 'type' );
+		}
+		$calc  = str_replace( '-', '_', $calc );
+		$flags = self::saved_result_flags( $member_id );
+		if ( $calc && LLD_Members_Saved_Results::api_refuses( $calc, $flags ) ) {
+			return self::refuse( 403, 'Not available.' );
+		}
+		$rows = LLD_Members_Stage3_Data::rows( $def['table'], $member_id, $def['sealed'], '', 500 );
+		if ( $calc ) {
+			$rows = array_values(
+				array_filter(
+					$rows,
+					static function ( $row ) use ( $calc ) {
+						return isset( $row['calculator'] ) && str_replace( '-', '_', (string) $row['calculator'] ) === $calc;
+					}
+				)
+			);
+		}
+		$premium = LLD_Members_Food_Log::premium( $member_id );
+		$plan    = $premium ? 'premium' : 'free';
+		$consent = class_exists( 'LLD_Members_Account' ) ? LLD_Members_Account::has_consent( $member_id, 'health' ) : true;
+		$view    = LLD_Members_Saved_Results::present_list( $rows, $plan, $consent, $flags );
+		$view['rows'] = array_map( array( __CLASS__, 'present' ), $view['rows'] );
+		$view         = apply_filters( 'lld_members_stage3_api_rows', $view, 'calculator-results', $member_id );
+		return new WP_REST_Response( $view, 200 );
+	}
+
+	/**
+	 * Safety flags the saved-results rules need (eating-disorder hides calorie_target and goal_timeline).
+	 *
+	 * @param int $member_id Member number.
+	 * @return array<string,bool>
+	 */
+	private static function saved_result_flags( $member_id ) {
+		$flags = array( 'eating_disorder' => false );
+		if ( class_exists( 'LLD_Members_Stage3_Safety' ) ) {
+			$applies = LLD_Members_Stage3_Safety::applies( $member_id, 'calculators_new' );
+			$flags['eating_disorder'] = in_array( 'eating_disorder', isset( $applies['situations'] ) ? $applies['situations'] : array(), true )
+				|| in_array( 'calorie-target', isset( $applies['refused'] ) ? $applies['refused'] : array(), true )
+				|| in_array( 'goal-timeline', isset( $applies['refused'] ) ? $applies['refused'] : array(), true );
+		}
+		return $flags;
 	}
 
 	/**

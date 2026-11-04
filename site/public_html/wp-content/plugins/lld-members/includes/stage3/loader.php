@@ -27,6 +27,7 @@ require_once __DIR__ . '/calculators/class-metabolic.php';
 require_once __DIR__ . '/calculators/class-fitness-age.php';
 require_once __DIR__ . '/calculators/class-hr-zones.php';
 require_once __DIR__ . '/calculators/class-sleep-stress.php';
+require_once __DIR__ . '/class-saved-results.php';
 require_once __DIR__ . '/class-content-stage3.php';
 require_once __DIR__ . '/class-safety-stage3.php';
 require_once __DIR__ . '/engine/class-rule-catalogue.php';
