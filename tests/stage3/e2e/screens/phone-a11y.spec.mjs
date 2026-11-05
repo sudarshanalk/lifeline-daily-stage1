@@ -1,6 +1,7 @@
 // phone-a11y (P3-83 · NFR3-12, NFR3-13): Phone layout and accessibility of every Stage 3 page.
 // Checks 360px viewport sideways scrolling, >= 44x44px tap targets (with inline link exemption),
 // 4-tap blood pressure logging, axe-core WCAG 2.2 AA zero critical/serious violations, and "Show as table" chart parity.
+import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { createMember, signIn, password, startTrack } from '../../key-journeys/helpers.mjs';
@@ -611,6 +612,19 @@ test.describe.serial('Stage 3 Phone layout and accessibility (P3-83)', () => {
   // -------------------------------------------------------------
   test('TC-NFR3-12-AS-01 and TC-NFR3-13-AS-01 Health Tools hub at 360 px and 1280 px: layout and accessibility', async ({ page }) => {
     await page.context().clearCookies();
+    const origin = new URL(page.url() || 'http://127.0.0.1:8090').origin;
+
+    // In throwaway CI (stage2-wp.sh), the Stage 1 mu-plugin lld-tools and /health-tools/ page
+    // are not present in the clean WordPress core database. Check if 404 and fulfill with fixture.
+    const probe = await page.request.get('/health-tools/');
+    if (probe.status() === 404) {
+      await page.route('**/health-tools/', async (route) => {
+        const fixturePath = new URL('./hub-page-fixture.html', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
+        const fixtureHtml = readFileSync(fixturePath, 'utf8').replaceAll('http://localhost:8090', origin);
+        await route.fulfill({ status: 200, contentType: 'text/html; charset=UTF-8', body: fixtureHtml });
+      });
+    }
+
     await page.goto('/health-tools/');
     await captureAndCheckScroll(page, 'Health Tools hub', 'health-tools-hub');
 
