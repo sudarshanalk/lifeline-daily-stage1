@@ -3,14 +3,14 @@
 // 4-tap blood pressure logging, axe-core WCAG 2.2 AA zero critical/serious violations, and "Show as table" chart parity.
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
-import { createMember, signIn, password } from '../../key-journeys/helpers.mjs';
+import { createMember, signIn, password, startTrack } from '../../key-journeys/helpers.mjs';
 import { restNonce } from '../../../stage2/e2e/helpers.mjs';
 
-const MEMBER_PREMIUM = 'p3-api-a@test.lifelinedaily.invalid';
+const MEMBER_PREMIUM = 'p3-calc-a@test.lifelinedaily.invalid';
 const MEMBER_FREE = 'p3-calc-b@test.lifelinedaily.invalid';
 
 // Test account for no health consent
-const MEMBER_NOCONSENT = 'p3-signin-b@test.lifelinedaily.invalid';
+const MEMBER_NOCONSENT = 'p3-calc-b@test.lifelinedaily.invalid';
 
 async function setupMember(page, email, fields = {}) {
   await page.request.post('/wp-json/lld-members/v1/test/reset', { data: { email } });
@@ -28,7 +28,7 @@ async function setProfile(page, memberId, fields = {}) {
 }
 
 async function saveGoal(page) {
-  const answered = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/members/goal/');
+  const answered = page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('/members/goal'));
   await page.getByRole('button', { name: 'Save my goal' }).click();
   await answered;
   await page.waitForLoadState('load');
@@ -72,11 +72,12 @@ async function weighIn(page, day, kg) {
 
 async function checkIn(page, { weight = '', waist = '', sys = '', dia = '' } = {}) {
   await page.goto('/members/check-in/');
-  await expect(page.locator('[data-lld-section="measurements"]')).toBeVisible();
-  if (weight) await page.locator('#lld_weight').fill(String(weight));
-  if (waist) await page.locator('#lld_waist').fill(String(waist));
-  if (sys) { await page.locator('#lld_sys').fill(String(sys)); await page.locator('#lld_dia').fill(String(dia)); }
-  await page.locator('[data-lld-section="measurements"] button[type="submit"]').click();
+  const sec = page.locator('[data-lld-section="measurements"]');
+  await expect(sec).toBeVisible();
+  if (weight) await sec.locator('#lld_weight').fill(String(weight));
+  if (waist) await sec.locator('#lld_waist').fill(String(waist));
+  if (sys) { await sec.locator('#lld_sys').fill(String(sys)); await sec.locator('#lld_dia').fill(String(dia)); }
+  await sec.locator('button[type="submit"]').click();
   await expect(page).toHaveURL(/\/members\/check-in\/\?done=1/);
 }
 
@@ -268,7 +269,7 @@ test.describe.serial('Stage 3 Phone layout and accessibility (P3-83)', () => {
     await captureAndCheckScroll(page, 'Goal setting (refused / not suitable)', 'goal-refused');
 
     // 4. Third goal refused
-    const freshExtra = await setupMember(page, 'p3-goal-extra@test.lifelinedaily.invalid', { access_state: 'Premium' });
+    const freshExtra = await setupMember(page, 'p3-calc-b@test.lifelinedaily.invalid', { access_state: 'Premium' });
     await setProfile(page, freshExtra.member_id);
     await weightGoal(page, { current: 90, target: 84 });
     await page.goto('/members/goal/?role=extra');
@@ -336,7 +337,7 @@ test.describe.serial('Stage 3 Phone layout and accessibility (P3-83)', () => {
     await captureAndCheckScroll(page, 'Today (plan adjustment waiting)', 'today-adjustment');
 
     // 4. Eating-disorder flag (no weight/calorie targets)
-    const mEd = await setupMember(page, 'p3-ed-user@test.lifelinedaily.invalid', { access_state: 'Premium' });
+    const mEd = await setupMember(page, 'p3-calc-b@test.lifelinedaily.invalid', { access_state: 'Premium' });
     await setProfile(page, mEd.member_id, { conditions_answered: 'answered', conditions: ['eating-disorder'] });
     await page.goto('/members/home/');
     await captureAndCheckScroll(page, 'Today (eating disorder safety flag)', 'today-eating-disorder');
@@ -400,14 +401,17 @@ test.describe.serial('Stage 3 Phone layout and accessibility (P3-83)', () => {
   // -------------------------------------------------------------
   test('TC-NFR3-12-AS-01 progress and dashboard at 360 px: no sideways scroll across states', async ({ page }) => {
     // 1. Clean member (no data)
-    const mEmpty = await setupMember(page, 'p3-prog-empty@test.lifelinedaily.invalid', { access_state: 'Premium' });
+    const mEmpty = await setupMember(page, 'p3-calc-b@test.lifelinedaily.invalid', { access_state: 'Premium' });
     await setProfile(page, mEmpty.member_id);
     await weightGoal(page);
     await page.goto('/members/progress/');
     await captureAndCheckScroll(page, 'Progress (empty/no data)', 'progress-empty');
 
     // 2. Member with readings & 14 days of logs
-    await signIn(page, MEMBER_PREMIUM, password);
+    const mActive = await setupMember(page, MEMBER_PREMIUM, { access_state: 'Premium' });
+    await setProfile(page, mActive.member_id);
+    await startTrack(page, 'healthy-weight');
+    await weightGoal(page);
     const a = await api(page);
     for (let d = 17; d <= 30; d++) {
       await a.post('readings', { reading_type: 'water', taken_at: at(d, 8), value_1: 250, unit_shown: 'ml', source: 'quick_tile' });
@@ -629,7 +633,7 @@ test.describe.serial('Stage 3 Phone layout and accessibility (P3-83)', () => {
     await scanA11y(page, 'signin screen');
 
     // 2. Code entry & wrong code
-    await page.locator('#lld_email').fill('p3-signin-b@test.lifelinedaily.invalid');
+    await page.locator('#lld_email').fill('p3-calc-a@test.lifelinedaily.invalid');
     await page.getByRole('button', { name: 'Email me a code', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Enter your code', exact: true })).toBeVisible();
     await captureAndCheckScroll(page, 'Enter your code', 'signin-enter-code');
