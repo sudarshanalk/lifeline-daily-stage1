@@ -387,7 +387,7 @@ class LLD_Members_Sign_In {
 			$main .= '<label class="lld-check"><input type="checkbox" name="lld_remember" value="1"> <span>Remember me for 30 days</span></label>';
 			$main .= lld_button( array( 'label' => 'Email me a code' ) );
 			$main .= '</form>';
-			$main .= '<p><a href="' . esc_url( home_url( '/members/sign-in/' . ( '' !== $redirect_to ? '?redirect_to=' . rawurlencode( $redirect_to ) : '' ) ) ) . '">Sign in with your password instead</a></p>';
+			$main .= '<p class="lld-link-row"><a href="' . esc_url( home_url( '/members/sign-in/' . ( '' !== $redirect_to ? '?redirect_to=' . rawurlencode( $redirect_to ) : '' ) ) ) . '">Sign in with your password instead</a></p>';
 		} else {
 			$main .= '<form method="post" class="lld-form lld-card lld-form-card" novalidate>';
 			$main .= wp_nonce_field( 'lld_sign_in', 'lld_sign_in_nonce', true, false );
@@ -400,11 +400,11 @@ class LLD_Members_Sign_In {
 			$main .= lld_button( array( 'label' => 'Sign in' ) );
 			$main .= '</form>';
 			if ( $code_on ) {
-				$main .= '<p><a href="' . esc_url( home_url( '/members/sign-in/?code=1' . ( '' !== $redirect_to ? '&redirect_to=' . rawurlencode( $redirect_to ) : '' ) ) ) . '">Email me a sign-in code instead</a></p>';
+				$main .= '<p class="lld-link-row"><a href="' . esc_url( home_url( '/members/sign-in/?code=1' . ( '' !== $redirect_to ? '&redirect_to=' . rawurlencode( $redirect_to ) : '' ) ) ) . '">Email me a sign-in code instead</a></p>';
 			}
-			$main .= '<p><a href="' . esc_url( home_url( '/members/reset/' ) ) . '">Forgot password?</a></p>';
+			$main .= '<p class="lld-link-row"><a href="' . esc_url( home_url( '/members/reset/' ) ) . '">Forgot password?</a></p>';
 		}
-		$main .= '<p><a href="' . esc_url( home_url( '/members/join/' ) ) . '">Join free</a></p>';
+		$main .= '<p class="lld-link-row"><a href="' . esc_url( home_url( '/members/join/' ) ) . '">Join free</a></p>';
 		lld_members_layout( array( 'title' => 'Sign in', 'main' => $main, 'signed_in' => false ) );
 		exit;
 	}

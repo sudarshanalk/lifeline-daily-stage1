@@ -45,7 +45,8 @@ export const PACKAGE_TOOLS = {
   // The calculator engines: P3-55 was built by the lead; P3-56 and P3-5B are delegated to Cursor in full (owner, 3 Nov 2026);
   // P3-57 to P3-5A were taken over by the lead (owner, 3 Nov 2026) before Cursor started them.
   55: ['cursor', 'claude'], 56: ['cursor'], 57: ['cursor', 'claude'], 58: ['cursor', 'claude'], 59: ['cursor', 'claude'], '5A': ['cursor', 'claude'], '5B': ['cursor'],
-  80: ['codex'], 81: ['codex'], 82: ['codex'], 83: ['antigravity'], 85: ['cursor'], 86: ['cursor'],
+  // P3-83: Antigravity checks the pages; the lead fixes what it reports in the lead's files (5 Nov 2026).
+  80: ['codex'], 81: ['codex'], 82: ['codex'], 83: ['antigravity', 'claude'], 85: ['cursor'], 86: ['cursor'],
 };
 
 // Stage 2 files any tool may touch additively; a change labels the PR for the lead's review (NFR3-05 AS-02).

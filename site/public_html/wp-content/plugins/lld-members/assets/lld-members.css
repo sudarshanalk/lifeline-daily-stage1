@@ -76,12 +76,17 @@ img, svg, iframe, video, pre, table { max-width: 100%; }
 .lld-skip {
   position: absolute;
   left: 16px;
-  top: -40px;
+  top: -60px;
   z-index: 20;
   background: var(--lld-card);
   color: var(--lld-ink);
   padding: 8px 12px;
   border-radius: var(--lld-radius-sm);
+  /* P3-83 (TC-NFR3-12-AS-02): a 44 px target once it is focused */
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  box-sizing: border-box;
 }
 
 .lld-skip:focus { top: 8px; }
@@ -377,6 +382,13 @@ a { color: var(--lld-green); }
   color: var(--lld-muted);
   box-shadow: none;
   cursor: not-allowed;
+}
+
+/* a stand-alone link on its own line (P3-83, TC-NFR3-12-AS-02): a 44 px target without looking like a button */
+.lld-link-row a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 
 .lld-text-button {
@@ -1268,7 +1280,7 @@ main h1[tabindex="-1"]:focus, main h1[tabindex="-1"]:focus-visible { outline: no
   .lld-header-inner { flex-wrap: nowrap; }
   .lld-logo-name { font-size: 16px; }
   .lld-logo-tagline { font-size: 9px; }
-  .lld-chip { gap: 6px; padding: 3px 5px 3px 3px; }
+  .lld-chip { gap: 6px; padding: 3px 5px 3px 3px; min-width: 44px; justify-content: center; }
   .lld-chip-initial { width: 30px; height: 30px; }
   .lld-chip-badge { font-size: 10px; padding: 3px 7px; }
 }
