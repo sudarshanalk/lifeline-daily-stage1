@@ -29,8 +29,13 @@ summary {
 }
 
 input[type="date"] {
+  min-width: 44px;
   min-height: 44px;
   box-sizing: border-box;
+}
+
+.lld-field input[type="date"] {
+  min-width: 160px;
 }
 
 .lld-option > label {
@@ -51,7 +56,9 @@ input[type="date"] {
 .lld-stage3-calc p > a:only-child {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   min-height: 44px;
+  min-width: 44px;
 }
 
 @media (max-width: 479px) {
