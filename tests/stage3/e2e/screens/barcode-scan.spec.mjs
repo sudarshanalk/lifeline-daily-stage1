@@ -10,9 +10,10 @@ const A = 'p3-api-a@test.lifelinedaily.invalid';
 const KNOWN = '2000000000015';
 const UNKNOWN = '2000000000022';
 
+/** A clean Premium test member (barcode scanning and adding your own product are Premium, FR3-63), signed in. */
 async function fresh(page, email = A) {
   await page.request.post('/wp-json/lld-members/v1/test/reset', { data: { email } });
-  await createMember(page.request, { email, password, first_name: 'Alex', health_consent: true, consents: ['terms'] });
+  await createMember(page.request, { email, password, first_name: 'Alex', health_consent: true, consents: ['terms'], access_state: 'Premium' });
   await signIn(page, email, password);
 }
 
