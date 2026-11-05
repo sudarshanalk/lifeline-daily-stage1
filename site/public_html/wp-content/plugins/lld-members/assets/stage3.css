@@ -631,6 +631,10 @@ button.lld-menu-item {
 .lld-stage3-scan {
   max-width: 640px;
 }
+/* The button styles set a display, which would otherwise show a button marked hidden. */
+.lld-stage3-scan [hidden] {
+  display: none !important;
+}
 .lld-scan-view {
   position: relative;
   overflow: hidden;

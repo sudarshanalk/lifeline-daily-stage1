@@ -537,7 +537,15 @@
 
     function loop() {
       if (!stream) return;
-      readFrame().then(function (code) {
+      var frame;
+      try {
+        frame = readFrame();
+      } catch (err) {
+        // One frame that cannot be read (the camera still starting, say) is skipped; the next one is tried.
+        if (window.console) console.warn('lld-scan: frame skipped', err && err.name);
+        frame = Promise.resolve(null);
+      }
+      frame.then(function (code) {
         if (!stream) return;
         // The built-in detector is trusted on one read; the script's own reader needs the same code in two frames.
         if (code && (detector || code === lastRead)) {
@@ -557,26 +565,37 @@
         return;
       }
       say(status, 'Starting the camera…');
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false })
-        .then(function (s) {
-          stream = s;
-          video.srcObject = s;
-          view.hidden = false;
-          startBtn.hidden = true;
-          stopBtn.hidden = false;
-          page.setAttribute('data-lld-camera', 'on');
-          say(status, 'Looking for a barcode…');
-          var play = video.play();
-          return Promise.resolve(play).catch(function () {}).then(makeDetector).then(function (d) {
-            detector = d;
-            lastRead = '';
-            loop();
-          });
-        })
-        .catch(function (err) {
-          var name = err && err.name ? err.name : '';
-          cameraUnavailable(name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError');
+      var asked;
+      try {
+        asked = navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
+      } catch (err) {
+        asked = Promise.reject(err);
+      }
+      // Only the camera request itself decides "refused" or "no camera"; what happens after it has started does not.
+      Promise.resolve(asked).then(function (s) {
+        stream = s;
+        video.srcObject = s;
+        view.hidden = false;
+        startBtn.hidden = true;
+        stopBtn.hidden = false;
+        page.setAttribute('data-lld-camera', 'on');
+        say(status, 'Looking for a barcode…');
+        var play;
+        try {
+          play = video.play();
+        } catch (err) {
+          play = null;
+        }
+        Promise.resolve(play).catch(function () {}).then(makeDetector).then(function (d) {
+          detector = d;
+          lastRead = '';
+          loop();
         });
+      }, function (err) {
+        var name = err && err.name ? err.name : '';
+        if (window.console) console.warn('lld-scan: camera not available', name);
+        cameraUnavailable(name === 'NotAllowedError' || name === 'SecurityError' || name === 'PermissionDeniedError');
+      });
     }
 
     // ---- Product cards -------------------------------------------------------------------------------------------

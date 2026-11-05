@@ -39,10 +39,13 @@ function fakeCamera(code) {
     for (let i = 7; i <= 12; i++) put(L[+code[i]], true);
     put([1, 1, 1], true);
     delete window.BarcodeDetector;
+    let tick = 0;
     const draw = (canvas) => {
       const ctx = canvas.getContext('2d');
       ctx.fillStyle = '#fff';
       ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = tick++ % 2 ? '#eee' : '#fff'; // a changing corner, so every browser sends new frames
+      ctx.fillRect(0, 0, 4, 4);
       ctx.fillStyle = '#111';
       const px = 6, left = (canvas.width - bits.length * px) / 2;
       bits.forEach((b, i) => { if (b) ctx.fillRect(left + i * px, 120, px, 240); });
@@ -51,6 +54,8 @@ function fakeCamera(code) {
       const canvas = document.createElement('canvas');
       canvas.width = 800;
       canvas.height = 480;
+      canvas.style.cssText = 'position:fixed;left:-9999px;top:0';
+      (document.body || document.documentElement).appendChild(canvas);
       draw(canvas);
       setInterval(() => draw(canvas), 100); // keep frames coming
       return canvas.captureStream(10);
@@ -59,6 +64,10 @@ function fakeCamera(code) {
 }
 
 test.describe.serial('P3-44 barcode scanning in the browser', () => {
+  test.beforeEach(({ page }) => {
+    page.on('console', (m) => { if (m.text().startsWith('lld-scan')) console.log(`[${test.info().project.name}] ${m.text()}`); });
+  });
+
   test('TC-FR3-37-AS-01 Scan a test barcode that is in the database: the product and its nutrition are shown, ready to log', async ({ page }) => {
     await fresh(page);
     await page.addInitScript(...fakeCamera(KNOWN));
