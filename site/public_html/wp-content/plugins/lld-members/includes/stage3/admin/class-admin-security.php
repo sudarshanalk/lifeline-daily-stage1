@@ -262,7 +262,9 @@ class LLD_Members_Admin_Security {
 			wp_clear_auth_cookie();
 			wp_set_current_user( 0 );
 			// Remember why for 5 minutes, so the sign-in page explains it even when a background request ended the
-			// session and the page load arrives already signed out (WordPress then sends it to ?reauth=1).
+			// session and the page load arrives already signed out (WordPress then sends it to ?reauth=1). Kept on the
+			// server under the ended session, because a browser may drop a cancelled request's cookie (WebKit does).
+			set_transient( 'lld_admin_out_' . substr( $key, 0, 40 ), 'no_code' === $why ? 'code' : 'timeout', 300 );
 			if ( ! headers_sent() ) {
 				setcookie(
 					self::OUT_COOKIE,
@@ -296,6 +298,9 @@ class LLD_Members_Admin_Security {
 	 */
 	public static function timeout_message( $message ) {
 		$out = isset( $_COOKIE[ self::OUT_COOKIE ] ) ? (string) $_COOKIE[ self::OUT_COOKIE ] : '';
+		if ( '' === $out ) {
+			$out = self::ended_reason();
+		}
 		if ( isset( $_GET['lld_admin_timeout'] ) || 'timeout' === $out ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$message .= '<p class="message">You were signed out for safety after 30 minutes without activity, or after 12 hours. Please sign in again.</p>';
 		}
@@ -303,6 +308,25 @@ class LLD_Members_Admin_Security {
 			$message .= '<p class="message">Support helpers sign in here, with the 6-digit code we email you.</p>';
 		}
 		return $message;
+	}
+
+	/**
+	 * Why the session in the browser's (now invalid) sign-in cookie was ended, if it was ended in the last 5 minutes.
+	 */
+	private static function ended_reason() {
+		foreach ( array( 'logged_in' => defined( 'LOGGED_IN_COOKIE' ) ? LOGGED_IN_COOKIE : '', 'auth' => defined( 'AUTH_COOKIE' ) ? AUTH_COOKIE : '', 'secure_auth' => defined( 'SECURE_AUTH_COOKIE' ) ? SECURE_AUTH_COOKIE : '' ) as $scheme => $name ) {
+			if ( '' === $name || empty( $_COOKIE[ $name ] ) ) {
+				continue;
+			}
+			$parts = wp_parse_auth_cookie( (string) $_COOKIE[ $name ], $scheme );
+			if ( is_array( $parts ) && ! empty( $parts['token'] ) ) {
+				$why = get_transient( 'lld_admin_out_' . substr( hash( 'sha256', (string) $parts['token'] ), 0, 40 ) );
+				if ( is_string( $why ) && '' !== $why ) {
+					return $why;
+				}
+			}
+		}
+		return '';
 	}
 
 	/**
