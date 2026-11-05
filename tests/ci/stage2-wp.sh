@@ -46,6 +46,14 @@ wp lld-members test-accounts p3-api-a@test.lifelinedaily.invalid p3-api-b@test.l
 # the callback is never reached (the tests complete provider sign-ins through the test route instead)
 wp config set --path="$DIR" LLD_GOOGLE_CLIENT_ID ci-google-client.apps.googleusercontent.com --quiet
 wp config set --path="$DIR" LLD_GOOGLE_CLIENT_SECRET ci-only --quiet
+# P3-83: the Stage 3 browser job (LLD_CI_STAGE1_TOOLS=1) also loads the Stage 1 mu-plugin and the Health Tools hub page
+# ([lld_tools_hub], as `wp lld pages` makes it on staging), so the hub and its Stage 3 cards are checked as the live code
+# renders them. The Stage 2 job keeps its plain site, as before.
+if [ "${LLD_CI_STAGE1_TOOLS:-}" = "1" ]; then
+  cp -R "$REPO/site/public_html/wp-content/mu-plugins/lld-tools/." "$DIR/wp-content/mu-plugins/lld-tools/"
+  cp "$REPO/site/public_html/wp-content/mu-plugins/lld-tools-loader.php" "$DIR/wp-content/mu-plugins/lld-tools-loader.php"
+  wp post create --path="$DIR" --post_type=page --post_name=health-tools --post_title="Health Tools" --post_status=publish --post_content='[lld_tools_hub]' --quiet
+fi
 # Router: without one, PHP's built-in server answers 404 itself for any missing path with a dot (/sitemap.xml)
 # instead of passing it to WordPress, unlike Apache/LiteSpeed with the WordPress .htaccess on staging and production
 nohup php -S 127.0.0.1:8090 -t "$DIR" "$REPO/tools/local/router.php" > "$DIR/../php-server.log" 2>&1 &

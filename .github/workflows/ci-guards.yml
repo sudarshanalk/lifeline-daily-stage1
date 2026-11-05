@@ -356,6 +356,7 @@ jobs:
       LLD_TEST_CLOCK: '1'
       LLD_STRIPE_API_BASE: http://127.0.0.1:12111
       LLD_STRIPE_SECRET: sk_test_123
+      LLD_CI_STAGE1_TOOLS: '1'   # P3-83: serve the real Health Tools hub (tests/ci/stage2-wp.sh)
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
