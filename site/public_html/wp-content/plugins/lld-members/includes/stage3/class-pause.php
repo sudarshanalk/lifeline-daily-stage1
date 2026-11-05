@@ -378,28 +378,32 @@ class LLD_Members_Pause {
 	}
 
 	/**
-	 * Daily: EM-31 on the day the pause starts and EM-32 seven days before it ends (FR3-65), once each. A pause
-	 * that was undone, or a plan that was cancelled, gets neither: Premium is not coming back.
+	 * Daily: EM-31 on the day the pause starts and EM-32 seven days before it ends (FR3-65), once each. Both say
+	 * Premium returns, so they go only while the plan is still Premium: a pause that was undone, or a plan that was
+	 * cancelled, refunded or ended (Stage 2 access states other than Premium), gets neither. EM-31 says "from
+	 * today", so a pause found more than a day after it started (a missed run, or pauses already running when
+	 * this was deployed) is marked as told without an email.
 	 */
 	public static function daily_mail() {
 		global $wpdb;
 		$soon = gmdate( 'Y-m-d', time() + 2 * DAY_IN_SECONDS );
-		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Stage3_Schema::table( 'pauses' ) . " WHERE status IN ('scheduled', 'active') AND starts_at <= %s", $soon ) );
+		$past = gmdate( 'Y-m-d', time() - 2 * DAY_IN_SECONDS );
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Stage3_Schema::table( 'pauses' ) . " WHERE status IN ('scheduled', 'active') AND starts_at <= %s AND ends_at >= %s", $soon, $past ) );
 		foreach ( (array) $rows as $pause ) {
 			$member_id = (int) $pause->member_id;
-			if ( ! self::on( $member_id ) ) {
+			if ( ! in_array( (string) $pause->status, array( 'scheduled', 'active' ), true ) || ! self::on( $member_id ) ) {
 				continue;
 			}
 			$sub = LLD_Members_Billing::subscription_for( $member_id );
-			if ( ! self::same_subscription( $pause, $sub ) || 'cancelled' === strtolower( (string) $sub->access_state ) ) {
+			if ( ! self::same_subscription( $pause, $sub ) || 'premium' !== strtolower( (string) $sub->access_state ) ) {
 				continue;
 			}
 			$today = LLD_Members_Programme::local_today( $member_id );
 			if ( $today < (string) $pause->starts_at || $today >= (string) $pause->ends_at ) {
 				continue;
 			}
-			self::send( $pause, 'started', $sub );
-			if ( $today >= gmdate( 'Y-m-d', (int) strtotime( (string) $pause->ends_at . ' 00:00:00 UTC' ) - 7 * DAY_IN_SECONDS ) ) {
+			self::send( $pause, 'started', $sub, $today > self::shift( (string) $pause->starts_at, 1 ) );
+			if ( $today >= self::shift( (string) $pause->ends_at, -7 ) ) {
 				self::send( $pause, 'ending', $sub );
 			}
 		}
@@ -423,8 +427,9 @@ class LLD_Members_Pause {
 			return;
 		}
 		$today = LLD_Members_Programme::local_today( $member_id );
-		$late  = gmdate( 'Y-m-d', (int) strtotime( (string) $pause->ends_at . ' 00:00:00 UTC' ) + 7 * DAY_IN_SECONDS );
-		if ( $today >= (string) $pause->ends_at && $today <= $late ) {
+		// A day early as well: Stripe charges at its own period-end time, which can fall on the evening before
+		// ends_at in the member's time zone.
+		if ( $today >= self::shift( (string) $pause->ends_at, -1 ) && $today <= self::shift( (string) $pause->ends_at, 7 ) ) {
 			self::send( $pause, 'ended', $sub );
 		}
 	}
@@ -476,8 +481,9 @@ class LLD_Members_Pause {
 	 * @param object      $pause Pause row.
 	 * @param string      $kind  started, ending or ended.
 	 * @param object|null $sub   Stage 2 subscription row.
+	 * @param bool        $quiet Claim it without sending (too late to say "from today").
 	 */
-	private static function send( $pause, $kind, $sub ) {
+	private static function send( $pause, $kind, $sub, $quiet = false ) {
 		global $wpdb;
 		$member_id = (int) $pause->member_id;
 		$member    = $wpdb->get_row( $wpdb->prepare( 'SELECT email, first_name FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
@@ -485,14 +491,25 @@ class LLD_Members_Pause {
 			return false;
 		}
 		$claimed = $wpdb->query( $wpdb->prepare( 'INSERT IGNORE INTO ' . LLD_Members_Schema::table( 'mail_sent' ) . ' (member_id, claim_key, sent_on) VALUES (%d, %s, %s)', $member_id, 'pause:' . (int) $pause->id . ':' . $kind, gmdate( 'Y-m-d' ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
-		if ( (int) $claimed < 1 ) {
+		if ( (int) $claimed < 1 || $quiet ) {
 			return false;
 		}
 		$prices = LLD_Members_Billing::shown_prices();
+		// The member's own monthly price, as EM-Q6 (a) asks; a one-off referral reward on that renewal is not shown.
 		$cents  = $sub && $sub->locked_amount ? (int) $sub->locked_amount : (int) $prices['monthly'];
 		$cur    = $sub && $sub->locked_currency ? (string) $sub->locked_currency : 'usd';
 		$copy   = self::mail_copy( $kind, (string) $member->first_name, $pause, LLD_Members_Membership::money( $cents, $cur ) );
 		return wp_mail( (string) $member->email, $copy['subject'], $copy['body'] . "\n" );
+	}
+
+	/**
+	 * A date moved by whole days.
+	 *
+	 * @param string $date Y-m-d.
+	 * @param int    $days Days, may be negative.
+	 */
+	private static function shift( $date, $days ) {
+		return gmdate( 'Y-m-d', (int) strtotime( $date . ' 00:00:00 UTC' ) + (int) $days * DAY_IN_SECONDS );
 	}
 
 	/**

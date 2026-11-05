@@ -449,8 +449,9 @@ $GLOBALS['wpdb'] = new MailDb(); $GLOBALS['sent'] = [];
 function is_email($e) { return strpos((string) $e, '@') !== false; }
 function wp_mail($to, $s, $b) { $GLOBALS['sent'][] = $s; return true; }
 // The claim: the first INSERT IGNORE for a key inserts one row, later ones none.
-$GLOBALS['wpdb'] = new class extends MailDb { function prepare($q, ...$a) { return $q . '|' . implode('|', $a); }
-  function query($q) { if (strpos($q, 'INSERT IGNORE') === 0) { $k = explode('|', $q)[2]; if (isset($this->claims[$k])) { return 0; } $this->claims[$k] = 1; return 1; } return 0; } };
+class ClaimDb extends MailDb { function prepare($q, ...$a) { return $q . '|' . implode('|', $a); }
+  function query($q) { if (strpos($q, 'INSERT IGNORE') === 0) { $k = explode('|', $q)[2]; if (isset($this->claims[$k])) { return 0; } $this->claims[$k] = 1; return 1; } return 0; } }
+$GLOBALS['dbclass'] = 'ClaimDb'; $GLOBALS['wpdb'] = new ClaimDb();
 `;
 
 test('TC-FR3-65-AS-01 (emails): EM-31 when the pause starts, EM-32 seven days before it ends, EM-33 after the first payment, each once', () => {
@@ -479,6 +480,41 @@ test('TC-FR3-65-AS-01 (emails): EM-31 when the pause starts, EM-32 seven days be
   expect(out.copy.body).toContain('Nothing is deleted.');
   // Members cannot end a running pause themselves, so EM-31 does not offer it (Owner question 119).
   expect(out.copy.body).not.toContain('end the pause early');
+});
+
+test('TC-FR3-65-AS-06 (emails): no pause email once Premium is not coming back, and none for an undone pause', () => {
+  const out = php(`${mailStubs}
+    $r = [];
+    foreach (['cancelled', 'Premium ended', 'Refunded', 'Free'] as $state) {
+      $GLOBALS['wpdb'] = new $GLOBALS['dbclass']();
+      $GLOBALS['wpdb']->pause = ['id' => 9, 'member_id' => 5, 'months' => 1, 'starts_at' => '2027-03-10', 'ends_at' => '2027-04-10', 'status' => 'active', 'subscription_ref' => 'sub_TEST1'];
+      LLD_Members_Billing::$sub = sub('monthly', $state, '2027-03-10');
+      $GLOBALS['sent'] = [];
+      foreach (['2027-03-10', '2027-04-03'] as $d) { $GLOBALS['today'] = $d; LLD_Members_Pause::daily_mail(); }
+      $r[$state] = $GLOBALS['sent'];
+    }
+    // An undone pause, even if a query ever returned it.
+    $GLOBALS['wpdb'] = new $GLOBALS['dbclass']();
+    $GLOBALS['wpdb']->pause = ['id' => 10, 'member_id' => 5, 'months' => 1, 'starts_at' => '2027-03-10', 'ends_at' => '2027-04-10', 'status' => 'cancelled', 'subscription_ref' => 'sub_TEST1'];
+    LLD_Members_Billing::$sub = sub('monthly'); $GLOBALS['sent'] = []; $GLOBALS['today'] = '2027-03-10'; LLD_Members_Pause::daily_mail();
+    $r['undone'] = $GLOBALS['sent'];
+    echo json_encode($r);`);
+  expect(out).toEqual({ cancelled: [], 'Premium ended': [], Refunded: [], Free: [], undone: [] });
+});
+
+test('TC-FR3-65-AS-01 (email timing): EM-31 is not sent late, EM-33 allows Stripe charging the evening before, and not weeks later', () => {
+  const out = php(`${mailStubs}
+    $GLOBALS['wpdb']->pause = ['id' => 11, 'member_id' => 5, 'months' => 2, 'starts_at' => '2027-03-10', 'ends_at' => '2027-05-10', 'status' => 'active', 'subscription_ref' => 'sub_TEST1'];
+    // First run after deploy finds a pause that started a week ago: no "paused from today" email, now or later.
+    $GLOBALS['today'] = '2027-03-17'; LLD_Members_Pause::daily_mail(); $GLOBALS['today'] = '2027-03-18'; LLD_Members_Pause::daily_mail();
+    $late = $GLOBALS['sent'];
+    $GLOBALS['sent'] = []; $GLOBALS['today'] = '2027-05-09'; LLD_Members_Pause::on_event('renewed', 5, []);
+    $early = $GLOBALS['sent'];
+    $GLOBALS['wpdb']->pause['id'] = 12; $GLOBALS['sent'] = []; $GLOBALS['today'] = '2027-05-18'; LLD_Members_Pause::on_event('renewed', 5, []);
+    echo json_encode(['late' => $late, 'early' => $early, 'weeks' => $GLOBALS['sent']]);`);
+  expect(out.late).toEqual([]);
+  expect(out.early).toEqual(['Welcome back to Premium']);
+  expect(out.weeks).toEqual([]);
 });
 
 test('TC-FR3-65-AS-06 (emails): no pause email once the plan is cancelled or the pause belongs to an older subscription', () => {
