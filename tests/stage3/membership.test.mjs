@@ -482,6 +482,19 @@ test('TC-FR3-65-AS-01 (emails): EM-31 when the pause starts, EM-32 seven days be
   expect(out.copy.body).not.toContain('end the pause early');
 });
 
+test('TC-FR3-65-AS-01 (email query): the live site looks only at pauses near today; a test-clock site looks at every open pause', () => {
+  const out = php(`${mailStubs}
+    if (!function_exists('lld_members_test_clock_allowed')) { function lld_members_test_clock_allowed() { return $GLOBALS['test_clock'] ?? false; } }
+    class QueryDb extends ClaimDb { public $asked = []; function get_results($q) { $this->asked[] = $q; return []; } }
+    $GLOBALS['wpdb'] = new QueryDb(); LLD_Members_Pause::daily_mail(); $live = $GLOBALS['wpdb']->asked[0];
+    $GLOBALS['test_clock'] = true;
+    $GLOBALS['wpdb'] = new QueryDb(); LLD_Members_Pause::daily_mail(); $clock = $GLOBALS['wpdb']->asked[0];
+    echo json_encode(['live' => $live, 'clock' => $clock]);`);
+  expect(out.live).toContain("status IN ('scheduled', 'active') AND starts_at <= %s AND ends_at >= %s");
+  expect(out.clock).toContain("status IN ('scheduled', 'active')");
+  expect(out.clock).not.toContain('starts_at <=');
+});
+
 test('TC-FR3-65-AS-06 (emails): no pause email once Premium is not coming back, and none for an undone pause', () => {
   const out = php(`${mailStubs}
     $r = [];
