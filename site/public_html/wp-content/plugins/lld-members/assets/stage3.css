@@ -626,3 +626,96 @@ button.lld-menu-item {
     font-size: 0.9rem;
   }
 }
+
+/* Barcode scanning (P3-44): /members/food/scan/ */
+.lld-stage3-scan {
+  max-width: 640px;
+}
+/* The button styles set a display, which would otherwise show a button marked hidden. */
+.lld-stage3-scan [hidden] {
+  display: none !important;
+}
+.lld-scan-view {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #000;
+  aspect-ratio: 4 / 3;
+  margin-bottom: 12px;
+}
+.lld-scan-view video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.lld-scan-frame {
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  top: 30%;
+  bottom: 30%;
+  border: 3px solid var(--lld-highlight, #3fd07f);
+  border-radius: 8px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+}
+.lld-scan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.lld-scan-form label,
+.lld-scan-log label,
+.lld-scan-add label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.lld-scan-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  margin-top: 6px;
+}
+.lld-scan-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  font-size: 1rem;
+}
+.lld-scan-log input,
+.lld-scan-log select,
+.lld-scan-add input {
+  width: 100%;
+  min-height: 44px;
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+.lld-scan-status:empty {
+  display: none;
+}
+.lld-scan-hits {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+.lld-scan-hits li {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--lld-line, #e5ece8);
+}
+.lld-scan-hits .lld-text-button {
+  text-align: left;
+  min-height: 44px;
+}
+.lld-scan-nutrition {
+  margin: 12px 0;
+  width: 100%;
+}
+.lld-scan-source {
+  font-size: 0.85rem;
+}
+.lld-scan-result:focus {
+  outline: 2px solid var(--lld-green, #157a42);
+  outline-offset: 2px;
+}
