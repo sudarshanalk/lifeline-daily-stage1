@@ -370,9 +370,16 @@ class LLD_Members_Privacy {
 		if ( $named > 0 ) {
 			$problems[] = 'A money log still names the member.';
 		}
-		$personal = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$log} WHERE member_number = %d AND money_related = 0", $member_id ) );
+		$personal = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$log} WHERE member_number = %d AND money_related = 0" . ( LLD_Members_Erasure::has_admin_column( $log ) ? ' AND admin_user_id IS NULL' : '' ), $member_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		if ( $personal > 0 ) {
 			$problems[] = 'A non-money admin log still names the member.';
+		}
+		// Stage 3 admin-panel entries stay with only the member number (P3-87, FR3-86 AS-05, NFR3-23).
+		if ( LLD_Members_Erasure::has_admin_column( $log ) ) {
+			$named_admin = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$log} WHERE member_number = %d AND admin_user_id IS NOT NULL AND (member_name IS NOT NULL OR member_email IS NOT NULL)", $member_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			if ( $named_admin > 0 ) {
+				$problems[] = 'An admin activity entry still names the member.';
+			}
 		}
 		// P3-15 (data model, notes from checking the built Stage 2 database): payments keep some personal data in
 		// wp_options (card fingerprints, referral code, checkout quotes, mismatch notes, retry windows). The billing

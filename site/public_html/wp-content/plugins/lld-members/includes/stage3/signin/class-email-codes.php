@@ -22,7 +22,7 @@ class LLD_Members_Email_Codes {
 	const ATTEMPTS     = 5;
 	const HOURLY_LIMIT = 5;
 	const KEEP_HOURS   = 24;
-	const PURPOSES     = array( 'sign_up', 'sign_in', 'delete' );
+	const PURPOSES     = array( 'sign_up', 'sign_in', 'delete', 'admin_step' ); // admin_step: an admin's fresh code before a risky action (P3-87, NFR3-20)
 
 	/** Codes one connection may ask for in an hour, across every address. */
 	const IP_HOURLY_LIMIT = 30;

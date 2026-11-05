@@ -50,6 +50,12 @@ require_once __DIR__ . '/signin/class-identity-provider.php';
 require_once __DIR__ . '/signin/class-sign-in.php';
 require_once __DIR__ . '/class-goal-rules.php';
 require_once __DIR__ . '/class-goal-journey.php';
+require_once __DIR__ . '/admin/class-admin-log.php';
+require_once __DIR__ . '/admin/class-admin-roles.php';
+require_once __DIR__ . '/admin/class-admin-security.php';
+require_once __DIR__ . '/admin/class-admin-members.php';
+require_once __DIR__ . '/admin/class-admin-pages.php';
+require_once __DIR__ . '/admin/class-admin-test-routes.php';
 
 /**
  * Hooks the Stage 3 layer into the Stage 2 plugin. Called from LLD_Members_Plugin::boot().
@@ -75,6 +81,13 @@ function lld_members_stage3_boot() {
 	LLD_Members_Installable::boot();
 	LLD_Members_Stage3_Consent::boot();
 	LLD_Members_Stage3_Export::boot();
+	// The admin panel (P3-87): always on, since it is how a feature is turned off in an emergency (FR3-74).
+	LLD_Members_Admin_Log::boot();
+	LLD_Members_Admin_Roles::boot();
+	LLD_Members_Admin_Security::boot();
+	LLD_Members_Admin_Members::boot();
+	LLD_Members_Admin_Pages::boot();
+	LLD_Members_Admin_Test_Routes::boot();
 	add_action( 'rest_api_init', array( 'LLD_Members_Stage3_API', 'register' ) );
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		require_once __DIR__ . '/class-cli-stage3.php';

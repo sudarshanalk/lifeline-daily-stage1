@@ -38,7 +38,7 @@ class LLD_Members_Stage3_Erasure {
 		}
 		$member = $wpdb->get_row( $wpdb->prepare( 'SELECT email FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
 		foreach ( LLD_Members_Stage3_Schema::suffixes() as $suffix ) {
-			if ( 'pauses' === $suffix || 'email_codes' === $suffix || 'goal_baselines' === $suffix ) {
+			if ( 'pauses' === $suffix || 'email_codes' === $suffix || 'goal_baselines' === $suffix || 'admin_devices' === $suffix ) {
 				continue;
 			}
 			LLD_Members_Stage3_Data::purge( $suffix, $member_id );

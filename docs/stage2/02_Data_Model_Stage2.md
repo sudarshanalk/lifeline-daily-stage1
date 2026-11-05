@@ -85,6 +85,7 @@ Uses WordPress's own user account, plus a Lifeline Daily member settings record.
 | Joined on | Account creation date | 2026-11-02 |
 | Last signed in on | Used for nudges (FR2-12) and inactive-account deletion (NFR2-01) | 2026-11-20 |
 | Two-step sign-in | On or off; always on for the owner admin | off |
+| Blocked on, block reason | Stage 3 (FR3-83, P3-87): when the Owner blocked the account from signing in, and why; empty when not blocked. Deleted with the account | — |
 
 - **Consent:** Account.
 - **Who sees it:** the member, and the owner when giving support.
@@ -624,7 +625,7 @@ One per guide requested or waitlist joined, so a contact can ask for several.
 | Record | What it holds | Personal? | How long |
 |---|---|---|---|
 | **F1. Erasure list** | One line per account deletion or health-consent withdrawal: member number, scrambled email, what was erased, date. A copy of each day's new lines is emailed to the owner's admin mailbox, so a website restore cannot remove it | Minimal | 60 days |
-| **F2. Admin log** | Approvals, article fates, refunds, rewards withdrawn, price changes, preview-mode use | Owner, and members named in money actions | 2 years. When a member is deleted, their name and email are removed from log lines, which keep only the member number |
+| **F2. Admin log** | Approvals, article fates, refunds, rewards withdrawn, price changes, preview-mode use. Stage 3 (FR3-86, P3-87) extends it to every admin action, adding who did it (an admin, or the command line), the other item affected, the state before, the state after, the reason, and a scrambled copy of the admin's IP address; these entries never hold a name, email, health detail or note text, and keep only the member number when a member is deleted | Owner, and members named in money actions | 2 years. When a member is deleted, their name and email are removed from log lines, which keep only the member number |
 | **F3. Support messages** | Name, email, message, plan, date (FR2-30) | Yes | 2 years, or until account deletion if sooner |
 | **F4. Surveys and testimonials** | Week 1 and week 4 answers, quote text, permission to quote, owner approval date, display name as first name and country (FR2-19) | Yes; "what changed for you" is health data | Until permission is withdrawn or the account is deleted. "What changed" answers are also deleted when health consent is withdrawn |
 | **F5. Monthly "Something else" grouping** | Themes and counts only | No | 2 years |
