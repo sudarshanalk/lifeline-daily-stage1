@@ -62,7 +62,13 @@ class LLD_Members_Erasure {
 		self::delete_where( 'mail_sent', 'member_id', $member_id );
 
 		$log = LLD_Members_Schema::table( 'admin_log' );
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$log} WHERE member_number = %d AND money_related = 0", $member_id ) );
+		// Stage 3 admin-panel entries (P3-87, FR3-86) carry who did it and keep only the member number after deletion;
+		// they never hold a name, email or note text. Stage 2 lines without an admin are deleted as before.
+		$keep = self::has_admin_column( $log ) ? ' AND admin_user_id IS NULL' : '';
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$log} WHERE member_number = %d AND money_related = 0{$keep}", $member_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( '' !== $keep ) {
+			$wpdb->query( $wpdb->prepare( "UPDATE {$log} SET member_name = NULL, member_email = NULL WHERE member_number = %d AND admin_user_id IS NOT NULL", $member_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
 		$wpdb->query( $wpdb->prepare( "UPDATE {$log} SET member_name = NULL, member_email = NULL WHERE member_number = %d AND money_related = 1", $member_id ) );
 
 		if ( $member ) {
@@ -378,6 +384,21 @@ class LLD_Members_Erasure {
 	/**
 	 * @param int $member_id Member number.
 	 */
+	/**
+	 * True when the Stage 3 admin_user_id column is on the admin log (P3-87). Checked once per request.
+	 *
+	 * @param string $log Admin log table.
+	 */
+	public static function has_admin_column( $log ) {
+		static $has = null;
+		if ( null === $has ) {
+			global $wpdb;
+			$names = $wpdb->get_col( "SHOW COLUMNS FROM {$log}", 0 ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
+			$has   = is_array( $names ) && in_array( 'admin_user_id', $names, true );
+		}
+		return $has;
+	}
+
 	/**
 	 * Keyed hash of an email. The key is the same one used for health text, so a copied table is not a lookup list.
 	 *

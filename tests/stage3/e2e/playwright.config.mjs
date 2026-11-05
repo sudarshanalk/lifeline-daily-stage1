@@ -13,7 +13,7 @@ function secret() {
 }
 const testSecret = secret();
 export default defineConfig({
-  testDir, outputDir, testMatch: ['key-journeys/**/*.spec.mjs', 'e2e/screens/**/*.spec.mjs', 'e2e/analytics/**/*.spec.mjs'], timeout: 120000, workers: 1, fullyParallel: false, retries: 0, reporter: 'list',
+  testDir, outputDir, testMatch: ['key-journeys/**/*.spec.mjs', 'e2e/screens/**/*.spec.mjs', 'e2e/analytics/**/*.spec.mjs', 'e2e/admin/**/*.spec.mjs'], timeout: 120000, workers: 1, fullyParallel: false, retries: 0, reporter: 'list',
   use: { baseURL: process.env.LLD_WP_URL || 'http://127.0.0.1:8090', extraHTTPHeaders: testSecret ? { 'X-LLD-Test-Secret': testSecret } : {}, trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }, { name: 'webkit', use: { ...devices['Desktop Safari'] } }],
 });

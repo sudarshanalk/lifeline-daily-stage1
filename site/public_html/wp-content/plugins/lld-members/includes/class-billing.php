@@ -2344,6 +2344,38 @@ class LLD_Members_Billing {
 	}
 
 	/**
+	 * The Owner ends a member's Premium from the admin panel (P3-87, FR3-81): at the end of the paid period (Stripe
+	 * cancels then, the member keeps Premium until that date) or now (Stripe cancels now, Premium stops at once).
+	 * Refunds stay in Stripe. The same Stage 2 steps as the member's own cancellation and an ended subscription.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $when      period_end or now.
+	 * @return true|WP_Error
+	 */
+	public static function admin_end_membership( $member_id, $when ) {
+		$member_id = (int) $member_id;
+		$sub       = self::subscription_row( $member_id );
+		if ( ! $sub || ! self::paid_state( $member_id ) ) {
+			return new WP_Error( 'lld_admin_end', 'This member has no Premium membership to end.' );
+		}
+		if ( 'period_end' === $when ) {
+			return self::cancel_at_period_end( $member_id );
+		}
+		if ( 'now' !== $when ) {
+			return new WP_Error( 'lld_admin_end', 'Choose when the membership ends.' );
+		}
+		$ref = (string) $sub->stripe_subscription;
+		if ( '' !== $ref ) {
+			$asked = apply_filters( 'lld_members_stripe_cancel_member', null, $member_id, $ref );
+			if ( is_wp_error( $asked ) ) {
+				return $asked;
+			}
+		}
+		self::end_premium( $member_id, 'expired', LLD_Members_Programme::local_today( $member_id ) );
+		return true;
+	}
+
+	/**
 	 * The Stage 2 subscription row, for Stage 3 (P3-62, P3-63).
 	 *
 	 * @param int $member_id Member number.

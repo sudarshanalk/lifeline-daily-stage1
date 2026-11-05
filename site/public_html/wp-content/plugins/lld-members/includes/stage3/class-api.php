@@ -508,7 +508,7 @@ class LLD_Members_Stage3_API {
 		$tool      = (string) $request['tool'];
 		$member_id = LLD_Members_Access::current_member_id();
 		$engines   = self::calculator_engines();
-		if ( ! isset( $engines[ $tool ] ) || ! class_exists( $engines[ $tool ] ) || ! LLD_Members_Features::enabled( 'calculators_new', $member_id ) ) {
+		if ( ! isset( $engines[ $tool ] ) || ! class_exists( $engines[ $tool ] ) || ! LLD_Members_Features::enabled( 'calculators_new', $member_id ) || ! LLD_Members_Features::tool_enabled( $tool, $member_id ) ) {
 			return self::refuse( 404, 'Not available.' );
 		}
 		if ( $member_id < 1 ) {

@@ -128,6 +128,8 @@ class LLD_Members_Access {
 		}
 		global $wpdb;
 		$state = $wpdb->get_var( $wpdb->prepare( 'SELECT access_state FROM ' . LLD_Members_Schema::table( 'subscription' ) . ' WHERE member_id = %d', $member_id ) );
-		return is_string( $state ) && '' !== $state ? $state : 'free';
+		$state = is_string( $state ) && '' !== $state ? $state : 'free';
+		// Stage 3 (P3-87, FR3-80): the Owner's free Premium grant gives Premium wherever the access state is read.
+		return (string) apply_filters( 'lld_members_access_state', $state, (int) $member_id );
 	}
 }

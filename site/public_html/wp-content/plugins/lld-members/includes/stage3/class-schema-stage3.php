@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Stage3_Schema {
 
-	const VERSION = 5;
+	const VERSION = 6;
 
 	/**
 	 * Every Stage 3 table suffix, in creation order. Stage 2's all_suffixes() is left as it is; the
@@ -47,6 +47,9 @@ class LLD_Members_Stage3_Schema {
 			'reminders',
 			'shares',
 			'pauses',
+			'member_notes',
+			'premium_grants',
+			'admin_devices',
 		);
 	}
 
@@ -73,6 +76,8 @@ class LLD_Members_Stage3_Schema {
 		$links['email_codes']    = array( 'email' );
 		$links['goal_baselines'] = array( 'via:goals' );
 		$links['foods']          = array( 'member_id' ); // only member-added packaged foods carry a member number
+		// Admin devices belong to admins, not members (P3-87, NFR3-20), so the member checker has nothing to find there.
+		unset( $links['admin_devices'] );
 		return $links;
 	}
 
@@ -421,6 +426,39 @@ class LLD_Members_Stage3_Schema {
 			PRIMARY KEY (id),
 			KEY member_id (member_id)
 			',
+			// Member note (P3-87, FR3-78): private to Owner and Support, never shown to the member; deleted with the account.
+			'member_notes' => '
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			member_id BIGINT UNSIGNED NOT NULL,
+			admin_user_id BIGINT UNSIGNED NOT NULL,
+			note TEXT NOT NULL,
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY (id),
+			KEY member_id (member_id)
+			',
+			// Premium grant (P3-87, FR3-80): free Premium from the Owner, kept apart from Stripe; deleted with the account.
+			'premium_grants' => '
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			member_id BIGINT UNSIGNED NOT NULL,
+			starts_at DATETIME NOT NULL,
+			ends_at DATETIME NOT NULL,
+			reason TEXT NOT NULL,
+			granted_by BIGINT UNSIGNED NOT NULL,
+			removed_at DATETIME NULL,
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY (id),
+			KEY member_id (member_id)
+			',
+			// Admin session (P3-87, NFR3-20, NFR3-21): the browsers each admin has signed in from, for new-device alerts.
+			'admin_devices' => '
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			admin_user_id BIGINT UNSIGNED NOT NULL,
+			device_hash CHAR(64) NOT NULL,
+			started_at DATETIME NOT NULL,
+			last_active_at DATETIME NOT NULL,
+			PRIMARY KEY (id),
+			UNIQUE KEY one_device (admin_user_id, device_hash)
+			',
 		);
 	}
 
@@ -457,6 +495,17 @@ class LLD_Members_Stage3_Schema {
 		// engine_version maps to the existing calculator_version column (never rename, NFR3-04).
 		self::ensure_column( 'calculator_result', 'inputs_ct', 'LONGTEXT NULL' );
 		self::ensure_column( 'calculator_result', 'result_ct', 'LONGTEXT NULL' );
+		// Version 6 (P3-87, FR3-83, FR3-86): the admin panel. The Stage 2 admin log gains who, what else, before and
+		// after, the reason and a scrambled IP; the Stage 2 member record gains the Owner's block.
+		self::ensure_column( 'admin_log', 'admin_user_id', 'VARCHAR(32) NULL' );
+		self::ensure_column( 'admin_log', 'target', 'VARCHAR(190) NULL' );
+		self::ensure_column( 'admin_log', 'before_state', 'TEXT NULL' );
+		self::ensure_column( 'admin_log', 'after_state', 'TEXT NULL' );
+		self::ensure_column( 'admin_log', 'reason', 'TEXT NULL' );
+		self::ensure_column( 'admin_log', 'ip_hash', 'CHAR(64) NULL' );
+		self::ensure_key( 'admin_log', 'admin_user', 'KEY admin_user (admin_user_id, created_at)' );
+		self::ensure_column( 'member', 'blocked_at', 'DATETIME NULL' );
+		self::ensure_column( 'member', 'blocked_reason', 'TEXT NULL' );
 	}
 
 	/**

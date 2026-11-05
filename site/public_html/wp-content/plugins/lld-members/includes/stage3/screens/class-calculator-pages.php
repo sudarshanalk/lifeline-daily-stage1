@@ -144,8 +144,8 @@ class LLD_Members_Calculator_Pages {
 		}
 		foreach ( self::HUB_CARDS as $slug => $card ) {
 			$page = self::PAGES[ $slug ];
-			if ( ! class_exists( $page ) ) {
-				continue;
+			if ( ! class_exists( $page ) || ! self::tool_on( $page::ENGINE, $member_id ) ) {
+				continue; // this one tool is switched off (P3-87): no card
 			}
 			$cards[] = array_merge(
 				array(
@@ -158,6 +158,16 @@ class LLD_Members_Calculator_Pages {
 			);
 		}
 		return $cards;
+	}
+
+	/**
+	 * This one tool's own switch (P3-87), on top of the calculators_new group.
+	 *
+	 * @param string $engine    Engine slug.
+	 * @param int    $member_id Member number, or 0.
+	 */
+	private static function tool_on( $engine, $member_id ) {
+		return ! method_exists( 'LLD_Members_Features', 'tool_enabled' ) || LLD_Members_Features::tool_enabled( $engine, $member_id );
 	}
 
 	public static function boot() {
@@ -211,6 +221,9 @@ class LLD_Members_Calculator_Pages {
 		$member_id = class_exists( 'LLD_Members_Access' ) ? (int) LLD_Members_Access::current_member_id() : 0;
 		if ( ! LLD_Members_Features::enabled( self::FEATURE, $member_id ) ) {
 			return; // switched off for this visitor or member: the address does not exist (NFR3-06)
+		}
+		if ( ! self::tool_on( constant( self::PAGES[ $slug ] . '::ENGINE' ), $member_id ) ) {
+			return; // this one tool is switched off (P3-87): its address does not exist
 		}
 		self::render( $slug, $member_id );
 		exit;

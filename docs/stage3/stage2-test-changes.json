@@ -30,6 +30,11 @@
       "file": "tests/stage2/e2e/accounts-privacy.spec.mjs",
       "decision": "Requirements v0.3 FR3-60 (TC-FR3-60-AS-01): the Stage 2 'Download my data' file also includes all food and health logs, goals and saved results; built in P3-86 (#207, merged 4 Nov 2026). Owner instruction in chat, 4 Nov 2026: fix the staging break this caused",
       "change": "TC-FR2-04-AS-01 only: the expected table list of data.json is the Stage 2 list plus the 15 Stage 3 download tables (STAGE3_DOWNLOAD_TABLES), and each Stage 3 table's row count is checked against the database like the Stage 2 ones. Nothing is removed or loosened: the Stage 2 list, the never-downloaded list and every count stay as they were"
+    },
+    {
+      "file": "tests/stage2/data-model-map.json",
+      "decision": "Data model v0.2 (owner-approved, 3 Nov 2026, admin panel): the Stage 2 admin log (wp_lld_admin_log) is extended with who did it, the item, before and after, the reason and a scrambled IP (Admin activity log), and the Stage 2 member record with the Owner's block (Member block); FR3-83, FR3-86, built in P3-87.",
+      "change": "admin_log.admin_user_id, target, before_state, after_state, reason, ip_hash and member.blocked_at, blocked_reason are tied to the Stage 3 notes added to Data Model F2 and A1 (docs/stage2/02). New columns only (a declared Stage 2 file, Build Method Stage 3 §4)."
     }
   ]
 }

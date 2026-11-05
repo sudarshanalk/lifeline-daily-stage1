@@ -22,6 +22,9 @@ class LLD_Members_Features {
 	// still runs against the switch states that tests/ci/stage2-wp.sh sets.
 	const ALL_ON        = 'lld_features_all_on';
 	const TEST_ACCOUNTS = 'lld_test_account_emails';
+	// Each feature's change history (FR3-74): who, when, from, to and the note, from the admin panel and the command line.
+	const HISTORY       = 'lld_feature_history';
+	const HISTORY_KEEP  = 50;
 	const STATES        = array( 'off', 'test_accounts', 'everyone' );
 
 	public static function boot() {
@@ -49,6 +52,14 @@ class LLD_Members_Features {
 			'barcode'          => 'P3-44 barcode scanning in the browser',
 			'health_logging'   => 'P3-50, P3-51 health logging and urgent-care warnings',
 			'calculators_new'  => 'P3-55 to P3-5B new calculators and saved results',
+			'calc_calorie_target' => 'P3-56 Calorie Target calculator (one tool; needs calculators_new on too)',
+			'calc_goal_timeline'  => 'P3-56 Goal Timeline calculator (one tool; needs calculators_new on too)',
+			'calc_heart_risk'     => 'P3-57 Heart Risk Check (one tool; needs calculators_new on too)',
+			'calc_bp_check'       => 'P3-58 Blood Pressure Check (one tool; needs calculators_new on too)',
+			'calc_metabolic'      => 'P3-59 Metabolic Health Check (one tool; needs calculators_new on too)',
+			'calc_fitness_age'    => 'P3-5A Fitness Age (one tool; needs calculators_new on too)',
+			'calc_hr_zones'       => 'P3-5A Heart Rate Zones (one tool; needs calculators_new on too)',
+			'calc_sleep_stress'   => 'P3-5A Sleep and Stress Check (one tool; needs calculators_new on too)',
 			'prices_launch'    => 'P3-60 launch prices',
 			'stripe_api'       => 'D2 real Stripe checkout, cancellation and refunds (Managed Payments)',
 			'access_tiers'     => 'P3-61 Free and Premium access, downgrade rules',
@@ -64,15 +75,45 @@ class LLD_Members_Features {
 	}
 
 	/**
+	 * The switch for one new calculator (P3-87, owner 5 Nov 2026): calc_ plus the engine slug, for example calc_heart_risk.
+	 *
+	 * @param string $tool Engine slug, for example heart-risk.
+	 */
+	public static function tool_feature( $tool ) {
+		return 'calc_' . str_replace( '-', '_', sanitize_key( (string) $tool ) );
+	}
+
+	/**
+	 * True when this new calculator may show: the calculators_new group is on for this member and so is the tool's own
+	 * switch. A tool switch nobody has changed follows the group, so the group alone still decides as before.
+	 *
+	 * @param string $tool      Engine slug, for example heart-risk.
+	 * @param int    $member_id Member number; 0 for the current request's member.
+	 */
+	public static function tool_enabled( $tool, $member_id = 0 ) {
+		$feature = self::tool_feature( $tool );
+		return self::enabled( 'calculators_new', $member_id ) && ( ! array_key_exists( $feature, self::catalog() ) || self::enabled( $feature, $member_id ) );
+	}
+
+	/**
 	 * Stored state of one feature: off, test_accounts or everyone.
 	 *
 	 * @param string $feature Feature name from catalog().
 	 */
 	public static function state( $feature ) {
-		if ( get_option( self::ALL_ON ) && array_key_exists( $feature, self::catalog() ) ) {
-			return 'everyone';
-		}
 		$all = get_option( self::OPTION );
+		// A calculator's own switch that was never changed follows the calculators_new group.
+		if ( 0 === strpos( (string) $feature, 'calc_' ) && array_key_exists( $feature, self::catalog() ) && ( ! is_array( $all ) || ! isset( $all[ $feature ] ) || ! is_array( $all[ $feature ] ) ) ) {
+			return self::state( 'calculators_new' );
+		}
+		// An emergency off (FR3-74, P3-87) holds even while every feature is on: set() marks it as an override.
+		if ( get_option( self::ALL_ON ) && array_key_exists( $feature, self::catalog() ) ) {
+			$row = is_array( $all ) && isset( $all[ $feature ] ) && is_array( $all[ $feature ] ) ? $all[ $feature ] : array();
+			if ( empty( $row['override'] ) || ! in_array( (string) ( $row['state'] ?? '' ), array( 'off', 'test_accounts' ), true ) ) {
+				return 'everyone';
+			}
+			return (string) $row['state'];
+		}
 		if ( ! is_array( $all ) || ! isset( $all[ $feature ] ) || ! is_array( $all[ $feature ] ) ) {
 			return 'off';
 		}
@@ -106,10 +147,13 @@ class LLD_Members_Features {
 	 * @param int $member_id Member number; 0 for the signed-in member.
 	 */
 	public static function is_test_account( $member_id = 0 ) {
-		if ( $member_id < 1 && class_exists( 'LLD_Members_Access' ) ) {
+		$own = $member_id < 1;
+		if ( $own && class_exists( 'LLD_Members_Access' ) ) {
 			$member_id = LLD_Members_Access::own_member_id();
 		}
-		if ( current_user_can( 'manage_options' ) ) {
+		// The Owner counts as a test account for their own requests. When a member number is named, that member decides,
+		// so an Owner acting in the admin panel on an ordinary member never makes that member a test account (P3-87).
+		if ( current_user_can( 'manage_options' ) && ( $own || ( class_exists( 'LLD_Members_Access' ) && (int) $member_id === (int) LLD_Members_Access::own_member_id() ) ) ) {
 			return true;
 		}
 		if ( $member_id < 1 ) {
@@ -145,14 +189,17 @@ class LLD_Members_Features {
 	}
 
 	/**
-	 * Change a switch. "everyone" records who approved it (P3-92).
+	 * Change a switch. "everyone" records who approved it (P3-92). Every change is added to the feature's history
+	 * and the admin activity log, whether it came from the admin panel or the command line (FR3-74 AS-03, FR3-86).
+	 * Off or test accounts is an override that holds while every feature is on.
 	 *
 	 * @param string $feature     Feature name from catalog().
 	 * @param string $state       off, test_accounts or everyone.
 	 * @param string $approved_by Who approved "everyone".
+	 * @param string $note        Why (the reason or approval note).
 	 * @return true|WP_Error
 	 */
-	public static function set( $feature, $state, $approved_by = '' ) {
+	public static function set( $feature, $state, $approved_by = '', $note = '' ) {
 		if ( ! array_key_exists( $feature, self::catalog() ) ) {
 			return new WP_Error( 'lld_feature_unknown', 'Unknown feature: ' . $feature );
 		}
@@ -162,15 +209,92 @@ class LLD_Members_Features {
 		if ( 'everyone' === $state && '' === trim( (string) $approved_by ) ) {
 			return new WP_Error( 'lld_feature_approval', 'Switching a feature on for everyone needs --approved-by (the owner\'s approval).' );
 		}
-		$all = get_option( self::OPTION );
-		$all = is_array( $all ) ? $all : array();
+		$before = self::state( $feature );
+		$all    = get_option( self::OPTION );
+		$all    = is_array( $all ) ? $all : array();
 		$all[ $feature ] = array(
 			'state'       => $state,
 			'approved_by' => 'everyone' === $state ? sanitize_text_field( (string) $approved_by ) : '',
 			'changed_at'  => gmdate( 'Y-m-d H:i:s' ),
+			'override'    => 'everyone' !== $state,
 		);
 		update_option( self::OPTION, $all, true );
+		$note = sanitize_text_field( '' !== trim( (string) $note ) ? (string) $note : (string) $approved_by );
+		self::add_history( $feature, $before, $state, $note );
+		if ( class_exists( 'LLD_Members_Admin_Log' ) ) {
+			LLD_Members_Admin_Log::add(
+				'everyone' === $state ? 'feature_on' : ( 'off' === $state ? 'feature_off' : 'feature_test_accounts' ),
+				array(
+					'target' => $feature,
+					'before' => $before,
+					'after'  => $state,
+					'reason' => '' !== $note ? $note : 'no note given',
+				)
+			);
+		}
 		return true;
+	}
+
+	/**
+	 * Who is changing a switch: the command line, the signed-in admin, or the system.
+	 */
+	public static function who() {
+		if ( defined( 'WP_CLI' ) && WP_CLI ) {
+			return 'command line';
+		}
+		$user = function_exists( 'wp_get_current_user' ) ? wp_get_current_user() : null;
+		return $user && ! empty( $user->ID ) ? (string) $user->user_login : 'system';
+	}
+
+	/**
+	 * @param string $feature Feature name.
+	 * @param string $from    State before.
+	 * @param string $to      State after.
+	 * @param string $note    Reason or approval note.
+	 */
+	private static function add_history( $feature, $from, $to, $note ) {
+		$all = get_option( self::HISTORY );
+		$all = is_array( $all ) ? $all : array();
+		$rows   = isset( $all[ $feature ] ) && is_array( $all[ $feature ] ) ? $all[ $feature ] : array();
+		$rows[] = array(
+			'who'  => self::who(),
+			'when' => gmdate( 'Y-m-d H:i:s' ),
+			'from' => (string) $from,
+			'to'   => (string) $to,
+			'note' => (string) $note,
+		);
+		$all[ $feature ] = array_slice( $rows, -self::HISTORY_KEEP );
+		update_option( self::HISTORY, $all, false );
+	}
+
+	/**
+	 * A feature's changes, newest first.
+	 *
+	 * @param string $feature Feature name.
+	 * @return array<int,array{who:string,when:string,from:string,to:string,note:string}>
+	 */
+	public static function history( $feature ) {
+		$all = get_option( self::HISTORY );
+		$rows = is_array( $all ) && isset( $all[ $feature ] ) && is_array( $all[ $feature ] ) ? $all[ $feature ] : array();
+		return array_reverse( $rows );
+	}
+
+	/**
+	 * Replace the test-account list (FR3-74, FR3-82). Returns the list as saved.
+	 *
+	 * @param string[] $emails Emails.
+	 * @return string[]
+	 */
+	public static function save_test_accounts( array $emails ) {
+		$clean = array();
+		foreach ( $emails as $email ) {
+			$email = strtolower( trim( (string) $email ) );
+			if ( '' !== $email && is_email( $email ) && ! in_array( $email, $clean, true ) ) {
+				$clean[] = $email;
+			}
+		}
+		update_option( self::TEST_ACCOUNTS, $clean, true );
+		return $clean;
 	}
 
 	/**
