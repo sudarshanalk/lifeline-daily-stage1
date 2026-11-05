@@ -500,7 +500,7 @@ class LLD_Members_Admin_Members {
 				'expires_at'         => LLD_Members_Clock::now( (int) $row->id )->modify( '+24 hours' )->format( 'Y-m-d H:i:s' ),
 			)
 		);
-		LLD_Members_Mail::send_confirm( (string) $row->email, home_url( '/members/confirm/?token=' . rawurlencode( $token ) ) );
+		LLD_Members_Mail::send_confirm( (string) $row->email, add_query_arg( 'token', rawurlencode( $token ), home_url( '/members/confirm/' ) ) );
 	}
 
 	/**

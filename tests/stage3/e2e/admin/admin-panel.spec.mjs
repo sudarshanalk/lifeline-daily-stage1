@@ -258,6 +258,12 @@ test.describe.serial('P3-87 admin panel', () => {
     await asOwner(page);
     const unconfirmed = await createMember(request, { email: mail('unconf'), password, first_name: 'Uma' });
     await admin(request, { op: 'prepare', member: unconfirmed.member_id, unconfirm: true });
+    // The welcome email is an opt-in: refused until the member has chosen it, then resent.
+    await open(page, memberPage(free.member_id));
+    await page.locator('#lld-kind').selectOption('welcome');
+    await page.getByRole('button', { name: 'Resend' }).click();
+    await expect(page.locator('.lld-admin .notice-error')).toContainText('has not chosen to get the welcome email');
+    await admin(request, { op: 'prepare', member: free.member_id, welcome: true });
     for (const [kind, subject, who] of [['sign_in_code', 'sign-in code', free], ['welcome', 'Welcome', free], ['confirm', 'onfirm', unconfirmed]]) {
       await open(page, memberPage(who.member_id));
       await page.locator('#lld-kind').selectOption(kind);

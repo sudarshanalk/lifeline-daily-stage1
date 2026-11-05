@@ -131,6 +131,15 @@ class LLD_Members_Admin_Test_Routes {
 			if ( ! empty( $p['customer'] ) ) {
 				$wpdb->update( LLD_Members_Schema::table( 'subscription' ), array( 'stripe_customer' => sanitize_text_field( (string) $p['customer'] ) ), array( 'member_id' => $id ) );
 			}
+			if ( ! empty( $p['welcome'] ) ) {
+				// The member chose the welcome email (Stage 2 email preference).
+				$prefs = LLD_Members_Schema::table( 'email_pref' );
+				if ( $wpdb->get_var( $wpdb->prepare( "SELECT member_id FROM {$prefs} WHERE member_id = %d", $id ) ) ) { // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$wpdb->update( $prefs, array( 'welcome' => 1 ), array( 'member_id' => $id ) );
+				} else {
+					$wpdb->insert( $prefs, array( 'member_id' => $id, 'welcome' => 1 ) );
+				}
+			}
 			if ( ! empty( $p['unconfirm'] ) ) {
 				$wpdb->update( LLD_Members_Schema::table( 'member' ), array( 'email_confirmed_at' => null ), array( 'id' => $id ) );
 			}
