@@ -15,6 +15,52 @@
   --lld-s3-border: #7d8a84;
 }
 
+/* Accessibility & Tap Target minimums (NFR3-12, NFR3-13) */
+.lld-skip {
+  min-height: 44px;
+  line-height: 44px;
+}
+
+summary {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+input[type="date"] {
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.lld-option > label {
+  min-height: 44px;
+  align-items: center;
+}
+
+.lld-hint {
+  line-height: 24px;
+}
+
+.lld-hint > a:only-child,
+.lld-members-content p > a:only-child,
+.lld-stage3-goal p > a:only-child,
+.lld-dash p > a:only-child,
+.lld-kicker > a,
+.lld-calc-about p > a,
+.lld-stage3-calc p > a:only-child {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+@media (max-width: 479px) {
+  .lld-chip {
+    min-width: 44px;
+    justify-content: center;
+  }
+}
+
 /* ================= ACCOUNT HUB (P3-30 · FR3-06) ================= */
 .lld-stage3-account-hub {
   max-width: 960px;
