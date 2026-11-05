@@ -52,6 +52,14 @@ class LLD_Members_Features {
 			'barcode'          => 'P3-44 barcode scanning in the browser',
 			'health_logging'   => 'P3-50, P3-51 health logging and urgent-care warnings',
 			'calculators_new'  => 'P3-55 to P3-5B new calculators and saved results',
+			'calc_calorie_target' => 'P3-56 Calorie Target calculator (one tool; needs calculators_new on too)',
+			'calc_goal_timeline'  => 'P3-56 Goal Timeline calculator (one tool; needs calculators_new on too)',
+			'calc_heart_risk'     => 'P3-57 Heart Risk Check (one tool; needs calculators_new on too)',
+			'calc_bp_check'       => 'P3-58 Blood Pressure Check (one tool; needs calculators_new on too)',
+			'calc_metabolic'      => 'P3-59 Metabolic Health Check (one tool; needs calculators_new on too)',
+			'calc_fitness_age'    => 'P3-5A Fitness Age (one tool; needs calculators_new on too)',
+			'calc_hr_zones'       => 'P3-5A Heart Rate Zones (one tool; needs calculators_new on too)',
+			'calc_sleep_stress'   => 'P3-5A Sleep and Stress Check (one tool; needs calculators_new on too)',
 			'prices_launch'    => 'P3-60 launch prices',
 			'stripe_api'       => 'D2 real Stripe checkout, cancellation and refunds (Managed Payments)',
 			'access_tiers'     => 'P3-61 Free and Premium access, downgrade rules',
@@ -67,12 +75,37 @@ class LLD_Members_Features {
 	}
 
 	/**
+	 * The switch for one new calculator (P3-87, owner 5 Nov 2026): calc_ plus the engine slug, for example calc_heart_risk.
+	 *
+	 * @param string $tool Engine slug, for example heart-risk.
+	 */
+	public static function tool_feature( $tool ) {
+		return 'calc_' . str_replace( '-', '_', sanitize_key( (string) $tool ) );
+	}
+
+	/**
+	 * True when this new calculator may show: the calculators_new group is on for this member and so is the tool's own
+	 * switch. A tool switch nobody has changed follows the group, so the group alone still decides as before.
+	 *
+	 * @param string $tool      Engine slug, for example heart-risk.
+	 * @param int    $member_id Member number; 0 for the current request's member.
+	 */
+	public static function tool_enabled( $tool, $member_id = 0 ) {
+		$feature = self::tool_feature( $tool );
+		return self::enabled( 'calculators_new', $member_id ) && ( ! array_key_exists( $feature, self::catalog() ) || self::enabled( $feature, $member_id ) );
+	}
+
+	/**
 	 * Stored state of one feature: off, test_accounts or everyone.
 	 *
 	 * @param string $feature Feature name from catalog().
 	 */
 	public static function state( $feature ) {
 		$all = get_option( self::OPTION );
+		// A calculator's own switch that was never changed follows the calculators_new group.
+		if ( 0 === strpos( (string) $feature, 'calc_' ) && array_key_exists( $feature, self::catalog() ) && ( ! is_array( $all ) || ! isset( $all[ $feature ] ) || ! is_array( $all[ $feature ] ) ) ) {
+			return self::state( 'calculators_new' );
+		}
 		// An emergency off (FR3-74, P3-87) holds even while every feature is on: set() marks it as an override.
 		if ( get_option( self::ALL_ON ) && array_key_exists( $feature, self::catalog() ) ) {
 			$row = is_array( $all ) && isset( $all[ $feature ] ) && is_array( $all[ $feature ] ) ? $all[ $feature ] : array();

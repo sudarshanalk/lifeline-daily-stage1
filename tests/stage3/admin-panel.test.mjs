@@ -58,6 +58,27 @@ test('TC-FR3-74-AS-01 An emergency off holds while every feature is on (lld_feat
   expect(out).toEqual(['everyone', 'off', false, 'test_accounts', 'everyone', 'everyone']);
 });
 
+test('TC-FR3-74-AS-01 Each new calculator has its own switch, which follows calculators_new until it is changed', () => {
+  const out = php(`${stubs(true)}
+    function sanitize_key($k) { return strtolower(preg_replace('/[^a-z0-9_\-]/i', '', $k)); }
+    $r = [];
+    $r[] = LLD_Members_Features::state('calc_heart_risk');            // never set, group never set: off
+    LLD_Members_Features::set('calculators_new', 'test_accounts', '', 'ci');
+    $r[] = LLD_Members_Features::state('calc_heart_risk');            // follows the group
+    LLD_Members_Features::set('calculators_new', 'everyone', 'Owner (test)', 'fixed');
+    update_option('lld_features_all_on', 1);
+    $r[] = LLD_Members_Features::state('calc_heart_risk');            // every feature on
+    LLD_Members_Features::set('calc_heart_risk', 'off', '', 'bug in one tool');
+    $r[] = LLD_Members_Features::state('calc_heart_risk');            // emergency off holds
+    $r[] = LLD_Members_Features::state('calc_bp_check');              // the others stay on
+    $r[] = LLD_Members_Features::tool_enabled('heart-risk', 5);
+    $r[] = LLD_Members_Features::tool_feature('sleep-stress');
+    LLD_Members_Features::set('calculators_new', 'off', '', 'all tools');
+    $r[] = LLD_Members_Features::tool_enabled('bp-check', 5);         // the group off turns every tool off
+    echo json_encode($r);`);
+  expect(out).toEqual(['off', 'test_accounts', 'everyone', 'off', 'everyone', false, 'calc_sleep_stress', false]);
+});
+
 test('TC-FR3-86-AS-02 A risky action is not logged (so it is refused) without a reason, outside the command line', () => {
   const out = php(`${stubs(false)}
     $r = [];

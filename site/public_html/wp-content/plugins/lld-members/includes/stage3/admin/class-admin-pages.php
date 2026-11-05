@@ -422,6 +422,7 @@ class LLD_Members_Admin_Pages {
 		$back  = self::url( 'lld-features' );
 		self::start( 'Features' );
 		echo '<p class="lld-hint">Every feature is on. Use this page only to turn a feature off in an emergency, or to limit it to test accounts while it is fixed. Members stop seeing a feature on their next page load.</p>';
+		echo '<p class="lld-hint">calculators_new turns every new calculator off at once; each calc_ switch turns off one calculator. The Daily Protein Target and Diabetes Risk Check are clinically frozen and have no switch here.</p>';
 		if ( ! $owner ) {
 			echo '<p class="lld-hint"><strong>You can view this page. Only the Owner can change it.</strong></p>';
 		}
