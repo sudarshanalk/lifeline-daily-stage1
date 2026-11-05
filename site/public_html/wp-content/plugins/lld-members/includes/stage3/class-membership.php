@@ -45,6 +45,41 @@ class LLD_Members_Membership {
 		add_filter( 'lld_members_price_option', array( __CLASS__, 'price_option' ) );
 		add_filter( 'lld_members_default_prices', array( __CLASS__, 'default_prices' ) );
 		add_filter( 'lld_members_subscription_top', array( __CLASS__, 'subscription_top' ), 10, 3 );
+		add_filter( 'lld_members_pricing_note', array( __CLASS__, 'pricing_note' ) );
+		add_filter( 'lld_members_receipt_mail', array( __CLASS__, 'receipt_mail' ), 10, 4 );
+	}
+
+	/** TC-FR3-62-AS-05 (Owner question 70a): Stripe may show a converted amount carrying its conversion fee. */
+	const CURRENCY_NOTE = 'Prices in US$; your bank or Stripe may convert.';
+
+	/**
+	 * Filter: the line under the plans on the pricing page.
+	 *
+	 * @param string $html Earlier content.
+	 */
+	public static function pricing_note( $html ) {
+		return self::launch_on() ? $html . '<p class="lld-plan-currency" data-lld-currency-note>' . esc_html( self::CURRENCY_NOTE ) . '</p>' : $html;
+	}
+
+	/**
+	 * Filter: with Stripe Managed Payments, Onelink sends the receipt, so the site's email confirms the payment and
+	 * says where the receipt comes from, without calling itself a receipt (TC-FR3-62-AS-06, Owner question 70b).
+	 *
+	 * @param array{subject:string,body:string} $mail      Stage 2 email.
+	 * @param int                               $member_id Member number.
+	 * @param string                            $amount    Amount charged, formatted.
+	 * @param string                            $today     Date Y-m-d.
+	 */
+	public static function receipt_mail( $mail, $member_id, $amount, $today ) {
+		if ( ! class_exists( 'LLD_Members_Stripe_API' ) || ! LLD_Members_Stripe_API::on( $member_id ) ) {
+			return $mail;
+		}
+		return array(
+			'subject' => 'Your Premium payment is confirmed',
+			'body'    => 'Thank you. Your payment of ' . $amount . ', tax included, on ' . LLD_Members_Pause::day( $today ) . ' is confirmed.'
+				. "\n\n" . 'The receipt comes in a separate email from Onelink, the Stripe partner that sells Lifeline Daily Premium. Your bank statement shows the payment as sold through Onelink.'
+				. "\n\n" . 'You can see your plan, or cancel at any time, in My subscription: ' . home_url( '/members/subscription/' ),
+		);
 	}
 
 	public static function launch_on() {
