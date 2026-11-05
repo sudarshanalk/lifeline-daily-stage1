@@ -388,7 +388,12 @@ class LLD_Members_Pause {
 		global $wpdb;
 		$soon = gmdate( 'Y-m-d', time() + 2 * DAY_IN_SECONDS );
 		$past = gmdate( 'Y-m-d', time() - 2 * DAY_IN_SECONDS );
-		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Stage3_Schema::table( 'pauses' ) . " WHERE status IN ('scheduled', 'active') AND starts_at <= %s AND ends_at >= %s", $soon, $past ) );
+		$open = 'SELECT * FROM ' . LLD_Members_Stage3_Schema::table( 'pauses' ) . " WHERE status IN ('scheduled', 'active')";
+		// Where members' test clocks are allowed (staging and local sites only), a member's date can be far from the
+		// real one, so every open pause is looked at; each member's own date below still decides what is sent.
+		$rows = function_exists( 'lld_members_test_clock_allowed' ) && lld_members_test_clock_allowed()
+			? $wpdb->get_results( $open ) // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- no input
+			: $wpdb->get_results( $wpdb->prepare( $open . ' AND starts_at <= %s AND ends_at >= %s', $soon, $past ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 		foreach ( (array) $rows as $pause ) {
 			$member_id = (int) $pause->member_id;
 			if ( ! in_array( (string) $pause->status, array( 'scheduled', 'active' ), true ) || ! self::on( $member_id ) ) {
