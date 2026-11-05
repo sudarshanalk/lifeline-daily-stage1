@@ -29,6 +29,7 @@ class LLD_Members_Admin_Security {
 	const SESSIONS_META    = 'lld_admin_sessions';
 	const DEVICE_COOKIE    = 'lld_adev';
 	const TOUCH_EVERY      = 60;
+	const OUT_COOKIE       = 'lld_admin_out';
 
 	public static function boot() {
 		add_filter( 'authenticate', array( __CLASS__, 'support_code' ), 100, 3 );
@@ -142,6 +143,9 @@ class LLD_Members_Admin_Security {
 			return;
 		}
 		self::prune( (int) $user_id );
+		if ( isset( $_COOKIE[ self::OUT_COOKIE ] ) && ! headers_sent() ) {
+			setcookie( self::OUT_COOKIE, '', time() - 3600, COOKIEPATH ? COOKIEPATH : '/', '', is_ssl(), true );
+		}
 		$now  = self::now();
 		$code = self::passed_code( (int) $user_id );
 		self::save_session(
@@ -257,6 +261,21 @@ class LLD_Members_Admin_Security {
 			LLD_Members_Admin_Log::add( 'admin_signed_out', array( 'user' => (int) $user->ID, 'after' => $why ) );
 			wp_clear_auth_cookie();
 			wp_set_current_user( 0 );
+			// Remember why for 5 minutes, so the sign-in page explains it even when a background request ended the
+			// session and the page load arrives already signed out (WordPress then sends it to ?reauth=1).
+			if ( ! headers_sent() ) {
+				setcookie(
+					self::OUT_COOKIE,
+					'no_code' === $why ? 'code' : 'timeout',
+					array(
+						'expires'  => time() + 300,
+						'path'     => COOKIEPATH ? COOKIEPATH : '/',
+						'secure'   => is_ssl(),
+						'httponly' => true,
+						'samesite' => 'Lax',
+					)
+				);
+			}
 			if ( ! wp_doing_ajax() && ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) && ! ( defined( 'WP_CLI' ) && WP_CLI ) ) {
 				wp_safe_redirect( wp_login_url() . ( false === strpos( wp_login_url(), '?' ) ? '?' : '&' ) . ( 'no_code' === $why ? 'lld_admin_code=1' : 'lld_admin_timeout=1' ) );
 				exit;
@@ -276,10 +295,11 @@ class LLD_Members_Admin_Security {
 	 * @param string $message Message so far.
 	 */
 	public static function timeout_message( $message ) {
-		if ( isset( $_GET['lld_admin_timeout'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$out = isset( $_COOKIE[ self::OUT_COOKIE ] ) ? (string) $_COOKIE[ self::OUT_COOKIE ] : '';
+		if ( isset( $_GET['lld_admin_timeout'] ) || 'timeout' === $out ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$message .= '<p class="message">You were signed out for safety after 30 minutes without activity, or after 12 hours. Please sign in again.</p>';
 		}
-		if ( isset( $_GET['lld_admin_code'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		if ( isset( $_GET['lld_admin_code'] ) || 'code' === $out ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$message .= '<p class="message">Support helpers sign in here, with the 6-digit code we email you.</p>';
 		}
 		return $message;

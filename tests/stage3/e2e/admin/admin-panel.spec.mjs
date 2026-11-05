@@ -679,7 +679,10 @@ test.describe.serial('P3-87 admin panel', () => {
     await supportSignIn(page, context);
     await admin(request, { op: 'clock', seconds: 31 * 60 });
     await open(page, '/wp-admin/admin.php?page=lld-overview');
-    await expect(page).toHaveURL(/wp-login\.php.*lld_admin_timeout=1/);
+    // Signed out, with the reason, whichever request (the page or a background one) ended the session.
+    await expect(page).toHaveURL(/wp-login\.php/);
+    await expect(page.getByText('You were signed out for safety')).toBeVisible();
+    expect((await page.request.get('/wp-admin/admin.php?page=lld-overview', { maxRedirects: 0 })).status()).toBe(302);
     await admin(request, { op: 'clock', seconds: 0 });
     await supportSignIn(page, context);
     test.setTimeout(300000);
@@ -691,7 +694,8 @@ test.describe.serial('P3-87 admin panel', () => {
     }
     await admin(request, { op: 'clock', seconds: 12 * 3600 + 60 });
     await open(page, '/wp-admin/admin.php?page=lld-overview');
-    await expect(page).toHaveURL(/lld_admin_timeout=1/);
+    await expect(page).toHaveURL(/wp-login\.php/);
+    await expect(page.getByText('You were signed out for safety')).toBeVisible();
     await admin(request, { op: 'clock', seconds: 0 });
   });
 
