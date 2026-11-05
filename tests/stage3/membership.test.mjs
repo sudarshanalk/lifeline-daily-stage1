@@ -477,6 +477,8 @@ test('TC-FR3-65-AS-01 (emails): EM-31 when the pause starts, EM-32 seven days be
   expect(out.copy.body).toContain('until 10 April 2027');
   expect(out.copy.body).toContain('at your current price of US$7.99 a month, tax included');
   expect(out.copy.body).toContain('Nothing is deleted.');
+  // Members cannot end a running pause themselves, so EM-31 does not offer it (Owner question 119).
+  expect(out.copy.body).not.toContain('end the pause early');
 });
 
 test('TC-FR3-65-AS-06 (emails): no pause email once the plan is cancelled or the pause belongs to an older subscription', () => {

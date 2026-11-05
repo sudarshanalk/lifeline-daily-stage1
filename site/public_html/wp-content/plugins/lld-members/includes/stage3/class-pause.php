@@ -432,6 +432,8 @@ class LLD_Members_Pause {
 	/**
 	 * The approved wording of EM-31, EM-32 and EM-33 (02 Content/Programme content/emails/stage3-emails.md,
 	 * approved 3 Nov 2026). The amount is the member's own monthly price (EM-Q6, default a).
+	 * EM-31 leaves out 'You can end the pause early in My subscription': members cannot end a running pause
+	 * themselves (Owner questions 114 and 119).
 	 *
 	 * @param string $kind       started, ending or ended.
 	 * @param string $first_name Member's first name.
@@ -448,7 +450,7 @@ class LLD_Members_Pause {
 				'subject' => 'Your Premium pause has started',
 				'body'    => $hi . "\n\nYour Premium membership is paused from today until " . $end . ". There's no charge while you're paused, and you have Free access in the meantime."
 					. "\n\nNothing is deleted. Your logs, saved results, custom foods and recipes are all kept, and everything comes back as it was when Premium returns."
-					. "\n\nPremium returns automatically on " . $end . ' at your current price of ' . $amount . ' a month, tax included. You can end the pause early in My subscription.'
+					. "\n\nPremium returns automatically on " . $end . ' at your current price of ' . $amount . ' a month, tax included.'
 					. "\n\nManage my subscription: " . $sub,
 			);
 		}
