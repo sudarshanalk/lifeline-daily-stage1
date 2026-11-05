@@ -565,12 +565,21 @@
         return;
       }
       say(status, 'Starting the camera…');
-      var asked;
-      try {
-        asked = navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false });
-      } catch (err) {
-        asked = Promise.reject(err);
-      }
+      var ask = function (constraints) {
+        try {
+          return Promise.resolve(navigator.mediaDevices.getUserMedia(constraints));
+        } catch (err) {
+          return Promise.reject(err);
+        }
+      };
+      // The back camera at a good size if the phone has one; a browser that cannot meet those wishes gets asked
+      // for any camera instead.
+      var asked = ask({ video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }).catch(function (err) {
+        if (err && (err.name === 'OverconstrainedError' || err.name === 'ConstraintNotSatisfiedError' || err.name === 'TypeError')) {
+          return ask({ video: true, audio: false });
+        }
+        throw err;
+      });
       // Only the camera request itself decides "refused" or "no camera"; what happens after it has started does not.
       Promise.resolve(asked).then(function (s) {
         stream = s;

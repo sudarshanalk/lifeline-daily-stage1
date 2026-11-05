@@ -50,7 +50,7 @@ function fakeCamera(code) {
       const px = 6, left = (canvas.width - bits.length * px) / 2;
       bits.forEach((b, i) => { if (b) ctx.fillRect(left + i * px, 120, px, 240); });
     };
-    navigator.mediaDevices.getUserMedia = async () => {
+    const fake = async () => {
       const canvas = document.createElement('canvas');
       canvas.width = 800;
       canvas.height = 480;
@@ -60,6 +60,9 @@ function fakeCamera(code) {
       setInterval(() => draw(canvas), 100); // keep frames coming
       return canvas.captureStream(10);
     };
+    // On the interface itself as well as the object, so the browser's own camera request is never reached.
+    Object.defineProperty(MediaDevices.prototype, 'getUserMedia', { value: fake, configurable: true, writable: true });
+    Object.defineProperty(navigator.mediaDevices, 'getUserMedia', { value: fake, configurable: true, writable: true });
   }, { code }];
 }
 
@@ -140,7 +143,9 @@ test.describe.serial('P3-44 barcode scanning in the browser', () => {
   test('TC-FR3-37-AS-03 If the member refuses camera access, typed search still works and a short message explains why scanning is unavailable', async ({ page }) => {
     await fresh(page);
     await page.addInitScript(() => {
-      navigator.mediaDevices.getUserMedia = async () => { throw new DOMException('Permission denied', 'NotAllowedError'); };
+      const refuse = async () => { throw new DOMException('Permission denied', 'NotAllowedError'); };
+      Object.defineProperty(MediaDevices.prototype, 'getUserMedia', { value: refuse, configurable: true, writable: true });
+      Object.defineProperty(navigator.mediaDevices, 'getUserMedia', { value: refuse, configurable: true, writable: true });
     });
     await page.goto('/members/food/scan/');
     await page.getByRole('button', { name: 'Scan with the camera' }).click();
