@@ -21,6 +21,9 @@ class LLD_Members_Email_Codes {
 	const MINUTES      = 10;
 	const ATTEMPTS     = 5;
 	const HOURLY_LIMIT = 5;
+	// An admin's fresh codes before risky actions (P3-87): counted apart, and enough for the 5 deletions an hour
+	// that NFR3-21 allows plus the other risky actions.
+	const ADMIN_HOURLY_LIMIT = 20;
 	const KEEP_HOURS   = 24;
 	const PURPOSES     = array( 'sign_up', 'sign_in', 'delete', 'admin_step' ); // admin_step: an admin's fresh code before a risky action (P3-87, NFR3-20)
 
@@ -47,8 +50,9 @@ class LLD_Members_Email_Codes {
 		}
 		$table = LLD_Members_Stage3_Schema::table( 'email_codes' );
 		self::sweep();
-		$recent = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE email = %s AND created_at > %s", $email, gmdate( 'Y-m-d H:i:s', time() - HOUR_IN_SECONDS ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		if ( $recent >= self::HOURLY_LIMIT || ! self::count_connection() ) {
+		$admin  = 'admin_step' === $purpose;
+		$recent = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE email = %s AND created_at > %s AND " . ( $admin ? "purpose = 'admin_step'" : "purpose <> 'admin_step'" ), $email, gmdate( 'Y-m-d H:i:s', time() - HOUR_IN_SECONDS ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( $recent >= ( $admin ? self::ADMIN_HOURLY_LIMIT : self::HOURLY_LIMIT ) || ( ! $admin && ! self::count_connection() ) ) {
 			return new WP_Error( 'lld_code_limit', self::LIMIT_MESSAGE );
 		}
 		$code = str_pad( (string) random_int( 0, 999999 ), 6, '0', STR_PAD_LEFT );

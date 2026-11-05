@@ -56,6 +56,10 @@ class LLD_Members_Admin_Test_Routes {
 		$log = LLD_Members_Schema::table( 'admin_log' );
 		if ( 'owner' === $op ) {
 			$admins = get_users( array( 'role' => 'administrator', 'number' => 1, 'orderby' => 'ID' ) );
+			if ( $admins ) {
+				// A new run starts with no fresh codes counted against the hour (repeated local runs).
+				$wpdb->delete( LLD_Members_Stage3_Schema::table( 'email_codes' ), array( 'email' => strtolower( (string) $admins[0]->user_email ), 'purpose' => 'admin_step' ), array( '%s', '%s' ) );
+			}
 			return new WP_REST_Response( array( 'email' => $admins ? (string) $admins[0]->user_email : '', 'id' => $admins ? (int) $admins[0]->ID : 0, 'admin_email' => (string) get_option( 'admin_email' ) ), 200 );
 		}
 		if ( 'helper' === $op ) {
@@ -112,6 +116,7 @@ class LLD_Members_Admin_Test_Routes {
 			return new WP_REST_Response(
 				array(
 					'premium'  => LLD_Members_Billing::has_premium( $id ),
+					'state'    => LLD_Members_Access::access_state( $id ),
 					'blocked'  => (bool) $wpdb->get_var( $wpdb->prepare( 'SELECT blocked_at FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $id ) ),
 					'notes'    => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Stage3_Schema::table( 'member_notes' ) . ' WHERE member_id = %d', $id ) ),
 					'grants'   => (int) $wpdb->get_var( $wpdb->prepare( 'SELECT COUNT(*) FROM ' . LLD_Members_Stage3_Schema::table( 'premium_grants' ) . ' WHERE member_id = %d', $id ) ),

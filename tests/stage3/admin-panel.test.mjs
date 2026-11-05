@@ -110,7 +110,7 @@ test('TC-NFR3-19-AS-02 No admin request reads a health, food, goal or calculator
   // The tables the Members page declares it reads are account tables only.
   const members = readFileSync(resolve(adminDir, 'class-admin-members.php'), 'utf8');
   const reads = [...members.matchAll(/table\(\s*'(\w+)'\s*\)/g)].map((m) => m[1]);
-  for (const t of reads) expect(['member', 'subscription', 'identities', 'pauses', 'member_notes', 'premium_grants', 'admin_log', 'session', 'app_key', 'security_code'], t).toContain(t);
+  for (const t of reads) expect(['member', 'subscription', 'identities', 'pauses', 'member_notes', 'premium_grants', 'admin_log', 'session', 'app_key', 'security_code', 'email_pref'], t).toContain(t);
 });
 
 test('TC-FR3-76-AS-03 No admin code offers to sign in as a member', () => {

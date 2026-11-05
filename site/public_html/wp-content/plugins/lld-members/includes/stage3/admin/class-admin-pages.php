@@ -215,7 +215,7 @@ class LLD_Members_Admin_Pages {
 	 * @param string $required Required attribute.
 	 */
 	private static function reason_field( $id, $label = 'Reason (kept in the activity log)', $required = ' required' ) {
-		return '<label for="' . esc_attr( $id ) . '">' . esc_html( $label ) . '</label><input type="text" id="' . esc_attr( $id ) . '" name="reason" maxlength="300"' . $required . '>';
+		return '<label for="' . esc_attr( $id ) . '">' . esc_html( $label ) . '</label><input type="text" id="' . esc_attr( $id ) . '" name="reason" maxlength="300" aria-describedby="' . esc_attr( $id ) . '-hint"' . $required . '><p class="lld-hint" id="' . esc_attr( $id ) . '-hint">No names, emails or health details.</p>';
 	}
 
 	/**

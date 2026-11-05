@@ -40,6 +40,7 @@ class LLD_Members_Admin_Security {
 		add_filter( 'wp_redirect', array( __CLASS__, 'support_home' ), 10, 1 );
 		add_filter( 'allow_password_reset', array( __CLASS__, 'allow_helper_reset' ), 20, 2 );
 		add_action( 'login_message', array( __CLASS__, 'timeout_message' ) );
+		add_filter( 'wp_is_application_passwords_available_for_user', array( __CLASS__, 'no_helper_app_passwords' ), 20, 2 );
 	}
 
 	/**
@@ -89,6 +90,16 @@ class LLD_Members_Admin_Security {
 	}
 
 	/**
+	 * Helpers cannot use application passwords, which would skip the emailed code and the time limits.
+	 *
+	 * @param bool    $available Allowed so far.
+	 * @param WP_User $user      User.
+	 */
+	public static function no_helper_app_passwords( $available, $user ) {
+		return $user instanceof WP_User && LLD_Members_Admin_Roles::is_support( $user ) ? false : $available;
+	}
+
+	/**
 	 * An admin session lasts at most 12 hours, even with "remember me".
 	 *
 	 * @param int  $length   Seconds.
@@ -126,19 +137,22 @@ class LLD_Members_Admin_Security {
 		if ( ! LLD_Members_Admin_Roles::is_admin_user( (int) $user_id ) || '' === (string) $token ) {
 			return;
 		}
-		$key      = hash( 'sha256', (string) $token );
-		$sessions = self::sessions( (int) $user_id );
-		if ( isset( $sessions[ $key ] ) ) {
+		$key = hash( 'sha256', (string) $token );
+		if ( null !== self::session( (int) $user_id, $key ) ) {
 			return;
 		}
-		$now              = self::now();
-		$code             = self::passed_code( (int) $user_id );
-		$sessions[ $key ] = array(
-			'started' => $now,
-			'last'    => $now,
-			'code'    => $code,
+		self::prune( (int) $user_id );
+		$now  = self::now();
+		$code = self::passed_code( (int) $user_id );
+		self::save_session(
+			(int) $user_id,
+			$key,
+			array(
+				'started' => $now,
+				'last'    => $now,
+				'code'    => $code,
+			)
 		);
-		self::save_sessions( (int) $user_id, $sessions );
 		if ( $code ) {
 			LLD_Members_Admin_Log::add( 'admin_sign_in', array( 'user' => (int) $user_id ) );
 			self::check_device( (int) $user_id );
@@ -146,28 +160,46 @@ class LLD_Members_Admin_Security {
 	}
 
 	/**
-	 * @param int $user_id User.
-	 * @return array<string,array{started:int,last:int,code:bool}>
+	 * One meta row per session, so two requests of the same admin never overwrite each other's record.
+	 *
+	 * @param int    $user_id User.
+	 * @param string $key     Session hash.
+	 * @return array{started:int,last:int,code:bool}|null
 	 */
-	private static function sessions( $user_id ) {
-		$rows = get_user_meta( (int) $user_id, self::SESSIONS_META, true );
-		$rows = is_array( $rows ) ? $rows : array();
-		// Sessions older than the 12-hour limit are dropped, so the list stays short.
-		$now = self::now();
-		foreach ( $rows as $key => $row ) {
-			if ( ! is_array( $row ) || $now - (int) ( $row['started'] ?? 0 ) > self::MAX_SECONDS + DAY_IN_SECONDS ) {
-				unset( $rows[ $key ] );
-			}
-		}
-		return $rows;
+	private static function session( $user_id, $key ) {
+		$row = get_user_meta( (int) $user_id, self::SESSIONS_META . '_' . $key, true );
+		return is_array( $row ) ? $row : null;
 	}
 
 	/**
-	 * @param int   $user_id  User.
-	 * @param array $sessions Sessions.
+	 * @param int        $user_id User.
+	 * @param string     $key     Session hash.
+	 * @param array|null $row     Record, or null to remove it.
 	 */
-	private static function save_sessions( $user_id, array $sessions ) {
-		update_user_meta( (int) $user_id, self::SESSIONS_META, $sessions );
+	private static function save_session( $user_id, $key, $row ) {
+		if ( null === $row ) {
+			delete_user_meta( (int) $user_id, self::SESSIONS_META . '_' . $key );
+			return;
+		}
+		update_user_meta( (int) $user_id, self::SESSIONS_META . '_' . $key, $row );
+	}
+
+	/**
+	 * Remove this admin's session records that are past the 12-hour limit.
+	 *
+	 * @param int $user_id User.
+	 */
+	private static function prune( $user_id ) {
+		$now = self::now();
+		foreach ( (array) get_user_meta( (int) $user_id ) as $meta => $values ) {
+			if ( 0 !== strpos( (string) $meta, self::SESSIONS_META . '_' ) ) {
+				continue;
+			}
+			$row = maybe_unserialize( $values[0] ?? '' );
+			if ( ! is_array( $row ) || $now - (int) ( $row['started'] ?? 0 ) > self::MAX_SECONDS + DAY_IN_SECONDS ) {
+				delete_user_meta( (int) $user_id, (string) $meta );
+			}
+		}
 	}
 
 	/**
@@ -209,34 +241,32 @@ class LLD_Members_Admin_Security {
 		if ( '' === $token ) {
 			return;
 		}
-		$key      = hash( 'sha256', $token );
-		$sessions = self::sessions( (int) $user->ID );
-		$now      = self::now();
-		$support  = LLD_Members_Admin_Roles::is_support( $user );
-		if ( ! isset( $sessions[ $key ] ) && ! $support ) {
+		$key     = hash( 'sha256', $token );
+		$session = self::session( (int) $user->ID, $key );
+		$now     = self::now();
+		$support = LLD_Members_Admin_Roles::is_support( $user );
+		if ( null === $session && ! $support ) {
 			// An Owner session from before this package: its clock starts now.
-			$sessions[ $key ] = array( 'started' => $now, 'last' => $now, 'code' => false );
-			self::save_sessions( (int) $user->ID, $sessions );
+			self::save_session( (int) $user->ID, $key, array( 'started' => $now, 'last' => $now, 'code' => false ) );
 			return;
 		}
-		$why = self::end_reason( $sessions[ $key ] ?? null, $now, $support );
+		$why = self::end_reason( $session, $now, $support );
 		if ( '' !== $why ) {
-			unset( $sessions[ $key ] );
-			self::save_sessions( (int) $user->ID, $sessions );
+			self::save_session( (int) $user->ID, $key, null );
 			WP_Session_Tokens::get_instance( (int) $user->ID )->destroy( $token );
 			LLD_Members_Admin_Log::add( 'admin_signed_out', array( 'user' => (int) $user->ID, 'after' => $why ) );
 			wp_clear_auth_cookie();
 			wp_set_current_user( 0 );
 			if ( ! wp_doing_ajax() && ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) && ! ( defined( 'WP_CLI' ) && WP_CLI ) ) {
-				wp_safe_redirect( wp_login_url() . ( false === strpos( wp_login_url(), '?' ) ? '?' : '&' ) . 'lld_admin_timeout=1' );
+				wp_safe_redirect( wp_login_url() . ( false === strpos( wp_login_url(), '?' ) ? '?' : '&' ) . ( 'no_code' === $why ? 'lld_admin_code=1' : 'lld_admin_timeout=1' ) );
 				exit;
 			}
 			return;
 		}
 		$heartbeat = wp_doing_ajax() && isset( $_POST['action'] ) && 'heartbeat' === $_POST['action']; // phpcs:ignore WordPress.Security.NonceVerification.Missing -- read only.
-		if ( ! $heartbeat && $now - (int) $sessions[ $key ]['last'] >= self::TOUCH_EVERY ) {
-			$sessions[ $key ]['last'] = $now;
-			self::save_sessions( (int) $user->ID, $sessions );
+		if ( ! $heartbeat && $now - (int) $session['last'] >= self::TOUCH_EVERY ) {
+			$session['last'] = $now;
+			self::save_session( (int) $user->ID, $key, $session );
 		}
 	}
 
@@ -248,6 +278,9 @@ class LLD_Members_Admin_Security {
 	public static function timeout_message( $message ) {
 		if ( isset( $_GET['lld_admin_timeout'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			$message .= '<p class="message">You were signed out for safety after 30 minutes without activity, or after 12 hours. Please sign in again.</p>';
+		}
+		if ( isset( $_GET['lld_admin_code'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			$message .= '<p class="message">Support helpers sign in here, with the 6-digit code we email you.</p>';
 		}
 		return $message;
 	}

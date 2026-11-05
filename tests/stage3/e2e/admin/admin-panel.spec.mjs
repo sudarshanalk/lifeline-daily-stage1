@@ -336,7 +336,10 @@ test.describe.serial('P3-87 admin panel', () => {
     await expect(page.getByText(`Free Premium given until ${until}.`)).toBeVisible();
     await expect(page.locator('dl.lld-facts')).toContainText('Premium (free, given by the Owner)');
     await expect(page.locator('dl.lld-facts')).toContainText('No payments');
-    expect((await admin(request, { op: 'member', member: free.member_id })).premium).toBe(true);
+    const granted = await admin(request, { op: 'member', member: free.member_id });
+    expect(granted.premium).toBe(true);
+    // Premium wherever the access state is read (Stage 2 programme weeks, the food tracker), not only in payments.
+    expect(granted.state).toBe('Premium');
   });
 
   test('TC-FR3-80-AS-02 On the end date the member returns to Free with nothing deleted', async ({ request }) => {
@@ -485,8 +488,14 @@ test.describe.serial('P3-87 admin panel', () => {
     globalThis.blocked = { id: target.member_id, email: blockEmail };
   });
 
-  test('TC-FR3-83-AS-03 Unblock: the member can sign in again', async ({ page, browser }) => {
+  test('TC-FR3-83-AS-03 Unblock: the member can sign in again', async ({ page, browser, request }) => {
     await asOwner(page);
+    // An admin account is never blocked from the panel (the Owner could lock themself out).
+    const adminMember = await createMember(request, { email: mail('adm'), password, first_name: 'Ada', role: 'owner_admin' });
+    await open(page, memberPage(adminMember.member_id));
+    await page.locator('#lld-block-reason').fill('try');
+    await page.getByRole('button', { name: 'Block member' }).click();
+    await expect(page.locator('.lld-admin .notice-error')).toContainText("Admin accounts can't be blocked");
     await open(page, memberPage(globalThis.blocked.id));
     await page.locator('#lld-block-reason').fill('Resolved');
     await page.getByRole('button', { name: 'Unblock member' }).click();

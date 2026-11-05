@@ -148,7 +148,7 @@ class LLD_Members_Admin_Roles {
 			return new WP_Error( 'lld_admin_helper', 'That email belongs to a member. Each helper needs their own separate account and email.' );
 		}
 		if ( $user ) {
-			$user->set_role( self::ROLE );
+			$user->add_role( self::ROLE ); // keeps any role the account already has
 			$user_id = (int) $user->ID;
 		} else {
 			$login   = sanitize_user( 'support-' . strtolower( strtok( $email, '@' ) ) . '-' . wp_rand( 100, 999 ), true );

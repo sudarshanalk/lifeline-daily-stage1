@@ -25,6 +25,7 @@ class LLD_Members_Admin_Members {
 
 	public static function boot() {
 		add_filter( 'lld_members_paid_open', array( __CLASS__, 'grant_open' ), 30, 2 );
+		add_filter( 'lld_members_access_state', array( __CLASS__, 'grant_state' ), 10, 2 );
 		add_filter( 'authenticate', array( __CLASS__, 'refuse_blocked' ), 35, 1 );
 		add_filter( 'determine_current_user', array( __CLASS__, 'drop_blocked' ), 99 );
 		add_action( 'lld_members_erase_account', array( __CLASS__, 'erase_account' ) );
@@ -185,7 +186,7 @@ class LLD_Members_Admin_Members {
 		if ( ! $premium ) {
 			return 'Free';
 		}
-		if ( self::active_grant( $member_id ) && ( ! $sub || ! LLD_Members_Billing::paid_state( $member_id ) ) ) {
+		if ( self::grant_only( $sub, $member_id ) ) {
 			return 'Premium (free, given by the Owner)';
 		}
 		return 'Premium' . ( $sub && $sub->plan ? ', ' . (string) $sub->plan : '' );
@@ -280,6 +281,34 @@ class LLD_Members_Admin_Members {
 		return null !== self::active_grant( (int) $member_id );
 	}
 
+	/**
+	 * Filter: a running grant reads as Premium everywhere the access state is used (Stage 2 programme weeks, the food
+	 * tracker's Premium parts), not only where Premium is worked out by the payments class.
+	 *
+	 * @param string $state     Stored access state.
+	 * @param int    $member_id Member number.
+	 */
+	public static function grant_state( $state, $member_id ) {
+		if ( 'premium' === strtolower( (string) $state ) || (int) $member_id < 1 ) {
+			return $state;
+		}
+		return null !== self::active_grant( (int) $member_id ) ? 'Premium' : $state;
+	}
+
+	/**
+	 * True when Premium comes only from the Owner's grant (the stored subscription is not Premium).
+	 *
+	 * @param object|null $sub       Subscription row.
+	 * @param int         $member_id Member number.
+	 */
+	private static function grant_only( $sub, $member_id ) {
+		if ( ! self::active_grant( $member_id ) ) {
+			return false;
+		}
+		$stored = $sub ? strtolower( (string) $sub->access_state ) : 'free';
+		return 'premium' !== $stored && ! ( 'cancelled' === $stored && $sub->period_ends_on && (string) $sub->period_ends_on >= gmdate( 'Y-m-d' ) );
+	}
+
 	// ----- Blocking (FR3-83) -----
 
 	/**
@@ -355,6 +384,10 @@ class LLD_Members_Admin_Members {
 		$row = self::member( $member_id );
 		if ( ! $row ) {
 			return new WP_Error( 'lld_admin_member', 'That member no longer exists.' );
+		}
+		if ( in_array( $action, array( 'block', 'delete', 'test' ), true ) && (int) $row->user_id > 0 && LLD_Members_Admin_Roles::is_admin_user( (int) $row->user_id ) ) {
+			// An admin's own account is never blocked, deleted or marked here: the Owner could lock themself out.
+			return new WP_Error( 'lld_admin_target', 'This is an admin account. Admin accounts can\'t be blocked, deleted or marked here.' );
 		}
 		$reason = trim( (string) ( $in['reason'] ?? '' ) );
 		$method = 'act_' . $action;
@@ -432,6 +465,11 @@ class LLD_Members_Admin_Members {
 			}
 			self::send_confirm_link( $row );
 		} elseif ( 'welcome' === $kind ) {
+			global $wpdb;
+			$chosen = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT welcome FROM ' . LLD_Members_Schema::table( 'email_pref' ) . ' WHERE member_id = %d', (int) $row->id ) );
+			if ( 1 !== $chosen ) {
+				return new WP_Error( 'lld_admin_resend', 'This member has not chosen to get the welcome email, so it can\'t be resent.' );
+			}
 			$subjects = LLD_Members_Programme::mail_kinds();
 			$link     = home_url( '/members/home/' );
 			wp_mail( $email, $subjects['welcome'] ?? 'Welcome', LLD_Members_Programme::mail_body( 'welcome', $link, LLD_Members_Programme::unsub_link( (int) $row->id, 'welcome' ) ) );

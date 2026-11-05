@@ -114,10 +114,13 @@ class LLD_Members_Features {
 	 * @param int $member_id Member number; 0 for the signed-in member.
 	 */
 	public static function is_test_account( $member_id = 0 ) {
-		if ( $member_id < 1 && class_exists( 'LLD_Members_Access' ) ) {
+		$own = $member_id < 1;
+		if ( $own && class_exists( 'LLD_Members_Access' ) ) {
 			$member_id = LLD_Members_Access::own_member_id();
 		}
-		if ( current_user_can( 'manage_options' ) ) {
+		// The Owner counts as a test account for their own requests. When a member number is named, that member decides,
+		// so an Owner acting in the admin panel on an ordinary member never makes that member a test account (P3-87).
+		if ( current_user_can( 'manage_options' ) && ( $own || ( class_exists( 'LLD_Members_Access' ) && (int) $member_id === (int) LLD_Members_Access::own_member_id() ) ) ) {
 			return true;
 		}
 		if ( $member_id < 1 ) {
@@ -192,7 +195,7 @@ class LLD_Members_Features {
 					'target' => $feature,
 					'before' => $before,
 					'after'  => $state,
-					'reason' => $note,
+					'reason' => '' !== $note ? $note : 'no note given',
 				)
 			);
 		}

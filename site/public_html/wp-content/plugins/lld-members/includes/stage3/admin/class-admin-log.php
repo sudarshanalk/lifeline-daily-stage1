@@ -142,7 +142,8 @@ class LLD_Members_Admin_Log {
 		$table = LLD_Members_Schema::table( 'admin_log' );
 		$cols  = 'id, action, member_number, detail, created_at, admin_user_id, target, before_state, after_state, reason';
 		if ( current_user_can( 'manage_options' ) ) {
-			return (array) $wpdb->get_results( $wpdb->prepare( "SELECT {$cols} FROM {$table} WHERE admin_user_id IS NOT NULL ORDER BY id DESC LIMIT %d OFFSET %d", (int) $limit, (int) $offset ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			// Stage 2 lines (refunds, prices, codes, rewards, approvals, preview) have no admin_user_id: shown as Stage 2 records.
+			return (array) $wpdb->get_results( $wpdb->prepare( "SELECT {$cols} FROM {$table} ORDER BY id DESC LIMIT %d OFFSET %d", (int) $limit, (int) $offset ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
 		return (array) $wpdb->get_results( $wpdb->prepare( "SELECT {$cols} FROM {$table} WHERE admin_user_id = %s ORDER BY id DESC LIMIT %d OFFSET %d", (string) get_current_user_id(), (int) $limit, (int) $offset ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
@@ -153,6 +154,9 @@ class LLD_Members_Admin_Log {
 	 * @param string $actor admin_user_id value.
 	 */
 	public static function who( $actor ) {
+		if ( '' === (string) $actor ) {
+			return 'Stage 2 record';
+		}
 		if ( 'cli' === $actor ) {
 			return 'Command line';
 		}
@@ -206,7 +210,7 @@ class LLD_Members_Admin_Log {
 			self::who( (string) $row->admin_user_id ),
 			self::label( (string) $row->action ),
 			null === $row->member_number ? '' : (string) $row->member_number,
-			(string) $row->target,
+			null === $row->admin_user_id ? (string) $row->detail : (string) $row->target,
 			(string) $row->before_state,
 			(string) $row->after_state,
 			(string) $row->reason,
