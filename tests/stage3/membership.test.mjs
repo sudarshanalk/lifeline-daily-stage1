@@ -35,7 +35,7 @@ class LLD_Members_Schema { static function table($s) { return 'wp_lld_' . $s; } 
 class LLD_Members_Stage3_Schema { static function table($s) { return 'wp_lld_' . $s; } }
 class LLD_Members_Programme { static function local_today($m) { return $GLOBALS['today']; } }
 class LLD_Members_Stripe { static function try_again_message() { return 'Please try again.'; } }
-class LLD_Members_Stripe_API { static function on($m = 0) { return false; } }
+class LLD_Members_Stripe_API { static function on($m = 0) { return $GLOBALS['stripe_on'] ?? false; } }
 class LLD_Members_Billing {
   static $sub = null; static $prices = ['monthly' => 999, 'yearly' => 6999];
   static function paid_state($m) { return $GLOBALS['premium']; }
@@ -405,4 +405,126 @@ test('TC-FR3-65-AS-01 (pause, undo, pause again): each pause reaches Stripe, wit
   expect(out.map((s) => s[2])).toEqual(['', '', '']);
   expect(new URLSearchParams(out[1][1]).get('pause_collection')).toBe('');
   expect(new URLSearchParams(out[2][1]).get('pause_collection[behavior]')).toBe('void');
+});
+
+// --- Managed Payments wording and the pause emails (P3-90 review, Owner question 70) ------------------------------
+
+test('TC-FR3-62-AS-05: the pricing page shows the line Prices in US$; your bank or Stripe may convert', () => {
+  const out = php(`${stubs}
+    $on = apply_filters('lld_members_pricing_note', '', LLD_Members_Membership::LAUNCH);
+    LLD_Members_Features::$off = ['prices_launch'];
+    echo json_encode(['on' => $on, 'off' => apply_filters('lld_members_pricing_note', '', LLD_Members_Membership::LAUNCH)]);`);
+  expect(out.on).toContain('Prices in US$; your bank or Stripe may convert.');
+  expect(out.off).toBe('');
+  // The note sits on the pricing page itself, under the two plans.
+  const billing = src('includes/class-billing.php');
+  const pricing = billing.slice(billing.indexOf('public static function pricing('), billing.indexOf('private static function pricing_features('));
+  expect(pricing).toContain("apply_filters( 'lld_members_pricing_note', '', $prices )");
+});
+
+test('TC-FR3-62-AS-06: with Managed Payments the payment email says the receipt comes from Onelink, without the words Your receipt', () => {
+  const out = php(`${stubs}
+    $stage2 = apply_filters('lld_members_receipt_mail', ['subject' => 'Your receipt', 'body' => 'Your receipt. Amount US$9.99, tax included. Date 2027-03-10.'], 5, 'US$9.99', '2027-03-10');
+    $GLOBALS['stripe_on'] = true;
+    $managed = apply_filters('lld_members_receipt_mail', ['subject' => 'Your receipt', 'body' => 'Your receipt. Amount US$9.99, tax included. Date 2027-03-10.'], 5, 'US$9.99', '2027-03-10');
+    echo json_encode(['stage2' => $stage2, 'managed' => $managed]);`);
+  expect(out.stage2.subject).toBe('Your receipt');
+  expect(out.managed.subject).toBe('Your Premium payment is confirmed');
+  expect(out.managed.body).toContain('The receipt comes in a separate email from Onelink');
+  expect(out.managed.body).toContain('US$9.99, tax included, on 10 March 2027');
+  expect(`${out.managed.subject} ${out.managed.body}`.toLowerCase()).not.toContain('your receipt');
+  // Both Stage 2 payment emails (first payment and renewal) go through the one filtered sender.
+  const billing = src('includes/class-billing.php');
+  expect(billing.match(/self::receipt_mail\( \$member_id, /g)).toHaveLength(2);
+  expect(billing).not.toMatch(/mail_member\( \$member_id, 'Your receipt'/);
+});
+
+const mailStubs = `${stubs}
+class MailDb extends FakeDb { public $claims = []; public $rows = [];
+  function get_row($q) { if (strpos($q, 'first_name FROM') !== false) { return (object) ['email' => 'member@example.test', 'first_name' => 'Sam']; } return parent::get_row($q); }
+  function get_results($q) { return $this->pause ? [(object) $this->pause] : []; }
+  function query($q) { return 0; }
+}
+$GLOBALS['wpdb'] = new MailDb(); $GLOBALS['sent'] = [];
+function is_email($e) { return strpos((string) $e, '@') !== false; }
+function wp_mail($to, $s, $b) { $GLOBALS['sent'][] = $s; return true; }
+// The claim: the first INSERT IGNORE for a key inserts one row, later ones none.
+class ClaimDb extends MailDb { function prepare($q, ...$a) { return $q . '|' . implode('|', $a); }
+  function query($q) { if (strpos($q, 'INSERT IGNORE') === 0) { $k = explode('|', $q)[2]; if (isset($this->claims[$k])) { return 0; } $this->claims[$k] = 1; return 1; } return 0; } }
+$GLOBALS['dbclass'] = 'ClaimDb'; $GLOBALS['wpdb'] = new ClaimDb();
+`;
+
+test('TC-FR3-65-AS-01 (emails): EM-31 when the pause starts, EM-32 seven days before it ends, EM-33 after the first payment, each once', () => {
+  const out = php(`${mailStubs}
+    $GLOBALS['wpdb']->pause = ['id' => 7, 'member_id' => 5, 'months' => 1, 'starts_at' => '2027-03-10', 'ends_at' => '2027-04-10', 'status' => 'scheduled', 'subscription_ref' => 'sub_TEST1'];
+    $log = [];
+    foreach (['2027-03-09', '2027-03-10', '2027-03-11', '2027-04-02', '2027-04-03', '2027-04-04'] as $d) { $GLOBALS['today'] = $d; $GLOBALS['sent'] = []; LLD_Members_Pause::daily_mail(); $log[$d] = $GLOBALS['sent']; }
+    $GLOBALS['today'] = '2027-04-10'; $GLOBALS['sent'] = [];
+    LLD_Members_Pause::on_event('upgraded', 5, []); LLD_Members_Pause::on_event('renewed', 5, []); LLD_Members_Pause::on_event('renewed', 5, []);
+    $log['renewed'] = $GLOBALS['sent'];
+    $copy = LLD_Members_Pause::mail_copy('started', 'Sam', (object) $GLOBALS['wpdb']->pause, 'US$7.99');
+    echo json_encode(['log' => $log, 'copy' => $copy]);`);
+  expect(out.log).toEqual({
+    '2027-03-09': [],
+    '2027-03-10': ['Your Premium pause has started'],
+    '2027-03-11': [],
+    '2027-04-02': [],
+    '2027-04-03': ['Your Premium returns on 10 April 2027'],
+    '2027-04-04': [],
+    renewed: ['Welcome back to Premium'],
+  });
+  // The member's own price, and nothing about their health.
+  expect(out.copy.body).toContain('Hi Sam,');
+  expect(out.copy.body).toContain('until 10 April 2027');
+  expect(out.copy.body).toContain('at your current price of US$7.99 a month, tax included');
+  expect(out.copy.body).toContain('Nothing is deleted.');
+  // Members cannot end a running pause themselves, so EM-31 does not offer it (Owner question 119).
+  expect(out.copy.body).not.toContain('end the pause early');
+});
+
+test('TC-FR3-65-AS-06 (emails): no pause email once Premium is not coming back, and none for an undone pause', () => {
+  const out = php(`${mailStubs}
+    $r = [];
+    foreach (['cancelled', 'Premium ended', 'Refunded', 'Free'] as $state) {
+      $GLOBALS['wpdb'] = new $GLOBALS['dbclass']();
+      $GLOBALS['wpdb']->pause = ['id' => 9, 'member_id' => 5, 'months' => 1, 'starts_at' => '2027-03-10', 'ends_at' => '2027-04-10', 'status' => 'active', 'subscription_ref' => 'sub_TEST1'];
+      LLD_Members_Billing::$sub = sub('monthly', $state, '2027-03-10');
+      $GLOBALS['sent'] = [];
+      foreach (['2027-03-10', '2027-04-03'] as $d) { $GLOBALS['today'] = $d; LLD_Members_Pause::daily_mail(); }
+      $r[$state] = $GLOBALS['sent'];
+    }
+    // An undone pause, even if a query ever returned it.
+    $GLOBALS['wpdb'] = new $GLOBALS['dbclass']();
+    $GLOBALS['wpdb']->pause = ['id' => 10, 'member_id' => 5, 'months' => 1, 'starts_at' => '2027-03-10', 'ends_at' => '2027-04-10', 'status' => 'cancelled', 'subscription_ref' => 'sub_TEST1'];
+    LLD_Members_Billing::$sub = sub('monthly'); $GLOBALS['sent'] = []; $GLOBALS['today'] = '2027-03-10'; LLD_Members_Pause::daily_mail();
+    $r['undone'] = $GLOBALS['sent'];
+    echo json_encode($r);`);
+  expect(out).toEqual({ cancelled: [], 'Premium ended': [], Refunded: [], Free: [], undone: [] });
+});
+
+test('TC-FR3-65-AS-01 (email timing): EM-31 is not sent late, EM-33 allows Stripe charging the evening before, and not weeks later', () => {
+  const out = php(`${mailStubs}
+    $GLOBALS['wpdb']->pause = ['id' => 11, 'member_id' => 5, 'months' => 2, 'starts_at' => '2027-03-10', 'ends_at' => '2027-05-10', 'status' => 'active', 'subscription_ref' => 'sub_TEST1'];
+    // First run after deploy finds a pause that started a week ago: no "paused from today" email, now or later.
+    $GLOBALS['today'] = '2027-03-17'; LLD_Members_Pause::daily_mail(); $GLOBALS['today'] = '2027-03-18'; LLD_Members_Pause::daily_mail();
+    $late = $GLOBALS['sent'];
+    $GLOBALS['sent'] = []; $GLOBALS['today'] = '2027-05-09'; LLD_Members_Pause::on_event('renewed', 5, []);
+    $early = $GLOBALS['sent'];
+    $GLOBALS['wpdb']->pause['id'] = 12; $GLOBALS['sent'] = []; $GLOBALS['today'] = '2027-05-18'; LLD_Members_Pause::on_event('renewed', 5, []);
+    echo json_encode(['late' => $late, 'early' => $early, 'weeks' => $GLOBALS['sent']]);`);
+  expect(out.late).toEqual([]);
+  expect(out.early).toEqual(['Welcome back to Premium']);
+  expect(out.weeks).toEqual([]);
+});
+
+test('TC-FR3-65-AS-06 (emails): no pause email once the plan is cancelled or the pause belongs to an older subscription', () => {
+  const out = php(`${mailStubs}
+    $GLOBALS['wpdb']->pause = ['id' => 8, 'member_id' => 5, 'months' => 1, 'starts_at' => '2027-03-10', 'ends_at' => '2027-04-10', 'status' => 'active', 'subscription_ref' => 'sub_TEST1'];
+    LLD_Members_Billing::$sub = sub('monthly', 'cancelled', '2027-04-10');
+    $GLOBALS['today'] = '2027-04-05'; LLD_Members_Pause::daily_mail();
+    $cancelled = $GLOBALS['sent'];
+    LLD_Members_Billing::$sub = sub('monthly'); LLD_Members_Billing::$sub->stripe_subscription = 'sub_NEW';
+    LLD_Members_Pause::daily_mail(); $GLOBALS['today'] = '2027-04-10'; LLD_Members_Pause::on_event('renewed', 5, []);
+    echo json_encode(['cancelled' => $cancelled, 'other' => $GLOBALS['sent']]);`);
+  expect(out).toEqual({ cancelled: [], other: [] });
 });

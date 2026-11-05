@@ -34,6 +34,8 @@ class LLD_Members_Pause {
 		add_filter( 'lld_members_cancel_offer', array( __CLASS__, 'cancel_offer' ), 10, 3 );
 		add_filter( 'lld_members_can_switch_yearly', array( __CLASS__, 'can_switch_yearly' ), 20, 2 );
 		add_action( 'lld_members_subscription_post', array( __CLASS__, 'post' ), 10, 2 );
+		add_action( 'lld_members_daily', array( __CLASS__, 'daily_mail' ) );
+		add_action( 'lld_members_event', array( __CLASS__, 'on_event' ), 10, 3 );
 	}
 
 	/**
@@ -373,6 +375,141 @@ class LLD_Members_Pause {
 	 */
 	private static function months_text( $months ) {
 		return 1 === (int) $months ? '1 month' : (int) $months . ' months';
+	}
+
+	/**
+	 * Daily: EM-31 on the day the pause starts and EM-32 seven days before it ends (FR3-65), once each. Both say
+	 * Premium returns, so they go only while the plan is still Premium: a pause that was undone, or a plan that was
+	 * cancelled, refunded or ended (Stage 2 access states other than Premium), gets neither. EM-31 says "from
+	 * today", so a pause found more than a day after it started (a missed run, or pauses already running when
+	 * this was deployed) is marked as told without an email.
+	 */
+	public static function daily_mail() {
+		global $wpdb;
+		$soon = gmdate( 'Y-m-d', time() + 2 * DAY_IN_SECONDS );
+		$past = gmdate( 'Y-m-d', time() - 2 * DAY_IN_SECONDS );
+		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT * FROM ' . LLD_Members_Stage3_Schema::table( 'pauses' ) . " WHERE status IN ('scheduled', 'active') AND starts_at <= %s AND ends_at >= %s", $soon, $past ) );
+		foreach ( (array) $rows as $pause ) {
+			$member_id = (int) $pause->member_id;
+			if ( ! in_array( (string) $pause->status, array( 'scheduled', 'active' ), true ) || ! self::on( $member_id ) ) {
+				continue;
+			}
+			$sub = LLD_Members_Billing::subscription_for( $member_id );
+			if ( ! self::same_subscription( $pause, $sub ) || 'premium' !== strtolower( (string) $sub->access_state ) ) {
+				continue;
+			}
+			$today = LLD_Members_Programme::local_today( $member_id );
+			if ( $today < (string) $pause->starts_at || $today >= (string) $pause->ends_at ) {
+				continue;
+			}
+			self::send( $pause, 'started', $sub, $today > self::shift( (string) $pause->starts_at, 1 ) );
+			if ( $today >= self::shift( (string) $pause->ends_at, -7 ) ) {
+				self::send( $pause, 'ending', $sub );
+			}
+		}
+	}
+
+	/**
+	 * EM-33 when the first payment after a pause goes through (the Stage 2 'renewed' event). If that payment
+	 * fails, the Stage 2 failed-payment email is sent instead (TC-FR3-65-AS-04).
+	 *
+	 * @param string $event     Event name.
+	 * @param int    $member_id Member number.
+	 * @param array  $data      Event data.
+	 */
+	public static function on_event( $event, $member_id, $data = array() ) {
+		if ( 'renewed' !== $event || ! self::on( $member_id ) ) {
+			return;
+		}
+		$pause = self::latest( $member_id );
+		$sub   = LLD_Members_Billing::subscription_for( $member_id );
+		if ( ! $pause || ! self::same_subscription( $pause, $sub ) ) {
+			return;
+		}
+		$today = LLD_Members_Programme::local_today( $member_id );
+		// A day early as well: Stripe charges at its own period-end time, which can fall on the evening before
+		// ends_at in the member's time zone.
+		if ( $today >= self::shift( (string) $pause->ends_at, -1 ) && $today <= self::shift( (string) $pause->ends_at, 7 ) ) {
+			self::send( $pause, 'ended', $sub );
+		}
+	}
+
+	/**
+	 * The approved wording of EM-31, EM-32 and EM-33 (02 Content/Programme content/emails/stage3-emails.md,
+	 * approved 3 Nov 2026). The amount is the member's own monthly price (EM-Q6, default a).
+	 * EM-31 leaves out 'You can end the pause early in My subscription': members cannot end a running pause
+	 * themselves (Owner questions 114 and 119).
+	 *
+	 * @param string $kind       started, ending or ended.
+	 * @param string $first_name Member's first name.
+	 * @param object $pause      Pause row.
+	 * @param string $amount     The member's monthly price, formatted.
+	 * @return array{subject:string,body:string}
+	 */
+	public static function mail_copy( $kind, $first_name, $pause, $amount ) {
+		$hi  = 'Hi ' . ( '' !== trim( $first_name ) ? trim( $first_name ) : 'there' ) . ',';
+		$end = self::day( (string) $pause->ends_at );
+		$sub = home_url( '/members/subscription/' );
+		if ( 'started' === $kind ) {
+			return array(
+				'subject' => 'Your Premium pause has started',
+				'body'    => $hi . "\n\nYour Premium membership is paused from today until " . $end . ". There's no charge while you're paused, and you have Free access in the meantime."
+					. "\n\nNothing is deleted. Your logs, saved results, custom foods and recipes are all kept, and everything comes back as it was when Premium returns."
+					. "\n\nPremium returns automatically on " . $end . ' at your current price of ' . $amount . ' a month, tax included.'
+					. "\n\nManage my subscription: " . $sub,
+			);
+		}
+		if ( 'ending' === $kind ) {
+			return array(
+				'subject' => 'Your Premium returns on ' . $end,
+				'body'    => $hi . "\n\nYour pause ends on " . $end . '. Premium returns automatically that day, and your card will be charged ' . $amount . ' a month, tax included, at your current price.'
+					. "\n\nIf you'd like to continue, there's nothing to do. If you'd rather not, you can cancel in My subscription before " . $end . '.'
+					. "\n\nManage my subscription: " . $sub,
+			);
+		}
+		return array(
+			'subject' => 'Welcome back to Premium',
+			'body'    => $hi . "\n\nYour pause has ended and Premium is back. Your full plan, insights, meal plans, workouts, reminders and history are all available again, exactly as you left them."
+				. "\n\nYour receipt for today's payment is in a separate email."
+				. "\n\nGo to my dashboard: " . home_url( '/members/home/' ),
+		);
+	}
+
+	/**
+	 * Send one pause email, once per pause and kind (claimed in the Stage 2 mail_sent table).
+	 *
+	 * @param object      $pause Pause row.
+	 * @param string      $kind  started, ending or ended.
+	 * @param object|null $sub   Stage 2 subscription row.
+	 * @param bool        $quiet Claim it without sending (too late to say "from today").
+	 */
+	private static function send( $pause, $kind, $sub, $quiet = false ) {
+		global $wpdb;
+		$member_id = (int) $pause->member_id;
+		$member    = $wpdb->get_row( $wpdb->prepare( 'SELECT email, first_name FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+		if ( ! $member || ! is_email( (string) $member->email ) ) {
+			return false;
+		}
+		$claimed = $wpdb->query( $wpdb->prepare( 'INSERT IGNORE INTO ' . LLD_Members_Schema::table( 'mail_sent' ) . ' (member_id, claim_key, sent_on) VALUES (%d, %s, %s)', $member_id, 'pause:' . (int) $pause->id . ':' . $kind, gmdate( 'Y-m-d' ) ) ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		if ( (int) $claimed < 1 || $quiet ) {
+			return false;
+		}
+		$prices = LLD_Members_Billing::shown_prices();
+		// The member's own monthly price, as EM-Q6 (a) asks; a one-off referral reward on that renewal is not shown.
+		$cents  = $sub && $sub->locked_amount ? (int) $sub->locked_amount : (int) $prices['monthly'];
+		$cur    = $sub && $sub->locked_currency ? (string) $sub->locked_currency : 'usd';
+		$copy   = self::mail_copy( $kind, (string) $member->first_name, $pause, LLD_Members_Membership::money( $cents, $cur ) );
+		return wp_mail( (string) $member->email, $copy['subject'], $copy['body'] . "\n" );
+	}
+
+	/**
+	 * A date moved by whole days.
+	 *
+	 * @param string $date Y-m-d.
+	 * @param int    $days Days, may be negative.
+	 */
+	private static function shift( $date, $days ) {
+		return gmdate( 'Y-m-d', (int) strtotime( $date . ' 00:00:00 UTC' ) + (int) $days * DAY_IN_SECONDS );
 	}
 
 	/**

@@ -404,6 +404,7 @@ class LLD_Members_Billing {
 		$main  .= '<article class="lld-card lld-plan" data-lld-plan="monthly"><p class="lld-plan-name">Monthly</p><p class="lld-plan-price">' . esc_html( self::money( $prices['monthly'], 'usd' ) . ' a month' ) . '</p><p class="lld-plan-tax">tax included</p>';
 		$main  .= '<p class="lld-plan-line">The same Premium content, month by month. Cancel in 3 clicks from My subscription.</p>';
 		$main  .= ( $premium ? '' : lld_button( array( 'label' => 'Choose monthly', 'href' => home_url( '/members/checkout/?plan=monthly' ), 'variant' => 'secondary' ) ) ) . '</article></div>';
+		$main  .= (string) apply_filters( 'lld_members_pricing_note', '', $prices );
 		$main  .= '<p class="lld-plan-intro">Week 1 of every track is free. Premium opens the rest.</p>';
 		$main  .= '<p data-lld-sale-terms><a href="' . esc_url( self::terms_of_sale_url() ) . '">Terms of sale</a>: price, plans, renewal, cancellation, refunds, discounts and referral rewards.</p>';
 		$main  .= self::pricing_features() . self::pricing_questions();
@@ -1845,7 +1846,7 @@ class LLD_Members_Billing {
 		LLD_Members_Programme::premium_restored( $member_id );
 		self::remember_card( $member_id, $fingerprint );
 		self::note_referral( $member_id, isset( $stored['ref'] ) ? (string) $stored['ref'] : '', $email, $fingerprint );
-		self::mail_member( $member_id, 'Your receipt', 'Your receipt. Amount ' . self::money( (int) $quote['charged'], (string) $quote['currency'] ) . ', tax included. Date ' . $today . '.' );
+		self::receipt_mail( $member_id, self::money( (int) $quote['charged'], (string) $quote['currency'] ), $today );
 		if ( self::cancel_was_held( $stripe ) ) {
 			// The subscription ended before its payment notice arrived: T4 maps that to Premium ended.
 			do_action( 'lld_members_event', 'cancelled', $member_id, array() );
@@ -1912,7 +1913,7 @@ class LLD_Members_Billing {
 		do_action( 'lld_members_event', 'renewed', $member_id, array( 'switched' => 'yearly' === $plan && 'yearly' !== (string) $row->plan ) );
 		LLD_Members_Programme::premium_restored( $member_id );
 		self::clear_retry( $member_id );
-		self::mail_member( $member_id, 'Your receipt', 'Your receipt. Amount ' . self::money( $amount, $next['currency'] ) . ', tax included. Date ' . $today . '.' );
+		self::receipt_mail( $member_id, self::money( $amount, $next['currency'] ), $today );
 	}
 
 	/**
@@ -3242,6 +3243,27 @@ class LLD_Members_Billing {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * The email after each payment. Stage 3 changes it when Onelink sends the receipt (FR3-62, Managed Payments).
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $amount    Amount charged, formatted.
+	 * @param string $today     Date Y-m-d.
+	 */
+	private static function receipt_mail( $member_id, $amount, $today ) {
+		$mail = apply_filters(
+			'lld_members_receipt_mail',
+			array(
+				'subject' => 'Your receipt',
+				'body'    => 'Your receipt. Amount ' . $amount . ', tax included. Date ' . $today . '.',
+			),
+			$member_id,
+			$amount,
+			$today
+		);
+		self::mail_member( $member_id, (string) $mail['subject'], (string) $mail['body'] );
 	}
 
 	/**
