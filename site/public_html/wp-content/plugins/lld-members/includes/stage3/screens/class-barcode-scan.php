@@ -47,7 +47,9 @@ class LLD_Members_Barcode_Scan {
 	 */
 	public static function rewrites() {
 		add_rewrite_rule( '^members/food/scan/?$', 'index.php?lld_screen=food-scan', 'top' );
-		if ( get_option( self::OPTION_REWRITE ) !== self::REWRITE_VERSION ) {
+		$rules = get_option( 'rewrite_rules' );
+		// Flushed once per version, and again if another flush dropped the rule (the switch was off at the time).
+		if ( get_option( self::OPTION_REWRITE ) !== self::REWRITE_VERSION || ( is_array( $rules ) && ! isset( $rules['^members/food/scan/?$'] ) ) ) {
 			flush_rewrite_rules( false );
 			update_option( self::OPTION_REWRITE, self::REWRITE_VERSION, true );
 		}
@@ -63,16 +65,31 @@ class LLD_Members_Barcode_Scan {
 		if ( get_option( 'lld_members_closed' ) && ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
-		if ( ! is_user_logged_in() || ! class_exists( 'LLD_Members_Access' ) || LLD_Members_Access::current_member_id() < 1 ) {
+		$signed_in = is_user_logged_in() && class_exists( 'LLD_Members_Access' ) && LLD_Members_Access::current_member_id() > 0;
+		$member_id = $signed_in ? (int) LLD_Members_Access::current_member_id() : 0;
+		// Where the screen does not apply, the address does not exist: a 404 for everyone, signed in or not (NFR3-06).
+		if ( ! LLD_Members_Features::enabled( 'barcode', $member_id ) || ! LLD_Members_Features::enabled( 'food_tracker', $member_id ) || ( $signed_in && '' !== LLD_Members_Access::preview_state() ) ) {
+			self::not_found();
+			return;
+		}
+		if ( ! $signed_in ) {
 			wp_safe_redirect( home_url( '/members/sign-in/?redirect_to=' . rawurlencode( home_url( '/members/food/scan/' ) ) ) );
 			exit;
 		}
-		$member_id = (int) LLD_Members_Access::current_member_id();
-		if ( ! LLD_Members_Features::enabled( 'barcode', $member_id ) || ! LLD_Members_Features::enabled( 'food_tracker', $member_id ) || '' !== LLD_Members_Access::preview_state() ) {
-			return;
-		}
 		self::render( $member_id );
 		exit;
+	}
+
+	/**
+	 * The WordPress "not found" page.
+	 */
+	private static function not_found() {
+		global $wp_query;
+		if ( isset( $wp_query ) && is_object( $wp_query ) ) {
+			$wp_query->set_404();
+		}
+		status_header( 404 );
+		nocache_headers();
 	}
 
 	/**
@@ -89,9 +106,10 @@ class LLD_Members_Barcode_Scan {
 		$words['error']   = 'Something went wrong. Please try again.';
 		// The safety matrix hides calories for some members (FR3-69, 'barcode_calories'): the page then shows no
 		// nutrition for any product it opens, scanned or searched, and "Add this product" asks no calories.
-		$hidden = class_exists( 'LLD_Members_Stage3_Safety' ) && ! empty( LLD_Members_Stage3_Safety::strip_barcode( array( 'found' => false ), $member_id )['nutrition_hidden'] );
+		$flags  = class_exists( 'LLD_Members_Stage3_Safety' ) ? LLD_Members_Stage3_Safety::nutrition_hidden( LLD_Members_Stage3_Safety::applies( $member_id, 'food_tracker' ) ) : array( 'all' => false, 'protein' => false );
+		$hidden = $flags['all'];
 
-		$html  = '<div class="lld-stage3-scan" data-lld-scan data-lld-premium="' . ( $premium ? 'yes' : 'no' ) . '" data-lld-consent="' . ( $consent ? 'yes' : 'no' ) . '" data-lld-hide-nutrition="' . ( $hidden ? 'yes' : 'no' ) . '"';
+		$html  = '<div class="lld-stage3-scan" data-lld-scan data-lld-premium="' . ( $premium ? 'yes' : 'no' ) . '" data-lld-consent="' . ( $consent ? 'yes' : 'no' ) . '" data-lld-hide-nutrition="' . ( $hidden ? 'yes' : 'no' ) . '" data-lld-hide-protein="' . ( $flags['protein'] ? 'yes' : 'no' ) . '"';
 		$html .= ' data-lld-api="' . esc_url( rest_url( 'lld-members/v1/me/' ) ) . '" data-lld-nonce="' . esc_attr( wp_create_nonce( 'wp_rest' ) ) . '"';
 		$html .= ' data-lld-today="' . esc_attr( $today ) . '" data-lld-words="' . esc_attr( (string) wp_json_encode( $words ) ) . '">';
 		$html .= '<h1>Scan a barcode</h1>';

@@ -190,6 +190,28 @@ test('TC-FR3-37-AS-03 camera refused: typed search still works and a short messa
   expect(screen.indexOf('data-lld-food-search-form')).toBeGreaterThan(screen.indexOf('lld_membership_lock'));
 });
 
+test('TC-FR3-63-AS-04 the members\' interface refuses a Free member the barcode lookup with an upgrade answer, for every method', () => {
+  const tiers = resolve(plugin, 'includes/stage3/class-access-tiers.php');
+  const run = (premium, method) => JSON.parse(execFileSync('php', ['-d', 'display_errors=stderr', '-r', `define('ABSPATH', '/');
+    class LLD_Members_Features { static function enabled($f, $m = 0) { return true; } }
+    class LLD_Members_Billing { static function has_premium($m) { return ${premium ? 'true' : 'false'}; } }
+    class WP_REST_Response { public $data; public $status; function __construct($d, $s) { $this->data = $d; $this->status = $s; } }
+    function home_url($p = '') { return 'https://example.test' . $p; }
+    class Req { function get_method() { return '${method}'; } }
+    require ${toPhpPath(tiers)};
+    $r = LLD_Members_Access_Tiers::api_refuse(null, 'food-barcode', 5, new Req());
+    $other = LLD_Members_Access_Tiers::api_refuse(null, 'food-search', 5, new Req());
+    echo json_encode(['r' => $r ? ['status' => $r->status, 'data' => $r->data] : null, 'search' => $other ? $other->status : null]);`], { encoding: 'utf8' }));
+  for (const method of ['GET', 'HEAD', 'POST']) {
+    const free = run(false, method);
+    expect(free.r.status).toBe(403);
+    expect(free.r.data).toMatchObject({ upgrade: true, feature: 'barcode', message: 'Barcode scanning is part of Premium.' });
+    expect(free.r.data.upgrade_url).toMatch(/^https:\/\/example\.test\//);
+    expect(free.search).toBe(null); // typed food search stays open to Free members
+    expect(run(true, method).r).toBe(null);
+  }
+});
+
 test('TC-FR3-63-AS-04 barcode scanning is Premium: a Free member gets the explanation and an upgrade link, never an error', () => {
   const tiers = readFileSync(resolve(plugin, 'includes/stage3/class-access-tiers.php'), 'utf8');
   expect(tiers).toMatch(/PREMIUM_TYPES = array\(\s*'food-barcode' => 'barcode'/);
@@ -222,4 +244,33 @@ test('TC-FR3-69-AS-03 kidney disease: a scanned product shows no protein figure'
   const r = php(`LLD_Members_Stage3_Safety::barcode_shown(LLD_Members_Barcode::lookup([$bar], [], 5, '2000000000015'), LLD_Members_Stage3_Safety::combine(['kidney'], 'food_tracker'))`);
   expect(r.food.per.protein_g).toBe(null);
   expect(r.food.per.kcal).toBe(400);
+  expect(r.protein_hidden).toBe(true);
+  // The page leaves the protein row out altogether for such a member.
+  expect(script).toMatch(/n\[0\] === 'protein_g' && \(hideProtein \|\| food\.protein_hidden\)\) return;/);
+});
+
+test('TC-FR3-69-AS-02 food search results carry no calorie or nutrient numbers for an eating-disorder member, and no protein for kidney disease', () => {
+  const hits = `['enabled'=>true,'foods'=>[['id'=>7,'name'=>'Test oat bar','food_kind'=>'food','portion'=>['name'=>'1 bar (40 g)','grams'=>40],'kcal'=>160,'protein_g'=>4,'carb_g'=>24,'fat_g'=>4.8,'fibre_g'=>3.2]]]`;
+  const ed = php(`LLD_Members_Stage3_Safety::search_shown(${hits}, LLD_Members_Stage3_Safety::combine(['eating_disorder'], 'food_tracker'))`);
+  expect(ed.foods[0].name).toBe('Test oat bar');
+  for (const k of ['kcal', 'protein_g', 'carb_g', 'fat_g', 'fibre_g']) expect(ed.foods[0][k]).toBe(null);
+  expect(ed.foods[0].nutrition_hidden).toBe(true);
+  const kidney = php(`LLD_Members_Stage3_Safety::search_shown(${hits}, LLD_Members_Stage3_Safety::combine(['kidney'], 'food_tracker'))`);
+  expect(kidney.foods[0].protein_g).toBe(null);
+  expect(kidney.foods[0].kcal).toBe(160);
+  const none = php(`LLD_Members_Stage3_Safety::search_shown(${hits}, LLD_Members_Stage3_Safety::combine([], 'food_tracker'))`);
+  expect(none.foods[0].kcal).toBe(160);
+  expect(none.foods[0].protein_g).toBe(4);
+  // The interface filter sends food-search and food-barcode through these rules.
+  const safety = readFileSync(resolve(plugin, 'includes/stage3/class-safety-stage3.php'), 'utf8');
+  expect(safety).toMatch(/'food-search' === \$type[^\n]*\n\s*return self::search_shown\( \$rows, self::applies\( \$member_id, 'food_tracker' \) \);/);
+  expect(safety).toMatch(/'food-barcode' === \$type \) \{\n\s*return self::strip_barcode\( \$rows, \$member_id \);/);
+  // The page takes the server's flag, not a missing calorie value.
+  expect(script).toContain('nutrition_hidden: !!hit.nutrition_hidden');
+});
+
+test('TC-FR3-37-AS-02 a barcode typed with spaces into a custom food is stored as digits, so a scan finds it', () => {
+  const api = readFileSync(resolve(plugin, 'includes/stage3/class-api.php'), 'utf8');
+  expect(api.match(/\$clean = self::barcode_digits\( \$def, \$clean \);/g)).toHaveLength(2); // create and change
+  expect(api).toMatch(/function barcode_digits[\s\S]{0,400}preg_replace\( '\/\\D\/', '', \(string\) \$clean\['barcode'\] \)/);
 });

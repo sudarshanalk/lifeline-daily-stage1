@@ -429,6 +429,7 @@
     var today = page.getAttribute('data-lld-today') || '';
     var consent = page.getAttribute('data-lld-consent') === 'yes';
     var hideAll = page.getAttribute('data-lld-hide-nutrition') === 'yes';
+    var hideProtein = page.getAttribute('data-lld-hide-protein') === 'yes';
     var words = {};
     try {
       words = JSON.parse(page.getAttribute('data-lld-words') || '{}');
@@ -640,6 +641,7 @@
         body.textContent = '';
         [['kcal', 'Calories', ' kcal', 0], ['protein_g', 'Protein', ' g', 1], ['carb_g', 'Carbohydrate', ' g', 1], ['fat_g', 'Fat', ' g', 1], ['fibre_g', 'Fibre', ' g', 1]].forEach(function (n) {
           var v = food.per ? food.per[n[0]] : null;
+          if (n[0] === 'protein_g' && (hideProtein || food.protein_hidden)) return; // no protein figure where the matrix hides it
           var tr = el('tr', { 'data-lld-nutrient': n[0] });
           tr.appendChild(el('th', { scope: 'row' }, n[1]));
           tr.appendChild(el('td', {}, v === null || v === undefined ? 'Not known' : round(v * f, n[3]) + n[2]));
@@ -753,7 +755,10 @@
     }
 
     function lookup(code) {
-      if (busy) return;
+      if (busy) {
+        say(status, 'Still looking up the last barcode. Try again in a moment.');
+        return;
+      }
       busy = true;
       say(status, 'Looking up ' + code + '…');
       call('GET', 'food-barcode?code=' + encodeURIComponent(code)).then(function (res) {
@@ -766,7 +771,10 @@
         }
         say(status, '');
         page.setAttribute('data-lld-barcode', d.barcode || code);
-        if (d.found && d.food) show(productCard(d.food, d.note || '', hideAll || !!d.nutrition_hidden));
+        if (d.found && d.food) {
+          d.food.protein_hidden = !!d.protein_hidden;
+          show(productCard(d.food, d.note || '', hideAll || !!d.nutrition_hidden));
+        }
         else show(addProductCard(d.barcode || code, hideAll || !!d.nutrition_hidden));
       }).catch(function () {
         busy = false;
@@ -799,7 +807,7 @@
       return {
         food_id: hit.id, food_kind: hit.food_kind || 'food', name: hit.name, brand: hit.brand || '', basis_grams: grams, default_grams: grams, portions: portions,
         per: { kcal: hit.kcal, protein_g: hit.protein_g, carb_g: hit.carb_g, fat_g: hit.fat_g, fibre_g: hit.fibre_g },
-        nutrition_hidden: hit.kcal === null || hit.kcal === undefined,
+        nutrition_hidden: !!hit.nutrition_hidden, // the server's flag (safety matrix); a food with no kcal still shows the rest
         source_name: hit.source_name || '', attribution: hit.attribution || '', from: 'search'
       };
     }

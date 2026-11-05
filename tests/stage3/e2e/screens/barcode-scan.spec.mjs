@@ -168,11 +168,17 @@ test.describe.serial('P3-44 barcode scanning in the browser', () => {
     const email = emailFor('scan');
     await createMember(page.request, { email, password, first_name: 'Sam', health_consent: true, consents: ['terms'] });
     await signIn(page, email, password);
-    await page.goto('/members/food/scan/');
+    const res0 = await page.goto('/members/food/scan/');
+    expect(res0.status()).toBe(404);
     await expect(page.locator('[data-lld-scan]')).toHaveCount(0);
     await page.goto('/members/home/');
     const nonce = await restNonce(page);
     const res = await page.request.get(`/wp-json/lld-members/v1/me/food-barcode?code=${KNOWN}`, { headers: { 'X-WP-Nonce': nonce } });
     expect(res.status()).toBe(404);
+    // Signed out, the address is not there either: no sign-in redirect that would show it exists.
+    await page.context().clearCookies();
+    const out = await page.goto('/members/food/scan/');
+    expect(out.status()).toBe(404);
+    expect(new URL(page.url()).pathname).toBe('/members/food/scan/');
   });
 });

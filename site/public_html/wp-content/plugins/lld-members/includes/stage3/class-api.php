@@ -862,6 +862,21 @@ class LLD_Members_Stage3_API {
 	}
 
 	/**
+	 * A custom food's barcode is stored as digits only, so a scan finds it however it was typed (P3-44).
+	 *
+	 * @param array<string,mixed> $def   Type definition.
+	 * @param array<string,mixed> $clean Validated fields.
+	 * @return array<string,mixed>
+	 */
+	private static function barcode_digits( array $def, array $clean ) {
+		if ( 'custom_foods' === $def['table'] && array_key_exists( 'barcode', $clean ) && null !== $clean['barcode'] ) {
+			$digits           = preg_replace( '/\D/', '', (string) $clean['barcode'] );
+			$clean['barcode'] = is_string( $digits ) && '' !== $digits ? $digits : null;
+		}
+		return $clean;
+	}
+
+	/**
 	 * The reading type asked for in the query string (?type=weight). Never get_param( 'type' ): with no query value it
 	 * falls back to the route's own {type} ("readings"), which matches no reading and empties every list.
 	 *
@@ -956,6 +971,7 @@ class LLD_Members_Stage3_API {
 		if ( $clean instanceof WP_REST_Response ) {
 			return $clean;
 		}
+		$clean = self::barcode_digits( $def, $clean );
 		if ( 'calculator_result' === $def['table'] ) {
 			// Keep sealed fields validate may have dropped when the body used engine_version.
 			foreach ( array( 'inputs', 'result', 'saved_at', 'calculator_version' ) as $keep ) {
@@ -1105,6 +1121,7 @@ class LLD_Members_Stage3_API {
 		if ( $clean instanceof WP_REST_Response ) {
 			return $clean;
 		}
+		$clean = self::barcode_digits( $def, $clean );
 		if ( ! $clean ) {
 			return self::refuse( 400, 'Nothing to change.' );
 		}

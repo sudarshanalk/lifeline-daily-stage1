@@ -573,6 +573,9 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 		if ( 'food-barcode' === $type ) {
 			return self::strip_barcode( $rows, $member_id );
 		}
+		if ( 'food-search' === $type && isset( $rows['foods'] ) && is_array( $rows['foods'] ) ) {
+			return self::search_shown( $rows, self::applies( $member_id, 'food_tracker' ) );
+		}
 		if ( ! in_array( $type, array( 'food-log', 'food-recent', 'recipes', 'custom-foods', 'targets', 'plans' ), true ) ) {
 			return $rows;
 		}
@@ -617,6 +620,50 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 	}
 
 	/**
+	 * What the matrix hides of a food's nutrition: everything ('barcode_calories' or 'calories', eating disorder) or
+	 * only protein (the protein target, kidney disease). The scan page reads this too.
+	 *
+	 * @param array<string,mixed> $a applies() or combine() for food_tracker.
+	 * @return array{all:bool,protein:bool}
+	 */
+	public static function nutrition_hidden( array $a ) {
+		if ( empty( $a['active'] ) ) {
+			return array( 'all' => false, 'protein' => false );
+		}
+		$all = in_array( 'barcode_calories', $a['hidden'], true ) || in_array( 'calories', $a['hidden'], true );
+		return array( 'all' => $all, 'protein' => $all || in_array( 'protein_target', $a['hidden'], true ) );
+	}
+
+	/**
+	 * Food search hits (P3-41, read by the P3-44 scan page): the same hiding as a scanned product, so the numbers
+	 * never leave the server for a member the matrix covers (FR3-69 AS-02).
+	 *
+	 * @param array<string,mixed> $rows { enabled, foods }.
+	 * @param array<string,mixed> $a    applies() or combine() for food_tracker.
+	 * @return array<string,mixed>
+	 */
+	public static function search_shown( array $rows, array $a ) {
+		$h = self::nutrition_hidden( $a );
+		if ( ! $h['all'] && ! $h['protein'] ) {
+			return $rows;
+		}
+		foreach ( $rows['foods'] as $i => $food ) {
+			if ( ! is_array( $food ) ) {
+				continue;
+			}
+			foreach ( $h['all'] ? array( 'kcal', 'protein_g', 'carb_g', 'fat_g', 'fibre_g' ) : array( 'protein_g' ) as $key ) {
+				if ( array_key_exists( $key, $food ) ) {
+					$rows['foods'][ $i ][ $key ] = null;
+				}
+			}
+			if ( $h['all'] ) {
+				$rows['foods'][ $i ]['nutrition_hidden'] = true;
+			}
+		}
+		return $rows;
+	}
+
+	/**
 	 * The rule itself, without WordPress, for tests.
 	 *
 	 * @param array<string,mixed> $result Lookup result.
@@ -627,15 +674,19 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 		if ( empty( $a['active'] ) || isset( $result['error'] ) ) {
 			return $result;
 		}
-		$hide_all = in_array( 'barcode_calories', $a['hidden'], true ) || in_array( 'calories', $a['hidden'], true );
+		$h        = self::nutrition_hidden( $a );
+		$hide_all = $h['all'];
 		if ( $hide_all ) {
 			$result['nutrition_hidden'] = true; // also when nothing was found: "Add this product" then asks no calories
+		}
+		if ( $h['protein'] ) {
+			$result['protein_hidden'] = true;
 		}
 		if ( empty( $result['food']['per'] ) || ! is_array( $result['food']['per'] ) ) {
 			return $result;
 		}
 		foreach ( array_keys( $result['food']['per'] ) as $key ) {
-			if ( $hide_all || ( 'protein_g' === $key && in_array( 'protein_target', $a['hidden'], true ) ) ) {
+			if ( $hide_all || ( 'protein_g' === $key && $h['protein'] ) ) {
 				$result['food']['per'][ $key ] = null;
 			}
 		}
