@@ -13,7 +13,9 @@ test.use({ viewport: { width: 360, height: 800 } });
 const box = async (locator) => { const b = await locator.boundingBox(); return { w: Math.round(b.width), h: Math.round(b.height) }; };
 
 test('TC-NFR3-12-AS-02 lead files: the stand-alone links under the sign-in forms are 44 px tall', async ({ page }) => {
-  for (const path of ['/members/sign-in/', '/members/sign-in/?code=1']) {
+  // CI keeps sign_in_code at test_accounts, where the plain address is Stage 2's screen; ?everywhere=1 and ?code=1 open the
+  // Stage 3 forms (staging and launch are all on, so members always see these)
+  for (const path of ['/members/sign-in/?everywhere=1', '/members/sign-in/?code=1']) {
     await page.goto(path);
     const links = page.locator('.lld-link-row a');
     const count = await links.count();
