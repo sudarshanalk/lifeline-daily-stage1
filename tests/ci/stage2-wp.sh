@@ -38,7 +38,9 @@ wp lld-members db-update --path="$DIR"
 # screens: the two listed test members and the owner admin (an admin is always a test account, so it sees every
 # Stage 3 screen whose switch is at test_accounts). Every other Stage 2 member stays exactly as Stage 2
 # (content_new stays off here on purpose).
-for f in api account_hub goals today progress insights food_tracker health_logging calculators_new reminders sign_in_social sign_in_code; do wp lld-members feature "$f" test_accounts --path="$DIR" --quiet; done
+for f in api account_hub goals today progress insights food_tracker barcode health_logging calculators_new reminders sign_in_social sign_in_code; do wp lld-members feature "$f" test_accounts --path="$DIR" --quiet; done
+# P3-44: one made-up packaged food with a barcode (GS1 prefix 2, never a real product) for the scan screen's live tests
+wp lld-members food import --source=off --file="$REPO/tests/stage3/e2e/screens/barcode-foods.jsonl" --path="$DIR" --quiet
 wp lld-members test-accounts p3-api-a@test.lifelinedaily.invalid p3-api-b@test.lifelinedaily.invalid p3-signin-a@test.lifelinedaily.invalid p3-signin-b@test.lifelinedaily.invalid p3-signin-c@test.lifelinedaily.invalid p3-signin-d@test.lifelinedaily.invalid p3-signin-e@test.lifelinedaily.invalid p3-signin-f@test.lifelinedaily.invalid p3-signin-g@test.lifelinedaily.invalid p3-signin-h@test.lifelinedaily.invalid p3-signin-i@test.lifelinedaily.invalid p3-signin-relay@privaterelay.appleid.test p3-calc-a@test.lifelinedaily.invalid p3-calc-b@test.lifelinedaily.invalid --path="$DIR" --quiet
 # P3-20: a Google client that exists only here, so the Continue with Google button and the start route can be checked;
 # the callback is never reached (the tests complete provider sign-ins through the test route instead)

@@ -285,6 +285,17 @@ class LLD_Members_Stage3_API {
 				),
 				'required' => array( 'from_date', 'to_date' ),
 			),
+			// Barcode lookup (P3-44, FR3-37): GET /me/food-barcode?code=… finds the product. Premium (access tiers) and
+			// behind the barcode switch; it reads no health data, and logging the product goes through food-log.
+			'food-barcode'       => array(
+				'table'    => 'foods',
+				'feature'  => 'barcode',
+				'health'   => false,
+				'computed' => 'barcode',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
 			// Weekly summary and suggestions (P3-43).
 			'food-week'          => array(
 				'table'    => 'food_log',
@@ -796,8 +807,11 @@ class LLD_Members_Stage3_API {
 				'from'       => (string) $request->get_param( 'from' ),
 				'to'         => (string) $request->get_param( 'to' ),
 				'unit'       => (string) $request->get_param( 'unit' ),
+				'code'       => (string) $request->get_param( 'code' ),
 			);
-			if ( in_array( $def['computed'], array( 'trend', 'activity-week' ), true ) ) {
+			if ( 'barcode' === $def['computed'] ) {
+				$rows = LLD_Members_Barcode::view( $member_id, $query );
+			} elseif ( in_array( $def['computed'], array( 'trend', 'activity-week' ), true ) ) {
 				$rows = LLD_Members_Health_Log::view( $def['computed'], $member_id, $query );
 			} elseif ( in_array( $def['computed'], array( 'week', 'suggest' ), true ) ) {
 				$rows = LLD_Members_Recipes::view( $def['computed'], $member_id, $query );

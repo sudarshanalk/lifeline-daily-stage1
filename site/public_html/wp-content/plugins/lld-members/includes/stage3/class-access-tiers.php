@@ -59,6 +59,11 @@ class LLD_Members_Access_Tiers {
 		'recipes'      => 'recipes',
 	);
 
+	/** Members' API types that are Premium for every method, reading too (FR3-63: barcode scanning, P3-44). */
+	const PREMIUM_TYPES = array(
+		'food-barcode' => 'barcode',
+	);
+
 	public static function boot() {
 		add_filter( 'lld_members_stage3_api_refuse', array( __CLASS__, 'api_refuse' ), 20, 4 );
 		add_filter( 'lld_members_stage3_api_rows', array( __CLASS__, 'api_rows' ), 20, 3 );
@@ -245,6 +250,9 @@ class LLD_Members_Access_Tiers {
 	 *                                         runs; the server's own method may differ.
 	 */
 	public static function api_refuse( $refusal, $type, $member_id, $request = null ) {
+		if ( null === $refusal && isset( self::PREMIUM_TYPES[ $type ] ) && ! self::allows( $member_id, self::PREMIUM_TYPES[ $type ] ) ) {
+			return self::upgrade_refusal( self::PREMIUM_TYPES[ $type ] );
+		}
 		if ( null !== $refusal || ! isset( self::READ_ONLY_TYPES[ $type ] ) ) {
 			return $refusal;
 		}
@@ -265,6 +273,15 @@ class LLD_Members_Access_Tiers {
 		if ( self::allows( $member_id, $feature ) ) {
 			return $refusal;
 		}
+		return self::upgrade_refusal( $feature );
+	}
+
+	/**
+	 * The 403 a screen turns into an upgrade prompt: the explanation, the feature and the upgrade link.
+	 *
+	 * @param string $feature Key of PREMIUM.
+	 */
+	private static function upgrade_refusal( $feature ) {
 		return new WP_REST_Response(
 			array(
 				'message'     => self::PREMIUM[ $feature ],

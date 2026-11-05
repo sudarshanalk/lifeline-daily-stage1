@@ -570,6 +570,9 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 		if ( 'recipe-suggestions' === $type ) {
 			return self::strip_suggestions( $rows, $member_id );
 		}
+		if ( 'food-barcode' === $type ) {
+			return self::strip_barcode( $rows, $member_id );
+		}
 		if ( ! in_array( $type, array( 'food-log', 'food-recent', 'recipes', 'custom-foods', 'targets', 'plans' ), true ) ) {
 			return $rows;
 		}
@@ -598,6 +601,51 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 			}
 		}
 		return $single ? $list[0] : $list;
+	}
+
+	/**
+	 * A scanned product (P3-44): the name stays so it can be logged; its calories and nutrients are hidden where the
+	 * matrix hides calories ('barcode_calories', eating disorder), and protein where it hides the protein target, as
+	 * for food-log rows. The approved diary sentence goes with it.
+	 *
+	 * @param array<string,mixed> $result    LLD_Members_Barcode::lookup() result.
+	 * @param int                 $member_id Member number.
+	 * @return array<string,mixed>
+	 */
+	public static function strip_barcode( array $result, $member_id ) {
+		return self::barcode_shown( $result, self::applies( $member_id, 'food_tracker' ) );
+	}
+
+	/**
+	 * The rule itself, without WordPress, for tests.
+	 *
+	 * @param array<string,mixed> $result Lookup result.
+	 * @param array<string,mixed> $a      applies() or combine() for food_tracker.
+	 * @return array<string,mixed>
+	 */
+	public static function barcode_shown( array $result, array $a ) {
+		if ( empty( $a['active'] ) || isset( $result['error'] ) ) {
+			return $result;
+		}
+		$hide_all = in_array( 'barcode_calories', $a['hidden'], true ) || in_array( 'calories', $a['hidden'], true );
+		if ( $hide_all ) {
+			$result['nutrition_hidden'] = true; // also when nothing was found: "Add this product" then asks no calories
+		}
+		if ( empty( $result['food']['per'] ) || ! is_array( $result['food']['per'] ) ) {
+			return $result;
+		}
+		foreach ( array_keys( $result['food']['per'] ) as $key ) {
+			if ( $hide_all || ( 'protein_g' === $key && in_array( 'protein_target', $a['hidden'], true ) ) ) {
+				$result['food']['per'][ $key ] = null;
+			}
+		}
+		if ( $hide_all ) {
+			$result['food']['nutrition_hidden'] = true;
+			if ( in_array( 'ed.food-tracker.calorie-total', $a['notes'], true ) ) {
+				$result['note'] = self::MESSAGES['ed.food-tracker.calorie-total'];
+			}
+		}
+		return $result;
 	}
 
 	/**

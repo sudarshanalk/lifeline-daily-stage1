@@ -17,6 +17,7 @@ require_once __DIR__ . '/class-data.php';
 require_once __DIR__ . '/class-erasure-stage3.php';
 require_once __DIR__ . '/class-api.php';
 require_once __DIR__ . '/class-food-log.php';
+require_once __DIR__ . '/class-barcode.php';
 require_once __DIR__ . '/class-recipes.php';
 require_once __DIR__ . '/class-health-log.php';
 require_once __DIR__ . '/calculators/class-calorie-target.php';
