@@ -1343,19 +1343,9 @@ class LLD_Members_Premium {
 			return null;
 		}
 		$fields = isset( $snap['fields'] ) && is_array( $snap['fields'] ) ? $snap['fields'] : array();
-		$lines  = array();
-		$aisles = array();
-		$raw    = (string) ( $fields['ingredients'] ?? '' );
-		foreach ( preg_split( '/\r\n|\r|\n/', $raw ) as $line ) {
-			$line = trim( (string) $line );
-			if ( '' === $line ) {
-				continue;
-			}
-			$parts           = array_map( 'trim', explode( '|', $line ) );
-			$text            = $parts[0] . ( isset( $parts[1] ) && '' !== $parts[1] ? ', ' . $parts[1] . ( isset( $parts[2] ) && '' !== $parts[2] ? ' ' . $parts[2] : '' ) : '' );
-			$lines[]         = $text;
-			$aisles[ $text ] = self::aisle_of( $parts[0], $parts[3] ?? '' );
-		}
+		$read   = self::ingredient_lines( $fields['ingredients'] ?? '' );
+		$lines  = $read['lines'];
+		$aisles = $read['aisles'];
 		return array(
 			'id'          => (int) $snap['parent_id'],
 			'version_key' => self::version_key( $snap ),
@@ -1364,6 +1354,45 @@ class LLD_Members_Premium {
 			'aisles'      => $aisles,
 			'servings'    => (string) ( $fields['servings'] ?? '' ),
 			'diet'        => (string) ( $fields['diet'] ?? '' ),
+		);
+	}
+
+	/**
+	 * A recipe's ingredients as display lines and their shopping-list groups. The content library saves them as rows
+	 * (name, amount, unit); older or test content may still hold the owner's text lines ("name | amount | unit | group").
+	 *
+	 * @param mixed $raw Stored ingredients: a list of rows, or text lines.
+	 * @return array{lines:array<int,string>,aisles:array<string,string>}
+	 */
+	private static function ingredient_lines( $raw ) {
+		$split = array();
+		if ( is_array( $raw ) ) {
+			foreach ( $raw as $row ) {
+				if ( is_array( $row ) ) {
+					$split[] = array( (string) ( $row['name'] ?? '' ), (string) ( $row['amount'] ?? '' ), (string) ( $row['unit'] ?? '' ), (string) ( $row['group'] ?? '' ) );
+				} elseif ( is_string( $row ) ) {
+					$split[] = explode( '|', $row );
+				}
+			}
+		} else {
+			foreach ( preg_split( '/\r\n|\r|\n/', (string) $raw ) as $line ) {
+				$split[] = explode( '|', (string) $line );
+			}
+		}
+		$lines  = array();
+		$aisles = array();
+		foreach ( $split as $parts ) {
+			$parts = array_map( 'trim', array_map( 'strval', $parts ) );
+			if ( '' === ( $parts[0] ?? '' ) ) {
+				continue;
+			}
+			$text            = $parts[0] . ( isset( $parts[1] ) && '' !== $parts[1] ? ', ' . $parts[1] . ( isset( $parts[2] ) && '' !== $parts[2] ? ' ' . $parts[2] : '' ) : '' );
+			$lines[]         = $text;
+			$aisles[ $text ] = self::aisle_of( $parts[0], $parts[3] ?? '' );
+		}
+		return array(
+			'lines'  => $lines,
+			'aisles' => $aisles,
 		);
 	}
 
