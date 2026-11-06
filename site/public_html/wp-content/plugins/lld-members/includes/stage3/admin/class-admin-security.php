@@ -69,13 +69,13 @@ class LLD_Members_Admin_Security {
 	}
 
 	/**
-	 * After the code step a helper has no member home: send them to the panel's Overview instead.
+	 * After the code step a helper has no member home: send them to My account → Admin instead (FR3-90).
 	 *
 	 * @param string $location Redirect.
 	 */
 	public static function support_home( $location ) {
 		if ( is_string( $location ) && 0 === strpos( $location, home_url( '/members/home/' ) ) && LLD_Members_Admin_Roles::is_support() ) {
-			return admin_url( 'admin.php?page=lld-overview' );
+			return LLD_Members_Admin_Front::url();
 		}
 		return $location;
 	}

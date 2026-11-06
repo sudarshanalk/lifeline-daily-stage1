@@ -85,6 +85,33 @@ class LLD_Members_Admin_Test_Routes {
 			$wpdb->delete( LLD_Members_Schema::table( 'sign_in_lock' ), array( 'email' => strtolower( $email ) ), array( '%s' ) );
 			return new WP_REST_Response( array( 'id' => (int) $id ), 200 );
 		}
+		if ( 'editor' === $op ) {
+			// A WordPress Editor with a known password (test sites only), for FR3-95.
+			$email = sanitize_email( (string) ( $p['email'] ?? '' ) );
+			$user  = get_user_by( 'email', $email );
+			$id    = $user ? (int) $user->ID : wp_insert_user(
+				array(
+					'user_login' => 'editor-' . substr( md5( $email ), 0, 10 ),
+					'user_email' => $email,
+					'user_pass'  => (string) ( $p['password'] ?? '' ),
+					'role'       => 'editor',
+				)
+			);
+			if ( is_wp_error( $id ) ) {
+				return new WP_REST_Response( array( 'error' => $id->get_error_message() ), 400 );
+			}
+			$recipe = (int) $wpdb->get_var( "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'lld_recipe' ORDER BY ID ASC LIMIT 1" );
+			if ( ! $recipe ) {
+				$recipe = (int) wp_insert_post( array( 'post_type' => 'lld_recipe', 'post_title' => 'Test recipe', 'post_status' => 'draft' ) );
+			}
+			$article = (int) wp_insert_post( array( 'post_type' => 'post', 'post_title' => 'Editor test article', 'post_status' => 'draft' ) );
+			return new WP_REST_Response( array( 'id' => (int) $id, 'login' => 'editor-' . substr( md5( $email ), 0, 10 ), 'recipe' => $recipe, 'article' => $article ), 200 );
+		}
+		if ( 'mailpage' === $op ) {
+			// Show the Staging emails page on a test site and copy each email sent to it (FR3-93; staging catches mail itself).
+			update_option( LLD_Members_Admin_Front::TEST_MAIL_OPTION, empty( $p['off'] ) ? 1 : 0, false );
+			return new WP_REST_Response( array( 'on' => empty( $p['off'] ) ), 200 );
+		}
 		if ( 'clear_spam' === $op ) {
 			// Paid Memberships Pro counts every code step of a sign-in as a failed login for this address; the specs
 			// sign in many times, so they clear that count first (test sites only).

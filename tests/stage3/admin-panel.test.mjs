@@ -86,11 +86,13 @@ test('TC-FR3-86-AS-02 A risky action is not logged (so it is refused) without a 
     $r['with_reason'] = LLD_Members_Admin_Log::add('member_block', ['member' => 3, 'reason' => 'abuse']);
     $r['note'] = LLD_Members_Admin_Log::add('member_note', ['member' => 3]);
     echo json_encode($r);`);
-  for (const action of ['member_delete', 'premium_grant', 'premium_grant_remove', 'membership_end', 'member_block', 'member_unblock', 'test_account_mark', 'test_account_unmark', 'feature_off', 'feature_on', 'helper_add', 'helper_remove']) {
+  for (const action of ['member_delete', 'premium_grant', 'premium_grant_remove', 'membership_end', 'member_block', 'member_unblock', 'test_account_mark', 'test_account_unmark', 'premium_test_on', 'premium_test_off', 'member_reset', 'helper_add', 'helper_remove']) {
     expect(out[action], action).toBe(false);
   }
   expect(out.with_reason).toBe(true);
   expect(out.note).toBe(true);
+  // Switches take an optional reason (FR3-74, 6 Nov 2026), so turning one off or on is never refused for lack of one.
+  expect(Object.keys(out)).not.toContain('feature_off');
 });
 
 test('TC-NFR3-20-AS-03 A session ends after 30 minutes idle and after 12 hours, and a helper session without a code ends at once', () => {
