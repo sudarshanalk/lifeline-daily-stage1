@@ -42,7 +42,8 @@ function lld_home_v2_asset(string $rel): string {
  *     goal "stay as I am"; height, weight and activity from the sliders;
  *   - diabetes: QDiabetes-2018 Model A with sex, age and BMI from the card and every other answer "no" (white or not
  *     stated, non-smoker, no family history or conditions);
- *   - healthy weight: the waist-to-height ratio and its band, from waist and height.
+ *   - healthy weight: the waist-to-height ratio and its band, from waist and height (the card has no weight, so the
+ *     tool's rule that hides the band at BMI 35 or more is left to the full check).
  * The full check, with its safety questions and every answer, is the tool's own page (the card's link).
  * Owner decision, 6 Nov 2026: no safety text on the homepage card; the tools show it.
  */
@@ -66,8 +67,8 @@ function lld_home_v2_tools(): array {
       'url' => '/health-tools/diabetes-risk-check/', 'cta' => 'Check your full risk →', 'result_label' => '10-Year Risk',
       'inputs' => [
         ['key' => 'sex', 'label' => 'Sex', 'value' => 'Female', 'choices' => [['Female', 'Female'], ['Male', 'Male']]],
-        ['key' => 'age', 'label' => 'Age', 'min' => 25, 'max' => 84, 'value' => 48],
-        ['key' => 'bmi', 'label' => 'Body Mass Index (BMI)', 'min' => 18, 'max' => 45, 'value' => 27],
+        ['key' => 'age', 'label' => 'Age', 'min' => 27, 'max' => 82, 'step' => 5, 'value' => 47],   // the tool's 5-year groups, run at their midpoints
+        ['key' => 'bmi', 'label' => 'Body Mass Index (BMI)', 'min' => 20, 'max' => 40, 'value' => 27],   // the engine's own range
       ],
     ],
     'healthy-weight' => [

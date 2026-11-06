@@ -8,7 +8,8 @@ if (!defined('ABSPATH')) exit;
 $img = function (string $f): string { return esc_url(lld_home_v2_asset('home/' . $f)); };
 $u = function (string $path): string { return esc_url(home_url($path)); };
 $signed_in = function_exists('is_user_logged_in') && is_user_logged_in();
-$tools = lld_home_v2_tools();
+// A tool withdrawn with `wp lld status set` (DEC-24) leaves the card too, as it leaves its own page.
+$tools = array_filter(lld_home_v2_tools(), function ($slug) { return !function_exists('lld_tools_tool_status') || lld_tools_tool_status((string)$slug) === 'active'; }, ARRAY_FILTER_USE_KEY);
 $first = array_key_first($tools);
 $check = isset($_GET['lld_check']) ? sanitize_text_field(wp_unslash($_GET['lld_check'])) : '';
 $back = remove_query_arg('lld_check');
@@ -184,6 +185,7 @@ $reads = lld_home_v2_reads();
     <!-- 2. CLINICAL CALCULATORS: the design's quick-check card; every number is the signed-off engine's own
          (assets/lld-home-calc.js, copied unchanged from the tools). The full check, with its safety questions, is on each
          tool's own page. -->
+    <?php if ($tools): ?>
     <section id="calculators" class="py-16 px-6 max-w-7xl mx-auto scroll-mt-24" data-test="home-tools">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
         <div class="lg:col-span-5 order-2 lg:order-1">
@@ -234,7 +236,7 @@ $reads = lld_home_v2_reads();
                 <?php endforeach; ?>
               </div>
               <?php else: ?>
-              <input type="range" id="<?php echo esc_attr($id); ?>" data-q="<?php echo esc_attr($in['key']); ?>" min="<?php echo (int)$in['min']; ?>" max="<?php echo (int)$in['max']; ?>" step="1" value="<?php echo (int)$in['value']; ?>" class="w-full h-1.5 bg-[#E6DFD4] rounded-lg appearance-none cursor-pointer accent-[#1D4E48]">
+              <input type="range" id="<?php echo esc_attr($id); ?>" data-q="<?php echo esc_attr($in['key']); ?>" min="<?php echo (int)$in['min']; ?>" max="<?php echo (int)$in['max']; ?>" step="<?php echo (int)($in['step'] ?? 1); ?>" value="<?php echo (int)$in['value']; ?>" class="w-full h-1.5 bg-[#E6DFD4] rounded-lg appearance-none cursor-pointer accent-[#1D4E48]">
               <?php endif; ?>
             </div>
             <?php endforeach; ?>
@@ -242,7 +244,7 @@ $reads = lld_home_v2_reads();
             <div class="pt-3 border-t border-[#E8E2D6] border-day-soft flex items-center justify-between gap-4">
               <div>
                 <span class="text-[10px] uppercase font-bold text-[#6B6862] text-day-muted block"><?php echo esc_html($t['result_label']); ?></span>
-                <div data-q-score class="font-serif-editorial text-4xl text-[#1F1E1C] text-day-dark score-glow" aria-live="polite"></div>
+                <div data-q-score class="font-serif-editorial text-4xl text-[#1F1E1C] text-day-dark score-glow"></div>
               </div>
               <div class="text-right">
                 <span data-q-badge class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800"></span>
@@ -254,6 +256,7 @@ $reads = lld_home_v2_reads();
         </div>
       </div>
     </section>
+    <?php endif; ?>
 
     <!-- 3. FOUR 4-WEEK TRACKS -->
     <section id="tracks" class="py-16 bg-[#EDE7DD] bg-day-surface border-y border-[#DDD5C7] border-day-soft px-6 scroll-mt-24" data-test="home-tracks">

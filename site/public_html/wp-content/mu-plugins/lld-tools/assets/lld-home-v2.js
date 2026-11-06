@@ -93,24 +93,25 @@
     return v;
   }
   function out(p, key, text) { var o = $('[data-q-out="' + key + '"]', p); if (o) o.textContent = text; }
+  function aria(p, key, text) { var i = $('input[data-q="' + key + '"]', p); if (i) i.setAttribute('aria-valuetext', text); }
   function show(p, score, badge) {
     $('[data-q-score]', p).textContent = score;
     var b = $('[data-q-badge]', p); b.textContent = badge[0]; b.className = BADGE[badge[1]];
   }
   var RUN = {
     protein: function (p, v) {
-      out(p, 'weight', v.weight + ' kg'); out(p, 'height', v.height + ' cm'); out(p, 'activity', ACT[v.activity][1]);
+      out(p, 'weight', v.weight + ' kg'); out(p, 'height', v.height + ' cm'); out(p, 'activity', ACT[v.activity][1]); aria(p, 'activity', ACT[v.activity][1]); aria(p, 'weight', v.weight + ' kg'); aria(p, 'height', v.height + ' cm');
       var r = CALC.computeProtein({ heightCm: v.height, weightKg: v.weight, age: 30, activity: ACT[v.activity][0], resistance: 'no',
         goal: 'maintain', preg: 'no', kidney: 'no', liver: 'no', plan: 'no', meals: 3 });
       show(p, r.targetG + 'g / day', [String(r.gPerKg) + 'g / kg • ' + r.lowG + '–' + r.highG + 'g range', 'good']);
     },
     diabetes: function (p, v) {
-      out(p, 'sex', ''); out(p, 'age', v.age + ' years'); out(p, 'bmi', String(v.bmi));
+      var band = (v.age - 2) + '–' + (v.age + 2); out(p, 'age', band); aria(p, 'age', band + ' years'); out(p, 'bmi', String(v.bmi));
       var pct = CALC.QDR2018A({ sex: v.sex, age: v.age, bmi: v.bmi, ethn: 'WhiteNA', smoke: 'Non', tds: 0 });
       show(p, pct.toFixed(1) + '%', RISK[CALC.bandFor(pct)]);
     },
     'healthy-weight': function (p, v) {
-      out(p, 'waist', v.waist + ' cm'); out(p, 'height', v.height + ' cm');
+      out(p, 'waist', v.waist + ' cm'); out(p, 'height', v.height + ' cm'); aria(p, 'waist', v.waist + ' cm'); aria(p, 'height', v.height + ' cm');
       var r2 = CALC.HW.roundHalfUp(v.waist / v.height, 2);
       show(p, r2.toFixed(2), WAIST[CALC.HW.waistBand(r2, 0)]);
     }
