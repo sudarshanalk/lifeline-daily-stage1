@@ -1178,6 +1178,8 @@ test.describe.serial('P3-87 admin module in My account', () => {
       await page.locator('#user_login').fill(HELPER);
       await page.locator('#user_pass').fill(`wrong-${i}`);
       await page.locator('#wp-submit').click();
+      // Wait for the refusal, so the next attempt never cuts this one off (WebKit) and every failure is counted.
+      await expect(page.locator('#login_error')).toBeVisible();
     }
     await page.goto('/wp-login.php');
     await page.locator('#user_login').fill(HELPER);

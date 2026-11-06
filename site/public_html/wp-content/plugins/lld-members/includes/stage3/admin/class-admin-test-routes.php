@@ -55,7 +55,8 @@ class LLD_Members_Admin_Test_Routes {
 		$op  = isset( $p['op'] ) ? (string) $p['op'] : '';
 		$log = LLD_Members_Schema::table( 'admin_log' );
 		if ( 'owner' === $op ) {
-			$admins = get_users( array( 'role' => 'administrator', 'number' => 1, 'orderby' => 'ID' ) );
+			// The same account the Stage 2 test sign-in (/test/owner) uses: the first administrator by login name.
+			$admins = get_users( array( 'role' => 'administrator', 'number' => 1 ) );
 			if ( $admins ) {
 				// A new run starts with no fresh codes counted against the hour (repeated local runs).
 				$wpdb->delete( LLD_Members_Stage3_Schema::table( 'email_codes' ), array( 'email' => strtolower( (string) $admins[0]->user_email ), 'purpose' => 'admin_step' ), array( '%s', '%s' ) );
