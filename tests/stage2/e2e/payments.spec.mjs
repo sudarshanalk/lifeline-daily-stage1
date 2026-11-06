@@ -297,29 +297,26 @@ test('TC-FR2-13-AS-04', async ({ page, request }) => {
   expect(full.text).toContain('US$8.99');
 });
 
-test('TC-FR2-13-AS-04 the plans are Paid Memberships Pro levels that follow the owner price', async ({ request }) => {
-  const levels = async () => billingAction(request, { action: 'pmpro_levels' });
-  let read = await levels();
-  expect(read.named).toBe(2);
-  expect(read.levels.yearly).toMatchObject({ name: 'Premium yearly', cycle_period: 'Year' });
-  expect(read.levels.monthly).toMatchObject({ name: 'Premium monthly', cycle_period: 'Month' });
-  expect(Number(read.levels.yearly.initial_payment)).toBe(59.99);
-  expect(Number(read.levels.yearly.billing_amount)).toBe(59.99);
-  expect(Number(read.levels.monthly.billing_amount)).toBe(7.99);
-  expect(Number(read.levels.monthly.cycle_number)).toBe(1);
-  expect(Number(read.levels.yearly.allow_signups)).toBe(0);
-  const ids = { yearly: read.levels.yearly.id, monthly: read.levels.monthly.id };
+test('TC-FR2-13-AS-04 the two Premium plans are the site\'s own catalogue and follow the owner price', async ({ request }) => {
+  // Paid Memberships Pro was retired on 6 Nov 2026 (FR3-96): the plans are Lifeline Daily Members' own catalogue, with no
+  // copy in another plugin. The same checks as before: names, periods, prices, kept by the database update, following a
+  // price change.
+  const plans = async () => (await billingAction(request, { action: 'plans' })).plans;
+  let read = await plans();
+  expect(Object.keys(read).sort()).toEqual(['monthly', 'yearly']);
+  expect(read.yearly).toMatchObject({ name: 'Premium yearly', period: 'Year' });
+  expect(read.monthly).toMatchObject({ name: 'Premium monthly', period: 'Month' });
+  expect(Number(read.yearly.price)).toBe(59.99);
+  expect(Number(read.monthly.price)).toBe(7.99);
   const update = await request.post('/wp-json/lld-members/v1/test/db-update', { data: {} });
   expect(update.ok(), await update.text()).toBeTruthy();
   expect((await update.json()).version).toBeGreaterThanOrEqual(3);
-  read = await levels();
-  expect(read.named).toBe(2);
-  expect({ yearly: read.levels.yearly.id, monthly: read.levels.monthly.id }).toEqual(ids);
+  read = await plans();
+  expect(read.yearly).toMatchObject({ name: 'Premium yearly', period: 'Year', price: '59.99' });
   await billingAction(request, { action: 'prices', monthly: 899, yearly: 6999 });
-  read = await levels();
-  expect(Number(read.levels.yearly.billing_amount)).toBe(69.99);
-  expect(Number(read.levels.monthly.billing_amount)).toBe(8.99);
-  expect(read.levels.yearly.id).toBe(ids.yearly);
+  read = await plans();
+  expect(Number(read.yearly.price)).toBe(69.99);
+  expect(Number(read.monthly.price)).toBe(8.99);
 });
 
 test('TC-FR2-14-AS-03 orders are stamped in UTC, and the refund window uses the member local date', async ({ page, request }) => {

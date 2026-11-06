@@ -61,9 +61,10 @@ class LLD_Members_Billing {
 	}
 
 	/**
-	 * Paid Memberships Pro levels for the two Premium plans (Data Model P1). Free has no level.
+	 * The two Premium plans (Data Model P1). Free has no plan. Lifeline Daily Members is the only membership system:
+	 * Paid Memberships Pro was retired on 6 Nov 2026 (FR3-96), so no copy of these plans is kept anywhere else.
 	 */
-	const PMPRO_LEVELS = array(
+	const PLANS = array(
 		'yearly'  => array(
 			'name'   => 'Premium yearly',
 			'period' => 'Year',
@@ -79,7 +80,25 @@ class LLD_Members_Billing {
 	 */
 	public static function db_update() {
 		self::rename_statuses();
-		self::sync_pmpro_levels();
+		delete_option( 'lld_pmpro_levels' ); // the ids of the retired Paid Memberships Pro copies (FR3-96)
+	}
+
+	/**
+	 * The two Premium plans with their current catalogue prices (FR2-13).
+	 *
+	 * @return array<string,array{name:string,period:string,price:string}>
+	 */
+	public static function plans() {
+		$prices = self::prices();
+		$out    = array();
+		foreach ( self::PLANS as $plan => $row ) {
+			$out[ $plan ] = array(
+				'name'   => $row['name'],
+				'period' => $row['period'],
+				'price'  => number_format( (int) $prices[ $plan ] / 100, 2, '.', '' ),
+			);
+		}
+		return $out;
 	}
 
 	/**
@@ -94,62 +113,6 @@ class LLD_Members_Billing {
 		foreach ( array( 'limited' => 'limit', 'self' => 'self', 'refunded' => 'refunded' ) as $old => $why ) {
 			$wpdb->query( $wpdb->prepare( "UPDATE {$referral} SET status = %s WHERE status = %s", 'not_qualified_' . $why, $old ) );
 		}
-	}
-
-	/**
-	 * Create or update the Premium levels in Paid Memberships Pro at the current catalogue prices.
-	 * Levels never take sign-ups through Paid Memberships Pro's own checkout: Stripe Checkout is the only way in.
-	 *
-	 * @return array<string,int> Level id for each plan; empty when Paid Memberships Pro is not installed.
-	 */
-	public static function sync_pmpro_levels() {
-		global $wpdb;
-		$table = $wpdb->prefix . 'pmpro_membership_levels';
-		if ( $table !== $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) ) ) {
-			return array();
-		}
-		$columns = $wpdb->get_col( "SHOW COLUMNS FROM {$table}", 0 ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
-		$prices  = self::prices();
-		$stored  = get_option( 'lld_pmpro_levels' );
-		$stored  = is_array( $stored ) ? $stored : array();
-		$ids     = array();
-		foreach ( self::PMPRO_LEVELS as $plan => $level ) {
-			$amount = number_format( (int) $prices[ $plan ] / 100, 2, '.', '' );
-			$row    = array(
-				'name'              => $level['name'],
-				'description'       => 'Lifeline Daily Premium, paid ' . $plan . ' through Stripe. Tax included.',
-				'confirmation'      => '',
-				'initial_payment'   => $amount,
-				'billing_amount'    => $amount,
-				'cycle_number'      => 1,
-				'cycle_period'      => $level['period'],
-				'billing_limit'     => 0,
-				'trial_amount'      => 0,
-				'trial_limit'       => 0,
-				'allow_signups'     => 0,
-				'expiration_number' => 0,
-			);
-			$row = array_intersect_key( $row, array_flip( $columns ) );
-			$id  = isset( $stored[ $plan ] ) ? (int) $stored[ $plan ] : 0;
-			if ( $id > 0 && ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE id = %d", $id ) ) ) {
-				$id = 0;
-			}
-			if ( $id < 1 ) {
-				$id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE name = %s ORDER BY id ASC LIMIT 1", $level['name'] ) );
-			}
-			if ( $id > 0 ) {
-				$wpdb->update( $table, $row, array( 'id' => $id ) );
-			} elseif ( false !== $wpdb->insert( $table, $row ) ) {
-				$id = (int) $wpdb->insert_id;
-			}
-			if ( $id > 0 ) {
-				$ids[ $plan ] = $id;
-			}
-		}
-		if ( $ids !== $stored ) {
-			update_option( 'lld_pmpro_levels', $ids, false );
-		}
-		return $ids;
 	}
 
 	/**
@@ -1396,7 +1359,6 @@ class LLD_Members_Billing {
 			delete_option( 'lld_reward_stop' );
 			delete_option( 'lld_notice_fail' );
 			delete_option( 'lld_members_stripe_unreachable' );
-			self::sync_pmpro_levels();
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
 		}
 		if ( 'launch' === $action && ! empty( $params['on'] ) ) {
@@ -1427,17 +1389,9 @@ class LLD_Members_Billing {
 		if ( 'codes' === $action ) {
 			return new WP_REST_Response( array( 'codes' => self::codes() ), 200 );
 		}
-		if ( 'pmpro_levels' === $action ) {
-			global $wpdb;
+		if ( 'plans' === $action ) {
 			LLD_Members_Billing::db_update();
-			$ids   = self::sync_pmpro_levels();
-			$table = $wpdb->prefix . 'pmpro_membership_levels';
-			$rows  = array();
-			foreach ( $ids as $plan => $id ) {
-				$rows[ $plan ] = $wpdb->get_row( $wpdb->prepare( "SELECT id, name, initial_payment, billing_amount, cycle_number, cycle_period, allow_signups FROM {$table} WHERE id = %d", $id ), ARRAY_A );
-			}
-			$named = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE name IN (%s, %s)", self::PMPRO_LEVELS['yearly']['name'], self::PMPRO_LEVELS['monthly']['name'] ) );
-			return new WP_REST_Response( array( 'levels' => $rows, 'named' => $named ), 200 );
+			return new WP_REST_Response( array( 'plans' => self::plans() ), 200 );
 		}
 		if ( 'admin_log' === $action ) {
 			global $wpdb;
@@ -2434,7 +2388,6 @@ class LLD_Members_Billing {
 			}
 		}
 		if ( $changes ) {
-			self::sync_pmpro_levels();
 			self::admin_log( 'price_change', 0, implode( '; ', $changes ) . ( $confirmed && ( 0 === $monthly || 0 === $yearly ) ? ' (price of 0 confirmed)' : '' ) );
 		}
 		if ( ! $new ) {

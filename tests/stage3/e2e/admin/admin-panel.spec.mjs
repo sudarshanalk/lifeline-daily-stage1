@@ -60,11 +60,28 @@ async function waitForMail(email, subjectPart) {
   throw new Error(`No "${subjectPart}" email for ${email}`);
 }
 
+/** The newest code email for this address since `after` (alerts to the same inbox, such as "new browser", are passed over). */
+async function codeFor(email, after) {
+  for (let i = 0; i < 20; i += 1) {
+    const found = (await messagesTo(email))
+      .filter((m) => /code/i.test(m.Subject || '') && new Date(m.Created) >= after)
+      .sort((a, b) => new Date(b.Created) - new Date(a.Created))[0];
+    if (found) {
+      const full = await fetch(`${MAILPIT}/api/v1/message/${found.ID}`).then((r) => r.json());
+      const code = (full.Text || '').match(/\b(\d{6})\b/);
+      if (code) return code[1];
+    }
+    await new Promise((r) => setTimeout(r, 500));
+  }
+  throw new Error(`No code email for ${email}`);
+}
+
 /** Ask for and read a fresh code for a risky action (NFR3-20). */
 async function freshCode(page, ownerEmail, scope = page) {
+  const after = new Date(Date.now() - 2000);
   await scope.getByRole('button', { name: 'Email me a code' }).first().click();
   await expect(saved(page)).toContainText('We\'ve emailed you a 6-digit code');
-  return mailCode(ownerEmail);
+  return codeFor(ownerEmail, after);
 }
 
 async function supportSignIn(page, context) {

@@ -35,6 +35,16 @@
       "file": "tests/stage2/data-model-map.json",
       "decision": "Data model v0.2 (owner-approved, 3 Nov 2026, admin panel): the Stage 2 admin log (wp_lld_admin_log) is extended with who did it, the item, before and after, the reason and a scrambled IP (Admin activity log), and the Stage 2 member record with the Owner's block (Member block); FR3-83, FR3-86, built in P3-87.",
       "change": "admin_log.admin_user_id, target, before_state, after_state, reason, ip_hash and member.blocked_at, blocked_reason are tied to the Stage 3 notes added to Data Model F2 and A1 (docs/stage2/02). New columns only (a declared Stage 2 file, Build Method Stage 3 §4)."
+    },
+    {
+      "file": "tests/stage2/e2e/payments.spec.mjs",
+      "decision": "FR3-96 Retire Paid Memberships Pro (owner, 6 Nov 2026; requirements v0.4, section 7 \"Paid Memberships Pro retired\"): Lifeline Daily Members is the only membership system, so the Premium plans are no longer copied into Paid Memberships Pro levels",
+      "change": "TC-FR2-13-AS-04 checks the same things on the site's own plan catalogue instead of the Paid Memberships Pro levels table: both plans with their names and periods, the owner prices, unchanged by the database update, following a price change, and no Stripe call in the database update. The checks of the copy's own fields (level ids, allow_signups, billing cycle numbers) go with the copy; the unit test also checks that no code still writes Paid Memberships Pro levels."
+    },
+    {
+      "file": "tests/stage2/payments-core.test.mjs",
+      "decision": "FR3-96 Retire Paid Memberships Pro (owner, 6 Nov 2026; requirements v0.4, section 7 \"Paid Memberships Pro retired\"): Lifeline Daily Members is the only membership system, so the Premium plans are no longer copied into Paid Memberships Pro levels",
+      "change": "TC-FR2-13-AS-04 checks the same things on the site's own plan catalogue instead of the Paid Memberships Pro levels table: both plans with their names and periods, the owner prices, unchanged by the database update, following a price change, and no Stripe call in the database update. The checks of the copy's own fields (level ids, allow_signups, billing cycle numbers) go with the copy; the unit test also checks that no code still writes Paid Memberships Pro levels."
     }
   ]
 }

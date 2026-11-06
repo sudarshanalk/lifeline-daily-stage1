@@ -62,15 +62,17 @@ test('live Stripe keys are refused unless LLD_ENV is production', () => {
 const plugin = resolve(dirname(fileURLToPath(import.meta.url)), '../../site/public_html/wp-content/plugins/lld-members/includes');
 const source = (name) => readFileSync(resolve(plugin, name), 'utf8');
 
-test('TC-FR2-13-AS-04 the database update creates the Paid Memberships Pro levels without calling Stripe', () => {
+test('TC-FR2-13-AS-04 the database update keeps the two plans in the site\'s own catalogue without calling Stripe', () => {
+  // Paid Memberships Pro was retired on 6 Nov 2026 (FR3-96): no third-party copy of the plans, and no Stripe call.
   const schema = source('class-schema.php');
   expect(Number(schema.match(/const VERSION = (\d+);/)[1])).toBeGreaterThanOrEqual(3);
   expect(schema).toMatch(/LLD_Members_Billing::db_update\(\)/);
   const billing = source('class-billing.php');
-  const sync = billing.slice(billing.indexOf('function sync_pmpro_levels'), billing.indexOf('function has_premium'));
-  expect(sync).toContain('pmpro_membership_levels');
-  expect(sync).toMatch(/'allow_signups'\s*=>\s*0/);
-  expect(sync).not.toMatch(/api\.stripe\.com|wp_remote_/);
+  const update = billing.slice(billing.indexOf('function db_update'), billing.indexOf('function rename_statuses'));
+  expect(update).not.toMatch(/api\.stripe\.com|wp_remote_/);
+  expect(billing).not.toMatch(/pmpro_membership|sync_pmpro_levels/);
+  const plans = billing.slice(billing.indexOf('function plans'), billing.indexOf('function rename_statuses'));
+  expect(plans).toContain('self::prices()');
   expect(billing).toMatch(/'name'\s*=>\s*'Premium yearly'[\s\S]*'period'\s*=>\s*'Year'/);
   expect(billing).toMatch(/'name'\s*=>\s*'Premium monthly'[\s\S]*'period'\s*=>\s*'Month'/);
 });

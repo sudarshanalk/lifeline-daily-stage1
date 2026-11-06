@@ -122,7 +122,7 @@ These are also in `.cursor/rules/stage2.mdc`, which Cursor reads automatically.
    - the three "not available" designs kept distinct;
    - no calorie numbers, no diagnosis, no upsell in calculator results.
 7. **Safety first:** the safety matrix is applied before access and matching, everywhere, including direct links, swaps and downloads.
-8. **Payments only through Paid Memberships Pro and Stripe.**
+8. **Payments only through Stripe** (Paid Memberships Pro was retired on 6 Nov 2026, FR3-96).
    - Card details never touch the site.
    - Access follows Stripe's confirmed state (Data Model T4), never a return page.
    - Test mode only.

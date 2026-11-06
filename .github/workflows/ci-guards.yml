@@ -231,7 +231,7 @@ jobs:
       - name: Stage 2 Vitest suites (tests/stage2)
         run: npx vitest run -c tests/vitest.config.mjs tests/stage2 --passWithNoTests
 
-  # stage2-e2e: a throwaway WordPress with Paid Memberships Pro and the lld-members plugin, then the Stage 2 Playwright
+  # stage2-e2e: a throwaway WordPress with the lld-members plugin, then the Stage 2 Playwright
   # journeys in both browser engines (Test Criteria §3, "E core journeys"). Runs once Cursor adds
   # tests/stage2/e2e/playwright.config.mjs; until then it reports that and succeeds. No secrets: Stripe is not called here.
   stage2-e2e:
@@ -310,7 +310,7 @@ jobs:
         if: steps.has.outputs.e2e == 'true'
         run: |
           php -r 'echo "imagick ", extension_loaded("imagick") ? "yes" : "no", ", exif ", extension_loaded("exif") ? "yes" : "no", ", HEIC formats: ", class_exists("Imagick") ? implode(",", Imagick::queryFormats("HEI*")) : "-", ", upload ", ini_get("upload_max_filesize"), PHP_EOL;'
-      - name: Throwaway WordPress with Paid Memberships Pro and lld-members
+      - name: Throwaway WordPress with lld-members
         if: steps.has.outputs.e2e == 'true'
         run: bash tests/ci/stage2-wp.sh "$RUNNER_TEMP/wp"
       - name: Playwright Stage 2 journeys (${{ matrix.browser }}, part ${{ matrix.part }} of ${{ matrix.parts }})

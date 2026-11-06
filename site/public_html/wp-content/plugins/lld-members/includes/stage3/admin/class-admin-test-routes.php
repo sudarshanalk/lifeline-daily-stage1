@@ -113,11 +113,7 @@ class LLD_Members_Admin_Test_Routes {
 			return new WP_REST_Response( array( 'on' => empty( $p['off'] ) ), 200 );
 		}
 		if ( 'clear_spam' === $op ) {
-			// Paid Memberships Pro counts every code step of a sign-in as a failed login for this address; the specs
-			// sign in many times, so they clear that count first (test sites only).
-			if ( function_exists( 'pmpro_clear_spam_activity' ) ) {
-				pmpro_clear_spam_activity();
-			}
+			// Kept so older specs still run: the plugin that counted code-step sign-ins as failures is retired (FR3-96).
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
 		}
 		if ( 'clock' === $op ) {
