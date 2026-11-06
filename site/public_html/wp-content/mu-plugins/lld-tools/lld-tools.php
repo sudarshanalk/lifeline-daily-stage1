@@ -739,6 +739,8 @@ require_once __DIR__ . '/category-hub.php';
 require_once __DIR__ . '/menu.php';
 /* Interface Pack Homepage (owner, 28 Oct 2026; prototype: lifeline_daily_ui_demo.html): Split Hero, 4-Week Programmes, Starter Guide. */
 require_once __DIR__ . '/homepage-pack.php';
+/* Homepage v2 (owner's new UI pack, 6 Nov 2026): the front page's own full-page template; every other page unchanged. */
+require_once __DIR__ . '/home-v2.php';
 /* Interface Pack Single Article & Page Layouts (prototypes: single_article_template_demo.html, health_tools_and_calculators_demo.html, site_governance_and_trust_demo.html). */
 require_once __DIR__ . '/page-layout.php';
 /* Site footer (DEC-88, S2-L1, Footer_Content.md). */
