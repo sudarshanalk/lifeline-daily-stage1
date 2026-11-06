@@ -902,6 +902,7 @@
   'use strict';
 
   function initAdminToggles() {
+    if (typeof document.querySelectorAll !== 'function') return; // test stubs without a full DOM
     var toggles = document.querySelectorAll('[data-lld-admin] input[data-lld-adm-autosubmit]');
     Array.prototype.forEach.call(toggles, function (input) {
       input.addEventListener('change', function () {
