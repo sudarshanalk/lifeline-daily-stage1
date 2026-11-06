@@ -48,7 +48,7 @@ $reads = lld_home_v2_reads();
   <div class="bg-[#ECE6DC] bg-day-surface text-[#4A4742] text-day-muted text-xs py-2 px-6 flex items-center justify-between border-b border-[#E0D8CB] border-day-soft">
     <div class="flex items-center gap-2">
       <span class="inline-block w-2 h-2 rounded-full bg-[#1D4E48]" aria-hidden="true"></span>
-      <span>Clinically reviewed guidance • Free 4-week evidence-based tracks</span>
+      <span>Clinically reviewed guidance • Week 1 of every 4-week track free</span>
     </div>
     <div class="flex items-center gap-1.5" role="group" aria-label="Day or night colours">
       <button type="button" data-circadian="day" id="circadian-btn-day" aria-pressed="true" class="px-2.5 py-0.5 rounded-full bg-[#1D4E48] text-white text-[11px] font-medium transition-all shadow-sm">☀️ Day</button>
@@ -205,7 +205,7 @@ $reads = lld_home_v2_reads();
 
           <div class="inline-flex rounded-full bg-[#EDE6DC] bg-day-surface p-1 border border-[#DDD5C7] border-day-soft flex-wrap" role="tablist" aria-label="Health calculators">
             <?php foreach ($tools as $slug => $t): $on = $slug === $first; ?>
-            <button type="button" role="tab" id="tab-btn-<?php echo esc_attr($slug); ?>" data-calc-tab="<?php echo esc_attr($slug); ?>" aria-controls="calc-panel-<?php echo esc_attr($slug); ?>" aria-selected="<?php echo $on ? 'true' : 'false'; ?>" data-title="<?php echo esc_attr($t['title']); ?>" data-sub="<?php echo esc_attr($t['sub']); ?>"
+            <button type="button" role="tab" id="tab-btn-<?php echo esc_attr($slug); ?>" data-calc-tab="<?php echo esc_attr($slug); ?>" aria-controls="calc-panel-<?php echo esc_attr($slug); ?>" aria-selected="<?php echo $on ? 'true' : 'false'; ?>" tabindex="<?php echo $on ? '0' : '-1'; ?>" data-title="<?php echo esc_attr($t['title']); ?>" data-sub="<?php echo esc_attr($t['sub']); ?>"
               class="calc-tab px-4 py-1.5 rounded-full text-xs font-semibold transition-all <?php echo $on ? 'is-active bg-[#1D4E48] text-white shadow-sm' : 'text-[#5A5751] text-day-muted hover:text-black'; ?>"><?php echo esc_html($t['tab']); ?></button>
             <?php endforeach; ?>
           </div>
@@ -311,7 +311,7 @@ $reads = lld_home_v2_reads();
               <span class="absolute top-3 left-3 bg-[#1D4E48] text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase"><?php echo esc_html($cat); ?></span>
             </div>
             <div class="p-5">
-              <div class="text-[11px] text-[#6B6862] text-day-muted"><?php echo (int)$mins; ?> min read</div>
+              <div class="text-[11px] text-[#6B6862] text-day-muted"><?php echo (int)$mins; ?> min read &bull; <time datetime="<?php echo esc_attr(get_the_date('c', $p)); ?>"><?php echo esc_html(get_the_date('j M Y', $p)); ?></time></div>
               <h3 class="font-serif-editorial text-2xl text-[#1F1E1C] text-day-dark mt-1 leading-snug group-hover:text-[#1D4E48]">
                 <a href="<?php echo esc_url(get_permalink($p)); ?>" class="after:absolute after:inset-0"><?php echo esc_html(html_entity_decode(get_the_title($p), ENT_QUOTES | ENT_HTML5, 'UTF-8')); ?></a>
               </h3>
@@ -331,9 +331,10 @@ $reads = lld_home_v2_reads();
         <span class="text-[11px] uppercase tracking-widest text-[#D4826F] font-bold">Free Starter Guide</span>
         <h2 class="font-serif-editorial text-3xl sm:text-4xl mt-2 leading-tight">Get the 4-Week Healthy Habit Starter Guide</h2>
         <p class="text-xs text-[#D8E2E0] mt-2 max-w-md mx-auto">Pick a goal and we'll email you a short guide to your first week: practical food, movement and habit steps you can start today.</p>
-        <?php if ($check !== ''): ?>
+        <?php if ($check !== '' && $check !== '1'): ?>
           <p class="mt-6 text-sm font-semibold text-white" role="status">Check your email to confirm.</p>
         <?php else: ?>
+        <?php if ($check === '1'): ?><p class="mt-6 text-sm font-semibold text-white" role="alert">We could not send the guide to that address. Please check it and try again.</p><?php endif; ?>
         <form method="post" action="" class="mt-6 flex flex-col sm:flex-row gap-2 max-w-xl mx-auto">
           <?php if (function_exists('wp_nonce_field')) wp_nonce_field('lld_guide', 'lld_guide_nonce'); ?>
           <input type="hidden" name="lld_kind" value="guide">

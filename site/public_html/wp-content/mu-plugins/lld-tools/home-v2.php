@@ -12,8 +12,9 @@
  *     every number shown is the frozen engine's, after its safety questions. No clinical code or wording is copied here.
  *   - The reader count in the newsletter box is dropped.
  *
- * The database `post_content` of the front page is not touched, so `wp lld home apply | revert` and TC-FR1-03's content
- * checks keep working; the Interface Pack shortcodes stay registered for any page that still uses them.
+ * The database `post_content` of the front page is not touched, so `wp lld home apply | revert` and TC-FR1-03's artefact
+ * checks keep working; the Interface Pack shortcodes stay registered. The rendered-page Stage 1 checks of the old layout
+ * (TC-FR1-03, TC-UI1-01 and others; local and staging only) no longer fit `/`: Owner question 144.
  * Switch off with `define('LLD_HOME_V2', false)` in wp-config.php to go back to the Interface Pack homepage.
  */
 if (!defined('ABSPATH')) exit;
@@ -23,6 +24,7 @@ function lld_home_v2_active(): bool {
   if (defined('LLD_HOME_V2') && !LLD_HOME_V2) return false;
   if (!function_exists('lld_tools_front_view') || !lld_tools_front_view()) return false;
   if (!function_exists('is_front_page') || !is_front_page()) return false;
+  if (function_exists('is_embed') && is_embed()) return false;
   return !(function_exists('is_paged') && is_paged());
 }
 
@@ -57,16 +59,21 @@ function lld_home_v2_tools(): array {
 }
 
 /**
- * One tool embed for a tab: the plugin's own [lld_tool] embed (FR1-21), with a unique frame id per tab. The first tab's
- * frame loads at once; the others carry data-src and load the first time their tab is opened, so the page stays light.
+ * One tool embed for a tab: the plugin's own [lld_tool] embed (FR1-21), with a unique frame id per tab. A withdrawn tool
+ * gives the plugin's own "unavailable" notice. The first tab's frame loads at once; the others carry data-src and load the
+ * first time their tab is opened, so the page stays light. Only the first embed that has a frame keeps the frame script.
  */
 function lld_home_v2_tool_frame(string $slug, bool $first): string {
+  static $script_done = false;
   if (!function_exists('lld_tools_render_tool')) return '';
   $html = lld_tools_render_tool(['slug' => $slug]);
   if ($html === '') return '';
   $html = str_replace('id="lld-tool-frame"', 'id="lld-home-frame-' . esc_attr($slug) . '"', $html);
+  if (strpos($html, '<iframe') !== false) {
+    if ($script_done) $html = (string)preg_replace('/<script\b[^>]*>.*?<\/script>/s', '', $html);   // already on the page
+    $script_done = true;
+  }
   if (!$first) {
-    $html = (string)preg_replace('/<script\b[^>]*>.*?<\/script>/s', '', $html);   // the frame script is already on the page
     $html = (string)preg_replace('/<iframe([^>]*?)\ssrc="([^"]+)"/', '<iframe$1 data-src="$2" src="about:blank"', $html, 1);
   }
   return $html;
