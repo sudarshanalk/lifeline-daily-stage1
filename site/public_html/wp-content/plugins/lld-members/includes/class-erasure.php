@@ -82,7 +82,6 @@ class LLD_Members_Erasure {
 			$user_id = (int) $member->user_id;
 			$wpdb->delete( LLD_Members_Schema::table( 'member' ), array( 'id' => $member_id ), array( '%d' ) );
 			if ( $user_id && get_userdata( $user_id ) ) {
-				self::delete_pmpro( $user_id );
 				require_once ABSPATH . 'wp-admin/includes/user.php';
 				wp_delete_user( $user_id );
 			}
@@ -406,40 +405,6 @@ class LLD_Members_Erasure {
 	 */
 	public static function email_hash( $email ) {
 		return hash_hmac( 'sha256', strtolower( trim( (string) $email ) ), LLD_Members_Crypto::key() );
-	}
-
-	/**
-	 * Remove Paid Memberships Pro copies of this person. Tax fields stay in our order table only.
-	 *
-	 * @param int $user_id WordPress user id.
-	 */
-	private static function delete_pmpro( $user_id ) {
-		global $wpdb;
-		$orders = $wpdb->prefix . 'pmpro_membership_orders';
-		$meta   = $wpdb->prefix . 'pmpro_membership_ordermeta';
-		if ( self::table_exists( $orders ) && self::table_exists( $meta ) ) {
-			$columns   = $wpdb->get_col( "SHOW COLUMNS FROM {$meta}", 0 );
-			$column    = is_array( $columns ) && in_array( 'order_id', $columns, true ) ? 'order_id' : 'pmpro_membership_order_id';
-			$order_ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$orders} WHERE user_id = %d", $user_id ) );
-			foreach ( $order_ids as $order_id ) {
-				$wpdb->delete( $meta, array( $column => (int) $order_id ), array( '%d' ) );
-			}
-		}
-		foreach ( array( 'pmpro_memberships_users', 'pmpro_membership_orders', 'pmpro_discount_codes_uses' ) as $suffix ) {
-			$table = $wpdb->prefix . $suffix;
-			if ( self::table_exists( $table ) ) {
-				$wpdb->delete( $table, array( 'user_id' => $user_id ), array( '%d' ) );
-			}
-		}
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->usermeta} WHERE user_id = %d AND meta_key LIKE %s", $user_id, $wpdb->esc_like( 'pmpro' ) . '%' ) );
-	}
-
-	/**
-	 * @param string $table Full table name.
-	 */
-	private static function table_exists( $table ) {
-		global $wpdb;
-		return $table === $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 	}
 
 	private static function member( $member_id ) {

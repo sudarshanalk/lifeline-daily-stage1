@@ -9,7 +9,7 @@ Lifeline Daily (lifelinedaily.com) is a health information website on WordPress,
 | Stage | What it delivers | Status |
 |---|---|---|
 | 1. Revamp | The two live calculators (Daily Protein Target, Diabetes Risk Check), homepage, health-tools hub, landing pages, linking and governance | Built and on staging; production release (HG-03) still to come |
-| 2. Membership | Accounts, goals, four four-week tracks, Premium through Stripe and Paid Memberships Pro, meal plans, workouts, challenges, food diary, Healthy Weight Check, SEO, AEO and speed | Built, on staging; goes live with Stage 3 |
+| 2. Membership | Accounts, goals, four four-week tracks, Premium through Stripe (Paid Memberships Pro retired 6 Nov 2026, FR3-96), meal plans, workouts, challenges, food diary, Healthy Weight Check, SEO, AEO and speed | Built, on staging; goes live with Stage 3 |
 | 3. Goal journey, member features and launch | Google, Apple and email-code sign-in; a goal with a guided plan; rule-based decision engine; dashboard; full food tracker; health logging; new calculators and tracks; Free and Premium; GA4; the paid launch | **In progress** from 2 Nov 2026 |
 | 4. Mobile app | iPhone and Android apps on the same account, data and Premium | Not started |
 | 5. Smart features | AI food helpers, health-app imports, languages, support chatbot, AI suggestions | Not started |

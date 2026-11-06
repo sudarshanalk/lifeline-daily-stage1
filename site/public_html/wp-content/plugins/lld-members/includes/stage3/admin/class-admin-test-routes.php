@@ -55,7 +55,8 @@ class LLD_Members_Admin_Test_Routes {
 		$op  = isset( $p['op'] ) ? (string) $p['op'] : '';
 		$log = LLD_Members_Schema::table( 'admin_log' );
 		if ( 'owner' === $op ) {
-			$admins = get_users( array( 'role' => 'administrator', 'number' => 1, 'orderby' => 'ID' ) );
+			// The same account the Stage 2 test sign-in (/test/owner) uses: the first administrator by login name.
+			$admins = get_users( array( 'role' => 'administrator', 'number' => 1 ) );
 			if ( $admins ) {
 				// A new run starts with no fresh codes counted against the hour (repeated local runs).
 				$wpdb->delete( LLD_Members_Stage3_Schema::table( 'email_codes' ), array( 'email' => strtolower( (string) $admins[0]->user_email ), 'purpose' => 'admin_step' ), array( '%s', '%s' ) );
@@ -113,11 +114,7 @@ class LLD_Members_Admin_Test_Routes {
 			return new WP_REST_Response( array( 'on' => empty( $p['off'] ) ), 200 );
 		}
 		if ( 'clear_spam' === $op ) {
-			// Paid Memberships Pro counts every code step of a sign-in as a failed login for this address; the specs
-			// sign in many times, so they clear that count first (test sites only).
-			if ( function_exists( 'pmpro_clear_spam_activity' ) ) {
-				pmpro_clear_spam_activity();
-			}
+			// Kept so older specs still run: the plugin that counted code-step sign-ins as failures is retired (FR3-96).
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
 		}
 		if ( 'clock' === $op ) {
