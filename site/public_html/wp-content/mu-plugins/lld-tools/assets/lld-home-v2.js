@@ -1,5 +1,5 @@
 /*! lld-home-v2.js — behaviour for the v2 homepage (S2-L1): Day/Night colours, the "Your Health" menu, the calculator
- *  tabs (each tab shows the real tool's embed; a tab's frame loads the first time it is opened) and the science accordion.
+ *  tabs with their quick checks (numbers from the signed-off engines in lld-home-calc.js) and the science accordion.
  *  No dependencies, no cookies, no analytics. The Day/Night choice is remembered in this browser only. */
 (function () {
   'use strict';
@@ -56,8 +56,6 @@
     $$('[data-calc-panel]').forEach(function (p) {
       var on = p.getAttribute('data-calc-panel') === slug;
       p.hidden = !on;
-      var f = on && $('iframe[data-src]', p);
-      if (f) { f.src = f.getAttribute('data-src'); f.removeAttribute('data-src'); }
     });
     $$('[data-calc-img]').forEach(function (i) { i.classList.toggle('hidden', i.getAttribute('data-calc-img') !== slug); });
     var t = $('#calc-image-title'), s = $('#calc-image-sub');
@@ -74,6 +72,64 @@
     if (i < 0) return;
     var next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
     next.focus(); setCalcTab(next.getAttribute('data-calc-tab'));
+  });
+
+  /* Quick checks: the design's sliders, with every number from the signed-off engines (window.LLD_HOME_CALC). */
+  var CALC = window.LLD_HOME_CALC;
+  var ACT = [null, ['sedentary', 'Mostly sitting'], ['light', 'Lightly active'], ['moderate', 'Moderate'], ['vigorous', 'Very active']];
+  var BADGE = {
+    good: 'inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800',
+    mid: 'inline-block px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-800',
+    bad: 'inline-block px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-800',
+    info: 'inline-block px-3 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700'
+  };
+  var RISK = { low: ['Low risk', 'good'], moderate: ['Moderate risk', 'mid'], high: ['High risk', 'bad'], veryHigh: ['Very high risk', 'bad'] };
+  var WAIST = { below: ['Below 0.40', 'info'], healthy: ['Healthy (under 0.50)', 'good'], increased: ['Increased (0.50 to 0.59)', 'mid'], high: ['High (0.60 or more)', 'bad'], notShown: ['See full check', 'info'] };
+
+  function panelValues(p) {
+    var v = {};
+    $$('input[type="range"][data-q]', p).forEach(function (i) { v[i.getAttribute('data-q')] = parseInt(i.value, 10); });
+    $$('.q-choice.is-active', p).forEach(function (b) { v[b.getAttribute('data-q')] = b.getAttribute('data-val'); });
+    return v;
+  }
+  function out(p, key, text) { var o = $('[data-q-out="' + key + '"]', p); if (o) o.textContent = text; }
+  function show(p, score, badge) {
+    $('[data-q-score]', p).textContent = score;
+    var b = $('[data-q-badge]', p); b.textContent = badge[0]; b.className = BADGE[badge[1]];
+  }
+  var RUN = {
+    protein: function (p, v) {
+      out(p, 'weight', v.weight + ' kg'); out(p, 'height', v.height + ' cm'); out(p, 'activity', ACT[v.activity][1]);
+      var r = CALC.computeProtein({ heightCm: v.height, weightKg: v.weight, age: 30, activity: ACT[v.activity][0], resistance: 'no',
+        goal: 'maintain', preg: 'no', kidney: 'no', liver: 'no', plan: 'no', meals: 3 });
+      show(p, r.targetG + 'g / day', [String(r.gPerKg) + 'g / kg • ' + r.lowG + '–' + r.highG + 'g range', 'good']);
+    },
+    diabetes: function (p, v) {
+      out(p, 'sex', ''); out(p, 'age', v.age + ' years'); out(p, 'bmi', String(v.bmi));
+      var pct = CALC.QDR2018A({ sex: v.sex, age: v.age, bmi: v.bmi, ethn: 'WhiteNA', smoke: 'Non', tds: 0 });
+      show(p, pct.toFixed(1) + '%', RISK[CALC.bandFor(pct)]);
+    },
+    'healthy-weight': function (p, v) {
+      out(p, 'waist', v.waist + ' cm'); out(p, 'height', v.height + ' cm');
+      var r2 = CALC.HW.roundHalfUp(v.waist / v.height, 2);
+      show(p, r2.toFixed(2), WAIST[CALC.HW.waistBand(r2, 0)]);
+    }
+  };
+  function recalc(p) { var k = p.getAttribute('data-calc-panel'); if (CALC && RUN[k]) RUN[k](p, panelValues(p)); }
+  $$('[data-calc-panel]').forEach(function (p) {
+    $$('input[type="range"][data-q]', p).forEach(function (i) { i.addEventListener('input', function () { recalc(p); }); });
+    $$('.q-choice', p).forEach(function (b) {
+      b.addEventListener('click', function () {
+        $$('.q-choice[data-q="' + b.getAttribute('data-q') + '"]', p).forEach(function (o) {
+          var on = o === b;
+          ['is-active', 'bg-[#1D4E48]', 'text-white', 'border-[#1D4E48]'].forEach(function (c) { o.classList.toggle(c, on); });
+          ['border-[#DDD5C7]', 'border-day-soft', 'text-[#5A5751]', 'text-day-muted', 'hover:text-black'].forEach(function (c) { o.classList.toggle(c, !on); });
+          o.setAttribute('aria-checked', String(on));
+        });
+        recalc(p);
+      });
+    });
+    recalc(p);
   });
 
   /* Science accordion */

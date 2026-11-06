@@ -181,10 +181,12 @@ $reads = lld_home_v2_reads();
       </div>
     </section>
 
-    <!-- 2. CLINICAL CALCULATORS: the real, signed-off tools embedded per tab -->
+    <!-- 2. CLINICAL CALCULATORS: the design's quick-check card; every number is the signed-off engine's own
+         (assets/lld-home-calc.js, copied unchanged from the tools). The full check, with its safety questions, is on each
+         tool's own page. -->
     <section id="calculators" class="py-16 px-6 max-w-7xl mx-auto scroll-mt-24" data-test="home-tools">
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start">
-        <div class="lg:col-span-5 order-2 lg:order-1 lg:sticky lg:top-28">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+        <div class="lg:col-span-5 order-2 lg:order-1">
           <div class="rounded-3xl overflow-hidden bg-[#EDE6DC] relative shadow-sm border border-[#DDD5C7] border-day-soft h-[420px] group">
             <?php foreach ($tools as $slug => $t): ?>
             <img data-calc-img="<?php echo esc_attr($slug); ?>" src="<?php echo $img($t['img']); ?>" alt="<?php echo esc_attr($t['alt']); ?>" width="800" height="600" loading="lazy" decoding="async" class="<?php echo $slug === $first ? '' : 'hidden '; ?>w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
@@ -213,14 +215,42 @@ $reads = lld_home_v2_reads();
             <?php endforeach; ?>
           </div>
 
-          <div class="bg-white bg-day-card rounded-2xl p-2 sm:p-3 border border-[#DDD5C7] border-day-soft">
-            <?php foreach ($tools as $slug => $t): $on = $slug === $first; ?>
-            <div role="tabpanel" id="calc-panel-<?php echo esc_attr($slug); ?>" aria-labelledby="tab-btn-<?php echo esc_attr($slug); ?>" data-calc-panel="<?php echo esc_attr($slug); ?>"<?php echo $on ? '' : ' hidden'; ?> class="lld-home-tool">
-              <?php echo lld_home_v2_tool_frame($slug, $on); // phpcs:ignore -- built by the plugin's escaped [lld_tool] embed ?>
-              <p class="px-3 pt-2 pb-1 text-[11px] text-[#6B6862] text-day-muted">Prefer a full page? <a href="<?php echo $u($t['url']); ?>" class="underline font-semibold text-[#1D4E48]">Open the <?php echo esc_html($t['tab']); ?> →</a></p>
+          <?php foreach ($tools as $slug => $t): $on = $slug === $first; ?>
+          <div role="tabpanel" id="calc-panel-<?php echo esc_attr($slug); ?>" aria-labelledby="tab-btn-<?php echo esc_attr($slug); ?>" data-calc-panel="<?php echo esc_attr($slug); ?>"<?php echo $on ? '' : ' hidden'; ?> class="bg-white bg-day-card rounded-2xl p-6 border border-[#DDD5C7] border-day-soft space-y-5">
+            <?php foreach ($t['inputs'] as $in): $id = 'q-' . $slug . '-' . $in['key']; ?>
+            <div>
+              <div class="flex justify-between items-center text-xs font-semibold text-[#1F1E1C] text-day-dark mb-1.5">
+                <?php if (!empty($in['choices'])): ?>
+                <span id="<?php echo esc_attr($id); ?>-label"><?php echo esc_html($in['label']); ?></span>
+                <?php else: ?>
+                <label for="<?php echo esc_attr($id); ?>"><?php echo esc_html($in['label']); ?></label>
+                <span data-q-out="<?php echo esc_attr($in['key']); ?>" class="text-[#1D4E48] bg-[#F4EFE7] bg-day-surface px-2 py-0.5 rounded"></span>
+                <?php endif; ?>
+              </div>
+              <?php if (!empty($in['choices'])): ?>
+              <div class="flex gap-2" role="radiogroup" aria-labelledby="<?php echo esc_attr($id); ?>-label">
+                <?php foreach ($in['choices'] as [$val, $lab]): ?>
+                <button type="button" role="radio" data-q="<?php echo esc_attr($in['key']); ?>" data-val="<?php echo esc_attr($val); ?>" aria-checked="<?php echo $val === $in['value'] ? 'true' : 'false'; ?>" class="q-choice px-4 py-1.5 rounded-full text-xs font-semibold border transition-all <?php echo $val === $in['value'] ? 'is-active bg-[#1D4E48] text-white border-[#1D4E48]' : 'border-[#DDD5C7] border-day-soft text-[#5A5751] text-day-muted hover:text-black'; ?>"><?php echo esc_html($lab); ?></button>
+                <?php endforeach; ?>
+              </div>
+              <?php else: ?>
+              <input type="range" id="<?php echo esc_attr($id); ?>" data-q="<?php echo esc_attr($in['key']); ?>" min="<?php echo (int)$in['min']; ?>" max="<?php echo (int)$in['max']; ?>" step="1" value="<?php echo (int)$in['value']; ?>" class="w-full h-1.5 bg-[#E6DFD4] rounded-lg appearance-none cursor-pointer accent-[#1D4E48]">
+              <?php endif; ?>
             </div>
             <?php endforeach; ?>
+
+            <div class="pt-3 border-t border-[#E8E2D6] border-day-soft flex items-center justify-between gap-4">
+              <div>
+                <span class="text-[10px] uppercase font-bold text-[#6B6862] text-day-muted block"><?php echo esc_html($t['result_label']); ?></span>
+                <div data-q-score class="font-serif-editorial text-4xl text-[#1F1E1C] text-day-dark score-glow" aria-live="polite"></div>
+              </div>
+              <div class="text-right">
+                <span data-q-badge class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800"></span>
+                <a href="<?php echo $u($t['url']); ?>" class="block text-xs font-semibold text-[#D4826F] hover:underline mt-1"><?php echo esc_html($t['cta']); ?></a>
+              </div>
+            </div>
           </div>
+          <?php endforeach; ?>
         </div>
       </div>
     </section>

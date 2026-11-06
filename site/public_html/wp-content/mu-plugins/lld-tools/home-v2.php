@@ -8,8 +8,8 @@
  *
  * Owner decisions (chat, 6 Nov 2026):
  *   - Whole design on the homepage only (header and footer included).
- *   - The calculator panel embeds the real, signed-off tools (the same auto-height embed as the /health-tools/ pages), so
- *     every number shown is the frozen engine's, after its safety questions. No clinical code or wording is copied here.
+ *   - The calculator card keeps the design's sliders; its numbers are the signed-off engines' own (generated copy, CI
+ *     checked against the tools), with no safety text on the card. The full check is each tool's own page.
  *   - The reader count in the newsletter box is dropped.
  *
  * The database `post_content` of the front page is not touched, so `wp lld home apply | revert` and TC-FR1-03's artefact
@@ -34,49 +34,53 @@ function lld_home_v2_asset(string $rel): string {
   return $url . '?ver=' . rawurlencode(function_exists('lld_tools_asset_version') ? lld_tools_asset_version('assets/' . $rel) : LLD_TOOLS_VERSION);
 }
 
-/** The three tools in the calculator panel, in tab order. Text is presentation only; the tools carry their own copy. */
+/**
+ * The three tabs of the quick-check card, in order. The card shows the design's sliders; the numbers come from the
+ * signed-off engines themselves (assets/lld-home-calc.js, generated from the tool pages; see tools/home-v2/). A slider
+ * card cannot ask every question, so each engine runs for a typical adult with the other answers at their defaults:
+ *   - protein: age 30, not pregnant or breastfeeding, no kidney or liver condition or set plan, no strength training,
+ *     goal "stay as I am"; height, weight and activity from the sliders;
+ *   - diabetes: QDiabetes-2018 Model A with sex, age and BMI from the card and every other answer "no" (white or not
+ *     stated, non-smoker, no family history or conditions);
+ *   - healthy weight: the waist-to-height ratio and its band, from waist and height.
+ * The full check, with its safety questions and every answer, is the tool's own page (the card's link).
+ * Owner decision, 6 Nov 2026: no safety text on the homepage card; the tools show it.
+ */
 function lld_home_v2_tools(): array {
   return [
     'protein' => [
       'tab' => 'Daily Protein Target', 'img' => 'calc-protein.jpg', 'alt' => 'Healthy fresh nutrition ingredients',
       'title' => 'Know your daily protein target.',
       'sub' => 'Preserve lean muscle, support healthy satiety, and pace your meals.',
-      'url' => '/health-tools/protein/',
+      'url' => '/health-tools/protein/', 'cta' => 'Get your full protein plan →', 'result_label' => 'Calculated Result',
+      'inputs' => [
+        ['key' => 'weight', 'label' => 'Body Weight', 'min' => 40, 'max' => 160, 'value' => 72],
+        ['key' => 'height', 'label' => 'Height', 'min' => 140, 'max' => 210, 'value' => 175],
+        ['key' => 'activity', 'label' => 'Activity / Training Level', 'min' => 1, 'max' => 4, 'value' => 3],
+      ],
     ],
     'diabetes' => [
       'tab' => 'Diabetes Risk Check', 'img' => 'calc-diabetes.jpg', 'alt' => 'Blood sugar balance habits',
       'title' => 'Check your 10-year diabetes risk.',
       'sub' => 'See where you stand, and the everyday changes that lower it.',
-      'url' => '/health-tools/diabetes-risk-check/',
+      'url' => '/health-tools/diabetes-risk-check/', 'cta' => 'Check your full risk →', 'result_label' => '10-Year Risk',
+      'inputs' => [
+        ['key' => 'sex', 'label' => 'Sex', 'value' => 'Female', 'choices' => [['Female', 'Female'], ['Male', 'Male']]],
+        ['key' => 'age', 'label' => 'Age', 'min' => 25, 'max' => 84, 'value' => 48],
+        ['key' => 'bmi', 'label' => 'Body Mass Index (BMI)', 'min' => 18, 'max' => 45, 'value' => 27],
+      ],
     ],
     'healthy-weight' => [
       'tab' => 'Healthy Weight Check', 'img' => 'calc-weight.jpg', 'alt' => 'Balanced whole-food meal',
       'title' => 'Assess your waist-to-height ratio.',
       'sub' => 'See your BMI and waist-to-height ratio, and what they mean for you.',
-      'url' => '/health-tools/healthy-weight-check/',
+      'url' => '/health-tools/healthy-weight-check/', 'cta' => 'See your BMI and full result →', 'result_label' => 'Waist-to-Height Ratio',
+      'inputs' => [
+        ['key' => 'waist', 'label' => 'Waist Circumference', 'min' => 50, 'max' => 150, 'value' => 84],
+        ['key' => 'height', 'label' => 'Height', 'min' => 140, 'max' => 210, 'value' => 170],
+      ],
     ],
   ];
-}
-
-/**
- * One tool embed for a tab: the plugin's own [lld_tool] embed (FR1-21), with a unique frame id per tab. A withdrawn tool
- * gives the plugin's own "unavailable" notice. The first tab's frame loads at once; the others carry data-src and load the
- * first time their tab is opened, so the page stays light. Only the first embed that has a frame keeps the frame script.
- */
-function lld_home_v2_tool_frame(string $slug, bool $first): string {
-  static $script_done = false;
-  if (!function_exists('lld_tools_render_tool')) return '';
-  $html = lld_tools_render_tool(['slug' => $slug]);
-  if ($html === '') return '';
-  $html = str_replace('id="lld-tool-frame"', 'id="lld-home-frame-' . esc_attr($slug) . '"', $html);
-  if (strpos($html, '<iframe') !== false) {
-    if ($script_done) $html = (string)preg_replace('/<script\b[^>]*>.*?<\/script>/s', '', $html);   // already on the page
-    $script_done = true;
-  }
-  if (!$first) {
-    $html = (string)preg_replace('/<iframe([^>]*?)\ssrc="([^"]+)"/', '<iframe$1 data-src="$2" src="about:blank"', $html, 1);
-  }
-  return $html;
 }
 
 /** Up to three newest published articles with a featured image, for "Essential Health Reads". */
@@ -112,7 +116,8 @@ if (function_exists('add_action')) {
       }
     }
     wp_enqueue_style('lld-home-v2', lld_home_v2_asset('lld-home-v2.css'), [], null);
-    wp_enqueue_script('lld-home-v2', lld_home_v2_asset('lld-home-v2.js'), [], null, true);
+    wp_enqueue_script('lld-home-calc', lld_home_v2_asset('lld-home-calc.js'), [], null, true);
+    wp_enqueue_script('lld-home-v2', lld_home_v2_asset('lld-home-v2.js'), ['lld-home-calc'], null, true);
   }, 999);
   add_action('wp_head', function () {
     if (!lld_home_v2_active()) return;
