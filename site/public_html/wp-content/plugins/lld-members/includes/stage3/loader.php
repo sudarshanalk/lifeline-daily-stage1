@@ -56,6 +56,7 @@ require_once __DIR__ . '/admin/class-admin-roles.php';
 require_once __DIR__ . '/admin/class-admin-security.php';
 require_once __DIR__ . '/admin/class-admin-members.php';
 require_once __DIR__ . '/admin/class-admin-pages.php';
+require_once __DIR__ . '/admin/class-admin-front.php';
 require_once __DIR__ . '/admin/class-admin-test-routes.php';
 
 /**
@@ -88,6 +89,8 @@ function lld_members_stage3_boot() {
 	LLD_Members_Admin_Security::boot();
 	LLD_Members_Admin_Members::boot();
 	LLD_Members_Admin_Pages::boot();
+	// The admin pages in My account (P3-87b, owner 6 Nov 2026).
+	LLD_Members_Admin_Front::boot();
 	LLD_Members_Admin_Test_Routes::boot();
 	add_action( 'rest_api_init', array( 'LLD_Members_Stage3_API', 'register' ) );
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {

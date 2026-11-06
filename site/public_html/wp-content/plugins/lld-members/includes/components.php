@@ -81,7 +81,11 @@ function lld_members_header( $signed_in ) {
 	foreach ( $public as $label => $url ) {
 		$links .= '<li><a href="' . esc_url( $url ) . '"' . lld_members_current( $url ) . '>' . esc_html( $label ) . '</a></li>';
 	}
-	if ( ! $signed_in ) {
+	// Stage 3 (P3-87b): the Owner and Support helpers reach My account → Admin from every member page.
+	$admin = function_exists( 'is_user_logged_in' ) && is_user_logged_in() && current_user_can( 'lld_admin_panel' );
+	if ( $admin ) {
+		$links .= '<li class="lld-nav-cta lld-nav-admin"><a href="' . esc_url( home_url( '/members/admin/' ) ) . '"' . lld_members_current( home_url( '/members/admin/' ) ) . '>Admin</a></li>';
+	} elseif ( ! $signed_in ) {
 		$links .= '<li class="lld-nav-signin"><a href="' . esc_url( $visitor['Sign in'] ) . '">Sign in</a></li>';
 		$links .= '<li class="lld-nav-cta"><a href="' . esc_url( $visitor['Join free'] ) . '">Join free</a></li>';
 	}

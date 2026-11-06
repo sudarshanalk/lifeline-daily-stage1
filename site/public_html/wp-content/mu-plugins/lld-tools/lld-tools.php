@@ -238,6 +238,45 @@ function lld_tools_deployed_version(string $slug): string {
   $origin = lld_tools_origin();
   return hash('sha256', $origin !== '' ? str_replace($origin, '__LLD_ORIGIN__', $raw) : $raw);
 }
+/** FR1-15, shared by `wp lld status set` and the admin Tools page (FR3-89): the only writer of tools/status.json.
+ *  `active` needs $version equal to the approved hash of the deployed tool file (DEC-10, DEC-71); there is no override.
+ *  Writes atomically, then purges the hub and landing pages. Returns the new entry, or an error message (file untouched). */
+function lld_tools_write_status(string $slug, string $status, string $version = '', ?string $message = null) {
+  if (!lld_tools_card($slug)) return "unknown tool '$slug'";
+  if (!in_array($status, ['active', 'withdrawn'], true)) return 'status must be active or withdrawn (DEC-24)';
+  $path = lld_tools_settings()['status_path'];
+  $raw = is_readable($path) ? file_get_contents($path) : false;
+  $doc = $raw ? json_decode($raw, true) : null;
+  if (!is_array($doc) || !isset($doc['tools'])) return "cannot read $path";
+  $entry = $doc['tools'][$slug] ?? ['status' => 'active', 'approved_version' => '', 'message' => null, 'since' => null];
+  if ($status === 'active') {
+    $deployed = lld_tools_deployed_version($slug);
+    if (!preg_match('/^[0-9a-f]{64}$/', $version) || $version !== $deployed) return "version $version is not an approved version of the deployed tool file (approved hash of the deployed file: " . ($deployed ?: 'unreadable') . "); only an approved, deployed version can be activated (DEC-10, DEC-71)";
+    $entry['status'] = 'active'; $entry['approved_version'] = $version; $entry['message'] = null; $entry['since'] = gmdate('Y-m-d\TH:i:s\Z');
+  } else {
+    $entry['status'] = 'withdrawn'; $entry['message'] = $message !== null ? $message : 'unavailable.' . $slug; $entry['since'] = gmdate('Y-m-d\TH:i:s\Z');
+  }
+  $doc['tools'][$slug] = $entry; $doc['updated_at'] = gmdate('Y-m-d\TH:i:s\Z');
+  $json = json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+  $tmp = $path . '.tmp';
+  if (file_put_contents($tmp, $json, LOCK_EX) === false || !rename($tmp, $path)) { @unlink($tmp); return "could not write $path"; }
+  foreach (lld_tools_purge_targets() as $t) do_action('litespeed_purge_url', $t);   // purge (DEC-31)
+  return $entry;
+}
+/** The pages a status change must purge: the hub, each landing page and any configured targets (DEC-31). */
+function lld_tools_purge_targets(): array {
+  return array_merge([home_url('/health-tools/')], array_map(fn($c) => home_url($c['landing_url']), array_values(lld_tools_cards())), (array)lld_tools_settings()['purge_targets']);
+}
+/** The admin Tools page turns a withdrawn tool back on only with the version it had when it was last approved and
+ *  active, and only if that is still the deployed file (FR3-89, DEC-71): a changed file needs `wp lld status set`. */
+function lld_tools_reactivate(string $slug) {
+  $entry = lld_tools_status()['tools'][$slug] ?? [];
+  $version = (string)($entry['approved_version'] ?? '');
+  if (!preg_match('/^[0-9a-f]{64}$/', $version) || $version !== lld_tools_deployed_version($slug)) {
+    return "This tool's file has changed since it was approved, so it can't be turned back on here. It needs the approved version (wp lld status set).";
+  }
+  return lld_tools_write_status($slug, 'active', $version);
+}
 function lld_tools_render_version(array $atts = []): string {
   $atts = shortcode_atts(['slug' => ''], $atts, 'lld_tool_version');
   $h = lld_tools_deployed_version($atts['slug']);
@@ -588,28 +627,13 @@ if (defined('WP_CLI') && WP_CLI) {
       $slug = $args[1] ?? ''; $status = $args[2] ?? '';
       if (!lld_tools_card($slug)) WP_CLI::error("unknown tool '$slug'");
       if (!in_array($status, ['active', 'withdrawn'], true)) WP_CLI::error("status must be active or withdrawn (DEC-24)");
-      $path = lld_tools_settings()['status_path'];
-      $raw = is_readable($path) ? file_get_contents($path) : false;
-      $doc = $raw ? json_decode($raw, true) : null;
-      if (!is_array($doc) || !isset($doc['tools'])) WP_CLI::error("cannot read $path");
-      $entry = $doc['tools'][$slug] ?? ['status' => 'active', 'approved_version' => '', 'message' => null, 'since' => null];
-      if ($status === 'active') {
-        $version = (string)($assoc['version'] ?? '');
-        if (!preg_match('/^[0-9a-f]{64}$/', $version)) WP_CLI::error('--version=<sha256 of the approved tool file> is required to set active');
-        $deployed = lld_tools_deployed_version($slug);
-        if ($version !== $deployed) WP_CLI::error("version $version is not an approved version of the deployed tool file (approved hash of the deployed file: " . ($deployed ?: 'unreadable') . "); only an approved, deployed version can be activated (DEC-10, DEC-71)");
-        $entry['status'] = 'active'; $entry['approved_version'] = $version; $entry['message'] = null; $entry['since'] = gmdate('Y-m-d\TH:i:s\Z');
-      } else {
-        $entry['status'] = 'withdrawn'; $entry['message'] = isset($assoc['message']) ? (string)$assoc['message'] : 'unavailable.' . $slug; $entry['since'] = gmdate('Y-m-d\TH:i:s\Z');
-      }
-      $doc['tools'][$slug] = $entry; $doc['updated_at'] = gmdate('Y-m-d\TH:i:s\Z');
-      $json = json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
-      $tmp = $path . '.tmp';
-      if (file_put_contents($tmp, $json, LOCK_EX) === false || !rename($tmp, $path)) { @unlink($tmp); WP_CLI::error("could not write $path"); }
+      $version = $status === 'active' ? (string)($assoc['version'] ?? '') : '';
+      if ($status === 'active' && !preg_match('/^[0-9a-f]{64}$/', $version)) WP_CLI::error('--version=<sha256 of the approved tool file> is required to set active');
+      $entry = lld_tools_write_status($slug, $status, $version, isset($assoc['message']) ? (string)$assoc['message'] : null);
+      if (is_string($entry)) WP_CLI::error($entry);
       WP_CLI::log("$slug: $status (since " . $entry['since'] . ")");
-      // purge (DEC-31): the hub and landing pages plus any configured targets; LiteSpeed when present, otherwise a logged manual step
-      $targets = array_merge([home_url('/health-tools/')], array_map(fn($c) => home_url($c['landing_url']), array_values(lld_tools_cards())), (array)lld_tools_settings()['purge_targets']);
-      if (has_action('litespeed_purge_url') || class_exists('\LiteSpeed\Purge')) { foreach ($targets as $t) do_action('litespeed_purge_url', $t); WP_CLI::log('purged: ' . implode(', ', $targets)); }
+      $targets = lld_tools_purge_targets();
+      if (has_action('litespeed_purge_url') || class_exists('\LiteSpeed\Purge')) WP_CLI::log('purged: ' . implode(', ', $targets));
       else WP_CLI::warning('LiteSpeed Cache not active here: purge ' . implode(', ', $targets) . ' manually (runbook)');
       WP_CLI::success("status.json updated");
     }

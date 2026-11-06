@@ -21,7 +21,7 @@ class LLD_Members_Admin_Log {
 
 	const KEEP_DAYS = 730;
 
-	/** Actions that need a reason (FR3-86). */
+	/** Actions that need a reason (FR3-86). Feature and tool switches take an optional reason (FR3-74, 6 Nov 2026). */
 	const NEED_REASON = array(
 		'member_delete',
 		'premium_grant',
@@ -32,9 +32,9 @@ class LLD_Members_Admin_Log {
 		'test_account_mark',
 		'test_account_unmark',
 		'test_accounts_set',
-		'feature_off',
-		'feature_test_accounts',
-		'feature_on',
+		'premium_test_on',
+		'premium_test_off',
+		'member_reset',
 		'helper_add',
 		'helper_remove',
 	);
@@ -65,6 +65,9 @@ class LLD_Members_Admin_Log {
 		'feature_off'            => 'Turned a feature off',
 		'feature_test_accounts'  => 'Limited a feature to test accounts',
 		'feature_on'             => 'Turned a feature on for everyone',
+		'premium_test_on'        => 'Made a Premium test member',
+		'premium_test_off'       => 'Returned a Premium test member to Free',
+		'member_reset'           => 'Reset a test member to a clean start',
 		'feature_all_on'         => 'Turned every feature on',
 		'feature_all_off'        => 'Made each feature follow its own switch',
 		'helper_add'             => 'Added a Support helper',

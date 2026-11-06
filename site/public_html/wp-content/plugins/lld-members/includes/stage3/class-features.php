@@ -268,6 +268,63 @@ class LLD_Members_Features {
 	}
 
 	/**
+	 * The stored row of a switch, or null when it was never set (a calculator's own switch then follows the group).
+	 *
+	 * @param string $feature Feature name.
+	 * @return array|null
+	 */
+	public static function stored( $feature ) {
+		$all = get_option( self::OPTION );
+		return is_array( $all ) && isset( $all[ $feature ] ) && is_array( $all[ $feature ] ) ? $all[ $feature ] : null;
+	}
+
+	/**
+	 * Put a switch back exactly as it was before a change (Undo, FR3-74 AS-07): a stored row, or no row at all.
+	 *
+	 * @param string     $feature Feature name.
+	 * @param array|null $row     The row before the change.
+	 * @param string     $note    Note for the history.
+	 * @return true|WP_Error
+	 */
+	public static function restore_row( $feature, $row, $note ) {
+		if ( ! array_key_exists( $feature, self::catalog() ) ) {
+			return new WP_Error( 'lld_feature_unknown', 'Unknown feature: ' . $feature );
+		}
+		$before = self::state( $feature );
+		$all    = get_option( self::OPTION );
+		$all    = is_array( $all ) ? $all : array();
+		if ( is_array( $row ) && in_array( (string) ( $row['state'] ?? '' ), self::STATES, true ) ) {
+			$all[ $feature ] = array(
+				'state'       => (string) $row['state'],
+				'approved_by' => sanitize_text_field( (string) ( $row['approved_by'] ?? '' ) ),
+				'changed_at'  => gmdate( 'Y-m-d H:i:s' ),
+				'override'    => ! empty( $row['override'] ),
+			);
+		} else {
+			unset( $all[ $feature ] );
+		}
+		update_option( self::OPTION, $all, true );
+		$after = self::state( $feature );
+		self::add_history( $feature, $before, $after, sanitize_text_field( (string) $note ) );
+		if ( class_exists( 'LLD_Members_Admin_Log' ) ) {
+			LLD_Members_Admin_Log::add( 'off' === $after ? 'feature_off' : 'feature_on', array( 'target' => $feature, 'before' => $before, 'after' => $after, 'reason' => (string) $note ) );
+		}
+		return true;
+	}
+
+	/**
+	 * Record a change made elsewhere (a standalone tool's status.json switch, FR3-89) in the same history.
+	 *
+	 * @param string $key  History key (for example tool_protein).
+	 * @param string $from State before.
+	 * @param string $to   State after.
+	 * @param string $note Reason.
+	 */
+	public static function record( $key, $from, $to, $note ) {
+		self::add_history( sanitize_key( (string) $key ), $from, $to, sanitize_text_field( (string) $note ) );
+	}
+
+	/**
 	 * A feature's changes, newest first.
 	 *
 	 * @param string $feature Feature name.

@@ -53,6 +53,9 @@ if [ "${LLD_CI_STAGE1_TOOLS:-}" = "1" ]; then
   cp -R "$REPO/site/public_html/wp-content/mu-plugins/lld-tools/." "$DIR/wp-content/mu-plugins/lld-tools/"
   cp "$REPO/site/public_html/wp-content/mu-plugins/lld-tools-loader.php" "$DIR/wp-content/mu-plugins/lld-tools-loader.php"
   wp post create --path="$DIR" --post_type=page --post_name=health-tools --post_title="Health Tools" --post_status=publish --post_content='[lld_tools_hub]' --quiet
+  # P3-87b: the standalone tools and their tools/status.json switch, copied into this throwaway site so the admin
+  # Tools page can turn one off and on (FR3-89) without touching the repository's files.
+  cp -R "$REPO/site/public_html/tools" "$DIR/tools"
 fi
 # Router: without one, PHP's built-in server answers 404 itself for any missing path with a dot (/sitemap.xml)
 # instead of passing it to WordPress, unlike Apache/LiteSpeed with the WordPress .htaccess on staging and production

@@ -893,3 +893,38 @@
     init();
   }
 })();
+
+/**
+ * Admin in My account (P3-87b · FR3-74, FR3-88): a switch saves as soon as it is flipped. The page comes back with
+ * "Saved" and Undo. Without JavaScript each switch has its own Save button.
+ */
+(function () {
+  'use strict';
+
+  function initAdminToggles() {
+    if (typeof document.querySelectorAll !== 'function') return; // test stubs without a full DOM
+    var toggles = document.querySelectorAll('[data-lld-admin] input[data-lld-adm-autosubmit]');
+    Array.prototype.forEach.call(toggles, function (input) {
+      input.addEventListener('change', function () {
+        var form = input.form;
+        if (!form) return;
+        var state = input.parentNode.querySelector('.lld-adm-state');
+        if (state) state.textContent = input.checked ? 'On' : 'Off';
+        input.setAttribute('aria-busy', 'true');
+        if (typeof form.requestSubmit === 'function') form.requestSubmit();
+        else form.submit();
+      });
+    });
+    var notice = document.querySelector('[data-lld-adm-notice]');
+    if (notice) {
+      notice.setAttribute('tabindex', '-1');
+      notice.focus();
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAdminToggles);
+  } else {
+    initAdminToggles();
+  }
+})();

@@ -18,6 +18,18 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Admin_Members {
 
+	/** A Premium test member's grant ends on this date: "no end date" (FR3-91, owner question 128). */
+	const NO_END = '2099-12-31';
+
+	/** At most this many Premium test members (owner question 129). */
+	const PREMIUM_TEST_LIMIT = 5;
+
+	/** Grant reason prefix: the account was a test account before it became a Premium test member, and stays one after. */
+	const WAS_TEST = 'Premium test member (was a test account): ';
+
+	/** Stage 3 tables a reset clears besides the health data (FR3-92): the member's own lists and progress. */
+	const RESET_TABLES = array( 'today_steps', 'custom_foods', 'food_favourites', 'recipes', 'shares', 'reminders' );
+
 	/** Tables the admin panel may read (NFR3-19 AS-02). */
 	const READS = array( 'member', 'subscription', 'identities', 'pauses', 'member_notes', 'premium_grants', 'admin_log' );
 
@@ -385,9 +397,13 @@ class LLD_Members_Admin_Members {
 		if ( ! $row ) {
 			return new WP_Error( 'lld_admin_member', 'That member no longer exists.' );
 		}
-		if ( in_array( $action, array( 'block', 'delete', 'test' ), true ) && (int) $row->user_id > 0 && LLD_Members_Admin_Roles::is_admin_user( (int) $row->user_id ) ) {
+		if ( in_array( $action, array( 'block', 'delete', 'test', 'ptm', 'reset' ), true ) && (int) $row->user_id > 0 && LLD_Members_Admin_Roles::is_admin_user( (int) $row->user_id ) ) {
 			// An admin's own account is never blocked, deleted or marked here: the Owner could lock themself out.
 			return new WP_Error( 'lld_admin_target', 'This is an admin account. Admin accounts can\'t be blocked, deleted or marked here.' );
+		}
+		if ( in_array( $action, array( 'test', 'grant', 'ungrant' ), true ) && self::is_premium_test( (int) $row->id ) ) {
+			// A Premium test member changes only through its own action, so it never becomes real Premium by a side door.
+			return new WP_Error( 'lld_admin_ptm', 'This is a Premium test member. Use "Return to Free" first.' );
 		}
 		$reason = trim( (string) ( $in['reason'] ?? '' ) );
 		$method = 'act_' . $action;
@@ -420,6 +436,8 @@ class LLD_Members_Admin_Members {
 			'unblock'      => 'member_unblock',
 			'delete'       => 'member_delete',
 			'download'     => 'member_download_sent',
+			'ptm'          => ! empty( $in['on'] ) ? 'premium_test_on' : 'premium_test_off',
+			'reset'        => 'member_reset',
 		);
 		return $map[ $action ] ?? $action;
 	}
@@ -561,6 +579,9 @@ class LLD_Members_Admin_Members {
 		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $ends ) || $ends <= gmdate( 'Y-m-d' ) ) {
 			return new WP_Error( 'lld_admin_grant', 'Choose an end date after today.' );
 		}
+		if ( $ends >= self::NO_END ) {
+			return new WP_Error( 'lld_admin_grant', 'Choose an end date before ' . self::NO_END . '. For no end date, make a Premium test member.' );
+		}
 		global $wpdb;
 		$now = gmdate( 'Y-m-d H:i:s' );
 		$wpdb->insert(
@@ -604,6 +625,93 @@ class LLD_Members_Admin_Members {
 		}
 		LLD_Members_Admin_Log::add( 'membership_end', array( 'member' => (int) $row->id, 'before' => 'Premium', 'after' => 'now' === $when ? 'ended now' : 'ends at the end of the period', 'reason' => $reason ) );
 		return 'now' === $when ? 'Membership ended now.' : 'Membership ends at the end of the paid period.';
+	}
+
+	/**
+	 * FR3-91: is this member a Premium test member (a test account with free Premium and no end date)?
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function is_premium_test( $member_id ) {
+		$grant = self::active_grant( (int) $member_id );
+		if ( ! $grant || substr( (string) $grant->ends_at, 0, 10 ) < self::NO_END ) {
+			return false;
+		}
+		$row = self::member( (int) $member_id );
+		return $row && in_array( strtolower( (string) $row->email ), LLD_Members_Features::test_account_emails(), true );
+	}
+
+	/**
+	 * How many Premium test members there are now.
+	 */
+	public static function premium_test_count() {
+		global $wpdb;
+		$now = gmdate( 'Y-m-d H:i:s' );
+		$ids = (array) $wpdb->get_col( $wpdb->prepare( 'SELECT DISTINCT member_id FROM ' . LLD_Members_Stage3_Schema::table( 'premium_grants' ) . ' WHERE removed_at IS NULL AND starts_at <= %s AND ends_at >= %s', $now, self::NO_END . ' 00:00:00' ) );
+		return count( array_filter( array_map( 'intval', $ids ), array( __CLASS__, 'is_premium_test' ) ) );
+	}
+
+	/**
+	 * FR3-91: make a member a Premium test member (test account + free Premium, no end date, no Stripe), or return them
+	 * to Free. Nothing is deleted either way.
+	 */
+	private static function act_ptm( $row, array $in, $reason ) {
+		$on     = ! empty( $in['on'] );
+		$id     = (int) $row->id;
+		$email  = strtolower( (string) $row->email );
+		$emails = array_values( array_diff( LLD_Members_Features::test_account_emails(), array( $email ) ) );
+		global $wpdb;
+		$table = LLD_Members_Stage3_Schema::table( 'premium_grants' );
+		$now   = gmdate( 'Y-m-d H:i:s' );
+		if ( $on ) {
+			if ( self::is_premium_test( $id ) ) {
+				return new WP_Error( 'lld_admin_ptm', 'This member is already a Premium test member.' );
+			}
+			if ( self::premium_test_count() >= self::PREMIUM_TEST_LIMIT ) {
+				return new WP_Error( 'lld_admin_ptm', 'There can be at most ' . self::PREMIUM_TEST_LIMIT . ' Premium test members. Return one to Free first.' );
+			}
+			$was_test = in_array( $email, LLD_Members_Features::test_account_emails(), true );
+			$emails[] = $email;
+			LLD_Members_Features::save_test_accounts( $emails );
+			$wpdb->insert( $table, array( 'member_id' => $id, 'starts_at' => $now, 'ends_at' => self::NO_END . ' 00:00:00', 'reason' => sanitize_textarea_field( ( $was_test ? self::WAS_TEST : 'Premium test member: ' ) . $reason ), 'granted_by' => get_current_user_id(), 'created_at' => $now ) );
+			LLD_Members_Admin_Log::add( 'premium_test_on', array( 'member' => $id, 'before' => 'not a Premium test member', 'after' => 'Premium test member', 'reason' => $reason ) );
+			return 'Premium test member on: every Premium feature, free, with no end date.';
+		}
+		if ( ! self::is_premium_test( $id ) ) {
+			return new WP_Error( 'lld_admin_ptm', 'This member is not a Premium test member.' );
+		}
+		$grant = self::active_grant( $id );
+		$wpdb->query( $wpdb->prepare( "UPDATE {$table} SET removed_at = %s WHERE member_id = %d AND removed_at IS NULL AND ends_at >= %s", $now, $id, self::NO_END . ' 00:00:00' ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( ! $grant || 0 !== strpos( (string) $grant->reason, self::WAS_TEST ) ) {
+			LLD_Members_Features::save_test_accounts( $emails ); // it was not a test account before, so it stops being one
+		}
+		LLD_Members_Admin_Log::add( 'premium_test_off', array( 'member' => $id, 'before' => 'Premium test member', 'after' => 'Free', 'reason' => $reason ) );
+		return 'Returned to Free. Nothing was deleted.';
+	}
+
+	/**
+	 * FR3-92: reset a test account to a clean start. Its health data (the same deletion as withdrawing health consent,
+	 * without the consent change) and its own lists and progress go; the account, sign-in, test status and Premium
+	 * stay. Nobody sees the data that is deleted (NFR3-19).
+	 */
+	private static function act_reset( $row, array $in, $reason ) {
+		$id = (int) $row->id;
+		if ( ! in_array( strtolower( (string) $row->email ), LLD_Members_Features::test_account_emails(), true ) ) {
+			return new WP_Error( 'lld_admin_reset', 'Only a test account can be reset.' );
+		}
+		if ( 'RESET' !== trim( (string) ( $in['typed'] ?? '' ) ) ) {
+			return new WP_Error( 'lld_admin_reset', 'Type RESET to confirm.' );
+		}
+		LLD_Members_Erasure::withdraw_health( $id, false );
+		global $wpdb;
+		foreach ( self::RESET_TABLES as $suffix ) {
+			$table = LLD_Members_Stage3_Schema::table( $suffix );
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) ) === $table ) {
+				$wpdb->delete( $table, array( 'member_id' => $id ), array( '%d' ) );
+			}
+		}
+		LLD_Members_Admin_Log::add( 'member_reset', array( 'member' => $id, 'before' => 'test member with data', 'after' => 'clean start', 'reason' => $reason ) );
+		return 'Test member reset. They start again at goal setting.';
 	}
 
 	/**

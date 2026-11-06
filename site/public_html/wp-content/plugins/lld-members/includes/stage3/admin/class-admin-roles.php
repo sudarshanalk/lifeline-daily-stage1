@@ -29,6 +29,7 @@ class LLD_Members_Admin_Roles {
 	public static function boot() {
 		add_action( 'init', array( __CLASS__, 'ensure_role' ), 5 );
 		add_filter( 'user_has_cap', array( __CLASS__, 'owner_caps' ), 10, 4 );
+		add_filter( 'register_post_type_args', array( __CLASS__, 'content_caps' ), 10, 2 );
 	}
 
 	/**
@@ -55,11 +56,36 @@ class LLD_Members_Admin_Roles {
 	 * @return array<string,bool>
 	 */
 	public static function owner_caps( $allcaps, $caps, $args, $user ) {
-		unset( $caps, $args, $user );
+		unset( $args, $user );
 		if ( ! empty( $allcaps['manage_options'] ) ) {
 			$allcaps[ self::PANEL ] = true;
+			// Lifeline Daily content is the Owner's (FR3-95): its own capabilities, held only by full administrators.
+			foreach ( (array) $caps as $cap ) {
+				if ( is_string( $cap ) && preg_match( '/_lld_contents?$/', $cap ) ) {
+					$allcaps[ $cap ] = true;
+				}
+			}
 		}
 		return $allcaps;
+	}
+
+	/**
+	 * Lifeline Daily content (tracks, recipes, meal plans, workouts, challenges, rules, badges, wording, the safety
+	 * matrix and Live Q&A) gets its own capabilities instead of WordPress's post ones, so Editors, who may edit any
+	 * post, cannot open, add or change it, even by typing the address (FR3-95). The Owner holds them (owner_caps).
+	 *
+	 * @param array  $args Post type arguments.
+	 * @param string $type Post type.
+	 * @return array
+	 */
+	public static function content_caps( $args, $type ) {
+		$ours = class_exists( 'LLD_Members_Content' ) && method_exists( 'LLD_Members_Content', 'types' ) ? (array) LLD_Members_Content::types() : array();
+		if ( in_array( $type, array_merge( $ours, array( 'lld_matrix', 'lld_qa', 'lld_wording' ) ), true ) ) {
+			$args['capability_type'] = array( 'lld_content', 'lld_contents' );
+			$args['map_meta_cap']    = true;
+			unset( $args['capabilities'] );
+		}
+		return $args;
 	}
 
 	/**
