@@ -38,6 +38,9 @@ $reads = lld_home_v2_reads();
 <head>
   <meta charset="<?php bloginfo('charset'); ?>">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <?php if (!current_theme_supports('title-tag')): // Newspaper prints the title in its own header.php, which this page skips ?>
+  <title><?php echo esc_html(wp_get_document_title()); ?></title>
+  <?php endif; ?>
   <?php wp_head(); ?>
 </head>
 <body <?php body_class('lld-home-v2 selection:bg-[#1D4E48] selection:text-white'); ?>>
