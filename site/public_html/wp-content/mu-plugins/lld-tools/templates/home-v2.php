@@ -45,6 +45,7 @@ $reads = lld_home_v2_reads();
   <?php wp_head(); ?>
 </head>
 <body <?php body_class('lld-home-v2 selection:bg-[#1D4E48] selection:text-white'); ?>>
+<script>try{if(localStorage.getItem('lld_circadian')==='night')document.body.classList.add('mode-night');}catch(e){}</script>
 <?php if (function_exists('wp_body_open')) wp_body_open(); ?>
   <a href="#lld-main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-[#1D4E48] focus:px-4 focus:py-2 focus:rounded-full">Skip to content</a>
 

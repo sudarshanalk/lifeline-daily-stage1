@@ -22,5 +22,8 @@
       menu.classList.toggle('hidden', !open);
       menuBtn.setAttribute('aria-expanded', String(open));
     });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !menu.classList.contains('hidden')) { menu.classList.add('hidden'); menuBtn.setAttribute('aria-expanded', 'false'); menuBtn.focus(); }
+    });
   }
 })();

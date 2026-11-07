@@ -37,13 +37,21 @@ function lld_category_v2_card($p, string $size, string $fallbackCat, bool $eager
 
 /* ------------------------------------------------------------------ hooks ------------------------------------------ */
 if (function_exists('add_action')) {
-  // 12 guides a page on v2 category pages, so the grid and its paging come from the main query.
+  // 12 guides a page on v2 category pages, so the grid and its paging come from the main query. It runs last: the
+  // Newspaper Cloud Library (plugin, loaded after this mu-plugin) sets offset and limit from its category template's
+  // loop and then lowers found_posts by that offset while `main_query_offset` is on; both are undone here, for the
+  // tree categories only. Hidden and other categories keep the theme's own query.
   add_action('pre_get_posts', function ($q) {
     if (is_admin() || !$q->is_main_query() || !$q->is_category() || $q->is_feed()) return;
     if (defined('LLD_CATEGORY_V2') && !LLD_CATEGORY_V2) return;
+    if (!function_exists('lld_tools_front_view') || !lld_tools_front_view()) return;
+    $term = $q->get_queried_object();
+    if (!$term || empty($term->slug) || !lld_hub_entry(lld_categories_doc(), (string)$term->slug)) return;
     $q->set('posts_per_page', LLD_CATEGORY_V2_PER_PAGE);
+    $q->set('offset', '');
+    $q->set('main_query_offset', false);
     $q->set('ignore_sticky_posts', true);
-  });
+  }, PHP_INT_MAX);
   add_filter('template_include', function ($template) {
     return lld_category_v2_hub() ? __DIR__ . '/templates/category-v2.php' : $template;
   }, 99);

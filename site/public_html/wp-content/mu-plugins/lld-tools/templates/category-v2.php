@@ -17,12 +17,14 @@ $header = lld_hub_header_view($term, $hub, $total);
 $tool = lld_hub_tool_view((string)$hub['tool']);
 $track = lld_hub_track_view((string)$hub['track']);
 $check = isset($_GET['lld_check']) ? sanitize_text_field(wp_unslash($_GET['lld_check'])) : '';
+$guide_sent = (bool)preg_match('/^(guide|waitlist)-/', $check);
 $back = remove_query_arg('lld_check');
 
-// Page 1: the hub's flagship and two trending guides on top, the other guides of the page in the grid.
+// Page 1: the hub's flagship and two trending guides on top, the other guides of the page in the grid. A category with
+// four guides or fewer shows them all in the grid, as the old hub did.
 $posts = (array)$wp_query->posts;
 $featured = null; $side = []; $grid = $posts;
-if ($paged === 1 && $posts) {
+if ($paged === 1 && count($posts) > 4) {
   $byId = []; foreach ($posts as $p) $byId[(int)$p->ID] = $p;
   $want = $hub['flagship'];
   if ($want !== null && $want !== '') {
@@ -34,11 +36,12 @@ if ($paged === 1 && $posts) {
   if ($pick['flagship']) $featured = lld_category_v2_card($byId[$pick['flagship']], 'medium_large', $catName, true);
   foreach ((array)$pick['trending'] as $id) if (isset($byId[$id])) $side[] = lld_category_v2_card($byId[$id], 'thumbnail', $catName, true);
   $hero = array_filter(array_merge([$pick['flagship']], (array)$pick['trending']));
-  $grid = array_slice(array_values(array_filter($posts, fn($p) => !in_array((int)$p->ID, $hero, true))), 0, 9);
+  $grid = array_values(array_filter($posts, fn($p) => !in_array((int)$p->ID, $hero, true)));
 }
 $cards = array_map(fn($p) => lld_category_v2_card($p, 'medium_large', $catName), $grid);
-$from = $total ? ($paged - 1) * LLD_CATEGORY_V2_PER_PAGE + 1 : 0;
-$to = min($total, $paged * LLD_CATEGORY_V2_PER_PAGE);
+$per = max(1, (int)$wp_query->get('posts_per_page'));
+$from = $total ? ($paged - 1) * $per + 1 : 0;
+$to = min($total, ($paged - 1) * $per + count($posts));
 $pages = (int)$wp_query->max_num_pages;
 ?><!DOCTYPE html>
 <html <?php language_attributes(); ?>>
@@ -51,6 +54,7 @@ $pages = (int)$wp_query->max_num_pages;
   <?php wp_head(); ?>
 </head>
 <body <?php body_class('lld-v2 mode-day'); ?>>
+<script>try{if(localStorage.getItem('lld_circadian')==='night'){document.body.classList.add('mode-night');document.body.classList.remove('mode-day');}}catch(e){}</script>
 <?php if (function_exists('wp_body_open')) wp_body_open(); ?>
   <a href="#lld-main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-[#1D4E48] focus:px-4 focus:py-2 focus:rounded-full">Skip to content</a>
 
@@ -64,7 +68,7 @@ $pages = (int)$wp_query->max_num_pages;
 
       <nav class="hidden lg:flex items-center gap-7 text-sm font-medium text-day-muted" aria-label="Main Navigation">
         <a href="<?php echo $u('/health-tools/'); ?>" class="hover:text-day-dark transition-colors">Health Tools</a>
-        <a href="<?php echo $u('/articles/'); ?>" aria-current="page" class="text-[#1D4E48] dark:text-[#4FA89B] font-semibold border-b-2 border-[#1D4E48] pb-1">Articles</a>
+        <a href="<?php echo $u('/articles/'); ?>" aria-current="true" class="text-[#1D4E48] dark:text-[#4FA89B] font-semibold border-b-2 border-[#1D4E48] pb-1">Articles</a>
         <a href="<?php echo $u('/programmes/'); ?>" class="hover:text-day-dark transition-colors">Programmes</a>
         <a href="<?php echo $u('/pricing/'); ?>" class="hover:text-day-dark transition-colors">Pricing</a>
       </nav>
@@ -75,10 +79,9 @@ $pages = (int)$wp_query->max_num_pages;
           <input id="lld-cat-search" type="search" name="s" placeholder="Search Lifeline Daily..." class="w-48 lg:w-56 pl-8 pr-3 py-1.5 text-xs rounded-full bg-white dark:bg-[#1A2624] border border-day-soft text-day-dark focus:outline-hidden focus:border-[#1D4E48] transition-all placeholder:text-day-muted/60">
           <svg class="w-3.5 h-3.5 text-day-muted absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
         </form>
-        <button type="button" id="themeToggle" aria-pressed="false" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium border border-day-soft bg-white dark:bg-[#1A2624] text-day-dark hover:border-[#1D4E48] transition-all shadow-xs" title="Switch circadian mode">
+        <button type="button" id="themeToggle" aria-pressed="false" aria-label="Night colours" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium border border-day-soft bg-white dark:bg-[#1A2624] text-day-dark hover:border-[#1D4E48] transition-all shadow-xs" title="Switch circadian mode">
           <span id="themeIcon" aria-hidden="true">☀️</span>
           <span id="themeLabel" class="hidden sm:inline text-[11px]">Day</span>
-          <span class="sr-only sm:hidden">Day or night colours</span>
         </button>
         <?php if ($signed_in): ?>
         <a href="<?php echo $u('/members/'); ?>" class="hidden sm:inline-flex text-xs font-semibold px-4 py-2 rounded-full bg-[#1D4E48] text-white hover:bg-[#163D38] transition-colors shadow-xs">My account</a>
@@ -147,7 +150,7 @@ $pages = (int)$wp_query->max_num_pages;
             <div>
               <div class="flex items-center justify-between gap-2 mb-4">
                 <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-bold tracking-wider uppercase bg-[#1D4E48] text-white">Popular guide</span>
-                <span class="text-xs text-day-muted"><?php echo (int)$featured['minutes']; ?> min read &bull; Updated <?php echo esc_html(date_i18n('M Y', strtotime('1 ' . $featured['updated']))); ?></span>
+                <span class="text-xs text-day-muted"><?php echo (int)$featured['minutes']; ?> min read &bull; Updated <?php echo esc_html(get_the_modified_date('M Y', (int)$featured['id'])); ?></span>
               </div>
               <h2 class="font-serif-editorial text-2xl sm:text-3xl lg:text-4xl text-day-dark font-normal tracking-tight group-hover:text-[#1D4E48] dark:group-hover:text-[#4FA89B] transition-colors mb-3 leading-snug">
                 <a href="<?php echo esc_url($featured['url']); ?>" class="after:absolute after:inset-0"><?php echo esc_html($featured['title']); ?></a>
@@ -231,6 +234,7 @@ $pages = (int)$wp_query->max_num_pages;
       <span class="text-xs text-day-muted shrink-0"><?php echo $total ? 'Showing ' . (int)$from . '&ndash;' . (int)$to . ' of ' . (int)$total . ' guides' : ''; ?></span>
     </div>
 
+    <?php if (!$posts): ?><p class="mb-10 text-sm text-day-muted">New guides for this topic are on their way. In the meantime, <a href="<?php echo $u('/articles/'); ?>" class="underline font-semibold text-[#1D4E48]">see all articles</a>.</p><?php endif; ?>
     <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10" id="guidesGrid" data-test="category-grid" aria-label="Guides">
       <?php foreach ($cards as $c): ?>
       <article class="guide-card rounded-2xl bg-day-surface border border-day-soft overflow-hidden transition-card flex flex-col justify-between group relative" data-post-id="<?php echo (int)$c['id']; ?>">
@@ -259,6 +263,8 @@ $pages = (int)$wp_query->max_num_pages;
       <?php
       $links = paginate_links(['total' => $pages, 'current' => $paged, 'type' => 'array', 'prev_text' => '&larr; Newer', 'next_text' => 'Older &rarr;', 'mid_size' => 1]);
       foreach ((array)$links as $l) {
+        // paginate_links copies the current query string; a starter-guide notice must not follow the reader to other pages
+        $l = (string)preg_replace_callback('/href="([^"]*)"/', fn($m) => 'href="' . esc_url(remove_query_arg('lld_check', html_entity_decode($m[1]))) . '"', $l);
         $on = strpos($l, 'current') !== false;
         echo '<span class="' . ($on ? 'tab-pill active ' : '') . 'inline-flex rounded-full border border-day-soft bg-white dark:bg-[#1A2624] text-day-dark [&>a]:px-4 [&>a]:py-2 [&>span]:px-4 [&>span]:py-2 hover:border-[#1D4E48]">' . $l . '</span>'; // phpcs:ignore -- WordPress-built links
       }
@@ -358,7 +364,7 @@ $pages = (int)$wp_query->max_num_pages;
         <div>
           <h2 class="font-serif-editorial text-2xl text-[#F4F1EA] font-normal mb-1">Get a free starter guide</h2>
           <p class="text-xs text-[#A39E93]">Pick a topic and get 7 practical tips by email over your first week.</p>
-          <?php if ($check !== '' && $check !== '1'): ?><p class="mt-2 text-xs font-semibold text-[#79D1C3]" role="status">Check your email to confirm.</p><?php endif; ?>
+          <?php if ($guide_sent): ?><p class="mt-2 text-xs font-semibold text-[#79D1C3]" role="status">Check your email to confirm.</p><?php endif; ?>
           <?php if ($check === '1'): ?><p class="mt-2 text-xs font-semibold text-[#F3DEC8]" role="alert">We could not send the guide to that address. Please check it and try again.</p><?php endif; ?>
         </div>
         <form method="post" action="" class="flex flex-col sm:flex-row items-stretch sm:items-end gap-2.5 w-full md:w-auto">
