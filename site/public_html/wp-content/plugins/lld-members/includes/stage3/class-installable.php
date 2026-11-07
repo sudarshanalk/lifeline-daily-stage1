@@ -186,6 +186,11 @@ JS;
 	 */
 	private static function no_cache() {
 		nocache_headers();
+		// The LiteSpeed Cache plugin sets its own cache header at shutdown, so a raw header alone is overridden.
+		if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+			define( 'DONOTCACHEPAGE', true );
+		}
+		do_action( 'litespeed_control_set_nocache', 'lld-members installable file' );
 		header( 'X-LiteSpeed-Cache-Control: no-cache' );
 	}
 
