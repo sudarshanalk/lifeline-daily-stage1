@@ -3,7 +3,7 @@
  * Category page v2 (S2-L1; owner's new UI pack, 6 Nov 2026: `03 UI Designs/UI-Inventory/Latest UIs/lld_category_weight_eating.html`).
  *
  * Every category of the agreed tree (data/categories.json → tree, top categories and their children) is rendered by its own
- * full-page template (`templates/category-v2.php`): the design's header with search and Day/Night, masthead with breadcrumb,
+ * full-page template (`templates/category-v2.php`): the site's one header (parts/v2-header.php), masthead with breadcrumb,
  * guide count and sub-topic pills, three featured guides, the category's tool banner, the latest guides grid with paging,
  * the 4-week track banner, the urgent-care strip and the design's footer with the starter guide.
  *
@@ -68,7 +68,7 @@ if (function_exists('add_action')) {
       }
     }
     wp_enqueue_style('lld-v2', lld_home_v2_asset('lld-v2.css'), [], null);
-    wp_enqueue_script('lld-category-v2', lld_home_v2_asset('lld-category-v2.js'), [], null, true);
+    wp_enqueue_script('lld-home-v2', lld_home_v2_asset('lld-home-v2.js'), [], null, true);   // the shared header's menu and Day/Night
   }, 999);
   add_action('wp_head', function () {
     if (!lld_category_v2_hub()) return;

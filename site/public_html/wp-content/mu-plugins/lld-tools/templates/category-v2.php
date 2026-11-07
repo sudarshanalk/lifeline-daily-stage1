@@ -1,7 +1,8 @@
 <?php
 /**
  * Category page v2 full-page template (see ../category-v2.php). Markup and classes follow the owner's design file
- * `lld_category_weight_eating.html`; styles are the compiled `assets/lld-v2.css`, behaviour `assets/lld-category-v2.js`.
+ * `lld_category_weight_eating.html`, with the site's one header (parts/v2-header.php, owner 7 Nov 2026); styles are the
+ * compiled `assets/lld-v2.css`, behaviour `assets/lld-home-v2.js`.
  */
 if (!defined('ABSPATH')) exit;
 
@@ -53,60 +54,12 @@ $pages = (int)$wp_query->max_num_pages;
   <?php endif; ?>
   <?php wp_head(); ?>
 </head>
-<body <?php body_class('lld-v2 mode-day'); ?>>
-<script>try{if(localStorage.getItem('lld_circadian')==='night'){document.body.classList.add('mode-night');document.body.classList.remove('mode-day');}}catch(e){}</script>
+<body <?php body_class('lld-v2'); ?>>
+<script>try{if(localStorage.getItem('lld_circadian')==='night')document.body.classList.add('mode-night');}catch(e){}</script>
 <?php if (function_exists('wp_body_open')) wp_body_open(); ?>
   <a href="#lld-main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-[#1D4E48] focus:px-4 focus:py-2 focus:rounded-full">Skip to content</a>
 
-  <!-- Main Global Navigation Header -->
-  <header class="nav-blur sticky top-0 z-40 border-b border-day-soft transition-colors duration-200">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
-      <a href="<?php echo $u('/'); ?>" class="group flex items-baseline gap-2.5 shrink-0 focus:outline-hidden" title="Lifeline Daily Home">
-        <span class="font-serif-editorial text-2xl sm:text-3xl font-normal tracking-tight text-day-dark group-hover:text-[#1D4E48] transition-colors">Lifeline Daily</span>
-        <span class="hidden sm:inline-block text-[11px] font-medium tracking-wide uppercase text-day-muted border-l border-day-soft pl-2.5">Evidence-based, clinically reviewed</span>
-      </a>
-
-      <nav class="hidden lg:flex items-center gap-7 text-sm font-medium text-day-muted" aria-label="Main Navigation">
-        <a href="<?php echo $u('/health-tools/'); ?>" class="hover:text-day-dark transition-colors">Health Tools</a>
-        <a href="<?php echo $u('/articles/'); ?>" aria-current="true" class="text-[#1D4E48] dark:text-[#4FA89B] font-semibold border-b-2 border-[#1D4E48] pb-1">Articles</a>
-        <a href="<?php echo $u('/programmes/'); ?>" class="hover:text-day-dark transition-colors">Programmes</a>
-        <a href="<?php echo $u('/pricing/'); ?>" class="hover:text-day-dark transition-colors">Pricing</a>
-      </nav>
-
-      <div class="flex items-center gap-3">
-        <form role="search" method="get" action="<?php echo $u('/'); ?>" class="relative hidden md:block">
-          <label for="lld-cat-search" class="sr-only">Search Lifeline Daily</label>
-          <input id="lld-cat-search" type="search" name="s" placeholder="Search Lifeline Daily..." class="w-48 lg:w-56 pl-8 pr-3 py-1.5 text-xs rounded-full bg-white dark:bg-[#1A2624] border border-day-soft text-day-dark focus:outline-hidden focus:border-[#1D4E48] transition-all placeholder:text-day-muted/60">
-          <svg class="w-3.5 h-3.5 text-day-muted absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-        </form>
-        <button type="button" id="themeToggle" aria-pressed="false" aria-label="Night colours" class="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs font-medium border border-day-soft bg-white dark:bg-[#1A2624] text-day-dark hover:border-[#1D4E48] transition-all shadow-xs" title="Switch circadian mode">
-          <span id="themeIcon" aria-hidden="true">☀️</span>
-          <span id="themeLabel" class="hidden sm:inline text-[11px]">Day</span>
-        </button>
-        <?php if ($signed_in): ?>
-        <a href="<?php echo $u('/members/'); ?>" class="hidden sm:inline-flex text-xs font-semibold px-4 py-2 rounded-full bg-[#1D4E48] text-white hover:bg-[#163D38] transition-colors shadow-xs">My account</a>
-        <?php else: ?>
-        <a href="<?php echo $u('/members/join/'); ?>" class="hidden sm:inline-flex text-xs font-semibold px-4 py-2 rounded-full bg-[#1D4E48] text-white hover:bg-[#163D38] transition-colors shadow-xs">Join Free</a>
-        <?php endif; ?>
-        <button type="button" id="navMenuBtn" aria-expanded="false" aria-controls="navMenu" class="lg:hidden w-9 h-9 rounded-full border border-day-soft text-day-dark flex items-center justify-center" aria-label="Menu">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-width="2" d="M4 7h16M4 12h16M4 17h16"/></svg>
-        </button>
-      </div>
-    </div>
-    <div id="navMenu" class="hidden lg:hidden border-t border-day-soft bg-day-base">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-4 grid grid-cols-2 gap-2 text-sm font-semibold">
-        <a href="<?php echo $u('/health-tools/'); ?>" class="px-4 py-3 rounded-xl bg-day-surface border border-day-soft text-day-dark">Health Tools</a>
-        <a href="<?php echo $u('/articles/'); ?>" class="px-4 py-3 rounded-xl bg-day-surface border border-day-soft text-[#1D4E48] dark:text-[#4FA89B]">Articles</a>
-        <a href="<?php echo $u('/programmes/'); ?>" class="px-4 py-3 rounded-xl bg-day-surface border border-day-soft text-day-dark">Programmes</a>
-        <a href="<?php echo $u('/pricing/'); ?>" class="px-4 py-3 rounded-xl bg-day-surface border border-day-soft text-day-dark">Pricing</a>
-        <form role="search" method="get" action="<?php echo $u('/'); ?>" class="col-span-2">
-          <label for="lld-cat-search-m" class="sr-only">Search Lifeline Daily</label>
-          <input id="lld-cat-search-m" type="search" name="s" placeholder="Search Lifeline Daily..." class="w-full px-4 py-3 text-sm rounded-xl bg-white dark:bg-[#1A2624] border border-day-soft text-day-dark">
-        </form>
-        <?php if (!$signed_in): ?><a href="<?php echo $u('/members/join/'); ?>" class="sm:hidden col-span-2 px-4 py-3 rounded-xl bg-[#1D4E48] text-white text-center">Join Free</a><?php endif; ?>
-      </div>
-    </div>
-  </header>
+  <?php $lld_header = ['page' => 'category', 'current' => (string)$hub['category']]; include __DIR__ . '/parts/v2-header.php'; ?>
 
   <main id="lld-main" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
