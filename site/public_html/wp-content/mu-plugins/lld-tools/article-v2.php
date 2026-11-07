@@ -145,6 +145,20 @@ function lld_article_v2_parts(string $html): array {
   return $out;
 }
 
+/**
+ * Key Takeaways: the first sentence of its first paragraph in bold (owner, 7 Nov 2026). Only a plain sentence of 30 words
+ * or fewer that ends with . ! or ? before any tag; anything else is left as written.
+ */
+function lld_article_v2_lead_bold(string $answer): string {
+  if (!preg_match('#<p\b[^>]*>\s*#i', $answer, $m, PREG_OFFSET_CAPTURE)) return $answer;
+  $start = $m[0][1] + strlen($m[0][0]);
+  // a sentence end is . ! or ? followed by a capital, a digit or the end of the paragraph, and not an abbreviation
+  if (!preg_match('#^([^<]{3,}?(?<!e\.g)(?<!i\.e)(?<!Dr)(?<!vs)(?<!etc)(?<!approx)[.!?])(?=\s+["“(]?[A-Z0-9]|\s*</p>|\s*$)#u', substr($answer, $start), $sm)) return $answer;
+  $first = $sm[1];
+  if (str_word_count(strip_tags($first)) > 30) return $answer;
+  return substr($answer, 0, $start) . '<strong class="lld-lead">' . $first . '</strong>' . substr($answer, $start + strlen($first));
+}
+
 /** Reading time in minutes at 200 words a minute (at least 1). */
 function lld_article_v2_minutes(string $html): int {
   return max(1, (int)ceil(str_word_count(wp_strip_all_tags(strip_shortcodes($html))) / 200));

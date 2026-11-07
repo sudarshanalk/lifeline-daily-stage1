@@ -7,6 +7,9 @@ import { resolve } from 'node:path';
 import { ROOT } from '../lib/paths.mjs';
 
 const PHP = resolve(ROOT, 'site/public_html/wp-content/mu-plugins/lld-tools/article-v2.php').replace(/\\/g, '/');
+const lead = (html) => execFileSync('php', ['-r',
+  `define('ABSPATH', '/'); require ${JSON.stringify(PHP)}; echo lld_article_v2_lead_bold(stream_get_contents(STDIN));`],
+  { input: html, encoding: 'utf8' });
 const parts = (html) => JSON.parse(execFileSync('php', ['-r',
   `define('ABSPATH', '/'); require ${JSON.stringify(PHP)}; echo json_encode(lld_article_v2_parts(stream_get_contents(STDIN)), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);`],
   { input: html, encoding: 'utf8' }));
@@ -97,5 +100,13 @@ describe('article page v2: the article laid out into the design blocks', () => {
     const p = parts('<p>One.</p><p>Two.</p>');
     expect(p.intro).toBe('<p>One.</p><p>Two.</p>');
     expect(p.sections).toEqual([]);
+  });
+
+  test('Key Takeaways: the first plain sentence is bold; abbreviations, links and unfinished sentences are left as written', () => {
+    const w = (t) => `<div class="lld-answer"><p>${t}</p></div>`;
+    expect(lead(w('Keto flu is short-lived. It passes.'))).toBe(w('<strong class="lld-lead">Keto flu is short-lived.</strong> It passes.'));
+    expect(lead(w('Eat whole foods, e.g. oats. Then walk.'))).toBe(w('<strong class="lld-lead">Eat whole foods, e.g. oats.</strong> Then walk.'));
+    expect(lead(w('Diet, e.g. <a href="x">fibre</a>, matters. Yes.'))).toBe(w('Diet, e.g. <a href="x">fibre</a>, matters. Yes.'));
+    expect(lead(w('No full stop here'))).toBe(w('No full stop here'));
   });
 });
