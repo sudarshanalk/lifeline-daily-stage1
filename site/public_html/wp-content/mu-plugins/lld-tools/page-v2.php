@@ -92,6 +92,38 @@ function lld_page_v2_related_ids(string $html): array {
   return array_values(array_unique(array_map('intval', $m[1] ?? [])));
 }
 
+/**
+ * The site's v2 look for a lld-members screen (P3-60 pricing first; owner's UI pack, Owner_Questions 153): the plugin's
+ * page shell (lld_members_layout with 'v2' => true) asks for each part here and keeps its own markup, wording and
+ * scripts in between. Parts: 'head' (stylesheet and fonts), 'body' (Day/Night before first paint), 'header', 'footer'
+ * (column titles as text: one heading per screen), 'scripts' (the header's menu and Day/Night). Off with LLD_PAGES_V2.
+ */
+function lld_v2_members_shell_on(): bool {
+  return !(defined('LLD_PAGES_V2') && !LLD_PAGES_V2) && function_exists('lld_home_v2_asset');
+}
+function lld_v2_members_shell(string $part): string {
+  if (!lld_v2_members_shell_on()) return '';
+  switch ($part) {
+    case 'head':
+      $out = '<link rel="stylesheet" href="' . esc_url(lld_home_v2_asset('lld-v2.css')) . '">';
+      foreach (['instrument-serif-latin', 'plus-jakarta-sans-latin-var'] as $f) {
+        $out .= '<link rel="preload" as="font" type="font/woff2" crossorigin href="' . esc_url(plugins_url('assets/fonts/' . $f . '.woff2', LLD_TOOLS_DIR . '/lld-tools.php')) . '">';
+      }
+      return $out;
+    case 'body':
+      return "<script>try{if(localStorage.getItem('lld_circadian')==='night')document.body.classList.add('mode-night');}catch(e){}</script>";
+    case 'header':
+      $lld_header = ['page' => 'page', 'current' => ''];
+      ob_start(); include __DIR__ . '/templates/parts/v2-header.php'; return (string)ob_get_clean();
+    case 'footer':
+      $lld_footer_plain = true;
+      ob_start(); include __DIR__ . '/templates/parts/v2-footer.php'; return (string)ob_get_clean();
+    case 'scripts':
+      return '<script src="' . esc_url(lld_home_v2_asset('lld-home-v2.js')) . '"></script>';
+  }
+  return '';
+}
+
 /* ------------------------------------------------------------------ hooks ------------------------------------------ */
 if (function_exists('add_filter')) {
   add_filter('template_include', function ($template) {

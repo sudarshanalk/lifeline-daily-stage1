@@ -69,9 +69,10 @@ test('TC-NFR3-12-AS-02 lead files: cookie banner lines are 24 px and Cookie sett
   expect(lineHeight, 'banner text line height (Owner question 118)').toBeGreaterThanOrEqual(24);
   await expect(text.getByRole('link', { name: 'Privacy policy' })).toBeVisible();
   await banner.getByRole('button', { name: 'Reject', exact: true }).click();
-  // the footer link shows on theme pages (the member layout has its own footer link); the hub page is one
+  // the footer link shows on theme pages (the member layout has its own footer link); the hub page is one.
+  // On v2 pages the site footer carries the link and the extra one is hidden, so check whichever shows.
   await page.goto('/health-tools/');
-  const settings = page.locator('[data-lld-consent-footer] a');
+  const settings = page.locator('a[data-lld-cookie-settings]').filter({ visible: true }).first();
   await expect(settings).toBeVisible();
   {
     const { h, w } = await box(settings);
