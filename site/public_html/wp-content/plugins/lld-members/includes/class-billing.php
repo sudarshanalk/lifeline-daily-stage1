@@ -377,18 +377,20 @@ class LLD_Members_Billing {
 				'description' => 'Premium is ' . self::money( $prices['yearly'], 'usd' ) . ' a year or ' . self::money( $prices['monthly'], 'usd' ) . ' a month, tax included.',
 				'main'        => $main,
 				'wide'        => true,
+				'v2'          => true,
 			)
 		);
 	}
 
 	/**
-	 * SCR-01 item 2: what is free and what is Premium, as listed in Requirements section 3.
+	 * SCR-01 item 2: what is free and what is Premium, as listed in Requirements section 3. The members' Facebook group and
+	 * the live Q&A are deferred (owner, Stage 3; Owner_Questions 157), so Premium does not list them.
 	 */
 	private static function pricing_features() {
 		$columns = array(
 			'Free for everyone'    => array( 'Daily Protein Target calculator', 'Diabetes Risk Check and Healthy Weight Check', 'All public articles', 'A free starter guide for each track' ),
 			'Free with an account' => array( 'General wellbeing suggestions', 'Health goals (with health consent)', 'Your personal dashboard', 'Week 1 of each track, once per track', 'The food diary during week 1' ),
-			'Premium'              => array( 'Weeks 2 to 4 of every track', 'Weekly meal plans and shopping lists', 'A new challenge every month', 'Progressive workout plans', 'The food diary, ongoing', 'Weekly action plan and weekly review', 'Long-term progress, charts and milestones', 'The members\' Facebook group and a monthly live Q&A', 'Premium-only articles', 'Premium in the Lifeline Daily app when it launches (yearly members)' ),
+			'Premium'              => array( 'Weeks 2 to 4 of every track', 'Weekly meal plans and shopping lists', 'A new challenge every month', 'Progressive workout plans', 'The food diary, ongoing', 'Weekly action plan and weekly review', 'Long-term progress, charts and milestones', 'Premium-only articles', 'Premium in the Lifeline Daily app when it launches (yearly members)' ),
 		);
 		// Labels, not headings: the pricing page keeps its single heading (UI2-01 snapshot).
 		$html = '<section class="lld-card lld-pricing-features" data-lld-features aria-label="What you get"><p class="lld-section-title"><strong>What you get</strong></p><div class="lld-feature-columns">';
