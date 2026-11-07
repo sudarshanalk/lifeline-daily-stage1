@@ -164,7 +164,7 @@ if (function_exists('add_action')) {
       if (!$deps || empty($deps->queue)) continue;
       foreach ((array)$deps->queue as $h) {
         $src = isset($deps->registered[$h]) ? (string)$deps->registered[$h]->src : '';
-        if (strpos($src, '/wp-content/themes/') !== false || in_array($h, ['lld-tools', 'lld-theme'], true)) {
+        if (strpos($src, '/wp-content/themes/') !== false || strpos($src, '/wp-content/plugins/td-') !== false || in_array($h, ['lld-tools', 'lld-theme'], true)) {
           ($deps === $wp_styles) ? wp_dequeue_style($h) : wp_dequeue_script($h);
         }
       }
