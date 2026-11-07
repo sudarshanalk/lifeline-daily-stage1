@@ -50,20 +50,20 @@ $health_on = in_array($lld_header['page'], ['category', 'article'], true);
   <!-- Global Header Navigation -->
   <header class="sticky top-0 z-50 bg-[#FAF8F5]/95 bg-day-base backdrop-blur-md border-b border-[#EAE4D8] border-day-soft transition-colors">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 h-20 flex items-center justify-between gap-2">
-      <a href="<?php echo $hu('/'); ?>" class="flex items-center gap-2.5 group" aria-label="Lifeline Daily home">
+      <a href="<?php echo $hu('/'); ?>" class="text-inherit flex items-center gap-2.5 group" aria-label="Lifeline Daily home">
         <div class="w-8 h-8 rounded-full bg-[#1D4E48] text-white flex items-center justify-center font-serif-editorial text-xl italic font-bold" aria-hidden="true">L</div>
-        <span class="text-lg sm:text-xl font-bold tracking-tight whitespace-nowrap text-[#1F1E1C] text-day-dark">LIFELINE<span class="font-normal text-[#1D4E48] ml-1">DAILY</span></span>
+        <span class="text-lg sm:text-xl font-bold tracking-tight whitespace-nowrap text-[#1F1E1C] text-day-dark">LIFELINE<span class="font-normal text-[#1D4E48] ml-1 dark:text-[#4FA89B]">DAILY</span></span>
       </a>
 
       <nav class="hidden md:flex items-center gap-1 text-sm font-medium text-[#4A4742] text-day-muted" aria-label="Main">
-        <button type="button" id="nav-your-health-btn" aria-expanded="false" aria-controls="mega-menu" class="px-3.5 py-2 rounded-full hover:bg-[#EFEAE2] flex items-center gap-1.5 transition-colors font-semibold <?php echo $health_on ? 'bg-[#EFEAE2] bg-day-card text-[#1D4E48]' : 'text-[#1F1E1C] text-day-dark'; ?>">
+        <button type="button" id="nav-your-health-btn" aria-expanded="false" aria-controls="mega-menu" class="px-3.5 py-2 rounded-full hover:bg-[#EFEAE2] flex items-center gap-1.5 transition-colors font-semibold <?php echo $health_on ? 'bg-[#EFEAE2] bg-day-card text-[#1D4E48] dark:text-[#4FA89B]' : 'text-[#1F1E1C] text-day-dark'; ?>">
           <span>Your Health</span>
           <svg id="nav-arrow" class="w-4 h-4 transition-transform text-[#1D4E48]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
         </button>
-        <a href="<?php echo $anchor('calculators'); ?>" class="px-3.5 py-2 rounded-full hover:bg-[#EFEAE2] transition-colors">Calculators</a>
-        <a href="<?php echo $anchor('tracks'); ?>" class="px-3.5 py-2 rounded-full hover:bg-[#EFEAE2] transition-colors">4-Week Tracks</a>
-        <a href="<?php echo $anchor('science'); ?>" class="px-3.5 py-2 rounded-full hover:bg-[#EFEAE2] transition-colors">The Science</a>
-        <a href="<?php echo $on_home ? '#reads' : $hu('/articles/'); ?>" class="px-3.5 py-2 rounded-full hover:bg-[#EFEAE2] transition-colors">Guides</a>
+        <a href="<?php echo $anchor('calculators'); ?>" class="text-inherit px-3.5 py-2 rounded-full hover:bg-[#EFEAE2] transition-colors">Calculators</a>
+        <a href="<?php echo $anchor('tracks'); ?>" class="text-inherit px-3.5 py-2 rounded-full hover:bg-[#EFEAE2] transition-colors">4-Week Tracks</a>
+        <a href="<?php echo $anchor('science'); ?>" class="text-inherit px-3.5 py-2 rounded-full hover:bg-[#EFEAE2] transition-colors">The Science</a>
+        <a href="<?php echo $on_home ? '#reads' : $hu('/articles/'); ?>" class="text-inherit px-3.5 py-2 rounded-full hover:bg-[#EFEAE2] transition-colors">Guides</a>
       </nav>
 
       <div class="flex items-center gap-2 sm:gap-4">
@@ -93,7 +93,7 @@ $health_on = in_array($lld_header['page'], ['category', 'article'], true);
           <span class="text-2xl" aria-hidden="true"><?php echo esc_html($t['icon']); ?></span>
           <div>
             <strong class="text-sm text-[#1F1E1C] text-day-dark block"><?php echo esc_html($t['name']); ?></strong>
-            <?php if ($t['desc'] !== ''): ?><span class="text-xs text-[#6B6862] text-day-muted"><?php echo esc_html($t['desc']); ?></span><?php endif; ?>
+            <?php if ($t['desc'] !== ''): ?><span class="text-xs text-[#62605A] text-day-muted"><?php echo esc_html($t['desc']); ?></span><?php endif; ?>
           </div>
         </a>
         <?php endforeach; ?>
@@ -109,7 +109,7 @@ $health_on = in_array($lld_header['page'], ['category', 'article'], true);
         <a href="<?php echo $anchor('tracks'); ?>" class="px-4 py-3 rounded-xl bg-white bg-day-card border border-[#E0D8CB] border-day-soft text-[#1F1E1C] text-day-dark">4-Week Tracks</a>
         <a href="<?php echo $anchor('science'); ?>" class="px-4 py-3 rounded-xl bg-white bg-day-card border border-[#E0D8CB] border-day-soft text-[#1F1E1C] text-day-dark">The Science</a>
         <a href="<?php echo $on_home ? '#reads' : $hu('/articles/'); ?>" class="px-4 py-3 rounded-xl bg-white bg-day-card border border-[#E0D8CB] border-day-soft text-[#1F1E1C] text-day-dark">Guides</a>
-        <?php if (!$signed_in): ?><a href="<?php echo $hu('/members/sign-in/'); ?>" class="col-span-2 px-4 py-3 rounded-xl bg-white bg-day-card border border-[#E0D8CB] border-day-soft text-[#1D4E48]">Sign In</a><?php endif; ?>
+        <?php if (!$signed_in): ?><a href="<?php echo $hu('/members/sign-in/'); ?>" class="col-span-2 px-4 py-3 rounded-xl bg-white bg-day-card border border-[#E0D8CB] border-day-soft text-[#1D4E48] dark:text-[#4FA89B]">Sign In</a><?php endif; ?>
       </div>
     </div>
   </header>

@@ -57,7 +57,7 @@ $pages = (int)$wp_query->max_num_pages;
 <body <?php body_class('lld-v2'); ?>>
 <script>try{if(localStorage.getItem('lld_circadian')==='night')document.body.classList.add('mode-night');}catch(e){}</script>
 <?php if (function_exists('wp_body_open')) wp_body_open(); ?>
-  <a href="#lld-main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-[#1D4E48] focus:px-4 focus:py-2 focus:rounded-full">Skip to content</a>
+  <a href="#lld-main" class="text-inherit sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-[#1D4E48] focus:px-4 focus:py-2 focus:rounded-full">Skip to content</a>
 
   <?php $lld_header = ['page' => 'category', 'current' => (string)$hub['category'], 'exact' => (string)$term->slug === (string)$hub['category']]; include __DIR__ . '/parts/v2-header.php'; ?>
 
@@ -67,10 +67,10 @@ $pages = (int)$wp_query->max_num_pages;
     <header class="mb-10 sm:mb-12" data-test="category-header">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
         <nav class="flex items-center gap-2 text-xs text-day-muted uppercase tracking-wider font-semibold" aria-label="Breadcrumb">
-          <a href="<?php echo esc_url($header['home_url']); ?>" class="hover:text-day-dark transition-colors">Home</a>
+          <a href="<?php echo esc_url($header['home_url']); ?>" class="text-inherit hover:text-day-dark transition-colors">Home</a>
           <span class="text-day-muted/40" aria-hidden="true">&gt;</span>
           <?php if ($header['parent_name'] !== ''): ?>
-          <a href="<?php echo esc_url($header['parent_url']); ?>" class="hover:text-day-dark transition-colors"><?php echo esc_html($header['parent_name']); ?></a>
+          <a href="<?php echo esc_url($header['parent_url']); ?>" class="text-inherit hover:text-day-dark transition-colors"><?php echo esc_html($header['parent_name']); ?></a>
           <span class="text-day-muted/40" aria-hidden="true">&gt;</span>
           <?php endif; ?>
           <span class="text-[#1D4E48] dark:text-[#4FA89B]" aria-current="page"><?php echo esc_html($catName); ?></span>
@@ -106,7 +106,7 @@ $pages = (int)$wp_query->max_num_pages;
                 <span class="text-xs text-day-muted"><?php echo (int)$featured['minutes']; ?> min read &bull; Updated <?php echo esc_html(get_the_modified_date('M Y', (int)$featured['id'])); ?></span>
               </div>
               <h2 class="font-serif-editorial text-2xl sm:text-3xl lg:text-4xl text-day-dark font-normal tracking-tight group-hover:text-[#1D4E48] dark:group-hover:text-[#4FA89B] transition-colors mb-3 leading-snug">
-                <a href="<?php echo esc_url($featured['url']); ?>" class="after:absolute after:inset-0"><?php echo esc_html($featured['title']); ?></a>
+                <a href="<?php echo esc_url($featured['url']); ?>" class="text-inherit after:absolute after:inset-0"><?php echo esc_html($featured['title']); ?></a>
               </h2>
               <p class="text-sm sm:text-base text-day-muted leading-relaxed mb-6"><?php echo esc_html($featured['excerpt']); ?></p>
             </div>
@@ -134,7 +134,7 @@ $pages = (int)$wp_query->max_num_pages;
               <div class="flex gap-4 items-start">
                 <div class="flex-1">
                   <h3 class="font-serif-editorial text-xl sm:text-2xl text-day-dark font-normal leading-snug group-hover:text-[#1D4E48] dark:group-hover:text-[#4FA89B] transition-colors mb-2">
-                    <a href="<?php echo esc_url($s['url']); ?>" class="after:absolute after:inset-0"><?php echo esc_html($s['title']); ?></a>
+                    <a href="<?php echo esc_url($s['url']); ?>" class="text-inherit after:absolute after:inset-0"><?php echo esc_html($s['title']); ?></a>
                   </h3>
                   <p class="text-xs sm:text-sm text-day-muted line-clamp-3 leading-relaxed mb-4"><?php echo esc_html($s['excerpt']); ?></p>
                 </div>
@@ -187,7 +187,7 @@ $pages = (int)$wp_query->max_num_pages;
       <span class="text-xs text-day-muted shrink-0"><?php echo $total ? 'Showing ' . (int)$from . '&ndash;' . (int)$to . ' of ' . (int)$total . ' guides' : ''; ?></span>
     </div>
 
-    <?php if (!$posts): ?><p class="mb-10 text-sm text-day-muted">New guides for this topic are on their way. In the meantime, <a href="<?php echo $u('/articles/'); ?>" class="underline font-semibold text-[#1D4E48]">see all articles</a>.</p><?php endif; ?>
+    <?php if (!$posts): ?><p class="mb-10 text-sm text-day-muted">New guides for this topic are on their way. In the meantime, <a href="<?php echo $u('/articles/'); ?>" class="underline font-semibold text-[#1D4E48] dark:text-[#4FA89B]">see all articles</a>.</p><?php endif; ?>
     <section class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10" id="guidesGrid" data-test="category-grid" aria-label="Guides">
       <?php foreach ($cards as $c): ?>
       <article class="guide-card rounded-2xl bg-day-surface border border-day-soft overflow-hidden transition-card flex flex-col justify-between group relative" data-post-id="<?php echo (int)$c['id']; ?>">
@@ -199,7 +199,7 @@ $pages = (int)$wp_query->max_num_pages;
           <div class="p-5">
             <div class="text-[11px] text-day-muted mb-2 font-medium"><?php echo (int)$c['minutes']; ?> min read &bull; Updated <?php echo esc_html($c['updated']); ?></div>
             <h3 class="font-serif-editorial text-xl sm:text-2xl text-day-dark font-normal leading-snug group-hover:text-[#1D4E48] dark:group-hover:text-[#4FA89B] transition-colors mb-2">
-              <a href="<?php echo esc_url($c['url']); ?>" class="after:absolute after:inset-0"><?php echo esc_html($c['title']); ?></a>
+              <a href="<?php echo esc_url($c['url']); ?>" class="text-inherit after:absolute after:inset-0"><?php echo esc_html($c['title']); ?></a>
             </h3>
             <p class="text-xs sm:text-sm text-day-muted line-clamp-3 leading-relaxed"><?php echo esc_html($c['excerpt']); ?></p>
           </div>
@@ -231,7 +231,7 @@ $pages = (int)$wp_query->max_num_pages;
       <div class="rounded-3xl bg-[#142A27] text-white p-8 sm:p-12 relative overflow-hidden shadow-lg border border-[#23443F]">
         <div class="relative z-10 max-w-2xl">
           <span class="inline-flex items-center px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-[#224A44] text-[#79D1C3] mb-4">4-week programme</span>
-          <h2 class="font-serif-editorial text-3xl sm:text-4xl lg:text-5xl font-normal leading-tight mb-4">Ready to put these <?php echo esc_html(function_exists('mb_strtolower') ? mb_strtolower($catName) : strtolower($catName)); ?> guides into practice?</h2>
+          <h2 class="text-inherit font-serif-editorial text-3xl sm:text-4xl lg:text-5xl font-normal leading-tight mb-4">Ready to put these <?php echo esc_html(function_exists('mb_strtolower') ? mb_strtolower($catName) : strtolower($catName)); ?> guides into practice?</h2>
           <p class="text-sm sm:text-base text-white/80 leading-relaxed mb-8">Join our 4-week <?php echo esc_html($track['title']); ?> track: daily bite-size habits, meal guidance, and weekly review. Week 1 is free, then Premium is US$9.99 a month.</p>
           <div>
             <a href="<?php echo esc_url($track['url']); ?>" class="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-[#1D4E48] hover:bg-[#235E57] text-white font-semibold text-sm transition-colors border border-white/20 shadow-md"><span>Start 7-day trial</span><span aria-hidden="true">&rarr;</span></a>
@@ -268,16 +268,16 @@ $pages = (int)$wp_query->max_num_pages;
               ['https://x.com/LifelineDaily', 'X', 'M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z'],
               ['https://www.youtube.com/@LifelineDaily', 'YouTube', 'M23.5 6.2a3 3 0 00-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 00.5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 002.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 002.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.5 15.6V8.4l6.3 3.6-6.3 3.6z'],
             ] as [$href, $name, $path]): ?>
-            <a href="<?php echo esc_url($href); ?>" target="_blank" rel="noopener" aria-label="Lifeline Daily on <?php echo esc_attr($name); ?>" class="w-8 h-8 rounded-full bg-[#1A2624] flex items-center justify-center hover:text-white hover:bg-[#23332F] transition-all"><svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="<?php echo esc_attr($path); ?>"/></svg></a>
+            <a href="<?php echo esc_url($href); ?>" target="_blank" rel="noopener" aria-label="Lifeline Daily on <?php echo esc_attr($name); ?>" class="text-inherit w-8 h-8 rounded-full bg-[#1A2624] flex items-center justify-center hover:text-white hover:bg-[#23332F] transition-all"><svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24" aria-hidden="true"><path d="<?php echo esc_attr($path); ?>"/></svg></a>
             <?php endforeach; ?>
           </div>
         </div>
         <nav aria-label="Health tools">
           <h2 class="text-[11px] font-bold tracking-wider uppercase text-[#F4F1EA] mb-4">Health tools</h2>
           <ul class="space-y-2.5">
-            <li><a href="<?php echo $u('/health-tools/protein/'); ?>" class="hover:text-white transition-colors">Daily Protein Target</a></li>
-            <li><a href="<?php echo $u('/health-tools/diabetes-risk-check/'); ?>" class="hover:text-white transition-colors">Diabetes Risk Check</a></li>
-            <li><a href="<?php echo $u('/health-tools/healthy-weight-check/'); ?>" class="hover:text-white transition-colors">Healthy Weight Check</a></li>
+            <li><a href="<?php echo $u('/health-tools/protein/'); ?>" class="text-inherit hover:text-white transition-colors">Daily Protein Target</a></li>
+            <li><a href="<?php echo $u('/health-tools/diabetes-risk-check/'); ?>" class="text-inherit hover:text-white transition-colors">Diabetes Risk Check</a></li>
+            <li><a href="<?php echo $u('/health-tools/healthy-weight-check/'); ?>" class="text-inherit hover:text-white transition-colors">Healthy Weight Check</a></li>
             <li class="pt-1"><a href="<?php echo $u('/health-tools/'); ?>" class="text-[#79D1C3] hover:underline font-medium">All health tools &rarr;</a></li>
           </ul>
         </nav>
@@ -285,7 +285,7 @@ $pages = (int)$wp_query->max_num_pages;
           <h2 class="text-[11px] font-bold tracking-wider uppercase text-[#F4F1EA] mb-4">Topics</h2>
           <ul class="space-y-2.5">
             <?php foreach ((array)(lld_categories_doc()['tree'] ?? []) as $t): $on = (string)$t['slug'] === (string)$hub['category']; ?>
-            <li><a href="<?php echo $u('/category/' . $t['slug'] . '/'); ?>" class="<?php echo $on ? 'text-white font-medium hover:underline' : 'hover:text-white transition-colors'; ?>"><?php echo esc_html(str_replace(' & ', ' and ', html_entity_decode((string)$t['name'], ENT_QUOTES | ENT_HTML5, 'UTF-8'))); ?></a></li>
+            <li><a href="<?php echo $u('/category/' . $t['slug'] . '/'); ?>" class="<?php echo $on ? 'text-white font-medium hover:underline' : 'text-inherit hover:text-white transition-colors'; ?>"><?php echo esc_html(str_replace(' & ', ' and ', html_entity_decode((string)$t['name'], ENT_QUOTES | ENT_HTML5, 'UTF-8'))); ?></a></li>
             <?php endforeach; ?>
             <li class="pt-1"><a href="<?php echo $u('/articles/'); ?>" class="text-[#79D1C3] hover:underline font-medium">All articles &rarr;</a></li>
           </ul>
@@ -293,21 +293,21 @@ $pages = (int)$wp_query->max_num_pages;
         <nav aria-label="Programmes">
           <h2 class="text-[11px] font-bold tracking-wider uppercase text-[#F4F1EA] mb-4">Programmes</h2>
           <ul class="space-y-2.5">
-            <li><a href="<?php echo $u('/programmes/healthy-weight/'); ?>" class="hover:text-white transition-colors">Healthy Weight</a></li>
-            <li><a href="<?php echo $u('/programmes/blood-sugar/'); ?>" class="hover:text-white transition-colors">Blood Sugar Balance</a></li>
-            <li><a href="<?php echo $u('/programmes/fitness/'); ?>" class="hover:text-white transition-colors">Fitness and Strength</a></li>
-            <li><a href="<?php echo $u('/programmes/sleep-stress/'); ?>" class="hover:text-white transition-colors">Sleep and Stress</a></li>
+            <li><a href="<?php echo $u('/programmes/healthy-weight/'); ?>" class="text-inherit hover:text-white transition-colors">Healthy Weight</a></li>
+            <li><a href="<?php echo $u('/programmes/blood-sugar/'); ?>" class="text-inherit hover:text-white transition-colors">Blood Sugar Balance</a></li>
+            <li><a href="<?php echo $u('/programmes/fitness/'); ?>" class="text-inherit hover:text-white transition-colors">Fitness and Strength</a></li>
+            <li><a href="<?php echo $u('/programmes/sleep-stress/'); ?>" class="text-inherit hover:text-white transition-colors">Sleep and Stress</a></li>
             <li class="pt-1"><a href="<?php echo $u('/programmes/'); ?>" class="text-[#79D1C3] hover:underline font-medium">All programmes &rarr;</a></li>
-            <li class="pt-2"><a href="<?php echo $u('/pricing/'); ?>" class="hover:text-white transition-colors">Pricing</a></li>
+            <li class="pt-2"><a href="<?php echo $u('/pricing/'); ?>" class="text-inherit hover:text-white transition-colors">Pricing</a></li>
           </ul>
         </nav>
         <nav aria-label="Lifeline Daily">
           <h2 class="text-[11px] font-bold tracking-wider uppercase text-[#F4F1EA] mb-4">Lifeline Daily</h2>
           <ul class="space-y-2.5">
-            <li><a href="<?php echo $u('/about-us/'); ?>" class="hover:text-white transition-colors">About us</a></li>
-            <li><a href="<?php echo $u('/editorial-standards/'); ?>" class="hover:text-white transition-colors">Editorial standards</a></li>
-            <li><a href="<?php echo $u('/contact-us/'); ?>" class="hover:text-white transition-colors">Contact</a></li>
-            <li><a href="<?php echo $u('/medical-disclaimer/'); ?>" class="hover:text-white transition-colors">Medical disclaimer and urgent care</a></li>
+            <li><a href="<?php echo $u('/about-us/'); ?>" class="text-inherit hover:text-white transition-colors">About us</a></li>
+            <li><a href="<?php echo $u('/editorial-standards/'); ?>" class="text-inherit hover:text-white transition-colors">Editorial standards</a></li>
+            <li><a href="<?php echo $u('/contact-us/'); ?>" class="text-inherit hover:text-white transition-colors">Contact</a></li>
+            <li><a href="<?php echo $u('/medical-disclaimer/'); ?>" class="text-inherit hover:text-white transition-colors">Medical disclaimer and urgent care</a></li>
           </ul>
         </nav>
       </div>
@@ -340,13 +340,13 @@ $pages = (int)$wp_query->max_num_pages;
         </form>
       </div>
 
-      <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#706C64]">
+      <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#8D8983]">
         <p>&copy; <?php echo esc_html(gmdate('Y')); ?> Lifeline Daily. Health information, not medical advice.</p>
         <div class="flex items-center gap-5 flex-wrap justify-center">
-          <a href="<?php echo $u('/privacy-policy/'); ?>" class="hover:text-white transition-colors">Privacy policy</a>
-          <a href="<?php echo $u('/terms-conditions/'); ?>" class="hover:text-white transition-colors">Terms and conditions</a>
-          <a href="<?php echo $u('/editorial-standards/'); ?>" class="hover:text-white transition-colors">Editorial policy</a>
-          <a href="#cookie-settings" data-lld-cookie-settings class="hover:text-white transition-colors">Cookie settings</a>
+          <a href="<?php echo $u('/privacy-policy/'); ?>" class="text-inherit hover:text-white transition-colors">Privacy policy</a>
+          <a href="<?php echo $u('/terms-conditions/'); ?>" class="text-inherit hover:text-white transition-colors">Terms and conditions</a>
+          <a href="<?php echo $u('/editorial-standards/'); ?>" class="text-inherit hover:text-white transition-colors">Editorial policy</a>
+          <a href="#cookie-settings" data-lld-cookie-settings class="text-inherit hover:text-white transition-colors">Cookie settings</a>
         </div>
       </div>
     </div>

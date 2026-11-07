@@ -39,7 +39,7 @@ $reads = lld_home_v2_reads();
 <body <?php body_class('lld-home-v2 selection:bg-[#1D4E48] selection:text-white'); ?>>
 <script>try{if(localStorage.getItem('lld_circadian')==='night')document.body.classList.add('mode-night');}catch(e){}</script>
 <?php if (function_exists('wp_body_open')) wp_body_open(); ?>
-  <a href="#lld-main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-[#1D4E48] focus:px-4 focus:py-2 focus:rounded-full">Skip to content</a>
+  <a href="#lld-main" class="text-inherit sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-[#1D4E48] focus:px-4 focus:py-2 focus:rounded-full">Skip to content</a>
 
   <?php $lld_header = ['page' => 'home', 'current' => '']; include __DIR__ . '/parts/v2-header.php'; ?>
 
@@ -48,14 +48,14 @@ $reads = lld_home_v2_reads();
     <section class="pt-12 pb-16 px-6 max-w-7xl mx-auto" data-test="home-hero">
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
         <div class="lg:col-span-6 space-y-6">
-          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EAE2D5] bg-day-card text-[#1D4E48] text-xs font-semibold uppercase tracking-wider">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#EAE2D5] bg-day-card text-[#1D4E48] text-xs font-semibold uppercase tracking-wider dark:text-[#4FA89B]">
             <span class="w-1.5 h-1.5 rounded-full bg-[#D4826F]" aria-hidden="true"></span>
             <span>Clinically Reviewed Health</span>
           </div>
           <h1 class="font-serif-editorial text-5xl sm:text-6xl md:text-7xl font-normal leading-[1.05] text-[#1F1E1C] text-day-dark tracking-tight">
             Start small.<br>
             Change big.<br>
-            <span class="italic text-[#1D4E48]">Live healthier every day.</span>
+            <span class="italic text-[#1D4E48] dark:text-[#4FA89B]">Live healthier every day.</span>
           </h1>
           <p class="text-base sm:text-lg text-[#5A5751] text-day-muted font-normal leading-relaxed max-w-lg">
             Evidence-backed micro-habits, validated clinical calculators, and guided 4-week tracks without fads, extremes, or medical jargon.
@@ -68,19 +68,19 @@ $reads = lld_home_v2_reads();
               <input id="lld-home-search" type="search" name="s" placeholder="Search protein, diabetes, sleep, fasting..." class="w-full py-3 pl-3 pr-24 text-xs text-[#1F1E1C] text-day-dark bg-transparent focus:outline-none">
               <button type="submit" class="absolute right-1.5 bg-[#1D4E48] text-white text-xs font-semibold px-4 py-1.5 rounded-full hover:bg-[#143833] transition-colors">Search</button>
             </form>
-            <div class="mt-2.5 flex items-center gap-2 text-[11px] text-[#6B6862] text-day-muted flex-wrap">
+            <div class="mt-2.5 flex items-center gap-2 text-[11px] text-[#62605A] text-day-muted flex-wrap">
               <span>Try:</span>
-              <a href="#calculators" data-calc-tab="protein" class="underline hover:text-[#1D4E48]">Protein Target</a>
+              <a href="#calculators" data-calc-tab="protein" class="text-inherit underline hover:text-[#1D4E48]">Protein Target</a>
               <span aria-hidden="true">•</span>
-              <a href="#calculators" data-calc-tab="diabetes" class="underline hover:text-[#1D4E48]">Diabetes Risk</a>
+              <a href="#calculators" data-calc-tab="diabetes" class="text-inherit underline hover:text-[#1D4E48]">Diabetes Risk</a>
               <span aria-hidden="true">•</span>
-              <a href="#tracks" class="underline hover:text-[#1D4E48]">4-Week Tracks</a>
+              <a href="#tracks" class="text-inherit underline hover:text-[#1D4E48]">4-Week Tracks</a>
             </div>
           </div>
 
           <div class="pt-3 flex items-center gap-4">
             <a href="#calculators" class="bg-[#1D4E48] hover:bg-[#143833] text-white px-6 py-3 rounded-full font-medium text-xs shadow-sm transition-all">Check Your Numbers ↓</a>
-            <a href="#tracks" class="bg-[#D4826F] hover:bg-[#BF6F5D] text-white px-6 py-3 rounded-full font-medium text-xs shadow-sm transition-all">Join 4-Week Track</a>
+            <a href="#tracks" class="bg-[#A56557] hover:bg-[#8E5548] text-white px-6 py-3 rounded-full font-medium text-xs shadow-sm transition-all">Join 4-Week Track</a>
           </div>
         </div>
 
@@ -95,9 +95,9 @@ $reads = lld_home_v2_reads();
               <div class="absolute bottom-2 left-2 text-[10px] bg-black/60 text-white px-2 py-0.5 rounded backdrop-blur-sm">10-Min Post-Meal</div>
             </div>
             <div class="rounded-2xl bg-[#EDE6DC] bg-day-surface p-4 border border-[#DDD5C7] border-day-soft flex-1 flex flex-col justify-center">
-              <span class="text-[10px] uppercase font-bold text-[#1D4E48] tracking-wider">Clinical Benchmark</span>
+              <span class="text-[10px] uppercase font-bold text-[#1D4E48] tracking-wider dark:text-[#4FA89B]">Clinical Benchmark</span>
               <div class="font-serif-editorial text-2xl text-[#1F1E1C] text-day-dark mt-0.5">-58% Risk</div>
-              <p class="text-[10px] text-[#6B6862] text-day-muted mt-0.5 leading-snug">Lower type 2 diabetes rate with guided lifestyle changes (DPP trial).</p>
+              <p class="text-[10px] text-[#62605A] text-day-muted mt-0.5 leading-snug">Lower type 2 diabetes rate with guided lifestyle changes (DPP trial).</p>
             </div>
           </div>
         </div>
@@ -117,7 +117,7 @@ $reads = lld_home_v2_reads();
             <?php endforeach; ?>
             <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex flex-col justify-end p-6 text-white">
               <span class="text-xs uppercase font-bold text-[#D4826F]">Instant Feedback</span>
-              <h2 id="calc-image-title" class="font-serif-editorial text-2xl mt-1"><?php echo esc_html($tools[$first]['title']); ?></h2>
+              <h2 id="calc-image-title" class="text-inherit font-serif-editorial text-2xl mt-1"><?php echo esc_html($tools[$first]['title']); ?></h2>
               <p id="calc-image-sub" class="text-xs text-white/80 mt-1"><?php echo esc_html($tools[$first]['sub']); ?></p>
             </div>
           </div>
@@ -126,8 +126,8 @@ $reads = lld_home_v2_reads();
         <div class="lg:col-span-7 order-1 lg:order-2 space-y-6">
           <div>
             <div class="flex items-center justify-between gap-4">
-              <span class="text-xs uppercase tracking-widest text-[#1D4E48] font-bold">Interactive Health Check</span>
-              <a href="<?php echo $u('/health-tools/'); ?>" class="text-xs text-[#1D4E48] underline font-semibold">View all 3 tools in full →</a>
+              <span class="text-xs uppercase tracking-widest text-[#1D4E48] font-bold dark:text-[#4FA89B]">Interactive Health Check</span>
+              <a href="<?php echo $u('/health-tools/'); ?>" class="text-xs text-[#1D4E48] underline font-semibold dark:text-[#4FA89B]">View all 3 tools in full →</a>
             </div>
             <h2 class="font-serif-editorial text-3xl sm:text-4xl text-[#1F1E1C] text-day-dark mt-1">Personalised checks backed by evidence.</h2>
           </div>
@@ -148,7 +148,7 @@ $reads = lld_home_v2_reads();
                 <span id="<?php echo esc_attr($id); ?>-label"><?php echo esc_html($in['label']); ?></span>
                 <?php else: ?>
                 <label for="<?php echo esc_attr($id); ?>"><?php echo esc_html($in['label']); ?></label>
-                <span data-q-out="<?php echo esc_attr($in['key']); ?>" class="text-[#1D4E48] bg-[#F4EFE7] bg-day-surface px-2 py-0.5 rounded"></span>
+                <span data-q-out="<?php echo esc_attr($in['key']); ?>" class="text-[#1D4E48] bg-[#F4EFE7] bg-day-surface px-2 py-0.5 rounded dark:text-[#4FA89B]"></span>
                 <?php endif; ?>
               </div>
               <?php if (!empty($in['choices'])): ?>
@@ -165,12 +165,12 @@ $reads = lld_home_v2_reads();
 
             <div class="pt-3 border-t border-[#E8E2D6] border-day-soft flex items-center justify-between gap-4">
               <div>
-                <span class="text-[10px] uppercase font-bold text-[#6B6862] text-day-muted block"><?php echo esc_html($t['result_label']); ?></span>
+                <span class="text-[10px] uppercase font-bold text-[#62605A] text-day-muted block"><?php echo esc_html($t['result_label']); ?></span>
                 <div data-q-score class="font-serif-editorial text-4xl text-[#1F1E1C] text-day-dark score-glow"></div>
               </div>
               <div class="text-right">
                 <span data-q-badge class="inline-block px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-800"></span>
-                <a href="<?php echo $u($t['url']); ?>" class="block text-xs font-semibold text-[#D4826F] hover:underline mt-1"><?php echo esc_html($t['cta']); ?></a>
+                <a href="<?php echo $u($t['url']); ?>" class="block text-xs font-semibold text-[#9D6052] dark:text-[#E1A89A] hover:underline mt-1"><?php echo esc_html($t['cta']); ?></a>
               </div>
             </div>
           </div>
@@ -185,10 +185,10 @@ $reads = lld_home_v2_reads();
       <div class="max-w-7xl mx-auto">
         <div class="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
           <div>
-            <span class="text-xs uppercase tracking-widest text-[#1D4E48] font-bold">Guided Habit Change</span>
+            <span class="text-xs uppercase tracking-widest text-[#1D4E48] font-bold dark:text-[#4FA89B]">Guided Habit Change</span>
             <h2 class="font-serif-editorial text-3xl sm:text-4xl text-[#1F1E1C] text-day-dark mt-1">Four structured 4-week tracks.</h2>
           </div>
-          <p class="text-xs text-[#6B6862] text-day-muted max-w-sm">Clinician-designed daily micro-habits, meal plans, and weekly reviews for sustainable health.</p>
+          <p class="text-xs text-[#62605A] text-day-muted max-w-sm">Clinician-designed daily micro-habits, meal plans, and weekly reviews for sustainable health.</p>
         </div>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <?php foreach ($tracks as [$f, $alt, $name, $desc, $path]): ?>
@@ -200,11 +200,11 @@ $reads = lld_home_v2_reads();
               </div>
               <div class="p-5">
                 <h3 class="font-serif-editorial text-2xl text-[#1F1E1C] text-day-dark"><?php echo esc_html($name); ?></h3>
-                <p class="text-xs text-[#6B6862] text-day-muted mt-1 leading-relaxed"><?php echo esc_html($desc); ?></p>
+                <p class="text-xs text-[#62605A] text-day-muted mt-1 leading-relaxed"><?php echo esc_html($desc); ?></p>
               </div>
             </div>
             <div class="p-5 pt-0">
-              <a href="<?php echo $u($path); ?>" class="text-xs font-bold text-[#1D4E48] group-hover:text-[#D4826F] flex items-center justify-between">
+              <a href="<?php echo $u($path); ?>" class="text-xs font-bold text-[#1D4E48] group-hover:text-[#9D6052] dark:group-hover:text-[#E1A89A] flex items-center justify-between dark:text-[#4FA89B]">
                 <span>Explore track<span class="sr-only">: <?php echo esc_html($name); ?></span></span> <span aria-hidden="true">→</span>
               </a>
             </div>
@@ -222,13 +222,13 @@ $reads = lld_home_v2_reads();
             <img src="<?php echo $img('science.jpg'); ?>" alt="Active healthy person" width="800" height="600" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
             <div class="absolute bottom-4 left-4 right-4 p-4 rounded-2xl bg-white/90 backdrop-blur-md">
               <span class="text-xs font-bold text-[#1D4E48]">Evidence-First Standard</span>
-              <p class="text-xs text-[#6B6862] mt-0.5">Every recommendation is referenced to peer-reviewed systematic reviews and ADA/NICE guidelines.</p>
+              <p class="text-xs text-[#62605A] mt-0.5">Every recommendation is referenced to peer-reviewed systematic reviews and ADA/NICE guidelines.</p>
             </div>
           </div>
         </div>
         <div class="lg:col-span-7 space-y-6">
           <div>
-            <span class="text-xs uppercase tracking-widest text-[#1D4E48] font-bold">The Science &amp; Method</span>
+            <span class="text-xs uppercase tracking-widest text-[#1D4E48] font-bold dark:text-[#4FA89B]">The Science &amp; Method</span>
             <h2 class="font-serif-editorial text-3xl sm:text-4xl text-[#1F1E1C] text-day-dark mt-1">Clinical evidence translated into simple daily actions.</h2>
           </div>
           <div class="space-y-3">
@@ -236,7 +236,7 @@ $reads = lld_home_v2_reads();
             <div class="border border-[#DFD8CC] border-day-soft rounded-2xl bg-white bg-day-card p-4 transition-all">
               <button type="button" data-acc="acc-<?php echo $n; ?>" aria-expanded="<?php echo $open ? 'true' : 'false'; ?>" aria-controls="acc-<?php echo $n; ?>" class="w-full text-left flex items-center justify-between font-semibold text-sm text-[#1F1E1C] text-day-dark">
                 <span><?php echo $n . '. ' . esc_html($q); ?></span>
-                <span id="acc-icon-<?php echo $n; ?>" class="text-lg text-[#1D4E48]" aria-hidden="true"><?php echo $open ? '−' : '+'; ?></span>
+                <span id="acc-icon-<?php echo $n; ?>" class="text-lg text-[#1D4E48] dark:text-[#4FA89B]" aria-hidden="true"><?php echo $open ? '−' : '+'; ?></span>
               </button>
               <p id="acc-<?php echo $n; ?>" class="<?php echo $open ? '' : 'hidden '; ?>text-xs text-[#5A5751] text-day-muted mt-2 leading-relaxed"><?php echo esc_html($a); ?></p>
             </div>
@@ -250,10 +250,10 @@ $reads = lld_home_v2_reads();
     <section id="reads" class="py-16 px-6 max-w-7xl mx-auto scroll-mt-24" data-test="learn-row">
       <div class="flex items-center justify-between mb-8 gap-4">
         <div>
-          <span class="text-xs uppercase tracking-widest text-[#1D4E48] font-bold">Clinical Knowledge Base</span>
+          <span class="text-xs uppercase tracking-widest text-[#1D4E48] font-bold dark:text-[#4FA89B]">Clinical Knowledge Base</span>
           <h2 class="font-serif-editorial text-3xl sm:text-4xl text-[#1F1E1C] text-day-dark mt-1">Essential Health Reads</h2>
         </div>
-        <a href="<?php echo $u('/articles/'); ?>" class="text-xs font-semibold text-[#1D4E48] hover:underline shrink-0">View all articles →</a>
+        <a href="<?php echo $u('/articles/'); ?>" class="text-xs font-semibold text-[#1D4E48] hover:underline shrink-0 dark:text-[#4FA89B]">View all articles →</a>
       </div>
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
         <?php foreach ($reads as $p):
@@ -269,14 +269,14 @@ $reads = lld_home_v2_reads();
               <span class="absolute top-3 left-3 bg-[#1D4E48] text-white text-[10px] font-bold px-2 py-0.5 rounded uppercase"><?php echo esc_html($cat); ?></span>
             </div>
             <div class="p-5">
-              <div class="text-[11px] text-[#6B6862] text-day-muted"><?php echo (int)$mins; ?> min read &bull; <time datetime="<?php echo esc_attr(get_the_date('c', $p)); ?>"><?php echo esc_html(get_the_date('j M Y', $p)); ?></time></div>
-              <h3 class="font-serif-editorial text-2xl text-[#1F1E1C] text-day-dark mt-1 leading-snug group-hover:text-[#1D4E48]">
-                <a href="<?php echo esc_url(get_permalink($p)); ?>" class="after:absolute after:inset-0"><?php echo esc_html(html_entity_decode(get_the_title($p), ENT_QUOTES | ENT_HTML5, 'UTF-8')); ?></a>
+              <div class="text-[11px] text-[#62605A] text-day-muted"><?php echo (int)$mins; ?> min read &bull; <time datetime="<?php echo esc_attr(get_the_date('c', $p)); ?>"><?php echo esc_html(get_the_date('j M Y', $p)); ?></time></div>
+              <h3 class="font-serif-editorial text-2xl text-[#1F1E1C] text-day-dark mt-1 leading-snug group-hover:text-[#1D4E48] dark:group-hover:text-[#4FA89B]">
+                <a href="<?php echo esc_url(get_permalink($p)); ?>" class="text-inherit after:absolute after:inset-0"><?php echo esc_html(html_entity_decode(get_the_title($p), ENT_QUOTES | ENT_HTML5, 'UTF-8')); ?></a>
               </h3>
             </div>
           </div>
           <div class="p-5 pt-0">
-            <span class="text-xs font-semibold text-[#1D4E48]" aria-hidden="true">Read guide →</span>
+            <span class="text-xs font-semibold text-[#1D4E48] dark:text-[#4FA89B]" aria-hidden="true">Read guide →</span>
           </div>
         </article>
         <?php endforeach; ?>
@@ -286,8 +286,8 @@ $reads = lld_home_v2_reads();
     <!-- 6. FREE STARTER GUIDE (the site's starter-guide request, lld-members Growth) -->
     <section id="starter-guide" class="py-12 px-6 max-w-4xl mx-auto scroll-mt-24" data-test="guide-row">
       <div class="bg-[#1D4E48] text-white rounded-3xl p-8 sm:p-10 text-center relative overflow-hidden shadow-lg">
-        <span class="text-[11px] uppercase tracking-widest text-[#D4826F] font-bold">Free Starter Guide</span>
-        <h2 class="font-serif-editorial text-3xl sm:text-4xl mt-2 leading-tight">Get the 4-Week Healthy Habit Starter Guide</h2>
+        <span class="text-[11px] uppercase tracking-widest text-[#E3AEA1] font-bold">Free Starter Guide</span>
+        <h2 class="text-inherit font-serif-editorial text-3xl sm:text-4xl mt-2 leading-tight">Get the 4-Week Healthy Habit Starter Guide</h2>
         <p class="text-xs text-[#D8E2E0] mt-2 max-w-md mx-auto">Pick a goal and we'll email you a short guide to your first week: practical food, movement and habit steps you can start today.</p>
         <?php if ($check !== '' && $check !== '1'): ?>
           <p class="mt-6 text-sm font-semibold text-white" role="status">Check your email to confirm.</p>
@@ -306,10 +306,10 @@ $reads = lld_home_v2_reads();
           </select>
           <label for="lld-home-guide-email" class="sr-only">Email</label>
           <input type="email" id="lld-home-guide-email" name="lld_email" placeholder="Enter your email address" required autocomplete="email" class="bg-white/10 border border-white/20 text-white placeholder-white/60 text-xs rounded-full px-4 py-2.5 flex-1 focus:outline-none">
-          <button type="submit" class="bg-[#D4826F] hover:bg-[#BF6F5D] text-white text-xs font-bold px-5 py-2.5 rounded-full transition-all">Send My Free Guide</button>
+          <button type="submit" class="bg-[#A56557] hover:bg-[#8E5548] text-white text-xs font-bold px-5 py-2.5 rounded-full transition-all">Send My Free Guide</button>
         </form>
         <?php endif; ?>
-        <p class="text-[11px] text-[#D8E2E0]/80 mt-4">We only use your email to send the guide you asked for. You can unsubscribe at any time. <a href="<?php echo $u('/privacy-policy/'); ?>" class="underline">Privacy policy</a></p>
+        <p class="text-[11px] text-[#D8E2E0]/80 mt-4">We only use your email to send the guide you asked for. You can unsubscribe at any time. <a href="<?php echo $u('/privacy-policy/'); ?>" class="text-inherit underline">Privacy policy</a></p>
       </div>
     </section>
   </main>

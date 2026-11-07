@@ -65,7 +65,7 @@ body.lld-home-v2, body.lld-v2 {
 .lld-prose th { background: #FAF8F5; color: #1F1E1C; font-weight: 600; }
 .lld-prose .lld-note { padding: 1rem; background: #FAF8F5; border: 1px solid #EAE4D8; border-radius: 1rem; font-size: 0.875rem; color: #3A3834; line-height: 1.65; }
 .lld-prose .lld-note strong:first-child { color: #1D4E48; }
-.lld-prose .lld-closing { font-weight: 600; color: #2D7A70; }
+.lld-prose .lld-closing { font-weight: 600; color: #1D4E48; }
 .lld-prose .lld-tool-cta a { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.625rem 1.25rem; border-radius: 9999px; background: #1D4E48; color: #FFFFFF; text-decoration: none; font-size: 0.8125rem; font-weight: 600; }
 .lld-prose .lld-tool-cta a::after { content: "\2192"; }
 .lld-prose .lld-tool-cta a:hover { background: #143833; color: #FFFFFF; }
