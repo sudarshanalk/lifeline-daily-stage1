@@ -1,7 +1,7 @@
 <?php
 /**
  * Homepage v2 full-page template (see ../home-v2.php). Markup and classes follow the owner's design file
- * `lld_homepage_interactive_demo.html`; styles are the compiled `assets/lld-home-v2.css`, behaviour `assets/lld-home-v2.js`.
+ * `lld_homepage_interactive_demo.html`; styles are the compiled `assets/lld-v2.css`, behaviour `assets/lld-home-v2.js`.
  */
 if (!defined('ABSPATH')) exit;
 

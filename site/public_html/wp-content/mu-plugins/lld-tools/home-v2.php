@@ -116,7 +116,7 @@ if (function_exists('add_action')) {
         }
       }
     }
-    wp_enqueue_style('lld-home-v2', lld_home_v2_asset('lld-home-v2.css'), [], null);
+    wp_enqueue_style('lld-v2', lld_home_v2_asset('lld-v2.css'), [], null);
     wp_enqueue_script('lld-home-calc', lld_home_v2_asset('lld-home-calc.js'), [], null, true);
     wp_enqueue_script('lld-home-v2', lld_home_v2_asset('lld-home-v2.js'), ['lld-home-calc'], null, true);
   }, 999);
