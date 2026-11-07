@@ -87,7 +87,7 @@ body.lld-home-v2, body.lld-v2 {
   .lld-prose .lld-note strong:first-child { color: #1D4E48 !important; }
   .lld-prose .lld-closing { font-weight: 600 !important; color: #1D4E48 !important; }
   .lld-prose .lld-tool-cta a { display: inline-flex !important; align-items: center !important; gap: 0.5rem !important; padding: 0.625rem 1.25rem !important; border-radius: 9999px !important; background: #1D4E48 !important; color: #FFFFFF !important; text-decoration: none !important; font-size: 0.8125rem !important; font-weight: 600 !important; }
-  .lld-prose .lld-tool-cta a::after { content: "\2192" !important; }
+  .lld-prose .lld-tool-cta a::after { content: "\2192" / "" !important; }
   .lld-prose .lld-tool-cta a:hover { background: #143833 !important; color: #FFFFFF !important; }
   .lld-prose--takeaways .lld-answer p, .lld-prose--takeaways p { color: inherit !important; }
   .lld-prose--sources li { padding-left: 0.25rem !important; }
@@ -180,7 +180,7 @@ body.lld-home-v2, body.lld-v2 {
   .lld-v2-hub .lld-tool-card__check { margin-top: auto !important; padding-top: 1rem !important; border-top: 1px solid #E0D8CB !important; display: flex !important; align-items: center !important; gap: 0.375rem !important; font-size: 0.75rem !important; font-weight: 700 !important; color: #1D4E48 !important; margin-bottom: 1rem !important; }
   .lld-v2-hub .lld-tool-card__check svg { flex-shrink: 0 !important; }
   .lld-v2-hub .lld-tool-card__cta { display: flex !important; align-items: center !important; justify-content: center !important; gap: 0.5rem !important; width: 100% !important; padding: 0.625rem 1.25rem !important; border-radius: 9999px !important; background: #1D4E48 !important; color: #FFFFFF !important; font-weight: 700 !important; font-size: 0.875rem !important; text-decoration: none !important; }
-  .lld-v2-hub .lld-tool-card__cta::after { content: "\2192" !important; }
+  .lld-v2-hub .lld-tool-card__cta::after { content: "\2192" / "" !important; }
   .lld-v2-hub .lld-tool-card__cta:hover { background: #143833 !important; }
   .lld-v2-hub .lld-tool-card__related { margin-top: 0.75rem !important; font-size: 0.75rem !important; line-height: 1.5 !important; color: #5A5751 !important; }
   .lld-v2-hub .lld-tool-card__related a { color: inherit !important; font-weight: 600 !important; text-decoration: underline !important; }
@@ -217,7 +217,7 @@ body.lld-home-v2, body.lld-v2 {
   .lld-v2-extras [data-lld-onward] { display: grid !important; gap: 1rem !important; }
   @media (min-width: 768px) { .lld-v2-extras [data-lld-onward]:not([hidden]) { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) !important; align-items: start !important; } .lld-v2-extras [data-lld-onward] > * + * { margin-top: 0 !important; } }
   .lld-v2-extras [data-lld-track-link] a { display: inline-flex !important; align-items: center !important; gap: 0.5rem !important; padding: 0.625rem 1.25rem !important; border-radius: 9999px !important; border: 1px solid #1D4E48 !important; color: #1D4E48 !important; font-weight: 700 !important; font-size: 0.875rem !important; text-decoration: none !important; }
-  .lld-v2-extras [data-lld-track-link] a::after { content: "\2192" !important; }
+  .lld-v2-extras [data-lld-track-link] a::after { content: "\2192" / "" !important; }
   .lld-v2-extras [data-lld-track-link] a:hover { background: #1D4E48 !important; color: #FFFFFF !important; }
   .lld-v2-extras [data-lld-guide] { padding: 1.25rem !important; border-radius: 1rem !important; background: #F4EFE6 !important; border: 1px solid #E0D8CB !important; }
   .lld-v2-extras h3 { font-size: 1rem !important; font-weight: 800 !important; color: #1F1E1C !important; margin-bottom: 0.75rem !important; }
@@ -269,7 +269,7 @@ body.lld-home-v2, body.lld-v2 {
   body.lld-members-v2 .lld-plan-cancel { font-weight: 500 !important; color: #3A3834 !important; margin-bottom: 1.5rem !important; }
   body.lld-members-v2 .lld-plan .lld-button { margin-top: auto !important; }
   body.lld-members-v2 .lld-main .lld-button { display: flex !important; width: 100% !important; align-items: center !important; justify-content: center !important; gap: 0.5rem !important; min-height: 3rem !important; padding: 0.875rem 1.5rem !important; border-radius: 9999px !important; font-size: 0.9375rem !important; font-weight: 800 !important; text-decoration: none !important; background: #1D4E48 !important; color: #FFFFFF !important; border: 0 !important; box-shadow: none !important; }
-  body.lld-members-v2 .lld-main .lld-button::after { content: "\2192" !important; }
+  body.lld-members-v2 .lld-main .lld-button::after { content: "\2192" / "" !important; }
   body.lld-members-v2 .lld-main .lld-button:hover { background: #143833 !important; }
   body.lld-members-v2 .lld-main .lld-button-secondary { background: #FAF8F5 !important; color: #1F1E1C !important; border: 1.5px solid #CFC5B5 !important; }
   body.lld-members-v2 .lld-main .lld-button-secondary:hover { background: #F4EFE6 !important; border-color: #1D4E48 !important; color: #1D4E48 !important; }
@@ -299,7 +299,7 @@ body.lld-home-v2, body.lld-v2 {
   body.lld-members-v2 [data-lld-pricing-faq] details + details { margin-top: 0.75rem !important; }
   body.lld-members-v2 [data-lld-pricing-faq] summary { display: flex !important; align-items: center !important; justify-content: space-between !important; gap: 1rem !important; min-height: 3.5rem !important; font-size: 1rem !important; font-weight: 800 !important; color: #1F1E1C !important; cursor: pointer !important; list-style: none !important; }
   body.lld-members-v2 [data-lld-pricing-faq] summary::-webkit-details-marker { display: none !important; }
-  body.lld-members-v2 [data-lld-pricing-faq] summary::after { content: "\2193" !important; color: #1D4E48 !important; transition: transform 0.2s !important; }
+  body.lld-members-v2 [data-lld-pricing-faq] summary::after { content: "\2193" / "" !important; color: #1D4E48 !important; transition: transform 0.2s !important; }
   body.lld-members-v2 [data-lld-pricing-faq] details[open] summary::after { transform: rotate(180deg) !important; }
   body.lld-members-v2 [data-lld-pricing-faq] details p { font-size: 0.9375rem !important; line-height: 1.65 !important; color: #3A3834 !important; padding-bottom: 1.25rem !important; }
 
