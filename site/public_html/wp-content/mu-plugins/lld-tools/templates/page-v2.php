@@ -8,10 +8,11 @@ if (!defined('ABSPATH')) exit;
 
 $view = lld_page_v2_view();
 $u = function (string $path): string { return esc_url(home_url($path)); };
-$page = $view === 'search' ? null : get_queried_object();
-$title = $page ? html_entity_decode(get_the_title($page), ENT_QUOTES | ENT_HTML5, 'UTF-8') : '';
+// lld_-prefixed: this template runs in global scope, and the loop below sets WordPress's own globals $page and $pages
+$lld_page = $view === 'search' ? null : get_queried_object();
+$title = $lld_page ? html_entity_decode(get_the_title($lld_page), ENT_QUOTES | ENT_HTML5, 'UTF-8') : '';
 $content = '';
-if ($page) {
+if ($lld_page) {
   // the page's own content through the usual filters, in the main loop as the theme showed it (shortcodes, the tool frame,
   // the review byline, which the content filters add only inside the loop)
   while (have_posts()) { the_post(); ob_start(); the_content(); $content .= (string)ob_get_clean(); }
@@ -223,7 +224,7 @@ $card = 'rounded-2xl bg-day-surface bg-white border border-day-soft';
   <?php endif; ?>
 
 <?php elseif ($view === 'legal'):
-  $slug = (string)$page->post_name;
+  $slug = (string)$lld_page->post_name;
 ?>
     <nav class="flex items-center gap-2 text-xs text-[#62605A] text-day-muted uppercase tracking-wider font-bold mb-6" aria-label="Breadcrumb">
       <a href="<?php echo $u('/'); ?>" class="<?php echo $crumb_link; ?>">Home</a>
@@ -256,7 +257,7 @@ $card = 'rounded-2xl bg-day-surface bg-white border border-day-soft';
   $q = get_search_query(false);   // unescaped: each use below escapes it once
   $total = (int)$wp_query->found_posts;
   $paged = max(1, (int)get_query_var('paged'));
-  $pages = (int)$wp_query->max_num_pages;
+  $lld_pages = (int)$wp_query->max_num_pages;
   // the tool whose approved card answers the search: the three Stage 1 tools, by the words of their subject
   $match = '';
   if (preg_match('/protein/i', $q)) $match = 'protein';
@@ -312,10 +313,10 @@ $card = 'rounded-2xl bg-day-surface bg-white border border-day-soft';
           </li>
           <?php endforeach; ?>
         </ol>
-        <?php if ($pages > 1): ?>
+        <?php if ($lld_pages > 1): ?>
         <nav class="flex flex-wrap items-center justify-center gap-2 text-sm font-semibold pt-4" aria-label="Search result pages">
           <?php
-          foreach ((array)paginate_links(['total' => $pages, 'current' => $paged, 'type' => 'array', 'prev_text' => '&larr; Previous', 'next_text' => 'Next &rarr;', 'mid_size' => 1]) as $l) {
+          foreach ((array)paginate_links(['total' => $lld_pages, 'current' => $paged, 'type' => 'array', 'prev_text' => '&larr; Previous', 'next_text' => 'Next &rarr;', 'mid_size' => 1]) as $l) {
             $on = strpos($l, 'current') !== false;
             echo '<span class="' . ($on ? 'tab-pill active ' : '') . 'inline-flex rounded-full border border-day-soft bg-white dark:bg-[#1A2624] text-[#1F1E1C] text-day-dark [&>a]:px-4 [&>a]:py-2 [&>span]:px-4 [&>span]:py-2 hover:border-[#1D4E48]">' . $l . '</span>'; // phpcs:ignore -- WordPress-built links
           }
