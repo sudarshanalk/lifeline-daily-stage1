@@ -745,6 +745,8 @@ require_once __DIR__ . '/home-v2.php';
 require_once __DIR__ . '/category-v2.php';
 /* Article page v2 (owner's new UI pack, 6 Nov 2026): every post gets the design's full-page template. */
 require_once __DIR__ . '/article-v2.php';
+// S2-L1: public pages v2 (Health Tools hub, tool pages, governance pages, search; owner's UI pack, 7 Nov 2026)
+require_once __DIR__ . '/page-v2.php';
 /* Interface Pack Single Article & Page Layouts (prototypes: single_article_template_demo.html, health_tools_and_calculators_demo.html, site_governance_and_trust_demo.html). */
 require_once __DIR__ . '/page-layout.php';
 /* Site footer (DEC-88, S2-L1, Footer_Content.md). */
