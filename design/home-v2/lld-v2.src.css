@@ -49,13 +49,14 @@ body.lld-home-v2, body.lld-v2 {
    its own margins and Roboto, paragraphs at 17 px with 20 px under them. On the v2 pages the designs' own values win. All of
    this is !important (the old styles are unlayered and not important). The reset sits in its own layer after Tailwind's
    (for important rules the earlier layer wins), so every class of the designs, spacing included, still wins over it.
-   The cookie banners and the admin bar keep their own styles. */
+   The cookie banners and the admin bar keep their own styles, and so do the group 3 member screens (body class
+   lld-members-v2-app): their own type scale and spacing stay, recoloured further down. */
 @layer lld-reset {
   body.lld-home-v2, body.lld-v2 { font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important; font-size: 16px !important; line-height: 1.5 !important; }
-  :where(body.lld-home-v2, body.lld-v2) :where(h1, h2, h3, h4, h5, h6, p, li, dt, dd, td, th, blockquote, figcaption, label, input, select, textarea, button, a, span, strong, em, small, time):not(:where(#lld-consent, #lld-consent *, .lld-consent-footer, .lld-consent-footer *, #wpadminbar, #wpadminbar *, [class*="cky-"], [class*="cky-"] *, .lld-tabbar, .lld-tabbar *, .lld-toasts, .lld-toasts *)) {
+  :where(body.lld-home-v2, body.lld-v2) :where(h1, h2, h3, h4, h5, h6, p, li, dt, dd, td, th, blockquote, figcaption, label, input, select, textarea, button, a, span, strong, em, small, time):not(:where(#lld-consent, #lld-consent *, .lld-consent-footer, .lld-consent-footer *, #wpadminbar, #wpadminbar *, [class*="cky-"], [class*="cky-"] *, .lld-tabbar, .lld-tabbar *, .lld-toasts, .lld-toasts *, body.lld-members-v2-app .lld-main, body.lld-members-v2-app .lld-main *)) {
     font-family: inherit !important; font-size: inherit !important; line-height: inherit !important; letter-spacing: inherit !important;
   }
-  :where(body.lld-home-v2, body.lld-v2) :where(h1, h2, h3, h4, h5, h6, p, ul, ol, dl, figure, blockquote):not(:where(#lld-consent, #lld-consent *, .lld-consent-footer, .lld-consent-footer *, #wpadminbar, #wpadminbar *, [class*="cky-"], [class*="cky-"] *, .lld-tabbar, .lld-tabbar *, .lld-toasts, .lld-toasts *)) { margin: 0 !important; }
+  :where(body.lld-home-v2, body.lld-v2) :where(h1, h2, h3, h4, h5, h6, p, ul, ol, dl, figure, blockquote):not(:where(#lld-consent, #lld-consent *, .lld-consent-footer, .lld-consent-footer *, #wpadminbar, #wpadminbar *, [class*="cky-"], [class*="cky-"] *, .lld-tabbar, .lld-tabbar *, .lld-toasts, .lld-toasts *, body.lld-members-v2-app .lld-main, body.lld-members-v2-app .lld-main *)) { margin: 0 !important; }
 }
 @layer utilities {
   .font-serif-editorial { font-family: 'Instrument Serif', Georgia, serif !important; }
@@ -408,4 +409,99 @@ body.lld-home-v2, body.lld-v2 {
   body.mode-night.lld-members-v2 .lld-tabbar a { color: #D6D1C7 !important; }
   body.mode-night.lld-members-v2 .lld-tabbar a[aria-current=page] { color: #79D1C3 !important; background: #192E2B !important; }
   body.mode-night.lld-members-v2-form .lld-notice-box { background: #192E2B !important; border-color: #4FA89B !important; color: #79D1C3 !important; }
+}
+
+/* Group 3 (Owner_Questions 158): the member coaching, food and logging screens (Today, check-in, goal, progress, track,
+   plan, review, suggestions, diary, barcode scan, meals, workout, challenge, badges, group, health profile, library, More)
+   in the v2 look, as design files 17 to 42 (body class lld-members-v2-app, set by lld_members_v2_app_screens()). The
+   plugin's own type scale and layout stay (the v2 reset leaves these screens alone); its colour, shape and font tokens
+   are pointed at the v2 palette here, for Day and Night, and headings, buttons, fields and the next-step card are drawn
+   as in the designs. The markup, wording and rules are the built ones (153). */
+@layer utilities {
+  body.lld-members-v2-app {
+    --lld-green: #1D4E48; --lld-green-press: #1D4E48; --lld-highlight: #4FA89B; --lld-mint: #2F7A6E;
+    --lld-mint-soft: #F1F7F5; --lld-mint-line: #C9DDD8;
+    --lld-bg: #FAF8F5; --lld-card: #FFFFFF; --lld-line: #E0D8CB; --lld-ink: #1F1E1C; --lld-text: #3A3834;
+    --lld-muted: #5A5751; --lld-border: #8F8576; --lld-tile: #FAF8F5;
+    --lld-caution: #8A5A0B; --lld-caution-bg: #FDF6E7; --lld-caution-line: #EBCB8B;
+    --lld-danger: #B3261E; --lld-danger-bg: #FCEEEC; --lld-danger-line: #E8B4AE; --lld-info-bg: #E6F0EE;
+    --lld-font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --lld-font-body: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --lld-radius: 1.5rem; --lld-radius-sm: 0.75rem;
+    --lld-shadow: 0 2px 10px -2px rgba(22, 28, 26, 0.06); --lld-shadow-hover: 0 10px 24px -12px rgba(29, 78, 72, 0.25);
+  }
+  body.mode-night.lld-members-v2-app {
+    --lld-green: #79D1C3; --lld-green-press: #79D1C3; --lld-highlight: #79D1C3; --lld-mint: #79D1C3;
+    --lld-mint-soft: #192E2B; --lld-mint-line: #2C5A52;
+    --lld-bg: #101413; --lld-card: #16201E; --lld-line: #354F49; --lld-ink: #F4F1EA; --lld-text: #D6D1C7;
+    --lld-muted: #B0ABA0; --lld-border: #6F8A84; --lld-tile: #121A18;
+    --lld-caution: #F0C674; --lld-caution-bg: #2E2410; --lld-caution-line: #6B5216;
+    --lld-danger: #F2A196; --lld-danger-bg: #3A1A17; --lld-danger-line: #E0786E; --lld-info-bg: #192E2B;
+    --lld-deep: #0C1A17; --lld-deep-2: #12241F; --lld-deep-line: #2C5A52;
+    --lld-shadow: 0 4px 14px rgba(0, 0, 0, 0.35); --lld-shadow-hover: 0 4px 14px rgba(0, 0, 0, 0.35);
+  }
+  body.mode-night.lld-members-v2-app .lld-main { color-scheme: dark !important; }
+  /* the Stage 3 screens' own tokens (stage3.css), the same way */
+  body.lld-members-v2-app { --lld-s3-green: var(--lld-green); --lld-s3-green-hover: var(--lld-green); --lld-s3-mint: var(--lld-mint); --lld-s3-mint-soft: var(--lld-mint-soft); --lld-s3-bg: var(--lld-bg); --lld-s3-card: var(--lld-card); --lld-s3-line: var(--lld-line); --lld-s3-ink: var(--lld-ink); --lld-s3-muted: var(--lld-muted); --lld-s3-border: var(--lld-border); }
+  body.lld-members-v2-app .lld-main :is(.lld-mood-button:hover, .lld-mood-button:focus-visible, .lld-pill-good) { background: var(--lld-mint-soft) !important; }
+  body.lld-members-v2-app .lld-main .lld-empty-helpful { background: var(--lld-card) !important; border-radius: 1.5rem !important; }
+  body.mode-night.lld-members-v2-app .lld-main .lld-pill-good { color: #79D1C3 !important; }
+  body.mode-night.lld-members-v2-app .lld-main .lld-pill-behind { background: #2E2410 !important; color: #F0C674 !important; }
+  body.mode-night.lld-members-v2-app .lld-main .lld-week.is-open .lld-week-num { color: #101413 !important; }
+
+  /* column: 48rem, the wide screens (dashboard, track, meals, diary) 64rem */
+  body.lld-members-v2-app .lld-main:not(.lld-wide) { max-width: 48rem !important; }
+  body.lld-members-v2-app .lld-main.lld-wide { max-width: 64rem !important; }
+
+  /* headings and text */
+  body.lld-members-v2-app .lld-main h1 { font-size: 2.25rem !important; line-height: 1.08 !important; font-weight: 800 !important; letter-spacing: -0.025em !important; color: var(--lld-ink) !important; margin: 0 0 1.25rem !important; }
+  @media (min-width: 640px) { body.lld-members-v2-app .lld-main h1 { font-size: 3rem !important; margin-bottom: 1.5rem !important; } }
+  body.lld-members-v2-app .lld-main h2 { font-size: 1.25rem !important; line-height: 1.3 !important; font-weight: 800 !important; letter-spacing: -0.01em !important; color: var(--lld-ink) !important; }
+  @media (min-width: 640px) { body.lld-members-v2-app .lld-main h2 { font-size: 1.375rem !important; } }
+  body.lld-members-v2-app .lld-main h3 { font-weight: 800 !important; color: var(--lld-ink) !important; }
+  body.lld-members-v2-app .lld-main .lld-kicker { font-size: 0.75rem !important; font-weight: 800 !important; letter-spacing: 0.08em !important; text-transform: uppercase !important; color: var(--lld-green) !important; background: none !important; padding: 0 !important; }
+  body.lld-members-v2-app .lld-main a:not(.lld-button) { color: var(--lld-green) !important; }
+  body.lld-members-v2-app .lld-main .lld-hint { color: var(--lld-muted) !important; }
+
+  /* cards: white, rounded, warm border */
+  body.lld-members-v2-app .lld-main .lld-card { border: 1.5px solid var(--lld-line) !important; border-radius: 1.5rem !important; background: var(--lld-card) !important; box-shadow: var(--lld-shadow) !important; color: var(--lld-text) !important; }
+
+  /* next step: the designs' dark green card */
+  body.lld-members-v2-app .lld-main .lld-next-step { background: #1D4E48 !important; border-color: #1D4E48 !important; color: #FFFFFF !important; }
+  body.lld-members-v2-app .lld-main .lld-next-step :is(h2, h3, p, .lld-next-step-text) { color: #FFFFFF !important; }
+  body.lld-members-v2-app .lld-main .lld-next-step .lld-kicker { color: #A9E3D9 !important; }
+  body.lld-members-v2-app .lld-main .lld-next-step a:not(.lld-button) { color: #FFFFFF !important; }
+  body.lld-members-v2-app .lld-main .lld-next-step .lld-button { background: #FFFFFF !important; color: #1D4E48 !important; border: 1.5px solid #FFFFFF !important; }
+  body.lld-members-v2-app .lld-main .lld-next-step .lld-button:hover { background: #E6F0EE !important; }
+  body.lld-members-v2-app .lld-main .lld-next-step .lld-button-secondary { background: transparent !important; color: #FFFFFF !important; border-color: rgba(255, 255, 255, 0.6) !important; }
+  body.lld-members-v2-app .lld-main .lld-next-step .lld-button-secondary:hover { background: rgba(255, 255, 255, 0.12) !important; }
+  body.lld-members-v2-app .lld-main .lld-next-step :focus-visible { outline-color: #FFFFFF !important; }
+  body.mode-night.lld-members-v2-app .lld-main .lld-next-step { background: #192E2B !important; border-color: #4FA89B !important; }
+  body.mode-night.lld-members-v2-app .lld-main .lld-next-step .lld-button { background: #79D1C3 !important; border-color: #79D1C3 !important; color: #101413 !important; }
+  body.mode-night.lld-members-v2-app .lld-main .lld-next-step .lld-button-secondary { background: transparent !important; color: #F4F1EA !important; border-color: #6F8A84 !important; }
+
+  /* buttons: as wide as their words, primary with the arrow, secondary plain */
+  body.lld-members-v2-app .lld-main .lld-button { display: inline-flex !important; width: auto !important; max-width: 100% !important; min-height: 2.75rem !important; padding: 0.75rem 1.25rem !important; border-radius: 9999px !important; font-size: 0.9375rem !important; }
+  body.lld-members-v2-app .lld-main .lld-button-secondary::after { content: none !important; }
+  body.mode-night.lld-members-v2-app .lld-main .lld-button:not(.lld-button-secondary) { background: #79D1C3 !important; color: #101413 !important; border-color: #79D1C3 !important; }
+  body.mode-night.lld-members-v2-app .lld-main .lld-button:not(.lld-button-secondary):hover { background: #A9E3D9 !important; }
+  body.mode-night.lld-members-v2-app .lld-main .lld-button-secondary { background: #101413 !important; color: #F4F1EA !important; border-color: #6F8A84 !important; }
+  body.mode-night.lld-members-v2-app .lld-main .lld-button-secondary:hover { border-color: #79D1C3 !important; color: #79D1C3 !important; }
+
+  /* fields, as on the group 2 forms */
+  body.lld-members-v2-app .lld-main :is(input[type=text], input[type=email], input[type=number], input[type=tel], input[type=date], input[type=time], input[type=search], select, textarea) { min-height: 2.75rem !important; padding: 0.625rem 0.875rem !important; border-radius: 0.75rem !important; border: 1.5px solid var(--lld-border) !important; background: var(--lld-card) !important; color: var(--lld-ink) !important; font-family: inherit !important; font-size: 1rem !important; box-shadow: none !important; }
+  body.mode-night.lld-members-v2-app .lld-main :is(input[type=text], input[type=email], input[type=number], input[type=tel], input[type=date], input[type=time], input[type=search], select, textarea) { background: #101413 !important; }
+  body.lld-members-v2-app .lld-main :is(input, select, textarea, button, a, summary, [tabindex]:not([tabindex="-1"])):focus-visible { outline: 3px solid var(--lld-green) !important; outline-offset: 2px !important; box-shadow: none !important; }
+  body.lld-members-v2-app .lld-main :is(input[type=checkbox], input[type=radio]) { accent-color: var(--lld-green) !important; }
+  body.lld-members-v2-app .lld-main label { color: var(--lld-ink) !important; }
+  body.lld-members-v2-app .lld-main .lld-error { color: var(--lld-danger) !important; }
+
+  /* pills, tiles and choices take the warm v2 border */
+  body.lld-members-v2-app .lld-main :is(.lld-tile, .lld-option, .lld-track-choice, .lld-mood-button, .lld-day) { border-color: var(--lld-line) !important; }
+  body.lld-members-v2-app .lld-main .lld-mood-button { min-width: 2.75rem !important; min-height: 2.75rem !important; border-radius: 0.75rem !important; }
+  body.lld-members-v2-app .lld-main .lld-recipe-slot { flex: 0 0 auto !important; white-space: nowrap !important; }
+  /* the mood tile takes the whole row, so its five 44 px buttons fit */
+  body.lld-members-v2-app .lld-main .lld-tile[data-lld-tile=mood] { grid-column: 1 / -1 !important; }
+  body.lld-members-v2-app .lld-main .lld-mood-row { flex-wrap: wrap !important; gap: 0.5rem !important; }
+  body.lld-members-v2-app .lld-main .lld-mood-button { flex: 1 1 2.75rem !important; }
 }
