@@ -94,6 +94,7 @@ $card = 'rounded-2xl bg-day-surface bg-white border border-day-soft';
     if ($extras !== '') {
       [$js, $sec['related']['body']] = lld_article_v2_take('#<script>\(function\(\)\{var frame=document\.querySelector\("iframe\.lld-tool-frame"\).*?</script>#s', $sec['related']['body']);
       $extras .= $js;
+      $extras = (string)preg_replace(['#<h2\b#i', '#</h2>#i'], ['<h3', '</h3>'], $extras);   // under the tool's own h2
     }
   }
   $h2card = 'text-lg sm:text-xl text-[#1F1E1C] text-day-dark font-extrabold tracking-tight';
@@ -158,7 +159,7 @@ $card = 'rounded-2xl bg-day-surface bg-white border border-day-soft';
     </section>
 
     <!-- The tool (FR1-21 frame, unchanged) -->
-    <section id="try-calculator" class="mb-14 scroll-mt-28" aria-label="<?php echo esc_attr($try); ?>">
+    <section id="try-calculator" class="mb-14 scroll-mt-28">
       <div class="rounded-3xl bg-white bg-day-surface border border-day-soft overflow-hidden">
         <div class="bg-[#F4EFE6] dark:bg-[#121A18] border-b border-day-soft px-6 sm:px-8 py-5 flex flex-wrap items-center justify-between gap-4">
           <div class="flex items-center gap-3">
@@ -179,16 +180,16 @@ $card = 'rounded-2xl bg-day-surface bg-white border border-day-soft';
     <!-- Limitations, How it works, Privacy -->
     <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-14" aria-label="Method, limitations and privacy">
       <?php foreach (['limitations', 'how', 'privacy'] as $k): ?>
-      <div class="<?php echo $card; ?> p-6 sm:p-7">
-        <?php echo lld_page_v2_h2($sec[$k]['h2'], $h2card . ' mb-3 pb-2 border-b border-day-soft'); // phpcs:ignore ?>
-        <div class="lld-v2-copy"><?php echo $sec[$k]['body']; // phpcs:ignore ?></div>
+      <div class="<?php echo $card; ?> p-6 sm:p-7 lld-v2-copy">
+        <?php echo lld_page_v2_h2($sec[$k]['h2'], $h2card . ' mb-3 pb-2 border-b border-day-soft'); // phpcs:ignore -- the body follows its heading directly (TC-FR1-04-AS-05) ?>
+        <?php echo $sec[$k]['body']; // phpcs:ignore ?>
       </div>
       <?php endforeach; ?>
     </section>
 
     <!-- Related reading ([lld_tool_related] chooses the guides) -->
     <?php $rel = $sec['related']['body']; $ids = lld_page_v2_related_ids($rel); ?>
-    <section class="mb-6" aria-label="<?php echo esc_attr($sec['related']['heading']); ?>">
+    <section class="mb-6">
       <div class="flex items-baseline justify-between gap-4 mb-6">
         <?php echo lld_page_v2_h2($sec['related']['h2'], 'text-2xl sm:text-3xl text-[#1F1E1C] text-day-dark font-extrabold tracking-tight'); // phpcs:ignore ?>
         <a href="<?php echo $u('/articles/'); ?>" class="text-xs font-bold text-[#1D4E48] dark:text-[#79D1C3] underline hover:no-underline shrink-0">View all guides &rarr;</a>
@@ -252,7 +253,7 @@ $card = 'rounded-2xl bg-day-surface bg-white border border-day-soft';
 
 <?php elseif ($view === 'search'):
   global $wp_query;
-  $q = get_search_query();
+  $q = get_search_query(false);   // unescaped: each use below escapes it once
   $total = (int)$wp_query->found_posts;
   $paged = max(1, (int)get_query_var('paged'));
   $pages = (int)$wp_query->max_num_pages;
