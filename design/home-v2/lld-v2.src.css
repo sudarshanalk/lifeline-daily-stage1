@@ -5,7 +5,7 @@
 @source "../../site/public_html/wp-content/mu-plugins/lld-tools/templates/home-v2.php";
 @source "../../site/public_html/wp-content/mu-plugins/lld-tools/templates/category-v2.php";
 @source "../../site/public_html/wp-content/mu-plugins/lld-tools/assets/lld-home-v2.js";
-@source "../../site/public_html/wp-content/mu-plugins/lld-tools/assets/lld-category-v2.js";
+@source "../../site/public_html/wp-content/mu-plugins/lld-tools/templates/parts/v2-header.php";
 
 /* The designs' `dark:` classes belong to their Night switch, not to the device's colour setting. */
 @custom-variant dark (&:where(.mode-night, .mode-night *));
