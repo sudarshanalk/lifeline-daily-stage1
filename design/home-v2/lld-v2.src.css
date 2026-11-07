@@ -150,6 +150,9 @@ body.lld-home-v2, body.lld-v2 {
   .lld-v2-legal > :first-child, .lld-v2-legal > div > :first-child { margin-top: 0 !important; }
   .lld-v2-legal .lld-disclaimer-page > * + * { margin-top: 1rem !important; }
   .lld-v2-legal .wpforms-container input:not([type=checkbox]):not([type=radio]), .lld-v2-legal .wpforms-container textarea { border: 1px solid #CFC5B5 !important; border-radius: 0.75rem !important; background: #FAF8F5 !important; }
+  .lld-v2-legal .wpforms-container label, .lld-v2-legal .wpforms-container legend { color: #1F1E1C !important; font-weight: 600 !important; }
+  .lld-v2-legal .wpforms-container .wpforms-field-sublabel, .lld-v2-legal .wpforms-container .wpforms-field-description { color: #5A5751 !important; font-weight: 500 !important; }
+  .lld-v2-legal .wpforms-container .wpforms-required-label { color: #A65045 !important; }
   .lld-v2-legal .wpforms-container button[type=submit] { background: #1D4E48 !important; color: #FFFFFF !important; border-radius: 9999px !important; padding: 0 1.5rem !important; font-weight: 700 !important; border: 0 !important; }
 
   .lld-v2-hub .lld-tools-hub__list { display: grid !important; grid-template-columns: 1fr !important; gap: 1.5rem !important; list-style: none !important; padding: 0 !important; margin: 0 !important; }
@@ -194,6 +197,8 @@ body.lld-home-v2, body.lld-v2 {
   body.mode-night .lld-v2-legal h2 { color: #F4F1EA !important; }
   body.mode-night .lld-v2-legal .wpforms-container input:not([type=checkbox]):not([type=radio]), body.mode-night .lld-v2-legal .wpforms-container textarea { background: #101413 !important; border-color: #344D47 !important; color: #F4F1EA !important; }
   body.mode-night .lld-v2-legal .wpforms-container label, body.mode-night .lld-v2-legal .wpforms-container legend { color: #F4F1EA !important; }
+  body.mode-night .lld-v2-legal .wpforms-container .wpforms-field-sublabel, body.mode-night .lld-v2-legal .wpforms-container .wpforms-field-description { color: #B0ABA0 !important; }
+  body.mode-night .lld-v2-legal .wpforms-container .wpforms-required-label { color: #E3AEA1 !important; }
   body.mode-night .lld-v2-hub .lld-tool-card { background: #16201E !important; border-color: #354F49 !important; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important; }
   body.mode-night .lld-v2-hub .lld-tool-card:hover { border-color: #4FA89B !important; }
   body.mode-night .lld-v2-hub .lld-tool-card__icon, body.mode-night .lld-v2-hub .lld-tool-card__status { background: #1E302D !important; border-color: #2F4F49 !important; color: #79D1C3 !important; }
