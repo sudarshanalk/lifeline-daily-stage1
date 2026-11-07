@@ -5,7 +5,8 @@
  * data/categories.json), Calculators, 4-Week Tracks, The Science and Guides. Owner, 7 Nov 2026: one header across the
  * site, and every category under Your Health.
  *
- * Set before including: $lld_header = ['page' => 'home'|'category'|'article', 'current' => top category slug or ''].
+ * Set before including: $lld_header = ['page' => 'home'|'category'|'article'|'tools'|'page', 'current' => top category slug or ''].
+ * 'tools' (the Health Tools hub and tool pages) marks Calculators as the current section.
  * Behaviour: assets/lld-home-v2.js (menu, Day/Night).
  */
 if (!defined('ABSPATH')) exit;
@@ -34,6 +35,7 @@ foreach ((array)(function_exists('lld_categories_doc') ? (lld_categories_doc()['
     'icon' => $topic_look[$slug][0] ?? '🧭', 'desc' => $topic_look[$slug][1] ?? '', 'url' => '/category/' . $slug . '/'];
 }
 $health_on = in_array($lld_header['page'], ['category', 'article'], true);
+$tools_on = $lld_header['page'] === 'tools';
 ?>
   <!-- Top Announcement Bar -->
   <div class="bg-[#ECE6DC] bg-day-surface text-[#4A4742] text-day-muted text-xs py-2 px-6 flex items-center justify-between border-b border-[#E0D8CB] border-day-soft">
@@ -60,7 +62,7 @@ $health_on = in_array($lld_header['page'], ['category', 'article'], true);
           <span>Your Health</span>
           <svg id="nav-arrow" class="w-4 h-4 transition-transform text-[#1D4E48]" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
         </button>
-        <a href="<?php echo $anchor('calculators'); ?>" class="text-inherit px-3.5 py-2 rounded-full hover:bg-[#EFEAE2] transition-colors">Calculators</a>
+        <a href="<?php echo $tools_on ? $hu('/health-tools/') : $anchor('calculators'); ?>"<?php echo $tools_on ? ' aria-current="true"' : ''; ?> class="text-inherit px-3.5 py-2 rounded-full hover:bg-[#EFEAE2] transition-colors<?php echo $tools_on ? ' bg-[#EFEAE2] bg-day-card text-[#1D4E48] dark:text-[#4FA89B] font-semibold' : ''; ?>">Calculators</a>
         <a href="<?php echo $anchor('tracks'); ?>" class="text-inherit px-3.5 py-2 rounded-full hover:bg-[#EFEAE2] transition-colors">4-Week Tracks</a>
         <a href="<?php echo $anchor('science'); ?>" class="text-inherit px-3.5 py-2 rounded-full hover:bg-[#EFEAE2] transition-colors">The Science</a>
         <a href="<?php echo $on_home ? '#reads' : $hu('/articles/'); ?>" class="text-inherit px-3.5 py-2 rounded-full hover:bg-[#EFEAE2] transition-colors">Guides</a>
