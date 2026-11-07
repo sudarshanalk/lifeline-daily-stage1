@@ -49,16 +49,16 @@ $count = count($sections);
 <body <?php body_class('lld-v2 selection:bg-[#1D4E48] selection:text-white'); ?>>
 <script>try{if(localStorage.getItem('lld_circadian')==='night')document.body.classList.add('mode-night');}catch(e){}</script>
 <?php if (function_exists('wp_body_open')) wp_body_open(); ?>
-  <a href="#lld-main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-[#1D4E48] focus:px-4 focus:py-2 focus:rounded-full">Skip to content</a>
+  <a href="#lld-main" class="text-inherit sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-[#1D4E48] focus:px-4 focus:py-2 focus:rounded-full">Skip to content</a>
   <?php $lld_header = ['page' => 'article', 'current' => $top ? (string)$top->slug : '']; include __DIR__ . '/parts/v2-header.php'; ?>
 
   <main id="lld-main">
   <article class="max-w-4xl mx-auto px-6 pt-10 pb-20" data-test="article">
 
     <nav class="flex items-center gap-2 text-xs text-[#62605A] text-day-muted mb-6 flex-wrap" aria-label="Breadcrumb">
-      <a href="<?php echo $u('/'); ?>" class="hover:text-[#1D4E48]">Home</a>
+      <a href="<?php echo $u('/'); ?>" class="text-inherit hover:text-[#1D4E48]">Home</a>
       <span aria-hidden="true">&rsaquo;</span>
-      <a href="<?php echo $u('/articles/'); ?>" class="text-[#1D4E48] font-semibold hover:underline">Your Health</a>
+      <a href="<?php echo $u('/articles/'); ?>" class="text-[#1D4E48] font-semibold hover:underline dark:text-[#4FA89B]">Your Health</a>
       <?php if ($top): ?>
       <span aria-hidden="true">&rsaquo;</span>
       <span class="text-[#1F1E1C] text-day-dark" aria-current="page"><?php echo esc_html($topName); ?></span>
@@ -67,7 +67,7 @@ $count = count($sections);
 
     <?php if ($top): ?>
     <div class="mb-3.5">
-      <a href="<?php echo esc_url($topUrl); ?>" class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#EAE2D5] bg-day-card text-[#1D4E48] hover:bg-[#DDD4C5] text-xs font-bold tracking-wider uppercase transition-colors shadow-2xs">
+      <a href="<?php echo esc_url($topUrl); ?>" class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-[#EAE2D5] bg-day-card text-[#1D4E48] hover:bg-[#DDD4C5] text-xs font-bold tracking-wider uppercase transition-colors shadow-2xs dark:text-[#4FA89B]">
         <span class="w-2 h-2 rounded-full bg-[#D4826F]" aria-hidden="true"></span>
         <span><?php echo esc_html($topName); ?></span>
       </a>
@@ -104,20 +104,20 @@ $count = count($sections);
       <div class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-[#DDD5C7] border-day-soft gap-3 flex-wrap">
         <div class="flex items-center gap-2">
           <span class="w-2 h-2 rounded-full bg-[#1D4E48]" aria-hidden="true"></span>
-          <span class="text-xs uppercase tracking-wider font-bold text-[#1D4E48]">In this guide<?php echo $guideLabel !== '' ? ' &bull; ' . esc_html($guideLabel) : ''; ?></span>
+          <span class="text-xs uppercase tracking-wider font-bold text-[#1D4E48] dark:text-[#4FA89B]">In this guide<?php echo $guideLabel !== '' ? ' &bull; ' . esc_html($guideLabel) : ''; ?></span>
         </div>
         <?php $jumps = array_filter([$P['answer'] !== '' ? ['#key-takeaways', 'Takeaways'] : null, $P['faq'] ? ['#faq', 'FAQ'] : null, $P['sources'] !== '' ? ['#sources', 'Sources'] : null]); ?>
         <?php if ($jumps): ?>
         <div class="flex items-center gap-2 text-[11px] font-medium text-[#6B675F] text-day-muted">
           <span>Jump to:</span>
-          <?php $i = 0; foreach ($jumps as [$href, $lab]): ?><?php echo $i++ ? ' &bull; ' : ''; ?><a href="<?php echo esc_attr($href); ?>" class="hover:text-[#1D4E48] hover:underline<?php echo $i === 1 ? ' font-semibold text-[#1D4E48]' : ''; ?>"><?php echo esc_html($lab); ?></a><?php endforeach; ?>
+          <?php $i = 0; foreach ($jumps as [$href, $lab]): ?><?php echo $i++ ? ' &bull; ' : ''; ?><a href="<?php echo esc_attr($href); ?>" class="text-inherit hover:text-[#1D4E48] hover:underline<?php echo $i === 1 ? ' font-semibold text-[#1D4E48] dark:text-[#4FA89B]' : ''; ?>"><?php echo esc_html($lab); ?></a><?php endforeach; ?>
         </div>
         <?php endif; ?>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
         <?php foreach ($sections as $k => $s): $wide = ($k === $count - 1) && ($count % 2 === 1); ?>
         <a href="#<?php echo esc_attr($s['id']); ?>" class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white bg-day-card border border-[#DDD5C7] border-day-soft hover:border-[#1D4E48] hover:shadow-xs transition-all text-[#1F1E1C] text-day-dark group<?php echo $wide ? ' sm:col-span-2' : ''; ?>">
-          <span class="w-5 h-5 rounded-full bg-[#EAE2D5] text-[#1D4E48] group-hover:bg-[#1D4E48] group-hover:text-white font-bold text-[11px] flex items-center justify-center shrink-0 transition-colors"><?php echo (int)($k + 1); ?></span>
+          <span class="w-5 h-5 rounded-full bg-[#EAE2D5] text-[#1D4E48] group-hover:bg-[#1D4E48] group-hover:text-white font-bold text-[11px] flex items-center justify-center shrink-0 transition-colors dark:text-[#4FA89B] dark:bg-[#22302D]"><?php echo (int)($k + 1); ?></span>
           <span class="font-medium<?php echo $wide ? '' : ' truncate'; ?>"><?php echo esc_html($s['short']); ?></span>
         </a>
         <?php endforeach; ?>
@@ -135,7 +135,7 @@ $count = count($sections);
     <div id="key-takeaways" class="my-8 p-6 sm:p-8 rounded-2xl bg-[#FAF5EE] bg-day-callout border border-[#E0D8CB] border-day-soft space-y-3.5 scroll-mt-28">
       <div class="flex items-center gap-2 pb-2 border-b border-[#E0D8CB] border-day-soft">
         <span class="w-2.5 h-2.5 rounded-full bg-[#1D4E48]" aria-hidden="true"></span>
-        <h2 class="text-xs uppercase tracking-widest font-bold text-[#1D4E48]">Key Takeaways</h2>
+        <h2 class="text-xs uppercase tracking-widest font-bold text-[#1D4E48] dark:text-[#4FA89B]">Key Takeaways</h2>
       </div>
       <div class="lld-prose lld-prose--takeaways space-y-3 text-sm sm:text-base text-[#1F1E1C] text-day-dark leading-relaxed font-normal">
         <?php echo $P['answer']; // phpcs:ignore -- [lld_answer] output ?>
@@ -146,7 +146,7 @@ $count = count($sections);
     <?php if ($P['benchmarks'] && $P['benchmarks']['stats']): $B = $P['benchmarks']; ?>
     <div class="my-10 p-6 sm:p-8 rounded-3xl bg-[#FAF5EE] bg-day-callout border border-[#EAE2D5] border-day-soft space-y-5 shadow-xs" data-test="benchmarks">
       <div class="flex items-center justify-between border-b border-[#EAE2D5] border-day-soft pb-3 gap-3">
-        <span class="text-xs uppercase tracking-widest font-bold text-[#1D4E48] flex items-center gap-2">
+        <span class="text-xs uppercase tracking-widest font-bold text-[#1D4E48] flex items-center gap-2 dark:text-[#4FA89B]">
           <span class="w-2 h-2 rounded-full bg-[#D4826F]" aria-hidden="true"></span>
           <span>Key clinical benchmarks</span>
         </span>
@@ -176,7 +176,7 @@ $count = count($sections);
       <?php else: ?>
       <section id="<?php echo esc_attr($s['id']); ?>" class="p-6 sm:p-8 rounded-3xl bg-white bg-day-card border border-[#E0D8CB] border-day-soft space-y-4 shadow-xs scroll-mt-28">
         <div class="flex items-center justify-between gap-3">
-          <span class="text-xs font-bold text-[#1D4E48] uppercase tracking-wider">Part <?php echo (int)($k + 1); ?></span>
+          <span class="text-xs font-bold text-[#1D4E48] uppercase tracking-wider dark:text-[#4FA89B]">Part <?php echo (int)($k + 1); ?></span>
           <?php if ($s['label'] !== ''): ?><span class="text-xs text-[#6E6A62] text-day-muted"><?php echo esc_html($s['label']); ?></span><?php endif; ?>
         </div>
         <h2 class="font-serif-editorial text-3xl text-[#1F1E1C] text-day-dark"><?php echo wp_kses_post($s['title']); ?></h2>
@@ -190,7 +190,7 @@ $count = count($sections);
         <div class="space-y-1.5 pb-2 border-b border-[#EAE4D8] border-day-soft">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-[#D4826F]" aria-hidden="true"></span>
-            <span class="text-xs uppercase tracking-widest font-bold text-[#1D4E48]">Evidence-based answers</span>
+            <span class="text-xs uppercase tracking-widest font-bold text-[#1D4E48] dark:text-[#4FA89B]">Evidence-based answers</span>
           </div>
           <h2 class="font-serif-editorial text-3xl sm:text-4xl text-[#1F1E1C] text-day-dark"><?php echo esc_html($P['faq_title'] !== '' ? $P['faq_title'] : 'Frequently Asked Questions'); ?></h2>
           <?php if ($faqIntro !== ''): ?><p class="text-xs sm:text-sm text-[#5A5751] text-day-muted"><?php echo esc_html($faqIntro); ?></p><?php endif; ?>
@@ -201,10 +201,10 @@ $count = count($sections);
           <details class="group p-5 rounded-2xl bg-[#FAF8F5] bg-day-surface border border-[#DDD5C7] border-day-soft transition-all duration-200 open:border-[#1D4E48] open:shadow-xs"<?php echo $i === 0 ? ' open' : ''; ?>>
             <summary class="flex items-center justify-between cursor-pointer list-none text-base font-semibold text-[#1F1E1C] text-day-dark select-none gap-4 [&::-webkit-details-marker]:hidden">
               <span class="flex items-center gap-3">
-                <span class="w-6 h-6 rounded-full bg-[#EAE2D5] text-[#1D4E48] text-xs font-bold flex items-center justify-center shrink-0 group-open:bg-[#1D4E48] group-open:text-white transition-colors" aria-hidden="true">Q<?php echo (int)($i + 1); ?></span>
+                <span class="w-6 h-6 rounded-full bg-[#EAE2D5] text-[#1D4E48] text-xs font-bold flex items-center justify-center shrink-0 group-open:bg-[#1D4E48] group-open:text-white transition-colors dark:text-[#4FA89B] dark:bg-[#22302D]" aria-hidden="true">Q<?php echo (int)($i + 1); ?></span>
                 <span class="lld-faq__q"><?php echo wp_kses_post($f['q']); ?></span>
               </span>
-              <span class="w-6 h-6 rounded-full bg-[#EAE2D5] text-[#1D4E48] flex items-center justify-center shrink-0 text-xs font-bold transition-transform duration-200 group-open:rotate-180" aria-hidden="true">&#9660;</span>
+              <span class="w-6 h-6 rounded-full bg-[#EAE2D5] text-[#1D4E48] flex items-center justify-center shrink-0 text-xs font-bold transition-transform duration-200 group-open:rotate-180 dark:text-[#4FA89B] dark:bg-[#22302D]" aria-hidden="true">&#9660;</span>
             </summary>
             <div class="lld-prose mt-4 pt-3 border-t border-[#EAE2D5] border-day-soft text-sm text-[#4A4742] text-day-muted leading-relaxed"><?php echo $f['a']; // phpcs:ignore -- [lld_q] output ?></div>
           </details>
@@ -218,7 +218,7 @@ $count = count($sections);
         <div class="flex items-center justify-between pb-2 border-b border-[#E0D8CB] border-day-soft">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-[#1D4E48]" aria-hidden="true"></span>
-            <h2 class="text-xs uppercase tracking-widest font-bold text-[#1D4E48]">References</h2>
+            <h2 class="text-xs uppercase tracking-widest font-bold text-[#1D4E48] dark:text-[#4FA89B]">References</h2>
           </div>
           <?php $nsrc = substr_count(strtolower($P['sources']), '<li'); ?>
           <span class="text-[11px] font-medium text-[#6B675F] text-day-muted"><?php echo (int)$nsrc; ?> source<?php echo $nsrc === 1 ? '' : 's'; ?></span>
@@ -231,7 +231,7 @@ $count = count($sections);
       <div class="mt-12 pt-8 border-t border-[#EAE4D8] border-day-soft space-y-6">
         <?php if ($tags): ?>
         <div class="flex flex-wrap items-center gap-2 text-xs">
-          <span class="font-bold text-[#1D4E48] tracking-wider uppercase text-[11px] mr-1">Tags</span>
+          <span class="font-bold text-[#1D4E48] tracking-wider uppercase text-[11px] mr-1 dark:text-[#4FA89B]">Tags</span>
           <?php foreach ($tags as $tg): $tl = get_tag_link($tg); ?>
           <a href="<?php echo esc_url(is_wp_error($tl) ? '#' : $tl); ?>" class="px-3.5 py-1.5 rounded-lg bg-white bg-day-card border border-[#DDD5C7] border-day-soft text-[#1F1E1C] text-day-dark hover:border-[#1D4E48] transition-colors font-medium"><?php echo esc_html(html_entity_decode($tg->name, ENT_QUOTES | ENT_HTML5, 'UTF-8')); ?></a>
           <?php endforeach; ?>
@@ -260,16 +260,16 @@ $count = count($sections);
               <?php endforeach; ?>
               <button type="button" data-copy-link="<?php echo esc_url($link); ?>" aria-label="Copy link" class="w-9 h-9 rounded-full bg-[#F4EDE2] bg-day-surface border border-[#DDD5C7] border-day-soft hover:bg-[#1D4E48] hover:text-white hover:border-[#1D4E48] text-[#1F1E1C] text-day-dark flex items-center justify-center transition-all text-xs"><span aria-hidden="true">🔗</span></button>
             </div>
-            <p data-copy-status class="text-[11px] text-[#1D4E48] min-h-4" role="status"></p>
+            <p data-copy-status class="text-[11px] text-[#1D4E48] min-h-4 dark:text-[#4FA89B]" role="status"></p>
           </div>
         </div>
 
         <?php if ($prev): ?>
         <nav class="py-3 px-4 rounded-xl bg-[#EDE6DC] bg-day-surface border border-[#DDD5C7] border-day-soft text-xs text-[#62605A] text-day-muted flex items-center gap-1.5 overflow-x-auto" aria-label="More from Lifeline Daily">
-          <a href="<?php echo $u('/'); ?>" class="hover:text-[#1D4E48]">Home</a>
+          <a href="<?php echo $u('/'); ?>" class="text-inherit hover:text-[#1D4E48]">Home</a>
           <?php if ($prevTop): $pl = get_term_link($prevTop); ?>
           <span aria-hidden="true">&rsaquo;</span>
-          <a href="<?php echo esc_url(is_wp_error($pl) ? '#' : $pl); ?>" class="hover:text-[#1D4E48] whitespace-nowrap"><?php echo esc_html(html_entity_decode($prevTop->name, ENT_QUOTES | ENT_HTML5, 'UTF-8')); ?></a>
+          <a href="<?php echo esc_url(is_wp_error($pl) ? '#' : $pl); ?>" class="text-inherit hover:text-[#1D4E48] whitespace-nowrap"><?php echo esc_html(html_entity_decode($prevTop->name, ENT_QUOTES | ENT_HTML5, 'UTF-8')); ?></a>
           <?php endif; ?>
           <span aria-hidden="true">&rsaquo;</span>
           <a href="<?php echo esc_url(get_permalink($prev)); ?>" class="text-[#1F1E1C] text-day-dark hover:underline font-medium"><?php echo esc_html(html_entity_decode(get_the_title($prev), ENT_QUOTES | ENT_HTML5, 'UTF-8')); ?> &rarr;</a>
@@ -286,7 +286,7 @@ $count = count($sections);
           <p class="text-xs sm:text-sm text-[#5A5751] text-day-muted">Practical daily steps and pacing guides delivered straight to your inbox.</p>
         </div>
         <?php if ($guide_sent): ?>
-        <p class="text-sm font-semibold text-[#1D4E48]" role="status">Check your email to confirm.</p>
+        <p class="text-sm font-semibold text-[#1D4E48] dark:text-[#4FA89B]" role="status">Check your email to confirm.</p>
         <?php else: ?>
         <?php if ($check === '1'): ?><p class="text-sm font-semibold text-[#8C5E2D]" role="alert">We could not send the guide to that address. Please check it and try again.</p><?php endif; ?>
         <form method="post" action="" class="space-y-3.5 max-w-xl">
@@ -322,7 +322,7 @@ $count = count($sections);
       <section class="mt-14 pt-10 border-t border-[#EAE4D8] border-day-soft space-y-6" aria-labelledby="read-next">
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <h2 id="read-next" class="text-xl sm:text-2xl font-bold text-[#1F1E1C] text-day-dark tracking-tight">Read Next in <?php echo esc_html($topName); ?></h2>
-          <a href="<?php echo esc_url($topUrl); ?>" class="text-xs font-bold text-[#1D4E48] hover:underline flex items-center gap-1"><span>View all in <?php echo esc_html($topName); ?></span><span aria-hidden="true">&rarr;</span></a>
+          <a href="<?php echo esc_url($topUrl); ?>" class="text-xs font-bold text-[#1D4E48] hover:underline flex items-center gap-1 dark:text-[#4FA89B]"><span>View all in <?php echo esc_html($topName); ?></span><span aria-hidden="true">&rarr;</span></a>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
           <?php foreach ($next as $np): $nm = lld_article_v2_minutes((string)$np->post_content); $nl = function_exists('lld_hub_post_category_label') ? lld_hub_post_category_label($np, $topName) : $topName; ?>
@@ -334,10 +334,10 @@ $count = count($sections);
               </div>
               <div class="p-5 space-y-2">
                 <span class="text-[11px] text-[#6B675F] text-day-muted block"><?php echo (int)$nm; ?> min read &bull; Clinically Reviewed</span>
-                <h3 class="text-base font-bold text-[#1F1E1C] text-day-dark leading-snug"><a href="<?php echo esc_url(get_permalink($np)); ?>" class="after:absolute after:inset-0"><?php echo esc_html(html_entity_decode(get_the_title($np), ENT_QUOTES | ENT_HTML5, 'UTF-8')); ?></a></h3>
+                <h3 class="text-base font-bold text-[#1F1E1C] text-day-dark leading-snug"><a href="<?php echo esc_url(get_permalink($np)); ?>" class="text-inherit after:absolute after:inset-0"><?php echo esc_html(html_entity_decode(get_the_title($np), ENT_QUOTES | ENT_HTML5, 'UTF-8')); ?></a></h3>
               </div>
             </div>
-            <div class="px-5 pb-5"><span class="text-xs font-bold text-[#1D4E48] inline-flex items-center gap-1" aria-hidden="true"><span>Read guide</span><span>&rarr;</span></span></div>
+            <div class="px-5 pb-5"><span class="text-xs font-bold text-[#1D4E48] inline-flex items-center gap-1 dark:text-[#4FA89B]" aria-hidden="true"><span>Read guide</span><span>&rarr;</span></span></div>
           </article>
           <?php endforeach; ?>
         </div>

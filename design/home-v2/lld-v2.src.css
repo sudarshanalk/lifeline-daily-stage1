@@ -103,8 +103,5 @@ body.lld-home-v2, body.lld-v2 {
   body.mode-night .lld-prose .lld-closing { color: #4FA89B !important; }
   body.mode-night .lld-prose th { background-color: #16201E !important; }
   body.mode-night .lld-prose th, body.mode-night .lld-prose td { border-color: #263834 !important; }
-  /* the designs keep dark-teal text and light beige chips in Night; both turn to their Night pair so text stays readable */
-  body.mode-night .text-\[\#1D4E48\], body.mode-night .group:hover .group-hover\:text-\[\#1D4E48\] { color: #4FA89B !important; }
-  body.mode-night .bg-\[\#EAE2D5\], body.mode-night .bg-\[\#F4EFE7\], body.mode-night .bg-\[\#E8F2F0\] { background-color: #22302D !important; }
   body.mode-night .tab-pill.active { background-color: #4FA89B !important; color: #101413 !important; border-color: #4FA89B !important; }
 }
