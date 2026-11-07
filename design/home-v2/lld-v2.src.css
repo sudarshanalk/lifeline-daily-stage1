@@ -320,3 +320,92 @@ body.lld-home-v2, body.lld-v2 {
   body.mode-night.lld-members-v2 .lld-feature-columns li::before, body.mode-night.lld-members-v2 [data-lld-pricing-faq] summary::after { color: #79D1C3 !important; }
   body.mode-night.lld-members-v2 .lld-info { background: #192E2B !important; border-color: #4FA89B !important; color: #79D1C3 !important; }
 }
+
+/* Group 2 (Owner_Questions 158): join, email confirmation, sign-in, two-step code, reset, agreements and checkout in
+   the v2 look, styled as design files 12 to 16 and 22 (body class lld-members-v2-form, set by
+   lld_members_v2_form_screens()). The plugin's own form markup and wording are unchanged. */
+@layer utilities {
+  body.lld-members-v2-form .lld-main { max-width: 36rem !important; }
+  html:has(body.lld-members-v2) { scroll-padding-top: 6rem !important; }
+  body.lld-members-v2-form .lld-main > h1 { margin-bottom: 1.25rem !important; }
+  body.lld-members-v2-form .lld-main > p:not(.lld-hint, .lld-error, .lld-note, [data-lld-charge]), body.lld-members-v2-form .lld-card p:not(.lld-hint, .lld-error, .lld-note, [data-lld-charge]), body.lld-members-v2-form .lld-form > p:not(.lld-hint, .lld-error, .lld-note, [data-lld-charge]) { font-size: 0.9375rem !important; line-height: 1.6 !important; font-weight: 600 !important; color: #3A3834 !important; margin-bottom: 0.75rem !important; }
+  body.lld-members-v2-form .lld-main > p { margin-top: 0.75rem !important; }
+  body.lld-members-v2-form .lld-link-row { text-align: center !important; }
+
+  /* the join steps */
+  body.lld-members-v2-form .lld-steps { display: flex !important; flex-wrap: wrap !important; gap: 0.5rem !important; list-style: none !important; padding: 0 !important; margin: 0 0 1.25rem !important; }
+  body.lld-members-v2-form .lld-steps li { padding: 0.375rem 0.875rem !important; border-radius: 9999px !important; background: #EFEAE2 !important; color: #4A4742 !important; font-size: 0.8125rem !important; line-height: 1.4 !important; font-weight: 700 !important; }
+  body.lld-members-v2-form .lld-steps li.is-current { background: #1D4E48 !important; color: #FFFFFF !important; }
+
+  /* cards and forms: white, rounded, warm border */
+  body.lld-members-v2-form .lld-card, body.lld-members-v2-form .lld-form-card { display: block !important; width: 100% !important; min-width: 0 !important; margin: 0 0 1.5rem !important; padding: 1.5rem !important; border-radius: 1.5rem !important; background: #FFFFFF !important; border: 1.5px solid #E0D8CB !important; box-shadow: 0 2px 10px -2px rgba(22, 28, 26, 0.06) !important; color: #1F1E1C !important; }
+  @media (min-width: 640px) { body.lld-members-v2-form .lld-card, body.lld-members-v2-form .lld-form-card { padding: 2rem !important; } }
+  body.lld-members-v2-form .lld-main > form.lld-form:not(:has(> .lld-card)) { display: block !important; width: 100% !important; min-width: 0 !important; margin: 0 0 1.5rem !important; padding: 1.5rem !important; border-radius: 1.5rem !important; background: #FFFFFF !important; border: 1.5px solid #E0D8CB !important; box-shadow: 0 2px 10px -2px rgba(22, 28, 26, 0.06) !important; color: #1F1E1C !important; }
+  @media (min-width: 640px) { body.lld-members-v2-form .lld-main > form.lld-form:not(:has(> .lld-card)) { padding: 2rem !important; } }
+  body.mode-night.lld-members-v2-form .lld-main > form.lld-form:not(:has(> .lld-card)) { background: #16201E !important; border-color: #354F49 !important; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important; color: #F4F1EA !important; }
+  body.lld-members-v2-form .lld-card > :last-child, body.lld-members-v2-form .lld-form > :last-child { margin-bottom: 0 !important; }
+  body.lld-members-v2-form fieldset.lld-card legend, body.lld-members-v2-form fieldset.lld-options legend { float: left !important; width: 100% !important; padding: 0 !important; margin: 0 0 0.75rem !important; font-size: 1.0625rem !important; line-height: 1.4 !important; font-weight: 800 !important; color: #1F1E1C !important; }
+  body.lld-members-v2-form fieldset legend + * { clear: both !important; }
+  body.lld-members-v2-form fieldset.lld-options { border: 0 !important; padding: 0 !important; margin: 0 0 1.25rem !important; min-width: 0 !important; }
+
+  /* fields */
+  body.lld-members-v2-form .lld-field { margin: 0 0 1.25rem !important; min-width: 0 !important; }
+  body.lld-members-v2-form .lld-field label { display: block !important; margin: 0 0 0.375rem !important; font-size: 0.875rem !important; line-height: 1.4 !important; font-weight: 800 !important; color: #1F1E1C !important; }
+  body.lld-members-v2-form .lld-field-row { display: grid !important; grid-template-columns: 1fr !important; gap: 0 1rem !important; }
+  @media (min-width: 640px) { body.lld-members-v2-form .lld-field-row { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; } }
+  body.lld-members-v2-form .lld-main input[type=text], body.lld-members-v2-form .lld-main input[type=email], body.lld-members-v2-form .lld-main input[type=password], body.lld-members-v2-form .lld-main input[type=number], body.lld-members-v2-form .lld-main input[type=tel], body.lld-members-v2-form .lld-main select { display: block !important; width: 100% !important; min-width: 0 !important; min-height: 3rem !important; padding: 0.75rem 1rem !important; border-radius: 0.75rem !important; border: 1.5px solid #8F8576 !important; background: #FFFFFF !important; color: #1F1E1C !important; font-family: inherit !important; font-size: 1rem !important; line-height: 1.4 !important; font-weight: 500 !important; box-shadow: none !important; }
+  body.lld-members-v2-form .lld-main input:not([type=checkbox], [type=radio]):focus-visible, body.lld-members-v2-form .lld-main select:focus-visible { outline: 3px solid #1D4E48 !important; outline-offset: 2px !important; border-color: #1D4E48 !important; box-shadow: none !important; }
+  body.lld-members-v2-form .lld-main input[type=checkbox]:focus-visible, body.lld-members-v2-form .lld-main input[type=radio]:focus-visible { outline: 3px solid #1D4E48 !important; outline-offset: 2px !important; }
+  body.lld-members-v2-form .lld-main input[aria-invalid=true] { border-color: #B3261E !important; }
+  body.lld-members-v2-form .lld-password-row { display: flex !important; gap: 0.5rem !important; align-items: stretch !important; }
+  body.lld-members-v2-form .lld-password-row input { flex: 1 1 auto !important; }
+  body.lld-members-v2-form .lld-eye { flex: 0 0 auto !important; min-height: 3rem !important; padding: 0 1rem !important; border-radius: 0.75rem !important; border: 1.5px solid #8F8576 !important; background: #F4EFE6 !important; color: #1F1E1C !important; font-family: inherit !important; font-size: 0.8125rem !important; font-weight: 800 !important; white-space: nowrap !important; cursor: pointer !important; }
+  body.lld-members-v2-form .lld-eye:hover { border-color: #1D4E48 !important; color: #1D4E48 !important; }
+  body.lld-members-v2-form .lld-hint { margin: 0.375rem 0 0 !important; font-size: 0.8125rem !important; line-height: 1.5 !important; font-weight: 600 !important; color: #5A5751 !important; }
+  body.lld-members-v2-form .lld-error { margin: 0.375rem 0 0 !important; font-size: 0.8125rem !important; line-height: 1.5 !important; font-weight: 700 !important; color: #B3261E !important; }
+  body.lld-members-v2-form .lld-note { font-size: 0.875rem !important; line-height: 1.6 !important; font-weight: 600 !important; color: #4A4742 !important; margin: 0 0 1rem !important; padding: 1rem 1.125rem !important; border-radius: 1rem !important; background: #FAF8F5 !important; border: 1px solid #E0D8CB !important; }
+
+  /* tick boxes and plan choice */
+  body.lld-members-v2-form .lld-check { display: flex !important; align-items: flex-start !important; gap: 0.75rem !important; min-height: 2.75rem !important; padding: 0.5rem 0 !important; margin: 0 0 0.75rem !important; font-size: 0.9375rem !important; line-height: 1.5 !important; font-weight: 600 !important; color: #1F1E1C !important; cursor: pointer !important; }
+  body.lld-members-v2-form .lld-check input, body.lld-members-v2-form .lld-choice input { width: 1.25rem !important; height: 1.25rem !important; margin: 0.125rem 0 0 !important; flex: 0 0 auto !important; accent-color: #1D4E48 !important; }
+  body.lld-members-v2-form .lld-choice { display: grid !important; grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 0.75rem !important; }
+  body.lld-members-v2-form .lld-choice label { display: flex !important; align-items: center !important; gap: 0.625rem !important; min-height: 3rem !important; padding: 0.75rem 1rem !important; border-radius: 0.75rem !important; border: 1.5px solid #8F8576 !important; background: #FAF8F5 !important; font-size: 0.9375rem !important; font-weight: 800 !important; color: #1F1E1C !important; cursor: pointer !important; }
+  body.lld-members-v2-form .lld-choice label:has(input:checked) { border: 2px solid #1D4E48 !important; background: #F1F7F5 !important; color: #1D4E48 !important; }
+  body.lld-members-v2-form [data-lld-sale-terms] { margin-bottom: 0.75rem !important; }
+  body.lld-members-v2-form [data-lld-charge] { font-family: 'Instrument Serif', Georgia, serif !important; font-size: 2.5rem !important; line-height: 1.1 !important; font-weight: 400 !important; color: #1F1E1C !important; margin-bottom: 0.25rem !important; }
+
+  /* buttons: the primary and Google buttons fill the card; Resend is a link-style button */
+  body.lld-members-v2-form .lld-providers .lld-button { border-radius: 0.75rem !important; }
+  body.lld-members-v2-form .lld-providers .lld-button::after, body.lld-members-v2-form .lld-button-secondary::after { content: none !important; }
+  body.lld-members-v2-form .lld-main .lld-providers .lld-note { margin: 0.75rem 0 0 !important; padding: 0 !important; border: 0 !important; background: none !important; text-align: center !important; }
+  body.lld-members-v2-form .lld-text-button { display: inline-flex !important; align-items: center !important; min-height: 2.75rem !important; padding: 0 !important; border: 0 !important; background: none !important; color: #1D4E48 !important; font-family: inherit !important; font-size: 0.9375rem !important; font-weight: 800 !important; text-decoration: underline !important; cursor: pointer !important; }
+
+  /* messages */
+  body.lld-members-v2-form .lld-fail, body.lld-members-v2-form .lld-error-box { margin: 0 0 1.5rem !important; padding: 1rem 1.25rem !important; border-radius: 1rem !important; background: #FCEEEC !important; border: 1.5px solid #B3261E !important; box-shadow: none !important; color: #8C1D18 !important; }
+  body.lld-members-v2-form .lld-fail p, body.lld-members-v2-form .lld-error-box p { font-size: 0.9375rem !important; line-height: 1.5 !important; font-weight: 700 !important; color: #8C1D18 !important; margin: 0 !important; }
+  body.lld-members-v2-form .lld-notice-box { margin: 0 0 1.5rem !important; padding: 1rem 1.25rem !important; border-radius: 1rem !important; background: #E6F0EE !important; border: 1.5px solid #1D4E48 !important; color: #1D4E48 !important; font-size: 0.9375rem !important; font-weight: 700 !important; }
+
+  /* Night */
+  body.mode-night.lld-members-v2-form .lld-card, body.mode-night.lld-members-v2-form .lld-form-card { background: #16201E !important; border-color: #354F49 !important; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35) !important; color: #F4F1EA !important; }
+  body.mode-night.lld-members-v2-form .lld-field label, body.mode-night.lld-members-v2-form .lld-check, body.mode-night.lld-members-v2-form fieldset legend, body.mode-night.lld-members-v2-form [data-lld-charge] { color: #F4F1EA !important; }
+  body.mode-night.lld-members-v2-form .lld-main > p:not(.lld-hint, .lld-error, .lld-note, [data-lld-charge]), body.mode-night.lld-members-v2-form .lld-card p:not(.lld-hint, .lld-error, .lld-note, [data-lld-charge]), body.mode-night.lld-members-v2-form .lld-form > p:not(.lld-hint, .lld-error, .lld-note, [data-lld-charge]), body.mode-night.lld-members-v2-form .lld-note { color: #D6D1C7 !important; }
+  body.mode-night.lld-members-v2-form .lld-note { background: #121A18 !important; border-color: #2C423D !important; }
+  body.mode-night.lld-members-v2-form .lld-main .lld-providers .lld-note { background: none !important; }
+  body.mode-night.lld-members-v2-form .lld-hint { color: #B0ABA0 !important; }
+  body.mode-night.lld-members-v2-form .lld-error { color: #F2A196 !important; }
+  body.mode-night.lld-members-v2-form .lld-main input[type=text], body.mode-night.lld-members-v2-form .lld-main input[type=email], body.mode-night.lld-members-v2-form .lld-main input[type=password], body.mode-night.lld-members-v2-form .lld-main input[type=number], body.mode-night.lld-members-v2-form .lld-main input[type=tel], body.mode-night.lld-members-v2-form .lld-main select { background: #101413 !important; border-color: #6F8A84 !important; color: #F4F1EA !important; }
+  body.mode-night.lld-members-v2-form .lld-main input:focus-visible, body.mode-night.lld-members-v2-form .lld-main select:focus-visible { outline-color: #79D1C3 !important; border-color: #79D1C3 !important; box-shadow: none !important; }
+  body.mode-night.lld-members-v2-form .lld-eye, body.mode-night.lld-members-v2-form .lld-choice label { background: #101413 !important; border-color: #6F8A84 !important; color: #F4F1EA !important; }
+  body.mode-night.lld-members-v2-form .lld-choice label:has(input:checked) { background: #14201D !important; border-color: #4FA89B !important; color: #79D1C3 !important; }
+  body.mode-night.lld-members-v2-form .lld-steps li { background: #1E2A28 !important; color: #D6D1C7 !important; }
+  body.mode-night.lld-members-v2-form .lld-steps li.is-current { background: #4FA89B !important; color: #101413 !important; }
+  body.mode-night.lld-members-v2-form .lld-text-button { color: #79D1C3 !important; }
+  body.mode-night.lld-members-v2-form .lld-fail, body.mode-night.lld-members-v2-form .lld-error-box { background: #3A1A17 !important; border-color: #E0786E !important; }
+  body.mode-night.lld-members-v2-form .lld-fail p, body.mode-night.lld-members-v2-form .lld-error-box p { color: #F6C4BC !important; }
+  /* native tick boxes, radios and the select arrow drawn dark; the plugin's member tab bar on every v2 members screen */
+  body.mode-night.lld-members-v2-form .lld-main { color-scheme: dark !important; }
+  body.mode-night.lld-members-v2 .lld-tabbar { background: #101413 !important; border-top-color: #2C423D !important; }
+  body.mode-night.lld-members-v2 .lld-tabbar a { color: #D6D1C7 !important; }
+  body.mode-night.lld-members-v2 .lld-tabbar a[aria-current=page] { color: #79D1C3 !important; background: #192E2B !important; }
+  body.mode-night.lld-members-v2-form .lld-notice-box { background: #192E2B !important; border-color: #4FA89B !important; color: #79D1C3 !important; }
+}

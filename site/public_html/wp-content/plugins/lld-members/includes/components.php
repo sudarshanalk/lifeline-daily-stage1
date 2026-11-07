@@ -10,6 +10,16 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Screens shown in the v2 look as a whole, whichever class draws them (owner's UI pack, group 2: join, sign-in,
+ * agreements and checkout; Owner_Questions 158). Look only: the markup, wording and rules are the built ones (153).
+ *
+ * @return string[] lld_screen values.
+ */
+function lld_members_v2_form_screens() {
+	return array( 'join', 'confirm', 'sign-in', 'two-step', 'reset', 'agreements', 'checkout' );
+}
+
+/**
  * Page shell: header, main, member menu and footer.
  *
  * @param array $args title, main, signed_in, status, wide (the 64rem column for the dashboard, track, meals, diary and pricing),
@@ -26,7 +36,8 @@ function lld_members_layout( $args ) {
 	$in    = ! empty( $args['signed_in'] );
 	$css   = plugins_url( 'assets/lld-members.css', LLD_MEMBERS_FILE );
 	$js    = plugins_url( 'assets/lld-members.js', LLD_MEMBERS_FILE );
-	$v2    = ! empty( $args['v2'] ) && function_exists( 'lld_v2_members_shell_on' ) && lld_v2_members_shell_on();
+	$form  = in_array( (string) get_query_var( 'lld_screen' ), lld_members_v2_form_screens(), true );
+	$v2    = ( ! empty( $args['v2'] ) || $form ) && function_exists( 'lld_v2_members_shell_on' ) && lld_v2_members_shell_on();
 	echo '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">';
 	echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
 	echo '<meta name="robots" content="noindex">';
@@ -40,7 +51,7 @@ function lld_members_layout( $args ) {
 	echo '<link rel="stylesheet" href="' . esc_url( $css ) . '?ver=' . esc_attr( LLD_MEMBERS_VERSION ) . '">';
 	echo lld_members_font_faces();
 	echo $v2 ? lld_v2_members_shell( 'head' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
-	echo '</head><body class="lld-members-body ' . ( $in ? 'lld-signed-in' : 'lld-signed-out' ) . ( $v2 ? ' lld-v2 lld-members-v2' : '' ) . '">';
+	echo '</head><body class="lld-members-body ' . ( $in ? 'lld-signed-in' : 'lld-signed-out' ) . ( $v2 ? ' lld-v2 lld-members-v2' . ( $form ? ' lld-members-v2-form' : '' ) : '' ) . '">';
 	echo $v2 ? lld_v2_members_shell( 'body' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed script.
 	echo '<a class="lld-skip" href="#lld-main">Skip to content</a>';
 	echo class_exists( 'LLD_Members_Quality' ) ? LLD_Members_Quality::preview_banner() : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
