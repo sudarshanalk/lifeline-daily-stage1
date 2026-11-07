@@ -10,7 +10,7 @@
  */
 if (!defined('ABSPATH')) exit;
 
-$lld_header = (array)($lld_header ?? []) + ['page' => 'home', 'current' => ''];
+$lld_header = (array)($lld_header ?? []) + ['page' => 'home', 'current' => '', 'exact' => false];   // exact: viewing that category itself
 $hu = function (string $path): string { return esc_url(home_url($path)); };
 $on_home = $lld_header['page'] === 'home';
 $anchor = function (string $id) use ($on_home, $hu): string { return $on_home ? '#' . $id : $hu('/#' . $id); };
@@ -89,7 +89,7 @@ $health_on = in_array($lld_header['page'], ['category', 'article'], true);
     <div id="mega-menu" class="hidden absolute top-full left-0 w-full bg-[#FAF8F5] bg-day-base border-b border-[#DFD8CC] border-day-soft shadow-xl max-h-[80vh] overflow-y-auto" data-test="your-health-menu">
       <div class="max-w-7xl mx-auto p-8 grid grid-cols-1 md:grid-cols-3 gap-6">
         <?php foreach ($topics as $t): $cur = $t['slug'] === $lld_header['current']; ?>
-        <a href="<?php echo $hu($t['url']); ?>"<?php echo $cur ? ' aria-current="page"' : ''; ?> class="p-4 rounded-xl bg-white bg-day-card border <?php echo $cur ? 'border-[#1D4E48]' : 'border-[#E0D8CB] border-day-soft'; ?> hover:border-[#1D4E48] transition-all flex items-center gap-4">
+        <a href="<?php echo $hu($t['url']); ?>"<?php echo $cur ? ' aria-current="' . ($lld_header['exact'] ? 'page' : 'true') . '"' : ''; ?> class="p-4 rounded-xl bg-white bg-day-card border <?php echo $cur ? 'border-[#1D4E48]' : 'border-[#E0D8CB] border-day-soft'; ?> hover:border-[#1D4E48] transition-all flex items-center gap-4">
           <span class="text-2xl" aria-hidden="true"><?php echo esc_html($t['icon']); ?></span>
           <div>
             <strong class="text-sm text-[#1F1E1C] text-day-dark block"><?php echo esc_html($t['name']); ?></strong>
