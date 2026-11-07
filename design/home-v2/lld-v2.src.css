@@ -123,6 +123,7 @@ body.lld-home-v2, body.lld-v2 {
   body.mode-night .lld-prose .lld-note { background-color: #14201D !important; border-color: #23332F !important; color: #D8E2E0 !important; }
   body.mode-night .lld-prose .lld-closing { color: #4FA89B !important; }
   body.mode-night .lld-prose .lld-note strong { color: #4FA89B !important; }
+  body.mode-night #key-takeaways { border-left-color: #4FA89B !important; }
   body.mode-night .lld-prose th { background-color: #16201E !important; }
   body.mode-night .lld-prose th, body.mode-night .lld-prose td { border-color: #263834 !important; }
   body.mode-night .tab-pill.active { background-color: #4FA89B !important; color: #101413 !important; border-color: #4FA89B !important; }

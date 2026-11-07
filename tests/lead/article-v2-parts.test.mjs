@@ -108,5 +108,15 @@ describe('article page v2: the article laid out into the design blocks', () => {
     expect(lead(w('Eat whole foods, e.g. oats. Then walk.'))).toBe(w('<strong class="lld-lead">Eat whole foods, e.g. oats.</strong> Then walk.'));
     expect(lead(w('Diet, e.g. <a href="x">fibre</a>, matters. Yes.'))).toBe(w('Diet, e.g. <a href="x">fibre</a>, matters. Yes.'));
     expect(lead(w('No full stop here'))).toBe(w('No full stop here'));
+    // a capital after an abbreviation does not end the sentence; numbers neither
+    expect(lead(w('Ask Dr. Smith first. Then eat.'))).toBe(w('<strong class="lld-lead">Ask Dr. Smith first.</strong> Then eat.'));
+    expect(lead(w('Eat whole foods, e.g. Oats and rye. Then walk.'))).toBe(w('<strong class="lld-lead">Eat whole foods, e.g. Oats and rye.</strong> Then walk.'));
+    expect(lead(w('The U.S. Food and Drug Administration agrees. Next.'))).toBe(w('<strong class="lld-lead">The U.S. Food and Drug Administration agrees.</strong> Next.'));
+    expect(lead(w('Lose 2.5 kg slowly. Then hold.'))).toBe(w('<strong class="lld-lead">Lose 2.5 kg slowly.</strong> Then hold.'));
+    // closing quotes and brackets stay with their sentence; a no-break space or an accented capital still starts the next
+    expect(lead(w('Say "stop." Then walk.'))).toBe(w('<strong class="lld-lead">Say "stop."</strong> Then walk.'));
+    expect(lead(w('Walk (most days.) Then rest.'))).toBe(w('<strong class="lld-lead">Walk (most days.)</strong> Then rest.'));
+    expect(lead(w('Drink water.&nbsp;Then eat.'))).toBe(w('<strong class="lld-lead">Drink water.</strong>&nbsp;Then eat.'));
+    expect(lead(w('Rest well. Écoutez your body.'))).toBe(w('<strong class="lld-lead">Rest well.</strong> Écoutez your body.'));
   });
 });

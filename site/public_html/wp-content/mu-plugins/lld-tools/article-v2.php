@@ -146,16 +146,37 @@ function lld_article_v2_parts(string $html): array {
 }
 
 /**
- * Key Takeaways: the first sentence of its first paragraph in bold (owner, 7 Nov 2026). Only a plain sentence of 30 words
- * or fewer that ends with . ! or ? before any tag; anything else is left as written.
+ * Key Takeaways: the first sentence of its first paragraph in bold (owner, 7 Nov 2026). The sentence ends at . ! or ?
+ * (with any closing quote or bracket) followed by the paragraph's end or a space and a capital, a digit or an opening
+ * quote; numbers and common abbreviations do not end it. Only 30 words or fewer, before any tag; else left as written.
  */
 function lld_article_v2_lead_bold(string $answer): string {
   if (!preg_match('#<p\b[^>]*>\s*#i', $answer, $m, PREG_OFFSET_CAPTURE)) return $answer;
   $start = $m[0][1] + strlen($m[0][0]);
-  // a sentence end is . ! or ? followed by a capital, a digit or the end of the paragraph, and not an abbreviation
-  if (!preg_match('#^([^<]{3,}?(?<!e\.g)(?<!i\.e)(?<!Dr)(?<!vs)(?<!etc)(?<!approx)[.!?])(?=\s+["“(]?[A-Z0-9]|\s*</p>|\s*$)#u', substr($answer, $start), $sm)) return $answer;
-  $first = $sm[1];
-  if (str_word_count(strip_tags($first)) > 30) return $answer;
+  $rest = substr($answer, $start);
+  $lt = strpos($rest, '<');
+  $text = $lt === false ? $rest : substr($rest, 0, $lt);   // the bold part never crosses a tag
+  $abbr = ['e.g', 'i.e', 'cf', 'vs', 'etc', 'approx', 'dr', 'mr', 'mrs', 'ms', 'prof', 'st', 'no', 'fig', 'u.s', 'u.k', 'a.m', 'p.m'];
+  $len = strlen($text);
+  for ($i = 0; $i < $len; $i++) {
+    $c = $text[$i];
+    if ($c !== '.' && $c !== '!' && $c !== '?') continue;
+    if ($c === '.') {
+      // a number like 2.5, or an abbreviation such as e.g. or Dr.
+      if ($i + 1 < $len && ctype_digit($text[$i + 1])) continue;
+      if (preg_match('#([A-Za-z]+(?:\.[A-Za-z]+)*)$#', substr($text, 0, $i), $wm) && in_array(strtolower($wm[1]), $abbr, true)) continue;
+    }
+    // the sentence may close with quotes or brackets, written as characters or as entities
+    $j = $i + 1;
+    while ($j < $len && preg_match('#^(?:["\')\]’”»]|&\#8217;|&\#8221;|&rsquo;|&rdquo;|&quot;)#u', substr($text, $j), $qm)) $j += strlen($qm[0]);
+    $end = $j;
+    $tail = substr($text, $end);
+    if ($lt === false ? trim($tail) === '' : trim($tail) === '') { $first = substr($text, 0, $end); break; }
+    // then a space (also a no-break space) and the start of the next sentence: a capital, a digit or an opening quote
+    if (preg_match('#^(?:\s|&nbsp;|\x{00A0})+(?:["\'(\[‘“«]|&\#8216;|&\#8220;|&lsquo;|&ldquo;)?[\p{Lu}0-9]#u', $tail)) { $first = substr($text, 0, $end); break; }
+  }
+  if (!isset($first) || strlen(trim($first)) < 3) return $answer;
+  if (count(preg_split('#\s+#u', trim(html_entity_decode(strip_tags($first), ENT_QUOTES | ENT_HTML5, 'UTF-8')))) > 30) return $answer;
   return substr($answer, 0, $start) . '<strong class="lld-lead">' . $first . '</strong>' . substr($answer, $start + strlen($first));
 }
 

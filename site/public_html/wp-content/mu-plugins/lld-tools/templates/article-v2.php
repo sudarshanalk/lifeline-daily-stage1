@@ -101,11 +101,15 @@ $count = count($sections);
     <?php if ($count > 1): ?>
     <!-- In this guide: plain numbered rows; folded on phones, open on larger screens (owner, 7 Nov 2026) -->
     <nav class="my-8 relative" aria-label="In this guide">
+      <?php $jumps = array_filter([$P['faq'] ? ['#faq', 'FAQ'] : null, $P['sources'] !== '' ? ['#sources', 'Sources'] : null]); ?>
+      <?php if ($jumps): ?>
+      <span class="hidden sm:inline absolute z-10 right-10 top-3.5 text-[11px] font-medium text-[#6B675F] text-day-muted">Jump to: <?php $i = 0; foreach ($jumps as [$href, $lab]): ?><?php echo $i++ ? ' &bull; ' : ''; ?><a href="<?php echo esc_attr($href); ?>" class="text-[#1D4E48] dark:text-[#4FA89B] hover:underline"><?php echo esc_html($lab); ?></a><?php endforeach; ?></span>
+      <?php endif; ?>
       <details class="group border-y border-[#E0D8CB] border-day-soft" data-fold-phone open>
         <summary class="flex items-center justify-between gap-3 py-3.5 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
-          <span class="flex items-center gap-2 text-xs uppercase tracking-wider font-bold text-[#1D4E48] dark:text-[#4FA89B]">
+          <span class="min-w-0 sm:pr-44 flex items-center gap-2 text-xs uppercase tracking-wider font-bold text-[#1D4E48] dark:text-[#4FA89B]">
             <span class="w-2 h-2 rounded-full bg-[#1D4E48] dark:bg-[#4FA89B]" aria-hidden="true"></span>
-            <span>In this guide &bull; <?php echo $guideLabel !== '' ? esc_html($guideLabel) : (int)$count . ' parts'; ?></span>
+            <span class="truncate">In this guide &bull; <?php echo $guideLabel !== '' ? esc_html($guideLabel) : (int)$count . ' parts'; ?></span>
           </span>
           <span class="flex items-center gap-3 text-[11px] font-medium text-[#6B675F] text-day-muted">
             <span class="w-6 h-6 rounded-full bg-[#EAE2D5] text-[#1D4E48] flex items-center justify-center text-xs transition-transform group-open:rotate-180 dark:text-[#4FA89B] dark:bg-[#22302D]" aria-hidden="true">&#9660;</span>
@@ -117,10 +121,6 @@ $count = count($sections);
           <?php endforeach; ?>
         </ol>
       </details>
-      <?php $jumps = array_filter([$P['faq'] ? ['#faq', 'FAQ'] : null, $P['sources'] !== '' ? ['#sources', 'Sources'] : null]); ?>
-      <?php if ($jumps): ?>
-      <span class="hidden sm:inline absolute right-10 top-3.5 text-[11px] font-medium text-[#6B675F] text-day-muted">Jump to: <?php $i = 0; foreach ($jumps as [$href, $lab]): ?><?php echo $i++ ? ' &bull; ' : ''; ?><a href="<?php echo esc_attr($href); ?>" class="text-[#1D4E48] dark:text-[#4FA89B] hover:underline"><?php echo esc_html($lab); ?></a><?php endforeach; ?></span>
-      <?php endif; ?>
     </nav>
     <?php endif; ?>
 
