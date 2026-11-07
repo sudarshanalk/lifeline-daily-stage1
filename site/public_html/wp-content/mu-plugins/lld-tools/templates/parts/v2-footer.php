@@ -71,7 +71,7 @@ $fh = empty($lld_footer_plain) ? 'h2' : 'p';
           <a href="<?php echo $fu('/privacy-policy/'); ?>" class="text-inherit hover:text-white transition-colors">Privacy Policy</a>
           <a href="<?php echo $fu('/terms-conditions/'); ?>" class="text-inherit hover:text-white transition-colors">Terms &amp; Conditions</a>
           <a href="<?php echo $fu('/terms-of-sale/'); ?>" class="text-inherit hover:text-white transition-colors">Terms of Sale</a>
-          <a href="#cookie-settings" data-lld-cookie-settings class="text-inherit hover:text-white transition-colors">Cookie settings</a>
+          <a href="#cookie-settings" data-lld-cookie-settings class="inline-flex items-center min-h-[44px] text-inherit hover:text-white transition-colors">Cookie settings</a>
         </div>
       </div>
     </div>

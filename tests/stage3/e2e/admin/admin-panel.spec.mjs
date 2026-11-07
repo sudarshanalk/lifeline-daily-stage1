@@ -138,7 +138,8 @@ test.describe.serial('P3-87 admin module in My account', () => {
   test('TC-FR3-87-AS-01 The Owner\'s My account shows Admin with its nine pages', async ({ page }) => {
     await asOwner(page);
     await open(page, '/pricing/');
-    await page.locator('.lld-header .lld-public-nav').getByRole('link', { name: 'Admin', exact: true }).click();
+    // the old member header, or the v2 header when the Stage 1 mu-plugin is present (P3-60 pricing v2)
+    await page.locator('.lld-header .lld-public-nav, header').getByRole('link', { name: 'Admin', exact: true }).filter({ visible: true }).first().click();
     await expect(page).toHaveURL(/\/members\/admin\/$/);
     const nav = page.locator('.lld-adm-side nav');
     for (const name of ['Overview', 'Members', 'Tools', 'Features', 'Activity log', 'Helpers', 'Payments', 'Weekly report', 'Group removals']) {
