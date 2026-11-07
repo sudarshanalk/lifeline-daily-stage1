@@ -68,6 +68,11 @@ function lld_members_layout( $args ) {
 	echo '<a class="lld-skip" href="#lld-main">Skip to content</a>';
 	echo class_exists( 'LLD_Members_Quality' ) ? LLD_Members_Quality::preview_banner() : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
 	echo $v2 ? lld_v2_members_shell( 'header' ) : lld_members_header( $in ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
+	// Group 3: the v2 header has no member menu or member chip, so a member bar under it carries the same five member
+	// links as the old header (the phone keeps its bottom bar) and the chip with the PREMIUM or FREE badge.
+	if ( $v2 && $app && $in ) {
+		echo '<div class="lld-member-bar"><div class="lld-member-bar-inner"><nav class="lld-member-bar-nav" aria-label="Member pages">' . lld_members_menu_links( 'lld-member-nav-list' ) . '</nav>' . lld_members_chip() . '</div></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
+	}
 	echo '<main id="lld-main" class="lld-main' . ( ! empty( $args['wide'] ) ? ' lld-wide' : '' ) . '" tabindex="-1">';
 	echo '<div class="lld-banner" id="lld-offline" hidden>You\'re offline</div>';
 	echo $main;

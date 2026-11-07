@@ -509,3 +509,34 @@ body.lld-home-v2, body.lld-v2 {
   body.lld-members-v2-app .lld-main .lld-mood-row { flex-wrap: wrap !important; gap: 0.5rem !important; }
   body.lld-members-v2-app .lld-main .lld-mood-button { flex: 1 1 2.75rem !important; }
 }
+
+/* Group 3: the member bar under the v2 header (components.php): the five member links on a tablet and desktop (the phone
+   keeps its bottom bar) and the member chip with the PREMIUM or FREE badge, in the v2 colours. */
+@layer utilities {
+  body.lld-members-v2-app .lld-member-bar { background: #FFFFFF !important; border-bottom: 1px solid #EAE4D8 !important; }
+  body.lld-members-v2-app .lld-member-bar-inner { max-width: 80rem !important; margin: 0 auto !important; padding: 0.5rem 1rem !important; display: flex !important; align-items: center !important; justify-content: flex-end !important; gap: 1rem !important; }
+  @media (min-width: 640px) { body.lld-members-v2-app .lld-member-bar-inner { padding-left: 1.5rem !important; padding-right: 1.5rem !important; } }
+  @media (min-width: 1024px) { body.lld-members-v2-app .lld-member-bar-inner { padding-left: 2rem !important; padding-right: 2rem !important; } }
+  body.lld-members-v2-app .lld-member-bar-nav { display: none !important; margin-right: auto !important; min-width: 0 !important; }
+  @media (min-width: 768px) { body.lld-members-v2-app .lld-member-bar-nav { display: block !important; } }
+  body.lld-members-v2-app .lld-member-bar .lld-member-nav-list { display: flex !important; flex-wrap: wrap !important; gap: 0.25rem !important; list-style: none !important; margin: 0 !important; padding: 0 !important; }
+  body.lld-members-v2-app .lld-member-bar .lld-member-nav-list a { display: inline-flex !important; align-items: center !important; min-height: 2.75rem !important; padding: 0 1rem !important; border-radius: 9999px !important; font-size: 0.9375rem !important; line-height: 1.4 !important; font-weight: 700 !important; color: #3A3834 !important; background: none !important; text-decoration: none !important; }
+  body.lld-members-v2-app .lld-member-bar .lld-member-nav-list a:hover { color: #1D4E48 !important; background: #F1F7F5 !important; }
+  body.lld-members-v2-app .lld-member-bar .lld-member-nav-list a[aria-current=page] { color: #1D4E48 !important; background: #E6F0EE !important; }
+  body.lld-members-v2-app .lld-member-bar :is(a):focus-visible { outline: 3px solid #1D4E48 !important; outline-offset: 2px !important; }
+  body.lld-members-v2-app .lld-member-bar .lld-chip { display: inline-flex !important; align-items: center !important; gap: 0.5rem !important; min-height: 2.75rem !important; padding: 0.25rem 0.5rem 0.25rem 0.25rem !important; border-radius: 9999px !important; background: #FAF8F5 !important; border: 1.5px solid #E0D8CB !important; color: #1F1E1C !important; font-size: 0.875rem !important; line-height: 1.4 !important; font-weight: 700 !important; text-decoration: none !important; }
+  body.lld-members-v2-app .lld-member-bar .lld-chip:hover { border-color: #1D4E48 !important; }
+  body.lld-members-v2-app .lld-member-bar .lld-chip-initial { width: 2rem !important; height: 2rem !important; border-radius: 9999px !important; display: inline-flex !important; align-items: center !important; justify-content: center !important; background: #1D4E48 !important; color: #FFFFFF !important; font-size: 0.8125rem !important; font-weight: 800 !important; }
+  /* the bar has room for the name and badge on a phone too */
+  body.lld-members-v2-app .lld-member-bar :is(.lld-chip-name, .lld-chip-badge) { position: static !important; width: auto !important; height: auto !important; overflow: visible !important; clip: auto !important; }
+  body.lld-members-v2-app .lld-member-bar .lld-chip-badge { padding: 0.1875rem 0.625rem !important; border-radius: 9999px !important; background: #1D4E48 !important; color: #FFFFFF !important; font-size: 0.6875rem !important; line-height: 1.4 !important; font-weight: 800 !important; letter-spacing: 0.06em !important; }
+  body.lld-members-v2-app .lld-member-bar .lld-chip-badge.is-free { background: #EFEAE2 !important; color: #3A3834 !important; }
+  body.mode-night.lld-members-v2-app .lld-member-bar { background: #101413 !important; border-bottom-color: #2C423D !important; }
+  body.mode-night.lld-members-v2-app .lld-member-bar .lld-member-nav-list a { color: #D6D1C7 !important; }
+  body.mode-night.lld-members-v2-app .lld-member-bar .lld-member-nav-list a:hover, body.mode-night.lld-members-v2-app .lld-member-bar .lld-member-nav-list a[aria-current=page] { color: #79D1C3 !important; background: #192E2B !important; }
+  body.mode-night.lld-members-v2-app .lld-member-bar :is(a):focus-visible { outline-color: #79D1C3 !important; }
+  body.mode-night.lld-members-v2-app .lld-member-bar .lld-chip { background: #16201E !important; border-color: #354F49 !important; color: #F4F1EA !important; }
+  body.mode-night.lld-members-v2-app .lld-member-bar .lld-chip:hover { border-color: #79D1C3 !important; }
+  body.mode-night.lld-members-v2-app .lld-member-bar :is(.lld-chip-initial, .lld-chip-badge:not(.is-free)) { background: #79D1C3 !important; color: #101413 !important; }
+  body.mode-night.lld-members-v2-app .lld-member-bar .lld-chip-badge.is-free { background: #1E2A28 !important; color: #D6D1C7 !important; }
+}
