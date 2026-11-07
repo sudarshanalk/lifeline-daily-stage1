@@ -12,7 +12,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Page shell: header, main, member menu and footer.
  *
- * @param array $args title, main, signed_in, status, wide (the 64rem column for the dashboard, track, meals, diary and pricing).
+ * @param array $args title, main, signed_in, status, wide (the 64rem column for the dashboard, track, meals, diary and pricing),
+ *                    v2 (Stage 3, owner's UI pack: the site's v2 header and footer from lld-tools around the same screen,
+ *                    when lld-tools is there; the screen's own markup, wording and scripts are unchanged).
  */
 function lld_members_layout( $args ) {
 	$status = isset( $args['status'] ) ? (int) $args['status'] : 200;
@@ -24,6 +26,7 @@ function lld_members_layout( $args ) {
 	$in    = ! empty( $args['signed_in'] );
 	$css   = plugins_url( 'assets/lld-members.css', LLD_MEMBERS_FILE );
 	$js    = plugins_url( 'assets/lld-members.js', LLD_MEMBERS_FILE );
+	$v2    = ! empty( $args['v2'] ) && function_exists( 'lld_v2_members_shell_on' ) && lld_v2_members_shell_on();
 	echo '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">';
 	echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
 	echo '<meta name="robots" content="noindex">';
@@ -36,20 +39,23 @@ function lld_members_layout( $args ) {
 	}
 	echo '<link rel="stylesheet" href="' . esc_url( $css ) . '?ver=' . esc_attr( LLD_MEMBERS_VERSION ) . '">';
 	echo lld_members_font_faces();
-	echo '</head><body class="lld-members-body ' . ( $in ? 'lld-signed-in' : 'lld-signed-out' ) . '">';
+	echo $v2 ? lld_v2_members_shell( 'head' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
+	echo '</head><body class="lld-members-body ' . ( $in ? 'lld-signed-in' : 'lld-signed-out' ) . ( $v2 ? ' lld-v2 lld-members-v2' : '' ) . '">';
+	echo $v2 ? lld_v2_members_shell( 'body' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed script.
 	echo '<a class="lld-skip" href="#lld-main">Skip to content</a>';
 	echo class_exists( 'LLD_Members_Quality' ) ? LLD_Members_Quality::preview_banner() : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
-	echo lld_members_header( $in );
+	echo $v2 ? lld_v2_members_shell( 'header' ) : lld_members_header( $in ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
 	echo '<main id="lld-main" class="lld-main' . ( ! empty( $args['wide'] ) ? ' lld-wide' : '' ) . '" tabindex="-1">';
 	echo '<div class="lld-banner" id="lld-offline" hidden>You\'re offline</div>';
 	echo $main;
 	echo '</main>';
-	echo lld_members_footer();
+	echo $v2 ? lld_v2_members_shell( 'footer' ) : lld_members_footer(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
 	if ( $in ) {
 		echo lld_members_menu();
 	}
 	echo '<div class="lld-toasts" aria-live="polite"></div>';
 	echo '<script src="' . esc_url( $js ) . '?ver=' . esc_attr( LLD_MEMBERS_VERSION ) . '"></script>';
+	echo $v2 ? lld_v2_members_shell( 'scripts' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
 	// Stage 3 (P3-70): Google Analytics replaces Plausible, so the Plausible script stays off while GA4 is set.
 	if ( class_exists( 'LLD_Members_Growth' ) && apply_filters( 'lld_members_plausible_on', true ) ) {
 		echo LLD_Members_Growth::script();
