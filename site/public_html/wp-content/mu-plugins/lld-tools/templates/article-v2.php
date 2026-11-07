@@ -16,7 +16,6 @@ $top = function_exists('lld_tools_hub_term') ? lld_tools_hub_term($post) : null;
 $topName = $top ? html_entity_decode((string)$top->name, ENT_QUOTES | ENT_HTML5, 'UTF-8') : '';
 $topUrl = $top ? get_term_link($top) : '';
 $topUrl = is_wp_error($topUrl) ? '' : (string)$topUrl;
-$subLabel = function_exists('lld_hub_post_category_label') ? lld_hub_post_category_label($post, $topName) : $topName;
 $caption = trim((string)get_post_meta($post->ID, 'lld_image_caption', true));
 if ($caption === '' && has_post_thumbnail($post)) $caption = trim((string)wp_get_attachment_caption(get_post_thumbnail_id($post)));
 $faqIntro = trim((string)get_post_meta($post->ID, 'lld_faq_intro', true));
@@ -53,7 +52,8 @@ $count = count($sections);
   <a href="#lld-main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-[#1D4E48] focus:px-4 focus:py-2 focus:rounded-full">Skip to content</a>
   <?php $lld_header = ['page' => 'article', 'current' => $top ? (string)$top->slug : '']; include __DIR__ . '/parts/v2-header.php'; ?>
 
-  <article id="lld-main" class="max-w-4xl mx-auto px-6 pt-10 pb-20" data-test="article">
+  <main id="lld-main">
+  <article class="max-w-4xl mx-auto px-6 pt-10 pb-20" data-test="article">
 
     <nav class="flex items-center gap-2 text-xs text-[#6B6862] text-day-muted mb-6 flex-wrap" aria-label="Breadcrumb">
       <a href="<?php echo $u('/'); ?>" class="hover:text-[#1D4E48]">Home</a>
@@ -61,7 +61,7 @@ $count = count($sections);
       <a href="<?php echo $u('/articles/'); ?>" class="text-[#1D4E48] font-semibold hover:underline">Your Health</a>
       <?php if ($top): ?>
       <span aria-hidden="true">&rsaquo;</span>
-      <span class="text-[#1F1E1C] text-day-dark"><?php echo esc_html($topName); ?></span>
+      <span class="text-[#1F1E1C] text-day-dark" aria-current="page"><?php echo esc_html($topName); ?></span>
       <?php endif; ?>
     </nav>
 
@@ -153,9 +153,9 @@ $count = count($sections);
         <?php if ($B['source'] !== ''): ?><span class="text-[11px] font-medium text-[#6B6862] text-day-muted text-right"><?php echo esc_html($B['source']); ?></span><?php endif; ?>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <?php foreach (array_slice($B['stats'], 0, 2) as $i => $stat): ?>
+        <?php foreach ($B['stats'] as $i => $stat): ?>
         <div class="p-5 rounded-2xl bg-white bg-day-card border border-[#E0D8CB] border-day-soft">
-          <span class="text-3xl sm:text-4xl font-serif-editorial font-bold <?php echo $i ? 'text-[#D4826F]' : 'text-[#1D4E48]'; ?> block leading-tight"><?php echo esc_html($stat['value']); ?></span>
+          <span class="text-3xl sm:text-4xl font-serif-editorial font-bold <?php echo $i % 2 ? 'text-[#D4826F]' : 'text-[#1D4E48]'; ?> block leading-tight"><?php echo esc_html($stat['value']); ?></span>
           <span class="text-xs text-[#5A5751] text-day-muted mt-2 block leading-relaxed"><?php echo wp_kses_post($stat['line']); ?></span>
         </div>
         <?php endforeach; ?>
@@ -186,7 +186,7 @@ $count = count($sections);
       <?php endforeach; ?>
 
       <?php if ($P['faq']): ?>
-      <section id="faq" class="p-6 sm:p-10 rounded-3xl bg-white bg-day-card border border-[#E0D8CB] border-day-soft shadow-xs space-y-6 scroll-mt-28">
+      <section id="faq" data-test="faq" class="lld-faq p-6 sm:p-10 rounded-3xl bg-white bg-day-card border border-[#E0D8CB] border-day-soft shadow-xs space-y-6 scroll-mt-28">
         <div class="space-y-1.5 pb-2 border-b border-[#EAE4D8] border-day-soft">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full bg-[#D4826F]" aria-hidden="true"></span>
@@ -194,6 +194,7 @@ $count = count($sections);
           </div>
           <h2 class="font-serif-editorial text-3xl sm:text-4xl text-[#1F1E1C] text-day-dark"><?php echo esc_html($P['faq_title'] !== '' ? $P['faq_title'] : 'Frequently Asked Questions'); ?></h2>
           <?php if ($faqIntro !== ''): ?><p class="text-xs sm:text-sm text-[#5A5751] text-day-muted"><?php echo esc_html($faqIntro); ?></p><?php endif; ?>
+          <?php if ($P['faq_note'] !== ''): ?><div class="lld-prose text-xs sm:text-sm text-[#5A5751] text-day-muted"><?php echo $P['faq_note']; // phpcs:ignore -- [lld_faq] text ?></div><?php endif; ?>
         </div>
         <div class="space-y-3.5">
           <?php foreach ($P['faq'] as $i => $f): ?>
@@ -201,7 +202,7 @@ $count = count($sections);
             <summary class="flex items-center justify-between cursor-pointer list-none text-base font-semibold text-[#1F1E1C] text-day-dark select-none gap-4 [&::-webkit-details-marker]:hidden">
               <span class="flex items-center gap-3">
                 <span class="w-6 h-6 rounded-full bg-[#EAE2D5] text-[#1D4E48] text-xs font-bold flex items-center justify-center shrink-0 group-open:bg-[#1D4E48] group-open:text-white transition-colors" aria-hidden="true">Q<?php echo (int)($i + 1); ?></span>
-                <span><?php echo wp_kses_post($f['q']); ?></span>
+                <span class="lld-faq__q"><?php echo wp_kses_post($f['q']); ?></span>
               </span>
               <span class="w-6 h-6 rounded-full bg-[#EAE2D5] text-[#1D4E48] flex items-center justify-center shrink-0 text-xs font-bold transition-transform duration-200 group-open:rotate-180" aria-hidden="true">&#9660;</span>
             </summary>
@@ -264,7 +265,7 @@ $count = count($sections);
         </div>
 
         <?php if ($prev): ?>
-        <nav class="py-3 px-4 rounded-xl bg-[#EDE6DC] bg-day-surface border border-[#DDD5C7] border-day-soft text-xs text-[#6B6862] text-day-muted flex items-center gap-1.5 overflow-x-auto" aria-label="Next article">
+        <nav class="py-3 px-4 rounded-xl bg-[#EDE6DC] bg-day-surface border border-[#DDD5C7] border-day-soft text-xs text-[#6B6862] text-day-muted flex items-center gap-1.5 overflow-x-auto" aria-label="More from Lifeline Daily">
           <a href="<?php echo $u('/'); ?>" class="hover:text-[#1D4E48]">Home</a>
           <?php if ($prevTop): $pl = get_term_link($prevTop); ?>
           <span aria-hidden="true">&rsaquo;</span>
@@ -344,6 +345,7 @@ $count = count($sections);
       <?php endif; ?>
     </div>
   </article>
+  </main>
 
   <?php include __DIR__ . '/parts/v2-footer.php'; ?>
 <?php wp_footer(); ?>

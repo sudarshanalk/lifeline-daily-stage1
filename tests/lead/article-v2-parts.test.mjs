@@ -72,6 +72,27 @@ describe('article page v2: the article laid out into the design blocks', () => {
     expect(p.sources).toBe('<li>A.</li><li>B.</li>');
   });
 
+  test('an old Key Insight table (a heading inside a cell) becomes a note box and never splits a card', () => {
+    const p = parts('<p>Intro.</p><table style="background-color:#cbebfd"><tbody><tr><td><h2><strong>Key Insight</strong></h2><p>Oats lower LDL.</p></td></tr></tbody></table><h2>Why oats help</h2><p>Text.</p>');
+    expect(p.intro).toBe('<p>Intro.</p><div class="lld-note lld-note--insight"><p><strong><strong>Key Insight</strong></strong></p><p>Oats lower LDL.</p></div>');
+    expect(p.sections.map((s) => s.short)).toEqual(['Why oats help']);
+    expect(p.sections[0].body).toBe('<p>Text.</p>');
+  });
+
+  test('a box with nested blocks is taken whole, and a benchmarks card without numbers stays in the text', () => {
+    const p = parts('<p>Intro.</p><div class="lld-answer" role="note"><div class="x"><p>One.</p></div><p>Two.</p></div><div class="lld-benchmarks"><p>No numbers.</p></div><h2>A</h2><p>B</p>');
+    expect(p.answer).toBe('<div class="lld-answer" role="note"><div class="x"><p>One.</p></div><p>Two.</p></div>');
+    expect(p.benchmarks).toBeNull();
+    expect(p.intro).toBe('<p>Intro.</p><div class="lld-benchmarks"><p>No numbers.</p></div>');
+  });
+
+  test('a tool link the site placed inside the FAQ or guide block is kept at the end of the article text', () => {
+    const p = parts('<p>Intro.</p><h2>Only part</h2><p>Text.</p><section class="lld-faq" data-test="faq"><h2>Frequently asked questions</h2><p class="lld-tool-cta" data-test="tool-cta"><a href="/health-tools/protein/">Find my target</a></p><p>Short answers below.</p><div class="lld-faq__item"><h3 class="lld-faq__q">Q?</h3><div class="lld-faq__a"><div><p>A.</p></div></div></div></section>');
+    expect(p.sections[0].body).toContain('lld-tool-cta');
+    expect(p.faq).toEqual([{ q: 'Q?', a: '<div><p>A.</p></div>' }]);
+    expect(p.faq_note).toBe('<p>Short answers below.</p>');
+  });
+
   test('an article with no H2 keeps all of its text as the intro', () => {
     const p = parts('<p>One.</p><p>Two.</p>');
     expect(p.intro).toBe('<p>One.</p><p>Two.</p>');

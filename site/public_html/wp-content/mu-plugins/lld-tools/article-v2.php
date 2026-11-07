@@ -31,43 +31,97 @@ function lld_article_v2_take(string $re, string $html): array {
 }
 
 /**
+ * The whole element (with everything nested inside it) that starts at the first tag matching $openRe, found with a depth
+ * count of its own tag name; returns [element, html without it]. Unbalanced HTML gives ['', $html].
+ */
+function lld_article_v2_take_el(string $openRe, string $html): array {
+  if (!preg_match($openRe, $html, $m, PREG_OFFSET_CAPTURE) || !preg_match('#^<([a-z0-9]+)#i', $m[0][0], $tn)) return ['', $html];
+  $tag = strtolower($tn[1]); $start = $m[0][1]; $depth = 0;
+  if (!preg_match_all('#<(/?)' . $tag . '\b[^>]*>#i', $html, $all, PREG_OFFSET_CAPTURE | PREG_SET_ORDER, $start)) return ['', $html];
+  foreach ($all as $t) {
+    $depth += $t[1][0] === '/' ? -1 : 1;
+    if ($depth === 0) {
+      $end = $t[0][1] + strlen($t[0][0]);
+      return [substr($html, $start, $end - $start), substr($html, 0, $start) . substr($html, $end)];
+    }
+  }
+  return ['', $html];
+}
+
+/** The inside of an element taken by lld_article_v2_take_el(). */
+function lld_article_v2_inner(string $el): string {
+  return (string)preg_replace(['#^<[^>]+>#', '#</[a-z0-9]+>$#i'], '', $el);
+}
+
+/**
  * The article's rendered HTML (the_content, shortcodes run) split into the design's blocks. Pure: no WordPress calls, so
  * tests can feed it plain strings. Returns intro, answer, benchmarks {stats[], source, summary}, sections[] {id, title,
- * short, label, body, closing}, faq[] {q, a}, faq_title, sources (the <li> list), guide {html, track}, hub_link, byline.
+ * short, label, body, closing}, faq[] {q, a}, faq_title, faq_note, sources (the <li> list), guide {html, track}, hub_link,
+ * byline.
  */
 function lld_article_v2_parts(string $html): array {
-  $out = ['intro' => '', 'answer' => '', 'benchmarks' => null, 'sections' => [], 'faq' => [], 'faq_title' => '', 'sources' => '',
-    'guide' => null, 'hub_link' => '', 'byline' => ''];
+  $out = ['intro' => '', 'answer' => '', 'benchmarks' => null, 'sections' => [], 'faq' => [], 'faq_title' => '', 'faq_note' => '',
+    'sources' => '', 'guide' => null, 'hub_link' => '', 'byline' => ''];
+  $rescued = '';   // a tool link (FR1-05) the site placed inside a block that the page draws itself
+  $rescue = function (string $block) use (&$rescued): void {
+    if (preg_match_all('#<p class="lld-tool-cta"[^>]*>.*?</p>#is', $block, $cm)) $rescued .= implode('', $cm[0]);
+  };
+
   // what the site appends at the end
-  [$g, $html] = lld_article_v2_take('#<section data-lld-guide>.*?</section>#is', $html);
+  [$g, $html] = lld_article_v2_take_el('#<section data-lld-guide\b[^>]*>#i', $html);
   if ($g !== '') {
-    $track = preg_match('#name="lld_track" value="([^"]*)"#', $g, $tm) ? $tm[1] : '';
-    $out['guide'] = ['html' => $g, 'track' => $track];
+    $rescue($g);
+    $out['guide'] = ['html' => $g, 'track' => preg_match('#name="lld_track" value="([^"]*)"#', $g, $tm) ? $tm[1] : ''];
   }
   [$out['hub_link'], $html] = lld_article_v2_take('#<p class="lld-hub-link"[^>]*>.*?</p>#is', $html);
   [$out['byline'], $html] = lld_article_v2_take('#<p class="lld-review-byline"[^>]*>.*?</p>#is', $html);
-  [$faq, $html] = lld_article_v2_take('#<section class="lld-faq"[^>]*>.*?</section>#is', $html);
+  [$faq, $html] = lld_article_v2_take_el('#<section class="lld-faq"[^>]*>#i', $html);
   if ($faq !== '') {
-    $out['faq_title'] = preg_match('#<h2>(.*?)</h2>#is', $faq, $fm) ? trim(strip_tags($fm[1])) : '';
-    preg_match_all('#<div class="lld-faq__item"><h3 class="lld-faq__q">(.*?)</h3><div class="lld-faq__a">(.*?)</div></div>#is', $faq, $qs, PREG_SET_ORDER);
-    foreach ($qs as $q) $out['faq'][] = ['q' => $q[1], 'a' => $q[2]];
+    $rescue($faq);
+    $inner = lld_article_v2_inner($faq);
+    if (preg_match('#<h2[^>]*>(.*?)</h2>#is', $inner, $fm)) { $out['faq_title'] = trim(strip_tags($fm[1])); $inner = str_replace($fm[0], '', $inner); }
+    while (true) {
+      [$item, $inner] = lld_article_v2_take_el('#<div class="lld-faq__item"[^>]*>#i', $inner);
+      if ($item === '') break;
+      $q = preg_match('#<h3 class="lld-faq__q">(.*?)</h3>#is', $item, $qm) ? $qm[1] : '';
+      [$a] = lld_article_v2_take_el('#<div class="lld-faq__a"[^>]*>#i', $item);
+      $out['faq'][] = ['q' => $q, 'a' => lld_article_v2_inner($a)];
+    }
+    // anything the writer put inside [lld_faq] besides the questions (an intro line) stays with the FAQ
+    $note = preg_replace('#<p class="lld-tool-cta"[^>]*>.*?</p>#is', '', $inner);
+    if (trim(strip_tags((string)$note)) !== '') $out['faq_note'] = trim((string)$note);
   }
-  [$src, $html] = lld_article_v2_take('#<section class="lld-sources"[^>]*>.*?</section>#is', $html);
-  // wpautop can leave <br> or empty <p> between the items; a list holds only its items
-  if ($src !== '' && preg_match('#<ol>(.*)</ol>#is', $src, $sm)) $out['sources'] = trim((string)preg_replace('#(^|</li>)(?:\s|<br\s*/?>|<p>\s*</p>|</?p>)*(?=<li\b|$)#i', '$1', trim($sm[1])));
+  [$src, $html] = lld_article_v2_take_el('#<section class="lld-sources"[^>]*>#i', $html);
+  if ($src !== '') {
+    $rescue($src);
+    // wpautop can leave <br> or empty <p> between the items; a list holds only its items
+    if (preg_match('#<ol>(.*)</ol>#is', $src, $sm)) $out['sources'] = trim((string)preg_replace('#(^|</li>)(?:\s|<br\s*/?>|<p>\s*</p>|</?p>)*(?=<li\b|$)#i', '$1', trim($sm[1])));
+  }
+
+  // old "Key Insight" boxes are tables with a heading inside a cell: they become the design's note box, so the split at
+  // each H2 never cuts a table in two (about half the articles written before the template have one)
+  $html = (string)preg_replace_callback('#<table\b[^>]*>(?:(?!</table>).)*?<h[2-6]\b.*?</table>#is', function ($m) {
+    $c = (string)preg_replace('#</?(table|tbody|thead|tfoot|tr|td|th|colgroup|col)\b[^>]*>#i', '', $m[0]);
+    $c = (string)preg_replace('#<h[2-6][^>]*>(.*?)</h[2-6]>#is', '<p><strong>$1</strong></p>', $c);
+    return '<div class="lld-note lld-note--insight">' . trim($c) . '</div>';
+  }, $html);
 
   // the main part: everything before the first H2 holds the intro, Key Takeaways and benchmarks
   $first = preg_match('#<h2\b#i', $html, $hm, PREG_OFFSET_CAPTURE) ? $hm[0][1] : strlen($html);
   $head = substr($html, 0, $first); $rest = substr($html, $first);
-  [$out['answer'], $head] = lld_article_v2_take('#<div class="lld-answer"[^>]*>.*?</div>#is', $head);
-  [$bm, $head] = lld_article_v2_take('#<div[^>]*class="[^"]*\blld-benchmarks\b[^"]*"[^>]*>.*?</div>#is', $head);
+  [$answer, $head] = lld_article_v2_take_el('#<div class="lld-answer"[^>]*>#i', $head);
+  $out['answer'] = $answer;
+  [$bm, $head2] = lld_article_v2_take_el('#<div[^>]*class="[^"]*\blld-benchmarks\b[^"]*"[^>]*>#i', $head);
   if ($bm !== '') {
     preg_match_all('#<p[^>]*class="[^"]*\blld-stat\b[^"]*"[^>]*data-value="([^"]*)"[^>]*>(.*?)</p>#is', $bm, $st, PREG_SET_ORDER);
-    $out['benchmarks'] = [
-      'stats' => array_map(fn($s) => ['value' => html_entity_decode($s[1], ENT_QUOTES | ENT_HTML5, 'UTF-8'), 'line' => $s[2]], $st),
-      'source' => preg_match('#data-source="([^"]*)"#', $bm, $bs) ? html_entity_decode($bs[1], ENT_QUOTES | ENT_HTML5, 'UTF-8') : '',
-      'summary' => preg_match('#<p[^>]*class="[^"]*\blld-summary\b[^"]*"[^>]*>(.*?)</p>#is', $bm, $bsm) ? $bsm[1] : '',
-    ];
+    if ($st) {   // a card with no numbers stays in the text as it was written
+      $head = $head2;
+      $out['benchmarks'] = [
+        'stats' => array_map(fn($s) => ['value' => html_entity_decode($s[1], ENT_QUOTES | ENT_HTML5, 'UTF-8'), 'line' => $s[2]], $st),
+        'source' => preg_match('#data-source="([^"]*)"#', $bm, $bs) ? html_entity_decode($bs[1], ENT_QUOTES | ENT_HTML5, 'UTF-8') : '',
+        'summary' => preg_match('#<p[^>]*class="[^"]*\blld-summary\b[^"]*"[^>]*>(.*?)</p>#is', $bm, $bsm) ? $bsm[1] : '',
+      ];
+    }
   }
   $out['intro'] = trim($head);
 
@@ -84,6 +138,9 @@ function lld_article_v2_parts(string $html): array {
     $body = trim(substr($sec, strlen($h[0])));
     $out['sections'][] = ['id' => $id, 'title' => $title, 'short' => $short !== '' ? $short : trim(html_entity_decode(strip_tags($title), ENT_QUOTES | ENT_HTML5, 'UTF-8')),
       'label' => $label, 'body' => $body, 'closing' => (bool)preg_match('#class="[^"]*\blld-closing\b#', $body)];
+  }
+  if ($rescued !== '') {
+    if ($out['sections']) $out['sections'][count($out['sections']) - 1]['body'] .= $rescued; else $out['intro'] .= $rescued;
   }
   return $out;
 }
