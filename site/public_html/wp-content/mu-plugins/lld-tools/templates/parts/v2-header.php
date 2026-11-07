@@ -93,7 +93,7 @@ $health_on = in_array($lld_header['page'], ['category', 'article'], true);
           <span class="text-2xl" aria-hidden="true"><?php echo esc_html($t['icon']); ?></span>
           <div>
             <strong class="text-sm text-[#1F1E1C] text-day-dark block"><?php echo esc_html($t['name']); ?></strong>
-            <?php if ($t['desc'] !== ''): ?><span class="text-xs text-[#6B6862] text-day-muted"><?php echo esc_html($t['desc']); ?></span><?php endif; ?>
+            <?php if ($t['desc'] !== ''): ?><span class="text-xs text-[#62605A] text-day-muted"><?php echo esc_html($t['desc']); ?></span><?php endif; ?>
           </div>
         </a>
         <?php endforeach; ?>

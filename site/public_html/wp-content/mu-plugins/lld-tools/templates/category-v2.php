@@ -340,7 +340,7 @@ $pages = (int)$wp_query->max_num_pages;
         </form>
       </div>
 
-      <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#706C64]">
+      <div class="pt-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#8D8983]">
         <p>&copy; <?php echo esc_html(gmdate('Y')); ?> Lifeline Daily. Health information, not medical advice.</p>
         <div class="flex items-center gap-5 flex-wrap justify-center">
           <a href="<?php echo $u('/privacy-policy/'); ?>" class="hover:text-white transition-colors">Privacy policy</a>

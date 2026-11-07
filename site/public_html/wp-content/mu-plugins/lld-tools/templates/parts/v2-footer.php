@@ -62,7 +62,7 @@ $fu = function (string $path): string { return esc_url(home_url($path)); };
         </nav>
       </div>
 
-      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#6E7B78]">
+      <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px] text-[#8B9593]">
         <div>&copy; <?php echo esc_html(gmdate('Y')); ?> Lifeline Daily. All rights reserved.</div>
         <div class="flex items-center gap-5 flex-wrap justify-center">
           <a href="<?php echo $fu('/privacy-policy/'); ?>" class="hover:text-white transition-colors">Privacy Policy</a>

@@ -181,4 +181,11 @@ if (function_exists('add_action')) {
   add_action('wp_footer', function () {
     if (lld_article_v2_active() && !defined('LLD_FOOTER_RENDERED')) define('LLD_FOOTER_RENDERED', true);
   }, 1);
+  // The Customizer's Additional CSS (wp-custom-css) was written for the Newspaper pages: on the v2 pages it turned
+  // headings near-black on the teal boxes and links green on the dark footers (colour-contrast failures). Off there.
+  add_action('wp_head', function () {
+    $v2 = (function_exists('lld_home_v2_active') && lld_home_v2_active()) || (function_exists('lld_category_v2_hub') && lld_category_v2_hub())
+      || lld_article_v2_active();
+    if ($v2) remove_action('wp_head', 'wp_custom_css_cb', 101);
+  }, 0);
 }
