@@ -38,7 +38,13 @@
     if (menu.contains(e.target) && !e.target.closest('a')) return;
     setMenu(false);
   });
-  doc.addEventListener('keydown', function (e) { if (e.key === 'Escape') setMenu(false); });
+  var opener = null;
+  openers.forEach(function (b) { b.addEventListener('click', function () { opener = b; }); });
+  doc.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || !menu || menu.classList.contains('hidden')) return;
+    setMenu(false);
+    if (opener) opener.focus();
+  });
 
   /* Calculator tabs */
   var TAB_ON = ['is-active', 'bg-[#1D4E48]', 'text-white', 'shadow-sm'];
@@ -131,6 +137,16 @@
       });
     });
     recalc(p);
+  });
+
+  /* Copy link (article pages) */
+  $$('[data-copy-link]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var st = $('[data-copy-status]'), url = b.getAttribute('data-copy-link');
+      var say = function (t) { if (st) st.textContent = t; };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { say('Link copied'); }, function () { say(url); });
+      else say(url);
+    });
   });
 
   /* Science accordion */

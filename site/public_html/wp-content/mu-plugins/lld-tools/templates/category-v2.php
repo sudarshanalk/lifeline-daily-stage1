@@ -59,7 +59,7 @@ $pages = (int)$wp_query->max_num_pages;
 <?php if (function_exists('wp_body_open')) wp_body_open(); ?>
   <a href="#lld-main" class="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-[#1D4E48] focus:px-4 focus:py-2 focus:rounded-full">Skip to content</a>
 
-  <?php $lld_header = ['page' => 'category', 'current' => (string)$hub['category']]; include __DIR__ . '/parts/v2-header.php'; ?>
+  <?php $lld_header = ['page' => 'category', 'current' => (string)$hub['category'], 'exact' => (string)$term->slug === (string)$hub['category']]; include __DIR__ . '/parts/v2-header.php'; ?>
 
   <main id="lld-main" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
