@@ -99,29 +99,28 @@ $count = count($sections);
     <?php endif; ?>
 
     <?php if ($count > 1): ?>
-    <!-- In this guide -->
-    <nav class="my-8 p-5 sm:p-6 rounded-3xl bg-[#F4EDE2] bg-day-surface border border-[#E0D8CB] border-day-soft shadow-xs" aria-label="In this guide">
-      <div class="flex items-center justify-between mb-3.5 pb-2.5 border-b border-[#DDD5C7] border-day-soft gap-3 flex-wrap">
-        <div class="flex items-center gap-2">
-          <span class="w-2 h-2 rounded-full bg-[#1D4E48]" aria-hidden="true"></span>
-          <span class="text-xs uppercase tracking-wider font-bold text-[#1D4E48] dark:text-[#4FA89B]">In this guide<?php echo $guideLabel !== '' ? ' &bull; ' . esc_html($guideLabel) : ''; ?></span>
-        </div>
-        <?php $jumps = array_filter([$P['answer'] !== '' ? ['#key-takeaways', 'Takeaways'] : null, $P['faq'] ? ['#faq', 'FAQ'] : null, $P['sources'] !== '' ? ['#sources', 'Sources'] : null]); ?>
-        <?php if ($jumps): ?>
-        <div class="flex items-center gap-2 text-[11px] font-medium text-[#6B675F] text-day-muted">
-          <span>Jump to:</span>
-          <?php $i = 0; foreach ($jumps as [$href, $lab]): ?><?php echo $i++ ? ' &bull; ' : ''; ?><a href="<?php echo esc_attr($href); ?>" class="text-inherit hover:text-[#1D4E48] hover:underline<?php echo $i === 1 ? ' font-semibold text-[#1D4E48] dark:text-[#4FA89B]' : ''; ?>"><?php echo esc_html($lab); ?></a><?php endforeach; ?>
-        </div>
-        <?php endif; ?>
-      </div>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 text-xs">
-        <?php foreach ($sections as $k => $s): $wide = ($k === $count - 1) && ($count % 2 === 1); ?>
-        <a href="#<?php echo esc_attr($s['id']); ?>" class="flex items-center gap-2.5 p-2.5 rounded-xl bg-white bg-day-card border border-[#DDD5C7] border-day-soft hover:border-[#1D4E48] hover:shadow-xs transition-all text-[#1F1E1C] text-day-dark group<?php echo $wide ? ' sm:col-span-2' : ''; ?>">
-          <span class="w-5 h-5 rounded-full bg-[#EAE2D5] text-[#1D4E48] group-hover:bg-[#1D4E48] group-hover:text-white font-bold text-[11px] flex items-center justify-center shrink-0 transition-colors dark:text-[#4FA89B] dark:bg-[#22302D]"><?php echo (int)($k + 1); ?></span>
-          <span class="font-medium<?php echo $wide ? '' : ' truncate'; ?>"><?php echo esc_html($s['short']); ?></span>
-        </a>
-        <?php endforeach; ?>
-      </div>
+    <!-- In this guide: plain numbered rows; folded on phones, open on larger screens (owner, 7 Nov 2026) -->
+    <nav class="my-8 relative" aria-label="In this guide">
+      <?php $jumps = array_filter([$P['faq'] ? ['#faq', 'FAQ'] : null, $P['sources'] !== '' ? ['#sources', 'Sources'] : null]); ?>
+      <?php if ($jumps): ?>
+      <span class="hidden sm:inline absolute z-10 right-10 top-3.5 text-[11px] font-medium text-[#6B675F] text-day-muted">Jump to: <?php $i = 0; foreach ($jumps as [$href, $lab]): ?><?php echo $i++ ? ' &bull; ' : ''; ?><a href="<?php echo esc_attr($href); ?>" class="text-[#1D4E48] dark:text-[#4FA89B] hover:underline"><?php echo esc_html($lab); ?></a><?php endforeach; ?></span>
+      <?php endif; ?>
+      <details class="group border-y border-[#E0D8CB] border-day-soft" data-fold-phone open>
+        <summary class="flex items-center justify-between gap-3 py-3.5 cursor-pointer list-none select-none [&::-webkit-details-marker]:hidden">
+          <span class="min-w-0 sm:pr-44 flex items-center gap-2 text-xs uppercase tracking-wider font-bold text-[#1D4E48] dark:text-[#4FA89B]">
+            <span class="w-2 h-2 rounded-full bg-[#1D4E48] dark:bg-[#4FA89B]" aria-hidden="true"></span>
+            <span class="truncate">In this guide &bull; <?php echo $guideLabel !== '' ? esc_html($guideLabel) : (int)$count . ' parts'; ?></span>
+          </span>
+          <span class="flex items-center gap-3 text-[11px] font-medium text-[#6B675F] text-day-muted">
+            <span class="w-6 h-6 rounded-full bg-[#EAE2D5] text-[#1D4E48] flex items-center justify-center text-xs transition-transform group-open:rotate-180 dark:text-[#4FA89B] dark:bg-[#22302D]" aria-hidden="true">&#9660;</span>
+          </span>
+        </summary>
+        <ol class="grid grid-cols-1 sm:grid-cols-2 gap-x-10 pb-4 text-sm">
+          <?php foreach ($sections as $k => $s): ?>
+          <li><a href="#<?php echo esc_attr($s['id']); ?>" class="flex items-baseline gap-3 py-2.5 border-b border-[#EAE4D8] border-day-soft text-[#1F1E1C] text-day-dark hover:text-[#1D4E48] transition-colors"><span class="w-6 shrink-0 text-xs font-bold text-[#1D4E48] dark:text-[#4FA89B] tabular-nums"><?php echo sprintf('%02d', $k + 1); ?></span><span class="font-medium"><?php echo esc_html($s['short']); ?></span></a></li>
+          <?php endforeach; ?>
+        </ol>
+      </details>
     </nav>
     <?php endif; ?>
 
@@ -132,13 +131,13 @@ $count = count($sections);
     <?php endif; ?>
 
     <?php if ($P['answer'] !== ''): ?>
-    <div id="key-takeaways" class="my-8 p-6 sm:p-8 rounded-2xl bg-[#FAF5EE] bg-day-callout border border-[#E0D8CB] border-day-soft space-y-3.5 scroll-mt-28">
-      <div class="flex items-center gap-2 pb-2 border-b border-[#E0D8CB] border-day-soft">
-        <span class="w-2.5 h-2.5 rounded-full bg-[#1D4E48]" aria-hidden="true"></span>
+    <div id="key-takeaways" class="my-8 p-6 sm:p-8 rounded-2xl bg-[#E8F2F0] bg-day-callout border-l-4 border-[#1D4E48] dark:border-[#4FA89B] space-y-3 scroll-mt-28">
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-[#1D4E48] dark:bg-[#4FA89B]" aria-hidden="true"></span>
         <h2 class="text-xs uppercase tracking-widest font-bold text-[#1D4E48] dark:text-[#4FA89B]">Key Takeaways</h2>
       </div>
-      <div class="lld-prose lld-prose--takeaways space-y-3 text-sm sm:text-base text-[#1F1E1C] text-day-dark leading-relaxed font-normal">
-        <?php echo $P['answer']; // phpcs:ignore -- [lld_answer] output ?>
+      <div class="lld-prose lld-prose--takeaways space-y-3 text-base sm:text-lg text-[#1F1E1C] text-day-dark leading-relaxed font-normal">
+        <?php echo lld_article_v2_lead_bold($P['answer']); // phpcs:ignore -- [lld_answer] output ?>
       </div>
     </div>
     <?php endif; ?>
@@ -174,13 +173,13 @@ $count = count($sections);
         <div class="lld-prose lld-prose--card space-y-4"><?php echo $s['body']; // phpcs:ignore ?></div>
       </section>
       <?php else: ?>
-      <section id="<?php echo esc_attr($s['id']); ?>" class="p-6 sm:p-8 rounded-3xl bg-white bg-day-card border border-[#E0D8CB] border-day-soft space-y-4 shadow-xs scroll-mt-28">
+      <section id="<?php echo esc_attr($s['id']); ?>" class="pt-10 border-t border-[#E0D8CB] border-day-soft space-y-4 scroll-mt-28">
         <div class="flex items-center justify-between gap-3">
           <span class="text-xs font-bold text-[#1D4E48] uppercase tracking-wider dark:text-[#4FA89B]">Part <?php echo (int)($k + 1); ?></span>
           <?php if ($s['label'] !== ''): ?><span class="text-xs text-[#6E6A62] text-day-muted"><?php echo esc_html($s['label']); ?></span><?php endif; ?>
         </div>
         <h2 class="font-serif-editorial text-3xl text-[#1F1E1C] text-day-dark"><?php echo wp_kses_post($s['title']); ?></h2>
-        <div class="lld-prose lld-prose--card space-y-4"><?php echo $s['body']; // phpcs:ignore ?></div>
+        <div class="lld-prose lld-prose--card lld-prose--flow space-y-4"><?php echo $s['body']; // phpcs:ignore ?></div>
       </section>
       <?php endif; ?>
       <?php endforeach; ?>

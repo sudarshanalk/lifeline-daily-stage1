@@ -149,6 +149,11 @@
     });
   });
 
+  /* Fold blocks marked data-fold-phone on phones (the article's "In this guide") */
+  if (window.matchMedia && window.matchMedia('(max-width: 639px)').matches) {
+    $$('details[data-fold-phone]').forEach(function (d) { d.removeAttribute('open'); });
+  }
+
   /* Science accordion */
   $$('[data-acc]').forEach(function (b) {
     b.addEventListener('click', function () {
