@@ -59,7 +59,7 @@ $fh = empty($lld_footer_plain) ? 'h2' : 'p';
         <nav class="lg:col-span-2 space-y-2.5 text-xs" aria-label="Lifeline Daily">
           <<?php echo $fh; ?> class="font-semibold uppercase tracking-wider text-[11px] mb-3 text-[#D4826F]">Lifeline Daily</<?php echo $fh; ?>>
           <p><a href="<?php echo $fu('/about-us/'); ?>" class="text-inherit hover:text-white transition-colors">About Us</a></p>
-          <p><a href="<?php echo $fu('/editorial-standards/'); ?>" class="text-inherit hover:text-white transition-colors">Editorial Standards</a></p>
+          <?php if (!function_exists('lld_footer_page_live') || lld_footer_page_live('editorial-standards')): ?><p><a href="<?php echo $fu('/editorial-standards/'); ?>" class="text-inherit hover:text-white transition-colors">Editorial Standards</a></p><?php endif; ?>
           <p><a href="<?php echo $fu('/contact-us/'); ?>" class="text-inherit hover:text-white transition-colors">Contact</a></p>
           <p><a href="<?php echo $fu('/medical-disclaimer/'); ?>" class="text-inherit hover:text-white transition-colors">Medical Disclaimer</a></p>
         </nav>
@@ -70,7 +70,7 @@ $fh = empty($lld_footer_plain) ? 'h2' : 'p';
         <div class="flex items-center gap-5 flex-wrap justify-center">
           <a href="<?php echo $fu('/privacy-policy/'); ?>" class="text-inherit hover:text-white transition-colors">Privacy Policy</a>
           <a href="<?php echo $fu('/terms-conditions/'); ?>" class="text-inherit hover:text-white transition-colors">Terms &amp; Conditions</a>
-          <a href="<?php echo $fu('/terms-of-sale/'); ?>" class="text-inherit hover:text-white transition-colors">Terms of Sale</a>
+          <?php if (!function_exists('lld_footer_page_live') || lld_footer_page_live('terms-of-sale')): ?><a href="<?php echo $fu('/terms-of-sale/'); ?>" class="text-inherit hover:text-white transition-colors">Terms of Sale</a><?php endif; ?>
           <a href="#cookie-settings" data-lld-cookie-settings class="inline-flex items-center min-h-[44px] text-inherit hover:text-white transition-colors">Cookie settings</a>
         </div>
       </div>

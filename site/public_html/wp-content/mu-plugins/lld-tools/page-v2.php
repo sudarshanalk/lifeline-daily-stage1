@@ -98,6 +98,15 @@ function lld_page_v2_related_ids(string $html): array {
  * scripts in between. Parts: 'head' (stylesheet and fonts), 'body' (Day/Night before first paint), 'header', 'footer'
  * (column titles as text: one heading per screen), 'scripts' (the header's menu and Day/Night). Off with LLD_PAGES_V2.
  */
+/**
+ * A footer link to a site page shows only once that page is published (Editorial Standards and Terms of Sale wait as
+ * drafts for the owner's approval, L6), so the footers never lead to "page not found". Outside WordPress, true.
+ */
+function lld_footer_page_live(string $slug): bool {
+  if (!function_exists('get_page_by_path')) return true;
+  $page = get_page_by_path($slug);
+  return $page instanceof WP_Post && 'publish' === $page->post_status;
+}
 function lld_v2_members_shell_on(): bool {
   return !(defined('LLD_PAGES_V2') && !LLD_PAGES_V2) && function_exists('lld_home_v2_asset');
 }

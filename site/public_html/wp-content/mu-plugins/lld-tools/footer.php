@@ -151,7 +151,7 @@ function lld_tools_footer_html(bool $is_member_view = false): string {
             <h3 class="lld-footer-col__title">Lifeline Daily</h3>
             <ul class="lld-footer-col__list">
               <li><a href="<?php echo esc_url(home_url('/about-us/')); ?>">About us</a></li>
-              <li><a href="<?php echo esc_url(home_url('/editorial-standards/')); ?>">Editorial standards</a></li>
+              <?php if (!function_exists('lld_footer_page_live') || lld_footer_page_live('editorial-standards')): ?><li><a href="<?php echo esc_url(home_url('/editorial-standards/')); ?>">Editorial standards</a></li><?php endif; ?>
               <li><a href="<?php echo esc_url(home_url('/contact-us/')); ?>">Contact</a></li>
               <li><a href="<?php echo esc_url(home_url('/medical-disclaimer/')); ?>">Medical disclaimer and urgent care</a></li>
             </ul>
@@ -234,9 +234,9 @@ function lld_tools_footer_html(bool $is_member_view = false): string {
             <span class="lld-footer-legal__sep" aria-hidden="true">&bull;</span>
             <a href="<?php echo esc_url(home_url('/terms-conditions/')); ?>">Terms and conditions</a>
             <span class="lld-footer-legal__sep" aria-hidden="true">&bull;</span>
-            <a href="<?php echo esc_url(home_url('/terms-of-sale/')); ?>">Terms of sale</a>
-            <span class="lld-footer-legal__sep" aria-hidden="true">&bull;</span>
-            <button type="button" class="cky-banner-element lld-footer-legal__cookies">Cookie settings</button>
+            <?php if (!function_exists('lld_footer_page_live') || lld_footer_page_live('terms-of-sale')): ?><a href="<?php echo esc_url(home_url('/terms-of-sale/')); ?>">Terms of sale</a>
+            <span class="lld-footer-legal__sep" aria-hidden="true">&bull;</span><?php endif; ?>
+            <button type="button" class="cky-banner-element lld-footer-legal__cookies" data-lld-cookie-settings>Cookie settings</button>
           </div>
         </div>
       </section>
