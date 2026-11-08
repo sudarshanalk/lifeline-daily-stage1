@@ -200,6 +200,28 @@ class LLD_Members_Pause {
 	}
 
 	/**
+	 * Owner, 8 Nov 2026 (Terms of Sale 6.2): one pause in any 12 months. A pause that was undone does not count. Pure:
+	 * the date a new pause may start from, given the last pause's start ('' when there was none).
+	 *
+	 * @param string $last_start Y-m-d start of the member's last pause that was not undone, or ''.
+	 */
+	public static function next_pause_from( $last_start ) {
+		return preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $last_start ) ? self::add_months( (string) $last_start, 12 ) : '';
+	}
+
+	/**
+	 * The date this member may next start a pause, when a pause starting on $starts_at would come too soon; else ''.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $starts_at Y-m-d the new pause would start (the end of the paid month).
+	 */
+	public static function limited_until( $member_id, $starts_at ) {
+		$last = self::latest( $member_id );
+		$from = $last ? self::next_pause_from( substr( (string) $last->starts_at, 0, 10 ) ) : '';
+		return ( '' !== $from && (string) $starts_at < $from ) ? $from : '';
+	}
+
+	/**
 	 * Filter: no switch to yearly while a pause is scheduled or running; the voided renewal would never apply it.
 	 *
 	 * @param bool $allowed   Earlier answer.
@@ -227,6 +249,10 @@ class LLD_Members_Pause {
 		$dates = self::dates( (string) $sub->period_ends_on, (int) $months );
 		if ( ! $dates ) {
 			return new WP_Error( 'lld_pause', 'Choose 1, 2 or 3 months.' );
+		}
+		$until = self::limited_until( $member_id, $dates['starts_at'] );
+		if ( '' !== $until ) {
+			return new WP_Error( 'lld_pause', 'You can pause once in any 12 months. You can pause again from ' . self::day( $until ) . '.' );
 		}
 		$ref = (string) $sub->stripe_subscription;
 		global $wpdb;
@@ -336,6 +362,10 @@ class LLD_Members_Pause {
 		if ( ! self::may_pause( $sub, LLD_Members_Billing::has_premium( $member_id ), null ) ) {
 			return $html;
 		}
+		$until = self::limited_until( $member_id, (string) $sub->period_ends_on );
+		if ( '' !== $until ) {
+			return $html . '<div class="lld-card" data-lld-pause="limit"><h2>Need a break?</h2><p>' . esc_html( 'You can pause once in any 12 months. You can pause again from ' . self::day( $until ) . '.' ) . '</p></div>';
+		}
 		return $html . '<div class="lld-card" data-lld-pause="offer"><h2>Need a break?</h2>' . self::choice( $sub ) . '</div>';
 	}
 
@@ -353,6 +383,9 @@ class LLD_Members_Pause {
 		}
 		if ( ! self::on( $member_id ) || ! self::may_pause( $sub, LLD_Members_Billing::has_premium( $member_id ), self::open( $member_id ) ) ) {
 			return $html;
+		}
+		if ( '' !== self::limited_until( $member_id, (string) $sub->period_ends_on ) ) {
+			return $html; // the 12-month limit: no pause to offer before cancelling
 		}
 		return $html . '<div data-lld-pause="cancel-offer"><h3>Pause instead?</h3>' . self::choice( $sub, false ) . '</div>';
 	}

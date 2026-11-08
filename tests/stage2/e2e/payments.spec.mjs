@@ -392,14 +392,15 @@ test('TC-FR2-13-AS-05', async ({ page, request }) => {
   await createMember(request, { email: monthly, password, first_name: 'Month', role: 'member', access_state: 'Premium', plan: 'monthly' });
   await signIn(page, yearly, password);
   await page.goto('/members/subscription/');
-  await expect(page.locator('[data-lld-app="included"]')).toHaveText('The Lifeline Daily app is included with your yearly plan when it launches.');
+  // TC-FR2-13-AS-05 (revised 8 Nov 2026, FR4-11): every member is entitled to the app, monthly and yearly alike.
+  await expect(page.locator('[data-lld-app="included"]')).toHaveText('The Lifeline Daily app is included with your membership when it launches.');
   const yearSnap = await readMember(request, yearly);
   expect(yearSnap.app).toBe('included');
   await signIn(page, monthly, password);
   await page.goto('/members/subscription/');
-  await expect(page.locator('[data-lld-app="not included"]')).toHaveText('The Lifeline Daily app, when it launches, is included with yearly plans.');
+  await expect(page.locator('[data-lld-app="included"]')).toHaveText('The Lifeline Daily app is included with your membership when it launches.');
   const monthSnap = await readMember(request, monthly);
-  expect(monthSnap.app).toBe('not included');
+  expect(monthSnap.app).toBe('included');
 });
 
 test('TC-FR2-14-AS-01', async ({ page, request }) => {

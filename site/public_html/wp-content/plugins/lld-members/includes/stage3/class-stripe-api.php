@@ -44,6 +44,8 @@ class LLD_Members_Stripe_API {
 		add_filter( 'lld_members_stripe_refund', array( __CLASS__, 'refund' ), 10, 2 );
 		add_filter( 'lld_members_payment_ref', array( __CLASS__, 'payment_ref' ), 10, 2 );
 		add_filter( 'lld_members_can_switch_yearly', array( __CLASS__, 'can_switch_yearly' ), 10, 2 );
+		add_filter( 'lld_members_stripe_switch', array( __CLASS__, 'switch_plan' ), 10, 3 );
+		add_action( 'lld_members_reward_ready', array( __CLASS__, 'reward_ready' ), 10, 1 );
 	}
 
 	/**
@@ -541,13 +543,152 @@ class LLD_Members_Stripe_API {
 	}
 
 	/**
-	 * Filter: switching a monthly plan to yearly at Stripe is not built yet, so the button is hidden while the switch is on.
+	 * Filter: with real Stripe, switching needs a Stripe subscription to schedule the change on (D2a, owner 8 Nov 2026).
 	 *
 	 * @param bool $allowed   Stage 2 answer.
 	 * @param int  $member_id Member number.
 	 */
 	public static function can_switch_yearly( $allowed, $member_id ) {
-		return self::on( $member_id ) ? false : $allowed;
+		if ( ! $allowed || ! self::on( $member_id ) ) {
+			return $allowed;
+		}
+		$sub = LLD_Members_Billing::subscription_for( (int) $member_id );
+		return $sub && 0 === strpos( (string) $sub->stripe_subscription, 'sub_' );
+	}
+
+	/**
+	 * Filter: monthly to yearly at the next renewal, at Stripe (D2a). A subscription schedule keeps the monthly price to
+	 * the end of the month already paid for, then moves to the yearly price; changing the price straight on the
+	 * subscription would charge the yearly price at once, because the billing period changes. "undo" releases the
+	 * schedule, which leaves the monthly subscription as it was. Returns the Stage 2 value when Stripe is off.
+	 *
+	 * @param true|WP_Error $result    Stage 2 result.
+	 * @param int           $member_id Member number.
+	 * @param string        $to        "yearly" or "undo".
+	 * @return true|WP_Error
+	 */
+	public static function switch_plan( $result, $member_id, $to ) {
+		$sub = self::on( $member_id ) ? LLD_Members_Billing::subscription_for( (int) $member_id ) : null;
+		$ref = $sub ? (string) $sub->stripe_subscription : '';
+		if ( 0 !== strpos( $ref, 'sub_' ) ) {
+			return $result;
+		}
+		$live = self::request( 'GET', 'subscriptions/' . rawurlencode( $ref ) );
+		if ( is_wp_error( $live ) ) {
+			return $live;
+		}
+		$schedule = isset( $live['schedule'] ) ? ( is_array( $live['schedule'] ) ? (string) ( $live['schedule']['id'] ?? '' ) : (string) $live['schedule'] ) : '';
+		if ( 'undo' === $to ) {
+			if ( 0 !== strpos( $schedule, 'sub_sched_' ) ) {
+				return true;   // nothing scheduled at Stripe
+			}
+			$done = self::request( 'POST', 'subscription_schedules/' . rawurlencode( $schedule ) . '/release', array(), 'lld-switch-undo-' . $schedule . '-' . gmdate( 'YmdHi' ) );
+			return is_wp_error( $done ) ? $done : true;
+		}
+		$yearly = self::price( 'yearly' );
+		if ( is_wp_error( $yearly ) ) {
+			return $yearly;
+		}
+		$monthly = isset( $live['items']['data'][0]['price']['id'] ) ? (string) $live['items']['data'][0]['price']['id'] : '';
+		$ends    = isset( $live['items']['data'][0]['current_period_end'] ) ? (int) $live['items']['data'][0]['current_period_end'] : (int) ( $live['current_period_end'] ?? 0 );
+		if ( '' === $monthly || $ends < 1 ) {
+			return new WP_Error( 'lld_stripe', 'Stripe did not give the current plan.' );
+		}
+		if ( 0 !== strpos( $schedule, 'sub_sched_' ) ) {
+			$made = self::request( 'POST', 'subscription_schedules', array( 'from_subscription' => $ref ), 'lld-switch-' . $ref . '-' . $ends );
+			if ( is_wp_error( $made ) ) {
+				return $made;
+			}
+			$schedule = (string) ( $made['id'] ?? '' );
+			$start    = isset( $made['phases'][0]['start_date'] ) ? (int) $made['phases'][0]['start_date'] : 0;
+		} else {
+			$found = self::request( 'GET', 'subscription_schedules/' . rawurlencode( $schedule ) );
+			if ( is_wp_error( $found ) ) {
+				return $found;
+			}
+			$start = isset( $found['phases'][0]['start_date'] ) ? (int) $found['phases'][0]['start_date'] : 0;
+		}
+		if ( 0 !== strpos( $schedule, 'sub_sched_' ) || $start < 1 ) {
+			return new WP_Error( 'lld_stripe', 'Stripe did not schedule the change.' );
+		}
+		$done = self::request( 'POST', 'subscription_schedules/' . rawurlencode( $schedule ), self::switch_phases( $start, $ends, $monthly, (string) $yearly['id'], (int) $member_id ), 'lld-switch-phases-' . $schedule . '-' . $ends );
+		return is_wp_error( $done ) ? $done : true;
+	}
+
+	/**
+	 * The schedule's two phases: monthly to the end of the paid month, then one yearly period, after which the schedule
+	 * lets go and the subscription simply renews yearly. No proration either side. Pure (tested).
+	 *
+	 * @param int    $start     Unix start of the current phase.
+	 * @param int    $ends      Unix end of the month already paid for.
+	 * @param string $monthly   Current (monthly) price id.
+	 * @param string $yearly    Yearly price id.
+	 * @param int    $member_id Member number (kept in the subscription's metadata).
+	 * @return array<string,mixed>
+	 */
+	public static function switch_phases( $start, $ends, $monthly, $yearly, $member_id ) {
+		return array(
+			'end_behavior' => 'release',
+			'phases'       => array(
+				array(
+					'start_date'         => (int) $start,
+					'end_date'           => (int) $ends,
+					'items'              => array( array( 'price' => $monthly, 'quantity' => 1 ) ),
+					'proration_behavior' => 'none',
+				),
+				array(
+					'items'              => array( array( 'price' => $yearly, 'quantity' => 1 ) ),
+					'iterations'         => 1,
+					'proration_behavior' => 'none',
+					'metadata'           => array(
+						'member_id' => (string) (int) $member_id,
+						'plan'      => 'yearly',
+					),
+				),
+			),
+		);
+	}
+
+	/**
+	 * Action: a referral reward is waiting (D2a). With real Stripe it is put on the member's next invoice as a once-only
+	 * discount of exactly the cents the site takes off, so the invoice matches the site's expected charge to the cent.
+	 * Only one discount at a time: a further reward waits until this one has been used.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function reward_ready( $member_id ) {
+		$member_id = (int) $member_id;
+		$sub       = self::on( $member_id ) ? LLD_Members_Billing::subscription_for( $member_id ) : null;
+		$ref       = $sub ? (string) $sub->stripe_subscription : '';
+		if ( 0 !== strpos( $ref, 'sub_' ) ) {
+			return;
+		}
+		$next = LLD_Members_Billing::next_charge_for( $member_id );
+		$off  = self::reward_off( $next );
+		if ( $off < 1 ) {
+			return;
+		}
+		$live = self::request( 'GET', 'subscriptions/' . rawurlencode( $ref ) );
+		if ( is_wp_error( $live ) || ! empty( $live['discounts'] ) || ! empty( $live['discount'] ) ) {
+			return;   // Stripe unreachable, or a discount is already waiting there
+		}
+		$coupon = self::coupon( 'reward', $off, (string) $next['currency'] );
+		if ( is_wp_error( $coupon ) ) {
+			return;
+		}
+		self::request( 'POST', 'subscriptions/' . rawurlencode( $ref ), array( 'discounts' => array( array( 'coupon' => $coupon ) ) ), 'lld-reward-' . $ref . '-' . (int) $next['reward_id'] );
+	}
+
+	/**
+	 * Cents a waiting reward takes off the next charge (0 when none). Pure (tested).
+	 *
+	 * @param array<string,mixed> $next The site's next charge (base, charged, reward_id).
+	 */
+	public static function reward_off( $next ) {
+		if ( empty( $next['reward_id'] ) ) {
+			return 0;
+		}
+		return max( 0, (int) ( $next['base'] ?? 0 ) - (int) ( $next['charged'] ?? 0 ) );
 	}
 
 	/**
