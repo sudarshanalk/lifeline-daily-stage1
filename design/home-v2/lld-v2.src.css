@@ -623,7 +623,8 @@ body.lld-home-v2, body.lld-v2 {
   body.mode-night #mega-menu .lld-topic:hover, body.mode-night #mega-menu .lld-topic.is-current { background: #192E2B !important; }
   body.mode-night #mega-menu .lld-topic.is-current .lld-topic-name, body.mode-night #mega-menu .lld-topics-all { color: #79D1C3 !important; }
   body.mode-night #mega-menu :is(.lld-topic, .lld-topics-all, .lld-search-input):focus-visible { outline-color: #79D1C3 !important; }
-  body.mode-night #mega-menu .lld-search-input { background: #16201E !important; border-color: #4A6660 !important; color: #F4F1EA !important; }
+  #mega-menu .lld-search-input { border-color: #8A8172 !important; }
+  body.mode-night #mega-menu .lld-search-input { background: #16201E !important; border-color: #5E7D76 !important; color: #F4F1EA !important; }
   body.mode-night #mega-menu .tone-amber { background: #2E2410 !important; color: #F0C674 !important; }
   body.mode-night #mega-menu .tone-rose { background: #3A1A22 !important; color: #F2A1B4 !important; }
   body.mode-night #mega-menu .tone-coral { background: #3A1F14 !important; color: #F2A88A !important; }
@@ -638,11 +639,12 @@ body.lld-home-v2, body.lld-v2 {
    box, and Night colours. */
 @layer utilities {
   .lld-page-search:focus-within { outline: 3px solid #1D4E48 !important; outline-offset: 2px !important; }
-  .lld-page-search { min-height: 3rem !important; }
+  .lld-page-search { min-height: 3rem !important; border-color: #8A8172 !important; }
   .lld-page-search button { min-height: 2.5rem !important; padding: 0 1.125rem !important; font-size: 0.8125rem !important; line-height: 1 !important; }
   .lld-page-search input { font-size: 0.9375rem !important; }
   .lld-page-search button:focus-visible { outline: 3px solid #FFFFFF !important; outline-offset: -5px !important; }
-  body.mode-night .lld-page-search { background: #16201E !important; border-color: #4A6660 !important; }
+  body.mode-night .lld-page-search { background: #16201E !important; border-color: #5E7D76 !important; }
+  body.mode-night .lld-page-search button:focus-visible { outline-color: #101413 !important; }
   body.mode-night .lld-page-search:focus-within { outline-color: #79D1C3 !important; }
   body.mode-night .lld-page-search > span { color: #B0ABA0 !important; }
   body.mode-night .lld-page-search button { background: #79D1C3 !important; color: #101413 !important; }
