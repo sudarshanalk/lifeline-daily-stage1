@@ -55,6 +55,8 @@ $count = count($sections);
   <main id="lld-main">
   <article class="max-w-4xl mx-auto px-6 pt-10 pb-20" data-test="article">
 
+    <div class="mb-6"><?php $lld_search_id = 'lld-article-search'; include __DIR__ . '/parts/v2-search.php'; ?></div>
+
     <nav class="flex items-center gap-2 text-xs text-[#62605A] text-day-muted mb-6 flex-wrap" aria-label="Breadcrumb">
       <a href="<?php echo $u('/'); ?>" class="text-inherit hover:text-[#1D4E48]">Home</a>
       <span aria-hidden="true">&rsaquo;</span>

@@ -96,6 +96,23 @@ function lld_home_v2_reads(): array {
   return array_slice(array_merge($with, $without), 0, 3);
 }
 
+/**
+ * The Science: the homepage section's approved wording, shared with the /the-science/ page (owner, 8 Nov 2026) so
+ * both always say the same thing. methods: [title, text] in order; standard: the Evidence-First Standard box.
+ */
+function lld_home_v2_science(): array {
+  return [
+    'kicker' => 'The Science & Method',
+    'heading' => 'Clinical evidence translated into simple daily actions.',
+    'standard' => ['Evidence-First Standard', 'Every recommendation is referenced to peer-reviewed systematic reviews and ADA/NICE guidelines.'],
+    'methods' => [
+      ['Food Sequencing Over Extreme Restriction', 'Eating fibre and protein before carbohydrates naturally blunts post-meal glucose spikes by slowing gastric emptying—no cutting whole food groups.'],
+      ['The 10-Minute Post-Meal Stroll', 'Contracting large leg muscles after meals clears glucose directly into muscle cells without extra insulin demand, dropping peaks by up to 30%.'],
+      ['Circadian Resetting & Evening Cortisol', 'Morning light within 30 minutes of waking sets your internal melatonin timer. Evening dimming prevents cortisol surges that cause 3am waking.'],
+    ],
+  ];
+}
+
 /* ------------------------------------------------------------------ hooks ------------------------------------------ */
 if (function_exists('add_filter')) {
   add_filter('template_include', function ($template) {

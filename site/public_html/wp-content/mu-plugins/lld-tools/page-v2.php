@@ -47,6 +47,7 @@ function lld_page_v2_view(): string {
   if ($slug === 'health-tools' && !$parent) return $view = 'hub';
   if ($parent && $parent->post_name === 'health-tools' && lld_page_v2_tool_slug() !== '') return $view = 'tool';
   if (!$parent && isset(lld_page_v2_legal_pages()[$slug])) return $view = 'legal';
+  if ($slug === 'the-science' && !$parent) return $view = 'science';   // owner, 8 Nov 2026: the menu's The Science page
   return $view;
 }
 

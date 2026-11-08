@@ -336,6 +336,8 @@ if (function_exists('add_action')) add_action('template_redirect', 'lld_tools_le
 // merge source whose slug now ends in __trashed (?p=<id>, itself a 404) before the listed redirect runs
 if (function_exists('add_filter')) add_filter('do_redirect_guess_404_permalink', function ($guess) {
   $path = trailingslashit((string)wp_parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH));
+  // /the-science/ (the menu's The Science page) never guesses its way to an article whose slug starts the same
+  if ($path === '/the-science/') return false;
   return isset(lld_tools_redirects_doc()['redirects'][$path]) ? false : $guess;
 });
 /** Tag slugs whose archive the owner marked 410 (Gone) in Yoast SEO Premium's redirect list. */
@@ -567,6 +569,13 @@ if (defined('WP_CLI') && WP_CLI) {
           WP_CLI::log("{$dp['slug']}: created (post $id)");
         }
         $targets[] = [$dp['slug'], $dp['content']];
+      }
+      // The Science (owner, 8 Nov 2026): the menu's page, drawn by page-v2's "science" view from the homepage section's
+      // approved wording; the page itself carries no content, so it is only created when missing
+      if (!get_page_by_path('the-science', OBJECT, 'page') && empty($assoc['dry-run'])) {
+        $id = wp_insert_post(wp_slash(['post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'The Science', 'post_name' => 'the-science', 'post_content' => '']), true);
+        if (is_wp_error($id)) WP_CLI::error('the-science: ' . $id->get_error_message());
+        WP_CLI::log("the-science: created (post $id)");
       }
       // a landing page added after Stage 1 (FR2-39: the Healthy Weight Check) is created under the hub when missing
       $hub = get_page_by_path($doc['hub']['slug'], OBJECT, 'page');
