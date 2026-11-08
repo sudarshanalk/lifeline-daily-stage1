@@ -252,6 +252,40 @@ $card = 'rounded-2xl bg-day-surface bg-white border border-day-soft';
       </article>
     </div>
 
+<?php elseif ($view === 'science'):
+  $sci = lld_home_v2_science();
+?>
+    <nav class="flex items-center gap-2 text-xs text-[#62605A] text-day-muted uppercase tracking-wider font-bold mb-6" aria-label="Breadcrumb">
+      <a href="<?php echo $u('/'); ?>" class="<?php echo $crumb_link; ?>">Home</a>
+      <span aria-hidden="true">&gt;</span>
+      <span class="text-[#1D4E48] dark:text-[#4FA89B]" aria-current="page">The Science</span>
+    </nav>
+
+    <header class="mb-10" data-test="science-header">
+      <span class="text-xs uppercase tracking-widest text-[#1D4E48] font-bold dark:text-[#4FA89B]"><?php echo esc_html($sci['kicker']); ?></span>
+      <h1 class="font-serif-editorial text-4xl sm:text-5xl text-[#1F1E1C] text-day-dark font-normal leading-[1.1] mt-2 max-w-3xl"><?php echo esc_html($sci['heading']); ?></h1>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start mb-12">
+      <div class="lg:col-span-5">
+        <div class="rounded-3xl overflow-hidden bg-[#EDE6DC] relative border border-[#DDD5C7] border-day-soft">
+          <img src="<?php echo esc_url(lld_home_v2_asset('home/science.jpg')); ?>" alt="Active healthy person" width="800" height="600" loading="lazy" decoding="async" class="w-full h-[320px] sm:h-[420px] object-cover">
+        </div>
+        <div class="<?php echo $card; ?> p-5 mt-4" data-test="science-standard">
+          <p class="text-sm font-extrabold text-[#1D4E48] dark:text-[#79D1C3]"><?php echo esc_html($sci['standard'][0]); ?></p>
+          <p class="text-sm text-[#3A3834] text-day-muted mt-1 leading-relaxed"><?php echo esc_html($sci['standard'][1]); ?></p>
+        </div>
+      </div>
+      <ol class="lg:col-span-7 space-y-4" data-test="science-methods">
+        <?php foreach ($sci['methods'] as $i => [$q, $a]): ?>
+        <li class="<?php echo $card; ?> p-6">
+          <h2 class="text-lg font-extrabold text-[#1F1E1C] text-day-dark"><?php echo (int)($i + 1) . '. ' . esc_html($q); ?></h2>
+          <p class="text-sm sm:text-base text-[#3A3834] text-day-muted leading-relaxed mt-2"><?php echo esc_html($a); ?></p>
+        </li>
+        <?php endforeach; ?>
+      </ol>
+    </div>
+
 <?php elseif ($view === 'search'):
   global $wp_query;
   $q = get_search_query(false);   // unescaped: each use below escapes it once

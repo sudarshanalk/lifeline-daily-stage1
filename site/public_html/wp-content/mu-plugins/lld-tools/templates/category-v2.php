@@ -63,6 +63,8 @@ $pages = (int)$wp_query->max_num_pages;
 
   <main id="lld-main" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
 
+    <div class="mb-6"><?php $lld_search_id = 'lld-category-search'; include __DIR__ . '/parts/v2-search.php'; ?></div>
+
     <!-- Category Masthead -->
     <header class="mb-10 sm:mb-12" data-test="category-header">
       <div class="flex flex-wrap items-center justify-between gap-3 mb-4">

@@ -20,11 +20,7 @@ $tracks = [
   ['track-fitness.jpg', 'Home strength training', 'Fitness & Strength', 'Progressive home bodyweight strength, mobility cues, and Zone 2 cardiovascular stamina.', '/programmes/fitness/'],
   ['track-sleep.jpg', 'Restful sleep', 'Sleep & Stress', 'Reset circadian rhythm cues, calm nocturnal cortisol, and improve deep recovery stages.', '/programmes/sleep-stress/'],
 ];
-$science = [
-  ['Food Sequencing Over Extreme Restriction', 'Eating fibre and protein before carbohydrates naturally blunts post-meal glucose spikes by slowing gastric emptying—no cutting whole food groups.'],
-  ['The 10-Minute Post-Meal Stroll', 'Contracting large leg muscles after meals clears glucose directly into muscle cells without extra insulin demand, dropping peaks by up to 30%.'],
-  ['Circadian Resetting & Evening Cortisol', 'Morning light within 30 minutes of waking sets your internal melatonin timer. Evening dimming prevents cortisol surges that cause 3am waking.'],
-];
+$science = lld_home_v2_science()['methods'];
 $reads = lld_home_v2_reads();
 ?><!DOCTYPE html>
 <html <?php language_attributes(); ?>>
@@ -221,8 +217,8 @@ $reads = lld_home_v2_reads();
           <div class="rounded-3xl overflow-hidden bg-[#EDE6DC] relative shadow-sm h-[460px] group border border-[#DDD5C7] border-day-soft">
             <img src="<?php echo $img('science.jpg'); ?>" alt="Active healthy person" width="800" height="600" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
             <div class="absolute bottom-4 left-4 right-4 p-4 rounded-2xl bg-white/90 backdrop-blur-md">
-              <span class="text-xs font-bold text-[#1D4E48]">Evidence-First Standard</span>
-              <p class="text-xs text-[#62605A] mt-0.5">Every recommendation is referenced to peer-reviewed systematic reviews and ADA/NICE guidelines.</p>
+              <span class="text-xs font-bold text-[#1D4E48]"><?php echo esc_html(lld_home_v2_science()['standard'][0]); ?></span>
+              <p class="text-xs text-[#62605A] mt-0.5"><?php echo esc_html(lld_home_v2_science()['standard'][1]); ?></p>
             </div>
           </div>
         </div>

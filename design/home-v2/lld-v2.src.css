@@ -7,6 +7,7 @@
 @source "../../site/public_html/wp-content/mu-plugins/lld-tools/assets/lld-home-v2.js";
 @source "../../site/public_html/wp-content/mu-plugins/lld-tools/templates/parts/v2-header.php";
 @source "../../site/public_html/wp-content/mu-plugins/lld-tools/templates/parts/v2-footer.php";
+@source "../../site/public_html/wp-content/mu-plugins/lld-tools/templates/parts/v2-search.php";
 @source "../../site/public_html/wp-content/mu-plugins/lld-tools/templates/article-v2.php";
 @source "../../site/public_html/wp-content/mu-plugins/lld-tools/templates/page-v2.php";
 
@@ -600,4 +601,49 @@ body.lld-home-v2, body.lld-v2 {
   body.lld-members-v2-app .lld-main .lld-adm-switch input:not(:checked) + .lld-adm-track { background: #7A857F !important; }
   body.lld-members-v2-app .lld-main .lld-adm-legacy a.button:hover { color: #FFFFFF !important; }
   body.mode-night.lld-members-v2-app .lld-main .lld-adm-badge.is-test { background: #1E2440 !important; color: #C9D2FF !important; border-color: #3E4A85 !important; }
+}
+
+/* Your Health menu (owner's choice, 8 Nov 2026): tidied cards, borderless, a soft hover, the current topic tinted,
+   line icons in soft coloured circles; a rounded search box and "All topics" under a hairline. Day and Night. */
+@layer utilities {
+  #mega-menu .lld-topic { min-height: 3.5rem !important; }
+  #mega-menu .lld-topic:hover { background: #EFEAE2 !important; }
+  #mega-menu .lld-topic.is-current { background: #E6F0EE !important; }
+  #mega-menu .lld-topic.is-current .lld-topic-name { color: #1D4E48 !important; }
+  #mega-menu .lld-topic:focus-visible, #mega-menu .lld-topics-all:focus-visible, #mega-menu .lld-search-input:focus-visible { outline: 3px solid #1D4E48 !important; outline-offset: 2px !important; }
+  #mega-menu .lld-topic-icon { display: inline-flex !important; align-items: center !important; justify-content: center !important; flex: 0 0 auto !important; width: 2.25rem !important; height: 2.25rem !important; border-radius: 9999px !important; }
+  #mega-menu .tone-amber { background: #FDF0E1 !important; color: #A35A12 !important; }
+  #mega-menu .tone-rose { background: #FCE8EC !important; color: #A3253F !important; }
+  #mega-menu .tone-coral { background: #FDEBE3 !important; color: #A9431B !important; }
+  #mega-menu .tone-violet { background: #EEEAF8 !important; color: #4E3F9A !important; }
+  #mega-menu .tone-teal { background: #E3F3EE !important; color: #1E6B57 !important; }
+  #mega-menu .tone-stone { background: #F1EEE6 !important; color: #5E5640 !important; }
+  #mega-menu .tone-pink { background: #FBE9F1 !important; color: #962D5C !important; }
+  #mega-menu .tone-blue { background: #E6EEF8 !important; color: #24508A !important; }
+  body.mode-night #mega-menu .lld-topic:hover, body.mode-night #mega-menu .lld-topic.is-current { background: #192E2B !important; }
+  body.mode-night #mega-menu .lld-topic.is-current .lld-topic-name, body.mode-night #mega-menu .lld-topics-all { color: #79D1C3 !important; }
+  body.mode-night #mega-menu :is(.lld-topic, .lld-topics-all, .lld-search-input):focus-visible { outline-color: #79D1C3 !important; }
+  body.mode-night #mega-menu .lld-search-input { background: #16201E !important; border-color: #4A6660 !important; color: #F4F1EA !important; }
+  body.mode-night #mega-menu .tone-amber { background: #2E2410 !important; color: #F0C674 !important; }
+  body.mode-night #mega-menu .tone-rose { background: #3A1A22 !important; color: #F2A1B4 !important; }
+  body.mode-night #mega-menu .tone-coral { background: #3A1F14 !important; color: #F2A88A !important; }
+  body.mode-night #mega-menu .tone-violet { background: #241F3D !important; color: #C3B8F5 !important; }
+  body.mode-night #mega-menu .tone-teal { background: #14302A !important; color: #79D1C3 !important; }
+  body.mode-night #mega-menu .tone-stone { background: #262420 !important; color: #D6D1C7 !important; }
+  body.mode-night #mega-menu .tone-pink { background: #3A1A2A !important; color: #F2A1C8 !important; }
+  body.mode-night #mega-menu .tone-blue { background: #16243A !important; color: #9DC0F2 !important; }
+}
+
+/* The search box at the top of category and article pages (parts/v2-search.php): a visible focus ring around the whole
+   box, and Night colours. */
+@layer utilities {
+  .lld-page-search:focus-within { outline: 3px solid #1D4E48 !important; outline-offset: 2px !important; }
+  .lld-page-search { min-height: 3rem !important; }
+  .lld-page-search button { min-height: 2.5rem !important; padding: 0 1.125rem !important; font-size: 0.8125rem !important; line-height: 1 !important; }
+  .lld-page-search input { font-size: 0.9375rem !important; }
+  .lld-page-search button:focus-visible { outline: 3px solid #FFFFFF !important; outline-offset: -5px !important; }
+  body.mode-night .lld-page-search { background: #16201E !important; border-color: #4A6660 !important; }
+  body.mode-night .lld-page-search:focus-within { outline-color: #79D1C3 !important; }
+  body.mode-night .lld-page-search > span { color: #B0ABA0 !important; }
+  body.mode-night .lld-page-search button { background: #79D1C3 !important; color: #101413 !important; }
 }
