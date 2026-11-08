@@ -1235,7 +1235,8 @@ test.describe.serial('P3-87 admin module in My account', () => {
     await asOwner(page);
     for (const p of PAGES) {
       await open(page, at(p));
-      await expect(page.locator('.lld-header'), p).toBeVisible();
+      // the site header: the plugin's own (.lld-header) or, on v2 pages, the site's v2 header; both are the page banner
+      await expect(page.getByRole('banner').first(), p).toBeVisible();
       const font = await page.locator('.lld-adm-head h1').evaluate((el) => getComputedStyle(el).fontFamily);
       expect(font, p).toMatch(/Plus Jakarta Sans/);
       expect(await page.locator('#adminmenu').count(), p).toBe(0);
@@ -1264,6 +1265,8 @@ test.describe.serial('P3-87 admin module in My account', () => {
     await page.locator('.lld-adm-members a').first().click();
     await expect(page.locator('dl.lld-facts')).toContainText(payEmail);
     await page.locator('.lld-adm-side').getByRole('link', { name: 'Tools' }).click();
+    // the switch saves through the page's script, so wait until the Tools page has loaded before using it
+    await page.waitForURL(/\/members\/admin\/tools\/$/, { waitUntil: 'load' });
     await page.locator('#lld-adm-t-calc_hr_zones').uncheck();
     await expect(saved(page)).toContainText('Heart Rate Zones is off.');
     await saved(page).getByRole('button', { name: 'Undo' }).click();
