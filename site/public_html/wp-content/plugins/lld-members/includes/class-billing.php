@@ -339,11 +339,24 @@ class LLD_Members_Billing {
 	 */
 	public static function daily() {
 		self::settle_rewards();
+		self::rewards_to_stripe();
 		self::retry_window();
 		self::close_elapsed();
 		self::renewal_reminders();
 		self::mismatch_mail();
 		self::purge_notices();
+	}
+
+	/**
+	 * D2a: each member with a waiting reward is offered to the Stripe connection again, so a discount that could not be
+	 * attached, or that Stripe used up on a voided invoice, is put back before the next real invoice. No-op without Stripe.
+	 */
+	private static function rewards_to_stripe() {
+		global $wpdb;
+		$ids = $wpdb->get_col( 'SELECT DISTINCT recipient_member_id FROM ' . LLD_Members_Schema::table( 'reward' ) . " WHERE status = 'pending'" );
+		foreach ( (array) $ids as $id ) {
+			do_action( 'lld_members_reward_ready', (int) $id );
+		}
 	}
 
 	/**
@@ -1068,12 +1081,14 @@ class LLD_Members_Billing {
 			$action = isset( $_POST['lld_sub_action'] ) ? sanitize_key( wp_unslash( $_POST['lld_sub_action'] ) ) : '';
 			if ( 'cancel' === $action ) {
 				$failed = is_wp_error( self::cancel_at_period_end( $member_id ) );
-			} elseif ( 'switch' === $action && $switching ) {
-				self::queue_yearly( $member_id );
+			} elseif ( 'switch' === $action && $switching && self::queue_yearly( $member_id ) ) {
+				// A waiting reward now reduces the yearly payment, so it takes the yearly form (13 % off).
+				self::reward_forms( $member_id, 'percent_13' );
 				// With real Stripe the change is scheduled there too (D2a); if Stripe refuses, nothing is queued here.
 				$done = apply_filters( 'lld_members_stripe_switch', true, $member_id, 'yearly' );
 				if ( is_wp_error( $done ) ) {
 					self::save_sub( $member_id, array( 'pending_yearly_on' => null ) );
+					self::reward_forms( $member_id, 'month_free' );
 					$switch_failed = true;
 				}
 			} elseif ( 'undo' === $action ) {
@@ -1082,6 +1097,8 @@ class LLD_Members_Billing {
 					$switch_failed = true;
 				} else {
 					self::save_sub( $member_id, array( 'pending_yearly_on' => null ) );
+					self::reward_forms( $member_id, 'month_free' );
+					do_action( 'lld_members_reward_ready', $member_id );
 				}
 			}
 			// Stage 3 actions on this page (P3-63 pause).
@@ -1877,7 +1894,7 @@ class LLD_Members_Billing {
 			'period_ends_on'    => self::add_period( $today, $plan ),
 			'pending_yearly_on' => null,
 		);
-		if ( 'yearly' === $plan && 'yearly' !== (string) $row->plan ) {
+		if ( 'yearly' === $plan && 'yearly' !== (string) $row->plan && 'usd' === (string) $next['currency'] ) {
 			$fields['locked_amount'] = (int) $next['base'];   // the price lock now holds the yearly price
 		}
 		self::save_sub( $member_id, $fields );
@@ -1993,8 +2010,9 @@ class LLD_Members_Billing {
 		self::save_sub(
 			$member_id,
 			array(
-				'access_state' => 'cancelled',
-				'stripe_state' => 'cancel_at_period_end',
+				'access_state'      => 'cancelled',
+				'stripe_state'      => 'cancel_at_period_end',
+				'pending_yearly_on' => null,   // a queued switch to yearly ends with the cancellation
 			)
 		);
 		return true;
@@ -2006,9 +2024,22 @@ class LLD_Members_Billing {
 	private static function queue_yearly( $member_id ) {
 		$sub = self::subscription_row( $member_id );
 		if ( ! $sub || 'monthly' !== (string) $sub->plan || ! $sub->period_ends_on ) {
-			return;
+			return false;
 		}
 		self::save_sub( $member_id, array( 'pending_yearly_on' => (string) $sub->period_ends_on ) );
+		return true;
+	}
+
+	/**
+	 * A member's waiting rewards take the form of the payment they will reduce: one month free on a monthly payment,
+	 * 13 % off a yearly one (D2a: a switch to yearly, or its undo, changes which payment comes next).
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $form      month_free or percent_13.
+	 */
+	private static function reward_forms( $member_id, $form ) {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare( 'UPDATE ' . LLD_Members_Schema::table( 'reward' ) . " SET form = %s WHERE recipient_member_id = %d AND status = 'pending'", 'percent_13' === $form ? 'percent_13' : 'month_free', (int) $member_id ) );
 	}
 
 	/**
@@ -2193,7 +2224,7 @@ class LLD_Members_Billing {
 	private static function insert_reward( $referral_id, $member_id, $key ) {
 		global $wpdb;
 		$sub  = self::subscription_row( $member_id );
-		$form = ( $sub && 'yearly' === (string) $sub->plan ) ? 'percent_13' : 'month_free';
+		$form = ( $sub && ( 'yearly' === (string) $sub->plan || ! empty( $sub->pending_yearly_on ) ) ) ? 'percent_13' : 'month_free';
 		$wpdb->suppress_errors( true );
 		$wpdb->insert(
 			LLD_Members_Schema::table( 'reward' ),
@@ -2206,6 +2237,9 @@ class LLD_Members_Billing {
 			)
 		);
 		$wpdb->suppress_errors( false );
+		if ( $sub && in_array( (string) $sub->access_state, array( 'Premium ended', 'Refunded' ), true ) ) {
+			self::lapse_rewards( $member_id );   // owner, 8 Nov 2026: a reward is lost once Premium has ended
+		}
 	}
 
 	/**

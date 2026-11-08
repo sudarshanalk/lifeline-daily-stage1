@@ -379,8 +379,27 @@ class LLD_Members_Stripe_API {
 		if ( ! self::on( $member_id ) || 0 !== strpos( $ref, 'sub_' ) ) {
 			return $result;
 		}
+		$live     = self::request( 'GET', 'subscriptions/' . rawurlencode( $ref ) );
+		$schedule = ( ! is_wp_error( $live ) && isset( $live['schedule'] ) ) ? self::schedule_id( $live['schedule'] ) : '';
+		if ( '' !== $schedule ) {
+			// A queued switch to yearly: Stripe refuses to change a subscription its schedule manages, so let go first.
+			$released = self::request( 'POST', 'subscription_schedules/' . rawurlencode( $schedule ) . '/release', array(), 'lld-release-' . $schedule . '-' . wp_generate_uuid4() );
+			if ( is_wp_error( $released ) ) {
+				return $released;
+			}
+		}
 		$done = self::request( 'POST', 'subscriptions/' . rawurlencode( $ref ), array( 'cancel_at_period_end' => 'true' ), 'lld-cancel-' . $ref );
 		return is_wp_error( $done ) ? $done : true;
+	}
+
+	/**
+	 * A schedule reference from a subscription's "schedule" field (an id or an expanded object), or ''.
+	 *
+	 * @param mixed $field The field.
+	 */
+	public static function schedule_id( $field ) {
+		$id = is_array( $field ) ? (string) ( $field['id'] ?? '' ) : (string) $field;
+		return 0 === strpos( $id, 'sub_sched_' ) ? $id : '';
 	}
 
 	/**
@@ -577,13 +596,17 @@ class LLD_Members_Stripe_API {
 		if ( is_wp_error( $live ) ) {
 			return $live;
 		}
-		$schedule = isset( $live['schedule'] ) ? ( is_array( $live['schedule'] ) ? (string) ( $live['schedule']['id'] ?? '' ) : (string) $live['schedule'] ) : '';
+		$schedule = isset( $live['schedule'] ) ? self::schedule_id( $live['schedule'] ) : '';
 		if ( 'undo' === $to ) {
-			if ( 0 !== strpos( $schedule, 'sub_sched_' ) ) {
+			if ( '' === $schedule ) {
 				return true;   // nothing scheduled at Stripe
 			}
-			$done = self::request( 'POST', 'subscription_schedules/' . rawurlencode( $schedule ) . '/release', array(), 'lld-switch-undo-' . $schedule . '-' . gmdate( 'YmdHi' ) );
-			return is_wp_error( $done ) ? $done : true;
+			$done = self::request( 'POST', 'subscription_schedules/' . rawurlencode( $schedule ) . '/release', array(), 'lld-switch-undo-' . $schedule . '-' . wp_generate_uuid4() );
+			if ( is_wp_error( $done ) ) {
+				return $done;
+			}
+			// The reward discount was on the yearly phase; it goes back on the subscription through the reward hook.
+			return true;
 		}
 		$yearly = self::price( 'yearly' );
 		if ( is_wp_error( $yearly ) ) {
@@ -594,25 +617,44 @@ class LLD_Members_Stripe_API {
 		if ( '' === $monthly || $ends < 1 ) {
 			return new WP_Error( 'lld_stripe', 'Stripe did not give the current plan.' );
 		}
-		if ( 0 !== strpos( $schedule, 'sub_sched_' ) ) {
-			$made = self::request( 'POST', 'subscription_schedules', array( 'from_subscription' => $ref ), 'lld-switch-' . $ref . '-' . $ends );
-			if ( is_wp_error( $made ) ) {
-				return $made;
-			}
-			$schedule = (string) ( $made['id'] ?? '' );
-			$start    = isset( $made['phases'][0]['start_date'] ) ? (int) $made['phases'][0]['start_date'] : 0;
+		// Fresh idempotency keys each time: after an undo, a new switch in the same month must make a new schedule,
+		// not get the released one back from Stripe's replay of the first request.
+		if ( '' === $schedule ) {
+			$found = self::request( 'POST', 'subscription_schedules', array( 'from_subscription' => $ref ), 'lld-switch-' . $ref . '-' . wp_generate_uuid4() );
 		} else {
 			$found = self::request( 'GET', 'subscription_schedules/' . rawurlencode( $schedule ) );
-			if ( is_wp_error( $found ) ) {
-				return $found;
-			}
-			$start = isset( $found['phases'][0]['start_date'] ) ? (int) $found['phases'][0]['start_date'] : 0;
 		}
-		if ( 0 !== strpos( $schedule, 'sub_sched_' ) || $start < 1 ) {
+		if ( is_wp_error( $found ) ) {
+			return $found;
+		}
+		$schedule = self::schedule_id( $found['id'] ?? '' );
+		$start    = isset( $found['phases'][0]['start_date'] ) ? (int) $found['phases'][0]['start_date'] : 0;
+		if ( '' === $schedule || $start < 1 || ! in_array( (string) ( $found['status'] ?? '' ), array( 'not_started', 'active' ), true ) ) {
 			return new WP_Error( 'lld_stripe', 'Stripe did not schedule the change.' );
 		}
-		$done = self::request( 'POST', 'subscription_schedules/' . rawurlencode( $schedule ), self::switch_phases( $start, $ends, $monthly, (string) $yearly['id'], (int) $member_id ), 'lld-switch-phases-' . $schedule . '-' . $ends );
+		// A waiting reward reduces the first yearly payment: 13 % off the yearly price, as the site expects (D2a).
+		$coupon = '';
+		$next   = LLD_Members_Billing::next_charge_for( (int) $member_id );
+		if ( ! empty( $next['reward_id'] ) ) {
+			$coupon = self::coupon( 'reward', self::yearly_reward_off( (int) $yearly['amount'] ), 'usd' );
+			if ( is_wp_error( $coupon ) ) {
+				return $coupon;
+			}
+			if ( ! empty( $live['discounts'] ) || ! empty( $live['discount'] ) ) {
+				self::request( 'DELETE', 'subscriptions/' . rawurlencode( $ref ) . '/discount' );   // the monthly-form coupon
+			}
+		}
+		$done = self::request( 'POST', 'subscription_schedules/' . rawurlencode( $schedule ), self::switch_phases( $start, $ends, $monthly, (string) $yearly['id'], (int) $member_id, $coupon ), 'lld-switch-phases-' . $schedule . '-' . wp_generate_uuid4() );
 		return is_wp_error( $done ) ? $done : true;
+	}
+
+	/**
+	 * Cents a 13 % reward takes off a yearly price, matching the site's own rounding (charged = round(base x 87 %)).
+	 *
+	 * @param int $amount Yearly price in cents.
+	 */
+	public static function yearly_reward_off( $amount ) {
+		return (int) $amount - (int) round( (int) $amount * 87 / 100 );
 	}
 
 	/**
@@ -624,10 +666,11 @@ class LLD_Members_Stripe_API {
 	 * @param string $monthly   Current (monthly) price id.
 	 * @param string $yearly    Yearly price id.
 	 * @param int    $member_id Member number (kept in the subscription's metadata).
+	 * @param string $coupon    Once-only reward coupon for the first yearly payment, or ''.
 	 * @return array<string,mixed>
 	 */
-	public static function switch_phases( $start, $ends, $monthly, $yearly, $member_id ) {
-		return array(
+	public static function switch_phases( $start, $ends, $monthly, $yearly, $member_id, $coupon = '' ) {
+		$fields = array(
 			'end_behavior' => 'release',
 			'phases'       => array(
 				array(
@@ -647,6 +690,10 @@ class LLD_Members_Stripe_API {
 				),
 			),
 		);
+		if ( '' !== (string) $coupon ) {
+			$fields['phases'][1]['discounts'] = array( array( 'coupon' => (string) $coupon ) );
+		}
+		return $fields;
 	}
 
 	/**
@@ -669,14 +716,26 @@ class LLD_Members_Stripe_API {
 			return;
 		}
 		$live = self::request( 'GET', 'subscriptions/' . rawurlencode( $ref ) );
-		if ( is_wp_error( $live ) || ! empty( $live['discounts'] ) || ! empty( $live['discount'] ) ) {
-			return;   // Stripe unreachable, or a discount is already waiting there
+		if ( is_wp_error( $live ) ) {
+			return;   // tried again by the daily run
+		}
+		$schedule = isset( $live['schedule'] ) ? self::schedule_id( $live['schedule'] ) : '';
+		if ( ! empty( $sub->pending_yearly_on ) || '' !== $schedule ) {
+			// A queued switch: the reward rides on the schedule's yearly phase. Put it there if it is missing.
+			$found = '' !== $schedule ? self::request( 'GET', 'subscription_schedules/' . rawurlencode( $schedule ) ) : null;
+			if ( is_array( $found ) && empty( $found['phases'][1]['discounts'] ) ) {
+				self::switch_plan( true, $member_id, 'yearly' );
+			}
+			return;
+		}
+		if ( ! empty( $live['discounts'] ) || ! empty( $live['discount'] ) ) {
+			return;   // a discount is already waiting there
 		}
 		$coupon = self::coupon( 'reward', $off, (string) $next['currency'] );
 		if ( is_wp_error( $coupon ) ) {
 			return;
 		}
-		self::request( 'POST', 'subscriptions/' . rawurlencode( $ref ), array( 'discounts' => array( array( 'coupon' => $coupon ) ) ), 'lld-reward-' . $ref . '-' . (int) $next['reward_id'] );
+		self::request( 'POST', 'subscriptions/' . rawurlencode( $ref ), array( 'discounts' => array( array( 'coupon' => $coupon ) ) ), 'lld-reward-' . $ref . '-' . (int) $next['reward_id'] . '-' . wp_generate_uuid4() );
 	}
 
 	/**
