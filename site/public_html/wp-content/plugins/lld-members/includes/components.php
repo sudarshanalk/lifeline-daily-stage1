@@ -21,12 +21,14 @@ function lld_members_v2_form_screens() {
 
 /**
  * Member screens shown in the v2 look (owner's UI pack, group 3: coaching, food and logging, design files 17 to 42;
- * Owner_Questions 158). Look only: the markup, wording and rules are the built ones (153).
+ * group 4: account settings, help, data and deletion, and the public track, waitlist and starter-guide pages, design
+ * files 43 to 58; Owner_Questions 158). Look only: the markup, wording and rules are the built ones (153).
  *
  * @return string[] lld_screen values.
  */
 function lld_members_v2_app_screens() {
-	return array( 'home', 'check-in', 'goal', 'goals', 'progress', 'track', 'tracks', 'screening', 'plan', 'review', 'suggestions', 'diary', 'food-scan', 'meals', 'workout', 'challenge', 'badges', 'group', 'health', 'foundations', 'library', 'read', 'record', 'more' );
+	return array( 'home', 'check-in', 'goal', 'goals', 'progress', 'track', 'tracks', 'screening', 'plan', 'review', 'suggestions', 'diary', 'food-scan', 'meals', 'workout', 'challenge', 'badges', 'group', 'health', 'foundations', 'library', 'read', 'record', 'more',
+		'settings', 'subscription', 'help', 'data', 'withdraw', 'delete', 'email', 'unsubscribe', 'programmes', 'sales', 'waitlist', 'guide-confirm', 'guide-unsub' );
 }
 
 /**
