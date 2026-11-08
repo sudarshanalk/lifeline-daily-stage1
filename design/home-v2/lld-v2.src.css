@@ -578,7 +578,7 @@ body.lld-home-v2, body.lld-v2 {
 @layer utilities {
   body.lld-members-v2-app .lld-main .lld-adm { background: transparent !important; gap: 1.5rem !important; }
   body.lld-members-v2-app .lld-main .lld-adm-side { background: var(--lld-card) !important; border: 1.5px solid var(--lld-line) !important; border-radius: 1.5rem !important; align-self: start !important; }
-  body.lld-members-v2-app .lld-main :is(a.lld-adm-chip, .lld-adm-action, .lld-button.lld-adm-danger-button) { background: var(--lld-card) !important; }
+  body.lld-members-v2-app .lld-main :is(a.lld-adm-chip:not([aria-current=true]), .lld-adm-action, .lld-button.lld-adm-danger-button) { background: var(--lld-card) !important; }
   body.lld-members-v2-app .lld-main .lld-adm-action { border-radius: 1rem !important; border-color: var(--lld-line) !important; }
   body.lld-members-v2-app .lld-main .lld-adm-nav-link[aria-current=page] { color: var(--lld-green) !important; }
   body.lld-members-v2-app .lld-main .lld-adm-notice:not(.is-error) { background: #1D4E48 !important; }
@@ -591,5 +591,13 @@ body.lld-home-v2, body.lld-v2 {
   body.lld-members-v2-app .lld-main .lld-button.lld-adm-danger-button { color: var(--lld-danger) !important; border: 1.5px solid var(--lld-danger) !important; }
   body.lld-members-v2-app .lld-main .lld-button.lld-adm-danger-button::after { content: none !important; }
   body.mode-night.lld-members-v2-app .lld-main .lld-adm-legacy :is(.button, button) { color: #101413 !important; }
+  /* review fixes: danger buttons stay outlined red in Night (the Night primary rule is more specific), the legacy link
+     button keeps white text in Day, the focus ring shows on the green notice bar, the off switch reaches 3:1 */
+  body.mode-night.lld-members-v2-app .lld-main .lld-button.lld-adm-danger-button, body.mode-night.lld-members-v2-app .lld-main .lld-button.lld-adm-danger-button:hover { background: var(--lld-card) !important; color: var(--lld-danger) !important; border-color: var(--lld-danger) !important; }
+  body.lld-members-v2-app .lld-main .lld-adm-legacy a.button { color: #FFFFFF !important; }
+  body.mode-night.lld-members-v2-app .lld-main .lld-adm-legacy a.button { color: #101413 !important; }
+  body.lld-members-v2-app .lld-main .lld-adm-notice:not(.is-error) :is(a, button):focus-visible { outline-color: #FFFFFF !important; }
+  body.lld-members-v2-app .lld-main .lld-adm-switch input:not(:checked) + .lld-adm-track { background: #7A857F !important; }
+  body.lld-members-v2-app .lld-main .lld-adm-legacy a.button:hover { color: #FFFFFF !important; }
   body.mode-night.lld-members-v2-app .lld-main .lld-adm-badge.is-test { background: #1E2440 !important; color: #C9D2FF !important; border-color: #3E4A85 !important; }
 }

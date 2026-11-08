@@ -869,6 +869,7 @@ test.describe.serial('P3-87 admin module in My account', () => {
       await signIn(m, email, password);
       await m.goto('/members/home/');
       await expect(m.locator('.lld-nav-admin')).toHaveCount(0);
+      await expect(m.getByRole('banner').getByRole('link', { name: 'Admin', exact: true })).toHaveCount(0); // the v2 header too
       for (const p of PAGES) expect((await m.request.get(at(p))).status(), `${email} ${p}`).toBe(404);
       await ctx.close();
     }
