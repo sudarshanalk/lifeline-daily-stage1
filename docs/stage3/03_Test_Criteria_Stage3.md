@@ -817,6 +817,7 @@ Monthly Premium members can pause for 1, 2 or 3 months instead of cancelling. Th
 | TC-FR3-65-AS-04 | A failed payment at the end of the pause follows the Stage 2 failed-payment retries. |
 | TC-FR3-65-AS-05 | A yearly test member is not offered a pause. |
 | TC-FR3-65-AS-06 | Starting to cancel shows the pause option before the final cancel button. |
+| TC-FR3-65-AS-07 | A member can pause once in any 12 months: within 12 months of their last pause they are offered no pause, a new pause is refused with the date they can pause again, and a pause they undid does not count (owner, 8 Nov 2026). |
 
 #### FR3-66 Google Analytics 4
 

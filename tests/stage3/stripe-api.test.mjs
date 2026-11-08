@@ -48,7 +48,7 @@ class LLD_Members_Schema { static function table($s) { return 'wp_lld_' . $s; } 
 class FakeDb { public $users = 'wp_users'; public $customer = ''; function prepare($q, ...$a) { return $q; } function get_var($q) { return strpos($q, 'stripe_customer') !== false ? $this->customer : 'member@example.test'; } }
 $GLOBALS['wpdb'] = new FakeDb();
 class LLD_Members_Features { static $on = true; static function enabled($f, $m = 0) { return $f === 'stripe_api' && self::$on; } static function state($f) { return self::$on ? 'test_accounts' : 'off'; } }
-class LLD_Members_Billing { static function stripe_key($k) { $v = defined('LLD_STRIPE_SECRET') ? LLD_STRIPE_SECRET : ''; return (strpos($v, 'sk_live_') === 0) ? new WP_Error('lld_stripe_live', 'A live Stripe key is set outside production.') : $v; } }
+class LLD_Members_Billing { static $sub = null; static $next = []; static function stripe_key($k) { $v = defined('LLD_STRIPE_SECRET') ? LLD_STRIPE_SECRET : ''; return (strpos($v, 'sk_live_') === 0) ? new WP_Error('lld_stripe_live', 'A live Stripe key is set outside production.') : $v; } static function subscription_for($m) { return self::$sub; } static function next_charge_for($m) { return self::$next; } }
 require ${toPhpPath(resolve(plugin, 'includes/stage3/class-stripe-api.php'))};
 $GLOBALS['answers']['GET https://api.stripe.com/v1/prices?lookup_keys%5B0%5D=lld_premium_monthly'] = ok(['data' => [['id' => 'price_M', 'unit_amount' => 999, 'currency' => 'usd', 'tax_behavior' => 'inclusive']]]);
 $GLOBALS['answers']['GET https://api.stripe.com/v1/prices?lookup_keys%5B0%5D=lld_premium_yearly'] = ok(['data' => [['id' => 'price_Y', 'unit_amount' => 6999, 'currency' => 'usd', 'tax_behavior' => 'inclusive']]]);
@@ -182,7 +182,7 @@ test('Cancel, account deletion and refunds go to Stripe first and report Stripe\
   expect(out.no_ref).toMatch(/Refund it in the Stripe Dashboard/);
   expect(out.pi).toBe('pi_9');
   expect(out.pi_kept).toBe('pi_2');
-  expect(out.switch).toBe(false); // switching plan at Stripe is not built yet, so the button is hidden
+  expect(out.switch).toBe(false); // no Stripe subscription to schedule the switch on, so the button is hidden
 });
 
 test('Stage 2 billing reaches Stripe only through the Stage 3 filters, and reads both invoice shapes', () => {
@@ -195,4 +195,125 @@ test('Stage 2 billing reaches Stripe only through the Stage 3 filters, and reads
   expect(src('includes/class-stripe.php')).toContain("'lld_members_stripe_cancel_member'");
   expect(src('includes/stage3/loader.php')).toContain('LLD_Members_Stripe_API::boot()');
   expect(src('includes/stage3/class-features.php')).toContain("'stripe_api'");
+});
+
+test('TC-FR2-14-AS-09: with real Stripe, monthly to yearly is scheduled from the next renewal with nothing charged now, and Undo releases it', () => {
+  const out = JSON.parse(php(`${stubs()}
+    LLD_Members_Billing::$sub = (object) ['stripe_subscription' => 'sub_1', 'plan' => 'monthly'];
+    $ends = gmmktime(14, 0, 0, 3, 10, 2027);
+    $GLOBALS['answers']['GET https://api.stripe.com/v1/subscriptions/sub_1'] = ok(['id' => 'sub_1', 'schedule' => null, 'items' => ['data' => [['price' => ['id' => 'price_M'], 'current_period_end' => $ends]]]]);
+    $GLOBALS['answers']['POST https://api.stripe.com/v1/subscription_schedules/sub_sched_1'] = ok(['id' => 'sub_sched_1']);
+    $GLOBALS['answers']['POST https://api.stripe.com/v1/subscription_schedules'] = ok(['id' => 'sub_sched_1', 'status' => 'active', 'phases' => [['start_date' => $ends - 2419200]]]);
+    $r = ['can' => LLD_Members_Stripe_API::can_switch_yearly(true, 7), 'done' => LLD_Members_Stripe_API::switch_plan(true, 7, 'yearly')];
+    $forms = []; foreach ($GLOBALS['sent'] as $s) { if ($s['args']['method'] === 'POST') { parse_str($s['args']['body'], $f); $forms[strtok($s['url'], '?')] = $f; } }
+    $r['create'] = $forms['https://api.stripe.com/v1/subscription_schedules'] ?? null;
+    $r['phases'] = $forms['https://api.stripe.com/v1/subscription_schedules/sub_sched_1'] ?? null;
+    $r['ends'] = $ends;
+    $r['subscription_changed'] = isset($forms['https://api.stripe.com/v1/subscriptions/sub_1']);
+    // Undo: the schedule is released, leaving the monthly subscription as it was.
+    $GLOBALS['sent'] = [];
+    $GLOBALS['answers'] = ['GET https://api.stripe.com/v1/subscriptions/sub_1' => ok(['id' => 'sub_1', 'schedule' => 'sub_sched_1']), 'POST https://api.stripe.com/v1/subscription_schedules/sub_sched_1/release' => ok(['id' => 'sub_sched_1', 'status' => 'released'])];
+    $r['undo'] = LLD_Members_Stripe_API::switch_plan(true, 7, 'undo');
+    $r['undo_calls'] = array_map(function ($s) { return $s['args']['method'] . ' ' . strtok($s['url'], '?'); }, $GLOBALS['sent']);
+    // A refusal from Stripe comes back as an error, so the site queues nothing.
+    $GLOBALS['answers'] = ['GET https://api.stripe.com/v1/subscriptions/sub_1' => ['code' => 500, 'body' => json_encode(['error' => ['message' => 'Try later']])]];
+    $r['refused'] = is_wp_error(LLD_Members_Stripe_API::switch_plan(true, 7, 'yearly'));
+    // Switch off: the Stage 2 answer stands and nothing is sent.
+    LLD_Members_Features::$on = false; $GLOBALS['sent'] = [];
+    $r['off'] = LLD_Members_Stripe_API::switch_plan(true, 7, 'yearly'); $r['off_sent'] = count($GLOBALS['sent']);
+    echo json_encode($r);
+  `));
+  expect(out.can).toBe(true);
+  expect(out.done).toBe(true);
+  expect(out.create).toEqual({ from_subscription: 'sub_1' });
+  expect(out.phases.end_behavior).toBe('release');
+  expect(out.phases.phases[0]).toMatchObject({ end_date: String(out.ends), proration_behavior: 'none', items: [{ price: 'price_M', quantity: '1' }] });
+  expect(out.phases.phases[1]).toMatchObject({ iterations: '1', proration_behavior: 'none', items: [{ price: 'price_Y', quantity: '1' }], metadata: { plan: 'yearly', member_id: '7' } });
+  expect(out.subscription_changed).toBe(false); // the price is never changed on the subscription itself (that would charge at once)
+  expect(out.undo).toBe(true);
+  expect(out.undo_calls).toEqual(['GET https://api.stripe.com/v1/subscriptions/sub_1', 'POST https://api.stripe.com/v1/subscription_schedules/sub_sched_1/release']);
+  expect(out.refused).toBe(true);
+  expect(out.off).toBe(true);
+  expect(out.off_sent).toBe(0);
+});
+
+test('TC-FR2-29-AS-06: with real Stripe, a waiting reward goes on the next invoice as a once-only discount of exactly the reward', () => {
+  const out = JSON.parse(php(`${stubs()}
+    LLD_Members_Billing::$sub = (object) ['stripe_subscription' => 'sub_1', 'plan' => 'yearly'];
+    LLD_Members_Billing::$next = ['charged' => 6089, 'currency' => 'usd', 'reward_id' => 4, 'base' => 6999];
+    $GLOBALS['answers']['GET https://api.stripe.com/v1/subscriptions/sub_1'] = ok(['id' => 'sub_1', 'discounts' => []]);
+    $GLOBALS['answers']['POST https://api.stripe.com/v1/coupons'] = ok(['id' => 'lld_reward_910usd']);
+    $GLOBALS['answers']['POST https://api.stripe.com/v1/subscriptions/sub_1'] = ok(['id' => 'sub_1']);
+    LLD_Members_Stripe_API::reward_ready(7);
+    $forms = []; foreach ($GLOBALS['sent'] as $s) { if ($s['args']['method'] === 'POST') { parse_str($s['args']['body'], $f); $forms[strtok($s['url'], '?')] = $f; } }
+    $r = ['coupon' => $forms['https://api.stripe.com/v1/coupons'] ?? null, 'sub' => $forms['https://api.stripe.com/v1/subscriptions/sub_1'] ?? null];
+    // A discount already waiting at Stripe: nothing more is added.
+    $GLOBALS['sent'] = []; $GLOBALS['answers']['GET https://api.stripe.com/v1/subscriptions/sub_1'] = ok(['id' => 'sub_1', 'discounts' => ['di_1']]);
+    LLD_Members_Stripe_API::reward_ready(7);
+    $r['second_posts'] = count(array_filter($GLOBALS['sent'], function ($s) { return $s['args']['method'] === 'POST'; }));
+    $r['month_free'] = LLD_Members_Stripe_API::reward_off(['charged' => 0, 'base' => 999, 'reward_id' => 2]);
+    $r['none'] = LLD_Members_Stripe_API::reward_off(['charged' => 999, 'base' => 999, 'reward_id' => 0]);
+    echo json_encode($r);
+  `));
+  expect(out.coupon).toEqual({ id: 'lld_reward_910usd', name: 'REWARD', amount_off: '910', currency: 'usd', duration: 'once' });
+  expect(out.sub).toEqual({ discounts: [{ coupon: 'lld_reward_910usd' }] });
+  expect(out.second_posts).toBe(0);
+  expect(out.month_free).toBe(999);
+  expect(out.none).toBe(0);
+});
+
+test('TC-FR2-14-AS-09 (review): a switch after an undo makes a new schedule, a released one is refused, a waiting reward rides on the yearly phase, and cancelling releases the schedule first', () => {
+  const out = JSON.parse(php(`${stubs()}
+    LLD_Members_Billing::$sub = (object) ['stripe_subscription' => 'sub_1', 'plan' => 'monthly', 'pending_yearly_on' => '2027-03-10'];
+    LLD_Members_Billing::$next = ['charged' => 870, 'currency' => 'usd', 'reward_id' => 4, 'base' => 999];
+    $ends = gmmktime(14, 0, 0, 3, 10, 2027);
+    $GLOBALS['answers']['GET https://api.stripe.com/v1/subscriptions/sub_1'] = ok(['id' => 'sub_1', 'schedule' => null, 'discounts' => ['di_old'], 'items' => ['data' => [['price' => ['id' => 'price_M'], 'current_period_end' => $ends]]]]);
+    $GLOBALS['answers']['POST https://api.stripe.com/v1/subscription_schedules/sub_sched_2'] = ok(['id' => 'sub_sched_2']);
+    $GLOBALS['answers']['POST https://api.stripe.com/v1/subscription_schedules'] = ok(['id' => 'sub_sched_2', 'status' => 'not_started', 'phases' => [['start_date' => $ends - 2419200]]]);
+    $GLOBALS['answers']['POST https://api.stripe.com/v1/coupons'] = ok(['id' => 'lld_reward_910usd']);
+    $GLOBALS['answers']['DELETE https://api.stripe.com/v1/subscriptions/sub_1/discount'] = ok(['deleted' => true]);
+    $r = ['done' => LLD_Members_Stripe_API::switch_plan(true, 7, 'yearly')];
+    $keys = []; $forms = []; $calls = [];
+    foreach ($GLOBALS['sent'] as $s) { $calls[] = $s['args']['method'] . ' ' . strtok($s['url'], '?'); if ($s['args']['method'] === 'POST') { parse_str($s['args']['body'], $f); $forms[strtok($s['url'], '?')] = $f; $keys[] = $s['args']['headers']['Idempotency-Key'] ?? ''; } }
+    $r['phase2_discount'] = $forms['https://api.stripe.com/v1/subscription_schedules/sub_sched_2']['phases'][1]['discounts'] ?? null;
+    $r['coupon'] = $forms['https://api.stripe.com/v1/coupons'] ?? null;
+    $r['old_removed'] = in_array('DELETE https://api.stripe.com/v1/subscriptions/sub_1/discount', $calls, true);
+    $r['keys'] = $keys;
+    // Stripe hands back a schedule that is no longer live (e.g. released): refused, so the site queues nothing.
+    $GLOBALS['answers']['POST https://api.stripe.com/v1/subscription_schedules'] = ok(['id' => 'sub_sched_2', 'status' => 'released', 'phases' => [['start_date' => $ends - 2419200]]]);
+    $r['released_refused'] = is_wp_error(LLD_Members_Stripe_API::switch_plan(true, 7, 'yearly'));
+    // Cancelling with a switch queued: the schedule is released, then the subscription cancels at period end.
+    $GLOBALS['sent'] = [];
+    $GLOBALS['answers'] = ['GET https://api.stripe.com/v1/subscriptions/sub_1' => ok(['id' => 'sub_1', 'schedule' => ['id' => 'sub_sched_2']]), 'POST https://api.stripe.com/v1/subscription_schedules/sub_sched_2/release' => ok(['id' => 'sub_sched_2']), 'POST https://api.stripe.com/v1/subscriptions/sub_1' => ok(['id' => 'sub_1'])];
+    $r['cancel'] = LLD_Members_Stripe_API::cancel_at_period_end(true, 7, (object) ['stripe_subscription' => 'sub_1']);
+    $r['cancel_calls'] = array_map(function ($s) { return $s['args']['method'] . ' ' . strtok($s['url'], '?'); }, $GLOBALS['sent']);
+    echo json_encode($r);
+  `));
+  expect(out.done).toBe(true);
+  expect(out.phase2_discount).toEqual([{ coupon: 'lld_reward_910usd' }]);   // 13 % of US$69.99, as the site expects
+  expect(out.coupon).toMatchObject({ amount_off: '910', currency: 'usd', duration: 'once' });
+  expect(out.old_removed).toBe(true);                                        // the monthly-form coupon comes off
+  expect(out.keys.every((k) => /uuid-1$/.test(k) || /^lld-coupon-/.test(k))).toBe(true); // fresh keys, never a replay of an earlier switch
+  expect(out.released_refused).toBe(true);
+  expect(out.cancel).toBe(true);
+  expect(out.cancel_calls).toEqual(['GET https://api.stripe.com/v1/subscriptions/sub_1', 'POST https://api.stripe.com/v1/subscription_schedules/sub_sched_2/release', 'POST https://api.stripe.com/v1/subscriptions/sub_1']);
+});
+
+test('TC-FR2-29-AS-06 (review): with a switch queued, a waiting reward is put on the yearly phase of the schedule if it is missing there', () => {
+  const out = JSON.parse(php(`${stubs()}
+    LLD_Members_Billing::$sub = (object) ['stripe_subscription' => 'sub_1', 'plan' => 'monthly', 'pending_yearly_on' => '2027-03-10'];
+    LLD_Members_Billing::$next = ['charged' => 870, 'currency' => 'usd', 'reward_id' => 4, 'base' => 999];
+    $ends = gmmktime(14, 0, 0, 3, 10, 2027);
+    $GLOBALS['answers']['GET https://api.stripe.com/v1/subscriptions/sub_1'] = ok(['id' => 'sub_1', 'schedule' => 'sub_sched_3', 'items' => ['data' => [['price' => ['id' => 'price_M'], 'current_period_end' => $ends]]]]);
+    $GLOBALS['answers']['GET https://api.stripe.com/v1/subscription_schedules/sub_sched_3'] = ok(['id' => 'sub_sched_3', 'status' => 'active', 'phases' => [['start_date' => $ends - 2419200], ['items' => []]]]);
+    $GLOBALS['answers']['POST https://api.stripe.com/v1/coupons'] = ok(['id' => 'lld_reward_910usd']);
+    $GLOBALS['answers']['POST https://api.stripe.com/v1/subscription_schedules/sub_sched_3'] = ok(['id' => 'sub_sched_3']);
+    LLD_Members_Stripe_API::reward_ready(7);
+    $phases = null; $subPost = false;
+    foreach ($GLOBALS['sent'] as $s) { if ($s['args']['method'] === 'POST' && strtok($s['url'], '?') === 'https://api.stripe.com/v1/subscription_schedules/sub_sched_3') { parse_str($s['args']['body'], $phases); } if ($s['args']['method'] === 'POST' && strtok($s['url'], '?') === 'https://api.stripe.com/v1/subscriptions/sub_1') { $subPost = true; } }
+    echo json_encode(['discount' => $phases['phases'][1]['discounts'] ?? null, 'sub_post' => $subPost, 'off' => LLD_Members_Stripe_API::yearly_reward_off(6999)]);
+  `));
+  expect(out.discount).toEqual([{ coupon: 'lld_reward_910usd' }]);
+  expect(out.sub_post).toBe(false);   // never on the subscription itself while the schedule manages it
+  expect(out.off).toBe(910);
 });

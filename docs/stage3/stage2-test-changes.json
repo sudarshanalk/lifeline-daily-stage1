@@ -45,6 +45,11 @@
       "file": "tests/stage2/payments-core.test.mjs",
       "decision": "FR3-96 Retire Paid Memberships Pro (owner, 6 Nov 2026; requirements v0.4, section 7 \"Paid Memberships Pro retired\"): Lifeline Daily Members is the only membership system, so the Premium plans are no longer copied into Paid Memberships Pro levels",
       "change": "TC-FR2-13-AS-04 checks the same things on the site's own plan catalogue instead of the Paid Memberships Pro levels table: both plans with their names and periods, the owner prices, unchanged by the database update, following a price change, and no Stripe call in the database update. The checks of the copy's own fields (level ids, allow_signups, billing cycle numbers) go with the copy; the unit test also checks that no code still writes Paid Memberships Pro levels."
+    },
+    {
+      "file": "tests/stage2/e2e/payments.spec.mjs",
+      "decision": "Owner, 8 Nov 2026 (Terms of Sale answers, D2a): web and app for every member, features differ by plan (FR4-11); TC-FR2-13-AS-05 revised in the requirements to 'Every member's record shows they are entitled to the future app, monthly and yearly alike'",
+      "change": "TC-FR2-13-AS-05 checks that both the yearly and the monthly member see 'The Lifeline Daily app is included with your membership when it launches.' and that both records show the app as included, in place of yearly-only."
     }
   ]
 }
