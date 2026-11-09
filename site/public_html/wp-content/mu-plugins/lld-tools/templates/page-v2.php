@@ -236,7 +236,7 @@ $card = 'rounded-2xl bg-day-surface bg-white border border-day-soft';
         <nav class="<?php echo $card; ?> p-5" aria-label="Governance and legal pages">
           <p class="text-[11px] font-extrabold uppercase tracking-wider text-[#62605A] text-day-muted mb-3">Governance &amp; trust</p>
           <ul class="space-y-1 list-none p-0">
-            <?php foreach (lld_page_v2_legal_pages() as $s => $label): $on = $s === $slug; ?>
+            <?php foreach (lld_page_v2_legal_pages() as $s => $label): if ($s !== $slug && function_exists('lld_footer_page_live') && !lld_footer_page_live($s)) continue; $on = $s === $slug; ?>
             <li><a href="<?php echo $u('/' . $s . '/'); ?>"<?php echo $on ? ' aria-current="page"' : ''; ?> class="flex items-center justify-between gap-2 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-colors <?php echo $on ? 'bg-[#1D4E48] text-white' : 'text-[#1F1E1C] text-day-dark hover:bg-[#F4EFE6] dark:hover:bg-[#1A2624]'; ?>"><span><?php echo esc_html($label); ?></span><span aria-hidden="true">&rarr;</span></a></li>
             <?php endforeach; ?>
           </ul>
