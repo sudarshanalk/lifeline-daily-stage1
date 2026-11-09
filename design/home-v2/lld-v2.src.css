@@ -649,3 +649,15 @@ body.lld-home-v2, body.lld-v2 {
   body.mode-night .lld-page-search > span { color: #B0ABA0 !important; }
   body.mode-night .lld-page-search button { background: #79D1C3 !important; color: #101413 !important; }
 }
+
+/* C1 staging checks (9 Nov 2026): tables in article text fit a 390 px phone (fixed columns, long values wrap inside
+   their cells, a little less padding on phones); the search results' page links and the contact form's word counter
+   are readable in Night. */
+@layer utilities {
+  .lld-prose table { table-layout: fixed !important; }
+  .lld-prose th, .lld-prose td { overflow-wrap: anywhere !important; }
+  @media (max-width: 639px) { .lld-prose th, .lld-prose td { padding: 0.4rem 0.5rem !important; } }
+  body.mode-night.lld-v2 .page-numbers { color: #79D1C3 !important; }
+  body.mode-night.lld-v2 .page-numbers.current { color: #101413 !important; }
+  body.mode-night.lld-v2 .wpforms-field-limit-text { color: #B0ABA0 !important; }
+}

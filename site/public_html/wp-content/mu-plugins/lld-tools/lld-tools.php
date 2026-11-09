@@ -758,6 +758,8 @@ require_once __DIR__ . '/article-v2.php';
 require_once __DIR__ . '/page-v2.php';
 /* Interface Pack Single Article & Page Layouts (prototypes: single_article_template_demo.html, health_tools_and_calculators_demo.html, site_governance_and_trust_demo.html). */
 require_once __DIR__ . '/page-layout.php';
+/* C1 staging security checks (9 Nov 2026): framing, no PHP version header, no account listing for visitors. */
+require_once __DIR__ . '/security.php';
 /* Site footer (DEC-88, S2-L1, Footer_Content.md). */
 require_once __DIR__ . '/footer.php';
 /* Staging mail catcher (P0-4): inert unless LLD_ENV is 'staging'. */

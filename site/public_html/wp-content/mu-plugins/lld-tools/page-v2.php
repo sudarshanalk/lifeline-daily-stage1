@@ -27,6 +27,7 @@ function lld_page_v2_legal_pages(): array {
     'privacy-policy' => 'Privacy policy',
     'terms-conditions' => 'Terms and conditions',
     'contact-us' => 'Contact us',
+    'editorial-standards' => 'Editorial standards',   // published 8 Nov 2026 (owner); C1 found it still in the old theme
   ];
 }
 
