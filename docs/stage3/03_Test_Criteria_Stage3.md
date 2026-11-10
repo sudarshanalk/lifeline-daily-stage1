@@ -434,10 +434,10 @@ Lifeline Daily suggests recipes from the owner-approved recipe library that fit 
 | Test ID | What the test checks |
 |---|---|
 | TC-FR3-36-AS-01 | A test member with a nut allergy is never shown a recipe that contains nuts. |
-| TC-FR3-36-AS-02 | A kosher test member is never shown a recipe tagged meat and dairy together, shellfish or pork, and sees the kosher meat line with the rest. |
-| TC-FR3-36-AS-03 | On a test member's 'no grains or pulses' fasting day, only recipes without grains or pulses are suggested, such as the approved fasting-day recipes. |
-| TC-FR3-36-AS-04 | Every suggested recipe fits within the member's calories left for the day. |
-| TC-FR3-36-AS-05 | Every suggested recipe is in the approved library. |
+| TC-FR3-36-AS-02 | Every suggested recipe fits within the member's calories left for the day. |
+| TC-FR3-36-AS-03 | Every suggested recipe is in the approved library. |
+| TC-FR3-36-AS-04 | A kosher test member is never shown a recipe tagged meat and dairy together, shellfish or pork, and sees the kosher meat line with the rest. |
+| TC-FR3-36-AS-05 | On a test member's 'no grains or pulses' fasting day, only recipes without grains or pulses are suggested, such as the approved fasting-day recipes. |
 
 #### FR3-37 Barcode scanning in the browser
 
@@ -819,6 +819,7 @@ Monthly Premium members can pause for 1, 2 or 3 months instead of cancelling. Th
 | TC-FR3-65-AS-04 | A failed payment at the end of the pause follows the Stage 2 failed-payment retries. |
 | TC-FR3-65-AS-05 | A yearly test member is not offered a pause. |
 | TC-FR3-65-AS-06 | Starting to cancel shows the pause option before the final cancel button. |
+| TC-FR3-65-AS-07 | A member can pause once in any 12 months: within 12 months of their last pause they are offered no pause, a new pause is refused with the date they can pause again, and a pause they undid does not count (owner, 8 Nov 2026). |
 
 #### FR3-66 Google Analytics 4
 
