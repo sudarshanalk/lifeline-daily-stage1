@@ -84,15 +84,28 @@ async function freshCode(page, ownerEmail, scope = page) {
   return codeFor(ownerEmail, after);
 }
 
+/**
+ * Open wp-login.php and fill it. WordPress's own login script focuses the username box 200 ms after the page is
+ * parsed, which can land after Playwright's "load" and in the middle of the password fill: the password is then typed
+ * into the username box, the required password box stays empty and the browser never sends the form (WebKit, and
+ * Chromium too, about once in 100 sign-ins). So wait for that focus first, and check both boxes before submitting.
+ */
+async function fillWpLogin(page, login, pass) {
+  await page.goto('/wp-login.php');
+  await expect(page.locator('#user_login')).toBeFocused();
+  await page.locator('#user_login').fill(login);
+  await page.locator('#user_pass').fill(pass);
+  await expect(page.locator('#user_login')).toHaveValue(login);
+  await expect(page.locator('#user_pass')).toHaveValue(pass);
+}
+
 async function supportSignIn(page, context) {
   await admin(page.request, { op: 'clear_spam' });
   await page.request.post('/wp-json/lld-members/v1/test/logout');
   await context.clearCookies();
   const base = test.info().project.use.baseURL || 'http://127.0.0.1:8090';
   await context.addCookies([{ name: 'wordpress_test_cookie', value: 'WP Cookie check', url: base }]);
-  await page.goto('/wp-login.php');
-  await page.locator('#user_login').fill(HELPER);
-  await page.locator('#user_pass').fill(password);
+  await fillWpLogin(page, HELPER, password);
   await page.locator('#wp-submit').click();
   await expect(page.getByRole('heading', { name: 'Enter your code' })).toBeVisible();
   await page.locator('#lld_code').fill(await mailCode(HELPER));
@@ -882,9 +895,7 @@ test.describe.serial('P3-87 admin module in My account', () => {
     await context.clearCookies();
     const base = test.info().project.use.baseURL || 'http://127.0.0.1:8090';
     await context.addCookies([{ name: 'wordpress_test_cookie', value: 'WP Cookie check', url: base }]);
-    await page.goto('/wp-login.php');
-    await page.locator('#user_login').fill(globalThis.editor.login);
-    await page.locator('#user_pass').fill(password);
+    await fillWpLogin(page, globalThis.editor.login, password);
     await page.locator('#wp-submit').click();
     await page.waitForURL(/wp-admin/);
   }
@@ -1176,16 +1187,12 @@ test.describe.serial('P3-87 admin module in My account', () => {
     await context.clearCookies();
     await context.addCookies([{ name: 'wordpress_test_cookie', value: 'WP Cookie check', url: base }]);
     for (let i = 0; i < 5; i += 1) {
-      await page.goto('/wp-login.php');
-      await page.locator('#user_login').fill(HELPER);
-      await page.locator('#user_pass').fill(`wrong-${i}`);
+      await fillWpLogin(page, HELPER, `wrong-${i}`);
       await page.locator('#wp-submit').click();
       // Wait for the refusal, so the next attempt never cuts this one off (WebKit) and every failure is counted.
       await expect(page.locator('#login_error')).toBeVisible();
     }
-    await page.goto('/wp-login.php');
-    await page.locator('#user_login').fill(HELPER);
-    await page.locator('#user_pass').fill(password);
+    await fillWpLogin(page, HELPER, password);
     await page.locator('#wp-submit').click();
     await expect(page.locator('#login_error')).toContainText('Try again in 15 minutes');
     await expect.poll(async () => (await messagesTo(owner.admin_email)).filter((m) => (m.Subject || '').includes('locked')).length).toBeGreaterThan(before);
