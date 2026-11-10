@@ -1,0 +1,314 @@
+{
+  "group": "Fitness age (sheet section 1.6, FR3-52)",
+  "tool": "fitness-age",
+  "fixtures": [
+    {
+      "id": "FX-FA-01",
+      "purpose": "FA-01 reference man: 45, waist 94, RHR 70, 2–3 ×/sweating/30–60",
+      "inputs": {
+        "age": 45,
+        "sex": "male",
+        "waistCm": 94,
+        "rhr": 70,
+        "frequency": "2–3 times a week",
+        "intensity": "sweating, heavier breathing",
+        "duration": "30–60 min",
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "paIndex": 3.75,
+        "vo2": 42.3,
+        "fitnessAgeRaw": 45.0,
+        "fitnessAge": 45,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Owner decided 3 Nov 2026 (Owner_Questions 65): the JAHA 2020 reproduction of Nes 2011 is accepted; a later difference from the paper is a new decision."
+    },
+    {
+      "id": "FX-FA-02",
+      "purpose": "FA-02 reference woman: 45, waist 80, RHR 70, 2–3 ×/sweating/30–60",
+      "inputs": {
+        "age": 45,
+        "sex": "female",
+        "waistCm": 80,
+        "rhr": 70,
+        "frequency": "2–3 times a week",
+        "intensity": "sweating, heavier breathing",
+        "duration": "30–60 min",
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "paIndex": 3.75,
+        "vo2": 35.7,
+        "fitnessAgeRaw": 45.0,
+        "fitnessAge": 45,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Owner decided 3 Nov 2026 (Owner_Questions 65): the JAHA 2020 reproduction of Nes 2011 is accepted; a later difference from the paper is a new decision."
+    },
+    {
+      "id": "FX-FA-03",
+      "purpose": "FA-03 man 45, waist 105, RHR 78, < once/easy/< 15",
+      "inputs": {
+        "age": 45,
+        "sex": "male",
+        "waistCm": 105,
+        "rhr": 78,
+        "frequency": "less than once a week",
+        "intensity": "easy, no sweating",
+        "duration": "under 15 min",
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "paIndex": 0,
+        "vo2": 36.1,
+        "fitnessAgeRaw": 65.8,
+        "fitnessAge": 66,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Owner decided 3 Nov 2026 (Owner_Questions 65): the JAHA 2020 reproduction of Nes 2011 is accepted; a later difference from the paper is a new decision."
+    },
+    {
+      "id": "FX-FA-04",
+      "purpose": "FA-04 woman 30, waist 72, RHR 55, daily/exhaustion/> 1 h: clamped at 18",
+      "inputs": {
+        "age": 30,
+        "sex": "female",
+        "waistCm": 72,
+        "rhr": 55,
+        "frequency": "almost every day",
+        "intensity": "near exhaustion",
+        "duration": "over 1 hour",
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "paIndex": 15,
+        "vo2": 45.4,
+        "fitnessAgeRaw": 5.7,
+        "fitnessAge": 18,
+        "notes": [
+          "clampedLow"
+        ],
+        "clamped": "low"
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Owner decided 3 Nov 2026 (Owner_Questions 65): the JAHA 2020 reproduction of Nes 2011 is accepted; a later difference from the paper is a new decision."
+    },
+    {
+      "id": "FX-FA-05",
+      "purpose": "FA-05 man 60, waist 88, RHR 60, daily/sweating/30–60",
+      "inputs": {
+        "age": 60,
+        "sex": "male",
+        "waistCm": 88,
+        "rhr": 60,
+        "frequency": "almost every day",
+        "intensity": "sweating, heavier breathing",
+        "duration": "30–60 min",
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "paIndex": 7.5,
+        "vo2": 42.4,
+        "fitnessAgeRaw": 44.4,
+        "fitnessAge": 44,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Owner decided 3 Nov 2026 (Owner_Questions 65): the JAHA 2020 reproduction of Nes 2011 is accepted; a later difference from the paper is a new decision."
+    },
+    {
+      "id": "FX-FA-06",
+      "purpose": "FA-06 woman 65, waist 95, RHR 80, never",
+      "inputs": {
+        "age": 65,
+        "sex": "female",
+        "waistCm": 95,
+        "rhr": 80,
+        "frequency": "never",
+        "intensity": null,
+        "duration": null,
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "paIndex": 0,
+        "vo2": 25.0,
+        "fitnessAgeRaw": 88.4,
+        "fitnessAge": 88,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Owner decided 3 Nov 2026 (Owner_Questions 65): the JAHA 2020 reproduction of Nes 2011 is accepted; a later difference from the paper is a new decision."
+    },
+    {
+      "id": "FX-FA-07",
+      "purpose": "FA-07 man 25, waist 80, RHR 50, daily/exhaustion/> 1 h: clamped at 18",
+      "inputs": {
+        "age": 25,
+        "sex": "male",
+        "waistCm": 80,
+        "rhr": 50,
+        "frequency": "almost every day",
+        "intensity": "near exhaustion",
+        "duration": "over 1 hour",
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "paIndex": 15,
+        "vo2": 59.0,
+        "fitnessAgeRaw": -11.5,
+        "fitnessAge": 18,
+        "notes": [
+          "clampedLow"
+        ],
+        "clamped": "low"
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Owner decided 3 Nov 2026 (Owner_Questions 65): the JAHA 2020 reproduction of Nes 2011 is accepted; a later difference from the paper is a new decision."
+    },
+    {
+      "id": "FX-FA-08",
+      "purpose": "FA-08 woman 50, waist 80, RHR 70, once/sweating/15–29",
+      "inputs": {
+        "age": 50,
+        "sex": "female",
+        "waistCm": 80,
+        "rhr": 70,
+        "frequency": "once a week",
+        "intensity": "sweating, heavier breathing",
+        "duration": "15–29 min",
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "paIndex": 0.76,
+        "vo2": 33.8,
+        "fitnessAgeRaw": 52.4,
+        "fitnessAge": 52,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Owner decided 3 Nov 2026 (Owner_Questions 65): the JAHA 2020 reproduction of Nes 2011 is accepted; a later difference from the paper is a new decision."
+    },
+    {
+      "id": "FX-FA-09",
+      "purpose": "FA-09 as FA-01 with beta-blocker = Yes: no result, medicine wording",
+      "inputs": {
+        "age": 45,
+        "sex": "male",
+        "waistCm": 94,
+        "rhr": 70,
+        "frequency": "2–3 times a week",
+        "intensity": "sweating, heavier breathing",
+        "duration": "30–60 min",
+        "heartMedicine": "yes",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": "medicine",
+        "paIndex": null,
+        "vo2": null,
+        "fitnessAgeRaw": null,
+        "fitnessAge": null,
+        "notes": [
+          "safety.medicine"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Owner decided 3 Nov 2026 (Owner_Questions 65): the JAHA 2020 reproduction of Nes 2011 is accepted; a later difference from the paper is a new decision."
+    },
+    {
+      "id": "FX-FA-10",
+      "purpose": "FA-10 as FA-02 with RHR 105: result plus 'pulse over 100' note",
+      "inputs": {
+        "age": 45,
+        "sex": "female",
+        "waistCm": 80,
+        "rhr": 105,
+        "frequency": "2–3 times a week",
+        "intensity": "sweating, heavier breathing",
+        "duration": "30–60 min",
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no"
+      },
+      "expected": {
+        "stop": null,
+        "paIndex": 3.75,
+        "vo2": 31.7,
+        "fitnessAgeRaw": 61.2,
+        "fitnessAge": 61,
+        "notes": [
+          "safety.rhrOver100"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Owner decided 3 Nov 2026 (Owner_Questions 65): the JAHA 2020 reproduction of Nes 2011 is accepted; a later difference from the paper is a new decision."
+    },
+    {
+      "id": "FX-FA-11",
+      "purpose": "FA-11 imperial twin of FA-01: waist 37 in (93.98 cm)",
+      "inputs": {
+        "age": 45,
+        "sex": "male",
+        "waistCm": 93.98,
+        "rhr": 70,
+        "frequency": "2–3 times a week",
+        "intensity": "sweating, heavier breathing",
+        "duration": "30–60 min",
+        "heartMedicine": "no",
+        "heartCondition": "no",
+        "pregnant": "no",
+        "waistIn": 37
+      },
+      "expected": {
+        "stop": null,
+        "paIndex": 3.75,
+        "vo2": 42.3,
+        "fitnessAgeRaw": 45.0,
+        "fitnessAge": 45,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Owner decided 3 Nov 2026 (Owner_Questions 65): the JAHA 2020 reproduction of Nes 2011 is accepted; a later difference from the paper is a new decision."
+    }
+  ]
+}

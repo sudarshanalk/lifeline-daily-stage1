@@ -1,0 +1,109 @@
+{
+ "kind": "release-smoke",
+ "req": "FR1-19",
+ "assertion": "TC-FR1-19-AS-03",
+ "env": "staging",
+ "label": "+0h",
+ "commit": "11307e7ebd4970bc28fa242b1aeb64308743f85c",
+ "started_at": "2026-10-28T06:32:59Z",
+ "finished_at": "2026-10-28T06:33:27Z",
+ "smoke": {
+  "ok": true,
+  "duration_s": 5.2,
+  "output": [
+   "ok 200 /health-tools/",
+   "ok 200 /health-tools/protein/",
+   "ok 200 /health-tools/diabetes-risk-check/",
+   "ok 200 /tools/health-tools-hub.html",
+   "ok 200 /tools/protein-requirement-tool.html",
+   "ok 200 /tools/diabetes-risk-tool.html",
+   "ok 200 /tools/healthy-weight-tool.html",
+   "ok 403 /tools/api/config.php",
+   "ok 403 /tools/api/mailer.php",
+   "ok hash protein-requirement-tool.html",
+   "ok hash diabetes-risk-tool.html",
+   "ok hash healthy-weight-tool.html"
+  ]
+ },
+ "pages": [
+  {
+   "path": "/",
+   "status": 200
+  },
+  {
+   "path": "/health-tools/",
+   "status": 200
+  },
+  {
+   "path": "/health-tools/protein/",
+   "status": 200
+  },
+  {
+   "path": "/health-tools/diabetes-risk-check/",
+   "status": 200
+  },
+  {
+   "path": "/tools/protein-requirement-tool.html",
+   "status": 200
+  },
+  {
+   "path": "/tools/diabetes-risk-tool.html",
+   "status": 200
+  },
+  {
+   "path": "/members/join/",
+   "status": 200
+  },
+  {
+   "path": "/pricing/",
+   "status": 200
+  }
+ ],
+ "browser": {
+  "ok": true,
+  "tests": [
+   {
+    "title": "TC-FR1-19-AS-03",
+    "status": "passed"
+   }
+  ],
+  "exit": 0,
+  "output_tail": [
+   "Running 1 test using 1 worker",
+   "",
+   "  ok 1 [chromium] › tests\\e2e\\TC-FR1-19.spec.mjs:8:1 › TC-FR1-19-AS-03 (4.5s)",
+   "",
+   "  1 passed (5.9s)"
+  ]
+ },
+ "mail": {
+  "fixtures": [
+   "FX-MAIL-01",
+   "FX-MAIL-02"
+  ],
+  "posts": [
+   {
+    "fixture": "FX-MAIL-01",
+    "endpoint": "/tools/submit-protein.php",
+    "status": 200,
+    "response": {
+     "status": "ok"
+    }
+   },
+   {
+    "fixture": "FX-MAIL-02",
+    "endpoint": "/tools/submit.php",
+    "status": 200,
+    "response": {
+     "status": "ok"
+    }
+   }
+  ],
+  "sink": "tools mailer log transport (outbox outside the web root), the Mailpit stand-in",
+  "messages": 2,
+  "delivered": true,
+  "config_restored": true,
+  "config_sha256_prefix": "549cde6c401b"
+ },
+ "ok": true
+}

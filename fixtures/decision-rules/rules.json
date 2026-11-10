@@ -1,0 +1,1274 @@
+{
+  "group": "Rule catalogue v1: should fire / should not fire per rule (P3-02 sections 2 to 5)",
+  "tool": "decision-rules",
+  "fixtures": [
+    {
+      "id": "FX-DR-SAFE-01-01",
+      "purpose": "R-SAFE-01 should fire: both 7-day windows above 135/85 with >= 3 days",
+      "inputs": {
+        "rule": "R-SAFE-01",
+        "pregnancy": false,
+        "window_1_D-14_to_D-8": {
+          "daily_mean": "136/84",
+          "days_with_data": 4
+        },
+        "window_2_D-7_to_D-1": {
+          "daily_mean": "138/86",
+          "days_with_data": 3
+        },
+        "urgent_reading_in_window": false
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-SAFE-01",
+        "template": "T-SAFE-01",
+        "cooldown_days": 28,
+        "counted_in_quota": false,
+        "class": "safety",
+        "precedence": "runs first and always shows, free, even when the weekly insight quota is used up"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-SAFE-01-02",
+      "purpose": "R-SAFE-01 should not fire: only one window above threshold",
+      "inputs": {
+        "rule": "R-SAFE-01",
+        "pregnancy": false,
+        "window_1_D-14_to_D-8": {
+          "daily_mean": "134/84",
+          "days_with_data": 7
+        },
+        "window_2_D-7_to_D-1": {
+          "daily_mean": "138/86",
+          "days_with_data": 7
+        },
+        "urgent_reading_in_window": false
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-SAFE-01",
+        "template": null,
+        "reason": "only one window"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-SAFE-01-03",
+      "purpose": "R-SAFE-01 should not fire: week 1 has only 2 days with data",
+      "inputs": {
+        "rule": "R-SAFE-01",
+        "pregnancy": false,
+        "window_1_D-14_to_D-8": {
+          "daily_mean": "136/84",
+          "days_with_data": 2
+        },
+        "window_2_D-7_to_D-1": {
+          "daily_mean": "138/86",
+          "days_with_data": 3
+        },
+        "urgent_reading_in_window": false
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-SAFE-01",
+        "template": null,
+        "reason": "min data"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-SAFE-01-04",
+      "purpose": "R-SAFE-01 should not fire: an urgent reading in the window",
+      "inputs": {
+        "rule": "R-SAFE-01",
+        "pregnancy": false,
+        "window_1_D-14_to_D-8": {
+          "daily_mean": "136/84",
+          "days_with_data": 4
+        },
+        "window_2_D-7_to_D-1": {
+          "daily_mean": "138/86",
+          "days_with_data": 3
+        },
+        "urgent_reading_in_window": true,
+        "urgent_reading": "182/100"
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-SAFE-01",
+        "template": null,
+        "reason": "urgent shown instead"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-SAFE-01P-01",
+      "purpose": "R-SAFE-01p should fire: pregnant, 141/88 saved today",
+      "inputs": {
+        "rule": "R-SAFE-01p",
+        "pregnancy": true,
+        "reading_today": "141/88"
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-SAFE-01p",
+        "template": "T-SAFE-01p",
+        "cooldown_days": 0,
+        "class": "safety",
+        "precedence": "runs first and always shows, free, even when the weekly insight quota is used up"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-SAFE-01P-02",
+      "purpose": "R-SAFE-01p should not fire: pregnant, 139/89",
+      "inputs": {
+        "rule": "R-SAFE-01p",
+        "pregnancy": true,
+        "reading_today": "139/89"
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-SAFE-01p",
+        "template": null,
+        "reason": "below 140 and below 90"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-SAFE-02-01",
+      "purpose": "R-SAFE-02 glucose warning levels: applied at save time with the safety matrix Part C levels",
+      "inputs": {
+        "rule": "R-SAFE-02",
+        "template": null
+      },
+      "expected": null,
+      "oracle": "clinical",
+      "status": "pending",
+      "notes": "No should-fire / should-not-fire test data in the catalogue (P3-02 v1); fixture recorded as pending. The catalogue says: 'Applied at save time (P3-03 Part C), not nightly; listed here so the engine's precedence includes it. No nightly re-evaluation; no insight quota. Template text is Part C's.' The sign-off scenarios S6 to S8 (2.8 urgent low, 15.2 symptom-free urgent high, 12.0 caution) belong to the safety matrix record."
+    },
+    {
+      "id": "FX-DR-SAFE-03-01",
+      "purpose": "R-SAFE-03 should fire: 80.0 kg on D-8, 78.3 on D-1 (2.1 %)",
+      "inputs": {
+        "rule": "R-SAFE-03",
+        "active_lose_weight_goal": false,
+        "weight_kg": {
+          "D-8": 80.0,
+          "D-1": 78.3
+        },
+        "fall_pct": 2.1
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-SAFE-03",
+        "template": "T-SAFE-03",
+        "cooldown_days": 28,
+        "class": "safety",
+        "precedence": "runs first and always shows, free, even when the weekly insight quota is used up"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-SAFE-03-02",
+      "purpose": "R-SAFE-03 should not fire: 80.0 to 78.5 (1.9 %)",
+      "inputs": {
+        "rule": "R-SAFE-03",
+        "active_lose_weight_goal": false,
+        "weight_kg": {
+          "D-8": 80.0,
+          "D-1": 78.5
+        },
+        "fall_pct": 1.9
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-SAFE-03",
+        "template": null,
+        "reason": "below the 2 % minimum difference"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-SAFE-03-03",
+      "purpose": "R-SAFE-03 should not fire: same drop with an active lose_weight goal",
+      "inputs": {
+        "rule": "R-SAFE-03",
+        "active_lose_weight_goal": true,
+        "weight_kg": {
+          "D-8": 80.0,
+          "D-1": 78.3
+        },
+        "fall_pct": 2.1
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-SAFE-03",
+        "template": null,
+        "reason": "active lose_weight goal"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-SAFE-03-04",
+      "purpose": "R-SAFE-03 should not fire: readings on D-6 and D-1 only",
+      "inputs": {
+        "rule": "R-SAFE-03",
+        "active_lose_weight_goal": false,
+        "weight_kg": {
+          "D-6": 80.0,
+          "D-1": 78.3
+        }
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-SAFE-03",
+        "template": null,
+        "reason": "no reading 7-10 days back"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-SAFE-04-01",
+      "purpose": "R-SAFE-04 should fire: mood 2, 1, 2 on D-3, D-2, D-1",
+      "inputs": {
+        "rule": "R-SAFE-04",
+        "mood_daily": {
+          "D-3": 2,
+          "D-2": 1,
+          "D-1": 2
+        }
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-SAFE-04",
+        "template": "T-SAFE-04",
+        "today_step_template": "T-SAFE-04s",
+        "cooldown_days": 7,
+        "suppresses_non_safety_output_days": 7,
+        "class": "safety",
+        "precedence": "runs first and always shows, free, even when the weekly insight quota is used up"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-SAFE-04-02",
+      "purpose": "R-SAFE-04 should not fire: mood 2, 3, 2",
+      "inputs": {
+        "rule": "R-SAFE-04",
+        "mood_daily": {
+          "D-3": 2,
+          "D-2": 3,
+          "D-1": 2
+        }
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-SAFE-04",
+        "template": null,
+        "reason": "a day above 2 breaks the run"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-SAFE-04-03",
+      "purpose": "R-SAFE-04 should not fire: 2, (no log), 2, 1",
+      "inputs": {
+        "rule": "R-SAFE-04",
+        "mood_daily": {
+          "D-4": 2,
+          "D-3": null,
+          "D-2": 2,
+          "D-1": 1
+        }
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-SAFE-04",
+        "template": null,
+        "reason": "a missing day breaks the run"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-SAFE-04-04",
+      "purpose": "R-SAFE-04 should not fire: 1, 1 (two days)",
+      "inputs": {
+        "rule": "R-SAFE-04",
+        "mood_daily": {
+          "D-2": 1,
+          "D-1": 1
+        }
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-SAFE-04",
+        "template": null,
+        "reason": "only two consecutive days"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-STEP-01-01",
+      "purpose": "R-STEP-01 should fire: last BP reading D-8",
+      "inputs": {
+        "rule": "R-STEP-01",
+        "goal_type": "lower_blood_pressure",
+        "last_bp_reading": "D-8"
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-STEP-01",
+        "template": "T-STEP-01",
+        "priority": 1,
+        "class": "today_step",
+        "precedence": "exactly one Today step per day, chosen by priority order; R-SAFE-04s out-ranks it"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-STEP-01-02",
+      "purpose": "R-STEP-01 should not fire: reading on D-7",
+      "inputs": {
+        "rule": "R-STEP-01",
+        "goal_type": "lower_blood_pressure",
+        "last_bp_reading": "D-7"
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-STEP-01",
+        "template": null,
+        "reason": "a reading within D-7...D"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-STEP-02-01",
+      "purpose": "R-STEP-02 should fire: weigh-in day Monday, today Monday, last weight 8 days ago",
+      "inputs": {
+        "rule": "R-STEP-02",
+        "plan_weigh_in_weekday": "Monday",
+        "today_weekday": "Monday",
+        "last_weight_reading_days_ago": 8,
+        "eating_disorder": false,
+        "pregnancy": false
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-STEP-02",
+        "template": "T-STEP-02",
+        "priority": 2,
+        "class": "today_step",
+        "precedence": "exactly one Today step per day, chosen by priority order; R-SAFE-04s out-ranks it"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-STEP-02-02",
+      "purpose": "R-STEP-02 should not fire: weight logged 3 days ago",
+      "inputs": {
+        "rule": "R-STEP-02",
+        "plan_weigh_in_weekday": "Monday",
+        "today_weekday": "Monday",
+        "last_weight_reading_days_ago": 3,
+        "eating_disorder": false,
+        "pregnancy": false
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-STEP-02",
+        "template": null,
+        "reason": "a weight reading within D-6...D"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-STEP-02-03",
+      "purpose": "R-STEP-02 should not fire: ED flag",
+      "inputs": {
+        "rule": "R-STEP-02",
+        "plan_weigh_in_weekday": "Monday",
+        "today_weekday": "Monday",
+        "last_weight_reading_days_ago": 8,
+        "eating_disorder": true,
+        "pregnancy": false
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-STEP-02",
+        "template": null,
+        "reason": "safety check: ED (weigh-ins never prompted)"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-STEP-03-01",
+      "purpose": "R-STEP-03 weekly check-in due",
+      "inputs": {
+        "rule": "R-STEP-03",
+        "template": "T-STEP-03"
+      },
+      "expected": null,
+      "oracle": "clinical",
+      "status": "pending",
+      "notes": "No should-fire / should-not-fire test data in the catalogue (P3-02 v1); fixture recorded as pending. Condition in the catalogue: 7 or more days since the last check-in (or since the plan started) and the check-in is not done this week."
+    },
+    {
+      "id": "FX-DR-STEP-04-01",
+      "purpose": "R-STEP-04 should fire: day 5, 40 of 150 minutes",
+      "inputs": {
+        "rule": "R-STEP-04",
+        "plan_week_day": 5,
+        "activity_minutes_this_week": 40,
+        "weekly_target_minutes": 150
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-STEP-04",
+        "template": "T-STEP-04",
+        "priority": 4,
+        "class": "today_step",
+        "precedence": "exactly one Today step per day, chosen by priority order; R-SAFE-04s out-ranks it"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-STEP-04-02",
+      "purpose": "R-STEP-04 should not fire: day 4, 40 of 150",
+      "inputs": {
+        "rule": "R-STEP-04",
+        "plan_week_day": 4,
+        "activity_minutes_this_week": 40,
+        "weekly_target_minutes": 150
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-STEP-04",
+        "template": null,
+        "reason": "before the 5th day of the plan week"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-STEP-04-03",
+      "purpose": "R-STEP-04 should not fire: day 5, 80 of 150",
+      "inputs": {
+        "rule": "R-STEP-04",
+        "plan_week_day": 5,
+        "activity_minutes_this_week": 80,
+        "weekly_target_minutes": 150
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-STEP-04",
+        "template": null,
+        "reason": "not below 50 % of the weekly target"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-STEP-05-01",
+      "purpose": "R-STEP-05 nothing logged for 3 days",
+      "inputs": {
+        "rule": "R-STEP-05",
+        "template": "T-STEP-05"
+      },
+      "expected": null,
+      "oracle": "clinical",
+      "status": "pending",
+      "notes": "No should-fire / should-not-fire test data in the catalogue (P3-02 v1); fixture recorded as pending. Condition in the catalogue: no reading or food entry of any type in D-3...D-1."
+    },
+    {
+      "id": "FX-DR-ADJ-01-01",
+      "purpose": "R-ADJ-01 should fire: check-ins on D and D-7 both projecting 3 weeks late",
+      "inputs": {
+        "rule": "R-ADJ-01",
+        "goal_type": "lose_weight",
+        "check_ins": {
+          "D-7": {
+            "projected_late_days": 21,
+            "weigh_ins_in_28_days": ">= 3"
+          },
+          "D": {
+            "projected_late_days": 21,
+            "weigh_ins_in_28_days": ">= 3"
+          }
+        }
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-ADJ-01",
+        "template": "T-ADJ-01",
+        "priority": 1,
+        "cooldown": "per check-in",
+        "class": "plan_adjustment",
+        "precedence": "offered at the weekly check-in only; applied only when the member accepts (R-ADJ-03 applied automatically, D3-46)"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ADJ-01-02",
+      "purpose": "R-ADJ-01 should not fire: only one late check-in",
+      "inputs": {
+        "rule": "R-ADJ-01",
+        "goal_type": "lose_weight",
+        "check_ins": {
+          "D": {
+            "projected_late_days": 21,
+            "weigh_ins_in_28_days": ">= 3"
+          }
+        }
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-ADJ-01",
+        "template": null,
+        "reason": "needs two consecutive late check-ins"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ADJ-01-03",
+      "purpose": "R-ADJ-01 should not fire: trend late by 5 days",
+      "inputs": {
+        "rule": "R-ADJ-01",
+        "goal_type": "lose_weight",
+        "check_ins": {
+          "D-7": {
+            "projected_late_days": 5
+          },
+          "D": {
+            "projected_late_days": 5
+          }
+        }
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-ADJ-01",
+        "template": null,
+        "reason": "projected date not more than target + 7 days"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ADJ-01-04",
+      "purpose": "R-ADJ-01 should not fire: only 2 weigh-ins in 28 days",
+      "inputs": {
+        "rule": "R-ADJ-01",
+        "goal_type": "lose_weight",
+        "check_ins": {
+          "D-7": {
+            "projected_late_days": 21,
+            "weigh_ins_in_28_days": 2
+          },
+          "D": {
+            "projected_late_days": 21,
+            "weigh_ins_in_28_days": 2
+          }
+        }
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-ADJ-01",
+        "template": null,
+        "reason": "min data: >= 3 weigh-ins in 28 days"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ADJ-02-01",
+      "purpose": "R-ADJ-02 should fire: 21 days, 5 weigh-ins between 84.8 and 85.3",
+      "inputs": {
+        "rule": "R-ADJ-02",
+        "goal_type": "lose_weight",
+        "goal_reached": false,
+        "window_days": 21,
+        "weigh_ins": 5,
+        "min_kg": 84.8,
+        "max_kg": 85.3,
+        "range_kg": 0.5
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-ADJ-02",
+        "template": "T-ADJ-02",
+        "priority": 2,
+        "cooldown_days": 28,
+        "class": "plan_adjustment",
+        "precedence": "offered at the weekly check-in only; applied only when the member accepts (R-ADJ-03 applied automatically, D3-46)"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ADJ-02-02",
+      "purpose": "R-ADJ-02 should not fire: range 0.6 kg",
+      "inputs": {
+        "rule": "R-ADJ-02",
+        "goal_type": "lose_weight",
+        "goal_reached": false,
+        "window_days": 21,
+        "weigh_ins": 5,
+        "range_kg": 0.6
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-ADJ-02",
+        "template": null,
+        "reason": "range above 0.5 kg"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ADJ-02-03",
+      "purpose": "R-ADJ-02 should not fire: 3 weigh-ins",
+      "inputs": {
+        "rule": "R-ADJ-02",
+        "goal_type": "lose_weight",
+        "goal_reached": false,
+        "window_days": 21,
+        "weigh_ins": 3,
+        "range_kg": 0.5
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-ADJ-02",
+        "template": null,
+        "reason": "min data: at least 4 weigh-ins in 21 days"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ADJ-02-04",
+      "purpose": "R-ADJ-02 should not fire: goal reached",
+      "inputs": {
+        "rule": "R-ADJ-02",
+        "goal_type": "lose_weight",
+        "goal_reached": true,
+        "window_days": 21,
+        "weigh_ins": 5,
+        "range_kg": 0.5
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-ADJ-02",
+        "template": null,
+        "reason": "goal already reached"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ADJ-03-01",
+      "purpose": "R-ADJ-03 should fire: cap 0.9, slope 1.2 kg/week over 4 weeks",
+      "inputs": {
+        "rule": "R-ADJ-03",
+        "goal_type": "lose_weight",
+        "cap_kg_per_week": 0.9,
+        "slope_kg_per_week": 1.2,
+        "weigh_ins_in_28_days": ">= 4"
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-ADJ-03",
+        "template": "T-ADJ-03",
+        "priority": 0,
+        "cooldown_days": 14,
+        "applied": "automatically (D3-46)",
+        "class": "plan_adjustment",
+        "precedence": "offered at the weekly check-in only; applied only when the member accepts (R-ADJ-03 applied automatically, D3-46)"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ADJ-03-02",
+      "purpose": "R-ADJ-03 should not fire: slope 1.0",
+      "inputs": {
+        "rule": "R-ADJ-03",
+        "goal_type": "lose_weight",
+        "cap_kg_per_week": 0.9,
+        "slope_kg_per_week": 1.0,
+        "weigh_ins_in_28_days": ">= 4"
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-ADJ-03",
+        "template": null,
+        "reason": "slope not steeper than 1.25 x the cap"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ADJ-03-03",
+      "purpose": "R-ADJ-03 should not fire: 3 weigh-ins",
+      "inputs": {
+        "rule": "R-ADJ-03",
+        "goal_type": "lose_weight",
+        "cap_kg_per_week": 0.9,
+        "slope_kg_per_week": 1.2,
+        "weigh_ins_in_28_days": 3
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-ADJ-03",
+        "template": null,
+        "reason": "min data: >= 4 weigh-ins in 28 days"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-01-01",
+      "purpose": "R-INS-01 should fire: 14 paired days, 7 short nights systolic 138, 7 long nights 132 (difference 6; the FR3-17 test case)",
+      "inputs": {
+        "rule": "R-INS-01",
+        "pregnancy": false,
+        "window_days": 42,
+        "paired_days": 14,
+        "short_nights": 7,
+        "long_nights": 7,
+        "mean_systolic_short": 138,
+        "mean_systolic_long": 132,
+        "difference_mmHg": 6,
+        "shown_within_28_days": false
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-INS-01",
+        "template": "T-INS-01",
+        "priority": 1,
+        "cooldown_days": 28,
+        "class": "insight",
+        "precedence": "Premium; at most 3 shown per rolling 7 days and 1 per night; highest-priority qualifying rule wins the night"
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "TC-FR3-17-AS-01"
+    },
+    {
+      "id": "FX-DR-INS-01-02",
+      "purpose": "R-INS-01 should not fire: 10 paired days (FR3-17 AS-02)",
+      "inputs": {
+        "rule": "R-INS-01",
+        "pregnancy": false,
+        "paired_days": 10
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-INS-01",
+        "template": null,
+        "reason": "min data: >= 14 paired days"
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "TC-FR3-17-AS-02"
+    },
+    {
+      "id": "FX-DR-INS-01-03",
+      "purpose": "R-INS-01 should not fire: 14 paired days but difference 4",
+      "inputs": {
+        "rule": "R-INS-01",
+        "pregnancy": false,
+        "paired_days": 14,
+        "difference_mmHg": 4
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-INS-01",
+        "template": null,
+        "reason": "difference below 5 mmHg (D3-47)"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-01-04",
+      "purpose": "R-INS-01 should not fire: 14 paired days with only 3 short nights",
+      "inputs": {
+        "rule": "R-INS-01",
+        "pregnancy": false,
+        "paired_days": 14,
+        "short_nights": 3
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-INS-01",
+        "template": null,
+        "reason": "min data: >= 4 short nights"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-01-05",
+      "purpose": "R-INS-01 should not fire: shown to the member 20 days ago",
+      "inputs": {
+        "rule": "R-INS-01",
+        "pregnancy": false,
+        "paired_days": 14,
+        "short_nights": 7,
+        "long_nights": 7,
+        "difference_mmHg": 6,
+        "last_shown_days_ago": 20
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-INS-01",
+        "template": null,
+        "reason": "28-day cooldown",
+        "cooldown_days": 28
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-02-01",
+      "purpose": "R-INS-02 should fire: 141/90 to 135/88 (-6)",
+      "inputs": {
+        "rule": "R-INS-02",
+        "previous_28_day_average": "141/90",
+        "last_28_day_average": "135/88",
+        "days_with_data_each_window": ">= 12",
+        "urgent_readings": false
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-INS-02",
+        "template": "T-INS-02",
+        "priority": 2,
+        "cooldown_days": 28,
+        "class": "insight",
+        "precedence": "Premium; at most 3 shown per rolling 7 days and 1 per night; highest-priority qualifying rule wins the night"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-02-02",
+      "purpose": "R-INS-02 should not fire: -4",
+      "inputs": {
+        "rule": "R-INS-02",
+        "systolic_change": -4,
+        "days_with_data_each_window": ">= 12",
+        "urgent_readings": false
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-INS-02",
+        "template": null,
+        "reason": "difference below 5 systolic"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-02-03",
+      "purpose": "R-INS-02 should not fire: 11 days of data in one window",
+      "inputs": {
+        "rule": "R-INS-02",
+        "systolic_change": -6,
+        "days_with_data_one_window": 11,
+        "urgent_readings": false
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-INS-02",
+        "template": null,
+        "reason": "min data: >= 12 days in each window"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-03-01",
+      "purpose": "R-INS-03 should fire: 8 active days mood 3.9, 9 inactive days 3.1",
+      "inputs": {
+        "rule": "R-INS-03",
+        "window_days": 28,
+        "active_days": 8,
+        "mean_mood_active": 3.9,
+        "inactive_days": 9,
+        "mean_mood_inactive": 3.1,
+        "difference": 0.8,
+        "low_mood_suppression_active": false
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-INS-03",
+        "template": "T-INS-03",
+        "priority": 3,
+        "cooldown_days": 28,
+        "class": "insight",
+        "precedence": "Premium; at most 3 shown per rolling 7 days and 1 per night; highest-priority qualifying rule wins the night"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-03-02",
+      "purpose": "R-INS-03 should not fire: difference 0.6",
+      "inputs": {
+        "rule": "R-INS-03",
+        "window_days": 28,
+        "active_days": 8,
+        "inactive_days": 9,
+        "difference": 0.6
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-INS-03",
+        "template": null,
+        "reason": "difference below 0.7"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-03-03",
+      "purpose": "R-INS-03 should not fire: 6 active days",
+      "inputs": {
+        "rule": "R-INS-03",
+        "window_days": 28,
+        "active_days": 6,
+        "inactive_days": 9,
+        "difference": 0.8
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-INS-03",
+        "template": null,
+        "reason": "min data: >= 7 active days"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-04-01",
+      "purpose": "R-INS-04 should fire: 5.8 h after 6.9 h",
+      "inputs": {
+        "rule": "R-INS-04",
+        "last_7_nights_mean_hours": 5.8,
+        "previous_7_nights_mean_hours": 6.9,
+        "nights_logged_each_window": ">= 5"
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-INS-04",
+        "template": "T-INS-04",
+        "priority": 4,
+        "cooldown_days": 28,
+        "class": "insight",
+        "precedence": "Premium; at most 3 shown per rolling 7 days and 1 per night; highest-priority qualifying rule wins the night"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-04-02",
+      "purpose": "R-INS-04 should not fire: 6.0 h",
+      "inputs": {
+        "rule": "R-INS-04",
+        "last_7_nights_mean_hours": 6.0,
+        "previous_7_nights_mean_hours": 6.9,
+        "nights_logged_each_window": ">= 5"
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-INS-04",
+        "template": null,
+        "reason": "mean not below 6.0"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-04-03",
+      "purpose": "R-INS-04 should not fire: 5.8 h after 6.2 h",
+      "inputs": {
+        "rule": "R-INS-04",
+        "last_7_nights_mean_hours": 5.8,
+        "previous_7_nights_mean_hours": 6.2,
+        "nights_logged_each_window": ">= 5"
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-INS-04",
+        "template": null,
+        "reason": "previous week not >= 6.5 (a habit, not a change)"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-04-04",
+      "purpose": "R-INS-04 should not fire: 4 nights logged",
+      "inputs": {
+        "rule": "R-INS-04",
+        "last_7_nights_mean_hours": 5.8,
+        "previous_7_nights_mean_hours": 6.9,
+        "nights_logged": 4
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-INS-04",
+        "template": null,
+        "reason": "min data: >= 5 nights logged"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-05-01",
+      "purpose": "R-INS-05 should fire: 155, 150, 170, 150 minutes",
+      "inputs": {
+        "rule": "R-INS-05",
+        "last_4_plan_weeks_moderate_equivalent_minutes": [
+          155,
+          150,
+          170,
+          150
+        ]
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-INS-05",
+        "template": "T-INS-05",
+        "priority": 5,
+        "cooldown_days": 56,
+        "class": "insight",
+        "precedence": "Premium; at most 3 shown per rolling 7 days and 1 per night; highest-priority qualifying rule wins the night"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-05-02",
+      "purpose": "R-INS-05 should not fire: 155, 149, 170, 150",
+      "inputs": {
+        "rule": "R-INS-05",
+        "last_4_plan_weeks_moderate_equivalent_minutes": [
+          155,
+          149,
+          170,
+          150
+        ]
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-INS-05",
+        "template": null,
+        "reason": "one week below 150"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-06-01",
+      "purpose": "R-INS-06 should fire: 5 of 6 days under 18 g (target 30)",
+      "inputs": {
+        "rule": "R-INS-06",
+        "eating_disorder": false,
+        "nutrition_target_set": true,
+        "fibre_target_g": 30,
+        "days_with_2_plus_meals": 6,
+        "days_under_60_pct": 5,
+        "fibre_g_on_those_days": "< 18"
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-INS-06",
+        "template": "T-INS-06",
+        "priority": 6,
+        "cooldown_days": 28,
+        "class": "insight",
+        "precedence": "Premium; at most 3 shown per rolling 7 days and 1 per night; highest-priority qualifying rule wins the night"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-06-02",
+      "purpose": "R-INS-06 should not fire: 4 of 7 days",
+      "inputs": {
+        "rule": "R-INS-06",
+        "eating_disorder": false,
+        "nutrition_target_set": true,
+        "fibre_target_g": 30,
+        "days_with_2_plus_meals": 7,
+        "days_under_60_pct": 4
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-INS-06",
+        "template": null,
+        "reason": "fewer than 5 days under 60 %"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-06-03",
+      "purpose": "R-INS-06 should not fire: only 4 days with 2+ meals",
+      "inputs": {
+        "rule": "R-INS-06",
+        "eating_disorder": false,
+        "nutrition_target_set": true,
+        "fibre_target_g": 30,
+        "days_with_2_plus_meals": 4
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-INS-06",
+        "template": null,
+        "reason": "min data: >= 5 days with >= 2 meals logged"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-07-01",
+      "purpose": "R-INS-07 protein under target most days",
+      "inputs": {
+        "rule": "R-INS-07",
+        "template": "T-INS-07"
+      },
+      "expected": null,
+      "oracle": "clinical",
+      "status": "pending",
+      "notes": "No should-fire / should-not-fire test data in the catalogue (P3-02 v1); fixture recorded as pending. Condition in the catalogue: as R-INS-06 for protein (< 80 % of the protein target on >= 5 of 7 days); safety check x ED, x kidney disease."
+    },
+    {
+      "id": "FX-DR-INS-08-01",
+      "purpose": "R-INS-08 should fire: waist 92 to 89.5 cm in 28 days, weight 85.0 to 84.4",
+      "inputs": {
+        "rule": "R-INS-08",
+        "eating_disorder": false,
+        "pregnancy": false,
+        "bmi_under_18_5": false,
+        "waist_cm": {
+          "start": 92,
+          "end": 89.5
+        },
+        "days_apart": 28,
+        "weight_kg": {
+          "start": 85.0,
+          "end": 84.4
+        }
+      },
+      "expected": {
+        "fires": true,
+        "rule": "R-INS-08",
+        "template": "T-INS-08",
+        "priority": 8,
+        "cooldown_days": 56,
+        "class": "insight",
+        "precedence": "Premium; at most 3 shown per rolling 7 days and 1 per night; highest-priority qualifying rule wins the night"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-08-02",
+      "purpose": "R-INS-08 should not fire: waist 92 to 90.5 (1.5 cm)",
+      "inputs": {
+        "rule": "R-INS-08",
+        "waist_cm": {
+          "start": 92,
+          "end": 90.5
+        },
+        "days_apart": 28,
+        "weight_kg": {
+          "start": 85.0,
+          "end": 84.4
+        }
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-INS-08",
+        "template": null,
+        "reason": "waist fall below 2 cm"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-08-03",
+      "purpose": "R-INS-08 should not fire: weight 85.0 to 83.5",
+      "inputs": {
+        "rule": "R-INS-08",
+        "waist_cm": {
+          "start": 92,
+          "end": 89.5
+        },
+        "days_apart": 28,
+        "weight_kg": {
+          "start": 85.0,
+          "end": 83.5
+        }
+      },
+      "expected": {
+        "fires": false,
+        "rule": "R-INS-08",
+        "template": null,
+        "reason": "weight changed by 1 kg or more"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-INS-09-01",
+      "purpose": "R-INS-09 logging streak milestone",
+      "inputs": {
+        "rule": "R-INS-09",
+        "template": "T-INS-09"
+      },
+      "expected": null,
+      "oracle": "clinical",
+      "status": "pending",
+      "notes": "No should-fire / should-not-fire test data in the catalogue (P3-02 v1); fixture recorded as pending. Condition in the catalogue: 14, 30, 60 or 100 consecutive days with at least one log; fires once per milestone."
+    },
+    {
+      "id": "FX-DR-INS-10-01",
+      "purpose": "R-INS-10 goal reached (FR3-15)",
+      "inputs": {
+        "rule": "R-INS-10",
+        "template": "T-INS-10"
+      },
+      "expected": null,
+      "oracle": "clinical",
+      "status": "pending",
+      "notes": "No should-fire / should-not-fire test data in the catalogue (P3-02 v1); fixture recorded as pending. Condition in the catalogue: goal measure's 7-day value meets the target; not an insight in the quota; triggers the Goal reached screen."
+    }
+  ]
+}

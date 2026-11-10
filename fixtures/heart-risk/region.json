@@ -1,0 +1,783 @@
+{
+  "group": "REG",
+  "tool": "heart-risk",
+  "fixtures": [
+    {
+      "id": "FX-HR-REG-01",
+      "purpose": "HR-R01: HR-01's inputs in Andean Latin America: 5 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "Andean Latin America",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Andean Latin America",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 5,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-02",
+      "purpose": "HR-R02: HR-01's inputs in Australasia: 8 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "Australasia",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Australasia",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 8,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-03",
+      "purpose": "HR-R03: HR-01's inputs in Caribbean: 6 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "Caribbean",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Caribbean",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 6,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-04",
+      "purpose": "HR-R04: HR-01's inputs in Central Asia: 8 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "Central Asia",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Central Asia",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 8,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-05",
+      "purpose": "HR-R05: HR-01's inputs in Central Europe: 7 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "Central Europe",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Central Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 7,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-06",
+      "purpose": "HR-R06: HR-01's inputs in Central Latin America: 5 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "Central Latin America",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Central Latin America",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 5,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-07",
+      "purpose": "HR-R07: HR-01's inputs in Central Sub-Saharan Africa: 6 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "Central Sub-Saharan Africa",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Central Sub-Saharan Africa",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 6,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-08",
+      "purpose": "HR-R08: HR-01's inputs in East Asia: 8 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "East Asia",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "East Asia",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 8,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-09",
+      "purpose": "HR-R09: HR-01's inputs in Eastern Europe: 12 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "Eastern Europe",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Eastern Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 12,
+        "band": "high",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-10",
+      "purpose": "HR-R10: HR-01's inputs in Eastern Sub-Saharan Africa: 6 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "Eastern Sub-Saharan Africa",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Eastern Sub-Saharan Africa",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 6,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-11",
+      "purpose": "HR-R11: HR-01's inputs in High-income Asia Pacific: 7 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "High-income Asia Pacific",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "High-income Asia Pacific",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 7,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-12",
+      "purpose": "HR-R12: HR-01's inputs in High-income North America: 9 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "High-income North America",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "High-income North America",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 9,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-13",
+      "purpose": "HR-R13: HR-01's inputs in North Africa and Middle East: 11 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "North Africa and Middle East",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "North Africa and Middle East",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 11,
+        "band": "high",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-14",
+      "purpose": "HR-R14: HR-01's inputs in Oceania: 7 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "Oceania",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Oceania",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 7,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-15",
+      "purpose": "HR-R15: HR-01's inputs in South Asia: 6 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "South Asia",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "South Asia",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 6,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-16",
+      "purpose": "HR-R16: HR-01's inputs in Southeast Asia: 6 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "Southeast Asia",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Southeast Asia",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 6,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-17",
+      "purpose": "HR-R17: HR-01's inputs in Southern Latin America: 7 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "Southern Latin America",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Southern Latin America",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 7,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-18",
+      "purpose": "HR-R18: HR-01's inputs in Southern Sub-Saharan Africa: 6 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "Southern Sub-Saharan Africa",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Southern Sub-Saharan Africa",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 6,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-19",
+      "purpose": "HR-R19: HR-01's inputs in Tropical Latin America: 5 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "Tropical Latin America",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Tropical Latin America",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 5,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-20",
+      "purpose": "HR-R20: HR-01's inputs in Western Europe: 7 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "Western Europe",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 7,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    },
+    {
+      "id": "FX-HR-REG-21",
+      "purpose": "HR-R21: HR-01's inputs in Western Sub-Saharan Africa: 6 %",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "region": "Western Sub-Saharan Africa",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Sub-Saharan Africa",
+        "cell": {
+          "diabetes": "no",
+          "sex": "men",
+          "smoking": "non-smoker",
+          "age": "55-59",
+          "sbp": "120-139",
+          "tc": "5-5.9"
+        },
+        "risk": 6,
+        "band": "moderate",
+        "urgent": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Region sweep: the sheet names the region, not a country, so the input is the region itself; the country-to-region step is covered by the LAB fixtures."
+    }
+  ]
+}

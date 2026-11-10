@@ -104,6 +104,8 @@ class LLD_Members_Privacy {
 		foreach ( LLD_Members_Schema::all_suffixes() as $suffix ) {
 			$known[] = LLD_Members_Schema::table( $suffix );
 		}
+		// Stage 3 tables are checked against the all-stages data model by tests/stage3; here they are known, not extra.
+		$known = apply_filters( 'lld_members_known_tables', $known );
 		$live  = $wpdb->get_col( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $wpdb->prefix . 'lld_' ) . '%' ) );
 		$extra = array();
 		foreach ( $live as $table ) {
@@ -175,7 +177,8 @@ class LLD_Members_Privacy {
 		$links['survey']           = array( 'member_id' );
 		$links['fb_removal']       = array( 'member_number' );
 		$links['test_clock']       = array( 'member_id' );
-		return $links;
+		// Stage 3 tables join the checker's list through this filter (one erasure routine for every stage).
+		return apply_filters( 'lld_members_member_links', $links );
 	}
 
 	/**
@@ -185,11 +188,13 @@ class LLD_Members_Privacy {
 	 * @return string[]
 	 */
 	public static function download_tables() {
-		return array_merge(
+		$tables = array_merge(
 			array( 'member', 'email_pref', 'consent' ),
 			LLD_Members_Schema::health_tables(),
 			array( 'enrolment_period', 'workout_change', 'subscription', 'order', 'referral', 'reward', 'contact_request', 'support', 'survey' )
 		);
+		// Stage 3 adds food, readings, goals and related tables (P3-86, FR3-60).
+		return apply_filters( 'lld_members_download_tables', $tables );
 	}
 
 	/**
@@ -208,6 +213,10 @@ class LLD_Members_Privacy {
 			}
 			$out[ $suffix ] = self::linked_rows( $suffix, $how, (int) $member_id, (string) $email );
 		}
+		// Download passes an $only list; Stage 3 then opens sealed columns (P3-86, FR3-60 AS-02).
+		if ( is_array( $only ) ) {
+			return apply_filters( 'lld_members_download_rows', $out, (int) $member_id, (string) $email );
+		}
 		return $out;
 	}
 
@@ -223,9 +232,10 @@ class LLD_Members_Privacy {
 		$table = LLD_Members_Schema::table( $suffix );
 		$first = $how[0];
 		// Table and column names below come from member_links(), never from a request.
-		if ( 'via:enrolment' === $first || 'via:workout' === $first ) {
-			$parent = 'via:enrolment' === $first ? 'enrolment' : 'workout';
-			$key    = $parent . '_id';
+		if ( 0 === strpos( $first, 'via:' ) ) {
+			// via:enrolment, via:workout, and the Stage 3 via:goals (baselines link through their goal).
+			$parent = substr( $first, 4 );
+			$key    = ( 'goals' === $parent ? 'goal' : $parent ) . '_id';
 			$sql    = $wpdb->prepare( "SELECT x.* FROM {$table} x INNER JOIN " . LLD_Members_Schema::table( $parent ) . " p ON p.id = x.{$key} WHERE p.member_id = %d ORDER BY x.id ASC", $member_id ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		} elseif ( 'email' === $first ) {
 			if ( '' === $email ) {
@@ -306,7 +316,7 @@ class LLD_Members_Privacy {
 		$member_id = (int) $member_id;
 		$problems  = array();
 		if ( 'health' === $scope ) {
-			$health = array_merge( LLD_Members_Schema::health_tables(), array( 'enrolment_period', 'workout_change' ) );
+			$health = apply_filters( 'lld_members_health_tables', array_merge( LLD_Members_Schema::health_tables(), array( 'enrolment_period', 'workout_change' ) ) );
 			foreach ( self::member_rows( $member_id, $email, $health ) as $suffix => $rows ) {
 				if ( $rows ) {
 					$problems[] = $suffix . ' still has ' . count( $rows ) . ' rows.';
@@ -360,9 +370,26 @@ class LLD_Members_Privacy {
 		if ( $named > 0 ) {
 			$problems[] = 'A money log still names the member.';
 		}
-		$personal = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$log} WHERE member_number = %d AND money_related = 0", $member_id ) );
+		$personal = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$log} WHERE member_number = %d AND money_related = 0" . ( LLD_Members_Erasure::has_admin_column( $log ) ? ' AND admin_user_id IS NULL' : '' ), $member_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		if ( $personal > 0 ) {
 			$problems[] = 'A non-money admin log still names the member.';
+		}
+		// Stage 3 admin-panel entries stay with only the member number (P3-87, FR3-86 AS-05, NFR3-23).
+		if ( LLD_Members_Erasure::has_admin_column( $log ) ) {
+			$named_admin = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$log} WHERE member_number = %d AND admin_user_id IS NOT NULL AND (member_name IS NOT NULL OR member_email IS NOT NULL)", $member_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			if ( $named_admin > 0 ) {
+				$problems[] = 'An admin activity entry still names the member.';
+			}
+		}
+		// P3-15 (data model, notes from checking the built Stage 2 database): payments keep some personal data in
+		// wp_options (card fingerprints, referral code, checkout quotes, mismatch notes, retry windows). The billing
+		// erasure step removes them; the checker now confirms it.
+		if ( class_exists( 'LLD_Members_Billing' ) ) {
+			foreach ( LLD_Members_Billing::member_options( $member_id ) as $what => $count ) {
+				if ( $count > 0 ) {
+					$problems[] = 'wp_options still holds ' . str_replace( '_', ' ', $what ) . ' for the member.';
+				}
+			}
 		}
 		$dir = lld_members_private_dir() . '/photos/' . $member_id;
 		if ( is_dir( $dir ) ) {

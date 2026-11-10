@@ -2,13 +2,13 @@
 /**
  * Plugin Name: Lifeline Daily Tools
  * Description: Must-use plugin (DEC-22) for the Stage 1 health tools: hub cards and landing-page embeds driven by tools/status.json (FR1-04), with `wp lld` commands. Theme untouched.
- * Version: 1.0.0
+ * Version: 1.1.0
  * Author: Lifeline Daily
  */
 if (!defined('ABSPATH')) exit;
 
 define('LLD_TOOLS_DIR', __DIR__);
-define('LLD_TOOLS_VERSION', '1.0.0');
+define('LLD_TOOLS_VERSION', '1.2.0');
 
 /* The document root that serves /tools/*: ABSPATH in production; the test harness overlays the repository's site/public_html
  * (LLD_TOOLS_DOCROOT defined by tests/lib/wp-router.php and wp-cli-env.php). */
@@ -127,33 +127,65 @@ function lld_tools_card(string $slug): ?array { return lld_tools_cards()[$slug] 
 function lld_tools_file(string $slug): string { return ['diabetes' => 'diabetes-risk-tool.html', 'healthy-weight' => 'healthy-weight-tool.html'][$slug] ?? 'protein-requirement-tool.html'; }
 
 /* ---------------------------------------------------------------- [lld_tools_hub] --------------------------------- */
+/** Interface Pack card look per tool (S2-L1): the icon, and one factual line about what the result includes. Colours live in
+ *  lld-theme.css (.lld-tool-card[data-tool=…]); the card copy stays in data/tool-cards.json. */
+function lld_tools_card_look(string $slug): array {
+  $looks = [
+    'protein'        => ['icon' => '&#129385;', 'check' => 'Includes a per-meal guide'],
+    'diabetes'       => ['icon' => '&#129658;', 'check' => 'Shows the factors behind your risk'],
+    'healthy-weight' => ['icon' => '&#9878;&#65039;', 'check' => 'Follows NICE NG246 (2025) guidance'],
+  ];
+  return $looks[$slug] ?? ['icon' => '&#10010;', 'check' => 'Free, and nothing you enter is stored'];
+}
+/** One card's markup up to its call to action (the related-article line and the closing </li> are the caller's): the
+ *  Stage 1 cards, and the cards the lld-members plugin adds through lld_tools_hub_more_cards, share it. */
+function lld_tools_card_markup(string $slug, array $c, string $status, array $look, bool $compact): string {
+  $out = '<li class="lld-tool-card lld-tool-card--' . esc_attr($status) . '" data-tool-card data-tool="' . esc_attr($slug) . '" data-status="' . esc_attr($status) . '">';
+  $h = $compact ? 'h3' : 'h2';   // NFR1-05 AS-06: on the hub the cards follow the page h1; on the homepage they sit under the h2 "Tools"
+  // Interface Pack card head (owner-approved style, 28 Oct 2026): icon tile and time pill. On the hub the pill repeats the
+  // spoken "About N minutes" line, so it is hidden from screen readers there.
+  $out .= '<div class="lld-tool-card__head"><span class="lld-tool-card__icon" aria-hidden="true">' . $look['icon'] . '</span>';
+  $out .= '<span class="lld-tool-card__pill"' . ($compact ? '' : ' aria-hidden="true"') . '>&#9201; ' . (int)$c['time_minutes'] . ' min check</span></div>';
+  $out .= '<' . $h . ' class="lld-tool-card__name" data-test="card-name">' . esc_html($c['name']) . '</' . $h . '>';
+  $out .= '<p class="lld-tool-card__purpose" data-test="card-purpose">' . esc_html($c['purpose']) . '</p>';
+  $out .= '<span class="lld-tool-card__status" data-test="status-label">' . esc_html(lld_tools_status_label($status)) . '</span>';
+  if (!$compact) {
+    $out .= '<p class="lld-tool-card__time" data-test="card-time">About ' . (int)$c['time_minutes'] . ' minute' . ((int)$c['time_minutes'] === 1 ? '' : 's') . '</p>';
+    $out .= '<ul class="lld-tool-card__inputs" data-test="card-inputs">';
+    foreach ($c['inputs'] as $i) $out .= '<li>' . esc_html($i) . '</li>';
+    $out .= '</ul>';
+    $out .= '<p class="lld-tool-card__eligibility" data-test="card-eligibility">' . esc_html($c['eligibility']) . '</p>';
+  }
+  $out .= '<p class="lld-tool-card__check"><svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true" focusable="false"><path fill="currentColor" fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>' . esc_html($look['check']) . '</p>';
+  $out .= '<a class="lld-tool-card__cta" data-test="cta" href="' . esc_url($c['landing_url']) . '">' . esc_html($c['cta_label']) . '</a>';
+  return $out;
+}
 function lld_tools_render_hub(array $atts = []): string {
   $atts = shortcode_atts(['compact' => '0'], $atts, 'lld_tools_hub');
   $compact = $atts['compact'] === '1';
   $out = '<section class="lld-tools-hub' . ($compact ? ' lld-tools-hub--compact' : '') . '" data-test="tools-hub"><ul class="lld-tools-hub__list">';
-  if ($compact) $out = '<section class="lld-home-row lld-home-tools" data-test="tools-row"><h2 class="lld-home-row__title">Tools</h2>' . $out;
+  if ($compact) $out = '<section class="lld-home-row lld-home-tools" data-test="tools-row"><div class="lld-home-row__head"><div class="lld-home-row__head-text"><span class="lld-home-row__kicker">Clinical Health Calculators</span><h2 class="lld-home-row__title">Tools</h2><p class="lld-home-row__subtitle">Personalised checks backed by evidence</p></div><a class="lld-home-row__more" href="' . esc_url(home_url('/health-tools/')) . '">View all calculators <span aria-hidden="true">&rarr;</span></a></div>' . $out;
   $installed = lld_tools_status()['tools'] ?? [];
   foreach (lld_tools_cards() as $slug => $c) {
     // a tool added after Stage 1 (FR2-39 Healthy Weight Check) is listed only once its server status entry is installed
     // (`wp lld status set <slug> active --version=…`, after the owner's sign-off on production); until then it is not shown
     if (!in_array($slug, ['protein', 'diabetes'], true) && !isset($installed[$slug])) continue;
     $status = lld_tools_tool_status($slug);
-    $out .= '<li class="lld-tool-card lld-tool-card--' . esc_attr($status) . '" data-tool-card data-tool="' . esc_attr($slug) . '" data-status="' . esc_attr($status) . '">';
-    $h = $compact ? 'h3' : 'h2';   // NFR1-05 AS-06: on the hub the cards follow the page h1; on the homepage they sit under the h2 "Tools"
-    $out .= '<' . $h . ' class="lld-tool-card__name" data-test="card-name">' . esc_html($c['name']) . '</' . $h . '>';
-    $out .= '<p class="lld-tool-card__purpose" data-test="card-purpose">' . esc_html($c['purpose']) . '</p>';
-    $out .= '<span class="lld-tool-card__status" data-test="status-label">' . esc_html(lld_tools_status_label($status)) . '</span>';
-    if (!$compact) {
-      $out .= '<p class="lld-tool-card__time" data-test="card-time">About ' . (int)$c['time_minutes'] . ' minute' . ((int)$c['time_minutes'] === 1 ? '' : 's') . '</p>';
-      $out .= '<ul class="lld-tool-card__inputs" data-test="card-inputs">';
-      foreach ($c['inputs'] as $i) $out .= '<li>' . esc_html($i) . '</li>';
-      $out .= '</ul>';
-      $out .= '<p class="lld-tool-card__eligibility" data-test="card-eligibility">' . esc_html($c['eligibility']) . '</p>';
-    }
-    $out .= '<a class="lld-tool-card__cta" data-test="cta" href="' . esc_url($c['landing_url']) . '">' . esc_html($c['cta_label']) . '</a>';
+    $out .= lld_tools_card_markup($slug, $c, $status, lld_tools_card_look($slug), $compact);
     $post = get_post((int)$c['related_post_id']);
     if ($post && $post->post_status === 'publish') $out .= '<p class="lld-tool-card__related" data-test="card-related"><a href="' . esc_url(get_permalink($post)) . '">' . esc_html(get_the_title($post)) . '</a></p>';
     $out .= '</li>';
+  }
+  // Stage 3 calculator pages (P3-57 to P3-5A, Owner_Questions 107): the lld-members plugin adds their cards on the hub only,
+  // while their switch is on for this visitor. Each card has the Stage 1 card fields (tool_slug, name, purpose, time_minutes,
+  // inputs, eligibility, cta_label, landing_url) plus icon and check; it is always active and never reads status.json.
+  if (!$compact && function_exists('apply_filters')) foreach ((array)apply_filters('lld_tools_hub_more_cards', []) as $c) {
+    if (!is_array($c) || empty($c['tool_slug']) || empty($c['name']) || empty($c['landing_url']) || lld_tools_card((string)$c['tool_slug'])) continue;
+    $c += ['purpose' => '', 'time_minutes' => 1, 'inputs' => [], 'eligibility' => '', 'cta_label' => 'Open'];
+    $c['inputs'] = array_map('strval', array_filter((array)$c['inputs'], 'is_scalar'));
+    $icon = (string)($c['icon'] ?? '');
+    $look = ['icon' => preg_match('/^(&#[0-9]+;){1,3}$/', $icon) ? $icon : '&#10010;', 'check' => (string)($c['check'] ?? 'Free, and nothing you enter is stored')];
+    $out .= lld_tools_card_markup((string)$c['tool_slug'], $c, 'active', $look, false) . '</li>';
   }
   // planned tools: label-only chips, never a link (DEC-24, DEC-26); the compact homepage row shows the two active cards only
   foreach (($compact ? [] : (lld_tools_status()['labels'] ?? [])) as $l) {
@@ -184,9 +216,9 @@ function lld_tools_render_tool(array $atts = []): string {
     return $out . '</p></div>';
   }
   $src = $s['tools_origin'] . '/tools/' . lld_tools_file($slug);
-  $out  = '<script>window.lld_tools_settings = ' . wp_json_encode(['iframe_origin' => $s['iframe_origin']]) . ';</script>';
-  $out .= '<script src="' . esc_url(home_url('/wp-content/mu-plugins/lld-tools/assets/lld-tool-frame.js')) . '?v=' . LLD_TOOLS_VERSION . '"></script>';
-  $out .= '<iframe class="lld-tool-frame" id="lld-tool-frame" title="' . esc_attr($c['name']) . '" src="' . esc_url($src) . '" loading="eager"></iframe>';
+  $out  = '<script data-no-optimize="1" data-no-defer="1">window.lld_tools_settings = ' . wp_json_encode(['iframe_origin' => $s['iframe_origin']]) . ';</script>';
+  $out .= '<script data-no-optimize="1" data-no-defer="1" src="' . esc_url(home_url('/wp-content/mu-plugins/lld-tools/assets/lld-tool-frame.js')) . '?v=' . LLD_TOOLS_VERSION . '"></script>';
+  $out .= '<iframe class="lld-tool-frame" id="lld-tool-frame" title="' . esc_attr($c['name']) . '" src="' . esc_url($src) . '" loading="eager" data-no-lazy="1"></iframe>';
   $out .= '<noscript><p>This tool needs JavaScript. <a href="' . esc_url($src) . '">Open the tool directly</a>.</p></noscript>';
   return $out;
 }
@@ -205,6 +237,45 @@ function lld_tools_deployed_version(string $slug): string {
   $raw = file_get_contents($file);
   $origin = lld_tools_origin();
   return hash('sha256', $origin !== '' ? str_replace($origin, '__LLD_ORIGIN__', $raw) : $raw);
+}
+/** FR1-15, shared by `wp lld status set` and the admin Tools page (FR3-89): the only writer of tools/status.json.
+ *  `active` needs $version equal to the approved hash of the deployed tool file (DEC-10, DEC-71); there is no override.
+ *  Writes atomically, then purges the hub and landing pages. Returns the new entry, or an error message (file untouched). */
+function lld_tools_write_status(string $slug, string $status, string $version = '', ?string $message = null) {
+  if (!lld_tools_card($slug)) return "unknown tool '$slug'";
+  if (!in_array($status, ['active', 'withdrawn'], true)) return 'status must be active or withdrawn (DEC-24)';
+  $path = lld_tools_settings()['status_path'];
+  $raw = is_readable($path) ? file_get_contents($path) : false;
+  $doc = $raw ? json_decode($raw, true) : null;
+  if (!is_array($doc) || !isset($doc['tools'])) return "cannot read $path";
+  $entry = $doc['tools'][$slug] ?? ['status' => 'active', 'approved_version' => '', 'message' => null, 'since' => null];
+  if ($status === 'active') {
+    $deployed = lld_tools_deployed_version($slug);
+    if (!preg_match('/^[0-9a-f]{64}$/', $version) || $version !== $deployed) return "version $version is not an approved version of the deployed tool file (approved hash of the deployed file: " . ($deployed ?: 'unreadable') . "); only an approved, deployed version can be activated (DEC-10, DEC-71)";
+    $entry['status'] = 'active'; $entry['approved_version'] = $version; $entry['message'] = null; $entry['since'] = gmdate('Y-m-d\TH:i:s\Z');
+  } else {
+    $entry['status'] = 'withdrawn'; $entry['message'] = $message !== null ? $message : 'unavailable.' . $slug; $entry['since'] = gmdate('Y-m-d\TH:i:s\Z');
+  }
+  $doc['tools'][$slug] = $entry; $doc['updated_at'] = gmdate('Y-m-d\TH:i:s\Z');
+  $json = json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
+  $tmp = $path . '.tmp';
+  if (file_put_contents($tmp, $json, LOCK_EX) === false || !rename($tmp, $path)) { @unlink($tmp); return "could not write $path"; }
+  foreach (lld_tools_purge_targets() as $t) do_action('litespeed_purge_url', $t);   // purge (DEC-31)
+  return $entry;
+}
+/** The pages a status change must purge: the hub, each landing page and any configured targets (DEC-31). */
+function lld_tools_purge_targets(): array {
+  return array_merge([home_url('/health-tools/')], array_map(fn($c) => home_url($c['landing_url']), array_values(lld_tools_cards())), (array)lld_tools_settings()['purge_targets']);
+}
+/** The admin Tools page turns a withdrawn tool back on only with the version it had when it was last approved and
+ *  active, and only if that is still the deployed file (FR3-89, DEC-71): a changed file needs `wp lld status set`. */
+function lld_tools_reactivate(string $slug) {
+  $entry = lld_tools_status()['tools'][$slug] ?? [];
+  $version = (string)($entry['approved_version'] ?? '');
+  if (!preg_match('/^[0-9a-f]{64}$/', $version) || $version !== lld_tools_deployed_version($slug)) {
+    return "This tool's file has changed since it was approved, so it can't be turned back on here. It needs the approved version (wp lld status set).";
+  }
+  return lld_tools_write_status($slug, 'active', $version);
 }
 function lld_tools_render_version(array $atts = []): string {
   $atts = shortcode_atts(['slug' => ''], $atts, 'lld_tool_version');
@@ -265,6 +336,8 @@ if (function_exists('add_action')) add_action('template_redirect', 'lld_tools_le
 // merge source whose slug now ends in __trashed (?p=<id>, itself a 404) before the listed redirect runs
 if (function_exists('add_filter')) add_filter('do_redirect_guess_404_permalink', function ($guess) {
   $path = trailingslashit((string)wp_parse_url((string)($_SERVER['REQUEST_URI'] ?? ''), PHP_URL_PATH));
+  // /the-science/ (the menu's The Science page) never guesses its way to an article whose slug starts the same
+  if ($path === '/the-science/') return false;
   return isset(lld_tools_redirects_doc()['redirects'][$path]) ? false : $guess;
 });
 /** Tag slugs whose archive the owner marked 410 (Gone) in Yoast SEO Premium's redirect list. */
@@ -314,19 +387,39 @@ if (function_exists('add_filter')) add_filter('wpseo_schema_webpage', 'lld_tools
 function lld_tools_render_learn_row(array $atts = []): string {
   $atts = shortcode_atts(['limit' => '6'], $atts, 'lld_learn_row');
   $limit = max(1, min(12, (int)$atts['limit']));
-  $out = '<section class="lld-home-row lld-home-learn" data-test="learn-row"><h2 class="lld-home-row__title">Learn</h2><div class="lld-home-learn__list">';
+  $out = '<section class="lld-home-row lld-home-learn" data-test="learn-row"><div class="lld-home-row__head"><div class="lld-home-row__head-text"><span class="lld-home-row__kicker">Latest Insights</span><h2 class="lld-home-row__title">Learn</h2><p class="lld-home-row__subtitle">Evidence-based health reads</p></div><div class="lld-home-row__pills" role="group" aria-label="Article topics"><span class="lld-home-row__pill lld-home-row__pill--active">All</span><span class="lld-home-row__pill">Nutrition</span><span class="lld-home-row__pill">Gut Health</span><span class="lld-home-row__pill">Strength</span></div></div><div class="lld-home-learn__list">';
   $q = new WP_Query(['post_type' => 'post', 'post_status' => 'publish', 'posts_per_page' => $limit, 'orderby' => 'date', 'order' => 'DESC', 'ignore_sticky_posts' => true, 'no_found_rows' => true]);
   foreach ($q->posts as $p) {
-    $img = function_exists('has_post_thumbnail') && has_post_thumbnail($p) ? get_the_post_thumbnail($p, 'medium_large', ['class' => 'lld-home-learn__img', 'loading' => 'lazy', 'alt' => '']) : '';
-    $out .= '<article class="lld-home-learn__item" data-post-id="' . (int)$p->ID . '"><a href="' . esc_url(get_permalink($p)) . '">' . $img . '<h3>' . esc_html(get_the_title($p)) . '</h3></a>';
-    $out .= '<time datetime="' . esc_attr(get_the_date('c', $p)) . '">' . esc_html(get_the_date('', $p)) . '</time></article>';
+    $img = function_exists('has_post_thumbnail') && has_post_thumbnail($p) ? get_the_post_thumbnail($p, 'medium_large', ['class' => 'lld-home-learn__img', 'loading' => 'lazy', 'data-no-lazy' => '1', 'alt' => '']) : '';
+    $cat = function_exists('lld_home_post_category_label') ? lld_home_post_category_label($p) : 'Health Guide';
+    $meta = function_exists('lld_home_post_meta_label') ? lld_home_post_meta_label($p) : '5 min read • Evidence Reviewed';
+    $ex = function_exists('lld_home_post_excerpt') ? lld_home_post_excerpt($p) : '';
+    $media = '<div class="lld-home-learn__media">' . ($img !== '' ? $img : '<span class="lld-home-learn__noimg" aria-hidden="true"></span>') . '<span class="lld-home-learn__badge">' . esc_html($cat) . '</span></div>';
+    $body = '<div class="lld-home-learn__body"><div class="lld-home-learn__meta">' . esc_html($meta) . '</div><h3>' . esc_html(get_the_title($p)) . '</h3>' . ($ex !== '' ? '<p class="lld-home-learn__excerpt">' . esc_html($ex) . '</p>' : '') . '</div>';
+    $out .= '<article class="lld-home-learn__item" data-post-id="' . (int)$p->ID . '"><a class="lld-home-learn__link" href="' . esc_url(get_permalink($p)) . '">' . $media . $body . '</a>';
+    $out .= '<div class="lld-home-learn__foot"><span class="lld-home-learn__read">Read article <span aria-hidden="true">&rarr;</span></span><time datetime="' . esc_attr(get_the_date('c', $p)) . '">' . esc_html(get_the_date('', $p)) . '</time></div></article>';
   }
   return $out . '</div></section>';
 }
 add_shortcode('lld_learn_row', 'lld_tools_render_learn_row');
+/** The ?ver= of a plugin asset: the plugin version plus the file's modification time, so every deploy that changes the
+ *  file gives it a new address. The stylesheets are served with a one-year cache lifetime; a fixed version kept browsers
+ *  on the old styles after a change. */
+function lld_tools_asset_version(string $rel): string {
+  $t = @filemtime(LLD_TOOLS_DIR . '/' . $rel);
+  return LLD_TOOLS_VERSION . ($t ? '.' . $t : '');
+}
 if (function_exists('add_action')) add_action('wp_enqueue_scripts', function () {
-  wp_enqueue_style('lld-tools', plugins_url('assets/lld-tools.css', __FILE__), [], LLD_TOOLS_VERSION);
+  wp_enqueue_style('lld-tools', plugins_url('assets/lld-tools.css', __FILE__), [], lld_tools_asset_version('assets/lld-tools.css'));
+  // S2-L1: the Interface Pack theme layer (owner-approved 28 Oct 2026). Presentation over the Newspaper templates; theme untouched (DEC-22).
+  wp_enqueue_style('lld-theme', plugins_url('assets/lld-theme.css', __FILE__), ['lld-tools'], lld_tools_asset_version('assets/lld-theme.css'));
 });
+/* S2-L1: preload the two self-hosted fonts so the swap happens before first paint (FR2-27). */
+if (function_exists('add_action')) add_action('wp_head', function () {
+  foreach (['inter-latin-var', 'plus-jakarta-sans-latin-var'] as $f) {
+    echo '<link rel="preload" as="font" type="font/woff2" crossorigin href="' . esc_url(plugins_url('assets/fonts/' . $f . '.woff2', __FILE__)) . '">' . "\n";
+  }
+}, 2);
 
 /* ---------------------------------------------------------------- article ↔ tool links (FR1-05, DEC-13) ------------ */
 function lld_tools_links_doc(): array { static $d = null; return $d ?? ($d = json_decode((string)file_get_contents(LLD_TOOLS_DIR . '/data/links.json'), true) ?: []); }
@@ -477,6 +570,13 @@ if (defined('WP_CLI') && WP_CLI) {
         }
         $targets[] = [$dp['slug'], $dp['content']];
       }
+      // The Science (owner, 8 Nov 2026): the menu's page, drawn by page-v2's "science" view from the homepage section's
+      // approved wording; the page itself carries no content, so it is only created when missing
+      if (!get_page_by_path('the-science', OBJECT, 'page') && empty($assoc['dry-run'])) {
+        $id = wp_insert_post(wp_slash(['post_type' => 'page', 'post_status' => 'publish', 'post_title' => 'The Science', 'post_name' => 'the-science', 'post_content' => '']), true);
+        if (is_wp_error($id)) WP_CLI::error('the-science: ' . $id->get_error_message());
+        WP_CLI::log("the-science: created (post $id)");
+      }
       // a landing page added after Stage 1 (FR2-39: the Healthy Weight Check) is created under the hub when missing
       $hub = get_page_by_path($doc['hub']['slug'], OBJECT, 'page');
       foreach ($doc['pages'] as $slug => $p) {
@@ -536,28 +636,13 @@ if (defined('WP_CLI') && WP_CLI) {
       $slug = $args[1] ?? ''; $status = $args[2] ?? '';
       if (!lld_tools_card($slug)) WP_CLI::error("unknown tool '$slug'");
       if (!in_array($status, ['active', 'withdrawn'], true)) WP_CLI::error("status must be active or withdrawn (DEC-24)");
-      $path = lld_tools_settings()['status_path'];
-      $raw = is_readable($path) ? file_get_contents($path) : false;
-      $doc = $raw ? json_decode($raw, true) : null;
-      if (!is_array($doc) || !isset($doc['tools'])) WP_CLI::error("cannot read $path");
-      $entry = $doc['tools'][$slug] ?? ['status' => 'active', 'approved_version' => '', 'message' => null, 'since' => null];
-      if ($status === 'active') {
-        $version = (string)($assoc['version'] ?? '');
-        if (!preg_match('/^[0-9a-f]{64}$/', $version)) WP_CLI::error('--version=<sha256 of the approved tool file> is required to set active');
-        $deployed = lld_tools_deployed_version($slug);
-        if ($version !== $deployed) WP_CLI::error("version $version is not an approved version of the deployed tool file (approved hash of the deployed file: " . ($deployed ?: 'unreadable') . "); only an approved, deployed version can be activated (DEC-10, DEC-71)");
-        $entry['status'] = 'active'; $entry['approved_version'] = $version; $entry['message'] = null; $entry['since'] = gmdate('Y-m-d\TH:i:s\Z');
-      } else {
-        $entry['status'] = 'withdrawn'; $entry['message'] = isset($assoc['message']) ? (string)$assoc['message'] : 'unavailable.' . $slug; $entry['since'] = gmdate('Y-m-d\TH:i:s\Z');
-      }
-      $doc['tools'][$slug] = $entry; $doc['updated_at'] = gmdate('Y-m-d\TH:i:s\Z');
-      $json = json_encode($doc, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n";
-      $tmp = $path . '.tmp';
-      if (file_put_contents($tmp, $json, LOCK_EX) === false || !rename($tmp, $path)) { @unlink($tmp); WP_CLI::error("could not write $path"); }
+      $version = $status === 'active' ? (string)($assoc['version'] ?? '') : '';
+      if ($status === 'active' && !preg_match('/^[0-9a-f]{64}$/', $version)) WP_CLI::error('--version=<sha256 of the approved tool file> is required to set active');
+      $entry = lld_tools_write_status($slug, $status, $version, isset($assoc['message']) ? (string)$assoc['message'] : null);
+      if (is_string($entry)) WP_CLI::error($entry);
       WP_CLI::log("$slug: $status (since " . $entry['since'] . ")");
-      // purge (DEC-31): the hub and landing pages plus any configured targets; LiteSpeed when present, otherwise a logged manual step
-      $targets = array_merge([home_url('/health-tools/')], array_map(fn($c) => home_url($c['landing_url']), array_values(lld_tools_cards())), (array)lld_tools_settings()['purge_targets']);
-      if (has_action('litespeed_purge_url') || class_exists('\LiteSpeed\Purge')) { foreach ($targets as $t) do_action('litespeed_purge_url', $t); WP_CLI::log('purged: ' . implode(', ', $targets)); }
+      $targets = lld_tools_purge_targets();
+      if (has_action('litespeed_purge_url') || class_exists('\LiteSpeed\Purge')) WP_CLI::log('purged: ' . implode(', ', $targets));
       else WP_CLI::warning('LiteSpeed Cache not active here: purge ' . implode(', ', $targets) . ' manually (runbook)');
       WP_CLI::success("status.json updated");
     }
@@ -657,5 +742,29 @@ if (defined('WP_CLI') && WP_CLI) {
 /* Stage 2 search and AI-assistant additions (S2-L4). */
 require_once __DIR__ . '/search.php';
 require_once __DIR__ . '/categories.php';
+/* Category hub block (S2-L4, SCR-44): [lld_category_hub], placed by wp lld hub apply | revert. */
+require_once __DIR__ . '/category-hub.php';
+/* Header menu (owner, 28 Oct 2026; screen specification section 6): wp lld menu apply | verify | restore. */
+require_once __DIR__ . '/menu.php';
+/* Interface Pack Homepage (owner, 28 Oct 2026; prototype: lifeline_daily_ui_demo.html): Split Hero, 4-Week Programmes, Starter Guide. */
+require_once __DIR__ . '/homepage-pack.php';
+/* Homepage v2 (owner's new UI pack, 6 Nov 2026): the front page's own full-page template; every other page unchanged. */
+require_once __DIR__ . '/home-v2.php';
+/* Category page v2 (owner's new UI pack, 6 Nov 2026): every category of the agreed tree gets the design's full-page template. */
+require_once __DIR__ . '/category-v2.php';
+/* Article page v2 (owner's new UI pack, 6 Nov 2026): every post gets the design's full-page template. */
+require_once __DIR__ . '/article-v2.php';
+// S2-L1: public pages v2 (Health Tools hub, tool pages, governance pages, search; owner's UI pack, 7 Nov 2026)
+require_once __DIR__ . '/page-v2.php';
+/* Interface Pack Single Article & Page Layouts (prototypes: single_article_template_demo.html, health_tools_and_calculators_demo.html, site_governance_and_trust_demo.html). */
+require_once __DIR__ . '/page-layout.php';
+/* C1 staging security checks (9 Nov 2026): framing, no PHP version header, no account listing for visitors. */
+require_once __DIR__ . '/security.php';
+/* Site footer (DEC-88, S2-L1, Footer_Content.md). */
+require_once __DIR__ . '/footer.php';
 /* Staging mail catcher (P0-4): inert unless LLD_ENV is 'staging'. */
 require_once __DIR__ . '/staging-mail.php';
+/* Approved content loader (S2-L6, B16): wp lld content load | verify. */
+require_once __DIR__ . '/content-load.php';
+/* WebP copies beside uploaded images for LiteSpeed's WebP replacement (S2-L1, FR2-27 AS-05): wp lld webp status | generate. */
+require_once __DIR__ . '/webp.php';

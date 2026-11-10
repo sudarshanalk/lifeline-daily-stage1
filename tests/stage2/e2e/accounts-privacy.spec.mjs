@@ -333,6 +333,10 @@ test('TC-FR2-02-AS-01', async ({ page }) => {
 
 test('TC-FR2-02-AS-02', async ({ page }) => {
   test.setTimeout(300000);
+  // Every Save waits for the page its own post returns. After the first save the settings page already says "Saved"
+  // (and later an error), so checking the text alone could pass on the old page while the post was still on its
+  // way; the next file was then chosen, and Save clicked, during that navigation, which could leave the click
+  // waiting on a navigation the browser had replaced (TC-FR2-02-AS-02 timing out on Save in Chromium).
   const email = 'tm-03f@test.lifelinedaily.invalid';
   const other = 'tm-04f@test.lifelinedaily.invalid';
   await reset(page.request, email);
@@ -345,7 +349,7 @@ test('TC-FR2-02-AS-02', async ({ page }) => {
   const big = makeJpeg('photo-ok.jpg', 9.9 * 1024 * 1024, { width: 3200, height: 2400, gps: true });
   expect(jpegInfo(readFileSync(big))).toEqual({ exif: true, width: 3200, height: 2400 });
   await page.locator('#lld_photo').setInputFiles(big);
-  await page.getByRole('button', { name: 'Save' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Save' }));
   await expect(page.getByText('Saved')).toBeVisible();
   await expect(page.locator('img')).toBeVisible();
   // Stored without any EXIF block, so without the location, and resized to at most 1,600 pixels.
@@ -356,13 +360,13 @@ test('TC-FR2-02-AS-02', async ({ page }) => {
   expect(Math.max(stored.width, stored.height)).toBe(1600);
   expect(stored.width * 3).toBe(stored.height * 4);
   await page.locator('#lld_photo').setInputFiles(sized('photo.png', png, 0));
-  await page.getByRole('button', { name: 'Save' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Save' }));
   await expect(page.getByText('Saved')).toBeVisible();
   await page.locator('#lld_photo').setInputFiles(makeJpeg('photo-big.jpg', 10.1 * 1024 * 1024));
-  await page.getByRole('button', { name: 'Save' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Save' }));
   await expect(page.getByText('10 MB or smaller')).toBeVisible();
   await page.locator('#lld_photo').setInputFiles({ name: 'photo.gif', mimeType: 'image/gif', buffer: Buffer.from('GIF89a') });
-  await page.getByRole('button', { name: 'Save' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Save' }));
   await expect(page.getByText('Use a JPG, PNG or HEIC')).toBeVisible();
   const origin = new URL(page.url()).origin;
   const anon = await page.context().browser().newContext();
@@ -378,7 +382,7 @@ test('TC-FR2-02-AS-02', async ({ page }) => {
   expect(jpegInfo(await own.body()).exif).toBe(false);
   await page.goto('/members/settings/');
   await page.locator('#lld_photo').setInputFiles(sized('photo.heic', heic, 0));
-  await page.getByRole('button', { name: 'Save' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Save' }));
   await expect(page.getByText('Saved')).toBeVisible();
   const fromHeic = jpegInfo(await (await page.request.get(`/members/photo/${created.member_id}/`)).body());
   expect(fromHeic).toEqual({ exif: false, width: 64, height: 48 });
@@ -387,20 +391,20 @@ test('TC-FR2-02-AS-02', async ({ page }) => {
   // The file's own bytes decide: something that is no photo is refused whatever it is called.
   for (const name of ['fake.heic', 'fake.jpg', 'fake.png']) {
     await page.locator('#lld_photo').setInputFiles({ name, mimeType: 'application/octet-stream', buffer: Buffer.from('This is a text file, not a photo.') });
-    await page.getByRole('button', { name: 'Save' }).click();
+    await submitAndWait(page, page.getByRole('button', { name: 'Save' }));
     await expect(page.getByText('Use a JPG, PNG or HEIC'), name).toBeVisible();
   }
   // A HEIC whose size reads as zero, and one claiming 9000 by 9000 pixels, are refused before decoding.
   for (const [width, height] of [[0, 0], [9000, 9000]]) {
     await page.locator('#lld_photo').setInputFiles({ name: 'claims.heic', mimeType: 'image/heic', buffer: heicClaiming(width, height) });
-    await page.getByRole('button', { name: 'Save' }).click();
+    await submitAndWait(page, page.getByRole('button', { name: 'Save' }));
     await expect(page.locator('.lld-fail'), `${width}x${height}`).toContainText(/could not be read|too large to open/);
     await expect(page.getByText('Saved')).toHaveCount(0);
   }
   expect(await photoNow()).toEqual({ exif: false, width: 64, height: 48 });
   // A request too big for the server shows an error, never "Saved".
   await page.locator('#lld_photo').setInputFiles(sized('photo-huge.jpg', jpeg, 33 * 1024 * 1024));
-  await page.getByRole('button', { name: 'Save' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Save' }));
   await expect(page.getByText('10 MB or smaller')).toBeVisible();
   await expect(page.getByText('Saved')).toHaveCount(0);
   expect(await photoNow()).toEqual({ exif: false, width: 64, height: 48 });
@@ -409,7 +413,7 @@ test('TC-FR2-02-AS-02', async ({ page }) => {
   for (let orientation = 1; orientation <= 8; orientation += 1) {
     await page.goto('/members/settings/');
     await page.locator('#lld_photo').setInputFiles(orientedJpeg(orientation));
-    await page.getByRole('button', { name: 'Save' }).click();
+    await submitAndWait(page, page.getByRole('button', { name: 'Save' }));
     await expect(page.getByText('Saved')).toBeVisible();
     const seen = quarters(await (await page.request.get(`/members/photo/${created.member_id}/`)).body());
     expect([seen.width, seen.height], `orientation ${orientation}`).toEqual([64, 32]);
@@ -736,6 +740,12 @@ const DOWNLOAD_TABLES = [
   'diary_day', 'meal_plan', 'suggestion', 'badge',
   'subscription', 'order', 'referral', 'reward', 'contact_request', 'support', 'survey',
 ];
+// FR3-60 (TC-FR3-60-AS-01): the same file also holds the Stage 3 food and health logs, goals, plans and related
+// records (P3-86, LLD_Members_Stage3_Export::download_suffixes()). Each is counted against the database like the rest.
+const STAGE3_DOWNLOAD_TABLES = [
+  'goals', 'goal_baselines', 'plans', 'plan_adjustments', 'today_steps', 'insights', 'custom_foods', 'food_log',
+  'food_favourites', 'nutrition_targets', 'recipes', 'food_preferences', 'readings', 'reminders', 'shares',
+];
 // Never in the download: A4 security records, unsubscribe codes, the test clock, operations records.
 const NEVER_DOWNLOADED = ['security_code', 'sign_in_lock', 'session', 'app_key', 'unsubscribe_code', 'test_clock', 'erasure', 'admin_log', 'fb_removal', 'contact', 'contact_consent', 'error_log', 'stripe_notice'];
 
@@ -787,8 +797,8 @@ test('TC-FR2-04-AS-01', async ({ page }) => {
   // Table by table against the database, using the erasure checker's list.
   const meta = ['format', 'version', 'made_at_utc', 'member_number', 'photos'];
   expect(data.format).toBe('lifeline-daily-member-data');
-  expect(Object.keys(data).filter((key) => !meta.includes(key)).sort()).toEqual(DOWNLOAD_TABLES.slice().sort());
-  for (const name of DOWNLOAD_TABLES) {
+  expect(Object.keys(data).filter((key) => !meta.includes(key)).sort()).toEqual([...DOWNLOAD_TABLES, ...STAGE3_DOWNLOAD_TABLES].sort());
+  for (const name of [...DOWNLOAD_TABLES, ...STAGE3_DOWNLOAD_TABLES]) {
     expect(data[name].length, name).toBe(db.records[name]);
   }
   for (const name of NEVER_DOWNLOADED) expect(data[name], name).toBeUndefined();

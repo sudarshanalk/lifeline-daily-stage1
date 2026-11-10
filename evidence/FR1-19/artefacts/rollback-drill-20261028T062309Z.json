@@ -1,0 +1,105 @@
+{
+ "kind": "rollback-drill",
+ "req": "FR1-19",
+ "assertion": "TC-FR1-19-AS-04",
+ "env": "staging",
+ "started_at": "2026-10-28T06:23:09Z",
+ "finished_at": "2026-10-28T06:24:58Z",
+ "previous_release": "1bc6e245c183c7bb4684e0c9fc1af29d5cfc711c",
+ "current_release": "45cd53c321a468e35aabb6fca4b870ffe655b66d",
+ "backup_id": "20261028T060817Z-a74d77fcbebf",
+ "rollback_command": "bash deploy/rollback.sh staging 20261028T060817Z-a74d77fcbebf",
+ "rollback_exit": 0,
+ "rollback_output": [
+  "Success: Purge all sent to the web server.",
+  "ok 200 /health-tools/",
+  "ok 200 /health-tools/protein/",
+  "ok 200 /health-tools/diabetes-risk-check/",
+  "ok 200 /tools/health-tools-hub.html",
+  "ok 200 /tools/protein-requirement-tool.html",
+  "ok 200 /tools/diabetes-risk-tool.html",
+  "ok 403 /tools/api/config.php",
+  "ok 403 /tools/api/mailer.php",
+  "ok hash protein-requirement-tool.html",
+  "ok hash diabetes-risk-tool.html",
+  "Rollback verified. Database, credentials and withdrawal state were preserved."
+ ],
+ "rollback_duration_s": 16,
+ "rto_hours": 4,
+ "runbook_target_minutes": 5,
+ "smoke_before": {
+  "ok": true,
+  "duration_s": 3.8,
+  "output": [
+   "ok 200 /health-tools/",
+   "ok 200 /health-tools/protein/",
+   "ok 200 /health-tools/diabetes-risk-check/",
+   "ok 200 /tools/health-tools-hub.html",
+   "ok 200 /tools/protein-requirement-tool.html",
+   "ok 200 /tools/diabetes-risk-tool.html",
+   "ok 200 /tools/healthy-weight-tool.html",
+   "ok 403 /tools/api/config.php",
+   "ok 403 /tools/api/mailer.php",
+   "ok hash protein-requirement-tool.html",
+   "ok hash diabetes-risk-tool.html",
+   "ok hash healthy-weight-tool.html"
+  ]
+ },
+ "smoke_after_rollback": {
+  "ok": true,
+  "duration_s": 3.8,
+  "output": [
+   "ok 200 /health-tools/",
+   "ok 200 /health-tools/protein/",
+   "ok 200 /health-tools/diabetes-risk-check/",
+   "ok 200 /tools/health-tools-hub.html",
+   "ok 200 /tools/protein-requirement-tool.html",
+   "ok 200 /tools/diabetes-risk-tool.html",
+   "ok 403 /tools/api/config.php",
+   "ok 403 /tools/api/mailer.php",
+   "ok hash protein-requirement-tool.html",
+   "ok hash diabetes-risk-tool.html"
+  ]
+ },
+ "browser_after_rollback": {
+  "ok": true,
+  "tests": [
+   {
+    "title": "TC-FR1-19-AS-03",
+    "status": "passed"
+   }
+  ],
+  "exit": 0,
+  "output_tail": [
+   "Running 1 test using 1 worker",
+   "",
+   "  ok 1 [chromium] › tests\\e2e\\TC-FR1-19.spec.mjs:8:1 › TC-FR1-19-AS-03 (3.6s)",
+   "",
+   "  1 passed (6.3s)"
+  ]
+ },
+ "roll_forward": {
+  "method": "gh run rerun 40643011506 (deploy-staging for 45cd53c321a468e35aabb6fca4b870ffe655b66d)",
+  "conclusion": "success",
+  "exit": 0,
+  "duration_s": 67,
+  "smoke": {
+   "ok": true,
+   "duration_s": 4.3,
+   "output": [
+    "ok 200 /health-tools/",
+    "ok 200 /health-tools/protein/",
+    "ok 200 /health-tools/diabetes-risk-check/",
+    "ok 200 /tools/health-tools-hub.html",
+    "ok 200 /tools/protein-requirement-tool.html",
+    "ok 200 /tools/diabetes-risk-tool.html",
+    "ok 200 /tools/healthy-weight-tool.html",
+    "ok 403 /tools/api/config.php",
+    "ok 403 /tools/api/mailer.php",
+    "ok hash protein-requirement-tool.html",
+    "ok hash diabetes-risk-tool.html",
+    "ok hash healthy-weight-tool.html"
+   ]
+  }
+ }
+}

@@ -1,0 +1,59 @@
+{
+  "group": "What is saved and shown (Free and Premium, consent, safety matrix)",
+  "tool": "saved-results",
+  "fixtures": [
+    {
+      "id": "FX-SR-04",
+      "purpose": "SR-04: heart_risk 12.3 % then 9.8 %, Free: only the latest shown, upgrade line (FR3-55 AS-03)",
+      "inputs": {
+        "calculator": "heart_risk",
+        "plan": "free",
+        "results": [
+          { "result": 12.3, "unit": "%" },
+          { "result": 9.8, "unit": "%" }
+        ]
+      },
+      "expected": {
+        "shown": "9.8 %",
+        "latest_only": true,
+        "history": false,
+        "comparison": false,
+        "upgrade_line": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-SR-14",
+      "purpose": "SR-14: Free member without health consent: save button not offered (Stage 2 rule)",
+      "inputs": {
+        "calculator": "any",
+        "plan": "free",
+        "health_consent": false
+      },
+      "expected": {
+        "save_offered": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-SR-15",
+      "purpose": "SR-15: calorie_target 1,800 saved, then eating-disorder flag added, Premium: hidden everywhere at once, API refuses (FR3-69 AS-02)",
+      "inputs": {
+        "calculator": "calorie_target",
+        "plan": "premium",
+        "results": [
+          { "result": 1800, "unit": "kcal" }
+        ],
+        "eating_disorder_flag_added_after_save": true
+      },
+      "expected": {
+        "hidden_everywhere": true,
+        "api_refuses": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    }
+  ]
+}

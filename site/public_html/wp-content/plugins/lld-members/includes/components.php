@@ -10,9 +10,34 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Screens shown in the v2 look as a whole, whichever class draws them (owner's UI pack, group 2: join, sign-in,
+ * agreements and checkout; Owner_Questions 158). Look only: the markup, wording and rules are the built ones (153).
+ *
+ * @return string[] lld_screen values.
+ */
+function lld_members_v2_form_screens() {
+	return array( 'join', 'confirm', 'sign-in', 'two-step', 'reset', 'agreements', 'checkout' );
+}
+
+/**
+ * Member screens shown in the v2 look (owner's UI pack, group 3: coaching, food and logging, design files 17 to 42;
+ * group 4: account settings, help, data and deletion, and the public track, waitlist and starter-guide pages, design
+ * files 43 to 58; group 5: My account → Admin, design files 59 to 70; Owner_Questions 158). Look only: the markup, wording and rules are the built ones (153).
+ *
+ * @return string[] lld_screen values.
+ */
+function lld_members_v2_app_screens() {
+	return array( 'home', 'check-in', 'goal', 'goals', 'progress', 'track', 'tracks', 'screening', 'plan', 'review', 'suggestions', 'diary', 'food-scan', 'meals', 'workout', 'challenge', 'badges', 'group', 'health', 'foundations', 'library', 'read', 'record', 'more',
+		'settings', 'subscription', 'help', 'data', 'withdraw', 'delete', 'email', 'unsubscribe', 'programmes', 'sales', 'waitlist', 'guide-confirm', 'guide-unsub',
+		'admin3' );
+}
+
+/**
  * Page shell: header, main, member menu and footer.
  *
- * @param array $args title, main, signed_in, status.
+ * @param array $args title, main, signed_in, status, wide (the 64rem column for the dashboard, track, meals, diary and pricing),
+ *                    v2 (Stage 3, owner's UI pack: the site's v2 header and footer from lld-tools around the same screen,
+ *                    when lld-tools is there; the screen's own markup, wording and scripts are unchanged).
  */
 function lld_members_layout( $args ) {
 	$status = isset( $args['status'] ) ? (int) $args['status'] : 200;
@@ -24,6 +49,10 @@ function lld_members_layout( $args ) {
 	$in    = ! empty( $args['signed_in'] );
 	$css   = plugins_url( 'assets/lld-members.css', LLD_MEMBERS_FILE );
 	$js    = plugins_url( 'assets/lld-members.js', LLD_MEMBERS_FILE );
+	$screen = (string) get_query_var( 'lld_screen' );
+	$form   = in_array( $screen, lld_members_v2_form_screens(), true );
+	$app    = in_array( $screen, lld_members_v2_app_screens(), true );
+	$v2     = ( ! empty( $args['v2'] ) || $form || $app ) && function_exists( 'lld_v2_members_shell_on' ) && lld_v2_members_shell_on();
 	echo '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">';
 	echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
 	echo '<meta name="robots" content="noindex">';
@@ -35,52 +64,160 @@ function lld_members_layout( $args ) {
 		echo '<meta name="description" content="' . esc_attr( (string) $args['description'] ) . '">';
 	}
 	echo '<link rel="stylesheet" href="' . esc_url( $css ) . '?ver=' . esc_attr( LLD_MEMBERS_VERSION ) . '">';
-	echo '</head><body class="' . ( $in ? 'lld-signed-in' : 'lld-signed-out' ) . '">';
+	echo lld_members_font_faces();
+	echo $v2 ? lld_v2_members_shell( 'head' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
+	echo '</head><body class="lld-members-body ' . ( $in ? 'lld-signed-in' : 'lld-signed-out' ) . ( $v2 ? ' lld-v2 lld-members-v2' . ( $form ? ' lld-members-v2-form' : '' ) . ( $app ? ' lld-members-v2-app' : '' ) : '' ) . '">';
+	echo $v2 ? lld_v2_members_shell( 'body' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed script.
 	echo '<a class="lld-skip" href="#lld-main">Skip to content</a>';
 	echo class_exists( 'LLD_Members_Quality' ) ? LLD_Members_Quality::preview_banner() : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
-	echo lld_members_header( $in );
-	echo '<main id="lld-main" class="lld-main" tabindex="-1">';
+	echo $v2 ? lld_v2_members_shell( 'header' ) : lld_members_header( $in ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
+	// Group 3: the v2 header has no member menu or member chip, so a member bar under it carries the same five member
+	// links as the old header (the phone keeps its bottom bar) and the chip with the PREMIUM or FREE badge.
+	if ( $v2 && $app && $in ) {
+		echo '<div class="lld-member-bar"><div class="lld-member-bar-inner"><nav class="lld-member-bar-nav" aria-label="Member pages">' . lld_members_menu_links( 'lld-member-nav-list' ) . '</nav>' . lld_members_chip() . '</div></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
+	}
+	echo '<main id="lld-main" class="lld-main' . ( ! empty( $args['wide'] ) ? ' lld-wide' : '' ) . '" tabindex="-1">';
 	echo '<div class="lld-banner" id="lld-offline" hidden>You\'re offline</div>';
 	echo $main;
 	echo '</main>';
-	echo lld_members_footer();
+	echo $v2 ? lld_v2_members_shell( 'footer' ) : lld_members_footer(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
 	if ( $in ) {
 		echo lld_members_menu();
 	}
 	echo '<div class="lld-toasts" aria-live="polite"></div>';
 	echo '<script src="' . esc_url( $js ) . '?ver=' . esc_attr( LLD_MEMBERS_VERSION ) . '"></script>';
-	if ( class_exists( 'LLD_Members_Growth' ) ) {
+	echo $v2 ? lld_v2_members_shell( 'scripts' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
+	// Stage 3 (P3-70): Google Analytics replaces Plausible, so the Plausible script stays off while GA4 is set.
+	if ( class_exists( 'LLD_Members_Growth' ) && apply_filters( 'lld_members_plausible_on', true ) ) {
 		echo LLD_Members_Growth::script();
 	}
+	// Stage 3 (P3-70, P3-71): the cookie banner and, after consent, the GA4 tag on public screens.
+	do_action( 'lld_members_layout_foot' );
 	echo '</body></html>';
 }
 
 /**
- * Signed-out header, or the desktop member links.
+ * The uniform dark header (Interface Pack, handover section 4): logo with the mint cross and tagline, the public
+ * links, then Sign in and Join free for a visitor or the member chip for a member. On a desktop a member also gets
+ * the five member items in a second row (Screen Design section 6); phones keep the bottom bar.
  *
  * @param bool $signed_in Whether a member is signed in.
  */
 function lld_members_header( $signed_in ) {
 	$public = array(
-		'Health Tools' => home_url( '/tools/' ),
+		'Health Tools' => home_url( '/health-tools/' ),
 		'Articles'     => home_url( '/articles/' ),
 		'Programmes'   => home_url( '/programmes/' ),
 		'Pricing'      => home_url( '/pricing/' ),
-		'Sign in'      => home_url( '/members/sign-in/' ),
-		'Join free'    => home_url( '/members/join/' ),
 	);
-	$html  = '<header class="lld-header"><div class="lld-header-inner">';
-	$html .= '<a class="lld-logo" href="' . esc_url( home_url( '/' ) ) . '">Lifeline Daily</a><nav aria-label="Site">';
-	if ( $signed_in ) {
-		$html .= lld_members_menu_links( 'lld-desktop-nav' );
-	} else {
-		$html .= '<ul class="lld-public-nav">';
-		foreach ( $public as $label => $url ) {
-			$html .= '<li><a href="' . esc_url( $url ) . '">' . esc_html( $label ) . '</a></li>';
-		}
-		$html .= '</ul>';
+	$visitor = array(
+		'Sign in'   => home_url( '/members/sign-in/' ),
+		'Join free' => home_url( '/members/join/' ),
+	);
+	$links = '';
+	foreach ( $public as $label => $url ) {
+		$links .= '<li><a href="' . esc_url( $url ) . '"' . lld_members_current( $url ) . '>' . esc_html( $label ) . '</a></li>';
 	}
-	$html .= '</nav></div></header>';
+	// Stage 3 (P3-87b): the Owner and Support helpers reach My account → Admin from every member page.
+	$admin = function_exists( 'is_user_logged_in' ) && is_user_logged_in() && current_user_can( 'lld_admin_panel' );
+	if ( $admin ) {
+		$links .= '<li class="lld-nav-cta lld-nav-admin"><a href="' . esc_url( home_url( '/members/admin/' ) ) . '"' . lld_members_current( home_url( '/members/admin/' ) ) . '>Admin</a></li>';
+	} elseif ( ! $signed_in ) {
+		$links .= '<li class="lld-nav-signin"><a href="' . esc_url( $visitor['Sign in'] ) . '">Sign in</a></li>';
+		$links .= '<li class="lld-nav-cta"><a href="' . esc_url( $visitor['Join free'] ) . '">Join free</a></li>';
+	}
+	$html  = '<header class="lld-header"><div class="lld-header-inner">';
+	$html .= '<a class="lld-logo" href="' . esc_url( home_url( '/' ) ) . '">';
+	$html .= '<span><span class="lld-logo-name">Lifeline Daily</span><span class="lld-logo-tagline" aria-hidden="true">Start Small, Change Big, Live Healthier</span></span></a>';
+	$html .= '<nav aria-label="Site"><ul class="lld-public-nav">' . $links . '</ul>';
+	if ( $signed_in ) {
+		$html .= lld_members_chip();
+	}
+	$html .= '<details class="lld-burger"><summary aria-label="Menu">' . lld_members_icon( 'menu' ) . '</summary><ul class="lld-burger-panel">' . $links . '</ul></details>';
+	$html .= '</nav></div>';
+	if ( $signed_in ) {
+		$html .= '<div class="lld-member-nav">' . lld_members_menu_links( 'lld-member-nav-list' ) . '</div>';
+	}
+	$html .= '</header>';
+	return $html;
+}
+
+/**
+ * The pack's two self-hosted fonts (Plus Jakarta Sans for headings, Inter for copy), served from the lld-tools theme
+ * layer (S2-L1) with font-display: swap. Declared only when both files are present: a missing file would cost a full
+ * WordPress 404 on every page view, and the stylesheet already falls back to the system font (FR2-27).
+ */
+function lld_members_font_faces() {
+	$dir   = WP_CONTENT_DIR . '/mu-plugins/lld-tools/assets/fonts/';
+	$files = array(
+		'Plus Jakarta Sans' => array( 'plus-jakarta-sans-latin-var.woff2', '400 800' ),
+		'Inter'             => array( 'inter-latin-var.woff2', '400 700' ),
+	);
+	$css = '';
+	foreach ( $files as $family => $font ) {
+		if ( ! is_file( $dir . $font[0] ) ) {
+			return '';
+		}
+		$url  = content_url( 'mu-plugins/lld-tools/assets/fonts/' . $font[0] );
+		$css .= '@font-face{font-family:"' . $family . '";font-style:normal;font-weight:' . $font[1] . ';font-display:swap;src:url("' . esc_url( $url ) . '") format("woff2")}';
+	}
+	return '<style>' . $css . '</style>';
+}
+
+/**
+ * aria-current for the link that matches the page being shown.
+ *
+ * @param string $url Link address.
+ */
+function lld_members_current( $url ) {
+	$path = (string) wp_parse_url( (string) $url, PHP_URL_PATH );
+	$here = isset( $_SERVER['REQUEST_URI'] ) ? (string) wp_parse_url( (string) wp_unslash( $_SERVER['REQUEST_URI'] ), PHP_URL_PATH ) : '';
+	return '' !== $path && untrailingslashit( $path ) === untrailingslashit( $here ) ? ' aria-current="page"' : '';
+}
+
+/**
+ * The logo mark: a mint cross in a soft square.
+ */
+function lld_members_logo_mark() {
+	return '<span class="lld-logo-mark" aria-hidden="true"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#2cc8b3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16M4 12h16"/></svg></span>';
+}
+
+/**
+ * @param string $name Icon name.
+ */
+function lld_members_icon( $name ) {
+	if ( 'menu' === $name ) {
+		return '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
+	}
+	return '';
+}
+
+/**
+ * The member chip: initial, first name and the PREMIUM or FREE badge. The badge follows the confirmed access state
+ * (and the owner's preview), never a payment that Stripe has not confirmed (Screen Design principle 10).
+ */
+function lld_members_chip() {
+	$member_id = LLD_Members_Access::current_member_id();
+	if ( $member_id < 1 ) {
+		return '';
+	}
+	global $wpdb;
+	$row   = $wpdb->get_row( $wpdb->prepare( 'SELECT first_name, display_name FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+	$name  = $row && '' !== trim( (string) $row->first_name ) ? trim( (string) $row->first_name ) : ( $row && '' !== trim( (string) $row->display_name ) ? trim( (string) $row->display_name ) : 'Member' );
+	$state = strtolower( LLD_Members_Access::access_state( $member_id ) );
+	if ( 'free' === $state ) {
+		$premium = false;
+	} elseif ( 0 === strpos( $state, 'premium' ) && false === strpos( $state, 'ended' ) ) {
+		$premium = true;
+	} else {
+		$premium = class_exists( 'LLD_Members_Billing' ) && LLD_Members_Billing::has_premium( $member_id );
+	}
+	$initial = function_exists( 'mb_substr' ) ? mb_substr( $name, 0, 1 ) : substr( $name, 0, 1 );
+	$html    = '<a class="lld-chip" href="' . esc_url( home_url( '/members/settings/' ) ) . '">';
+	$html   .= '<span class="lld-chip-initial" aria-hidden="true">' . esc_html( strtoupper( $initial ) ) . '</span>';
+	$html   .= '<span class="lld-chip-name">' . esc_html( $name ) . '</span>';
+	$html   .= '<span class="lld-chip-badge' . ( $premium ? '' : ' is-free' ) . '">' . ( $premium ? 'PREMIUM' : 'FREE' ) . '</span>';
+	$html   .= '<span class="lld-sr">, profile and settings</span></a>';
 	return $html;
 }
 
@@ -97,7 +234,7 @@ function lld_members_menu_links( $class ) {
 	);
 	$html  = '<ul class="' . esc_attr( $class ) . '">';
 	foreach ( $items as $label => $url ) {
-		$html .= '<li><a href="' . esc_url( $url ) . '">' . esc_html( $label ) . '</a></li>';
+		$html .= '<li><a href="' . esc_url( $url ) . '"' . lld_members_current( $url ) . '>' . esc_html( $label ) . '</a></li>';
 	}
 	$html .= '</ul>';
 	return $html;
@@ -111,7 +248,14 @@ function lld_members_menu() {
 }
 
 function lld_members_footer() {
-	return '<footer class="lld-footer"><p>Lifeline Daily</p></footer>';
+	$html  = '<footer class="lld-footer"><div class="lld-footer-inner"><p>&copy; ' . esc_html( gmdate( 'Y' ) ) . ' Lifeline Daily. Health information, not medical advice.</p>';
+	$html .= '<ul><li><a href="' . esc_url( home_url( '/medical-disclaimer/' ) ) . '">Medical disclaimer</a></li>';
+	$html .= '<li><a href="' . esc_url( home_url( '/privacy/' ) ) . '">Privacy policy</a></li>';
+	$html .= '<li><a href="' . esc_url( home_url( '/terms/' ) ) . '">Terms of membership</a></li>';
+	// Stage 3 (P3-71): "Cookie settings" while Google Analytics is set; empty otherwise, so Stage 2 is unchanged.
+	$html .= (string) apply_filters( 'lld_members_footer_links', '' );
+	$html .= '</ul></div></footer>';
+	return $html;
 }
 
 /**
@@ -137,7 +281,7 @@ function lld_button( $args ) {
 }
 
 /**
- * @param array $args id, label, hint, error, type, name, value.
+ * @param array $args id, label, hint, error, type, name, value, autocomplete.
  */
 function lld_field( $args ) {
 	$id    = (string) $args['id'];
@@ -146,7 +290,8 @@ function lld_field( $args ) {
 	$value = isset( $args['value'] ) ? (string) $args['value'] : '';
 	$html  = '<div class="lld-field">';
 	$html .= '<label for="' . esc_attr( $id ) . '">' . esc_html( $args['label'] ) . '</label>';
-	$html .= '<input id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" type="' . esc_attr( $type ) . '" value="' . esc_attr( $value ) . '">';
+	$auto  = ! empty( $args['autocomplete'] ) ? ' autocomplete="' . esc_attr( $args['autocomplete'] ) . '"' : '';
+	$html .= '<input id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" type="' . esc_attr( $type ) . '" value="' . esc_attr( $value ) . '"' . $auto . '>';
 	if ( ! empty( $args['hint'] ) ) {
 		$html .= '<p class="lld-hint" id="' . esc_attr( $id ) . '-hint">' . esc_html( $args['hint'] ) . '</p>';
 	}
@@ -160,14 +305,14 @@ function lld_field( $args ) {
 /**
  * Password box with a show/hide control.
  *
- * @param array $args id, label, name, error.
+ * @param array $args id, label, name, error, autocomplete (current-password unless given).
  */
 function lld_password_field( $args ) {
 	$id   = (string) $args['id'];
 	$name = isset( $args['name'] ) ? (string) $args['name'] : $id;
 	$html = '<div class="lld-field lld-password">';
 	$html .= '<label for="' . esc_attr( $id ) . '">' . esc_html( $args['label'] ) . '</label>';
-	$html .= '<div class="lld-password-row"><input id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" type="password" autocomplete="current-password">';
+	$html .= '<div class="lld-password-row"><input id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" type="password" autocomplete="' . esc_attr( isset( $args['autocomplete'] ) ? (string) $args['autocomplete'] : 'current-password' ) . '">';
 	$html .= '<button type="button" class="lld-eye" aria-controls="' . esc_attr( $id ) . '" aria-pressed="false" data-lld-show="Show password" data-lld-hide="Hide password">Show password</button></div>';
 	if ( ! empty( $args['hint'] ) ) {
 		$html .= '<p class="lld-hint">' . esc_html( $args['hint'] ) . '</p>';
@@ -193,10 +338,10 @@ function lld_card( $title, $line, $action ) {
  */
 function lld_suggestion_card( $args ) {
 	$html  = '<article class="lld-card lld-suggestion">';
-	$html .= '<p class="lld-kicker">' . esc_html( $args['label'] ) . '</p>';
+	$html .= '<div class="lld-suggestion-meta"><p class="lld-kicker">' . esc_html( $args['label'] ) . '</p>';
+	$html .= '<p class="lld-hint">Reviewed by ' . esc_html( $args['reviewer'] ) . ' on ' . esc_html( $args['date'] ) . '</p></div>';
 	$html .= '<h2>' . esc_html( $args['title'] ) . '</h2>';
-	$html .= '<p>' . esc_html( $args['reason'] ) . '</p>';
-	$html .= '<p class="lld-hint">Reviewed by ' . esc_html( $args['reviewer'] ) . ' on ' . esc_html( $args['date'] ) . '</p>';
+	$html .= '<p class="lld-reason">' . esc_html( $args['reason'] ) . '</p>';
 	$html .= '<div class="lld-row">' . lld_button( array( 'label' => $args['action_label'], 'href' => $args['action_href'], 'type' => 'button' ) );
 	$html .= lld_button( array( 'label' => 'Not for me', 'variant' => 'secondary', 'type' => 'button' ) ) . '</div></article>';
 	return $html;
@@ -283,11 +428,30 @@ function lld_info( $text ) {
  * @param string $line What Premium adds.
  */
 function lld_membership_lock( $line ) {
-	$html  = '<article class="lld-lock"><p class="lld-kicker">Part of Premium</p>';
-	$html .= '<p class="lld-lock-preview">A short preview of this Premium item.</p>';
-	$html .= '<p>' . esc_html( $line ) . '</p><p class="lld-price">US$59.99 a year</p>';
-	$html .= lld_button( array( 'label' => 'Upgrade', 'href' => home_url( '/members/checkout/' ) ) );
-	$html .= '</article>';
+	// Section 5: a faded preview, a lock icon, "Part of Premium", what Premium adds, the price and one upgrade button.
+	// The preview is a faded outline of the item, never its content, so nothing locked can be read from the page.
+	$prices = class_exists( 'LLD_Members_Billing' ) ? LLD_Members_Billing::shown_prices() : array( 'yearly' => 5999, 'monthly' => 799 );
+	$html   = '<article class="lld-lock">';
+	$html  .= '<div class="lld-lock-preview" data-lld-lock-preview aria-hidden="true"><span></span><span></span><span></span></div>';
+	$html  .= '<div class="lld-lock-body"><p class="lld-kicker"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Part of Premium</p>';
+	$html  .= '<p>' . esc_html( $line ) . '</p>';
+	$html  .= '<p class="lld-price">US$' . esc_html( number_format( $prices['yearly'] / 100, 2 ) ) . ' a year <span class="lld-hint">or US$' . esc_html( number_format( $prices['monthly'] / 100, 2 ) ) . ' a month, tax included</span></p>';
+	$html  .= lld_button( array( 'label' => 'Upgrade', 'href' => home_url( '/members/checkout/' ) ) );
+	$html  .= '</div></article>';
+	return $html;
+}
+
+/**
+ * Empty state for a feature whose content has not been approved yet (section 3.3: a friendly line and the next
+ * useful action). Never used when the safety rules leave nothing: that keeps the matrix's own message.
+ *
+ * @param string $line       What is on its way.
+ * @param string $next_label The next useful action.
+ * @param string $next_path  Where it goes.
+ */
+function lld_coming_soon( $line, $next_label, $next_path ) {
+	$html  = '<article class="lld-empty" data-lld-coming-soon><h2>Coming soon</h2><p>' . esc_html( $line ) . '</p>';
+	$html .= '<p><a href="' . esc_url( home_url( $next_path ) ) . '">' . esc_html( $next_label ) . '</a></p></article>';
 	return $html;
 }
 
@@ -392,3 +556,4 @@ function lld_state_not_allowed( $level = 'h1' ) {
 	$tag = 'h2' === $level ? 'h2' : 'h1';
 	return '<' . $tag . '>This page isn\'t available</' . $tag . '>';
 }
+

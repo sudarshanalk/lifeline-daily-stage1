@@ -27,6 +27,7 @@ remote headers
 remote dbupdate
 remote purge
 DEPLOY_ORIGIN="$EXPECTED_URL" bash deploy/smoke.sh "$EXPECTED_URL"
+bash deploy/key-journeys.sh "$EXPECTED_URL"   # Stage 2 key journeys after every deploy (NFR3-03)
 remote finish
 mkdir -p deploy/log
 printf '{"env":"%s","sha":"%s","backup":"%s","smoke":"passed"}\n' "$ENV_NAME" "$(git rev-parse HEAD)" "$STAMP" > "deploy/log/$ENV_NAME.jsonl"

@@ -1,0 +1,194 @@
+{
+  "group": "RATE",
+  "tool": "goal-timeline",
+  "fixtures": [
+    {
+      "id": "FX-GWT-RATE-01",
+      "purpose": "TL-01: 90 to 84 kg at 0.5 kg a week",
+      "inputs": {
+        "currentKg": 90,
+        "goalKg": 84,
+        "heightCm": 175,
+        "rateKgPerWeek": 0.5
+      },
+      "expected": {
+        "stop": null,
+        "refused": null,
+        "goalBmi": 27.4,
+        "capKgPerWeek": 0.9,
+        "weeks": 12,
+        "milestone5PctKg": 85.5,
+        "deficitKcalPerDay": 550,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-GWT-RATE-02",
+      "purpose": "TL-02: 90 to 84 kg at 1.0 kg a week, above cap",
+      "inputs": {
+        "currentKg": 90,
+        "goalKg": 84,
+        "heightCm": 175,
+        "rateKgPerWeek": 1.0
+      },
+      "expected": {
+        "stop": null,
+        "refused": "above cap",
+        "goalBmi": 27.4,
+        "capKgPerWeek": 0.9,
+        "weeks": null,
+        "milestone5PctKg": null,
+        "deficitKcalPerDay": null,
+        "offer": {
+          "rateKgPerWeek": 0.75,
+          "weeks": 8
+        }
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-GWT-RATE-03",
+      "purpose": "TL-03: 100 to 80 kg at 0.75, more than 10 % requested",
+      "inputs": {
+        "currentKg": 100,
+        "goalKg": 80,
+        "heightCm": 170,
+        "rateKgPerWeek": 0.75
+      },
+      "expected": {
+        "stop": null,
+        "refused": null,
+        "goalBmi": 27.7,
+        "capKgPerWeek": 1.0,
+        "weeks": 27,
+        "milestone5PctKg": 95.0,
+        "deficitKcalPerDay": 825,
+        "notes": [
+          ">10%"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-GWT-RATE-04",
+      "purpose": "TL-04: 60 to 52 kg at 0.5, lighter person, more than 10 % requested",
+      "inputs": {
+        "currentKg": 60,
+        "goalKg": 52,
+        "heightCm": 165,
+        "rateKgPerWeek": 0.5
+      },
+      "expected": {
+        "stop": null,
+        "refused": null,
+        "goalBmi": 19.1,
+        "capKgPerWeek": 0.6,
+        "weeks": 16,
+        "milestone5PctKg": 57.0,
+        "deficitKcalPerDay": 550,
+        "notes": [
+          ">10%"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-GWT-RATE-05",
+      "purpose": "TL-06: 58 to 55 kg at 1.0, above the 1 % cap",
+      "inputs": {
+        "currentKg": 58,
+        "goalKg": 55,
+        "heightCm": 170,
+        "rateKgPerWeek": 1.0
+      },
+      "expected": {
+        "stop": null,
+        "refused": "above cap",
+        "goalBmi": 19.0,
+        "capKgPerWeek": 0.58,
+        "weeks": null,
+        "milestone5PctKg": null,
+        "deficitKcalPerDay": null,
+        "offer": {
+          "rateKgPerWeek": 0.5,
+          "weeks": 6
+        }
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-GWT-RATE-06",
+      "purpose": "TL-07: 120 to 100 kg at 1.0, cap exactly 1.00, more than 10 % requested",
+      "inputs": {
+        "currentKg": 120,
+        "goalKg": 100,
+        "heightCm": 180,
+        "rateKgPerWeek": 1.0
+      },
+      "expected": {
+        "stop": null,
+        "refused": null,
+        "goalBmi": 30.9,
+        "capKgPerWeek": 1.0,
+        "weeks": 20,
+        "milestone5PctKg": 114.0,
+        "deficitKcalPerDay": 1100,
+        "notes": [
+          ">10%"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-GWT-RATE-07",
+      "purpose": "TL-08: 80 to 79.6 kg at 0.5, 0.4 kg rounds up to 1 week",
+      "inputs": {
+        "currentKg": 80,
+        "goalKg": 79.6,
+        "heightCm": 175,
+        "rateKgPerWeek": 0.5
+      },
+      "expected": {
+        "stop": null,
+        "refused": null,
+        "goalBmi": 26.0,
+        "capKgPerWeek": 0.8,
+        "weeks": 1,
+        "milestone5PctKg": 76.0,
+        "deficitKcalPerDay": 550,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-GWT-RATE-08",
+      "purpose": "TL-09: 65 to 60 kg at 0.25",
+      "inputs": {
+        "currentKg": 65,
+        "goalKg": 60,
+        "heightCm": 165,
+        "rateKgPerWeek": 0.25
+      },
+      "expected": {
+        "stop": null,
+        "refused": null,
+        "goalBmi": 22.0,
+        "capKgPerWeek": 0.65,
+        "weeks": 20,
+        "milestone5PctKg": 61.8,
+        "deficitKcalPerDay": 275,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    }
+  ]
+}

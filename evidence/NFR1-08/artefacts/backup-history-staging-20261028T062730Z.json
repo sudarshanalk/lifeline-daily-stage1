@@ -1,0 +1,22 @@
+{
+ "kind": "backup-history",
+ "req": "NFR1-08",
+ "assertion": "TC-NFR1-08-AS-05",
+ "recorded_at": "2026-10-28T06:27:30Z",
+ "backups": [
+  {
+   "backup_id": "full-20261028T061800Z",
+   "created_at": "2026-10-28T06:18:00Z",
+   "verified": true
+  }
+ ],
+ "env": "staging",
+ "policy": {
+  "retain": {
+   "daily": 14,
+   "weekly": 8
+  },
+  "rpo_hours": 24,
+  "rto_hours": 4
+ }
+}

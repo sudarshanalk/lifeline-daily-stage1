@@ -44,5 +44,16 @@
       { "task": "Search queries: list two or three new questions people searched for, for next month's articles.", "minutes": 5 },
       { "task": "Open /robots.txt and /llms.txt and confirm both load.", "minutes": 2 }
     ]
+  },
+  "identity": {
+    "_note": "Who the site is (owner, 28 Oct 2026, O-4): Yoast describes Lifeline Daily as an organisation with these official profiles, and llms.txt lists them. Applied by `wp lld search setup`. The logo stays the image Yoast already has until the owner supplies the logo file.",
+    "organisation": "Lifeline Daily",
+    "profiles": [
+      { "name": "Facebook", "url": "https://www.facebook.com/lifelineofhealth" },
+      { "name": "X", "url": "https://x.com/LifelineDaily" },
+      { "name": "Pinterest", "url": "https://uk.pinterest.com/lifelinedaily7/" },
+      { "name": "YouTube", "url": "https://www.youtube.com/@LifelineDaily" },
+      { "name": "Instagram", "url": "https://www.instagram.com/life.l.daily/" }
+    ]
   }
 }

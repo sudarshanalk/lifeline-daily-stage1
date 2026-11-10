@@ -23,6 +23,9 @@ class LLD_Members_Billing {
 		add_action( 'admin_menu', array( __CLASS__, 'admin_menu' ) );
 		add_action( 'lld_members_notice_check', array( __CLASS__, 'close_stale_notices' ) );
 		add_action( 'lld_members_erase_account', array( __CLASS__, 'erase_member' ) );
+		// Stage 1 calculator pages keep their own content; the save form, track link and guide follow it.
+		add_action( 'template_redirect', array( __CLASS__, 'stage1_landing_save' ), 5 );
+		add_filter( 'the_content', array( __CLASS__, 'stage1_landing_content' ), 20 );
 		if ( ! wp_next_scheduled( 'lld_members_notice_check' ) ) {
 			wp_schedule_event( time() + HOUR_IN_SECONDS, 'hourly', 'lld_members_notice_check' );
 		}
@@ -33,9 +36,20 @@ class LLD_Members_Billing {
 	}
 
 	/**
+	 * Premium open now. Stage 3 may close it while a subscription is paused (P3-63, FR3-65).
+	 *
 	 * @param int $member_id Member number.
 	 */
 	public static function paid_open( $member_id ) {
+		return (bool) apply_filters( 'lld_members_paid_open', self::paid_state( $member_id ), (int) $member_id );
+	}
+
+	/**
+	 * Premium as paid for, before any pause.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function paid_state( $member_id ) {
 		$state = strtolower( LLD_Members_Access::access_state( $member_id ) );
 		if ( in_array( $state, array( 'free', 'premium ended', 'refunded', '' ), true ) ) {
 			return false;
@@ -47,9 +61,10 @@ class LLD_Members_Billing {
 	}
 
 	/**
-	 * Paid Memberships Pro levels for the two Premium plans (Data Model P1). Free has no level.
+	 * The two Premium plans (Data Model P1). Free has no plan. Lifeline Daily Members is the only membership system:
+	 * Paid Memberships Pro was retired on 6 Nov 2026 (FR3-96), so no copy of these plans is kept anywhere else.
 	 */
-	const PMPRO_LEVELS = array(
+	const PLANS = array(
 		'yearly'  => array(
 			'name'   => 'Premium yearly',
 			'period' => 'Year',
@@ -65,7 +80,25 @@ class LLD_Members_Billing {
 	 */
 	public static function db_update() {
 		self::rename_statuses();
-		self::sync_pmpro_levels();
+		delete_option( 'lld_pmpro_levels' ); // the ids of the retired Paid Memberships Pro copies (FR3-96)
+	}
+
+	/**
+	 * The two Premium plans with their current catalogue prices (FR2-13).
+	 *
+	 * @return array<string,array{name:string,period:string,price:string}>
+	 */
+	public static function plans() {
+		$prices = self::prices();
+		$out    = array();
+		foreach ( self::PLANS as $plan => $row ) {
+			$out[ $plan ] = array(
+				'name'   => $row['name'],
+				'period' => $row['period'],
+				'price'  => number_format( (int) $prices[ $plan ] / 100, 2, '.', '' ),
+			);
+		}
+		return $out;
 	}
 
 	/**
@@ -80,62 +113,6 @@ class LLD_Members_Billing {
 		foreach ( array( 'limited' => 'limit', 'self' => 'self', 'refunded' => 'refunded' ) as $old => $why ) {
 			$wpdb->query( $wpdb->prepare( "UPDATE {$referral} SET status = %s WHERE status = %s", 'not_qualified_' . $why, $old ) );
 		}
-	}
-
-	/**
-	 * Create or update the Premium levels in Paid Memberships Pro at the current catalogue prices.
-	 * Levels never take sign-ups through Paid Memberships Pro's own checkout: Stripe Checkout is the only way in.
-	 *
-	 * @return array<string,int> Level id for each plan; empty when Paid Memberships Pro is not installed.
-	 */
-	public static function sync_pmpro_levels() {
-		global $wpdb;
-		$table = $wpdb->prefix . 'pmpro_membership_levels';
-		if ( $table !== $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) ) ) {
-			return array();
-		}
-		$columns = $wpdb->get_col( "SHOW COLUMNS FROM {$table}", 0 ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
-		$prices  = self::prices();
-		$stored  = get_option( 'lld_pmpro_levels' );
-		$stored  = is_array( $stored ) ? $stored : array();
-		$ids     = array();
-		foreach ( self::PMPRO_LEVELS as $plan => $level ) {
-			$amount = number_format( (int) $prices[ $plan ] / 100, 2, '.', '' );
-			$row    = array(
-				'name'              => $level['name'],
-				'description'       => 'Lifeline Daily Premium, paid ' . $plan . ' through Stripe. Tax included.',
-				'confirmation'      => '',
-				'initial_payment'   => $amount,
-				'billing_amount'    => $amount,
-				'cycle_number'      => 1,
-				'cycle_period'      => $level['period'],
-				'billing_limit'     => 0,
-				'trial_amount'      => 0,
-				'trial_limit'       => 0,
-				'allow_signups'     => 0,
-				'expiration_number' => 0,
-			);
-			$row = array_intersect_key( $row, array_flip( $columns ) );
-			$id  = isset( $stored[ $plan ] ) ? (int) $stored[ $plan ] : 0;
-			if ( $id > 0 && ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE id = %d", $id ) ) ) {
-				$id = 0;
-			}
-			if ( $id < 1 ) {
-				$id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE name = %s ORDER BY id ASC LIMIT 1", $level['name'] ) );
-			}
-			if ( $id > 0 ) {
-				$wpdb->update( $table, $row, array( 'id' => $id ) );
-			} elseif ( false !== $wpdb->insert( $table, $row ) ) {
-				$id = (int) $wpdb->insert_id;
-			}
-			if ( $id > 0 ) {
-				$ids[ $plan ] = $id;
-			}
-		}
-		if ( $ids !== $stored ) {
-			update_option( 'lld_pmpro_levels', $ids, false );
-		}
-		return $ids;
 	}
 
 	/**
@@ -362,6 +339,7 @@ class LLD_Members_Billing {
 	 */
 	public static function daily() {
 		self::settle_rewards();
+		self::rewards_to_stripe();
 		self::retry_window();
 		self::close_elapsed();
 		self::renewal_reminders();
@@ -370,24 +348,197 @@ class LLD_Members_Billing {
 	}
 
 	/**
+	 * D2a: each member with a waiting reward is offered to the Stripe connection again, so a discount that could not be
+	 * attached, or that Stripe used up on a voided invoice, is put back before the next real invoice. No-op without Stripe.
+	 */
+	private static function rewards_to_stripe() {
+		global $wpdb;
+		$ids = $wpdb->get_col( 'SELECT DISTINCT recipient_member_id FROM ' . LLD_Members_Schema::table( 'reward' ) . " WHERE status = 'pending'" );
+		foreach ( (array) $ids as $id ) {
+			do_action( 'lld_members_reward_ready', (int) $id );
+		}
+	}
+
+	/**
 	 * Public pricing page.
 	 */
 	public static function pricing() {
 		$prices = self::prices();
+		$launch = class_exists( 'LLD_Members_Membership' ) && LLD_Members_Membership::launch_on();
+		// SCR-01: yearly first, then monthly; the price, what's included and how to cancel sit in the top block (UI2-03).
 		$main   = '<h1>Pricing</h1>';
-		$main  .= '<article data-lld-plan="yearly"><p>best value</p><p>' . esc_html( self::money( $prices['yearly'], 'usd' ) ) . ' a year</p><p>tax included</p>';
-		$main  .= '<p>What\'s included: weeks 2 to 4, meal plans, workouts and the food diary.</p>';
-		$main  .= '<p>How to cancel: cancel from My subscription. Access continues to the end of the paid period.</p>';
-		$main  .= '<p>That is US$5 a month, a saving of 37 %.</p>';
-		$main  .= lld_button( array( 'label' => 'Choose yearly', 'href' => home_url( '/members/checkout/?plan=yearly' ) ) ) . '</article>';
-		$main  .= '<article data-lld-plan="monthly"><p>' . esc_html( self::money( $prices['monthly'], 'usd' ) ) . ' a month</p><p>tax included</p>';
-		$main  .= lld_button( array( 'label' => 'Choose monthly', 'href' => home_url( '/members/checkout/?plan=monthly' ) ) ) . '</article>';
+		$member = LLD_Members_Access::current_member_id();
+		$premium = $member > 0 && self::paid_open( $member );
+		if ( $premium ) {
+			$main .= '<p class="lld-info" data-lld-premium-now>You\'re Premium. Everything below is already open to you. <a href="' . esc_url( home_url( '/members/subscription/' ) ) . '">My subscription</a></p>';
+		}
+		$main  .= '<div class="lld-plans"><article class="lld-card lld-plan is-yearly" data-lld-plan="yearly"><p class="lld-plan-best">best value</p>';
+		$main  .= '<p class="lld-plan-name">Yearly</p><p class="lld-plan-price">' . esc_html( self::money( $prices['yearly'], 'usd' ) . ' a year' ) . '</p><p class="lld-plan-tax">' . esc_html( $launch ? LLD_Members_Membership::yearly_line( $prices ) : 'tax included. That is US$5 a month, a saving of 37 %.' ) . '</p>';
+		$main  .= '<p class="lld-plan-line">What\'s included: weeks 2 to 4, meal plans, workouts and the food diary.</p>';
+		$main  .= '<p class="lld-plan-line lld-plan-cancel">How to cancel: cancel in 3 clicks from My subscription. Access continues to the end of the paid period.</p>';
+		$main  .= ( $premium ? '' : lld_button( array( 'label' => 'Choose yearly', 'href' => home_url( '/members/checkout/?plan=yearly' ) ) ) ) . '</article>';
+		$main  .= '<article class="lld-card lld-plan" data-lld-plan="monthly"><p class="lld-plan-name">Monthly</p><p class="lld-plan-price">' . esc_html( self::money( $prices['monthly'], 'usd' ) . ' a month' ) . '</p><p class="lld-plan-tax">tax included</p>';
+		$main  .= '<p class="lld-plan-line">The same Premium content, month by month. Cancel in 3 clicks from My subscription.</p>';
+		$main  .= ( $premium ? '' : lld_button( array( 'label' => 'Choose monthly', 'href' => home_url( '/members/checkout/?plan=monthly' ), 'variant' => 'secondary' ) ) ) . '</article></div>';
+		$main  .= (string) apply_filters( 'lld_members_pricing_note', '', $prices );
+		$main  .= '<p class="lld-plan-intro">Week 1 of every track is free. Premium opens the rest.</p>';
 		$main  .= '<p data-lld-sale-terms><a href="' . esc_url( self::terms_of_sale_url() ) . '">Terms of sale</a>: price, plans, renewal, cancellation, refunds, discounts and referral rewards.</p>';
+		$main  .= self::pricing_features() . self::pricing_questions();
 		lld_members_layout(
 			array(
 				'title'       => 'Pricing',
-				'description' => 'Premium is US$59.99 a year or US$7.99 a month, tax included.',
+				'description' => 'Premium is ' . self::money( $prices['yearly'], 'usd' ) . ' a year or ' . self::money( $prices['monthly'], 'usd' ) . ' a month, tax included.',
 				'main'        => $main,
+				'wide'        => true,
+				'v2'          => true,
+			)
+		);
+	}
+
+	/**
+	 * SCR-01 item 2: what is free and what is Premium, as listed in Requirements section 3. The members' Facebook group and
+	 * the live Q&A are deferred (owner, Stage 3; Owner_Questions 157), so Premium does not list them.
+	 */
+	private static function pricing_features() {
+		$columns = array(
+			'Free for everyone'    => array( 'Daily Protein Target calculator', 'Diabetes Risk Check and Healthy Weight Check', 'All public articles', 'A free starter guide for each track' ),
+			'Free with an account' => array( 'General wellbeing suggestions', 'Health goals (with health consent)', 'Your personal dashboard', 'Week 1 of each track, once per track', 'The food diary during week 1' ),
+			'Premium'              => array( 'Weeks 2 to 4 of every track', 'Weekly meal plans and shopping lists', 'A new challenge every month', 'Progressive workout plans', 'The food diary, ongoing', 'Weekly action plan and weekly review', 'Long-term progress, charts and milestones', 'Premium-only articles', 'Premium in the Lifeline Daily app when it launches' ),
+		);
+		// Labels, not headings: the pricing page keeps its single heading (UI2-01 snapshot).
+		$html = '<section class="lld-card lld-pricing-features" data-lld-features aria-label="What you get"><p class="lld-section-title"><strong>What you get</strong></p><div class="lld-feature-columns">';
+		foreach ( $columns as $title => $items ) {
+			$html .= '<div><p class="lld-section-title"><strong>' . esc_html( $title ) . '</strong></p><ul>';
+			foreach ( $items as $item ) {
+				$html .= '<li>' . esc_html( $item ) . '</li>';
+			}
+			$html .= '</ul></div>';
+		}
+		return $html . '</div></section>';
+	}
+
+	/**
+	 * SCR-01 item 3: questions and answers, in the words already used on the help page and in the requirements.
+	 */
+	private static function pricing_questions() {
+		$questions = array(
+			'Is there a free trial?'         => 'Week 1 of every track is free, so there is no separate trial. You only pay when you want weeks 2 to 4 and the rest of Premium.',
+			'How do I cancel?'               => 'Cancel in 3 clicks from My subscription. Premium stays open to the end of the period you have paid for.',
+			'Can I get a refund?'            => 'Your first payment can be refunded within 14 days.',
+			'Which currency do I pay in?'    => 'Prices are shown in US dollars with tax included. Stripe\'s secure checkout shows the price in your own currency.',
+			'Is the app included?'           => 'Yes. Every member can use the Lifeline Daily app when it launches, with the same features as on the web for their plan.',
+		);
+		$html = '<section class="lld-card lld-faq" data-lld-pricing-faq aria-label="Questions and answers"><p class="lld-section-title"><strong>Questions and answers</strong></p>';
+		foreach ( $questions as $question => $answer ) {
+			$html .= '<details><summary>' . esc_html( $question ) . '</summary><p>' . esc_html( $answer ) . '</p></details>';
+		}
+		return $html . '</section>';
+	}
+
+	/**
+	 * Programmes hub page listing all 4-week structured tracks.
+	 */
+	public static function programmes() {
+		$tracks = array(
+			'healthy-weight' => array(
+				'title'       => 'Healthy Weight',
+				'tagline'     => 'Sustainable weight management without extreme restriction',
+				'desc'        => 'A four-week habit track focusing on balanced protein pacing, whole-food nutrition, and non-exercise daily activity to achieve steady weight results.',
+				'icon'        => '&#9878;&#65039;',
+				'duration'    => '4 Weeks',
+				'highlights'  => array(
+					'Daily habit: 10-minute post-meal walk',
+					'Nutrition focus: Balanced protein & fibre plates',
+					'Preserves lean muscle mass during weight loss',
+				),
+			),
+			'blood-sugar'    => array(
+				'title'       => 'Blood Sugar Balance',
+				'tagline'     => 'Glucose stability, sustained energy & metabolic health',
+				'desc'        => 'A four-week programme for adults with prediabetes or raised metabolic risk, designed to flatten daily glucose spikes with meal sequencing and steady movement.',
+				'icon'        => '&#129656;',
+				'duration'    => '4 Weeks',
+				'highlights'  => array(
+					'Daily habit: Short walk after your largest meal',
+					'Nutrition focus: Savoury breakfast & fibre starters',
+					'Lowers risk using clinically proven risk models',
+				),
+			),
+			'fitness'        => array(
+				'title'       => 'Fitness and Strength',
+				'tagline'     => 'Functional strength, mobility & metabolic vitality',
+				'desc'        => 'A four-week progressive strength routine for any fitness level. Learn low-impact resistance training, joint-friendly movement, and recovery habits.',
+				'icon'        => '&#128170;',
+				'duration'    => '4 Weeks',
+				'highlights'  => array(
+					'Daily habit: Sit-to-stand chair routine at your pace',
+					'Nutrition focus: Post-exercise protein distribution',
+					'Protects joint mobility, bone density & vitality',
+				),
+			),
+			'sleep-stress'   => array(
+				'title'       => 'Sleep and Stress',
+				'tagline'     => 'Deep restorative sleep & nervous system calm',
+				'desc'        => 'A four-week protocol to align your circadian rhythm, lower evening cortisol, and establish practical wind-down routines for restful sleep.',
+				'icon'        => '&#127769;',
+				'duration'    => '4 Weeks',
+				'highlights'  => array(
+					'Daily habit: 5-minute evening breath & wind-down',
+					'Nutrition focus: Earlier dinner & caffeine curfew',
+					'Calms the nervous system without sleeping pills',
+				),
+			),
+		);
+
+		$main  = '<div class="lld-programmes-hero">';
+		$main .= '<p class="lld-programmes-kicker">4-WEEK STRUCTURED TRACKS</p>';
+		$main .= '<h1>Evidence-based health programmes</h1>';
+		$main .= '<p class="lld-programmes-lead">Doctor-reviewed, habit-focused tracks designed to guide you step-by-step. Week 1 of every track is completely free &mdash; no payment details required.</p>';
+		$main .= '</div>';
+
+		$main .= '<div class="lld-programmes-grid">';
+		foreach ( $tracks as $key => $track ) {
+			$sales_url = home_url( '/programmes/' . $key . '/' );
+			$join_url  = home_url( '/members/join/?track=' . $key );
+
+			$main .= '<article class="lld-card lld-programmes-card">';
+			$main .= '<div class="lld-programmes-card-head">';
+			$main .= '<span class="lld-programmes-icon" aria-hidden="true">' . $track['icon'] . '</span>';
+			$main .= '<span class="lld-programmes-badge">Week 1 Free</span>';
+			$main .= '</div>';
+			$main .= '<h2 class="lld-programmes-title"><a href="' . esc_url( $sales_url ) . '">' . esc_html( $track['title'] ) . '</a></h2>';
+			$main .= '<p class="lld-programmes-tagline">' . esc_html( $track['tagline'] ) . '</p>';
+			$main .= '<p class="lld-programmes-desc">' . esc_html( $track['desc'] ) . '</p>';
+
+			$main .= '<ul class="lld-programmes-highlights">';
+			foreach ( $track['highlights'] as $hl ) {
+				$main .= '<li><span class="lld-check" aria-hidden="true">&#10003;</span> ' . esc_html( $hl ) . '</li>';
+			}
+			$main .= '</ul>';
+
+			$main .= '<div class="lld-programmes-actions">';
+			$main .= lld_button( array( 'label' => 'Start Week 1 Free', 'href' => $join_url ) );
+			$main .= lld_button( array( 'label' => 'Programme Details &rarr;', 'href' => $sales_url, 'variant' => 'secondary' ) );
+			$main .= '</div>';
+			$main .= '</article>';
+		}
+		$main .= '</div>';
+
+		$main .= '<div class="lld-card lld-programmes-banner">';
+		$main .= '<div class="lld-programmes-banner-content">';
+		$main .= '<h2>Ready to build lasting daily health habits?</h2>';
+		$main .= '<p>Every track includes daily 5-minute action prompts, weekly summaries, habit tracking, and clinical safety checks.</p>';
+		$main .= '<div class="lld-programmes-banner-actions">';
+		$main .= lld_button( array( 'label' => 'Join Lifeline Daily Free', 'href' => home_url( '/members/join/' ) ) );
+		$main .= lld_button( array( 'label' => 'View Premium Memberships', 'href' => home_url( '/pricing/' ), 'variant' => 'secondary' ) );
+		$main .= '</div></div></div>';
+
+		lld_members_layout(
+			array(
+				'title'       => 'Health Programmes — 4-Week Habits',
+				'description' => 'Four doctor-reviewed 4-week health tracks designed to build lasting daily habits. Week 1 is completely free to start.',
+				'main'        => $main,
+				'wide'        => true,
 			)
 		);
 	}
@@ -405,55 +556,253 @@ class LLD_Members_Billing {
 		}
 		$page   = $pages[ $key ];
 		$prices = self::prices();
-		$main   = '<h1>' . esc_html( $page['title'] ) . '</h1>';
-		$main  .= '<p>best value</p><p>' . esc_html( self::money( $prices['yearly'], 'usd' ) ) . ' a year</p><p>tax included</p>';
-		$main  .= '<ul><li>Weeks 2 to 4 of this track</li><li>Meal plans, workouts and the monthly challenge</li><li>The food diary after week 1</li></ul>';
-		$main  .= '<p>Cancel any time. Access continues to the end of the paid period.</p>';
-		$main  .= lld_button( array( 'label' => 'See pricing', 'href' => home_url( '/pricing/' ) ) );
-		$main  .= '<h2>Who it is for</h2><p>' . esc_html( $page['for'] ) . '</p>';
-		$main  .= '<h2>Who it is not for</h2><p>' . esc_html( $page['not'] ) . '</p>';
-		$main  .= '<h2>Weekly themes</h2><ol><li>Week 1: getting started</li><li>Week 2: a steady rhythm</li><li>Week 3: building on it</li><li>Week 4: keeping it going</li></ol>';
-		$main  .= '<h2>Sample activity</h2><p>' . esc_html( $page['activity'] ) . '</p>';
-		$main  .= '<h2>Sample meal</h2><p>' . esc_html( $page['meal'] ) . '</p>';
-		$main  .= '<h2>Testimonials</h2>';
+		$launch = class_exists( 'LLD_Members_Membership' ) && LLD_Members_Membership::launch_on();
+
+		$icons = array(
+			'healthy-weight' => '&#9878;&#65039;',
+			'blood-sugar'    => '&#129656;',
+			'fitness'        => '&#128170;',
+			'sleep-stress'   => '&#127769;',
+		);
+		$icon = $icons[ $key ] ?? '&#127807;';
+
+		$main  = '<div class="lld-track-sales">';
+
+		// Breadcrumb
+		$main .= '<nav class="lld-track-breadcrumb"><a href="' . esc_url( home_url( '/programmes/' ) ) . '">&larr; Back to All Programmes</a> <span>/</span> <span>' . esc_html( $page['title'] ) . '</span></nav>';
+
+		// 1. Hero Card
+		$main .= '<div class="lld-card lld-track-sales-hero">';
+		$main .= '<div class="lld-track-sales-hero-top">';
+		$main .= '<div class="lld-track-sales-hero-title-group">';
+		$main .= '<span class="lld-track-sales-icon" aria-hidden="true">' . $icon . '</span>';
+		$main .= '<div>';
+		$main .= '<div class="lld-track-kicker-row"><span class="lld-programmes-badge">4-Week Habit Track</span><span class="lld-track-free-tag">&#10003; Week 1 Free</span></div>';
+		$main .= '<h1>' . esc_html( $page['title'] ) . '</h1>';
+		$main .= '</div></div>';
+		$main .= '<div class="lld-track-sales-hero-cta">' . lld_button( array( 'label' => 'Start Week 1 Free', 'href' => home_url( '/members/join/?track=' . $key ) ) ) . '</div>';
+		$main .= '</div>';
+		$main .= '<p class="lld-track-sales-desc">' . esc_html( $page['description'] ) . '</p>';
+		$main .= '<div class="lld-track-trust-strip">';
+		$main .= '<span>⏱️ 10 min/day habit</span>';
+		$main .= '<span>🛡️ Clinically reviewed</span>';
+		$main .= '<span>🍽️ Evidence meal plans</span>';
+		$main .= '<span>🔓 Cancel in 3 clicks</span>';
+		$main .= '</div>';
+		$main .= '</div>';
+
+		// 2. Pricing & Value Callout Card
+		$main .= '<div class="lld-card lld-track-pricing-box" data-lld-plan="yearly">';
+		$main .= '<div class="lld-track-pricing-head">';
+		$main .= '<div>';
+		$main .= '<p class="lld-plan-best">best value</p>';
+		$main .= '<p class="lld-track-price-amount">' . esc_html( self::money( $prices['yearly'], 'usd' ) ) . ' <span class="lld-track-price-period">a year</span></p>';
+		$main .= '<p class="lld-plan-tax">' . esc_html( $launch ? LLD_Members_Membership::yearly_line( $prices ) : 'tax included. That is US$5 a month, a saving of 37 %.' ) . '</p>';
+		$main .= '</div>';
+		$main .= '<div class="lld-track-pricing-actions">';
+		$main .= lld_button( array( 'label' => 'Choose yearly', 'href' => home_url( '/members/checkout/?plan=yearly' ) ) );
+		$main .= lld_button( array( 'label' => 'See pricing', 'href' => home_url( '/pricing/' ), 'variant' => 'secondary' ) );
+		$main .= '</div>';
+		$main .= '</div>';
+		$main .= '<ul class="lld-track-inclusions">';
+		$main .= '<li><span class="lld-check" aria-hidden="true">&#10003;</span> Weeks 2 to 4 of this track</li>';
+		$main .= '<li><span class="lld-check" aria-hidden="true">&#10003;</span> Meal plans, workouts and the monthly challenge</li>';
+		$main .= '<li><span class="lld-check" aria-hidden="true">&#10003;</span> The food diary after week 1</li>';
+		$main .= '</ul>';
+		$main .= '<p class="lld-plan-cancel">Cancel any time. Access continues to the end of the paid period.</p>';
+		$main .= '</div>';
+
+		// 3. Clinical Suitability (Who it is for vs Who it is not for)
+		$main .= '<div class="lld-track-split-grid">';
+		$main .= '<div class="lld-card lld-track-for-card">';
+		$main .= '<div class="lld-card-head"><span class="lld-icon-pill is-yes">&#10003;</span><h2>Who it is for</h2></div>';
+		$main .= '<p>' . esc_html( $page['for'] ) . '</p>';
+		$main .= '</div>';
+		$main .= '<div class="lld-card lld-track-not-card">';
+		$main .= '<div class="lld-card-head"><span class="lld-icon-pill is-no">!</span><h2>Who it is not for</h2></div>';
+		$main .= '<p>' . esc_html( $page['not'] ) . '</p>';
+		$main .= '</div>';
+		$main .= '</div>';
+
+		// 4. Weekly Themes
+		$main .= '<div class="lld-card lld-track-themes-card">';
+		$main .= '<div class="lld-track-themes-head">';
+		$main .= '<h2>Weekly themes</h2>';
+		$main .= '<span class="lld-programmes-badge">4 Weeks Total</span>';
+		$main .= '</div>';
+		// The same four theme names on every track; each track's own descriptions follow its approved content (L6).
+		$main .= '<ol class="lld-track-themes-list">';
+		$main .= '<li><span class="lld-theme-step">Week 1</span><strong>getting started</strong></li>';
+		$main .= '<li><span class="lld-theme-step">Week 2</span><strong>a steady rhythm</strong></li>';
+		$main .= '<li><span class="lld-theme-step">Week 3</span><strong>building on it</strong></li>';
+		$main .= '<li><span class="lld-theme-step">Week 4</span><strong>keeping it going</strong></li>';
+		$main .= '</ol>';
+		$main .= '</div>';
+
+		// 5. Sample Activity & Sample Meal
+		$main .= '<div class="lld-track-split-grid">';
+		$main .= '<div class="lld-card lld-track-preview-card">';
+		$main .= '<div class="lld-card-head"><span class="lld-track-preview-icon" aria-hidden="true">🏃</span><h2>Sample activity</h2></div>';
+		$main .= '<p class="lld-track-preview-highlight">' . esc_html( $page['activity'] ) . '</p>';
+		$main .= '</div>';
+		$main .= '<div class="lld-card lld-track-preview-card">';
+		$main .= '<div class="lld-card-head"><span class="lld-track-preview-icon" aria-hidden="true">🥣</span><h2>Sample meal</h2></div>';
+		$main .= '<p class="lld-track-preview-highlight">' . esc_html( $page['meal'] ) . '</p>';
+		$main .= '</div>';
+		$main .= '</div>';
+
+		// 6. Testimonials, once available (SCR-40): only quotes members gave permission for and the owner approved (FR2-19).
 		$quotes = class_exists( 'LLD_Members_Growth' ) ? LLD_Members_Growth::testimonial_html() : '';
-		$main  .= '' !== $quotes ? $quotes : '<p>Testimonials appear here once the owner approves them.</p>';
-		$main  .= '<h2>Questions and answers</h2><p>Week 1 is free. Premium opens the rest.</p>';
-		$main  .= '<h2>Safety note</h2><p>' . esc_html( $page['safety'] ) . '</p>';
+		if ( '' !== $quotes ) {
+			$main .= '<div class="lld-card lld-track-testimonials-card"><h2>Testimonials</h2>' . $quotes . '</div>';
+		}
+
+		// 7. Questions and Answers
+		$main .= '<div class="lld-card lld-track-faq-card">';
+		$main .= '<h2>Questions and answers</h2>';
+		$main .= '<div class="lld-faq-item"><h3>How does the free week work?</h3><p>Week 1 is free. Premium opens the rest.</p></div>';
+		$main .= '<div class="lld-faq-item"><h3>Can I switch tracks later?</h3><p>Yes. You can switch at the end of any week from your track page. Your progress is kept, and you can resume the track later.</p></div>';
+		$main .= '</div>';
+
+		// 8. Safety note
+		$main .= '<div class="lld-card lld-track-safety-card">';
+		$main .= '<div class="lld-card-head"><span class="lld-track-preview-icon" aria-hidden="true">🛡️</span><h2>Safety note</h2></div>';
+		$main .= '<p>' . esc_html( $page['safety'] ) . '</p>';
+		$main .= '<p class="lld-hint">If you feel very unwell or experience emergency symptoms, call your local emergency services (999, 911, or 112) immediately.</p>';
+		$main .= '</div>';
+
+		// 9. Bottom CTA banner
+		$main .= '<div class="lld-card lld-track-bottom-cta">';
+		$main .= '<div><h3>Ready to start this 4-week track?</h3><p>Begin with Week 1 completely free &mdash; no credit card required.</p></div>';
+		$main .= '<div class="lld-track-pricing-actions">';
+		$main .= lld_button( array( 'label' => 'Start Week 1 Free', 'href' => home_url( '/members/join/?track=' . $key ) ) );
+		$main .= lld_button( array( 'label' => 'See pricing', 'href' => home_url( '/pricing/' ), 'variant' => 'secondary' ) );
+		$main .= '</div>';
+		$main .= '</div>';
+
+		$main .= '</div>'; // .lld-track-sales
+
 		lld_members_layout(
 			array(
 				'title'       => $page['title'],
 				'description' => $page['description'],
 				'main'        => $main,
+				'wide'        => true,
 			)
 		);
 	}
 
 	/**
-	 * Calculator landing page. The track link sits below the tool, not inside its result.
+	 * The calculator landing pages, by their Stage 1 WordPress page path (the Healthy Weight Check's page is created by
+	 * `wp lld pages apply` under the same hub, FR2-39).
+	 */
+	const LANDING_PATHS = array(
+		'protein'        => 'health-tools/protein',
+		'diabetes'       => 'health-tools/diabetes-risk-check',
+		'healthy-weight' => 'health-tools/healthy-weight-check',
+	);
+
+	/**
+	 * Stage 1 page path that a plugin screen stands in for, or an empty string.
+	 *
+	 * @param string $screen lld_screen value.
+	 * @param string $track  lld_track value.
+	 */
+	public static function stage1_path( $screen, $track ) {
+		if ( 'disclaimer' === $screen ) {
+			return 'medical-disclaimer';
+		}
+		if ( 'landing' === $screen ) {
+			return self::LANDING_PATHS[ isset( self::LANDING_PATHS[ $track ] ) ? $track : 'protein' ];
+		}
+		return '';
+	}
+
+	/**
+	 * The published Stage 1 WordPress page at a path, when there is one.
+	 *
+	 * @param string $path Page path, for example health-tools/protein.
+	 * @return WP_Post|null
+	 */
+	public static function stage1_page( $path ) {
+		$page = get_page_by_path( $path, OBJECT, 'page' );
+		return ( $page instanceof WP_Post && 'publish' === $page->post_status ) ? $page : null;
+	}
+
+	/**
+	 * protein, diabetes or healthy-weight when the main query is a Stage 1 calculator landing page, otherwise ''.
+	 */
+	private static function stage1_landing() {
+		if ( ! is_page() ) {
+			return '';
+		}
+		$page = get_queried_object();
+		if ( ! $page instanceof WP_Post ) {
+			return '';
+		}
+		$which = array_search( get_page_uri( $page ), self::LANDING_PATHS, true );
+		return false === $which ? '' : (string) $which;
+	}
+
+	/**
+	 * Saved state of the Stage 1 landing page's save form in this request.
+	 *
+	 * @var bool
+	 */
+	private static $stage1_saved = false;
+
+	/**
+	 * Save handling on the Stage 1 landing page, before WordPress renders it (template_redirect).
+	 */
+	public static function stage1_landing_save() {
+		$which = self::stage1_landing();
+		if ( '' === $which ) {
+			return;
+		}
+		$member_id = LLD_Members_Access::current_member_id();
+		if ( $member_id > 0 && LLD_Members_Account::has_consent( $member_id, 'health' ) ) {
+			self::$stage1_saved = self::save_calculator_result( $member_id, $which );
+		}
+	}
+
+	/**
+	 * The Stage 2 extras below a Stage 1 calculator page's own content. The page in the database is not changed.
+	 *
+	 * @param string $content Page content.
+	 * @return string
+	 */
+	public static function stage1_landing_content( $content ) {
+		if ( ! in_the_loop() || ! is_main_query() ) {
+			return $content;
+		}
+		$which = self::stage1_landing();
+		if ( '' === $which || (int) get_the_ID() !== (int) get_queried_object_id() || false !== strpos( (string) $content, 'id="lld-landing-extras"' ) ) {
+			return $content;
+		}
+		$member_id = LLD_Members_Access::current_member_id();
+		$can_save  = $member_id > 0 && LLD_Members_Account::has_consent( $member_id, 'health' );
+		return $content . self::landing_extras( $which, $member_id, $can_save, self::$stage1_saved );
+	}
+
+	/**
+	 * Calculator landing page for a site with no Stage 1 page at the address (the CI test site).
+	 * The track link sits below the tool, not inside its result.
 	 *
 	 * @param string $which protein, diabetes or healthy-weight.
 	 */
 	public static function landing( $which ) {
 		$which = in_array( $which, array( 'diabetes', 'healthy-weight' ), true ) ? $which : 'protein';
-		$guide = 'diabetes' === $which ? 'blood-sugar' : ( 'healthy-weight' === $which ? 'healthy-weight' : 'fitness' );
 		if ( 'healthy-weight' === $which ) {
 			$title = 'Healthy Weight Check';
 			$src   = home_url( '/tools/healthy-weight-tool.html' );
-			$href  = home_url( '/programmes/healthy-weight/' );
-			$label = 'Healthy Weight';
 			$desc  = 'Check your BMI, waist-to-height ratio and a healthy weight range for your height.';
 		} elseif ( 'diabetes' === $which ) {
 			$title = 'Diabetes Risk Check';
 			$src   = home_url( '/tools/diabetes-risk-tool.html' );
-			$href  = home_url( '/programmes/blood-sugar/' );
-			$label = 'Blood Sugar Balance';
 			$desc  = 'Check diabetes risk, then look at the Blood Sugar Balance track.';
 		} else {
 			$title = 'Daily Protein Target';
 			$src   = home_url( '/tools/protein-requirement-tool.html' );
-			$href  = home_url( '/programmes/fitness/' );
-			$label = 'Fitness and Strength';
 			$desc  = 'Find a daily protein target, then look at the Fitness and Strength track.';
 		}
 		$member_id = class_exists( 'LLD_Members_Access' ) ? LLD_Members_Access::current_member_id() : 0;
@@ -461,34 +810,7 @@ class LLD_Members_Billing {
 		$saved     = $can_save && self::save_calculator_result( $member_id, $which );
 		$main      = '<h1>' . esc_html( $title ) . '</h1>';
 		$main     .= '<iframe class="lld-tool-frame" title="' . esc_attr( $title ) . '" src="' . esc_url( $src ) . '" style="width:100%;height:900px;border:0"></iframe>';
-		if ( $can_save ) {
-			$main .= $saved ? '<p>Saved</p>' : '';
-			$main .= '<form method="post" id="lld-save-result" data-calculator="' . esc_attr( $which ) . '" hidden>';
-			$main .= wp_nonce_field( 'lld_result', 'lld_result_nonce', true, false );
-			$main .= '<input type="hidden" name="lld_headline" value="">';
-			$main .= '<input type="hidden" name="lld_unit" value="">';
-			$main .= '<input type="hidden" name="lld_band" value="">';
-			$main .= '<input type="hidden" name="lld_version" value="">';
-			$main .= lld_button( array( 'label' => 'Save this result to my profile' ) );
-			$main .= '</form>';
-		}
-		// FR2-39 AS-15: no Healthy Weight track offer to a member whose saved profile excludes it (section 8.2)
-		$offer = ! ( 'healthy-weight' === $which && $member_id > 0 && class_exists( 'LLD_Members_Safety' ) && ! LLD_Members_Safety::track_allowed( $member_id, $label ) );
-		if ( $offer ) {
-			$main .= '<div data-lld-onward>';
-			$main .= '<p data-lld-track-link><a href="' . esc_url( $href ) . '">' . esc_html( $label ) . '</a></p>';
-			if ( class_exists( 'LLD_Members_Growth' ) ) {
-				$main .= LLD_Members_Growth::guide_form( $guide, 'guide' );
-			}
-			$main .= '</div>';
-		}
-		// FR2-23 / FR2-39 AS-14: only messages from this page's own calculator frame count; a cleared result hides the save,
-		// and a result or stop that allows no onward offer hides the track link and guide (answers never arrive here)
-		$main .= '<script>(function(){var frame=document.querySelector("iframe.lld-tool-frame");var form=document.getElementById("lld-save-result");var onward=document.querySelector("[data-lld-onward]");var which=' . wp_json_encode( $which ) . ';'
-			. 'function field(n,v){if(form)form.querySelector("[name="+n+"]").value=String(v||"").slice(0,64);}'
-			. 'window.addEventListener("message",function(event){if(event.origin!==location.origin||!frame||event.source!==frame.contentWindow)return;var data=event.data||{};if(data.calculator!==which)return;'
-			. 'if(data.type==="lld-calculator-result"){field("lld_headline",data.headline);field("lld_unit",data.unit);field("lld_band",data.band);field("lld_version",data.version);if(form)form.hidden=false;if(onward)onward.hidden=data.onward===false;}'
-			. 'else if(data.type==="lld-calculator-cleared"){["lld_headline","lld_unit","lld_band","lld_version"].forEach(function(n){field(n,"");});if(form)form.hidden=true;if(onward)onward.hidden=data.onward===false;}});})();</script>';
+		$main     .= self::landing_extras( $which, $member_id, $can_save, $saved );
 		lld_members_layout(
 			array(
 				'title'       => $title,
@@ -497,6 +819,65 @@ class LLD_Members_Billing {
 				'signed_in'   => $member_id > 0,
 			)
 		);
+	}
+
+	/**
+	 * What Stage 2 adds below a calculator, on the Stage 1 page or the fallback screen: the save form for a member with
+	 * health consent, the track link and the starter guide, and the listener for the calculator's messages.
+	 *
+	 * @param string $which     protein, diabetes or healthy-weight.
+	 * @param int    $member_id Signed-in member, or 0.
+	 * @param bool   $can_save  Signed-in member with health consent.
+	 * @param bool   $saved     The result was saved in this request.
+	 * @return string
+	 */
+	private static function landing_extras( $which, $member_id, $can_save, $saved ) {
+		$guide = 'diabetes' === $which ? 'blood-sugar' : ( 'healthy-weight' === $which ? 'healthy-weight' : 'fitness' );
+		if ( 'healthy-weight' === $which ) {
+			$href  = home_url( '/programmes/healthy-weight/' );
+			$label = 'Healthy Weight';
+		} elseif ( 'diabetes' === $which ) {
+			$href  = home_url( '/programmes/blood-sugar/' );
+			$label = 'Blood Sugar Balance';
+		} else {
+			$href  = home_url( '/programmes/fitness/' );
+			$label = 'Fitness and Strength';
+		}
+		$html = '<div id="lld-landing-extras">';
+		if ( $can_save ) {
+			$html .= $saved ? '<p>Saved</p>' : '';
+			$html .= '<form method="post" id="lld-save-result" data-calculator="' . esc_attr( $which ) . '" hidden>';
+			$html .= wp_nonce_field( 'lld_result', 'lld_result_nonce', true, false );
+			$html .= '<input type="hidden" name="lld_headline" value="">';
+			$html .= '<input type="hidden" name="lld_unit" value="">';
+			$html .= '<input type="hidden" name="lld_band" value="">';
+			$html .= '<input type="hidden" name="lld_version" value="">';
+			$html .= lld_button( array( 'label' => 'Save this result to my profile' ) );
+			$html .= '</form>';
+		}
+		// FR2-39 AS-15: no Healthy Weight track offer to a member whose saved profile excludes it (section 8.2)
+		$offer = ! ( 'healthy-weight' === $which && $member_id > 0 && class_exists( 'LLD_Members_Safety' ) && ! LLD_Members_Safety::track_allowed( $member_id, $label ) );
+		if ( $offer ) {
+			$html .= '<div data-lld-onward>';
+			$html .= '<p data-lld-track-link><a href="' . esc_url( $href ) . '">' . esc_html( $label ) . '</a></p>';
+			if ( class_exists( 'LLD_Members_Growth' ) ) {
+				$html .= LLD_Members_Growth::guide_form( $guide, 'guide' );
+			}
+			$html .= '</div>';
+		}
+		$html .= '</div>';
+		// FR2-23 / FR2-39 AS-14: only messages from this page's own calculator frame count, from the address the frame was
+		// loaded from (the Stage 1 page embeds it from lld_tools_settings.tools_origin; iframe_origin is the configured one)
+		// or this page's own. A cleared result hides the save, and a result or stop that allows no onward offer hides the
+		// track link and guide (answers never arrive here).
+		$html .= '<script>(function(){var frame=document.querySelector("iframe.lld-tool-frame");var form=document.getElementById("lld-save-result");var onward=document.querySelector("[data-lld-onward]");var which=' . wp_json_encode( $which ) . ';'
+			. 'var cfg=window.lld_tools_settings||{};var from="";try{from=frame?new URL(frame.getAttribute("src")||"",location.href).origin:"";}catch(e){}'
+			. 'function trusted(o){return o===location.origin||(from!==""&&o===from)||(!!cfg.iframe_origin&&o===cfg.iframe_origin);}'
+			. 'function field(n,v){if(form)form.querySelector("[name="+n+"]").value=String(v||"").slice(0,64);}'
+			. 'window.addEventListener("message",function(event){if(!trusted(event.origin)||!frame||event.source!==frame.contentWindow)return;var data=event.data||{};if(data.calculator!==which)return;'
+			. 'if(data.type==="lld-calculator-result"){field("lld_headline",data.headline);field("lld_unit",data.unit);field("lld_band",data.band);field("lld_version",data.version);if(form)form.hidden=false;if(onward)onward.hidden=data.onward===false;}'
+			. 'else if(data.type==="lld-calculator-cleared"){["lld_headline","lld_unit","lld_band","lld_version"].forEach(function(n){field(n,"");});if(form)form.hidden=true;if(onward)onward.hidden=data.onward===false;}});})();</script>';
+		return $html;
 	}
 
 	/**
@@ -606,7 +987,8 @@ class LLD_Members_Billing {
 			LLD_Members_Personal::render( 'Checkout', $main );
 			return;
 		}
-		if ( self::has_premium( $member_id ) ) {
+		// paid_state: a paused member still has a subscription, so a second checkout would charge twice (P3-63).
+		if ( $member_id > 0 && self::paid_state( $member_id ) ) {
 			// A second checkout would start a second subscription while the first keeps charging.
 			$main .= '<p>You already have Premium. No payment was taken.</p>';
 			$main .= lld_button( array( 'label' => 'My subscription', 'href' => home_url( '/members/subscription/' ) ) );
@@ -643,16 +1025,22 @@ class LLD_Members_Billing {
 			if ( $code && empty( $quote['code'] ) ) {
 				$note = 'This code has ended.';
 			}
-			$session = 'cs_test_' . bin2hex( random_bytes( 8 ) );
+			$opened = self::open_session( $quote, $member_id, $ref );
+			if ( is_wp_error( $opened ) ) {
+				$main .= '<div class="lld-fail" role="alert"><p>' . esc_html( LLD_Members_Stripe::try_again_message() ) . '</p></div>';
+				LLD_Members_Personal::render( 'Checkout', $main );
+				return;
+			}
+			$session = (string) $opened['id'];
 			self::store_quote( $session, $quote, $member_id, $ref );
-			$shown = true;
+			$shown   = true;
 			$main .= '<p>You\'ll pay securely with Stripe. We never see your card details.</p>';
 			$main .= '<p data-lld-charge="' . (int) $quote['charged'] . '" data-lld-shown="' . (int) $quote['charged'] . '" data-lld-tax="' . (int) $quote['tax'] . '" data-lld-currency="' . esc_attr( $quote['currency'] ) . '" data-lld-session="' . esc_attr( $session ) . '">';
 			$main .= esc_html( self::money( $quote['charged'], $quote['currency'] ) ) . '</p>';
 			$main .= '<p>tax included</p>';
 			$main .= '<p>' . esc_html( self::tax_line( $quote ) ) . '</p>';
 			$main .= '<p>Apple Pay and Google Pay are offered by Stripe on devices that support them.</p>';
-			$main .= '<p><a href="' . esc_url( 'https://checkout.stripe.com/c/pay/' . $session ) . '">Continue to payment</a></p>';
+			$main .= '<p><a href="' . esc_url( $opened['url'] ) . '">Continue to payment</a></p>';
 			$main .= '<p data-lld-sale-terms>You accepted the <a href="' . esc_url( self::terms_of_sale_url() ) . '">terms of sale</a>.</p>';
 			if ( $note ) {
 				$main .= '<p>' . esc_html( $note ) . '</p>';
@@ -662,17 +1050,17 @@ class LLD_Members_Billing {
 			if ( '' !== $refuse ) {
 				$main .= '<div class="lld-fail" role="alert"><p>' . esc_html( $refuse ) . '</p></div>';
 			}
-			$main .= '<form method="post">';
+			$main .= '<form method="post" class="lld-card lld-form-card">';
 			$main .= wp_nonce_field( 'lld_checkout', 'lld_checkout_nonce', true, false );
 			$main .= '<input type="hidden" name="lld_ref" value="' . esc_attr( $ref ) . '">';
-			$main .= '<fieldset><legend>Plan</legend>';
-			$main .= '<label><input type="radio" name="lld_plan" value="yearly"' . checked( $plan, 'yearly', false ) . '> Yearly</label> ';
+			$main .= '<fieldset class="lld-options"><legend>Plan</legend><div class="lld-choice">';
+			$main .= '<label><input type="radio" name="lld_plan" value="yearly"' . checked( $plan, 'yearly', false ) . '> Yearly</label>';
 			$main .= '<label><input type="radio" name="lld_plan" value="monthly"' . checked( $plan, 'monthly', false ) . '> Monthly</label>';
-			$main .= '</fieldset>';
-			$main .= '<label for="lld_country">Country</label> <select id="lld_country" name="lld_country">';
-			$main .= '<option value="US">United States</option><option value="GB">United Kingdom</option><option value="DE">Germany</option></select>';
-			$main .= '<label for="lld_code">Discount code</label> <input id="lld_code" name="lld_code" value="' . esc_attr( $code ) . '">';
-			$main .= '<label class="lld-check" data-lld-sale-terms><input type="checkbox" id="lld_sale_terms" name="lld_sale_terms" value="1" required> I accept the <a href="' . esc_url( self::terms_of_sale_url() ) . '">terms of sale</a></label>';
+			$main .= '</div></fieldset>';
+			$main .= '<div class="lld-field"><label for="lld_country">Country</label> <select id="lld_country" name="lld_country">';
+			$main .= '<option value="US">United States</option><option value="GB">United Kingdom</option><option value="DE">Germany</option></select></div>';
+			$main .= '<div class="lld-field"><label for="lld_code">Discount code</label> <input id="lld_code" name="lld_code" type="text" value="' . esc_attr( $code ) . '"></div>';
+			$main .= '<label class="lld-check" data-lld-sale-terms><input type="checkbox" id="lld_sale_terms" name="lld_sale_terms" value="1" required> <span>I accept the <a href="' . esc_url( self::terms_of_sale_url() ) . '">terms of sale</a></span></label>';
 			$main .= lld_button( array( 'label' => 'Show the price' ) );
 			$main .= '</form>';
 		}
@@ -686,23 +1074,51 @@ class LLD_Members_Billing {
 		LLD_Members_Personal::require_page();
 		$member_id = LLD_Members_Access::current_member_id();
 		$posted    = 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' );
+		$failed        = false;
+		$switch_failed = false;
+		$switching     = (bool) apply_filters( 'lld_members_can_switch_yearly', true, $member_id );
 		if ( $posted && isset( $_POST['lld_sub_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_sub_nonce'] ) ), 'lld_sub' ) ) {
 			$action = isset( $_POST['lld_sub_action'] ) ? sanitize_key( wp_unslash( $_POST['lld_sub_action'] ) ) : '';
 			if ( 'cancel' === $action ) {
-				self::cancel_at_period_end( $member_id );
-			} elseif ( 'switch' === $action ) {
-				self::queue_yearly( $member_id );
+				$failed = is_wp_error( self::cancel_at_period_end( $member_id ) );
+			} elseif ( 'switch' === $action && $switching && self::queue_yearly( $member_id ) ) {
+				// A waiting reward now reduces the yearly payment, so it takes the yearly form (13 % off).
+				self::reward_forms( $member_id, 'percent_13' );
+				// With real Stripe the change is scheduled there too (D2a); if Stripe refuses, nothing is queued here.
+				$done = apply_filters( 'lld_members_stripe_switch', true, $member_id, 'yearly' );
+				if ( is_wp_error( $done ) ) {
+					self::save_sub( $member_id, array( 'pending_yearly_on' => null ) );
+					self::reward_forms( $member_id, 'month_free' );
+					$switch_failed = true;
+				}
 			} elseif ( 'undo' === $action ) {
-				self::save_sub( $member_id, array( 'pending_yearly_on' => null ) );
+				$done = apply_filters( 'lld_members_stripe_switch', true, $member_id, 'undo' );
+				if ( is_wp_error( $done ) ) {
+					$switch_failed = true;
+				} else {
+					self::save_sub( $member_id, array( 'pending_yearly_on' => null ) );
+					self::reward_forms( $member_id, 'month_free' );
+					do_action( 'lld_members_reward_ready', $member_id );
+				}
 			}
+			// Stage 3 actions on this page (P3-63 pause).
+			do_action( 'lld_members_subscription_post', $action, $member_id );
 		}
 		$sub  = self::subscription_row( $member_id );
 		$main = '<h1>My subscription</h1>';
+		// Stage 3: the membership card and the pause (P3-62, P3-63).
+		$main .= (string) apply_filters( 'lld_members_subscription_top', '', $member_id, $sub );
+		if ( $failed ) {
+			$main .= '<div class="lld-fail" role="alert"><p>Your subscription was not cancelled. ' . esc_html( LLD_Members_Stripe::try_again_message() ) . '</p></div>';
+		}
+		if ( $switch_failed ) {
+			$main .= '<div class="lld-fail" role="alert"><p>Your plan was not changed. ' . esc_html( LLD_Members_Stripe::try_again_message() ) . '</p></div>';
+		}
 		if ( ! $sub || 'free' === strtolower( (string) $sub->access_state ) ) {
 			$main .= '<p>Your membership is Free.</p>';
 			$main .= '<p><a href="' . esc_url( home_url( '/pricing/' ) ) . '">See pricing</a></p>';
 		} else {
-			$main .= '<p>Plan: ' . esc_html( (string) $sub->plan ) . '</p>';
+			$main .= '<p>Plan: ' . esc_html( ucfirst( (string) $sub->plan ) ) . '</p>';
 			$main .= '<p>Your membership is ' . esc_html( (string) $sub->access_state ) . '.</p>';
 			if ( $sub->locked_amount ) {
 				$main .= '<p>Your price is ' . esc_html( self::money( (int) $sub->locked_amount, (string) $sub->locked_currency ) ) . ', tax included.</p>';
@@ -716,8 +1132,8 @@ class LLD_Members_Billing {
 			if ( 'past_due' === (string) $sub->stripe_state ) {
 				$main .= '<p>Update your card</p>';
 			}
-			$app = ( 'yearly' === (string) $sub->plan && self::paid_open( $member_id ) ) ? 'included' : 'not included';
-			$main .= '<p data-lld-app="' . esc_attr( $app ) . '">Stage 3 app: ' . esc_html( $app ) . '</p>';
+			// The app entitlement (FR2-13, FR4-11; owner, 8 Nov 2026): web and app for every member, features by plan.
+			$main .= '<p data-lld-app="included">The Lifeline Daily app is included with your membership when it launches.</p>';
 			$next = self::next_charge( $member_id );
 			$main .= '<p data-lld-next="' . (int) $next['charged'] . '" data-lld-next-currency="' . esc_attr( $next['currency'] ) . '">Next payment ' . esc_html( self::money( $next['charged'], $next['currency'] ) ) . '</p>';
 			if ( $sub->pending_yearly_on ) {
@@ -728,20 +1144,29 @@ class LLD_Members_Billing {
 		$main .= self::reward_list( $member_id );
 		$link  = home_url( '/pricing/?ref=' . rawurlencode( self::referral_code( $member_id ) ) );
 		$main .= '<p>Your referral link is <a href="' . esc_url( $link ) . '">' . esc_html( $link ) . '</a></p>';
-		$main .= '<form method="post">';
+		$main .= '<p class="lld-row"><button type="button" class="lld-button lld-button-secondary" data-lld-copy="' . esc_attr( $link ) . '">Copy referral link</button> ';
+		$main .= '<button type="button" class="lld-button lld-button-secondary" data-lld-share="' . esc_attr( $link ) . '" hidden>Share referral link</button></p>';
+		$main .= '<form method="post" id="lld-plan-actions">';
 		$main .= wp_nonce_field( 'lld_sub', 'lld_sub_nonce', true, false );
-		if ( $sub && 'monthly' === (string) $sub->plan && self::paid_open( $member_id ) && ! $sub->pending_yearly_on ) {
+		if ( $switching && $sub && 'monthly' === (string) $sub->plan && self::paid_open( $member_id ) && ! $sub->pending_yearly_on ) {
 			$main .= '<button class="lld-button" type="submit" name="lld_sub_action" value="switch">Switch to yearly</button> ';
 		}
 		if ( $sub && $sub->pending_yearly_on ) {
 			$main .= '<button class="lld-button" type="submit" name="lld_sub_action" value="undo">Undo</button> ';
 		}
-		if ( self::paid_open( $member_id ) && ( ! $sub || 'cancelled' !== strtolower( (string) $sub->access_state ) ) ) {
+		// paid_state: a paused member can still cancel.
+		if ( self::paid_state( $member_id ) && ( ! $sub || 'cancelled' !== strtolower( (string) $sub->access_state ) ) ) {
 			$confirm = isset( $_GET['confirm'] );
 			if ( ! $confirm ) {
 				$main .= '<p><a href="' . esc_url( home_url( '/members/subscription/?confirm=1' ) ) . '">Cancel</a></p>';
 			} else {
-				$main .= '<button class="lld-button" type="submit" name="lld_sub_action" value="cancel">Confirm cancellation</button>';
+				$until = ( $sub && $sub->period_ends_on ) ? ' until ' . (string) $sub->period_ends_on : ' until the end of the period you have paid for';
+				$main .= '<div class="lld-card" data-lld-cancel-note><h2>Cancel Premium?</h2><p>' . esc_html( 'Premium stays open' . $until . '. You will not be charged again.' ) . '</p>';
+				$main .= '<p>Your account, your progress and the free features stay. You can rejoin Premium at any time.</p>';
+				// Stage 3: a pause is offered before the final button (TC-FR3-65-AS-06).
+				$main .= (string) apply_filters( 'lld_members_cancel_offer', '', $member_id, $sub );
+				$main .= '<button class="lld-button" type="submit" name="lld_sub_action" value="cancel">Confirm cancellation</button> ';
+				$main .= '<a href="' . esc_url( home_url( '/members/subscription/' ) ) . '">Keep Premium</a></div>';
 			}
 		}
 		$main .= '</form>';
@@ -961,13 +1386,12 @@ class LLD_Members_Billing {
 		$params = $request->get_json_params();
 		$action = isset( $params['action'] ) ? sanitize_key( (string) $params['action'] ) : '';
 		if ( 'reset' === $action ) {
-			delete_option( 'lld_prices' );
+			delete_option( self::price_option() );
 			delete_option( 'lld_codes' );
 			delete_option( 'lld_launch_on' );
 			delete_option( 'lld_reward_stop' );
 			delete_option( 'lld_notice_fail' );
 			delete_option( 'lld_members_stripe_unreachable' );
-			self::sync_pmpro_levels();
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
 		}
 		if ( 'launch' === $action && ! empty( $params['on'] ) ) {
@@ -998,17 +1422,9 @@ class LLD_Members_Billing {
 		if ( 'codes' === $action ) {
 			return new WP_REST_Response( array( 'codes' => self::codes() ), 200 );
 		}
-		if ( 'pmpro_levels' === $action ) {
-			global $wpdb;
+		if ( 'plans' === $action ) {
 			LLD_Members_Billing::db_update();
-			$ids   = self::sync_pmpro_levels();
-			$table = $wpdb->prefix . 'pmpro_membership_levels';
-			$rows  = array();
-			foreach ( $ids as $plan => $id ) {
-				$rows[ $plan ] = $wpdb->get_row( $wpdb->prepare( "SELECT id, name, initial_payment, billing_amount, cycle_number, cycle_period, allow_signups FROM {$table} WHERE id = %d", $id ), ARRAY_A );
-			}
-			$named = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE name IN (%s, %s)", self::PMPRO_LEVELS['yearly']['name'], self::PMPRO_LEVELS['monthly']['name'] ) );
-			return new WP_REST_Response( array( 'levels' => $rows, 'named' => $named ), 200 );
+			return new WP_REST_Response( array( 'plans' => self::plans() ), 200 );
 		}
 		if ( 'admin_log' === $action ) {
 			global $wpdb;
@@ -1054,17 +1470,21 @@ class LLD_Members_Billing {
 			if ( ! in_array( $country, array( 'GB', 'DE', 'US' ), true ) ) {
 				$country = 'US';
 			}
-			if ( self::has_premium( $member_id ) ) {
+			if ( $member_id > 0 && self::paid_state( $member_id ) ) {
 				return new WP_REST_Response( array( 'message' => 'You already have Premium.' ), 409 );
 			}
 			if ( empty( $params['sale_terms'] ) ) {
 				return new WP_REST_Response( array( 'message' => 'Please accept the terms of sale to continue.' ), 400 );
 			}
 			self::accept_terms_of_sale( $member_id );
-			$quote   = self::quote( $member_id, $plan, $country, $code );
-			$session = 'cs_test_' . bin2hex( random_bytes( 8 ) );
-			self::store_quote( $session, $quote, $member_id, $ref );
-			$quote['session'] = $session;
+			$quote  = self::quote( $member_id, $plan, $country, $code );
+			$opened = self::open_session( $quote, $member_id, $ref );
+			if ( is_wp_error( $opened ) ) {
+				// Stripe's own text (which can carry a masked key fragment or price ids) stays with the admin log.
+				return new WP_REST_Response( array( 'message' => self::try_again_message() ), 503 );
+			}
+			self::store_quote( (string) $opened['id'], $quote, $member_id, $ref );
+			$quote['session'] = $opened['id'];
 			return new WP_REST_Response( $quote, 200 );
 		}
 		if ( 'read' === $action ) {
@@ -1152,8 +1572,9 @@ class LLD_Members_Billing {
 	 */
 	public static function quote( $member_id, $plan, $country, $code ) {
 		$prices   = self::prices();
-		$currency = self::currency_for( $country );
-		$base     = 'yearly' === $plan ? (int) $prices['yearly'] : (int) $prices['monthly'];
+		// Stage 3 (D2): with the real Stripe connected, the price and currency are Stripe's own.
+		$currency = (string) apply_filters( 'lld_members_plan_currency', self::currency_for( $country ), $plan, $member_id );
+		$base     = (int) apply_filters( 'lld_members_plan_price', 'yearly' === $plan ? (int) $prices['yearly'] : (int) $prices['monthly'], $plan, $member_id );
 		$used     = '';
 		$charged  = $base;
 		if ( '' !== $code && self::code_applies( $member_id, $code, $plan ) ) {
@@ -1187,7 +1608,7 @@ class LLD_Members_Billing {
 			return;
 		}
 		if ( 'invoice.payment_failed' === $type ) {
-			$sub_id = isset( $object['subscription'] ) ? (string) $object['subscription'] : '';
+			$sub_id = self::invoice_subscription( $object );
 			$row    = self::by_stripe_subscription( $sub_id );
 			if ( $row ) {
 				$invoice = isset( $object['id'] ) && '' !== (string) $object['id'] ? (string) $object['id'] : 'sub:' . $sub_id;
@@ -1373,11 +1794,19 @@ class LLD_Members_Billing {
 		$today    = LLD_Members_Programme::local_today( $member_id );
 		$ends     = self::add_period( $today, (string) $quote['plan'] );
 		$stripe   = isset( $object['subscription'] ) ? sanitize_text_field( (string) $object['subscription'] ) : '';
-		$payment  = isset( $object['payment_intent'] ) ? sanitize_text_field( (string) $object['payment_intent'] ) : $session;
+		$payment  = isset( $object['payment_intent'] ) && is_string( $object['payment_intent'] ) ? sanitize_text_field( $object['payment_intent'] ) : $session;
+		// A real subscription session carries its invoice, not a payment intent; Stage 3 (D2) looks the intent up.
+		$payment  = sanitize_text_field( (string) apply_filters( 'lld_members_payment_ref', $payment, $object ) );
 		$fingerprint = isset( $object['fingerprint'] ) ? sanitize_text_field( (string) $object['fingerprint'] ) : '';
-		$email    = isset( $object['email'] ) ? sanitize_email( (string) $object['email'] ) : self::email_of( $member_id );
+		$email    = isset( $object['email'] ) ? sanitize_email( (string) $object['email'] ) : '';
+		if ( '' === $email && isset( $object['customer_details']['email'] ) ) {
+			$email = sanitize_email( (string) $object['customer_details']['email'] );
+		}
+		if ( '' === $email ) {
+			$email = self::email_of( $member_id );
+		}
 		$current  = self::subscription_row( $member_id );
-		if ( self::has_premium( $member_id ) && $current && '' !== (string) $current->stripe_subscription && (string) $current->stripe_subscription !== $stripe ) {
+		if ( $member_id > 0 && self::paid_state( $member_id ) && $current && '' !== (string) $current->stripe_subscription && (string) $current->stripe_subscription !== $stripe ) {
 			// Paid twice: keep the first subscription, record the payment so the owner can refund it, and flag it.
 			self::insert_order( $member_id, 'payment', $quote, $payment, $email, $fingerprint );
 			self::flag_mismatch( $member_id, $today );
@@ -1404,7 +1833,7 @@ class LLD_Members_Billing {
 		LLD_Members_Programme::premium_restored( $member_id );
 		self::remember_card( $member_id, $fingerprint );
 		self::note_referral( $member_id, isset( $stored['ref'] ) ? (string) $stored['ref'] : '', $email, $fingerprint );
-		self::mail_member( $member_id, 'Your receipt', 'Your receipt. Amount ' . self::money( (int) $quote['charged'], (string) $quote['currency'] ) . ', tax included. Date ' . $today . '.' );
+		self::receipt_mail( $member_id, self::money( (int) $quote['charged'], (string) $quote['currency'] ), $today );
 		if ( self::cancel_was_held( $stripe ) ) {
 			// The subscription ended before its payment notice arrived: T4 maps that to Premium ended.
 			do_action( 'lld_members_event', 'cancelled', $member_id, array() );
@@ -1416,7 +1845,7 @@ class LLD_Members_Billing {
 	 * @param array<string,mixed> $object Invoice object.
 	 */
 	private static function apply_renewal( $object ) {
-		$row = self::by_stripe_subscription( isset( $object['subscription'] ) ? (string) $object['subscription'] : '' );
+		$row = self::by_stripe_subscription( self::invoice_subscription( $object ) );
 		if ( ! $row ) {
 			return;
 		}
@@ -1432,12 +1861,13 @@ class LLD_Members_Billing {
 		if ( $row->pending_yearly_on && (string) $row->pending_yearly_on <= $today ) {
 			$plan = 'yearly';
 		}
-		$payment = isset( $object['payment_intent'] ) ? sanitize_text_field( (string) $object['payment_intent'] ) : sanitize_text_field( (string) $object['id'] );
+		$payment = isset( $object['payment_intent'] ) && is_string( $object['payment_intent'] ) ? sanitize_text_field( $object['payment_intent'] ) : sanitize_text_field( (string) $object['id'] );
+		$payment = sanitize_text_field( (string) apply_filters( 'lld_members_payment_ref', $payment, $object ) );
 		$quote   = array(
 			'plan'     => $plan,
 			'country'  => 'gbp' === $next['currency'] ? 'GB' : ( 'eur' === $next['currency'] ? 'DE' : 'US' ),
 			'currency' => $next['currency'],
-			'base'     => (int) $row->locked_amount,
+			'base'     => (int) $next['base'],
 			'charged'  => $amount,
 			'tax'      => self::tax_inside( $amount, 'gbp' === $next['currency'] ? 'GB' : ( 'eur' === $next['currency'] ? 'DE' : 'US' ) ),
 			'code'     => '',
@@ -1457,20 +1887,23 @@ class LLD_Members_Billing {
 		if ( ! empty( $next['reward_id'] ) ) {
 			self::consume_reward( (int) $next['reward_id'], $order_id );
 		}
-		self::save_sub(
-			$member_id,
-			array(
-				'plan'              => $plan,
-				'access_state'      => 'Premium',
-				'stripe_state'      => 'active',
-				'period_ends_on'    => self::add_period( $today, $plan ),
-				'pending_yearly_on' => null,
-			)
+		$fields = array(
+			'plan'              => $plan,
+			'access_state'      => 'Premium',
+			'stripe_state'      => 'active',
+			'period_ends_on'    => self::add_period( $today, $plan ),
+			'pending_yearly_on' => null,
 		);
+		if ( 'yearly' === $plan && 'yearly' !== (string) $row->plan && 'usd' === (string) $next['currency'] ) {
+			$fields['locked_amount'] = (int) $next['base'];   // the price lock now holds the yearly price
+		}
+		self::save_sub( $member_id, $fields );
+		// A further waiting reward goes onto the next real Stripe invoice (D2a).
+		do_action( 'lld_members_reward_ready', $member_id );
 		do_action( 'lld_members_event', 'renewed', $member_id, array( 'switched' => 'yearly' === $plan && 'yearly' !== (string) $row->plan ) );
 		LLD_Members_Programme::premium_restored( $member_id );
 		self::clear_retry( $member_id );
-		self::mail_member( $member_id, 'Your receipt', 'Your receipt. Amount ' . self::money( $amount, $next['currency'] ) . ', tax included. Date ' . $today . '.' );
+		self::receipt_mail( $member_id, self::money( $amount, $next['currency'] ), $today );
 	}
 
 	/**
@@ -1535,6 +1968,7 @@ class LLD_Members_Billing {
 			)
 		);
 		self::close_week( $member_id, $as_of );
+		self::lapse_rewards( $member_id );
 		if ( class_exists( 'LLD_Members_Premium' ) ) {
 			LLD_Members_Premium::note_ended( $member_id, $as_of );
 		}
@@ -1544,20 +1978,44 @@ class LLD_Members_Billing {
 	}
 
 	/**
+	 * Owner, 8 Nov 2026 (Terms of Sale 12): a reward still waiting when Premium ends is lost. Logged for the owner.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function lapse_rewards( $member_id ) {
+		global $wpdb;
+		$table   = LLD_Members_Schema::table( 'reward' );
+		$pending = $wpdb->get_results( $wpdb->prepare( "SELECT id, form FROM {$table} WHERE recipient_member_id = %d AND status = 'pending'", (int) $member_id ) );
+		foreach ( (array) $pending as $reward ) {
+			$done = $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET status = 'withdrawn', withdrawn_on = %s, withdrawn_why = %s WHERE id = %d AND status = 'pending'", lld_members_now_mysql(), 'premium_ended', (int) $reward->id ) );
+			if ( 1 === $done ) {
+				self::admin_log( 'reward_withdrawn', (int) $member_id, 'Reward ' . (int) $reward->id . ' (' . (string) $reward->form . ') lost: Premium ended before it was used.' );
+			}
+		}
+	}
+
+	/**
 	 * @param int $member_id Member number.
 	 */
 	private static function cancel_at_period_end( $member_id ) {
 		$sub = self::subscription_row( $member_id );
 		if ( ! $sub ) {
-			return;
+			return true;
+		}
+		// Stage 3 (D2): Stripe is told first; the site changes only when Stripe agreed.
+		$asked = apply_filters( 'lld_members_stripe_cancel', true, $member_id, $sub );
+		if ( is_wp_error( $asked ) ) {
+			return $asked;
 		}
 		self::save_sub(
 			$member_id,
 			array(
-				'access_state' => 'cancelled',
-				'stripe_state' => 'cancel_at_period_end',
+				'access_state'      => 'cancelled',
+				'stripe_state'      => 'cancel_at_period_end',
+				'pending_yearly_on' => null,   // a queued switch to yearly ends with the cancellation
 			)
 		);
+		return true;
 	}
 
 	/**
@@ -1566,9 +2024,22 @@ class LLD_Members_Billing {
 	private static function queue_yearly( $member_id ) {
 		$sub = self::subscription_row( $member_id );
 		if ( ! $sub || 'monthly' !== (string) $sub->plan || ! $sub->period_ends_on ) {
-			return;
+			return false;
 		}
 		self::save_sub( $member_id, array( 'pending_yearly_on' => (string) $sub->period_ends_on ) );
+		return true;
+	}
+
+	/**
+	 * A member's waiting rewards take the form of the payment they will reduce: one month free on a monthly payment,
+	 * 13 % off a yearly one (D2a: a switch to yearly, or its undo, changes which payment comes next).
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $form      month_free or percent_13.
+	 */
+	private static function reward_forms( $member_id, $form ) {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare( 'UPDATE ' . LLD_Members_Schema::table( 'reward' ) . " SET form = %s WHERE recipient_member_id = %d AND status = 'pending'", 'percent_13' === $form ? 'percent_13' : 'month_free', (int) $member_id ) );
 	}
 
 	/**
@@ -1592,7 +2063,12 @@ class LLD_Members_Billing {
 		if ( 'refunded' === (string) $order->status ) {
 			return new WP_Error( 'lld_refund', 'This payment is already refunded.' );
 		}
-		self::record_refund( $order, 're_test_' . $order_id, 'owner' );
+		// Stage 3 (D2): the refund is made at Stripe first and recorded here with Stripe's reference.
+		$ref = apply_filters( 'lld_members_stripe_refund', 're_test_' . $order_id, $order );
+		if ( is_wp_error( $ref ) ) {
+			return $ref;
+		}
+		self::record_refund( $order, sanitize_text_field( (string) $ref ), 'owner' );
 		return true;
 	}
 
@@ -1724,7 +2200,20 @@ class LLD_Members_Billing {
 			return false;
 		}
 		self::insert_reward( $referral_id, $friend, 'friend-' . $referral_id );
+		// With real Stripe, each waiting reward is put on the member's next invoice (D2a).
+		do_action( 'lld_members_reward_ready', $referrer );
+		do_action( 'lld_members_reward_ready', $friend );
 		return true;
+	}
+
+	/**
+	 * The next charge the site expects for this member (amount, currency, reward and base), for the Stripe connection.
+	 *
+	 * @param int $member_id Member number.
+	 * @return array<string,mixed>
+	 */
+	public static function next_charge_for( $member_id ) {
+		return self::next_charge( (int) $member_id );
 	}
 
 	/**
@@ -1735,7 +2224,7 @@ class LLD_Members_Billing {
 	private static function insert_reward( $referral_id, $member_id, $key ) {
 		global $wpdb;
 		$sub  = self::subscription_row( $member_id );
-		$form = ( $sub && 'yearly' === (string) $sub->plan ) ? 'percent_13' : 'month_free';
+		$form = ( $sub && ( 'yearly' === (string) $sub->plan || ! empty( $sub->pending_yearly_on ) ) ) ? 'percent_13' : 'month_free';
 		$wpdb->suppress_errors( true );
 		$wpdb->insert(
 			LLD_Members_Schema::table( 'reward' ),
@@ -1748,6 +2237,9 @@ class LLD_Members_Billing {
 			)
 		);
 		$wpdb->suppress_errors( false );
+		if ( $sub && in_array( (string) $sub->access_state, array( 'Premium ended', 'Refunded' ), true ) ) {
+			self::lapse_rewards( $member_id );   // owner, 8 Nov 2026: a reward is lost once Premium has ended
+		}
 	}
 
 	/**
@@ -1880,10 +2372,68 @@ class LLD_Members_Billing {
 	/**
 	 * @return array{yearly:int,monthly:int}
 	 */
+	/**
+	 * The current yearly and monthly prices in cents, for screens outside billing (the membership lock).
+	 *
+	 * @return array{yearly:int,monthly:int}
+	 */
+	public static function shown_prices() {
+		return self::prices();
+	}
+
+	/**
+	 * The Owner ends a member's Premium from the admin panel (P3-87, FR3-81): at the end of the paid period (Stripe
+	 * cancels then, the member keeps Premium until that date) or now (Stripe cancels now, Premium stops at once).
+	 * Refunds stay in Stripe. The same Stage 2 steps as the member's own cancellation and an ended subscription.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $when      period_end or now.
+	 * @return true|WP_Error
+	 */
+	public static function admin_end_membership( $member_id, $when ) {
+		$member_id = (int) $member_id;
+		$sub       = self::subscription_row( $member_id );
+		if ( ! $sub || ! self::paid_state( $member_id ) ) {
+			return new WP_Error( 'lld_admin_end', 'This member has no Premium membership to end.' );
+		}
+		if ( 'period_end' === $when ) {
+			return self::cancel_at_period_end( $member_id );
+		}
+		if ( 'now' !== $when ) {
+			return new WP_Error( 'lld_admin_end', 'Choose when the membership ends.' );
+		}
+		$ref = (string) $sub->stripe_subscription;
+		if ( '' !== $ref ) {
+			$asked = apply_filters( 'lld_members_stripe_cancel_member', null, $member_id, $ref );
+			if ( is_wp_error( $asked ) ) {
+				return $asked;
+			}
+		}
+		self::end_premium( $member_id, 'expired', LLD_Members_Programme::local_today( $member_id ) );
+		return true;
+	}
+
+	/**
+	 * The Stage 2 subscription row, for Stage 3 (P3-62, P3-63).
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function subscription_for( $member_id ) {
+		return self::subscription_row( (int) $member_id );
+	}
+
+	/**
+	 * Prices for new members. Stage 3 launch prices use their own option and defaults (P3-60, FR3-62).
+	 */
+	private static function price_option() {
+		return (string) apply_filters( 'lld_members_price_option', 'lld_prices' );
+	}
+
 	private static function prices() {
-		$stored = get_option( 'lld_prices' );
-		$yearly = 5999;
-		$monthly = 799;
+		$stored  = get_option( self::price_option() );
+		$default = (array) apply_filters( 'lld_members_default_prices', array( 'yearly' => 5999, 'monthly' => 799 ) );
+		$yearly  = (int) $default['yearly'];
+		$monthly = (int) $default['monthly'];
 		if ( is_array( $stored ) ) {
 			$yearly  = isset( $stored['yearly'] ) ? (int) $stored['yearly'] : $yearly;
 			$monthly = isset( $stored['monthly'] ) ? (int) $stored['monthly'] : $monthly;
@@ -1914,7 +2464,7 @@ class LLD_Members_Billing {
 			return new WP_Error( 'lld_free', 'A price of 0 or a 100 % code needs the confirm box ticked. Nothing was saved.' );
 		}
 		$before = self::prices();
-		update_option( 'lld_prices', array( 'monthly' => $monthly, 'yearly' => $yearly ), false );
+		update_option( self::price_option(), array( 'monthly' => $monthly, 'yearly' => $yearly ), false );
 		$changes = array();
 		foreach ( array( 'monthly' => $monthly, 'yearly' => $yearly ) as $plan => $cents ) {
 			if ( (int) $before[ $plan ] !== $cents ) {
@@ -1922,7 +2472,6 @@ class LLD_Members_Billing {
 			}
 		}
 		if ( $changes ) {
-			self::sync_pmpro_levels();
 			self::admin_log( 'price_change', 0, implode( '; ', $changes ) . ( $confirmed && ( 0 === $monthly || 0 === $yearly ) ? ' (price of 0 confirmed)' : '' ) );
 		}
 		if ( ! $new ) {
@@ -2205,6 +2754,45 @@ class LLD_Members_Billing {
 	}
 
 	/**
+	 * Open the checkout session for a quote; the caller keeps the quote under its id. Stage 3 (D2) opens a real Stripe
+	 * session through the lld_members_checkout_session filter; without it the session is simulated as before.
+	 *
+	 * @param array<string,mixed> $quote     Quote.
+	 * @param int                 $member_id Member.
+	 * @param string              $ref       Referral code.
+	 * @return array{id:string,url:string}|WP_Error
+	 */
+	private static function open_session( $quote, $member_id, $ref ) {
+		$opened = apply_filters( 'lld_members_checkout_session', null, $quote, $member_id, $ref );
+		if ( is_wp_error( $opened ) ) {
+			return $opened;
+		}
+		if ( ! is_array( $opened ) || empty( $opened['id'] ) || empty( $opened['url'] ) ) {
+			$id     = 'cs_test_' . bin2hex( random_bytes( 8 ) );
+			$opened = array(
+				'id'  => $id,
+				'url' => 'https://checkout.stripe.com/c/pay/' . $id,
+			);
+		}
+		return $opened;
+	}
+
+	/**
+	 * The subscription a Stripe invoice belongs to: the older top-level field, or the newer parent details.
+	 *
+	 * @param array<string,mixed> $object Invoice object.
+	 */
+	private static function invoice_subscription( $object ) {
+		if ( ! empty( $object['subscription'] ) && is_string( $object['subscription'] ) ) {
+			return (string) $object['subscription'];
+		}
+		if ( ! empty( $object['parent']['subscription_details']['subscription'] ) && is_string( $object['parent']['subscription_details']['subscription'] ) ) {
+			return (string) $object['parent']['subscription_details']['subscription'];
+		}
+		return '';
+	}
+
+	/**
 	 * @param string $session Session id.
 	 * @return array<string,mixed>|null
 	 */
@@ -2226,6 +2814,11 @@ class LLD_Members_Billing {
 		$prices   = self::prices();
 		$currency = ( $sub && $sub->locked_currency ) ? (string) $sub->locked_currency : 'usd';
 		$base     = ( $sub && $sub->locked_amount ) ? (int) $sub->locked_amount : ( 'yearly' === $plan ? (int) $prices['yearly'] : (int) $prices['monthly'] );
+		// A queued switch to yearly that is due (owner, 8 Nov 2026, D2a): the renewal is charged the yearly price, which
+		// is what Stripe's schedule charges; until now the monthly price was expected and a real invoice would not match.
+		if ( $sub && 'monthly' === $plan && ! empty( $sub->pending_yearly_on ) && 'usd' === $currency && (string) $sub->pending_yearly_on <= LLD_Members_Programme::local_today( $member_id ) ) {
+			$base = (int) $prices['yearly'];
+		}
 		$reward   = self::pending_reward( $member_id );
 		$charged  = $base;
 		$reward_id = 0;
@@ -2237,6 +2830,7 @@ class LLD_Members_Billing {
 			'charged'   => $charged,
 			'currency'  => $currency,
 			'reward_id' => $reward_id,
+			'base'      => $base,
 		);
 	}
 
@@ -2727,6 +3321,27 @@ class LLD_Members_Billing {
 	}
 
 	/**
+	 * The email after each payment. Stage 3 changes it when Onelink sends the receipt (FR3-62, Managed Payments).
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $amount    Amount charged, formatted.
+	 * @param string $today     Date Y-m-d.
+	 */
+	private static function receipt_mail( $member_id, $amount, $today ) {
+		$mail = apply_filters(
+			'lld_members_receipt_mail',
+			array(
+				'subject' => 'Your receipt',
+				'body'    => 'Your receipt. Amount ' . $amount . ', tax included. Date ' . $today . '.',
+			),
+			$member_id,
+			$amount,
+			$today
+		);
+		self::mail_member( $member_id, (string) $mail['subject'], (string) $mail['body'] );
+	}
+
+	/**
 	 * @param int    $member_id Member number.
 	 * @param string $subject   Subject.
 	 * @param string $body      Plain text with no health details.
@@ -2779,7 +3394,7 @@ class LLD_Members_Billing {
 			'rewards'      => $wpdb->get_results( $wpdb->prepare( 'SELECT id, form, status, operation_key FROM ' . LLD_Members_Schema::table( 'reward' ) . ' WHERE recipient_member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
 			'referrals'    => $wpdb->get_results( $wpdb->prepare( 'SELECT id, status, self_referral, friend_member_id FROM ' . LLD_Members_Schema::table( 'referral' ) . ' WHERE referrer_member_id = %d OR friend_member_id = %d ORDER BY id ASC', $member_id, $member_id ), ARRAY_A ),
 			'next'         => $member_id ? self::next_charge( $member_id ) : array(),
-			'app'          => ( $sub && 'yearly' === (string) $sub->plan && self::paid_open( $member_id ) ) ? 'included' : 'not included',
+			'app'          => 'included', // every member (FR4-11; owner, 8 Nov 2026)
 			'sale_consent' => $wpdb->get_results( $wpdb->prepare( 'SELECT consent_type, change_kind, document_version, occurred_at FROM ' . LLD_Members_Schema::table( 'consent' ) . " WHERE member_id = %d AND consent_type = 'sale' ORDER BY id ASC", $member_id ), ARRAY_A ),
 		);
 	}
@@ -2787,7 +3402,7 @@ class LLD_Members_Billing {
 	/**
 	 * @return array<string,array<string,string>>
 	 */
-	private static function sales_pages() {
+	public static function sales_pages() {
 		return array(
 			'healthy-weight' => array(
 				'title'       => 'Healthy Weight',

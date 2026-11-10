@@ -6,9 +6,30 @@
   "owner": "Lifeline Daily",
   "versions": [
     {
+      "version_hash": "4ebf15240ef7eff74a5bd8c93753c4957213f3d52579f26e3f6da61cff16834d",
+      "captured_at": "2026-10-28T16:44:21Z",
+      "is_live": true,
+      "size_bytes": 66687,
+      "engine_hashes": {
+        "submit.php": "b7dd197892b71f47758ef6929a7ebfbd19df10867ffe623450334abff76dde10",
+        "api/mailer.php": "40fc7099b728886bd565d611c26e6f712bb9663691611cbb6d671bba44a83f5e",
+        "api/validate.php": "0d02f48fefedc039308eaa86bd7ba97681c23abae7ac0b1d718cafe64b29815b",
+        "api/render.php": "4cff985b6c5b3e54d8f8e476a4a88c8d3e2d998db519a115484b73e3d112f298",
+        "api/ratelimit.php": "031b03a79bdf2b81cc6f269330a50da2eb9c919cc97b161b1142a1fa4800c9aa",
+        "api/templates.php": "ca2aea12f82ba48d66050aa634dc2fe795a9ad2a1a083c1079f299466d826050",
+        "api/templates-protein.php": "daa9428655d79dcef46ac3dff5a245010ec1bec1acfd10b0959217c83091cd5b",
+        "js:ENGINE": "036017e4b3c581f1e5b68424e89fcd7b697a46117657ef18a26e9ab7477d04e4",
+        "js:bandFor": "ee6851dbb9379047b0c967294a16d17a8106f61a6828a1055a026450386516cd",
+        "js:idrs": "8d3ed8417077930c7817a6fc474deb9ce1350d98b3b8120d1a584764570c409e",
+        "js:whtr": "36e2bd80a91c22c488ac5dc5455ecb2f38a9b6289c5e17003bc95ebf70900a80",
+        "js:render.priority": "38960329f57a9f2733cf086a9901ddf9cf7151bf258a3f849fcd5002d86f9076"
+      },
+      "notes": "Interface Pack look (owner-approved 28 Oct 2026): style block only; markup, MESSAGES and frozen objects unchanged"
+    },
+    {
       "version_hash": "339cec858f3db3f4f62dbf6bdea79e31a9b99c73e44da48e9cd64c30c776e2ba",
       "captured_at": "2026-10-27T17:27:53Z",
-      "is_live": true,
+      "is_live": false,
       "size_bytes": 63705,
       "engine_hashes": {
         "submit.php": "b7dd197892b71f47758ef6929a7ebfbd19df10867ffe623450334abff76dde10",

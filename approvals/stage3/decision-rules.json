@@ -1,0 +1,72 @@
+{
+  "approval_id": "APR-DECISION-RULES-V1-1-2026-11-03",
+  "tool_slug": "decision-rules",
+  "version_hash": "e9b41cc81b7169dc4314be3b5201467cd99f73982a25b0f1fd4fd1c2e9a44287",
+  "engine_name": "Decision engine rule catalogue version 1.1 (P3-02, FR3-17, NFR3-17): 23 rules (5 safety, 5 Today steps, 3 plan adjustments, 10 insights) with exact conditions, minimum data, minimum differences, cooldowns, safety checks and message templates; precedence safety > Today step > plan adjustment > insight; insights Premium, at most 3 per rolling 7 days and 1 per night, the same rule not repeated within 28 days (56 for habit praise); the low-mood safety rule R-SAFE-04 suppresses every non-safety insight and adjustment for 7 days, except the safety adjustment R-ADJ-03, which applies to every member with a calorie target and carries the gentle wording T-ADJ-03g during those days (version 1.1, Owner Q68); no AI.",
+  "intended_use": "Rule-based insights, Today steps, plan adjustments and safety notices for members, run once a night at 02:00 in the member's time zone and on demand after a profile change, a warning-level reading or opening Today. Every message is an owner-approved template in which the engine fills only numbers and dates; no template names a diagnosis or a medicine, none praises kilograms lost, and emails and notifications never carry an insight's text or numbers (NFR3-16, FR3-56 AS-02).",
+  "eligibility": "Members with health consent and a profile. Safety rules run first for every member, Free and Premium, and always show. Insights and plan adjustments are Premium, except R-ADJ-03 (losing faster than the safe rate), a safety adjustment applied to every member with a calorie target, Free or Premium, never suppressed by R-SAFE-04; a member with an eating-disorder flag gets the raise with no message and no calorie number (version 1.1, Owner Q68). The safety matrix (P3-03) is evaluated before any rule and again at display time; the engine never fires a rule the matrix forbids for that member, and a rule never fires below its minimum data.",
+  "sources": [
+    "ISH 2020 home BP thresholds and the >= 5 mmHg meaningful difference; Stergiou 2021 (home protocol).",
+    "NICE CG189 (weight-loss rate, plateaus); Hall 2011; P3-56 for the cap.",
+    "AASM/SRS 2015 sleep duration consensus; Grandner MA et al. Sleep 2010 (short sleep and hypertension).",
+    "WHO 2020 physical activity guidelines (150-300 min moderate); Chekroud SR et al. Lancet Psychiatry 2018 (activity and mood, dose about 45 min, 3-5 times a week).",
+    "Ross R et al. Waist circumference as a vital sign. Nat Rev Endocrinol 2020 (waist vs weight).",
+    "SACN 2015 (fibre 30 g); Stage 1 protein tool for protein targets.",
+    "ADA Standards of Care 2025 (glucose levels); FR2-38 wording for self-harm response."
+  ],
+  "limitations": [
+    "R-SAFE-02 (glucose warning levels) is applied at save time with the safety matrix Part C wording, not nightly; it has no template of its own in the catalogue and no test data there.",
+    "R-STEP-01 has a pregnancy wording variant T-STEP-01p ('share it with your midwife') whose text is not written out in the catalogue.",
+    "R-STEP-03, R-STEP-05, R-INS-07, R-INS-09 and R-INS-10 have no should-fire / should-not-fire test data in the catalogue.",
+    "Deliberately absent: a water-intake rule and any glucose-pattern rule (I-12: no glucose interpretation beyond the warning levels).",
+    "An insight already shown is not withdrawn when its data is later edited.",
+    "Message wording is drafted jointly with the content session's safety/stage3-messages.md (P3-77); where the two differ, the catalogue's template IDs are the ones the engine uses and the content file is aligned to them before approval."
+  ],
+  "regulatory_statement": "Signed off by the owner as clinical reviewer on 3 November 2026 (D3-43 to D3-48; version 1.1 with D3-49 the same day; record Signoff-P3-02-Decision-Engine-Rule-Catalogue.md). General health information, not a diagnosis or a medical device. Frozen: any change needs a new decision and a new version (NFR3-14, NFR3-17).",
+  "licence": "Lifeline Daily's own rules",
+  "copy_hashes": {
+    "rule.R-SAFE-01": "9b0dd9646960b05f559be6719e770fd1092ed7d9db5623b385ba19b848a702ce",
+    "rule.R-SAFE-01p": "2e050abae5ef33c3a2f483a14b056efa457efd49d9b759678ab5622d9097ab98",
+    "rule.R-SAFE-03": "e9cb4eb2a128919e2ccf52ba980096b971c40bec0376aedbb88eef96693b9bfb",
+    "rule.R-SAFE-04": "7bf13bb42db71674a300b09bb78d376571b80b34815363c1177fd305d0ccbcc6",
+    "rule.R-SAFE-04.today-step": "4979ba905b92734d9aea3fbac1c750279f9a925087f18d74c1a3f3af10e20839",
+    "rule.R-STEP-01": "3c284a3bb046991eb878f06e57e2e16fcc44ae1c2deef8bb7ad751adf1bfda17",
+    "rule.R-STEP-02": "3f724687b21a5ebffdab26a87e4bbc42085fe0247e5da16504acd5a716db6d3a",
+    "rule.R-STEP-03": "291a3a8eca66322693928c8ae961beb7e17a2eb426a85c16275d430de94c242b",
+    "rule.R-STEP-04": "6899800989b61d4bd884b4a7236aaf71ae4673f98c71b29853320cdde18c9b55",
+    "rule.R-STEP-05": "b16bb1c0dc000d1baff217ace84c647598a7a3af0143d8b43d2515912e87fbe3",
+    "rule.R-ADJ-01": "90f9fcf06a164e2ba5a7b7552cd023a74b2ce668689637e8c4b13ff03542c999",
+    "rule.R-ADJ-02": "97177bd35c5dd41c1610956896bd327e94cc1b2527325cddb486d43bfeadce74",
+    "rule.R-ADJ-03": "75bfc6e1ef2b85e858b3bf8bf6c24fa5dd616e4b41d5bb53e7778aece4b3af2a",
+    "rule.R-ADJ-03.gentle": "1d8eb79b57c70978a25ee62ca7fcc5f2ca16c5d20d516589c6d61097351ccc91",
+    "rule.R-INS-01": "95700add66ff40abfdd18a6fcc97aea18cca2bd3922e0482c25f1274cbf4682b",
+    "rule.R-INS-02": "84100a616a5ae561cb3a44d58bbf27874043ed23c72ed13c7f02916c0324b5b3",
+    "rule.R-INS-03": "953c7c102df81cc8511649d6ed4466a0f7709f1e8cdf30877a85f83af57effd2",
+    "rule.R-INS-04": "de5536d3a7ce289f428f42e25502fc4ed7f0044dbd790c958d350fbf052864a7",
+    "rule.R-INS-05": "15ce74f115bc7131fc28b2c826bc455b00ce8cc486a226d530c43fd680998ffa",
+    "rule.R-INS-06": "86b03270832e99c3608bee0058d4355a3f022f9db5941931c212fb98eacdd5ac",
+    "rule.R-INS-07": "003468d83828ece51ca4a8902939790bcba8d11c7244e612d156fec6688d374c",
+    "rule.R-INS-08": "1b301fb91b8b7af6c6d4865974935e62a45f273a9852183b99d1bb0a079f8221",
+    "rule.R-INS-09": "44ec36b4cd0acec89b735f9cdb5eb8c25796c94ae00d89be88a94a96a53fe4f4",
+    "rule.R-INS-10": "be9d143aa907a4f683b1025cf084000e608475db047929f7b705d1603b72c02d",
+    "template.T-GEN-01": "420cb9624e92ad09def2a2cdf928a3facf71912f0be7795b6f38cd2b570aafd7"
+  },
+  "oracle_report": "oracles/orc-15-decision-rules/results.json",
+  "decisions_ratified": [
+    "D3-43",
+    "D3-44",
+    "D3-45",
+    "D3-46",
+    "D3-47",
+    "D3-48",
+    "D3-49"
+  ],
+  "clinical_signoff": {
+    "name": "Product owner (sudarshanalk), acting as clinical reviewer",
+    "date": "2026-11-03",
+    "decision": "approved",
+    "notes": "Version 1.1 signed 3 November 2026 ('Yes, A and A', in chat): D3-49, Owner_Questions 68 = B. R-ADJ-03 applies to every member with a calorie target, Free or Premium, and is never suppressed by R-SAFE-04; during the 7 low-mood days it shows the gentle wording T-ADJ-03g (A); a member with an eating-disorder flag gets the raise with no message and no insight (A). Record P3-02-R-ADJ-03-Q68-Change-Draft.md and a v1.1 row in Signoff-P3-02-Decision-Engine-Rule-Catalogue.md. Version 1: Signed 3 November 2026 ('Approve all, D3-10 = B', in chat with the clinical session). D3-43 the 23 rules and templates as drafted; D3-44 Skip after a low-mood day does not lower the weekly ring that week; D3-45 plateau never lowers calories, offers a logging focus and a meal-plan swap; D3-46 too fast: calorie target raised by 250 kcal automatically, member told, doctor line if the 7-day rule triggered; D3-47 sleep vs BP: >= 5 mmHg systolic difference, >= 14 paired days with >= 4 short (< 6 h) and >= 4 long (>= 7 h) nights, 42-day window; D3-48 run at 02:00 local nightly plus on demand after profile changes and warning-level readings. Quota 3 insights per rolling 7 days, 1 per night, 28-day cooldown (56 for habit praise); R-SAFE-04 suppresses all non-safety insights and adjustments for 7 days. Wording sign-off (every template T-SAFE-01, 01p, 03, 04, 04s; T-STEP-01 to 05; T-ADJ-01 to 03; T-INS-01 to 10; T-GEN-01) is joint with the P3-77 content approval of 3 November 2026."
+  },
+  "review_date": "2026-11-03",
+  "next_review_date": "2027-11-03"
+}

@@ -1,0 +1,215 @@
+{
+  "group": "Engine-level test data (P3-02 section 7; NFR3-17 AS-01, FR3-17 AS-03)",
+  "tool": "decision-rules",
+  "fixtures": [
+    {
+      "id": "FX-DR-ENG-01",
+      "purpose": "ENG-01 priority between insights",
+      "inputs": {
+        "night_1_qualifying": [
+          "R-INS-01",
+          "R-INS-03",
+          "R-INS-05"
+        ]
+      },
+      "expected": {
+        "shown": [
+          "R-INS-01"
+        ],
+        "reason": "priority",
+        "others": "re-evaluated next night"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ENG-02",
+      "purpose": "ENG-02 weekly quota",
+      "inputs": {
+        "insights_shown_on": [
+          "D-6",
+          "D-4",
+          "D-2"
+        ],
+        "qualifies_on_D": "R-INS-02"
+      },
+      "expected": {
+        "shown_on_D": null,
+        "reason": "quota",
+        "shown_on": "D+1 when the D-6 one leaves the 7-day window"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ENG-03",
+      "purpose": "ENG-03 28-day cooldown",
+      "inputs": {
+        "R-INS-01_shown_on": "D-20",
+        "qualifies_again_on": "D"
+      },
+      "expected": {
+        "shown_on_D": null,
+        "reason": "28-day cooldown",
+        "shown_from": "D+8 if still true"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ENG-04",
+      "purpose": "ENG-04 low-mood suppression",
+      "inputs": {
+        "R-SAFE-04_fires_on": "D",
+        "R-INS-02_qualifies_on": [
+          "D",
+          "D+3"
+        ]
+      },
+      "expected": {
+        "shown": "T-SAFE-04",
+        "insights_until": "D+7",
+        "reason": "R-SAFE-04 suppresses non-safety insights for 7 days"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ENG-05",
+      "purpose": "ENG-05 Free member, insight qualifies",
+      "inputs": {
+        "membership": "free",
+        "qualifies": "R-INS-01"
+      },
+      "expected": {
+        "insight_stored": false,
+        "insight_shown": false,
+        "upgrade_line_in_insights_area": true
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ENG-06",
+      "purpose": "ENG-06 Free member, safety rule qualifies",
+      "inputs": {
+        "membership": "free",
+        "qualifies": "R-SAFE-01"
+      },
+      "expected": {
+        "shown": "T-SAFE-01",
+        "reason": "safety notice shown (free)"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ENG-07",
+      "purpose": "ENG-07 ED flag added during the day",
+      "inputs": {
+        "profile_change": "eating-disorder flag at 10:00",
+        "rule_due_that_night": "R-INS-06"
+      },
+      "expected": {
+        "rule_silenced": "at once",
+        "insight_at_02_00": null
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ENG-08",
+      "purpose": "ENG-08 daily mean and 7-day average",
+      "inputs": {
+        "readings": {
+          "day_1": [
+            "150/95",
+            "130/85"
+          ],
+          "day_2": [
+            "136/86"
+          ],
+          "day_3": [
+            "136/86"
+          ]
+        }
+      },
+      "expected": {
+        "day_1_daily_mean": "140/90",
+        "counted_once": true,
+        "seven_day_average_exact": "(140 + 136 + 136)/3 = 137.33/87.33",
+        "seven_day_average_shown": "137/87"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ENG-09",
+      "purpose": "ENG-09 sleep belongs to the wake-up day",
+      "inputs": {
+        "bedtime": "23:30 D-1",
+        "wake": "06:30 D"
+      },
+      "expected": {
+        "hours": 7.0,
+        "day": "D",
+        "pairs_with": "D's BP mean"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ENG-10",
+      "purpose": "ENG-10 member's local calendar day",
+      "inputs": {
+        "saved_local": "23:50 on D-1, UTC+10",
+        "stored_utc": "D-1 13:50"
+      },
+      "expected": {
+        "counted_on": "D-1 in the member's calendar"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ENG-11",
+      "purpose": "ENG-11 edit after an insight was shown",
+      "inputs": {
+        "edited": "the reading that made R-INS-02 fire, after it was shown"
+      },
+      "expected": {
+        "insight_shown_record": "stays",
+        "re_shown": false,
+        "cooldown": "unchanged"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-DR-ENG-12",
+      "purpose": "ENG-12 output equals an approved template with only gaps replaced",
+      "inputs": {
+        "templates": "every Message template with status approved",
+        "check": "engine output text"
+      },
+      "expected": {
+        "each_shown_insight_text": "equals a template with only {gaps} replaced"
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "FR3-17 AS-04, NFR3-17 AS-02"
+    },
+    {
+      "id": "FX-DR-ENG-13",
+      "purpose": "ENG-13 reminder email carries no insight content",
+      "inputs": {
+        "email": "reminder to a member with 2 new insights"
+      },
+      "expected": {
+        "body_contains_number_reading_or_template_text": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    }
+  ]
+}

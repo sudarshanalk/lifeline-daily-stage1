@@ -81,8 +81,22 @@
   function keyboard(on) {
     document.body.classList.toggle("lld-keyboard", on);
   }
+  // NFR2-04: the focused item is shown whole. WebKit leaves a field that is only partly on screen where it is when
+  // Tab reaches it (for example a textarea at the bottom edge), so it is brought fully into view.
+  function keepInView(el) {
+    if (!el || el === document.body || typeof el.getBoundingClientRect !== "function" || typeof el.scrollIntoView !== "function") return;
+    var box = el.getBoundingClientRect();
+    var tall = window.innerHeight || document.documentElement.clientHeight;
+    if (box.top >= 0 && box.bottom <= tall) return;
+    try {
+      el.scrollIntoView({ block: "nearest", inline: "nearest" });
+    } catch (e) {
+      el.scrollIntoView(false);
+    }
+  }
   document.addEventListener("focusin", function (event) {
     if (event.target.matches("input, textarea, select")) keyboard(true);
+    keepInView(event.target);
   });
   document.addEventListener("focusout", function () {
     window.setTimeout(function () {
@@ -126,6 +140,16 @@
     }
     screenForm.addEventListener("change", screenReady);
     screenReady();
+  }
+  // The approved hint beside "Continue" (screening-sleep-and-stress.md, Owner_Questions 93 = B), shown while it is disabled.
+  var screenHint = screenForm && screenForm.querySelector("[data-lld-screen-hint]");
+  if (screenHint) {
+    function screenHintPaint() {
+      var button = screenForm.querySelector("button");
+      screenHint.hidden = !(button && button.disabled);
+    }
+    screenForm.addEventListener("change", screenHintPaint);
+    screenHintPaint();
   }
 
   var imperial = document.querySelector("[data-lld-imperial]");
@@ -244,6 +268,34 @@
       saveForm.hidden = true;
     });
   }
+
+  // Referral link: Copy, and Share where the device offers it (SCR-31).
+  function toast(text) {
+    var box = document.querySelector(".lld-toasts");
+    if (!box) return;
+    var note = document.createElement("p");
+    note.className = "lld-toast";
+    note.textContent = text;
+    box.appendChild(note);
+    window.setTimeout(function () { note.remove(); }, 4000);
+  }
+  document.querySelectorAll("[data-lld-copy]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var link = button.getAttribute("data-lld-copy");
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link).then(function () { toast("Link copied"); }, function () { toast("Copy didn't work. Select the link above and copy it."); });
+      } else {
+        toast("Select the link above and copy it.");
+      }
+    });
+  });
+  document.querySelectorAll("[data-lld-share]").forEach(function (button) {
+    if (!navigator.share) return;
+    button.hidden = false;
+    button.addEventListener("click", function () {
+      navigator.share({ title: "Lifeline Daily", url: button.getAttribute("data-lld-share") }).catch(function () {});
+    });
+  });
 
   var fail = document.querySelector(".lld-fail");
   if (fail) {

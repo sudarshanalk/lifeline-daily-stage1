@@ -23,3 +23,58 @@ exclude the tool iframes in LiteSpeed Cache → Page Optimization → Lazy Load 
 to `__LLD_ORIGIN__`, substituted per environment at deploy time, never `'*'`.
 
 Test double of the landing page: `tests/e2e/harness/landing.html`; unit test of the listener: `tests/static/TC-FR1-21.test.mjs`.
+
+## Theme layer (S2-L1, Interface Pack) — 28 Oct 2026
+
+`assets/lld-theme.css` restyles the Newspaper Cloud Library templates and the plugin's own blocks to the owner-approved
+Interface Pack (`handover/HANDOVER_TO_CLAUDE_INTERFACE_PACK.md`, prototype `handover/interface_pack_hub.html`): dark
+`#1a1a1a` header with the mint tagline, `#f8faf9` canvas, 16 px cards, the 780 px reading column at 17 px / 1.75, the
+emerald direct-answer box, card-style article lists, pills for sub-topics, the dark footer. Presentation only: the theme
+files stay untouched (DEC-22), the calculator pages stay byte-frozen (only the page around the iframe is styled), and the
+member screens keep their own shell in `lld-members` until Cursor aligns them.
+
+- Tokens live in the file's single `:root` block and in `design/tokens.json` → `theme`; TC-UI1-09 lints the file.
+- Fonts are self-hosted in `assets/fonts/` (latin variable woff2 for Plus Jakarta Sans and Inter, `font-display: swap`,
+  preloaded from `wp_head`), so no request goes to Google Fonts.
+- Loaded after `lld-tools.css` on every front-end page. To switch it off for a check, dequeue the `lld-theme` handle.
+
+## Category hub block (S2-L4, SCR-44) — 28 Oct 2026
+
+`category-hub.php` renders `[lld_category_hub]` for the category being viewed (handover section 5.2, prototype package 3):
+the magazine hero (flagship guide with its 1:1 featured image, "Medically reviewed" chip, excerpt and "Read full guide";
+two trending articles with 96 px square thumbnails), the topic tool callout (a `data/tool-cards.json` card) and the Stage 2
+track banner ("Start 7-day trial" to `/members/join/`, shown only while `lld-members` is active). Styles are section 5b of
+`assets/lld-theme.css`.
+
+- Choices per top category live in `data/categories.json` → `tree[].hub` (`flagship` post id or slug, `trending` ids,
+  `tool`, `track`); a child category uses its parent's tool and track. Defaults (owner question 36): flagship = the newest
+  article whose review byline says it is medically reviewed (else the newest), trending = the next two newest.
+- **Placement:** `wp lld hub apply [--dry-run] [--template=<id>] [--backup-dir=<dir>]` edits the Newspaper Cloud Library
+  category template (the theme's `tdb_category_template` setting; post 4139 on staging): the template content is plain
+  Composer shortcode text, so a `[vc_row … el_class="lld-hub-row"][vc_column][lld_category_hub][/vc_column][/vc_row]` row is
+  inserted directly above the row that holds `[tdb_loop]`, in `post_content` and the Composer's `tdc_content` copy alike,
+  after saving both to `~/lld-backups/<env>/hub-template-<id>-<time>.json`. The row is hidden on page 2 onwards
+  (`row_hide_on_pagination`) and the shortcode also returns nothing when paged. `wp lld hub revert` restores the saved
+  original. Editing the template was chosen over the output-buffer hook because the Composer row keeps the block inside the
+  theme's own grid and spacing; the hook stays reserved for the logo H1 fix.
+- Pure builders (`lld_hub_entry`, `lld_hub_pick`, `lld_hub_markup`, `lld_hub_template_insert` / `_revert`) are tested in
+  PHP CLI without WordPress: `tests/lead/TC-FR2-26-hub.test.mjs`.
+
+## WebP copies (S2-L1, FR2-27 AS-05) — 30 Oct 2026
+
+`webp.php` makes a WebP copy beside every JPEG and PNG in the media library, named the way LiteSpeed Cache looks for
+it (`photo.png` → `photo.png.webp`). LiteSpeed's WebP replacement, already on in its settings, then swaps image addresses
+in pages to the copy for browsers that accept WebP and keeps the original for the rest. LiteSpeed's own converter needs a
+QUIC.cloud account; this one uses WordPress's image editor on the server at quality 82, the site's LiteSpeed setting.
+
+- New uploads, regenerated sizes and edits get copies when WordPress saves the image's metadata. Deleting an attachment
+  deletes its copies. Originals are never changed, and a copy larger than its original is not kept.
+- `wp lld webp status` counts files with a current copy and files still due. `wp lld webp generate [--dry-run]
+  [--limit=<n>] [--ids=<id,id>]` fills in the existing library; `--limit` stops after that many attachments, for batches.
+  Run it once on each environment after this module first deploys (production: in the release checklist), then purge
+  the page cache.
+- The theme's list and related-article thumbnails are background images whose address sits in `<span data-img-url>`,
+  which LiteSpeed's WebP attribute list leaves out. The module adds `span.data-img-url` to that list in memory on each
+  request (`litespeed_conf_force`), so the saved LiteSpeed setting is unchanged. Favicons stay PNG.
+- Pure builders (`lld_webp_path`, `_convertible`, `_files`, `_keep`, `_due`, `_attrs`) are tested in PHP CLI without WordPress:
+  `tests/lead/webp.test.mjs`.

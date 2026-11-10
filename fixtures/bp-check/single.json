@@ -1,0 +1,417 @@
+{
+  "group": "Single reading",
+  "tool": "bp-check",
+  "fixtures": [
+    {
+      "id": "FX-BP-SINGLE-01",
+      "purpose": "119/79: Normal",
+      "inputs": {
+        "systolic": 119,
+        "diastolic": 79,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal.headline",
+          "category.normal.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-01"
+    },
+    {
+      "id": "FX-BP-SINGLE-02",
+      "purpose": "129/84: Normal",
+      "inputs": {
+        "systolic": 129,
+        "diastolic": 84,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal.headline",
+          "category.normal.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-02"
+    },
+    {
+      "id": "FX-BP-SINGLE-03",
+      "purpose": "130/84: High-normal (systolic)",
+      "inputs": {
+        "systolic": 130,
+        "diastolic": 84,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "high-normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.high-normal.headline",
+          "category.high-normal.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-03"
+    },
+    {
+      "id": "FX-BP-SINGLE-04",
+      "purpose": "129/85: High-normal (diastolic)",
+      "inputs": {
+        "systolic": 129,
+        "diastolic": 85,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "high-normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.high-normal.headline",
+          "category.high-normal.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-04"
+    },
+    {
+      "id": "FX-BP-SINGLE-05",
+      "purpose": "139/89: High-normal",
+      "inputs": {
+        "systolic": 139,
+        "diastolic": 89,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "high-normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.high-normal.headline",
+          "category.high-normal.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-05"
+    },
+    {
+      "id": "FX-BP-SINGLE-06",
+      "purpose": "140/89: Grade 1",
+      "inputs": {
+        "systolic": 140,
+        "diastolic": 89,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "grade1",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.grade1.headline",
+          "category.grade1.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-06"
+    },
+    {
+      "id": "FX-BP-SINGLE-07",
+      "purpose": "139/90: Grade 1",
+      "inputs": {
+        "systolic": 139,
+        "diastolic": 90,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "grade1",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.grade1.headline",
+          "category.grade1.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-07"
+    },
+    {
+      "id": "FX-BP-SINGLE-08",
+      "purpose": "159/99: Grade 1",
+      "inputs": {
+        "systolic": 159,
+        "diastolic": 99,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "grade1",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.grade1.headline",
+          "category.grade1.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-08"
+    },
+    {
+      "id": "FX-BP-SINGLE-09",
+      "purpose": "160/99: Grade 2",
+      "inputs": {
+        "systolic": 160,
+        "diastolic": 99,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.grade2.headline",
+          "category.grade2.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-09"
+    },
+    {
+      "id": "FX-BP-SINGLE-10",
+      "purpose": "159/100: Grade 2",
+      "inputs": {
+        "systolic": 159,
+        "diastolic": 100,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.grade2.headline",
+          "category.grade2.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-10"
+    },
+    {
+      "id": "FX-BP-SINGLE-11",
+      "purpose": "110/100: Grade 2 (diastolic decides)",
+      "inputs": {
+        "systolic": 110,
+        "diastolic": 100,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.grade2.headline",
+          "category.grade2.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-11"
+    },
+    {
+      "id": "FX-BP-SINGLE-12",
+      "purpose": "179/119: Grade 2, no urgent",
+      "inputs": {
+        "systolic": 179,
+        "diastolic": 119,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": false,
+        "category": "grade2",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.grade2.headline",
+          "category.grade2.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-12"
+    },
+    {
+      "id": "FX-BP-SINGLE-13",
+      "purpose": "400/20: refused, not possible (FR3-38 AS-04)",
+      "inputs": {
+        "systolic": 400,
+        "diastolic": 20,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": true,
+        "category": null,
+        "warning_level": "refused",
+        "urgent": false,
+        "wording_keys": [
+          "refused.impossible"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-20"
+    },
+    {
+      "id": "FX-BP-SINGLE-14",
+      "purpose": "130/125: refused, diastolic not 10 below systolic",
+      "inputs": {
+        "systolic": 130,
+        "diastolic": 125,
+        "mode": "single",
+        "pregnant": "no"
+      },
+      "expected": {
+        "refused": true,
+        "category": null,
+        "warning_level": "refused",
+        "urgent": false,
+        "wording_keys": [
+          "refused.impossible"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-21"
+    },
+    {
+      "id": "FX-BP-SINGLE-15",
+      "purpose": "128/82 pulse 70: Normal, no pulse note (FR3-38 AS-01)",
+      "inputs": {
+        "systolic": 128,
+        "diastolic": 82,
+        "mode": "single",
+        "pregnant": "no",
+        "pulse": 70
+      },
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "none",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal.headline",
+          "category.normal.body"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-22"
+    },
+    {
+      "id": "FX-BP-SINGLE-16",
+      "purpose": "128/82 pulse 125: Normal + high-pulse note",
+      "inputs": {
+        "systolic": 128,
+        "diastolic": 82,
+        "mode": "single",
+        "pregnant": "no",
+        "pulse": 125
+      },
+      "expected": {
+        "refused": false,
+        "category": "normal",
+        "warning_level": "pulse_high",
+        "urgent": false,
+        "wording_keys": [
+          "category.normal.headline",
+          "category.normal.body",
+          "pulse.note"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-23; pulse.note shown with the {high} variant"
+    },
+    {
+      "id": "FX-BP-SINGLE-17",
+      "purpose": "150/90 age 82: Grade 1 + 80+ note",
+      "inputs": {
+        "systolic": 150,
+        "diastolic": 90,
+        "mode": "single",
+        "pregnant": "no",
+        "age": 82
+      },
+      "expected": {
+        "refused": false,
+        "category": "grade1",
+        "warning_level": "age80_note",
+        "urgent": false,
+        "wording_keys": [
+          "category.grade1.headline",
+          "category.grade1.body",
+          "age80.note"
+        ],
+        "average": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet BP-34"
+    }
+  ]
+}

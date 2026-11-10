@@ -38,8 +38,8 @@ def atomic(path,data):
     os.replace(tmp,path)
 
 def run(env,root,op,stamp):
-    expected=Path.home()/'domains/lifelinedaily.com/public_html'
-    if env=='staging': expected=expected/'stg'
+    # staging is its own Hostinger website since 28 Oct 2026 (was the stg folder inside the production site)
+    expected=Path.home()/('domains/stg.lifelinedaily.com/public_html' if env=='staging' else 'domains/lifelinedaily.com/public_html')
     if env not in ('staging','production') or root != expected or root.resolve()!=expected:
         raise ValueError('Document root does not match fixed LLD destination')
     for ancestor in [root,*root.parents]:

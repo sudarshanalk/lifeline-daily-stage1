@@ -1,0 +1,55 @@
+{
+  "_about": "NFR3-02: a Stage 3 pull request may change a file under tests/stage2/ only when an owner decision recorded here covers it. Each entry: the file (repository path), the decision (requirements v0.3 section 6 or a dated owner decision) and what changes. CI stage3-guards fails any other change, and any skip, to a Stage 2 test.",
+  "changes": [
+    {
+      "file": "tests/stage2/e2e/personal.spec.mjs",
+      "decision": "Owner_Questions 93 = B (owner, 3 Nov 2026): the Sleep and Stress safety check uses the approved wording of 02 Content/Programme content/safety/screening-sleep-and-stress.md in both the Stage 2 screen (class-personal.php) and the Stage 3 engine, with its Stage 2 tests updated under this decision",
+      "change": "TC-FR2-38-AS-01, AS-02, AS-03 and AS-05 assert the approved question, Response 1, Response 2, Response 3 and 'Please answer all three questions to continue.' in place of the old shorter text. No assertion is removed or loosened: each old text check is the same check on the new text, and AS-01 also checks the rest of Response 1 (heading, helpline line, the two closing paragraphs, 'Back to my dashboard'), AS-03 the findahelpline.com link."
+    },
+    {
+      "file": "tests/stage2/safety-wording.test.mjs",
+      "decision": "Owner_Questions 93 = B (owner, 3 Nov 2026), as above",
+      "change": "TC-FR2-38-AS-01: the order check (self-harm before the 'answer all three' check) and the example-numbers check use the approved wording ('Please answer all three questions to continue.'; 'for example 999 in the UK, 911 in the US and Canada, 112 in the EU and India, or 000 in Australia'), and the approved self-harm question is checked too."
+    },
+    {
+      "file": "tests/stage2/e2e/personal.spec.mjs",
+      "decision": "Owner decision, 4 Nov 2026: fix the intermittent TC-FR2-06-AS-02 (tracker P3-11b) without weakening it",
+      "change": "TC-FR2-06-AS-02 only: each 'Not for me' click now waits for its form post to finish (submitAndWait) before the next page.goto. In WebKit the next navigation could cancel the post, so an unwanted item stayed and pushed the second opened item off the list. No assertion, count or expected value changes"
+    },
+    {
+      "file": "tests/stage2/data-model-map.json",
+      "decision": "Data model v0.2 (owner-approved, 3 Nov 2026), 'Saved calculator result (new calculators)': the Stage 2 table wp_lld_calculator_result is extended with the sealed inputs and result (FR3-55; P3-5B method sheet signed 3 Nov 2026; built in #204).",
+      "change": "calculator_result.inputs_ct and result_ct are tied to the Stage 3 note added to Data Model C4 (docs/stage2/02). New columns only (a declared Stage 2 file, Build Method Stage 3 §4)."
+    },
+    {
+      "file": "tests/stage2/data-model-map.test.mjs",
+      "decision": "Data model v0.2 (owner-approved, 3 Nov 2026), 'Saved calculator result (new calculators)': the Stage 2 table wp_lld_calculator_result is extended with the sealed inputs and result (FR3-55; P3-5B method sheet signed 3 Nov 2026; built in #204).",
+      "change": "The schema the map is compared with also includes the ensure_column() additions that class-schema-stage3.php makes to Stage 2 tables, so the map still has to match the created columns exactly, in both directions."
+    },
+    {
+      "file": "tests/stage2/e2e/accounts-privacy.spec.mjs",
+      "decision": "Requirements v0.3 FR3-60 (TC-FR3-60-AS-01): the Stage 2 'Download my data' file also includes all food and health logs, goals and saved results; built in P3-86 (#207, merged 4 Nov 2026). Owner instruction in chat, 4 Nov 2026: fix the staging break this caused",
+      "change": "TC-FR2-04-AS-01 only: the expected table list of data.json is the Stage 2 list plus the 15 Stage 3 download tables (STAGE3_DOWNLOAD_TABLES), and each Stage 3 table's row count is checked against the database like the Stage 2 ones. Nothing is removed or loosened: the Stage 2 list, the never-downloaded list and every count stay as they were"
+    },
+    {
+      "file": "tests/stage2/data-model-map.json",
+      "decision": "Data model v0.2 (owner-approved, 3 Nov 2026, admin panel): the Stage 2 admin log (wp_lld_admin_log) is extended with who did it, the item, before and after, the reason and a scrambled IP (Admin activity log), and the Stage 2 member record with the Owner's block (Member block); FR3-83, FR3-86, built in P3-87.",
+      "change": "admin_log.admin_user_id, target, before_state, after_state, reason, ip_hash and member.blocked_at, blocked_reason are tied to the Stage 3 notes added to Data Model F2 and A1 (docs/stage2/02). New columns only (a declared Stage 2 file, Build Method Stage 3 §4)."
+    },
+    {
+      "file": "tests/stage2/e2e/payments.spec.mjs",
+      "decision": "FR3-96 Retire Paid Memberships Pro (owner, 6 Nov 2026; requirements v0.4, section 7 \"Paid Memberships Pro retired\"): Lifeline Daily Members is the only membership system, so the Premium plans are no longer copied into Paid Memberships Pro levels",
+      "change": "TC-FR2-13-AS-04 checks the same things on the site's own plan catalogue instead of the Paid Memberships Pro levels table: both plans with their names and periods, the owner prices, unchanged by the database update, following a price change, and no Stripe call in the database update. The checks of the copy's own fields (level ids, allow_signups, billing cycle numbers) go with the copy; the unit test also checks that no code still writes Paid Memberships Pro levels."
+    },
+    {
+      "file": "tests/stage2/payments-core.test.mjs",
+      "decision": "FR3-96 Retire Paid Memberships Pro (owner, 6 Nov 2026; requirements v0.4, section 7 \"Paid Memberships Pro retired\"): Lifeline Daily Members is the only membership system, so the Premium plans are no longer copied into Paid Memberships Pro levels",
+      "change": "TC-FR2-13-AS-04 checks the same things on the site's own plan catalogue instead of the Paid Memberships Pro levels table: both plans with their names and periods, the owner prices, unchanged by the database update, following a price change, and no Stripe call in the database update. The checks of the copy's own fields (level ids, allow_signups, billing cycle numbers) go with the copy; the unit test also checks that no code still writes Paid Memberships Pro levels."
+    },
+    {
+      "file": "tests/stage2/e2e/payments.spec.mjs",
+      "decision": "Owner, 8 Nov 2026 (Terms of Sale answers, D2a): web and app for every member, features differ by plan (FR4-11); TC-FR2-13-AS-05 revised in the requirements to 'Every member's record shows they are entitled to the future app, monthly and yearly alike'",
+      "change": "TC-FR2-13-AS-05 checks that both the yearly and the monthly member see 'The Lifeline Daily app is included with your membership when it launches.' and that both records show the app as included, in place of yearly-only."
+    }
+  ]
+}

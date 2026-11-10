@@ -1,0 +1,59 @@
+{
+  "group": "PROGRESS",
+  "tool": "goal-timeline",
+  "fixtures": [
+    {
+      "id": "FX-GWT-PROGRESS-01",
+      "purpose": "FR3-13: start 90, goal 84, now 86.8 -> 3.2 of 6 kg, 53 %",
+      "inputs": {
+        "startKg": 90,
+        "goalKg": 84,
+        "nowKg": 86.8
+      },
+      "expected": {
+        "lostKg": 3.2,
+        "totalKg": 6,
+        "pct": 53,
+        "goalReached": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "53 is the half-up rounding of 53.33 (TC-FR3-13-AS-01)."
+    },
+    {
+      "id": "FX-GWT-PROGRESS-02",
+      "purpose": "FR3-13: start 90, goal 84, now 90.4 -> 0 of 6 kg, 0 %, never negative",
+      "inputs": {
+        "startKg": 90,
+        "goalKg": 84,
+        "nowKg": 90.4
+      },
+      "expected": {
+        "lostKg": 0,
+        "totalKg": 6,
+        "pct": 0,
+        "goalReached": false
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-GWT-PROGRESS-03",
+      "purpose": "FR3-13 / FR3-15: start 90, goal 84, now 83.5 -> 6 of 6 kg, 100 %",
+      "inputs": {
+        "startKg": 90,
+        "goalKg": 84,
+        "nowKg": 83.5
+      },
+      "expected": {
+        "lostKg": 6,
+        "totalKg": 6,
+        "pct": 100,
+        "goalReached": null
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet: 'goal reached (if the 7-day mean <= 84)' (D3-09). goalReached is left null because the row gives a single 'now' value, not the 7-day mean."
+    }
+  ]
+}

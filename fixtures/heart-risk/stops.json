@@ -1,0 +1,101 @@
+{
+  "group": "STOP",
+  "tool": "heart-risk",
+  "fixtures": [
+    {
+      "id": "FX-HR-STOP-17",
+      "purpose": "HR-17: woman 39: not suitable, under 40 (AS-03), no number",
+      "inputs": {
+        "age": 39,
+        "sex": "female",
+        "country": "United Kingdom",
+        "smoke": "no",
+        "sbp": 120,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 24,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": "under40"
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "The sheet gives the region as 'any'; United Kingdom is used as a representative country only. No number is shown."
+    },
+    {
+      "id": "FX-HR-STOP-18",
+      "purpose": "HR-18: man 75: not suitable, over 74 (AS-03), no number",
+      "inputs": {
+        "age": 75,
+        "sex": "male",
+        "country": "United Kingdom",
+        "smoke": "no",
+        "sbp": 120,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 24,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": "over74"
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "The sheet gives the region as 'any'; United Kingdom is used as a representative country only. No number is shown."
+    },
+    {
+      "id": "FX-HR-STOP-19",
+      "purpose": "HR-19: man 55 with existing CVD = Yes: not suitable, no number",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "country": "United Kingdom",
+        "smoke": "no",
+        "sbp": 130,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "yes",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": "cvd"
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "The sheet gives the region as 'any'; United Kingdom is used as a representative country only. No number is shown."
+    },
+    {
+      "id": "FX-HR-STOP-21",
+      "purpose": "HR-21: Western Europe (UK), woman 50, pregnant = Not sure: not suitable, no number",
+      "inputs": {
+        "age": 50,
+        "sex": "female",
+        "country": "United Kingdom",
+        "smoke": "no",
+        "sbp": 125,
+        "diabetes": "no",
+        "tc": 5.0,
+        "tcUnit": "mmol/L",
+        "bmi": 24,
+        "cvd": "no",
+        "preg": "not-sure",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": "pregnancy"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    }
+  ]
+}

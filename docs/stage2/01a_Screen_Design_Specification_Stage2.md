@@ -40,7 +40,7 @@ Gaps leave room for additions. Emails are EM-01 to EM-21, owner screens are AD-0
 ## 2. Design principles
 
 1. **Phone first.** Designed at 360 pixels wide first. Checked at 320, 360, 768 and 1280 pixels, and at 200 % text size (section 3.4).
-2. **The site's existing look,** with accessible versions of its colours (section 3.1). No new visual style (UI2-01).
+2. **The approved Interface Pack look** (owner decision, 28 October 2026: `handover/HANDOVER_TO_CLAUDE_INTERFACE_PACK.md`, prototype `handover/interface_pack_hub.html`): the uniform dark navigation header, the off-white canvas, rounded white cards, and the 780 px reading column. It replaces the earlier "existing look" rule; its tokens are in section 3.1 and in `design/tokens.json` (`theme`). Within that look, no further visual style is invented (UI2-01).
 3. **One main action per screen,** in a large green button.
 4. **Plain, calm words.** Short sentences, no jargon, no fear, no pressure. Upgrade invitations are friendly and never pushy (FR2-16).
 5. **Safety is always visible.** Safety notes, urgent-help messages and "see your doctor" advice are never hidden behind a tap, never in small print, and never behind the paywall.
@@ -70,15 +70,16 @@ Gaps leave room for additions. Emails are EM-01 to EM-21, owner screens are AD-0
 | Main button, hover and pressed | #0f5c31 | Higher | Darker on hover and press |
 | **Text links** on white | #157a42 | 5.39 to 1 | Always underlined in body text |
 | Brand highlight (decoration only, never text) | #3fd07f or #1f9d57 | — | For badges, progress fill and icons; not for text or white-text buttons |
-| Page background, cards | #f7f8f8, #ffffff | — | |
-| Main text | #161a17 | 16.5 to 1 | |
-| Secondary text | #63706a | 4.87 to 1 on the page background | Never smaller than 14 px |
+| Page background, cards | #f8faf9 canvas, #ffffff cards with a 1 px #e5ece8 border | — | Interface Pack, on public pages and member screens alike (S2-C10, #139) |
+| Main text | #111a14 headings, #242f28 copy | 16.9 and 12.7 to 1 on the canvas | Interface Pack |
+| Secondary text | #5c6b64 | 5.3 to 1 on the canvas | Never smaller than 14 px in copy; 11 px minimum for metadata labels |
 | **Form field border** | #7d8a84 | At least 3 to 1 | The pale line colour #e4eae6 is decoration only, never a field's only edge |
 | Focus ring | #157a42, 3 px, with a 2 px white gap | — | On every interactive item |
 | Disabled button | #e4eae6 background, #63706a text | — | Disabled buttons also say why, in words nearby |
 | Caution text and border | #94600c on a light amber background | At least 4.5 to 1 | The earlier #a8690d measured 4.48 to 1 and is not used for text |
 | Safety and urgent messages | #b5302f on a light red background | 6.12 to 1 on white | |
-| Header and footer | #1c1c1c | — | |
+| Header | #1a1a1a, border #2a2a2a, current item #262626 | — | Menu text #cbd5e1 (9.7 to 1), white when current or hovered; the tagline in brand mint #2cc8b3 is decoration only |
+| Footer | #141414 | — | Text #9aa3ae (6.6 to 1) |
 
 The calculators' band colours are used only to show a saved calculator result exactly as the calculator showed it.
 
@@ -86,9 +87,10 @@ The calculators' band colours are used only to show a saved calculator result ex
 
 | Item | Rule |
 |---|---|
-| Typeface | Inter, falling back to the system font |
+| Typeface | Plus Jakarta Sans for headings and navigation, Inter for copy, both self-hosted by lld-tools with the system font as fallback (Interface Pack), on public pages and member screens |
+| Reading column (articles) | 780 px wide at most; 17 px copy at 1.75 line height on desktop, 16 px on phones |
 | Text sizes on a phone | Body 16 px; small print at least 14 px; screen title 24 px; section heading 18 px |
-| Corners | 18 px on cards; buttons fully rounded |
+| Corners | 16 px on cards (Interface Pack); buttons fully rounded |
 | Spacing | 16 px side margins on phones; 8 px steps |
 | Larger text | Layouts grow downwards when text is enlarged, and text is never shrunk or cut off to fit |
 

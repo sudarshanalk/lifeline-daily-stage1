@@ -47,6 +47,9 @@ class LLD_Members_Screens {
 			case 'pricing':
 				LLD_Members_Billing::pricing();
 				break;
+			case 'programmes':
+				LLD_Members_Billing::programmes();
+				break;
 			case 'sales':
 				LLD_Members_Billing::sales( (string) get_query_var( 'lld_track' ) );
 				break;
@@ -132,7 +135,8 @@ class LLD_Members_Screens {
 			wp_safe_redirect( self::destination() );
 			exit;
 		}
-		$error = '';
+		$error       = '';
+		$unconfirmed = '';
 		if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['lld_sign_in_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_sign_in_nonce'] ) ), 'lld_sign_in' ) ) {
 			$email    = isset( $_POST['lld_email'] ) ? sanitize_email( wp_unslash( $_POST['lld_email'] ) ) : '';
 			$password = isset( $_POST['lld_password'] ) ? (string) wp_unslash( $_POST['lld_password'] ) : '';
@@ -145,7 +149,8 @@ class LLD_Members_Screens {
 				$member_id = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE user_id = %d', $user->ID ) );
 				$confirmed = $member_id ? $wpdb->get_var( $wpdb->prepare( 'SELECT email_confirmed_at FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) ) : 'yes';
 				if ( $member_id && ! $confirmed ) {
-					$error = 'Confirm your email before you sign in.';
+					$error       = 'Confirm your email before you sign in.';
+					$unconfirmed = (string) $user->user_email;
 				} elseif ( LLD_Members_Auth::needs_two_step( $user ) ) {
 					LLD_Members_Auth::issue_code( $user, $remember );
 					wp_safe_redirect( home_url( '/members/two-step/' ) );
@@ -157,8 +162,21 @@ class LLD_Members_Screens {
 				}
 			}
 		}
-		$main  = '<h1>Sign in</h1>';
-		$main .= '<form method="post" class="lld-form" novalidate>';
+		$main = '<h1>Sign in</h1>';
+		if ( isset( $_GET['signed_out'] ) && 'POST' !== $_SERVER['REQUEST_METHOD'] ) {
+			$main .= '<p class="lld-info" role="status">You\'re signed out.</p>';
+		}
+		if ( '' !== $unconfirmed ) {
+			// The password was right, so the member may be told the link is the only thing missing and get a new one (SCR-03 resend).
+			// The link expires after 24 hours, and the first email may never have arrived.
+			$main .= '<div class="lld-fail" role="alert" tabindex="-1"><p>' . esc_html( $error ) . ' Open the link we emailed to ' . esc_html( $unconfirmed ) . '. It expires after 24 hours.</p>';
+			$main .= '<form method="post" action="' . esc_url( home_url( '/members/confirm/' ) ) . '">';
+			$main .= wp_nonce_field( 'lld_resend_confirm', 'lld_resend_nonce', true, false );
+			$main .= '<input type="hidden" name="lld_email" value="' . esc_attr( $unconfirmed ) . '">';
+			$main .= '<button type="submit" class="lld-text-button">Send a new link</button></form></div>';
+			$error = '';
+		}
+		$main .= '<form method="post" class="lld-form lld-card lld-form-card" novalidate>';
 		$main .= wp_nonce_field( 'lld_sign_in', 'lld_sign_in_nonce', true, false );
 		if ( isset( $_GET['redirect_to'] ) ) {
 			$main .= '<input type="hidden" name="redirect_to" value="' . esc_attr( esc_url_raw( wp_unslash( $_GET['redirect_to'] ) ) ) . '">';
@@ -167,9 +185,9 @@ class LLD_Members_Screens {
 			$main .= '<div class="lld-fail" role="alert" tabindex="-1"><p>' . esc_html( $error ) . '</p></div>';
 		}
 		$kept_email = ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['lld_email'] ) ) ? sanitize_email( wp_unslash( $_POST['lld_email'] ) ) : '';
-		$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email', 'value' => $kept_email ) );
+		$main .= lld_field( array( 'id' => 'lld_email', 'name' => 'lld_email', 'label' => 'Email', 'type' => 'email', 'value' => $kept_email, 'autocomplete' => 'email' ) );
 		$main .= lld_password_field( array( 'id' => 'lld_password', 'name' => 'lld_password', 'label' => 'Password' ) );
-		$main .= '<label class="lld-check"><input type="checkbox" name="lld_remember" value="1"> Remember me for 30 days</label>';
+		$main .= '<label class="lld-check"><input type="checkbox" name="lld_remember" value="1"> <span>Remember me for 30 days</span></label>';
 		$main .= lld_button( array( 'label' => 'Sign in' ) );
 		$main .= '</form>';
 		$main .= '<p><a href="' . esc_url( home_url( '/members/reset/' ) ) . '">Forgot password?</a></p>';
@@ -194,7 +212,8 @@ class LLD_Members_Screens {
 			if ( is_wp_error( $result ) ) {
 				$error = $result->get_error_message();
 			} else {
-				wp_safe_redirect( home_url( '/members/home/' ) );
+				// An administrator has no member home (often no member record): wp-admin, or wp-login.php's redirect_to.
+				wp_safe_redirect( LLD_Members_Auth::after_code_destination() );
 				exit;
 			}
 		}
@@ -439,3 +458,4 @@ class LLD_Members_Screens {
 		return wp_validate_redirect( $raw, home_url( '/members/home/' ) );
 	}
 }
+

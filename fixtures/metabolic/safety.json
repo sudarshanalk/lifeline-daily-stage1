@@ -1,0 +1,250 @@
+{
+  "group": "Stops, flags and notes",
+  "tool": "metabolic",
+  "fixtures": [
+    {
+      "id": "FX-MET-SAFE-01",
+      "purpose": "MS-15: FPG 12.0: met, not met overall, diagnostic-range flag",
+      "inputs": {
+        "age": null,
+        "sex": "female",
+        "background": "Europid",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 85,
+        "bpSystolic": 120,
+        "bpDiastolic": 80,
+        "bpMedicine": false,
+        "triglycerides": 1.0,
+        "triglyceridesUnit": "mmol/L",
+        "hdl": 1.5,
+        "hdlUnit": "mmol/L",
+        "hdlMedicine": false,
+        "fastingGlucose": 12.0,
+        "fastingGlucoseUnit": "mmol/L",
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "not-met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "met"
+        },
+        "count": 1,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": [
+          "flags.glucoseDiagnostic"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range)."
+    },
+    {
+      "id": "FX-MET-SAFE-02",
+      "purpose": "MS-16: BP 185/122: urgent wording first, then not met",
+      "inputs": {
+        "age": null,
+        "sex": "female",
+        "background": "Europid",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 85,
+        "bpSystolic": 185,
+        "bpDiastolic": 122,
+        "bpMedicine": false,
+        "triglycerides": 1.0,
+        "triglyceridesUnit": "mmol/L",
+        "hdl": 1.5,
+        "hdlUnit": "mmol/L",
+        "hdlMedicine": false,
+        "fastingGlucose": 5.0,
+        "fastingGlucoseUnit": "mmol/L",
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "not-met",
+          "bloodPressure": "met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 1,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": [
+          "flags.bpUrgent"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range). The urgent-care wording is the frozen P3-58 section 4.1 text, not quoted in this sheet."
+    },
+    {
+      "id": "FX-MET-SAFE-03",
+      "purpose": "MS-17: Pregnant: stop",
+      "inputs": {
+        "age": null,
+        "sex": "female",
+        "background": "Europid",
+        "pregnantOrBreastfeeding": "yes",
+        "eatingDisorder": "no",
+        "waistCm": 85,
+        "bpSystolic": 120,
+        "bpDiastolic": 80,
+        "bpMedicine": false,
+        "triglycerides": 1.0,
+        "triglyceridesUnit": "mmol/L",
+        "hdl": 1.5,
+        "hdlUnit": "mmol/L",
+        "hdlMedicine": false,
+        "fastingGlucose": 5.0,
+        "fastingGlucoseUnit": "mmol/L",
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": "stops.pregnancy",
+        "central": null,
+        "criteria": null,
+        "count": null,
+        "result": null,
+        "missing": [],
+        "flags": []
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range)."
+    },
+    {
+      "id": "FX-MET-SAFE-04",
+      "purpose": "MS-18: Sex prefer not to say: female HDL threshold and 80 cm waist, HDL 1.25 met, sex note (D3-23)",
+      "inputs": {
+        "age": null,
+        "sex": "prefer-not-to-say",
+        "background": "Europid",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 82,
+        "bpSystolic": 120,
+        "bpDiastolic": 80,
+        "bpMedicine": false,
+        "triglycerides": 1.0,
+        "triglyceridesUnit": "mmol/L",
+        "hdl": 1.25,
+        "hdlUnit": "mmol/L",
+        "hdlMedicine": false,
+        "fastingGlucose": 5.0,
+        "fastingGlucoseUnit": "mmol/L",
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 1,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": [
+          "notes.sex"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range). The D3-23 note text is not quoted in the sheet."
+    },
+    {
+      "id": "FX-MET-SAFE-05",
+      "purpose": "MS-19: FPG 2.8 below 3.0: low glucose urgent wording, 0 met",
+      "inputs": {
+        "age": null,
+        "sex": "female",
+        "background": "Europid",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "no",
+        "waistCm": 85,
+        "bpSystolic": 120,
+        "bpDiastolic": 80,
+        "bpMedicine": false,
+        "triglycerides": 1.0,
+        "triglyceridesUnit": "mmol/L",
+        "hdl": 1.5,
+        "hdlUnit": "mmol/L",
+        "hdlMedicine": false,
+        "fastingGlucose": 2.8,
+        "fastingGlucoseUnit": "mmol/L",
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "not-met",
+          "hdl": "not-met",
+          "bloodPressure": "not-met",
+          "fastingGlucose": "not-met"
+        },
+        "count": 0,
+        "result": "results.notMet",
+        "missing": [],
+        "flags": [
+          "flags.glucoseUrgent"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range). Sheet section 4: below 3.0 -> urgent wording (P3-03 safety matrix); the text is not quoted in this sheet."
+    },
+    {
+      "id": "FX-MET-SAFE-06",
+      "purpose": "MS-20: Eating disorder yes: meets (4), no weight-loss suggestion, activity and sleep instead (D3-25)",
+      "inputs": {
+        "age": null,
+        "sex": "male",
+        "background": "Europid",
+        "pregnantOrBreastfeeding": "no",
+        "eatingDisorder": "yes",
+        "waistCm": 102,
+        "bpSystolic": 135,
+        "bpDiastolic": 88,
+        "bpMedicine": false,
+        "triglycerides": 2.0,
+        "triglyceridesUnit": "mmol/L",
+        "hdl": 0.9,
+        "hdlUnit": "mmol/L",
+        "hdlMedicine": false,
+        "fastingGlucose": 6.1,
+        "fastingGlucoseUnit": "mmol/L",
+        "type2Diabetes": false
+      },
+      "expected": {
+        "stop": null,
+        "central": true,
+        "criteria": {
+          "triglycerides": "met",
+          "hdl": "met",
+          "bloodPressure": "met",
+          "fastingGlucose": "met"
+        },
+        "count": 4,
+        "result": "results.meets",
+        "missing": [],
+        "flags": [],
+        "lifestyleWaistShown": false
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet section 7 gives no age; null here (an adult age is implied by the 18-99 range)."
+    }
+  ]
+}

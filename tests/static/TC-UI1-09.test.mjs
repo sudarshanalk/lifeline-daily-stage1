@@ -7,7 +7,7 @@ import { resolve } from 'node:path';
 import stylelint from 'stylelint';
 import { ROOT } from '../lib/paths.mjs';
 
-const FILES = ['site/public_html/tools/protein-requirement-tool.html', 'site/public_html/tools/diabetes-risk-tool.html', 'site/public_html/wp-content/mu-plugins/lld-tools/assets/lld-tools.css'].map((f) => resolve(ROOT, f));
+const FILES = ['site/public_html/tools/protein-requirement-tool.html', 'site/public_html/tools/diabetes-risk-tool.html', 'site/public_html/wp-content/mu-plugins/lld-tools/assets/lld-tools.css', 'site/public_html/wp-content/mu-plugins/lld-tools/assets/lld-theme.css'].map((f) => resolve(ROOT, f));
 
 describe('TC-UI1-09 visual consistency — lint', () => {
   test('TC-UI1-09-AS-01', async () => {

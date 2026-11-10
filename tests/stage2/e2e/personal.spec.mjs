@@ -355,10 +355,16 @@ test('TC-FR2-25-AS-06', async ({ page }) => {
 test('TC-FR2-38-AS-01', async ({ browser, page }) => {
   const email = emailFor('harm');
   await createMember(page.request, { email, password, first_name: 'Sam', consents: ['terms', 'health'] });
+  // The approved Response 1 (screening-sleep-and-stress.md, Owner_Questions 93 = B), all of it shown at once.
   const emergency = async (target) => {
+    await expect(target.getByRole('heading', { name: 'Please get support now' })).toBeVisible();
     await expect(target.getByText('If you are in danger now, call your local emergency number')).toBeVisible();
     for (const number of ['999', '911', '112', '000']) await expect(target.getByText(number, { exact: false })).toBeVisible();
+    await expect(target.getByText('To find a free, confidential helpline in your country, by phone, text or chat:')).toBeVisible();
     await expect(target.getByRole('link', { name: 'Find support in your country' })).toHaveAttribute('href', 'https://findahelpline.com');
+    await expect(target.getByText("Thank you for telling us. You don't have to cope with these thoughts alone, and talking to someone can help. A doctor can also help you find the right support.")).toBeVisible();
+    await expect(target.getByText("We won't start Sleep and Stress today. Your account and everything else on Lifeline Daily are still here for you.")).toBeVisible();
+    await expect(target.getByRole('link', { name: 'Back to my dashboard' })).toBeVisible();
     await expect(target.getByRole('button', { name: 'Continue' })).toHaveCount(0);
     await expect(target.getByRole('link', { name: /Start/ })).toHaveCount(0);
   };
@@ -368,7 +374,7 @@ test('TC-FR2-38-AS-01', async ({ browser, page }) => {
     await expect(target.getByRole('button', { name: 'Start Sleep and Stress' })).toHaveCount(0);
     await target.goto('/members/screening/?track=sleep-stress');
     await emergency(target);
-    await expect(target.getByText('Are you currently having thoughts of harming yourself?')).toHaveCount(0);
+    await expect(target.getByText('Have you had any thoughts of harming yourself or ending your life?')).toHaveCount(0);
     await target.goto('/members/home/');
     await expect(target.getByText('Sleep and Stress. Week 1')).toHaveCount(0);
   };
@@ -379,7 +385,7 @@ test('TC-FR2-38-AS-01', async ({ browser, page }) => {
   await page.locator('input[name="lld_harm"][value="yes"]').check();
   await page.getByRole('button', { name: 'Continue' }).click();
   await emergency(page);
-  await expect(page.getByText('Answer all three questions before continuing.')).toHaveCount(0);
+  await expect(page.getByText('Please answer all three questions to continue.')).toHaveCount(0);
   await noOffer(page);
   // Posting the start straight away is refused in this session.
   const value = await page.request.get('/members/screening/?track=sleep-stress');
@@ -395,7 +401,8 @@ test('TC-FR2-38-AS-01', async ({ browser, page }) => {
   await second.locator('input[name="lld_mood"][value="yes"]').check();
   await second.getByRole('button', { name: 'Continue' }).click();
   await emergency(second);
-  await expect(second.getByText('Panic attacks can have a physical cause')).toHaveCount(0);
+  await expect(second.getByText('Please talk to a doctor about panic attacks')).toHaveCount(0);
+  await expect(second.getByText('Please talk to a doctor about your mood')).toHaveCount(0);
   await noOffer(second);
   await other.close();
 });
@@ -409,7 +416,9 @@ test('TC-FR2-38-AS-02', async ({ page }) => {
   await page.locator('input[name="lld_panic"][value="yes"]').check();
   await page.locator('input[name="lld_mood"][value="no"]').check();
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText('Panic attacks can have a physical cause. See a doctor before you start this track.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Please talk to a doctor about panic attacks' })).toBeVisible();
+  await expect(page.getByText("Panic attacks can be very frightening. A doctor can check what's causing them and talk to you about treatments and support that can help. This track offers general sleep and stress habits and isn't a treatment for panic attacks.")).toBeVisible();
+  await expect(page.getByText("You can still start the track if you'd like to.")).toBeVisible();
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByText('Sleep and Stress. Week 1, day 1.')).toBeVisible();
 });
@@ -423,7 +432,11 @@ test('TC-FR2-38-AS-03', async ({ page }) => {
   await page.locator('input[name="lld_panic"][value="no"]').check();
   await page.locator('input[name="lld_mood"][value="yes"]').check();
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByText("Low mood that lasts this long is worth a doctor's visit. See a doctor, then come back and continue.")).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Please talk to a doctor about your mood' })).toBeVisible();
+  await expect(page.getByText("Feeling low most days for 2 weeks or more is worth talking to a doctor about. They can help you find out what's going on and what support is available. This track offers general sleep and stress habits and isn't a treatment for low mood or depression.")).toBeVisible();
+  await expect(page.getByText('If things get worse, or you have thoughts of harming yourself, get help straight away: call your local emergency number or visit findahelpline.com.')).toBeVisible();
+  await expect(page.getByRole('link', { name: 'findahelpline.com' })).toHaveAttribute('href', 'https://findahelpline.com');
+  await expect(page.getByText("You can still start the track if you'd like to.")).toBeVisible();
   await page.getByRole('button', { name: 'Continue' }).click();
   await expect(page.getByText('Sleep and Stress. Week 1, day 1.')).toBeVisible();
 });
@@ -482,12 +495,12 @@ test('TC-FR2-38-AS-05', async ({ browser, page }) => {
   await page.getByRole('button', { name: 'Continue' }).click();
   await submitAndWait(page, page.getByRole('button', { name: 'Continue' }));
   await page.goto('/members/screening/?track=sleep-stress');
-  await expect(page.getByText('Are you currently having thoughts of harming yourself?')).toBeVisible();
+  await expect(page.getByText('Have you had any thoughts of harming yourself or ending your life?')).toBeVisible();
   const other = await browser.newContext();
   const otherPage = await other.newPage();
   await signIn(otherPage, email, password);
   await otherPage.goto('/members/screening/?track=sleep-stress');
-  await expect(otherPage.getByText('Are you currently having thoughts of harming yourself?')).toBeVisible();
+  await expect(otherPage.getByText('Have you had any thoughts of harming yourself or ending your life?')).toBeVisible();
   await other.close();
 });
 
@@ -543,7 +556,8 @@ test('TC-FR2-06-AS-02', async ({ page }) => {
     const text = await page.locator('main').innerText();
     const title = unwanted.find((item) => text.includes(item));
     if (!title) break;
-    await page.locator('.lld-suggestion', { hasText: title }).getByRole('button', { name: 'Not for me' }).click();
+    // Wait for the form post to finish; going to the next page first can cancel it (P3-11b).
+    await submitAndWait(page, page.locator('.lld-suggestion', { hasText: title }).getByRole('button', { name: 'Not for me' }));
   }
   await page.goto('/members/suggestions/');
   const text = await page.locator('main').innerText();

@@ -1,0 +1,79 @@
+{
+  "group": "BMI",
+  "tool": "goal-timeline",
+  "fixtures": [
+    {
+      "id": "FX-GWT-BMI-01",
+      "purpose": "TL-05: 70 to 50 kg, goal BMI 17.3 below the floor",
+      "inputs": {
+        "currentKg": 70,
+        "goalKg": 50,
+        "heightCm": 170,
+        "rateKgPerWeek": 0.5
+      },
+      "expected": {
+        "stop": null,
+        "refused": "below BMI 18.5",
+        "goalBmi": 17.3,
+        "capKgPerWeek": null,
+        "weeks": null,
+        "milestone5PctKg": null,
+        "deficitKcalPerDay": null,
+        "offer": {
+          "goalKg": 53.5
+        }
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-GWT-BMI-02",
+      "purpose": "TL-10: 64.0 to 53.5 kg, goal BMI exactly 18.5 allowed (18.512 rounds to 18.5)",
+      "inputs": {
+        "currentKg": 64.0,
+        "goalKg": 53.5,
+        "heightCm": 170,
+        "rateKgPerWeek": 0.5
+      },
+      "expected": {
+        "stop": null,
+        "refused": null,
+        "goalBmi": 18.5,
+        "capKgPerWeek": 0.64,
+        "weeks": 21,
+        "milestone5PctKg": 60.8,
+        "deficitKcalPerDay": 550,
+        "notes": []
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-GWT-BMI-03",
+      "purpose": "TL-15: 50 to 48 kg, goal BMI 16.6 below the floor and current BMI 17.3 underweight",
+      "inputs": {
+        "currentKg": 50,
+        "goalKg": 48,
+        "heightCm": 170,
+        "rateKgPerWeek": 0.5
+      },
+      "expected": {
+        "stop": null,
+        "refused": "below 18.5",
+        "goalBmi": 16.6,
+        "capKgPerWeek": null,
+        "weeks": null,
+        "milestone5PctKg": null,
+        "deficitKcalPerDay": null,
+        "offer": null,
+        "currentBmi": 17.3,
+        "notes": [
+          "underweight"
+        ]
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "Sheet row TL-15: 'Refused: below 18.5 and current BMI 17.3 -> underweight wording' (the underweight wording from the Healthy Weight Check). The row gives no offer, so offer is null."
+    }
+  ]
+}

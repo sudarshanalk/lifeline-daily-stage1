@@ -59,7 +59,51 @@ function lld_search_llms_text(array $cfg, array $site, array $articles, array $p
     $out .= "\n## About this site\n\n";
     foreach ($pages as $p) $out .= '- [' . lld_search_md((string)$p['title']) . '](' . (string)$p['url'] . ")\n";
   }
+  $profiles = lld_search_profiles($cfg);
+  if ($profiles) {
+    $out .= "\n## Official profiles\n\n";
+    foreach ($profiles as $x) $out .= '- [' . lld_search_md((string)$x['name']) . '](' . $x['url'] . ")\n";
+  }
   return $out;
+}
+
+/** The official profiles in data/search.json identity.profiles: https addresses only, nothing that could break markdown. */
+function lld_search_profiles(array $cfg): array {
+  $out = [];
+  foreach ((array)($cfg['identity']['profiles'] ?? []) as $p) {
+    $url = is_array($p) ? (string)($p['url'] ?? '') : '';
+    if (preg_match('#^https://[^\s()<>\[\]]+$#', $url)) $out[] = ['name' => (string)($p['name'] ?? $url), 'url' => $url];
+  }
+  return $out;
+}
+
+/** Yoast site identity from data/search.json (owner, 28 Oct 2026, O-4): an organisation with its official profiles.
+ *  Pure: takes the current wpseo_titles and wpseo_social arrays and returns ['changes' => [...], 'titles' => [...],
+ *  'social' => [...]]. Facebook goes in facebook_site, the X address becomes the twitter_site username, and every other
+ *  profile goes in other_social_urls. The logo is left as it is. */
+function lld_search_identity_plan(array $cfg, array $titles, array $social): array {
+  $name = trim((string)($cfg['identity']['organisation'] ?? ''));
+  $changes = [];
+  if ($name === '') return ['changes' => $changes, 'titles' => $titles, 'social' => $social];
+  $set = function (array &$arr, string $opt, string $k, $v) use (&$changes) {
+    if (($arr[$k] ?? null) === $v) return;
+    $changes[] = "$opt.$k -> " . (is_array($v) ? json_encode($v, JSON_UNESCAPED_SLASHES) : $v);
+    $arr[$k] = $v;
+  };
+  $set($titles, 'wpseo_titles', 'company_or_person', 'company');
+  $set($titles, 'wpseo_titles', 'company_name', $name);
+  $facebook = ''; $x = ''; $other = [];
+  foreach (lld_search_profiles($cfg) as $p) {
+    $host = strtolower((string)parse_url($p['url'], PHP_URL_HOST));
+    $path = (string)parse_url($p['url'], PHP_URL_PATH);
+    if ($facebook === '' && preg_match('/(^|\.)facebook\.com$/', $host)) { $facebook = $p['url']; continue; }
+    if ($x === '' && preg_match('/(^|\.)(x|twitter)\.com$/', $host) && preg_match('#^/@?([A-Za-z0-9_]{1,15})/?$#', $path, $m)) { $x = $m[1]; continue; }
+    $other[] = $p['url'];
+  }
+  if ($facebook !== '') $set($social, 'wpseo_social', 'facebook_site', $facebook);
+  if ($x !== '') $set($social, 'wpseo_social', 'twitter_site', $x);
+  $set($social, 'wpseo_social', 'other_social_urls', $other);
+  return ['changes' => $changes, 'titles' => $titles, 'social' => $social];
 }
 
 /** Number of words in an HTML fragment (the 60-word rule for the direct answer, FR2-21 AS-01). */
@@ -272,8 +316,9 @@ add_action('lld_seo_checklist_daily', function () {
 
 /* ---------------------------------------------------------------- WP-CLI ------------------------------------------- */
 if (defined('WP_CLI') && WP_CLI) {
-  /** wp lld search setup [--dry-run]: hand robots.txt, llms.txt and IndexNow to lld-tools. Turns off the Yoast and Hostinger
-   *  llms.txt generators and Yoast's IndexNow, and removes a generated static llms.txt from the document root. */
+  /** wp lld search setup [--dry-run]: hand robots.txt, llms.txt and IndexNow to lld-tools, and set the Yoast site identity
+   *  (an organisation with the official profiles in data/search.json). Turns off the Yoast and Hostinger llms.txt
+   *  generators and Yoast's IndexNow, and removes a generated static llms.txt from the document root. */
   WP_CLI::add_command('lld search setup', function (array $args, array $assoc) {
     $dry = !empty($assoc['dry-run']); $do = [];
     $y = get_option('wpseo');
@@ -281,6 +326,12 @@ if (defined('WP_CLI') && WP_CLI) {
     // Tag and author archives are noindex (owner decision 25 Oct 2026, FR2-22: tag pages repeat categories; the site publishes under its brand)
     $yt = get_option('wpseo_titles');
     if (is_array($yt)) foreach (['noindex-tax-post_tag', 'noindex-author-wpseo'] as $k) if (empty($yt[$k])) { $do[] = "wpseo_titles.$k -> true"; $yt[$k] = true; }
+    // Site identity: an organisation with its official profiles (owner, 28 Oct 2026, O-4)
+    $ys = get_option('wpseo_social');
+    if (is_array($yt) && is_array($ys)) {
+      $plan = lld_search_identity_plan(lld_search_cfg(), $yt, $ys);
+      $do = array_merge($do, $plan['changes']); $yt = $plan['titles']; $ys = $plan['social'];
+    }
     $h = get_option('hostinger_tools');
     if (is_array($h) && !empty($h['enable_llms_txt'])) { $do[] = 'hostinger_tools.enable_llms_txt -> false'; $h['enable_llms_txt'] = false; }
     $file = rtrim(ABSPATH, '/\\') . '/llms.txt';
@@ -291,6 +342,7 @@ if (defined('WP_CLI') && WP_CLI) {
     if (!$dry) {
       if (is_array($y)) update_option('wpseo', $y);
       if (is_array($yt)) update_option('wpseo_titles', $yt);
+      if (is_array($ys)) update_option('wpseo_social', $ys);
       if (is_array($h)) update_option('hostinger_tools', $h);
       if ($generated && !unlink($file)) WP_CLI::error("could not remove $file");
       lld_indexnow_key();

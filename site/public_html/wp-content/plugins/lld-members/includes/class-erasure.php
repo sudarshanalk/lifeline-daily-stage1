@@ -62,7 +62,13 @@ class LLD_Members_Erasure {
 		self::delete_where( 'mail_sent', 'member_id', $member_id );
 
 		$log = LLD_Members_Schema::table( 'admin_log' );
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$log} WHERE member_number = %d AND money_related = 0", $member_id ) );
+		// Stage 3 admin-panel entries (P3-87, FR3-86) carry who did it and keep only the member number after deletion;
+		// they never hold a name, email or note text. Stage 2 lines without an admin are deleted as before.
+		$keep = self::has_admin_column( $log ) ? ' AND admin_user_id IS NULL' : '';
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$log} WHERE member_number = %d AND money_related = 0{$keep}", $member_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( '' !== $keep ) {
+			$wpdb->query( $wpdb->prepare( "UPDATE {$log} SET member_name = NULL, member_email = NULL WHERE member_number = %d AND admin_user_id IS NOT NULL", $member_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
 		$wpdb->query( $wpdb->prepare( "UPDATE {$log} SET member_name = NULL, member_email = NULL WHERE member_number = %d AND money_related = 1", $member_id ) );
 
 		if ( $member ) {
@@ -76,7 +82,6 @@ class LLD_Members_Erasure {
 			$user_id = (int) $member->user_id;
 			$wpdb->delete( LLD_Members_Schema::table( 'member' ), array( 'id' => $member_id ), array( '%d' ) );
 			if ( $user_id && get_userdata( $user_id ) ) {
-				self::delete_pmpro( $user_id );
 				require_once ABSPATH . 'wp-admin/includes/user.php';
 				wp_delete_user( $user_id );
 			}
@@ -101,6 +106,11 @@ class LLD_Members_Erasure {
 		foreach ( LLD_Members_Schema::health_tables() as $suffix ) {
 			$column = 'diary_day' === $suffix || 'health_profile' === $suffix ? 'member_id' : 'member_id';
 			self::delete_where( $suffix, $column, $member_id );
+		}
+		// Stage 3 health tables (readings, food log, goals' values, plans, insights) go with the same withdrawal.
+		// The Stage 2 erasure tests run this method in PHP CLI without WordPress, hence the guard.
+		if ( function_exists( 'do_action' ) ) {
+			do_action( 'lld_members_withdraw_health', $member_id );
 		}
 		self::delete_periods_for_missing_enrolments();
 		self::delete_workout_changes_for_missing_workouts();
@@ -374,46 +384,27 @@ class LLD_Members_Erasure {
 	 * @param int $member_id Member number.
 	 */
 	/**
+	 * True when the Stage 3 admin_user_id column is on the admin log (P3-87). Checked once per request.
+	 *
+	 * @param string $log Admin log table.
+	 */
+	public static function has_admin_column( $log ) {
+		static $has = null;
+		if ( null === $has ) {
+			global $wpdb;
+			$names = $wpdb->get_col( "SHOW COLUMNS FROM {$log}", 0 ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
+			$has   = is_array( $names ) && in_array( 'admin_user_id', $names, true );
+		}
+		return $has;
+	}
+
+	/**
 	 * Keyed hash of an email. The key is the same one used for health text, so a copied table is not a lookup list.
 	 *
 	 * @param string $email Email address.
 	 */
 	public static function email_hash( $email ) {
 		return hash_hmac( 'sha256', strtolower( trim( (string) $email ) ), LLD_Members_Crypto::key() );
-	}
-
-	/**
-	 * Remove Paid Memberships Pro copies of this person. Tax fields stay in our order table only.
-	 *
-	 * @param int $user_id WordPress user id.
-	 */
-	private static function delete_pmpro( $user_id ) {
-		global $wpdb;
-		$orders = $wpdb->prefix . 'pmpro_membership_orders';
-		$meta   = $wpdb->prefix . 'pmpro_membership_ordermeta';
-		if ( self::table_exists( $orders ) && self::table_exists( $meta ) ) {
-			$columns   = $wpdb->get_col( "SHOW COLUMNS FROM {$meta}", 0 );
-			$column    = is_array( $columns ) && in_array( 'order_id', $columns, true ) ? 'order_id' : 'pmpro_membership_order_id';
-			$order_ids = $wpdb->get_col( $wpdb->prepare( "SELECT id FROM {$orders} WHERE user_id = %d", $user_id ) );
-			foreach ( $order_ids as $order_id ) {
-				$wpdb->delete( $meta, array( $column => (int) $order_id ), array( '%d' ) );
-			}
-		}
-		foreach ( array( 'pmpro_memberships_users', 'pmpro_membership_orders', 'pmpro_discount_codes_uses' ) as $suffix ) {
-			$table = $wpdb->prefix . $suffix;
-			if ( self::table_exists( $table ) ) {
-				$wpdb->delete( $table, array( 'user_id' => $user_id ), array( '%d' ) );
-			}
-		}
-		$wpdb->query( $wpdb->prepare( "DELETE FROM {$wpdb->usermeta} WHERE user_id = %d AND meta_key LIKE %s", $user_id, $wpdb->esc_like( 'pmpro' ) . '%' ) );
-	}
-
-	/**
-	 * @param string $table Full table name.
-	 */
-	private static function table_exists( $table ) {
-		global $wpdb;
-		return $table === $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
 	}
 
 	private static function member( $member_id ) {

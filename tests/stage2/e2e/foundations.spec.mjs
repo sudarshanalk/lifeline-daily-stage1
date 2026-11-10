@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import { memberRoutes } from '../tools/member-routes.mjs';
 import { refuseOtherMember, SENTINEL } from '../tools/access-runner.mjs';
 import { probeSignedOut } from '../tools/signed-out-prober.mjs';
-import { createMember, mailCode, restNonce, signIn } from './helpers.mjs';
+import { ADMIN, createMember, leanAdmin, mailCode, restNonce, signIn } from './helpers.mjs';
 
 const password = process.env.LLD_TEST_MEMBER_PASSWORD || randomBytes(18).toString('base64url');
 const tm03 = 'tm-03@test.lifelinedaily.invalid';
@@ -69,7 +69,19 @@ test('TC-NFR2-02-AS-02', async ({ request }) => {
   }
 });
 
+// After the code, an administrator is in wp-admin: the dashboard (or the page wp-login.php's redirect_to named).
+// Paid Memberships Pro sends the first admin visit after activation to its setup wizard; that is still wp-admin.
+async function inAdmin(page, path = '/wp-admin/', heading = 'Dashboard') {
+  await page.waitForURL(/\/wp-admin\//, ADMIN);
+  if (page.url().includes('pmpro-wizard')) await page.goto(path, ADMIN);
+  const expected = path === '/wp-admin/' ? /\/wp-admin\/(index\.php)?$/ : new RegExp(`${path.replace(/[.]/g, '\\.')}$`);
+  await expect(page).toHaveURL(expected);
+  await expect(page.getByRole('heading', { name: heading, level: 1 })).toBeVisible();
+}
+
 test('TC-NFR2-02-AS-03', async ({ page, context }) => {
+  // wp-admin's own scripts and background requests stall the single-process CI server in WebKit (see helpers.mjs)
+  await leanAdmin(page);
   await createMember(page.request, { email: tm20, password, first_name: 'Owner', role: 'owner_admin' });
   await createMember(page.request, { email: tm03, password, first_name: 'Sam', role: 'member', two_step: false });
 
@@ -84,7 +96,8 @@ test('TC-NFR2-02-AS-03', async ({ page, context }) => {
   const adminCode = await mailCode(tm20);
   await page.locator('#lld_code').fill(adminCode);
   await page.getByRole('button', { name: 'Continue' }).click();
-  await expect(page.getByRole('heading', { name: 'Today' })).toBeVisible();
+  // The owner admin is a WordPress administrator: the code leads to the dashboard, not the member home.
+  await inAdmin(page);
 
   await context.clearCookies();
   await signIn(page, tm03, password);
@@ -117,6 +130,26 @@ test('TC-NFR2-02-AS-03', async ({ page, context }) => {
   await page.locator('#wp-submit').click();
   await expect(page.getByRole('heading', { name: 'Enter your code' })).toBeVisible();
   await expect(page).not.toHaveURL(/wp-admin/);
+  // An administrator with no member record: the correct code signs them in and opens the dashboard
+  // (the member home would only send them back to sign-in).
+  const bareCode = await mailCode('bare-admin@test.lifelinedaily.invalid');
+  await page.locator('#lld_code').fill(bareCode);
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await inAdmin(page);
+
+  // A safe redirect_to on wp-login.php is kept through the code step.
+  await context.clearCookies();
+  await context.addCookies([{ name: 'wordpress_test_cookie', value: 'WP Cookie check', url: base }]);
+  await page.goto(`/wp-login.php?redirect_to=${encodeURIComponent(new URL('/wp-admin/profile.php', base).href)}`);
+  await page.locator('#user_login').fill('bare-admin');
+  await page.locator('#user_pass').fill(password);
+  await page.locator('#wp-submit').click();
+  await expect(page.getByRole('heading', { name: 'Enter your code' })).toBeVisible();
+  const nextCode = await mailCode('bare-admin@test.lifelinedaily.invalid');
+  expect(nextCode).not.toBe(bareCode);
+  await page.locator('#lld_code').fill(nextCode);
+  await page.getByRole('button', { name: 'Continue' }).click();
+  await inAdmin(page, '/wp-admin/profile.php', 'Profile');
 });
 
 test('integrity rules reject a second active row', async ({ request }) => {

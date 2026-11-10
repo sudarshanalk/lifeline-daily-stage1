@@ -163,3 +163,57 @@ test('TC-FR2-39-AS-18', async ({ page }) => {
   const scan = await new AxeBuilder({ page }).analyze();
   expect(scan.violations.filter((v) => ['serious', 'critical'].includes(v.impact)).map((v) => v.id)).toEqual([]);
 });
+
+// Staging and production have a real WordPress page at the landing address (created by `wp lld pages apply`, page 6540 on
+// staging). WordPress serves it, and the plugin adds the save form, the track link and the guide below its own content,
+// as for the other two calculators; the plugin's screen above is the fallback for a site without the page.
+test('TC-FR2-39-AS-14 the Stage 1 Healthy Weight page keeps its own content, with the save, track link and guide below it', async ({ page, request }) => {
+  test.setTimeout(180000);
+  await serveTool(page);
+  const stamp = `hw${randomBytes(3).toString('hex')}`;
+  const fixture = (mode) => request.post('/wp-json/lld-members/v1/test/fixture', { data: { kind: 'stage1-pages', stamp, mode } });
+  const made = await fixture('create');
+  expect(made.ok(), await made.text()).toBeTruthy();
+  const pages = await made.json();
+  const marker = page.locator('[data-lld-stage1-marker="healthy-weight"]');
+  const save = page.getByRole('button', { name: 'Save this result to my profile' });
+  const below = (first, second) => page.evaluate(([a, b]) => {
+    const x = document.querySelector(a);
+    const y = document.querySelector(b);
+    return !!x && !!y && !!(x.compareDocumentPosition(y) & Node.DOCUMENT_POSITION_FOLLOWING);
+  }, [first, second]);
+  try {
+    await page.goto(LANDING);
+    await expect(marker).toHaveText(pages['healthy-weight'].marker);
+    await expect(page.locator('iframe.lld-tool-frame')).toHaveCount(1);
+    await expect(page.locator('[data-lld-track-link]')).toContainText('Healthy Weight');
+    await expect(page.locator('[data-lld-guide]')).toBeVisible();
+    expect(await below('[data-lld-stage1-marker="healthy-weight"]', 'iframe.lld-tool-frame')).toBe(true);
+    expect(await below('iframe.lld-tool-frame', '[data-lld-onward]')).toBe(true);
+    // An underweight result hides the onward offer on the real page too.
+    await check(page, { ...healthy, weightKg: 50 });
+    await expect(page.locator('[data-lld-onward]')).toBeHidden();
+    await expect(save).toHaveCount(0);
+
+    const member = emailFor('hw-s1');
+    await createMember(request, { email: member, password, first_name: 'Pat', role: 'member', consents: ['terms', 'health'] });
+    await signIn(page, member, password);
+    await page.goto(LANDING);
+    await expect(marker).toHaveText(pages['healthy-weight'].marker);
+    await check(page, healthy);
+    await expect(save).toBeVisible();
+    await expect(page.locator('[data-lld-onward]')).toBeVisible();
+    await save.click();
+    await expect(page.getByText('Saved', { exact: true })).toBeVisible();
+    await expect(marker).toHaveText(pages['healthy-weight'].marker);
+    const row = await (await page.request.post('/wp-json/lld-members/v1/test/calculator', { data: { email: member } })).json();
+    expect(row).toMatchObject({ calculator: 'healthy-weight', headline: '23.5', unit: 'kg/m²', band: 'Healthy weight' });
+  } finally {
+    const removed = await fixture('remove');
+    expect(removed.ok(), await removed.text()).toBeTruthy();
+  }
+  // With the page gone, the plugin's own screen answers again.
+  await page.goto(LANDING);
+  await expect(page.getByRole('heading', { name: 'Healthy Weight Check', level: 1 })).toBeVisible();
+  await expect(page.locator('[data-lld-stage1-marker]')).toHaveCount(0);
+});

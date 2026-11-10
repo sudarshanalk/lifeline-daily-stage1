@@ -1,0 +1,143 @@
+{
+  "group": "WHATIF",
+  "tool": "heart-risk",
+  "fixtures": [
+    {
+      "id": "FX-HR-WHATIF-15",
+      "purpose": "HR-15: as HR-02 (26 %); what-if non-smoker 16 (-10), SBP 140-159 20 (-6), TC 6-6.9 22 (-4): smoking first (AS-02)",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "country": "United Kingdom",
+        "smoke": "yes",
+        "sbp": 160,
+        "diabetes": "no",
+        "tc": 7.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "risk": 26,
+        "band": "very-high",
+        "urgent": false,
+        "whatif": [
+          {
+            "factor": "smoking",
+            "to": "non-smoker",
+            "risk": 16,
+            "fall": 10
+          },
+          {
+            "factor": "blood-pressure",
+            "to": "140-159",
+            "risk": 20,
+            "fall": 6
+          },
+          {
+            "factor": "cholesterol",
+            "to": "6-6.9",
+            "risk": 22,
+            "fall": 4
+          }
+        ],
+        "first": "smoking"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-WHATIF-16",
+      "purpose": "HR-16: Western Europe (UK), man 55, non-smoker, SBP 160, TC 7.0 = 16 %; what-if SBP 140-159 12 (-4), TC 6-6.9 14 (-2): blood pressure first; smoking absent",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "country": "United Kingdom",
+        "smoke": "no",
+        "sbp": 160,
+        "diabetes": "no",
+        "tc": 7.0,
+        "tcUnit": "mmol/L",
+        "bmi": 26,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "no"
+      },
+      "expected": {
+        "stop": null,
+        "model": "lab",
+        "region": "Western Europe",
+        "risk": 16,
+        "band": "high",
+        "urgent": false,
+        "whatif": [
+          {
+            "factor": "blood-pressure",
+            "to": "140-159",
+            "risk": 12,
+            "fall": 4
+          },
+          {
+            "factor": "cholesterol",
+            "to": "6-6.9",
+            "risk": 14,
+            "fall": 2
+          }
+        ],
+        "first": "blood-pressure"
+      },
+      "oracle": "clinical",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HR-WHATIF-22",
+      "purpose": "HR-22: as HR-12 (24 %) with eating disorder = Yes; what-if shows non-smoker 14 and SBP 140-159 18 only; BMI what-if absent (would have been 25-29 -> 21)",
+      "inputs": {
+        "age": 55,
+        "sex": "male",
+        "country": "United Kingdom",
+        "smoke": "yes",
+        "sbp": 160,
+        "diabetes": "no",
+        "tc": null,
+        "tcUnit": null,
+        "bmi": 31,
+        "cvd": "no",
+        "preg": "no",
+        "eat": "yes"
+      },
+      "expected": {
+        "stop": null,
+        "model": "nolab",
+        "region": "Western Europe",
+        "risk": 24,
+        "band": "very-high",
+        "urgent": false,
+        "whatif": [
+          {
+            "factor": "smoking",
+            "to": "non-smoker",
+            "risk": 14,
+            "fall": 10
+          },
+          {
+            "factor": "blood-pressure",
+            "to": "140-159",
+            "risk": 18,
+            "fall": 6
+          }
+        ],
+        "first": "smoking",
+        "weightWhatifHidden": true
+      },
+      "oracle": "clinical",
+      "status": "recorded",
+      "notes": "The hidden BMI what-if cell (25-29) reads 21 % in the file, as the sheet says; it must not be shown."
+    }
+  ]
+}
