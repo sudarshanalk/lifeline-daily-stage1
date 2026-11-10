@@ -71,7 +71,7 @@ function lld_content_safety_missing(array $it, string $track = ''): array {
 function lld_content_check(array $bundle): array {
   $problems = [];
   if (!isset($bundle['items']) || !is_array($bundle['items']) || !$bundle['items']) return ['the bundle has no items'];
-  $seen = []; $titles = [];
+  $seen = []; $titles = []; $blocks = [];
   foreach ($bundle['items'] as $i => $it) {
     $where = 'item ' . ($i + 1) . (isset($it['key']) ? ' (' . $it['key'] . ')' : '');
     if (!is_array($it)) { $problems[] = "$where is not an object"; continue; }
@@ -89,13 +89,25 @@ function lld_content_check(array $bundle): array {
     if (preg_match('/(?<!never |not |n\'t |do not |without |avoid |no )(breath[- ]?holding|hold(ing)? your breath)/', $text)) $problems[] = "$where mentions breath-holding";
     $track_ref = (string)($it['fields']['track_id'] ?? '');
     $track = preg_match('/^@([A-Za-z0-9:._-]+)$/', $track_ref, $m) ? (string)($titles[$m[1]] ?? '') : '';
+    if (lld_content_hw_tags_only($it, isset($m[1]) && isset($blocks[$m[1]]))) $track = '';
     foreach (lld_content_safety_missing($it, $track) as $line) $problems[] = "$where lacks $line (NFR2-07)";
     $ap = (array)($it['approval'] ?? []);
     if (!preg_match('/^d-[a-z0-9-]+$/', (string)($ap['decision'] ?? '')) || !preg_match('/^[0-9a-f]{16}$/', (string)($ap['sha'] ?? ''))) $problems[] = "$where has no approval decision and fingerprint";
     if (array_key_exists('stage', $it) && $it['stage'] !== 3) $problems[] = "$where has a stage that is not 3";
     if ($key !== '') { $seen[$key] = true; $titles[$key] = (string)($it['title'] ?? ''); }
+    if ($key !== '' && ($it['fields']['track_kind'] ?? '') === 'focus_block') $blocks[$key] = true;
   }
   return array_merge($problems, lld_content_hw_problems($bundle));
+}
+
+/** P3-35 (owner, FB06-Q1 = A and the 8 and 9 Nov 2026 decisions for sleep content): the Stage 3 Healthy Weight content
+ *  (its mindset notes, its sleep, stress and alcohol steps, and everything in the nine focus blocks) takes its safety
+ *  lines from its own goal tags only, never from its track's title, so "Sleep and weight" content tagged sleep gets the
+ *  snoring advice and no urgent-help line, and only stress and mood items get that line. Stage 2 tracks keep the
+ *  title rule. $in_block: the item belongs to a focus block. */
+function lld_content_hw_tags_only(array $it, bool $in_block): bool {
+  if (($it['stage'] ?? null) !== 3) return false;
+  return $in_block || ($it['type'] ?? '') === 'lld_note' || (bool)preg_match('/^act:HW-(SL|ST|AL)-\d\d$/', (string)($it['key'] ?? ''));
 }
 
 /** The Healthy Weight programme's own checks (P3-35), only for a bundle that carries its content: notes, questions,

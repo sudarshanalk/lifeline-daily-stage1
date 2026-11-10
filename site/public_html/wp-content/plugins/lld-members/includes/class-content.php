@@ -212,6 +212,10 @@ class LLD_Members_Content {
 	 */
 	public static function box( $post ) {
 		wp_nonce_field( 'lld_content_save', 'lld_content_nonce' );
+		if ( self::reload_only( $post->post_type ) ) {
+			echo '<p class="description">' . esc_html( self::RELOAD_ONLY_NOTE ) . '</p>';
+			return;
+		}
 		$fields = get_post_meta( $post->ID, '_lld_fields', true );
 		if ( ! is_array( $fields ) ) {
 			$fields = array();
@@ -890,11 +894,30 @@ class LLD_Members_Content {
 	}
 
 	/**
+	 * P3-35 (Owner Question 160, additions only): the Healthy Weight mindset notes and programme questions carry fields
+	 * this form cannot show (choices, rules, the note's track and day), so they are not edited here: their fields and
+	 * tags are kept exactly as the approved content loader stored them.
+	 */
+	const RELOAD_ONLY_NOTE = 'This item is changed only by reloading the owner-approved content (wp lld content load). Its fields and tags cannot be edited here, and saving keeps them as loaded.';
+
+	/**
+	 * True for a type whose fields change only by reloading approved content (P3-35).
+	 *
+	 * @param string $type Post type.
+	 */
+	public static function reload_only( $type ) {
+		return in_array( (string) $type, array( 'lld_note', 'lld_question' ), true );
+	}
+
+	/**
 	 * @param int $post_id Working copy.
 	 */
 	private static function save_fields( $post_id ) {
 		if ( ! self::nonce_ok() ) {
 			return;
+		}
+		if ( self::reload_only( (string) get_post_type( $post_id ) ) ) {
+			return; // P3-35: fields and tags kept as loaded; they change only by reloading approved content
 		}
 		$posted = isset( $_POST['lld_fields'] ) && is_array( $_POST['lld_fields'] ) ? wp_unslash( $_POST['lld_fields'] ) : array();
 		$clean  = array();
@@ -1648,19 +1671,6 @@ class LLD_Members_Content {
 				array( 'exercise_note', 'Before exercise', 'textarea' ),
 				array( 'intense_note', 'On high-intensity content', 'textarea' ),
 				array( 'confirmed_drops', 'Launch protections the owner confirmed removing', 'text' ),
-			),
-			'lld_note'      => array(
-				array( 'note_key', 'Note key', 'text' ),
-				array( 'track_id', 'Track or focus block', 'post', 'lld_track' ),
-				array( 'week', 'Week number', 'number' ),
-				array( 'day', 'Day number', 'number' ),
-				array( 'try_this', 'Try this today', 'textarea' ),
-				array( 'support_wording', 'Shows the support wording', 'check' ),
-			),
-			'lld_question'  => array(
-				array( 'question_key', 'Question key', 'text' ),
-				array( 'why', 'Why we ask', 'textarea' ),
-				array( 'asked_in', 'Asked in', 'select', array( 'where_now', 'joining', 'quick_question' ) ),
 			),
 			'lld_qa'        => array(
 				array( 'session_date', 'Date', 'text' ),
