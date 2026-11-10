@@ -101,6 +101,31 @@ test('every Stage 3 test id in tests/stage3 is a check in docs/stage3/03', () =>
   expect(r.known).toBeGreaterThan(200);
 });
 
+test('the test id check reads three-digit requirement numbers (FR3-100 and above)', () => {
+  // The unknown id is built from parts so the --names scan of tests/stage3 does not see it in this file.
+  const unknown = ['TC', 'FR3', '111', 'AS', '01'].join('-');
+  const unknownNfr = ['TC', 'NFR3', '100', 'AS', '01'].join('-');
+  const root = mkdtempSync(join(tmpdir(), 'lld-s3-ids-'));
+  try {
+    mkdirSync(join(root, 'docs', 'stage3'), { recursive: true });
+    mkdirSync(join(root, 'tests', 'stage3'), { recursive: true });
+    writeFileSync(join(root, 'docs', 'stage3', '03_Test_Criteria_Stage3.md'), '| TC-FR3-100-AS-01 | known |\n| TC-FR3-09-AS-01 | known |\n');
+    writeFileSync(join(root, 'tests', 'stage3', 'known.test.mjs'), "test('TC-FR3-100-AS-01', () => {}); test('TC-FR3-09-AS-01', () => {});\n");
+    const ok = unknownTestIds({ root });
+    expect(ok.problems).toEqual([]);
+    expect(ok.known).toBe(2);
+    writeFileSync(join(root, 'tests', 'stage3', 'unknown.test.mjs'), `test('${unknown}', () => {}); test('${unknownNfr}', () => {});\n`);
+    const bad = unknownTestIds({ root });
+    expect(bad.ok).toBe(false);
+    expect(bad.problems).toEqual([
+      `tests/stage3/unknown.test.mjs: ${unknown} is not a check in docs/stage3/03`,
+      `tests/stage3/unknown.test.mjs: ${unknownNfr} is not a check in docs/stage3/03`,
+    ]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test("NFR3-14 (guard): a Stage 3 calculator's first fixtures come from its signed sheet; later changes and the Stage 1 folders stay guarded", () => {
   // The lead may add approvals/stage3/<tool>.json and fixtures/<tool>/ in an S3-P pull request; the Stage 1 approvals stay protected.
   const lead = stage3Scope({ title: 'S3-P02-P03: sign-offs', files: ['approvals/stage3/heart-risk.json', 'fixtures/heart-risk/lab.json', 'schemas/fixture.schema.json'], decisions: [] });

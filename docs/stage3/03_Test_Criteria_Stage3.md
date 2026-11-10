@@ -1,6 +1,6 @@
 # Stage 3 test criteria (extract)
 
-Extracted on 6 November 2026 from `01 Requirements/Lifeline_Daily_Requirements_All_Stages.md` v0.4 by the lead. Every `TC-FR3-nn-AS-nn` and `TC-NFR3-nn-AS-nn` used under `tests/stage3/` must appear here (`stage3-guards`). Do not edit by hand: re-extract from the requirements when they change.
+Extracted on 10 November 2026 from `01 Requirements/Lifeline_Daily_Requirements_All_Stages.md` v0.4 by the lead. Every `TC-FR3-nn-AS-nn` and `TC-NFR3-nn-AS-nn` used under `tests/stage3/` must appear here (`stage3-guards`). Do not edit by hand: re-extract from the requirements when they change.
 
 #### FR3-01 Sign in with Google
 
@@ -429,13 +429,15 @@ Premium members can create a recipe from ingredients and a number of servings, a
 
 Stage 3 · Food tracker · Must · Status: To be built
 
-Lifeline Daily suggests recipes from the owner-approved recipe library that fit the member's goal, plan, calories left for the day, dislikes and allergies. No recipe is written by AI. Premium.
+Lifeline Daily suggests recipes from the owner-approved recipe library that fit the member's goal, plan, calories left for the day, dislikes, allergies and food rules. Each approved recipe carries owner-approved food-rule tags worked out from its ingredients (for example contains poultry, beef, fish, shellfish, egg, dairy, meat and dairy together, onion or garlic, grains or pulses), and a recipe is suggested only when it meets every food rule the member chose: halal, kosher, no pork, no beef, pescatarian, vegetarian, vegan, no eggs, dairy-free, no onion or garlic, and 'no grains or pulses on fasting days' on the member's fasting days (owner, 10 Nov 2026). Halal and kosher members are shown 'Use halal (or kosher) meat and chicken in these recipes'. Buckwheat is in the allergen list. No recipe is written by AI. Premium.
 
 | Test ID | What the test checks |
 |---|---|
 | TC-FR3-36-AS-01 | A test member with a nut allergy is never shown a recipe that contains nuts. |
-| TC-FR3-36-AS-02 | Every suggested recipe fits within the member's calories left for the day. |
-| TC-FR3-36-AS-03 | Every suggested recipe is in the approved library. |
+| TC-FR3-36-AS-02 | A kosher test member is never shown a recipe tagged meat and dairy together, shellfish or pork, and sees the kosher meat line with the rest. |
+| TC-FR3-36-AS-03 | On a test member's 'no grains or pulses' fasting day, only recipes without grains or pulses are suggested, such as the approved fasting-day recipes. |
+| TC-FR3-36-AS-04 | Every suggested recipe fits within the member's calories left for the day. |
+| TC-FR3-36-AS-05 | Every suggested recipe is in the approved library. |
 
 #### FR3-37 Barcode scanning in the browser
 
@@ -817,7 +819,6 @@ Monthly Premium members can pause for 1, 2 or 3 months instead of cancelling. Th
 | TC-FR3-65-AS-04 | A failed payment at the end of the pause follows the Stage 2 failed-payment retries. |
 | TC-FR3-65-AS-05 | A yearly test member is not offered a pause. |
 | TC-FR3-65-AS-06 | Starting to cancel shows the pause option before the final cancel button. |
-| TC-FR3-65-AS-07 | A member can pause once in any 12 months: within 12 months of their last pause they are offered no pause, a new pause is refused with the date they can pause again, and a pause they undid does not count (owner, 8 Nov 2026). |
 
 #### FR3-66 Google Analytics 4
 
@@ -883,7 +884,7 @@ Removed by the owner on 4 November 2026: no weekly email is sent, and the owner 
 
 #### FR3-71 Owner and Support admin roles
 
-Stage 3 · Admin panel · Must · Status: Built, on staging (#217); changed on 6 Nov 2026 (My account → Admin, simple toggles): to be rebuilt
+Stage 3 · Admin panel · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 The admin panel has two roles. The Owner can do everything. A Support helper can find members, see their account details, resend account emails, add private notes, and pause or resume a membership when the member asks. Support cannot delete a member, send a data download, give or remove Premium, end a membership, issue refunds or change payments, mark test accounts, block or unblock, change features, approve content, manage admins, or see other admins' actions and payment counts. Only the Owner adds or removes Support helpers, and each helper has their own account. Every action checks the role on the server, not only by hiding buttons. Both roles work in My account → Admin (FR3-87), and a Support helper never enters the WordPress admin (FR3-90). Section 3 lists every privilege.
 
@@ -895,7 +896,7 @@ The admin panel has two roles. The Owner can do everything. A Support helper can
 
 #### FR3-72 Two admin areas: My account → Admin, and content in the WordPress admin
 
-Stage 3 · Admin panel · Must · Status: Built, on staging (#217); changed on 6 Nov 2026 (My account → Admin, simple toggles): to be rebuilt
+Stage 3 · Admin panel · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 Running members, tools and money happens in My account → Admin (FR3-87): Overview, Members, Tools, Features, Activity log, Helpers, Payments, Weekly report and Group removals. Content and the site stay in the WordPress admin, where the menu is called 'Lifeline Daily content' and holds Goals, Tracks, Weeks, Lessons, Activities, Challenges, Recipes, Meal plans, Workout plans, Suggestion rules, Badges, Screening wording, Tags, Approvals, Safety matrix, Live Q&A, Testimonials and Preview. The moved pages leave the WordPress admin only after their My account versions pass every check; until then both work. The old WordPress-admin address of a moved page takes the Owner to the same page in My account.
 
@@ -908,7 +909,7 @@ Running members, tools and money happens in My account → Admin (FR3-87): Overv
 
 #### FR3-73 Overview page with counts only
 
-Stage 3 · Admin panel · Must · Status: Built, on staging (#217); changed on 6 Nov 2026 (My account → Admin, simple toggles): to be rebuilt
+Stage 3 · Admin panel · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 The first admin page shows counts only: members in total, new this week and signed in within 7 and 30 days; Free, Premium, paused and cancelled members; monthly and yearly plans; open failed payments; content waiting for approval; unanswered Live Q&A questions; each feature and its state; and the last 10 admin actions. It never shows health figures, even as totals. Support sees the same page without the payment counts and the activity log. The page is in My account → Admin. Test members are counted apart from real members: the counts show real members only, with the number of test members shown separately.
 
@@ -920,7 +921,7 @@ The first admin page shows counts only: members in total, new this week and sign
 
 #### FR3-74 Emergency off for a feature
 
-Stage 3 · Admin panel · Must · Status: Built, on staging (#217); changed on 6 Nov 2026 (My account → Admin, simple toggles): to be rebuilt
+Stage 3 · Admin panel · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 Every Stage 3 feature is on (decision of 3 Nov 2026). The Features page in My account → Admin lists each feature by its plain name with a one-line description and one simple on/off toggle. Flipping the toggle saves at once and shows 'Saved' with an Undo link, and members stop seeing a feature that is off on their next page load. A reason box beside the toggle is optional. There is no 'test accounts only' choice on the screen (the command line keeps that state for the automated tests only, NFR3-06), and turning a feature back on needs no typed name, note or fresh code. Each feature shows its change history (who, when, from and to, reason), including changes made on the command line. The tools' switches are on the Tools page (FR3-88). The list of test-account emails is edited on this page. Full administrators (the Owner) count as test accounts automatically; Support helpers do not, unless their email is added to the list. Support can view the page but not change it.
 
@@ -1015,7 +1016,7 @@ The Owner can end a member's Premium either at the end of the paid period or str
 
 #### FR3-82 Mark or unmark a test account
 
-Stage 3 · Admin panel · Must · Status: Built, on staging (#217); changed on 6 Nov 2026 (My account → Admin, simple toggles): to be rebuilt
+Stage 3 · Admin panel · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 The Owner can mark a member as a test account, or unmark them, with a reason. This updates the same test-account list as the Features page.
 
@@ -1059,7 +1060,7 @@ The Owner can send a member a link to their own data download. The member signs 
 
 #### FR3-86 Admin activity log
 
-Stage 3 · Admin panel · Must · Status: Built, on staging (#217); changed on 6 Nov 2026 (My account → Admin, simple toggles): to be rebuilt
+Stage 3 · Admin panel · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 The Stage 2 admin log is extended so that every admin action, from both roles and from the command line, is recorded: admin sign-ins and failed attempts, every member action, feature and test-account changes, and adding or removing helpers. Each entry has who, when, what, the member number, the before and after state and the reason. A reason is required for deleting, giving or removing Premium, ending a membership, blocking or unblocking, test-account changes, and adding or removing a helper. A reason for turning a feature or tool off or on is optional (FR3-74). Entries can never be edited or deleted, contain no health data, and do not copy note text. The Owner sees the whole log and can download it as a CSV file; Support sees only their own actions. Entries are kept for 2 years. When a member is deleted, their entries keep only the member number.
 
@@ -1074,7 +1075,7 @@ The Stage 2 admin log is extended so that every admin action, from both roles an
 
 #### FR3-87 Admin pages in My account
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 The Owner and Support helpers reach their admin pages from My account → Admin, in the site's own design, at addresses under /members/admin/. Members never see the Admin link and get 'not found' at those addresses. The Owner's Admin section has a link, 'Content and site settings (WordPress)', that opens the WordPress admin without signing in again, and the WordPress admin has a link back. Sign-in, the email code, the 30-minute and 12-hour limits, reasons, confirmations and the activity log work as in FR3-71 to FR3-86 and NFR3-19 to NFR3-23.
 
@@ -1087,7 +1088,7 @@ The Owner and Support helpers reach their admin pages from My account → Admin,
 
 #### FR3-88 Tools page
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 One Tools page lists all 11 tools: the three standalone tools (Daily Protein Target, Diabetes Risk Check, Healthy Weight Check), the six calculator pages (Heart Risk Check, Blood Pressure Check, Metabolic Health Check, Fitness Age, Heart Rate Zones, Sleep and Stress Check) and the two members-only calculators (Calorie Target, Goal Timeline). For each it shows the name, its address, whether it is on or off, and when, by whom and why it last changed. Each tool has a simple on/off toggle with an optional reason, as in FR3-74, and a master toggle turns all eight newer calculators off at once. The page never shows results or any member's data.
 
@@ -1101,7 +1102,7 @@ One Tools page lists all 11 tools: the three standalone tools (Daily Protein Tar
 
 #### FR3-89 Switching off a standalone tool
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 Turning off one of the three standalone tools uses their approved Stage 1 switch (tools/status.json, FR1-15): its card on the homepage and the Health Tools hub says 'Temporarily unavailable', its landing page and its file address (for example /tools/protein-requirement-tool.html) show the approved paused text instead of the form, and its email-the-result step is refused. A tool can be turned back on from the page only while its approved file is still the one deployed. It does not change the tool's frozen calculation, wording or fixtures (FR2-23, NFR3-14), so CI's engine-freeze and oracle-guard checks still pass. Turning it back on restores everything as it was.
 
@@ -1113,7 +1114,7 @@ Turning off one of the three standalone tools uses their approved Stage 1 switch
 
 #### FR3-90 Support helpers kept out of the WordPress admin
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 A Support helper never enters the WordPress admin. Any WordPress-admin address sends them to My account → Admin, and the WordPress admin bar is not shown to them. The background addresses that forms use (admin-post.php and admin-ajax.php) still work for the actions their role allows, and refuse everything else.
 
@@ -1125,7 +1126,7 @@ A Support helper never enters the WordPress admin. Any WordPress-admin address s
 
 #### FR3-91 Premium test member for the Owner
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 The Owner can see and test the site exactly as a paying member does (every tool, guide, track week, plan and challenge) without paying. On the Members page the Owner can make any member account a Premium test member with one action and a reason: it is marked as a test account and given free Premium with no end date, with no Stripe charge or subscription. The account then sees everything a paying Premium member sees, under the same safety rules. A Premium test member is labelled 'Test' on every admin page, is left out of member counts, revenue, the weekly report and analytics, and never receives marketing emails. Up to 5 accounts can be Premium test members. The Owner signs in to it with its own email and password or code, as any member does; it is never the Owner's admin account and never a way to sign in as a real member (FR3-76). Removing the status returns the account to Free.
 
@@ -1140,7 +1141,7 @@ The Owner can see and test the site exactly as a paying member does (every tool,
 
 #### FR3-92 Reset a test member
 
-Stage 3 · Admin panel · Should · Status: To be built
+Stage 3 · Admin panel · Should · Status: Built, on staging (#222, 6 Nov 2026)
 
 So the Owner can walk through joining, goal setting and the first week again, the Owner can reset a test member to a clean start: goals, plans, logs, saved results and track progress are deleted, and the account, its sign-in and its Premium test status stay. Only accounts marked as test accounts can be reset; it needs a reason and the typed word RESET, and it is recorded in the activity log. The reset deletes the member's own data without anyone seeing it, so NFR3-19 still holds.
 
@@ -1151,7 +1152,7 @@ So the Owner can walk through joining, goal setting and the first week again, th
 
 #### FR3-93 Staging emails for the Owner
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 Staging never sends real email; it catches every message (NFR1-14). On staging only, a Staging emails page in My account → Admin shows the Owner the caught emails, newest first, with the recipient, subject, time and text, so the Owner can read sign-in codes and see the emails members would get, without a developer. The page and its address exist only where the staging setting is on. Support cannot open it.
 
@@ -1163,7 +1164,7 @@ Staging never sends real email; it catches every message (NFR1-14). On staging o
 
 #### FR3-94 A switch change shows at once
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 Turning a tool or feature off or on also clears the site's page cache for the pages that show it (the homepage, the Health Tools hub and the tool's own page), so signed-out visitors never see a card for a tool that is off.
 
@@ -1173,7 +1174,7 @@ Turning a tool or feature off or on also clears the site's page cache for the pa
 
 #### FR3-95 Editors limited to articles and pages
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 Editors write and edit articles and pages only. They cannot open, add or change Lifeline Daily content (goals, tracks, weeks, lessons, activities, challenges, recipes, meal plans, workouts, rules, badges, wording), approvals or the safety matrix, even by typing the address; those are the Owner's. (These content types use WordPress's standard post permissions today, which Editors have.)
 
@@ -1184,7 +1185,7 @@ Editors write and edit articles and pages only. They cannot open, add or change 
 
 #### FR3-96 Retire Paid Memberships Pro
 
-Stage 3 · Paid membership · Must · Status: To be built
+Stage 3 · Paid membership · Must · Status: Built, on staging (#223, 6 Nov 2026); deactivated on staging, files and tables kept
 
 Lifeline Daily Members already runs Premium: prices, Stripe checkout, subscriptions, pause, cancellation, free Premium and blocking. Paid Memberships Pro is retired so there is one membership system with one set of rules. Lifeline Daily Members stops copying the two Premium plans into Paid Memberships Pro's levels list and stops relying on it in member deletion. Every page, shortcode, menu and sign-in step that came from it is checked and replaced or removed, including its 'Suspicious activity' sign-in block and its Memberships menu. Its records are backed up, then the plugin is deactivated and removed. The Stage 2 build documents and AGENTS.md, which say Premium runs 'through Stripe and Paid Memberships Pro', are updated.
 
@@ -1194,6 +1195,223 @@ Lifeline Daily Members already runs Premium: prices, Stripe checkout, subscripti
 | TC-FR3-96-AS-02 | No page, menu or sign-in step on the site comes from Paid Memberships Pro, and no Lifeline Daily code refers to it. |
 | TC-FR3-96-AS-03 | Free, Premium, paused and cancelled test members keep exactly the same access before and after it is removed. |
 | TC-FR3-96-AS-04 | A backup of its records is taken before removal, and after removal no leftover record names a member. |
+
+#### FR3-97 Where you are now, before the goal
+
+Stage 3 · Healthy Weight programme · Must · Status: To be built
+
+Before a weight goal is set, the member enters or confirms their weight, height and waist. Lifeline Daily works out BMI and waist-to-height ratio with the same calculations as the Healthy Weight Check (FR2-39) and explains in plain words what each result means, using the standard bands: BMI 18.5 to 24.9 healthy, 25 to 29.9 overweight and 30 or more obesity, with the lower cut-offs of 23 and 27.5 for people of South Asian, Chinese, other Asian, Middle Eastern, Black African or African-Caribbean background (owner, D3-54, 6 Nov 2026, signed method sheet: taken from the health profile when it names one of these; when it says 'White / not stated', 'Other / mixed' or nothing, the Healthy Weight Check's own background question is asked once, with its mixed-background follow-up, and saved as a programme answer without changing the profile; 'prefer not to say' uses the standard bands); waist-to-height ratio under 0.5 healthy, 0.5 to 0.59 increased risk and 0.6 or more high risk. It also shows the healthy weight range for the member's height, rounded inwards exactly as the Healthy Weight Check does, so every weight in it shows a healthy BMI. It reuses the Check's engine and approved result wording, including its rules for a BMI of 35 or more (no waist-to-height ratio) and a ratio under 0.40. Results are never shown as a diagnosis or in red and green. BMI bands are not shown during pregnancy or for anyone under 18. The member also confirms their activity level, choosing one of the four levels of the signed calorie method sheet (P3-55): low, 'Mostly sitting; little planned exercise'; some, 'Light activity or exercise 1 to 3 days a week'; active, 'Moderate exercise 3 to 5 days a week'; very active, 'Hard exercise 6 to 7 days a week'. It is filled in from the Stage 2 health profile when there, and a change is saved back to the profile. The member can skip waist and add it later. The bands and wording follow the method sheet `P3-35-Where-You-Are-Now-Method-Sheet.md`, signed by the owner on 6 Nov 2026 (NFR3-14), which reuses the Healthy Weight Check's approved wording.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-97-AS-01 | A test member of 163 cm and 80 kg with a 98 cm waist sees BMI 30.1 (obesity), waist-to-height ratio 0.60 (high risk) and a healthy range of 49.1 to 66.2 kg, before the goal step. |
+| TC-FR3-97-AS-02 | The same member with a South Asian background in their health profile sees the 23 and 27.5 cut-offs, and a healthy range of 49.1 to 60.9 kg. |
+| TC-FR3-97-AS-03 | Every BMI and waist-to-height result matches the Healthy Weight Check's engine for the same inputs on its frozen test cases. |
+| TC-FR3-97-AS-04 | A member who says they are pregnant sees no BMI band and is shown the pregnancy safety wording. |
+| TC-FR3-97-AS-05 | Skipping waist shows the BMI result alone, and the waist result appears once waist is added. |
+| TC-FR3-97-AS-06 | A member whose health profile says 'Other / mixed' is asked the Check's background question once; answering Middle Eastern gives the 23 and 27.5 cut-offs, and the health profile answer is unchanged. |
+| TC-FR3-97-AS-07 | A member whose health profile says 'some' activity sees that level already chosen, and can change it before going on. |
+| TC-FR3-97-AS-08 | The four activity levels and their wording match the P3-55 method sheet exactly, and a changed level is saved to the health profile. |
+
+#### FR3-98 Eight quick questions when joining
+
+Stage 3 · Healthy Weight programme · Must · Status: To be built
+
+After choosing a weight goal and before choosing a pace, a member with health consent answers eight quick questions, each one tap or a short choice: their reason or an event they are aiming for, their biggest barrier, how much time they have on a typical day, their work pattern (days, shifts, nights or irregular), how confident they feel (1 to 10), how long they usually sleep (under 6 hours, 6 to 7, 7 to 9, over 9), their stress level (1 to 10) and how often they have an alcoholic drink (never, less than once a week, 1 to 2 days a week, 3 to 4 days, most days). A member who drinks is asked one more tap: how many drinks on a day they drink (1 to 2, 3 to 4, 5 or more), shown as pictures of standard drinks rather than units, which differ between countries. A member whose food rules in the health profile or food preferences exclude alcohol is not asked, and 'never' is recorded. A member who works shifts, nights or irregular hours is also asked, optionally, when they usually wake up, so reminders fit their day (FR3-56). Sleep, stress and alcohol are asked at joining because they change the plan from day 1 (FR3-109, FR3-110). Each question shows a one-line reason for asking. Every question can be skipped, and the step takes about a minute. The answers shape the recommended pace (FR3-100), the order of activities (FR3-103), the first focus block (FR3-104), the sleep and stress steps (FR3-109) and the alcohol steps (FR3-110), each through a rule the owner signs off (NFR3-17). Answers are health data: they need health consent, are in 'Download my data', are deleted with the account or when consent is withdrawn, and never appear in emails, analytics or admin pages.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-98-AS-01 | A new test member with health consent sees the eight questions after choosing a weight goal, each with its reason, and can finish in about 1 minute. |
+| TC-FR3-98-AS-02 | The sleep question offers exactly under 6 hours, 6 to 7, 7 to 9 and over 9, the stress question 1 to 10, and the alcohol question never, less than once a week, 1 to 2 days a week, 3 to 4 days and most days. |
+| TC-FR3-98-AS-03 | Skipping every question still leads to the pace step, with the standard recommendation. |
+| TC-FR3-98-AS-04 | A member who declines health consent is not asked, and nothing is stored. |
+| TC-FR3-98-AS-05 | The answers are in 'Download my data' and are gone after the account is deleted. |
+| TC-FR3-98-AS-06 | No email, analytics event or admin page contains an answer. |
+| TC-FR3-98-AS-07 | Answering 'never' to alcohol skips the drinks-a-day tap; any other answer shows it, with pictures of standard drinks and the choices 1 to 2, 3 to 4 and 5 or more. |
+| TC-FR3-98-AS-08 | A member whose food preferences say halal is not asked about alcohol, and 'never' is recorded. |
+| TC-FR3-98-AS-09 | A member who chooses 'shifts' or 'nights' is offered the optional wake-up time question; a member on regular days is not, and their reminders start at 08:00. |
+
+#### FR3-99 Getting-to-know-you questions
+
+Stage 3 · Healthy Weight programme · Must · Status: To be built
+
+When the member starts Healthy Weight, they are offered a short set of questions: eating pattern and meals a day, when they snack, sugary drinks, how often they eat out or have takeaways, cooking time and skill, food budget, food rules and allergies (for example halal, kosher, vegetarian, 'no grains or pulses on fasting days' or a fast they keep, chosen from the approved festival calendar), favourite cuisines, current activity and what they enjoy, stress eating, and what they have tried before (sleep, stress and alcohol are asked at joining, FR3-98). They can answer now or later; unanswered questions appear one or two a day on the Today screen. The member can change any answer from the Account hub. Each question has a written rule for what its answer changes, signed off by the owner (NFR3-17); a question without a rule is not asked. Answers already given in the health profile (FR2-25) or food preferences (FR3-36) are reused, not asked again. The privacy rules of FR3-98 apply.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-99-AS-01 | Starting Healthy Weight offers the question set, and choosing 'Later' starts the track with none answered. |
+| TC-FR3-99-AS-02 | With questions unanswered, the Today screen shows at most 2 a day until all are answered or skipped. |
+| TC-FR3-99-AS-03 | A question already answered in the health profile or food preferences is not asked again. |
+| TC-FR3-99-AS-04 | Every question in the set has a signed rule in the rule catalogue, and CI fails if one does not. |
+| TC-FR3-99-AS-05 | Changing an answer in the Account hub changes the plan from the next day. |
+| TC-FR3-99-AS-06 | A member with an eating-disorder flag is not asked any portion or calorie question. |
+| TC-FR3-99-AS-07 | During a dawn-to-sunset fast of several days that the member keeps, their meal plan switches to the approved fasting meal plan (pre-dawn meal, breaking the fast, evening meal) with the same calorie target, and switches back the day after it ends; a member with type 2 diabetes keeps their usual plan and sees 'If you are planning to fast, follow the plan you agreed with your doctor or diabetes team.' |
+
+#### FR3-100 Recommended pace
+
+Stage 3 · Healthy Weight programme · Must · Status: To be built
+
+After the quick questions, Lifeline Daily recommends a weekly pace of weight loss from the member's answers and shows the date it gives. The rule the owner signed off (6 Nov 2026): 0.25 kg a week if confidence is 4 or less, time is under 10 minutes, the member works shifts, nights or irregular hours, or stress is 8 or more; 0.75 kg a week only if confidence is 8 or more, time is over 30 minutes, stress is 6 or less, sleep is 7 hours or more, the member is under 65 and 0.75 is within their safe limit; otherwise 0.5 kg a week. When both apply, the gentler pace wins. 1 kg a week is never recommended, though a member may choose it within their safe limit. Weeks to the goal are rounded up (P3-56). The member can choose another pace within the safe limits already built into goal setting (0.25 to 1 kg a week, with the lower limits for people over 65 and others), or pick a date instead. The recommended pace, the chosen pace and the rule that made the recommendation are saved. Wording such as 'faster results' is never used.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-100-AS-01 | A test member with 20 kg to lose, 10 minutes a day and confidence 3 out of 10 is recommended 0.25 kg a week, with the matching date. |
+| TC-FR3-100-AS-02 | A test member with time, support and confidence 8 out of 10 can choose 0.75 kg a week, but never more than their safe limit. |
+| TC-FR3-100-AS-03 | A test member of 80 kg with confidence 9, over 30 minutes, stress 4 and sleep 7 to 9 is recommended 0.75 kg a week; the same member with stress 8 is recommended 0.25, and with sleep 6 to 7 is recommended 0.5. |
+| TC-FR3-100-AS-04 | A 20 kg loss at 0.75 kg a week from 6 November 2026 shows 27 weeks and 14 May 2027 (weeks rounded up). |
+| TC-FR3-100-AS-05 | Choosing a pace above the member's safe limit is refused with a gentle message and the safe suggestion. |
+| TC-FR3-100-AS-06 | The recommended pace, the chosen pace and the rule are saved with the goal. |
+
+#### FR3-101 Weight milestones
+
+Stage 3 · Healthy Weight programme · Must · Status: To be built
+
+A weight goal is split into milestones: 5% of the starting weight, 10%, reaching the healthy range for the member's height, and the goal itself. Milestones already passed, or beyond the goal, are left out. The progress page shows them on the way to the goal. Reaching one shows an approved celebration, explains in a sentence what it means for health, and asks a few of the getting-to-know-you questions again in case life has changed; the plan is updated from the answers. Badges reward the milestone, never the amount of weight lost (FR3-16).
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-101-AS-01 | A member of 163 cm starting at 80 kg with a 60 kg goal has milestones at 76 kg, 72 kg, 66.2 kg and 60 kg. |
+| TC-FR3-101-AS-02 | A member whose goal weight is above the top of the healthy range has no healthy-range milestone. |
+| TC-FR3-101-AS-03 | Reaching 76 kg shows the 5% celebration once, followed by the re-check questions. |
+| TC-FR3-101-AS-04 | No badge or message names the amount of weight lost. |
+
+#### FR3-102 Calorie counting in Healthy Weight
+
+Stage 3 · Healthy Weight programme · Must · Status: To be built
+
+At launch, members following Healthy Weight track their eating with the food tracker against their daily calorie target (FR3-28, FR3-47). The target uses the activity level the member confirmed (FR3-97) through the signed calorie method (P3-55), and the plan shows 'Your body uses about {tdee} kcal a day at your activity level.' Changing the activity level, in the Account hub or at a check-in, works the target out again at once. Weeks 1 and 2 of the track include a 'Counting made easy' guide: logging quickly, estimating home-cooked food, using favourites and copied meals, and what to do on days they cannot log. The Today screen offers one-tap logging of a meal they often repeat. The track's lessons still teach plates, swaps and habits, and their wording is updated so nothing contradicts counting. Members with an eating-disorder flag cannot start Healthy Weight and never see calorie numbers anywhere (FR3-69). The plate method, with an AI plate photo check, comes later (FR5-33); members will then choose between the two.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-102-AS-01 | A Premium test member who starts Healthy Weight with a weight goal has a calorie target and the food tracker on the Today screen. |
+| TC-FR3-102-AS-02 | The 'Counting made easy' guide appears in weeks 1 and 2 and has an approval record. |
+| TC-FR3-102-AS-03 | A test member with the P3-55 fixture CAL-03 details (female, 45, 160 cm, 80 kg, 0.5 kg a week) gets 1,390 kcal at 'some', 1,640 kcal at 'active' and the 1,200 kcal safe minimum at 'low', matching the ORC-06 oracle. |
+| TC-FR3-102-AS-04 | The plan shows the 'Your body uses about {tdee} kcal a day at your activity level' line with the engine's energy figure for the chosen level. |
+| TC-FR3-102-AS-05 | Changing the activity level from 'some' to 'active' in the Account hub changes the target on the Today screen and the food tracker at once. |
+| TC-FR3-102-AS-06 | A meal logged yesterday can be logged again from the Today screen with one tap. |
+| TC-FR3-102-AS-07 | No approved Healthy Weight lesson or activity says that calorie numbers never appear. |
+| TC-FR3-102-AS-08 | A member with an eating-disorder flag sees no calorie number on any Healthy Weight or Today screen. |
+
+#### FR3-103 Personalised Healthy Weight activities
+
+Stage 3 · Healthy Weight programme · Must · Status: To be built
+
+Every Healthy Weight activity carries habit tags (for example sugary drinks, snacking, evening eating, eating out, activity or sleep) and has an approved easier and stretch version as well as the standard one. From the member's answers and logs, the plan gives first the activities aimed at their biggest barrier, leaves out those for a habit the member already has (for example 'Swap one sugary drink' for someone who drinks none), and uses the easier version for members short of time or low in confidence and the stretch version for confident members who are doing well. Safety rules always apply first. Each week keeps its theme, and every day still has one activity.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-103-AS-01 | A test member who says they drink no sugary drinks is never given 'Swap one sugary drink'. |
+| TC-FR3-103-AS-02 | A member whose biggest barrier is evening snacking gets the snacking activities first in week 3. |
+| TC-FR3-103-AS-03 | A member with 10 minutes a day gets the easier versions; a member with confidence 8 who did over 80% last week gets a stretch version. |
+| TC-FR3-103-AS-04 | Every activity in Healthy Weight levels 1 and 2 has at least one habit tag and approved easier and stretch versions. |
+| TC-FR3-103-AS-05 | Each day of the track shows exactly one activity, and no item excluded by the safety rules appears. |
+
+#### FR3-104 Focus blocks after week 8
+
+Stage 3 · Healthy Weight programme · Must · Status: To be built
+
+After Healthy Weight levels 1 and 2 (8 weeks), a member who has not reached their goal carries on with 4-week focus blocks, each built like a track (a weekly lesson, daily activities, a weekly task and daily notes). There are nine: evening and night eating; stress and emotional eating; eating out and social life; breaking a plateau; alcohol; sleep and weight; getting stronger; festivals and fasting (for example Ramadan, Diwali and Christmas, offered before the date); and shift work. The decision engine suggests the next block from the member's answers and logs, with a one-line reason, and the member can choose a different one. All nine are drafted together, and members see only owner-approved content. Blocks continue until the goal is reached; then Keep It Off is offered (FR3-20). Festivals and fasting is timed by a rule the owner signed (R-HW-BLOCK-03, 10 Nov 2026): its week 3 starts on the festival's first day from the approved festival calendar; the block the member is in carries on in whole weeks and pauses; for a fast longer than 7 days, week 3 repeats until it ends; week 4 starts the day after; the paused block then resumes. It can run again for a different festival, is not offered in weeks 1 to 8, and the plateau check does not run while it runs.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-104-AS-01 | A member finishing week 8 short of their goal is offered a focus block with a one-line reason, and can choose another. |
+| TC-FR3-104-AS-02 | A member who said they snack after dinner is suggested 'Evening and night eating' first. |
+| TC-FR3-104-AS-03 | 'Festivals and fasting' is offered before Ramadan only to members who said they keep that fast. |
+| TC-FR3-104-AS-04 | Each of the nine blocks has 4 weeks of owner-approved content, and an unapproved item is never shown. |
+| TC-FR3-104-AS-05 | A member who reaches their goal during a block is offered Keep It Off. |
+| TC-FR3-104-AS-06 | For a test 30-day fast starting Monday 8 February 2027 and accepted on 1 January 2027, the block's week 3 starts on 8 February, its steps repeat until 9 March, and week 4 runs 10 to 16 March (fixture HWB-03a). |
+| TC-FR3-104-AS-07 | No plateau message is shown while a test member is in Festivals and fasting. |
+
+#### FR3-105 Daily mindset notes
+
+Stage 3 · Healthy Weight programme · Must · Status: To be built
+
+The Today screen shows a one-minute mindset note each day (60 to 100 words, with one 'Try this today' line) based on everyday psychology: noticing triggers, the all-or-nothing trap, kindness after a slip and planning ahead. Weeks 1 to 8 have 56 notes, with weekly themes: starting well; counting without stress; triggers and cravings; when motivation dips; habits that stick; planning and surroundings; confidence and your body; and stress, setbacks and the long run. Each focus block adds 28 of its own. Notes are in Lifeline Daily's own words and promise no weight loss, and any note about stress or mood carries the approved support wording. Members see only approved notes.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-105-AS-01 | On each of days 1 to 56 a Premium test member sees one note on the Today screen, with that week's theme. |
+| TC-FR3-105-AS-02 | All 56 notes and each block's 28 notes have approval records, and an unapproved note is never shown. |
+| TC-FR3-105-AS-03 | Every note about stress or mood shows the approved support wording. |
+| TC-FR3-105-AS-04 | A note can be read in full on a 360-pixel-wide screen with no sideways scrolling. |
+
+#### FR3-106 Notes chosen from the member's data
+
+Stage 3 · Healthy Weight programme · Should · Status: To be built
+
+The decision engine can bring a note forward when the member's data shows a need: no food logged for 3 days brings 'Missed a log? Just log the next meal'; weight up by 0.3 kg or more on last week brings 'Weight goes up and down'; a plateau (FR3-108) brings 'Plateaus are part of the process'; a low mood log brings 'Talk to yourself like a friend', with the approved support wording. Each rule is signed off by the owner (NFR3-17). A note brought forward replaces that day's note, which moves to the next day, and no note is shown twice within 30 days.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-106-AS-01 | A test member with no food logged for 3 days sees the missed-log note the next day. |
+| TC-FR3-106-AS-02 | A member whose weigh-ins meet the plateau rule (FR3-108) sees the plateau note. |
+| TC-FR3-106-AS-03 | A weigh-in 0.4 kg above last week's brings 'Weight goes up and down'; a rise of 0.2 kg does not. |
+| TC-FR3-106-AS-04 | A low mood log brings the kindness note with the support wording, and never a weight-loss message. |
+| TC-FR3-106-AS-05 | The note it replaced appears the following day, and no note repeats within 30 days. |
+
+#### FR3-107 'What got in the way?' at the weekly check-in
+
+Stage 3 · Healthy Weight programme · Must · Status: To be built
+
+The weekly check-in adds one optional question, 'What got in the way this week?', with quick choices (time, work, family, cravings, stress, social events, illness, nothing) and a short free-text box. The answer feeds the next week's plan, the suggested focus block and the notes, through rules the owner signs off. Like the other answers, it is health data: it is never read by staff, sent in emails or used in analytics.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-107-AS-01 | The check-in shows the question, and skipping it still completes the check-in. |
+| TC-FR3-107-AS-02 | Choosing 'cravings' two weeks running makes the next suggestion a block or activities about cravings. |
+| TC-FR3-107-AS-03 | The answer is in 'Download my data' and in no email or analytics event. |
+
+#### FR3-108 Plateau rule
+
+Stage 3 · Healthy Weight programme · Must · Status: To be built
+
+When a member with a weight goal has logged weight at least 4 times in 21 days, with no more than 0.5 kg between the highest and lowest reading (the signed rule R-ADJ-02), and has not reached the goal, Lifeline Daily treats it as a plateau. It explains plateaus kindly, offers the 'Breaking a plateau' block or its activities, and suggests that calorie-counting members check their logging is complete. It never lowers the calorie target below the safe minimum (FR3-14). Members with an eating-disorder flag get no plateau message.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-108-AS-01 | Weights of 80.1, 80.0, 80.2 and 80.1 kg within 21 days bring the plateau message and the block offer. |
+| TC-FR3-108-AS-02 | Only 3 weigh-ins in 21 days, or a range of 0.6 kg, do not. |
+| TC-FR3-108-AS-03 | A falling trend of 0.5 kg a week does not. |
+| TC-FR3-108-AS-04 | No suggested change sets a calorie target below the safe minimum. |
+| TC-FR3-108-AS-05 | A member with an eating-disorder flag sees no plateau message. |
+
+#### FR3-109 Sleep and stress answers shape the plan
+
+Stage 3 · Healthy Weight programme · Must · Status: To be built
+
+The sleep and stress answers from joining (FR3-98) change the plan from day 1, through rules the owner signs off (NFR3-17). Sleep under 7 hours or stress 7 or more: the week 1 mindset note on sleep, stress and appetite is brought forward, one sleep or stress step a week is added to weeks 1 to 8, and at week 9 the 'Stress and emotional eating' or 'Sleep and weight' focus block is suggested in the signed order (R-HW-BLOCK-01: plateau, festival and biggest barrier come first). Stress 8 or more: the gentle pace of 0.25 kg a week is suggested, with the reason. Stress 9 or 10, or sleep under 6 hours: the approved support wording is shown ('if this goes on for more than two weeks, talk to your doctor') at joining and again at the first two weekly check-ins if the answer has not changed, the Sleep and stress check (FR3-54) is offered, and the Sleep and Stress track is offered as the optional extra goal, which keeps its own safety questions (FR2-38). When both a sleep step and a stress step apply, they alternate weeks (sleep in odd weeks, stress in even), and each replaces one activity so there is still one step a day. The answers are health data: they need health consent, are in 'Download my data', are deleted with the account or when consent is withdrawn, and never appear in emails or analytics.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-109-AS-01 | A test member who answers sleep 6 to 7 hours sees the sleep, stress and appetite note in week 1 and one sleep or stress step in each of weeks 1 to 8. |
+| TC-FR3-109-AS-02 | With no plateau, no festival due, biggest barrier 'not sure' and stress under 7, the same member is suggested 'Sleep and weight' at week 9; a member with stress 7 and sleep 7 to 9 is suggested 'Stress and emotional eating' (the signed R-HW-BLOCK-01 order). |
+| TC-FR3-109-AS-03 | A member with stress 8 is suggested 0.25 kg a week with the reason, and can still choose another safe pace. |
+| TC-FR3-109-AS-04 | A member with stress 9, or sleep under 6 hours, sees the approved support wording and an offer of the Sleep and Stress track as the extra goal. |
+| TC-FR3-109-AS-05 | Accepting that offer starts the Sleep and Stress safety questions (FR2-38) before the track. |
+| TC-FR3-109-AS-06 | With stress 9 unchanged, the support wording shows again at the first and second weekly check-ins and not at the third. |
+| TC-FR3-109-AS-07 | A member with stress 8 and sleep under 6 hours gets a sleep step in weeks 1, 3, 5 and 7 and a stress step in weeks 2, 4, 6 and 8, and each day still has exactly one step. |
+| TC-FR3-109-AS-08 | A member with sleep 7 to 9 hours and stress 5 gets none of these changes. |
+| TC-FR3-109-AS-09 | The sleep and stress answers are in 'Download my data' and in no email or analytics event. |
+
+#### FR3-110 Alcohol answers shape the plan
+
+Stage 3 · Healthy Weight programme · Must · Status: To be built
+
+The alcohol answers from joining (FR3-98) change the plan from day 1, through rules the owner signs off (NFR3-17). Drinks count against the daily calorie target like food, and the target itself does not change (FR3-102). For a member who drinks, the plan shows 'Your usual week of drinks is about {weekly} kcal, roughly {daily} a day', worked out from the two answers with about 130 kcal a pictured drink (owner, D3-56, 6 Nov 2026; one pictured drink is about 12.5 g of alcohol), recorded in the method sheet with the 'where you are now' bands (NFR3-14); members with an eating-disorder flag never see it. A member who drinks gets an evening 'Add a drink' shortcut on the Today screen that opens the food tracker's drinks in standard sizes (glass of wine, bottle or pint of beer or cider, single spirit), with mixers as separate items. Drinking 3 to 4 days a week or more, or 5 or more drinks on a drinking day: one alcohol-free-day step a week is added to weeks 1 to 8 (for a member who drinks most days with 5 or more a time, 'one drink fewer on one day' instead, never an alcohol-free day or 'stop' wording), and the 'Alcohol' focus block is suggested at week 9 in the signed order (R-HW-BLOCK-01: after plateau, festival, biggest barrier, stress and sleep; FR3-104). A member who answers 'never', or whose food rules exclude alcohol, gets no alcohol activity, note or shortcut. Above the drinking limit (more than 8 pictured drinks a week, about 100 g of alcohol, owner, D3-55, 6 Nov 2026, worked out from the two answers), or 5 or more drinks on a drinking day, the approved support card is shown, at joining and at the first two check-ins if the answers have not changed, to Free and Premium members alike: less is better for health and weight, help is available, and anyone who drinks heavily every day should talk to their doctor before cutting down suddenly, because stopping suddenly can be dangerous. No weight-loss message is shown beside the card. The answers are health data: they need health consent, are in 'Download my data', are deleted with the account or when consent is withdrawn, and never appear in emails, analytics or admin pages.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-110-AS-01 | A test member who drinks 1 to 2 days a week, 3 to 4 drinks a time, sees 'about 680 kcal a week, roughly 100 a day' at 130 kcal a drink, and their calorie target is the same as with 'never'. |
+| TC-FR3-110-AS-02 | A drink logged from the evening 'Add a drink' shortcut counts against that day's calorie target in the food tracker. |
+| TC-FR3-110-AS-03 | The staging food tracker offers wine, beer, cider and spirits in standard sizes, with mixers as separate items. |
+| TC-FR3-110-AS-04 | A member who drinks 3 to 4 days a week gets one alcohol-free-day step in each of weeks 1 to 8 and, with no plateau, no festival due, biggest barrier 'not sure', stress under 7 and sleep 7 hours or more, is suggested 'Alcohol' at week 9 (the signed R-HW-BLOCK-01 order). |
+| TC-FR3-110-AS-05 | A member who answers 'never', or whose food rules exclude alcohol, sees no alcohol activity, note or shortcut in weeks 1 to 8. |
+| TC-FR3-110-AS-06 | A member who drinks most days, 3 to 4 drinks a time (about 21 a week), sees the support card with the doctor wording on both Free and Premium, and no weight-loss message beside it. |
+| TC-FR3-110-AS-07 | A member who drinks less than once a week but 5 or more drinks a time also sees the support card. |
+| TC-FR3-110-AS-08 | A member who drinks 3 to 4 days a week, 3 to 4 drinks a time (about 12 a week), sees the support card; a member who drinks 1 to 2 days a week, 3 to 4 a time (about 5 a week), does not. |
+| TC-FR3-110-AS-09 | A member who drinks most days, 5 or more a time, gets 'Have one drink fewer on one day this week' and never an alcohol-free-day step, with the support card shown first. |
+| TC-FR3-110-AS-10 | A member with an eating-disorder flag sees no drink calorie figure. |
+| TC-FR3-110-AS-11 | The alcohol answers are in 'Download my data' and in no email, analytics event or admin page. |
 
 #### NFR3-01 Stage 2 keeps working
 
@@ -1416,7 +1634,7 @@ No admin page, count, export, log entry or admin request shows members' health r
 
 #### NFR3-20 Secure admin sign-in
 
-Stage 3 · Security · Must · Status: Built, on staging (#217); changed on 6 Nov 2026 (My account → Admin, simple toggles): to be rebuilt
+Stage 3 · Security · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 Every admin role (Owner and Support) enters an emailed 6-digit code at every sign-in, extending NFR2-02. The code is asked for again before deleting a member and before adding or removing a helper; feature and tool toggles need no code (FR3-74). Admin sessions end after 30 minutes without activity and always after 12 hours. After 5 wrong passwords or codes the account is locked for 15 minutes and the Owner is emailed. The same rules apply to My account → Admin, and to the WordPress admin for the Owner.
 
@@ -1440,7 +1658,7 @@ Each admin can delete at most 5 members an hour; further deletions wait. The Own
 
 #### NFR3-22 Admin panel works on a phone and is hidden
 
-Stage 3 · Quality · Must · Status: Built, on staging (#217); changed on 6 Nov 2026 (My account → Admin, simple toggles): to be rebuilt
+Stage 3 · Quality · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 Every new admin page works on a phone from 360 pixels wide and meets WCAG 2.2 AA, as the member pages do. Admin pages never load Google Analytics, are never indexed by search engines and are never cached. This covers every page in My account → Admin.
 
@@ -1461,7 +1679,7 @@ The erasure checker that confirms a deleted member leaves nothing behind also co
 
 #### NFR3-24 Admin screens are friendly and modern
 
-Stage 3 · Quality · Must · Status: To be built
+Stage 3 · Quality · Must · Status: Built, on staging (#222, 6 Nov 2026)
 
 This covers the admin module: every screen in My account → Admin, and the Lifeline Daily screens the Owner still uses in the WordPress admin. Each is easy to use without training and looks as modern as the member pages, in the site's own design (UI2-01), not the plain WordPress-admin look. Plain words, never code names ('Heart Risk Check', not calc_heart_risk). Simple controls: on/off toggles for switches, clear buttons, and choices shown as options rather than typed in. Cards and a clear layout that starts with what matters most and fits a phone from 360 pixels wide (NFR3-22). Search and filters on every list longer than one screen. Instant feedback: every action shows 'Saved' (with Undo where it can be undone) or a plain message saying what went wrong and what to do. Helpful empty screens. A confirmation only for actions that cannot be undone (deleting a member, ending a membership), stating exactly what will happen. One look across every admin page. The admin screens are designed and approved by the owner before they are built, as the member screens were.
 
