@@ -233,12 +233,13 @@ A new four-week track on lowering blood pressure and cholesterol, using blood pr
 
 Stage 3 · Tracks and content · Must · Status: To be built
 
-A new track for members who have reached a weight goal, focused on keeping the weight off.
+A new track for members who have reached a weight goal, focused on keeping the weight off. The member keeps a daily calorie target as a guide, set at the level that keeps their weight steady (the signed P3-55 'maintain' setting, no deficit); logging stays optional but encouraged, and the track's wording is updated so nothing contradicts it (owner, 10 Nov 2026). Members with an eating-disorder flag never see a calorie number.
 
 | Test ID | What the test checks |
 |---|---|
 | TC-FR3-20-AS-01 | The track has owner-approved content for every week. |
 | TC-FR3-20-AS-02 | A member who reaches a weight-loss goal is offered this track. |
+| TC-FR3-20-AS-03 | A test member who reaches their goal and starts Keep It Off gets a target equal to their daily use rounded to 10 (no deficit), shown as a guide, and no approved Keep It Off item says calorie numbers never appear. |
 
 #### FR3-21 Healthy Weight, level 2
 
