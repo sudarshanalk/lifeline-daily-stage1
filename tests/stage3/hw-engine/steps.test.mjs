@@ -241,12 +241,21 @@ test('TC-FR3-110-AS-10', () => {
 
 test('TC-FR3-110-AS-02', () => {
   // (Engine part.) The evening "Add a drink" shortcut, which opens the food tracker's drinks so a drink counts against the
-  // day's target: from 18:00, or 6 hours before a shift worker's usual sleep time; hidden once a drink is logged.
-  ok(['HWA-02a', 'HWA-02c']);
-  const [early, shift] = call([
+  // day's target: from 18:00; for shift and night workers from 10 hours after their wake-up time (D3-60, v1.3.1), or
+  // from 18:00 without one; hidden once a drink is logged.
+  ok(['HWA-02a', 'HWA-02c', 'HWA-02d', 'HWA-02e', 'HWA-02f', 'HWA-02g']);
+  const [early, shift, before, wrap, logged] = call([
     ['drink_shortcut', { alcohol_freq: '1_2_days', time: '17:59', work: 'days' }],
-    ['drink_shortcut', { alcohol_freq: '1_2_days', time: '03:00', work: 'nights', sleep_time: '08:00' }],
+    ['drink_shortcut', { alcohol_freq: '1_2_days', time: '03:00', work: 'nights', wake_time: '14:00' }],
+    ['drink_shortcut', { alcohol_freq: '1_2_days', time: '13:59', work: 'nights', wake_time: '14:00' }],
+    ['drink_shortcut', { alcohol_freq: '1_2_days', time: '14:00', work: 'nights', wake_time: '14:00' }],
+    ['drink_shortcut', { alcohol_freq: '1_2_days', time: '03:00', work: 'nights', wake_time: '14:00', drink_logged_today: true }],
   ]);
   expect(early.show).toBe(false);
-  expect(shift).toMatchObject({ show: true, from: '02:00' });
+  expect(shift).toMatchObject({ show: true, from: '00:00' });
+  expect(before.show).toBe(true); // still their evening: shown until the next wake-up
+  expect(wrap.show).toBe(false); // a new day starts when they wake
+  expect(logged.show).toBe(false);
+  // The day worker's wake-up time does not move it: 18:00.
+  expect(one('drink_shortcut', { alcohol_freq: '1_2_days', time: '17:00', work: 'days', wake_time: '06:00' })).toMatchObject({ show: false, from: '18:00' });
 });

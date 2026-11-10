@@ -1138,6 +1138,98 @@
       "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
       "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
       "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWA02-04",
+      "purpose": "HWA-02d: night worker who wakes at 14:00: shown from 00:00 (10 hours after waking)",
+      "inputs": {
+        "source_id": "HWA-02d",
+        "fn": "drink_shortcut",
+        "args": {
+          "alcohol_freq": "1_2_days",
+          "work": "nights",
+          "wake_time": "14:00",
+          "time": "00:30"
+        }
+      },
+      "expected": {
+        "show": true,
+        "from": "00:00"
+      },
+      "oracle": "clinical",
+      "source_version": "bc58d14803be60049e57914587d76d3b2d58fbd4fc484fc54b552ec2c7968ceb",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded",
+      "notes": "D3-60, catalogue v1.3.1 (10 Nov 2026)."
+    },
+    {
+      "id": "FX-HWP-HWA02-05",
+      "purpose": "HWA-02e: the same member at 23:30, before 10 hours after waking: not shown, although it is after 18:00",
+      "inputs": {
+        "source_id": "HWA-02e",
+        "fn": "drink_shortcut",
+        "args": {
+          "alcohol_freq": "1_2_days",
+          "work": "nights",
+          "wake_time": "14:00",
+          "time": "23:30"
+        }
+      },
+      "expected": {
+        "show": false,
+        "from": "00:00"
+      },
+      "oracle": "clinical",
+      "source_version": "bc58d14803be60049e57914587d76d3b2d58fbd4fc484fc54b552ec2c7968ceb",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded",
+      "notes": "D3-60, catalogue v1.3.1 (10 Nov 2026)."
+    },
+    {
+      "id": "FX-HWP-HWA02-06",
+      "purpose": "HWA-02f: shift worker with no wake-up time: from 18:00",
+      "inputs": {
+        "source_id": "HWA-02f",
+        "fn": "drink_shortcut",
+        "args": {
+          "alcohol_freq": "1_2_days",
+          "work": "shifts",
+          "time": "19:00"
+        }
+      },
+      "expected": {
+        "show": true,
+        "from": "18:00"
+      },
+      "oracle": "clinical",
+      "source_version": "bc58d14803be60049e57914587d76d3b2d58fbd4fc484fc54b552ec2c7968ceb",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded",
+      "notes": "D3-60, catalogue v1.3.1 (10 Nov 2026)."
+    },
+    {
+      "id": "FX-HWP-HWA02-07",
+      "purpose": "HWA-02g: shift worker who wakes at 06:00: shown from 16:00",
+      "inputs": {
+        "source_id": "HWA-02g",
+        "fn": "drink_shortcut",
+        "args": {
+          "alcohol_freq": "3_4_days",
+          "alcohol_amount": "1_2",
+          "work": "shifts",
+          "wake_time": "06:00",
+          "time": "16:00"
+        }
+      },
+      "expected": {
+        "show": true,
+        "from": "16:00"
+      },
+      "oracle": "clinical",
+      "source_version": "bc58d14803be60049e57914587d76d3b2d58fbd4fc484fc54b552ec2c7968ceb",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded",
+      "notes": "D3-60, catalogue v1.3.1 (10 Nov 2026)."
     }
   ]
 }

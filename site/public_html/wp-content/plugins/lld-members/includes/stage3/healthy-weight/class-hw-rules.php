@@ -401,10 +401,12 @@ class LLD_Members_HW_Rules {
 	}
 
 	/**
-	 * R-HW-ALC-02: the evening "Add a drink" shortcut on Today (never a reminder).
+	 * R-HW-ALC-02: the evening "Add a drink" shortcut on Today (never a reminder). From 18:00 local time; for shift and
+	 * night workers who gave a wake-up time, from 10 hours after they wake (D3-60, catalogue v1.3.1: no sleep time is
+	 * asked), until their next wake-up; without a wake-up time, from 18:00. Hidden once a drink is logged that day.
 	 *
 	 * @param array $in alcohol_freq, food_rules, eating_disorder, counts_calories (default true), time (HH:MM now),
-	 *                  work, sleep_time (HH:MM usual sleep time, for shift workers), drink_logged_today.
+	 *                  work, wake_time (HH:MM, shift and night workers), drink_logged_today.
 	 * @return array {rule, show: bool, label, from: HH:MM|null, reason}
 	 */
 	public static function drink_shortcut( array $in ) {
@@ -429,10 +431,8 @@ class LLD_Members_HW_Rules {
 			return $out;
 		}
 		$shift = isset( $in['work'] ) && in_array( $in['work'], array( 'shifts', 'nights', 'irregular' ), true );
-		$from  = 18 * 60;
-		if ( $shift && ! empty( $in['sleep_time'] ) ) {
-			$from = ( self::minutes( $in['sleep_time'] ) - 6 * 60 + 1440 ) % 1440;
-		}
+		$wake  = $shift && ! empty( $in['wake_time'] ) ? self::minutes( $in['wake_time'] ) : null;
+		$from  = null === $wake ? 18 * 60 : ( $wake + 10 * 60 ) % 1440;
 		$out['from'] = self::hhmm( $from );
 		if ( ! empty( $in['drink_logged_today'] ) ) {
 			$out['reason'] = 'logged_today';
@@ -443,8 +443,11 @@ class LLD_Members_HW_Rules {
 			$out['reason'] = 'no_time';
 			return $out;
 		}
-		$since       = ( $now - $from + 1440 ) % 1440;
-		$out['show'] = $since < 6 * 60 || ( ! $shift && $now >= $from );
+		if ( null === $wake ) {
+			$out['show'] = $now >= $from; // 18:00 to the end of the day
+		} else {
+			$out['show'] = ( $now - $wake + 1440 ) % 1440 >= 10 * 60; // 10 hours after waking, until the next wake-up
+		}
 		$out['reason'] = $out['show'] ? '' : 'before_evening';
 		return $out;
 	}

@@ -65,16 +65,18 @@ test('TC-NFR3-17-AS-02 (Healthy Weight templates)', () => {
   }
 });
 
-test('TC-NFR3-17-AS-03 (catalogue version 1.3)', () => {
-  // The catalogue is version 1.3; the 36 R-HW rules are a programme class outside the insight quota; the 23 rules of
+test('TC-NFR3-17-AS-03 (catalogue version 1.3.1)', () => {
+  // The catalogue is version 1.3.1 (D3-60); the 36 R-HW rules are a programme class outside the insight quota; the 23 rules of
   // sections 1 to 8 are unchanged; the approval record is the signed v1.3 one.
-  expect(php('echo LLD_Members_Rule_Catalogue::VERSION;')).toBe('1.3');
+  expect(php('echo LLD_Members_Rule_Catalogue::VERSION;')).toBe('1.3.1');
   expect(Object.keys(RULES)).toHaveLength(36);
   const groups = {};
   for (const r of Object.values(RULES)) { groups[r.group] = (groups[r.group] || 0) + 1; expect(r.class).toBe('programme'); expect(r.counted_in_quota).toBe(false); }
   expect(groups).toEqual({ safety: 5, numbers: 5, pace: 1, steps: 6, alcohol: 2, food: 3, notes: 5, reminders: 1, motivation: 2, weekly: 2, blocks: 4 });
   expect(RULES['R-HW-BLOCK-03'].version).toBe('1.3');
   expect(Object.values(RULES).filter((r) => r.version === '1.3')).toHaveLength(1);
+  expect(RULES['R-HW-ALC-02'].version).toBe('1.3.1');
+  expect(Object.values(RULES).filter((r) => r.version === '1.3.1')).toHaveLength(1);
   const ids = Object.values(RULES).map((r) => r.id);
   expect(new Set(ids).size).toBe(36);
   const core = JSON.parse(php('echo json_encode(LLD_Members_Rule_Catalogue::rules());'));
@@ -86,18 +88,30 @@ test('TC-NFR3-17-AS-03 (catalogue version 1.3)', () => {
   for (const n of ['R-HW-STEP-01', 'R-HW-STEP-02', 'R-HW-STEP-03', 'R-HW-STEP-04', 'R-HW-STEP-05', 'R-HW-NOTE-02', 'R-HW-BLOCK-01']) expect(RULES[n].tier).toBe('premium');
   for (const n of ['R-HW-NUM-04', 'R-HW-PACE-01', 'R-HW-MOT-01', 'R-HW-FOOD-01']) expect(RULES[n].tier).toBe('free');
   // The approval record: v1.3, D3-58 and D3-59, the SHA-256 of the signed v1.3 catalogue file (outside the repository).
-  expect(approval.approval_id).toBe('APR-DECISION-RULES-V1-3-2026-11-10');
-  expect(approval.decisions_ratified.slice(-2)).toEqual(['D3-58', 'D3-59']);
+  expect(approval.approval_id).toBe('APR-DECISION-RULES-V1-3-1-2026-11-10');
+  expect(approval.decisions_ratified.slice(-3)).toEqual(['D3-58', 'D3-59', 'D3-60']);
   expect(approval.clinical_signoff).toMatchObject({ decision: 'approved', date: '2026-11-10' });
   expect(approval.clinical_signoff.name).toMatch(/sudarshanalk/);
   expect(approval.version_hash).toMatch(/^[0-9a-f]{64}$/);
   expect(approval.regulatory_statement).toMatch(/Frozen: any change needs a new decision/);
-  expect(hwApproval).toMatchObject({ tool_slug: 'healthy-weight-programme', decisions_ratified: ['D3-54', 'D3-55', 'D3-56', 'D3-57', 'D3-58', 'D3-59'] });
+  expect(hwApproval).toMatchObject({ tool_slug: 'healthy-weight-programme', decisions_ratified: ['D3-54', 'D3-55', 'D3-56', 'D3-57', 'D3-58', 'D3-59', 'D3-60'] });
   expect(hwApproval.clinical_signoff.decision).toBe('approved');
   // The fixture folder carries its own sign-off record, as oracle-guard requires of a new Stage 3 fixture folder.
   const schema = json('schemas/fixture.schema.json');
   expect(schema.properties.tool.enum).toContain('healthy-weight-programme');
   for (const n of fixtureFiles) if (json(`fixtures/healthy-weight-programme/${n}`).fixtures) expect(json(`fixtures/healthy-weight-programme/${n}`).tool).toBe('healthy-weight-programme');
+});
+
+test('TC-NFR3-17-AS-03 (every R-HW rule has a tier)', () => {
+  // Every R-HW rule says whether it is Free or Premium: rule question 12, and Owner Question 163 (10 Nov 2026) for the six
+  // it did not name. R-HW-WEEK-01 is split: the question free, the changes to next week Premium, the illness wording free.
+  for (const [n, r] of Object.entries(RULES)) expect(['free', 'premium', 'split'], n).toContain(r.tier);
+  expect(Object.entries(RULES).filter(([, r]) => r.tier === 'split').map(([n]) => n)).toEqual(['R-HW-WEEK-01']);
+  expect(RULES['R-HW-WEEK-01'].tiers).toEqual({ question: 'free', next_week: 'premium', illness_wording: 'free' });
+  const q163 = { 'R-HW-STEP-06': 'premium', 'R-HW-ALC-02': 'free', 'R-HW-FOOD-03': 'premium', 'R-HW-REM-01': 'free', 'R-HW-QOD-01': 'free' };
+  for (const [n, t] of Object.entries(q163)) expect(RULES[n].tier, n).toBe(t);
+  // The safety limits inside the Premium rules stay free: the exercise limits are R-HW-SAFE-04, the fasting lines safety.
+  expect(RULES['R-HW-SAFE-04'].tier).toBe('free');
 });
 
 test('TC-NFR3-17-AS-03 (pure engine, no second copy of the wording)', () => {
