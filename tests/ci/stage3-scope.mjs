@@ -63,7 +63,7 @@ export const LEAD_STAGE2 = [`${PLUGIN}/includes/class-billing.php`, `${PLUGIN}/i
 // approved wording file (screening-sleep-and-stress.md), as the Stage 3 engine does.
 // P3-90: owner, 5 Nov 2026 ("Yes, open it"): the meal-plan code in class-premium.php reads recipe ingredients saved as
 // rows, found broken in the owner's test checkout (warnings and "Array" on /members/meals/).
-export const DECISION_STAGE2 = { '03': [`${PLUGIN}/includes/class-personal.php`], 90: [`${PLUGIN}/includes/class-premium.php`] };
+export const DECISION_STAGE2 = { '03': [`${PLUGIN}/includes/class-personal.php`], 90: [`${PLUGIN}/includes/class-premium.php`], 35: [`${PLUGIN}/includes/class-programme.php`, `${PLUGIN}/includes/class-content.php`] };
 const STAGE2_TESTS = ['tests/stage2/**'];
 // The Stage 1 and 2 calculators and their approvals. Stage 3 sign-offs live in approvals/stage3/ (Build Method §7.4).
 const PROTECTED = ['site/public_html/tools/**', 'approvals/*', 'manifests/**', 'copy/**'];
