@@ -59,6 +59,9 @@ class LLD_Members_HW_Programme {
 		'R-HW-QOD-01'  => 'free',
 	);
 
+	/** The safe-rate cap for eating disorder "prefer not to say" (HWS-01b: 0.25 or 0.5 kg a week). */
+	const PNTS_CAP = 0.5;
+
 	/** Data model milestone kinds, by the engine's. */
 	const KINDS = array(
 		'5pct'    => 'five_percent',
@@ -212,21 +215,11 @@ class LLD_Members_HW_Programme {
 					'eating_pnts' => 'pnts' === $known['eating_disorder'],
 				)
 			);
-			if ( ! empty( $check['ok'] ) && 'pnts' === $known['eating_disorder'] && (float) $check['rate'] > 0.5 + 1e-9 ) {
-				// HWS-01b: "prefer not to say" keeps the pace at 0.25 or 0.5 by a date too. The signed timeline's date path
-				// checks only the cap, so the implied rate is put to its rate path, which refuses it with the signed message.
-				$check = LLD_Members_Goal_Rules::weight_check(
-					array(
-						'current_kg'  => is_numeric( $goal['start_value'] ) ? (float) $goal['start_value'] : $facts['weight_kg'],
-						'goal_kg'     => is_numeric( $goal['target_value'] ) ? (float) $goal['target_value'] : null,
-						'height_cm'   => $facts['height_cm'],
-						'rate'        => (float) $check['rate'],
-						'today'       => (string) $facts['today'],
-						'situations'  => (array) $facts['situations'],
-						'imperial'    => ! empty( $facts['imperial'] ),
-						'eating_pnts' => true,
-					)
-				);
+			if ( ! empty( $check['ok'] ) && 'pnts' === $known['eating_disorder'] && (float) $check['rate'] > self::PNTS_CAP + 1e-9 ) {
+				// HWS-01b: "prefer not to say" is limited to 0.25 or 0.5 kg a week, so their cap is 0.5, by a date too. The
+				// signed timeline's date path checks only the general cap: the refusal is its signed rate-cap message filled
+				// with 0.5 and the earliest safe date at 0.5.
+				return self::pnts_refusal( $goal, $facts );
 			}
 			if ( empty( $check['ok'] ) ) {
 				return new WP_Error( 'lld_hw_pace', (string) $check['message'], array( 'code' => $check['code'], 'offered' => $check['offered'] ) );
@@ -267,6 +260,42 @@ class LLD_Members_HW_Programme {
 		}
 		self::flush();
 		return self::plan_view( $member_id, $facts['today'] );
+	}
+
+	/**
+	 * The signed P3-56 rate-cap refusal for a "prefer not to say" member (cap 0.5): the message filled with 0.5 and the
+	 * date the goal is reached at 0.5 (the signed weeks, rounded up).
+	 *
+	 * @param array $goal  Goal row.
+	 * @param array $facts facts().
+	 * @return WP_Error lld_hw_pace with data {code: rate_cap, offered {rate, weeks, date}}.
+	 */
+	private static function pnts_refusal( array $goal, array $facts ) {
+		$start  = is_numeric( $goal['start_value'] ) ? (float) $goal['start_value'] : (float) $facts['weight_kg'];
+		$target = (float) $goal['target_value'];
+		$weeks  = LLD_Members_Goal_Rules::weeks_for( $start - $target, self::PNTS_CAP );
+		$date   = LLD_Members_Goal_Rules::add_days( (string) $facts['today'], 7 * $weeks );
+		$show   = ! empty( $facts['imperial'] ) ? LLD_Members_Goal_Rules::plain( LLD_Members_Goal_Rules::round1( $target / 0.45359237 ) ) . ' lb' : LLD_Members_Goal_Rules::plain( $target ) . ' kg';
+		$text   = LLD_Members_Goal_Rules::fill(
+			'rate_cap',
+			array(
+				'cap'       => self::PNTS_CAP,
+				'goal'      => $show,
+				'safe_date' => LLD_Members_Goal_Rules::nice_date( $date ),
+			)
+		);
+		return new WP_Error(
+			'lld_hw_pace',
+			$text,
+			array(
+				'code'    => 'rate_cap',
+				'offered' => array(
+					'rate'  => self::PNTS_CAP,
+					'weeks' => $weeks,
+					'date'  => $date,
+				),
+			)
+		);
 	}
 
 	/**

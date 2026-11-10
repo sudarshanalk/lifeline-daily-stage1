@@ -516,3 +516,19 @@ test('P3-35 day items: one context a request and member for a Stage 2 programme 
   `);
   expect(out.facts).toBeLessThanOrEqual(2); // was one facts() read a day (28)
 });
+
+test('TC-FR3-100-AS-05 (prefer not to say, by a date): a date implying 0.6 kg a week is refused with the signed message at 0.5 and the safe date at 0.5; 0.4 is kept', () => {
+  const out = run(`
+    member(7); member(8);
+    foreach ([7, 8] as $m) { weight_goal($m); LLD_Members_HW_Answers::set($m, 'eating_disorder', 'prefer'); }
+    $no = LLD_Members_HW_Programme::join(7, ['target_date' => '2027-06-30', 'today' => '2026-11-12']); // 20 kg in 33 weeks: 0.61
+    $ok = LLD_Members_HW_Programme::join(8, ['target_date' => '2027-10-28', 'today' => '2026-11-12']); // 20 kg in 50 weeks: 0.4
+    return ['no' => [$no->get_error_code(), $no->get_error_message(), $no->get_error_data()], 'goal' => raw('goals')[0]['chosen_rate'], 'ok' => $ok['pace']['chosen'], 'date' => raw('goals')[1]['target_date']];
+  `);
+  expect(out.no[0]).toBe('lld_hw_pace');
+  expect(out.no[1]).toBe("That's faster than the safe rate of about 0.5 kg a week. At a safe rate you'd reach 60 kg by about Thursday 19 August 2027. Shall we use that date?");
+  expect(out.no[2]).toEqual({ code: 'rate_cap', offered: { rate: 0.5, weeks: 40, date: '2027-08-19' } });
+  expect(out.goal).toBeNull(); // nothing stored for the refused date
+  expect(out.ok).toBe(0.4);
+  expect(out.date).toBe('2027-10-28');
+});

@@ -243,6 +243,10 @@ class LLD_Members_Hw_Plan_Screen {
 		$target = (float) $goal['target_value'];
 		$over65 = in_array( 'age_65_plus', isset( $facts['situations'] ) ? (array) $facts['situations'] : array(), true );
 		$cap    = LLD_Members_Goal_Timeline::rate_cap( $start, $over65 );
+		// Eating disorder "prefer not to say" (the Check's own question): 0.25 or 0.5 kg a week, so the cap is 0.5 (HWS-01b).
+		if ( isset( $facts['member_id'] ) && 'prefer' === LLD_Members_Hw_Screen_Parts::answer( (int) $facts['member_id'], 'eating_disorder' ) ) {
+			$cap = min( $cap, 0.5 );
+		}
 		$d      = DateTimeImmutable::createFromFormat( '!Y-m-d', (string) $today, new DateTimeZone( 'UTC' ) );
 		if ( ! $d || $cap <= 0 ) {
 			return $none;

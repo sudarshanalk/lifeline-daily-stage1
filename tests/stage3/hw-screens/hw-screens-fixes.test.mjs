@@ -83,3 +83,12 @@ test('TC-FR3-100-AS-06 (pace not chosen): Today asks the member to finish choosi
   expect(r[0]).toContain('href="https://stg.example.test/members/goal/?done=12&amp;hw=pace"');
   expect(run(`return LLD_Members_Today_Screen::hw_pace_pending_html(7);`, base)).toBe('');
 });
+
+test('TC-FR3-100-AS-05 (prefer not to say, pace step): the refusal names 0.5 and the safe date at 0.5; other members keep their own cap', () => {
+  const goal = { start_value: 80, target_value: 60 };
+  const call = `return LLD_Members_Hw_Plan_Screen::refusal(${phpJson(planView)}, ${phpJson(facts())}, '2026-11-12', ${phpJson(goal)});`;
+  expect(run(call, { ...base, answers: { eating_disorder: 'prefer' } })).toEqual({
+    text: "That's faster than the safe rate of about 0.5 kg a week. At a safe rate you'd reach 60 kg by about Thursday 19 August 2027. Shall we use that date?", date: '2027-08-19', cap: 0.5,
+  });
+  expect(run(call, { ...base, answers: { eating_disorder: 'no' } })).toMatchObject({ date: '2027-05-06', cap: 0.8 });
+});
