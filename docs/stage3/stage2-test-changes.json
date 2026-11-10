@@ -52,6 +52,11 @@
       "change": "TC-FR2-13-AS-05 checks that both the yearly and the monthly member see 'The Lifeline Daily app is included with your membership when it launches.' and that both records show the app as included, in place of yearly-only."
     },
     {
+      "file": "tests/stage2/e2e/account-review.spec.mjs",
+      "decision": "Owner, 10 Nov 2026 (\"fix the test\"): TC-FR2-02-AS-01 failed by chance in WebKit on #241 and #123 because the reload cancelled the Save POST; a timing fix, no change of behaviour or requirement",
+      "change": "TC-FR2-02-AS-01 waits for the POST to /members/settings/ to answer, and for the page to load, before reloading settings; every assertion is unchanged."
+    },
+    {
       "file": "tests/stage2/e2e/accounts-privacy.spec.mjs",
       "decision": "Requirements FR3-60 (TC-FR3-60-AS-01) and the data model (Healthy Weight programme records, owner-approved 6 to 10 Nov 2026): the five P3-35 member tables are in 'Download my data'; built in S3-P35.",
       "change": "TC-FR2-04-AS-01 only: STAGE3_DOWNLOAD_TABLES gains profile_answers, goal_milestones, block_choices, notes_shown and check_in_barriers, and each one's row count is checked against the database like the others. Nothing is removed or loosened."

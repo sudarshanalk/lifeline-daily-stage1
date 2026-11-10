@@ -107,7 +107,12 @@ test('TC-FR2-02-AS-01 settings link to goals, track, profile and subscription, a
   await page.goto('/members/settings/');
   await expect(page.locator('#lld_timezone')).toHaveValue('Europe/London');
   await page.locator('#lld_timezone').fill('America/New_York');
+  // wait for the server's answer to Save: without it, WebKit can cancel the form's POST with the next page.goto, so
+  // the zone is never saved (seen in CI on #241 and #123); the checks below are unchanged
+  const saved = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/members/settings/');
   await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await saved;
+  await page.waitForLoadState('load');
   await page.goto('/members/settings/');
   await expect(page.locator('#lld_timezone')).toHaveValue('America/New_York');
   // the consent record is still there, folded under its own heading
