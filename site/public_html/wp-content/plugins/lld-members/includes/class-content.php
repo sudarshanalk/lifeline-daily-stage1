@@ -66,6 +66,9 @@ class LLD_Members_Content {
 			'lld_matrix',
 			'lld_wording',
 			'lld_qa',
+			// P3-35 (Owner Question 160, additions only): Healthy Weight mindset notes and questions.
+			'lld_note',
+			'lld_question',
 		);
 	}
 
@@ -96,6 +99,8 @@ class LLD_Members_Content {
 			'lld_matrix'    => 'Safety matrix',
 			'lld_wording'   => 'Screening wording',
 			'lld_qa'        => 'Live Q&A',
+			'lld_note'      => 'Mindset notes',
+			'lld_question'  => 'Programme questions',
 		);
 		foreach ( $labels as $type => $plural ) {
 			$hidden = in_array( $type, array( 'lld_matrix', 'lld_qa' ), true );
@@ -1643,6 +1648,19 @@ class LLD_Members_Content {
 				array( 'exercise_note', 'Before exercise', 'textarea' ),
 				array( 'intense_note', 'On high-intensity content', 'textarea' ),
 				array( 'confirmed_drops', 'Launch protections the owner confirmed removing', 'text' ),
+			),
+			'lld_note'      => array(
+				array( 'note_key', 'Note key', 'text' ),
+				array( 'track_id', 'Track or focus block', 'post', 'lld_track' ),
+				array( 'week', 'Week number', 'number' ),
+				array( 'day', 'Day number', 'number' ),
+				array( 'try_this', 'Try this today', 'textarea' ),
+				array( 'support_wording', 'Shows the support wording', 'check' ),
+			),
+			'lld_question'  => array(
+				array( 'question_key', 'Question key', 'text' ),
+				array( 'why', 'Why we ask', 'textarea' ),
+				array( 'asked_in', 'Asked in', 'select', array( 'where_now', 'joining', 'quick_question' ) ),
 			),
 			'lld_qa'        => array(
 				array( 'session_date', 'Date', 'text' ),
