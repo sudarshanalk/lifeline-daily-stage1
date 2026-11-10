@@ -444,8 +444,8 @@ class LLD_Members_HW_Programme {
 			$qod[]   = array(
 				'key'     => $key,
 				'rule'    => $q['rules'][ $key ],
-				'wording' => is_array( $content ) && isset( $content['wording'] ) ? $content['wording'] : null,
-				'reason'  => is_array( $content ) && isset( $content['reason'] ) ? $content['reason'] : null,
+				'wording' => is_array( $content ) ? ( isset( $content['title'] ) ? $content['title'] : ( isset( $content['wording'] ) ? $content['wording'] : null ) ) : null,
+				'reason'  => is_array( $content ) ? ( isset( $content['why'] ) ? $content['why'] : ( isset( $content['reason'] ) ? $content['reason'] : null ) ) : null,
 				'choices' => is_array( $content ) && isset( $content['choices'] ) ? $content['choices'] : null,
 			);
 		}
@@ -549,6 +549,13 @@ class LLD_Members_HW_Programme {
 		$pos = self::position( $member_id, $c, $date );
 		if ( 'block' === $pos['stage'] ) {
 			$block = self::content( 'block', $pos['block'] );
+			if ( is_array( $block ) && isset( $block['weeks'][ $pos['week'] ]['activities'][ $pos['day'] ]['id'] ) ) {
+				return array(
+					'activity_key' => (string) $block['weeks'][ $pos['week'] ]['activities'][ $pos['day'] ]['id'],
+					'version'      => 'standard',
+					'reason'       => null,
+				);
+			}
 			foreach ( is_array( $block ) && isset( $block['activities'] ) ? (array) $block['activities'] : array() as $x ) {
 				if ( (int) $x['week'] === $pos['week'] && (int) $x['day'] === $pos['day'] ) {
 					return array(
@@ -1212,11 +1219,12 @@ class LLD_Members_HW_Programme {
 		if ( null !== self::$activities ) {
 			return self::$activities;
 		}
-		$out = array(
+		$out  = array(
 			'activities' => array(),
 			'library'    => array(),
 			'snapshots'  => array(),
 		);
+		$alts = array();
 		foreach ( array( self::TRACK_1 => 0, self::TRACK_2 => 4 ) as $track => $offset ) {
 			$tid = LLD_Members_Programme::track_id( $track );
 			if ( $tid < 1 ) {
@@ -1227,6 +1235,11 @@ class LLD_Members_HW_Programme {
 					$week = (int) ceil( $d / 7 );
 					$day  = ( ( $d - 1 ) % 7 ) + 1;
 					$meta = self::meta( $snap );
+					if ( ! empty( $meta['alt_for'] ) && isset( $meta['key'] ) ) {
+						$alts[ (string) $meta['alt_for'] ] = (string) $meta['key']; // an -ALT item stands in, it is not the day's item
+						$out['snapshots'][ (string) $meta['key'] ] = $snap;
+						continue;
+					}
 					$id   = isset( $meta['key'] ) ? (string) $meta['key'] : self::PREFIX[ $track ] . '-W' . $week . '-A' . $day;
 					$out['activities'][]     = self::engine_item( $id, $meta, $snap ) + array(
 						'week' => $week + $offset,
@@ -1244,6 +1257,14 @@ class LLD_Members_HW_Programme {
 				}
 			}
 		}
+		// The approved content marks the steady-walk alternative, not the item: an item with an -ALT item standing in for
+		// it is the high-intensity one, never given to members with high blood pressure or heart disease (R-HW-SAFE-04).
+		foreach ( $out['activities'] as $i => $x ) {
+			if ( isset( $alts[ $x['id'] ] ) && empty( $x['alt_id'] ) ) {
+				$out['activities'][ $i ]['alt_id']         = $alts[ $x['id'] ];
+				$out['activities'][ $i ]['high_intensity'] = true;
+			}
+		}
 		self::$activities = $out;
 		return $out;
 	}
@@ -1254,7 +1275,11 @@ class LLD_Members_HW_Programme {
 	 */
 	private static function meta( array $snap ) {
 		$m = self::content( 'activity_meta', isset( $snap['parent_id'] ) ? (int) $snap['parent_id'] : 0 );
-		return is_array( $m ) ? $m : array();
+		$m = is_array( $m ) ? $m : array();
+		if ( ! isset( $m['key'] ) && isset( $m['id'] ) && is_string( $m['id'] ) && '' !== $m['id'] ) {
+			$m['key'] = $m['id']; // package P3: the approved draft id, for example HW-W1-A1
+		}
+		return $m;
 	}
 
 	/**

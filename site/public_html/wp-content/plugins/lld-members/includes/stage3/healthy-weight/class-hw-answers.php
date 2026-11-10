@@ -117,8 +117,8 @@ class LLD_Members_HW_Answers {
 				'choices'  => $choices,
 				'multiple' => 'multi' === $def['values'],
 				'rules'    => $def['rules'],
-				'wording'  => isset( $content['wording'] ) ? (string) $content['wording'] : null,
-				'reason'   => isset( $content['reason'] ) ? (string) $content['reason'] : null,
+				'wording'  => isset( $content['title'] ) ? (string) $content['title'] : ( isset( $content['wording'] ) ? (string) $content['wording'] : null ),
+				'reason'   => isset( $content['why'] ) ? (string) $content['why'] : ( isset( $content['reason'] ) ? (string) $content['reason'] : null ),
 			);
 		}
 		return $out;
