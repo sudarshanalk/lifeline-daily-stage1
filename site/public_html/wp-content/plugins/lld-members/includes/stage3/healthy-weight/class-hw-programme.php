@@ -231,14 +231,15 @@ class LLD_Members_HW_Programme {
 	// ---- The plan screen ------------------------------------------------------------------------------------------
 
 	/**
-	 * What the plan screen shows (shape in the class comment). Null when the member has not joined.
+	 * What the plan screen shows (shape in the class comment). Before joining it previews the plan for the member's active
+	 * weight-loss goal (the pace step shows the recommended pace and milestones, FR3-100, FR3-101); null without one.
 	 *
 	 * @param int         $member_id Member number.
 	 * @param string|null $today     Local date, or null for the member's today.
 	 * @return array|null
 	 */
 	public static function plan_view( $member_id, $today = null ) {
-		$c = self::context( $member_id, $today );
+		$c = self::context( $member_id, $today, true );
 		if ( ! $c ) {
 			return null;
 		}
@@ -1458,7 +1459,7 @@ class LLD_Members_HW_Programme {
 	 * @param string|null $today     Local date.
 	 * @return array|null
 	 */
-	private static function context( $member_id, $today ) {
+	private static function context( $member_id, $today, $preview = false ) {
 		$member_id = (int) $member_id;
 		if ( $member_id < 1 || ! LLD_Members_Access::has_health_consent( $member_id ) ) {
 			return null;
@@ -1468,7 +1469,11 @@ class LLD_Members_HW_Programme {
 			return null;
 		}
 		$plan = LLD_Members_Goal_Journey::plan( $member_id, (int) $goal['id'] );
-		if ( ! $plan || empty( $plan['schedule']['hw'] ) ) {
+		if ( ! $plan ) {
+			return null;
+		}
+		// Before joining, only the plan screen previews the plan (the pace step, FR3-100): an active goal, no state yet.
+		if ( empty( $plan['schedule']['hw'] ) && ( ! $preview || 'active' !== (string) $goal['status'] ) ) {
 			return null;
 		}
 		$facts = LLD_Members_Goal_Journey::facts( $member_id );
@@ -1477,7 +1482,7 @@ class LLD_Members_HW_Programme {
 			'answers' => LLD_Members_HW_Answers::engine( $member_id, $facts ),
 			'goal'    => $goal,
 			'plan'    => $plan,
-			'state'   => (array) $plan['schedule']['hw'],
+			'state'   => empty( $plan['schedule']['hw'] ) ? array() : (array) $plan['schedule']['hw'],
 			'premium' => ! empty( $facts['premium'] ),
 			'reached' => 'reached' === (string) $goal['status'],
 			'today'   => null === $today ? (string) $facts['today'] : (string) $today,

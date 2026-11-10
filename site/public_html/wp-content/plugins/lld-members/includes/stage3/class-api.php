@@ -319,7 +319,7 @@ class LLD_Members_Stage3_API {
 				'table'   => 'food_preferences',
 				'feature' => 'food_tracker',
 				'health'  => true,
-				'sealed'  => array(),
+				'sealed'  => array( 'food_rules' ), // P3-35: written by the Healthy Weight answers, opened on read
 				'fields'  => array(
 					'allergies' => 'json',
 					'dislikes'  => 'json',

@@ -83,6 +83,7 @@ class LLD_Members_Stage3_Export {
 			'recipes'            => array(),
 			'calculator_result'  => array( 'inputs', 'result' ),
 			'profile_answers'    => array( 'answer' ),
+			'food_preferences'   => array( 'food_rules' ),
 			'goal_milestones'    => array( 'target_value' ),
 			'check_in_barriers'  => array( 'barrier_choices', 'barrier_text' ),
 		);

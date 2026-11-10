@@ -25,14 +25,15 @@ test('P3-35 schema: the six tables with every data model field, the five columns
   has('check_in_barriers', ['member_id', 'check_in_date', 'barrier_choices_ct', 'barrier_text_ct']);
   has('goals', ['recommended_rate', 'chosen_rate', 'pace_rule_id']);
   has('plans', ['eating_method']);
-  has('food_preferences', ['food_rules']);
+  has('food_preferences', ['food_rules_ct']);
+  expect(out.cols.food_preferences).not.toContain('food_rules'); // sealed only, never a plain column
   for (const t of ['profile_answers', 'goal_milestones', 'block_choices', 'check_in_barriers']) expect(out.health).toContain(t);
   expect(out.health).not.toContain('festival_calendar');
   expect(out.links).not.toHaveProperty('festival_calendar');
   expect(out.links.notes_shown).toEqual(['member_id']);
   const schema = src('class-schema-stage3.php');
   expect(schema).not.toMatch(/DROP\s+(TABLE|COLUMN)|ALTER TABLE \S+ (DROP|MODIFY|CHANGE|RENAME)/i);
-  for (const c of ["'goals', 'recommended_rate'", "'goals', 'chosen_rate'", "'goals', 'pace_rule_id'", "'plans', 'eating_method'", "'food_preferences', 'food_rules'"]) expect(schema).toContain(`ensure_column( ${c}`);
+  for (const c of ["'goals', 'recommended_rate'", "'goals', 'chosen_rate'", "'goals', 'pace_rule_id'", "'plans', 'eating_method'", "'food_preferences', 'food_rules_ct'"]) expect(schema).toContain(`ensure_column( ${c}`);
 });
 
 test('TC-FR3-98-AS-04', () => {
@@ -162,4 +163,42 @@ test('P3-35 answers: values checked against the signed choices; skipping is stor
   expect(out.after).not.toHaveProperty('barrier');
   expect(out.after.food_rules).toEqual(['halal', 'no_grains_pulses_fasting_days']); // the food preferences keep theirs
   expect(out.engine.food_rules).toEqual(['halal', 'no_grains_pulses_fasting']);
+});
+
+test('P3-35 food rules sealed: a fast kept and halal or kosher are never stored in plain text, and are downloaded and erased', () => {
+  // Food rules and fasts can show religion (special category data): sealed like every other health value, readable by
+  // the engine and the recipe filter, in "Download my data", and gone with the account or health consent.
+  const out = run(`
+    member(7); member(8);
+    LLD_Members_HW_Answers::set(7, 'food_rules', ['kosher']);
+    LLD_Members_HW_Answers::set(7, 'allergies', ['sesame']);
+    global $wpdb;
+    $wpdb->insert('wp_lld_festival_calendar', ['name' => 'Test fast', 'kind' => 'one_day_fast', 'starts_on' => '2026-11-20', 'ends_on' => '2026-11-20', 'expected' => 0, 'approved_on' => '2026-11-10']);
+    LLD_Members_HW_Answers::set(7, 'fasts', ['1']);
+    LLD_Members_HW_Answers::set(8, 'food_rules', ['halal']);
+    $stored = raw('food_preferences');
+    $mine = array_values(array_filter($stored, function ($r) { return 7 === (int) $r['member_id']; }))[0];
+    $prefs = new ReflectionMethod('LLD_Members_Recipes', 'prefs_of'); $prefs->setAccessible(true);
+    $opened = LLD_Members_Stage3_Export::open_sealed(['food_preferences' => [$mine]], 7);
+    $wrong = LLD_Members_Stage3_Data::open(8, $mine['food_rules_ct']);
+    $out = ['stored' => $stored, 'engine' => LLD_Members_HW_Answers::engine(7), 'prefs' => $prefs->invoke(null, 7, '2026-11-20'), 'opened' => $opened['food_preferences'][0], 'wrong' => $wrong,
+      'in' => in_array('food_preferences', LLD_Members_Stage3_Export::download_suffixes(), true)];
+    LLD_Members_Stage3_Erasure::withdraw_health(7);
+    LLD_Members_Stage3_Erasure::erase_account(8);
+    $out['after'] = count(raw('food_preferences'));
+    return $out;
+  `);
+  for (const r of out.stored) {
+    expect(r).not.toHaveProperty('food_rules');
+    expect(r.food_rules_ct).toMatch(/^ct:/);
+    expect(JSON.stringify(r)).not.toMatch(/kosher|halal|fast:/);
+  }
+  expect(out.engine.food_rules).toEqual(['kosher']);
+  expect(out.engine.fasts).toEqual(['1']);
+  expect(out.prefs).toMatchObject({ food_rules: ['kosher', 'fast:1'], allergies: ['sesame'], fasting_day: true });
+  expect(JSON.parse(out.opened.food_rules)).toEqual(['kosher', 'fast:1']);
+  expect(out.opened).not.toHaveProperty('food_rules_ct');
+  expect(out.wrong).toBeNull(); // another member's key never opens it
+  expect(out.in).toBe(true);
+  expect(out.after).toBe(0);
 });

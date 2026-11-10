@@ -607,12 +607,13 @@ class LLD_Members_Stage3_Schema {
 		self::ensure_column( 'member', 'blocked_at', 'DATETIME NULL' );
 		self::ensure_column( 'member', 'blocked_reason', 'TEXT NULL' );
 		// Version 7 (P3-35, FR3-100, FR3-102, FR3-36, FR3-99): the goal's pace, the plan's eating method and the member's
-		// food rules (one store, reused by the getting-to-know-you questions).
+		// food rules (one store, reused by the getting-to-know-you questions). The food rules and the fasts kept can show
+		// a member's religion (special category), so they are sealed like every other health value: food_rules_ct.
 		self::ensure_column( 'goals', 'recommended_rate', 'DECIMAL(4,2) NULL' );
 		self::ensure_column( 'goals', 'chosen_rate', 'DECIMAL(4,2) NULL' );
 		self::ensure_column( 'goals', 'pace_rule_id', 'BIGINT UNSIGNED NULL' );
 		self::ensure_column( 'plans', 'eating_method', 'VARCHAR(16) NULL' );
-		self::ensure_column( 'food_preferences', 'food_rules', 'TEXT NULL' );
+		self::ensure_column( 'food_preferences', 'food_rules_ct', 'TEXT NULL' );
 	}
 
 	/**

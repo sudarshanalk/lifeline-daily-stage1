@@ -140,7 +140,7 @@ test('TC-FR3-102-AS-06', () => {
   expect(out.none).toBeNull();
 });
 
-test('P3-35 Keep It Off target (FR3-20 acceptance 03, not yet in docs/stage3/03)', () => {
+test('TC-FR3-20-AS-03: Keep It Off keeps a target as a guide at the P3-55 maintain level, no deficit', () => {
   // A member who reaches the goal keeps a target as a guide at the P3-55 maintain level (no deficit): their daily use
   // rounded to 10.
   const out = run(`
