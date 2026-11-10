@@ -2319,7 +2319,7 @@ class LLD_Members_HW_Programme {
 	private static function reason_line( array $c ) {
 		$a    = $c['answers'];
 		$goal = $c['goal'];
-		if ( ! $a['reason'] || 'something_else' === $a['reason'] ) {
+		if ( ! $a['reason'] || 'other' === $a['reason'] ) { // "Something else" has no line
 			return null;
 		}
 		$event = isset( self::EVENTS[ $a['reason'] ] ) ? self::EVENTS[ $a['reason'] ] : null;

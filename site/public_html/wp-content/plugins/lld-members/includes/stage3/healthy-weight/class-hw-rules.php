@@ -1335,6 +1335,29 @@ class LLD_Members_HW_Rules {
 		return $out;
 	}
 
+	/** Allergen names as the recipes record them, read as the members' allergy keys (FR3-36, HW-QW-15). */
+	const ALLERGEN_NAMES = array(
+		'eggs'        => 'egg',
+		'tree nuts'   => 'nuts',
+		'tree_nuts'   => 'nuts',
+		'treenuts'    => 'nuts',
+		'pine nuts'   => 'nuts',
+		'soya'        => 'soy',
+		'crustaceans' => 'shellfish',
+		'dairy'       => 'milk',
+	);
+
+	/**
+	 * One allergen as a member allergy key: the recipes' "tree nuts", "soya", "eggs"… and the members' "nuts", "soy",
+	 * "egg" are the same allergen.
+	 *
+	 * @param string $name Allergen name.
+	 */
+	public static function allergen( $name ) {
+		$n = strtolower( trim( (string) $name ) );
+		return isset( self::ALLERGEN_NAMES[ $n ] ) ? self::ALLERGEN_NAMES[ $n ] : $n;
+	}
+
 	/**
 	 * R-HW-FOOD-01 for one approved item: every food rule met and no listed allergen (FR3-36, FR3-99).
 	 *
@@ -1344,10 +1367,10 @@ class LLD_Members_HW_Rules {
 	 */
 	public static function food_ok( array $item, array $member ) {
 		$rules     = self::lower_list( isset( $member['food_rules'] ) ? $member['food_rules'] : array() );
-		$allergies = self::lower_list( isset( $member['allergies'] ) ? $member['allergies'] : array() );
+		$allergies = array_map( array( __CLASS__, 'allergen' ), self::lower_list( isset( $member['allergies'] ) ? $member['allergies'] : array() ) );
 		$tags      = self::lower_list( isset( $item['food_rules'] ) ? $item['food_rules'] : array() );
 		$diets     = self::lower_list( isset( $item['diets'] ) ? $item['diets'] : array() );
-		$allergens = self::lower_list( isset( $item['allergens'] ) ? $item['allergens'] : array() );
+		$allergens = array_map( array( __CLASS__, 'allergen' ), self::lower_list( isset( $item['allergens'] ) ? $item['allergens'] : array() ) );
 		$reasons   = array();
 		if ( empty( $item['approved'] ) ) {
 			$reasons[] = 'not_approved';

@@ -344,7 +344,7 @@ class LLD_Members_Recipes {
 		}
 		$allergies = array();
 		foreach ( isset( $prefs['allergies'] ) && is_array( $prefs['allergies'] ) ? $prefs['allergies'] : array() as $a ) {
-			$a = sanitize_key( (string) $a );
+			$a = self::allergen_key( $a );
 			if ( in_array( $a, self::ALLERGENS, true ) ) {
 				$allergies[] = $a;
 			}
@@ -370,7 +370,7 @@ class LLD_Members_Recipes {
 			}
 			$hit = false;
 			foreach ( $recipe['allergens'] as $a ) {
-				if ( in_array( sanitize_key( (string) $a ), $allergies, true ) ) {
+				if ( in_array( self::allergen_key( $a ), $allergies, true ) ) {
 					$hit = true;
 					break;
 				}
@@ -446,7 +446,7 @@ class LLD_Members_Recipes {
 			if ( 0 === strpos( $r, 'fast:' ) ) {
 				continue; // a fast kept is a calendar entry, not a food rule
 			}
-			$rules[] = 'no_grains_pulses_fasting_days' === $r ? 'no_grains_pulses_fasting' : $r;
+			$rules[] = 'no_grains_pulses_fasting_days' === $r ? 'no_grains_pulses_fasting' : $r; // a value stored before the value sets were joined
 		}
 		if ( ! $rules && ! $allergies ) {
 			return null;
@@ -606,6 +606,16 @@ class LLD_Members_Recipes {
 			'food_rules'  => $f,
 			'fasting_day' => null !== $date && $fasts && class_exists( 'LLD_Members_HW_Programme' ) && LLD_Members_HW_Programme::fasting_day( $fasts, (string) $date ),
 		);
+	}
+
+	/**
+	 * An allergen as the ALLERGENS key: the recipes' names ("tree nuts", "soya", "eggs") read as the members' keys.
+	 *
+	 * @param string $name Allergen name.
+	 */
+	private static function allergen_key( $name ) {
+		$name = class_exists( 'LLD_Members_HW_Rules' ) ? LLD_Members_HW_Rules::allergen( (string) $name ) : (string) $name;
+		return sanitize_key( $name );
 	}
 
 	/**

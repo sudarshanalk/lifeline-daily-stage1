@@ -48,7 +48,7 @@ class LLD_Members_HW_Answers {
 		// Stage 2 profile has no answer (it holds only yes or no): "yes" stops (SAFE-01), "prefer" limits the pace (HWS-01b).
 		'eating_disorder'   => array( 'asked_in' => 'joining', 'values' => array( 'yes', 'no', 'prefer' ), 'store' => 'answers', 'rules' => array( 'R-HW-SAFE-01', 'R-HW-SAFE-02', 'R-HW-PACE-01' ) ),
 		// The eight quick questions when joining (FR3-98), with the drinks-a-time tap and the optional wake-up time.
-		'reason'            => array( 'asked_in' => 'joining', 'values' => array( 'health', 'confidence', 'family', 'wedding', 'holiday', 'event', 'something_else' ), 'store' => 'answers', 'rules' => array( 'R-HW-MOT-01' ) ),
+		'reason'            => array( 'asked_in' => 'joining', 'values' => array( 'health', 'confidence', 'family', 'wedding', 'holiday', 'event', 'other' ), 'store' => 'answers', 'rules' => array( 'R-HW-MOT-01' ) ),
 		'event_date'        => array( 'asked_in' => 'joining', 'values' => 'date', 'store' => 'answers', 'rules' => array( 'R-HW-MOT-01' ) ),
 		'barrier'           => array( 'asked_in' => 'joining', 'values' => array( 'evening_snacking', 'stress_eating', 'eating_out', 'no_time', 'alcohol', 'not_sure' ), 'store' => 'answers', 'rules' => array( 'R-HW-STEP-01', 'R-HW-BLOCK-01' ) ),
 		'time'              => array( 'asked_in' => 'joining', 'values' => array( 'under_10', '10_30', 'over_30' ), 'store' => 'answers', 'rules' => array( 'R-HW-PACE-01', 'R-HW-STEP-03', 'R-HW-STEP-06' ) ),
@@ -60,31 +60,43 @@ class LLD_Members_HW_Answers {
 		'alcohol_freq'      => array( 'asked_in' => 'joining', 'values' => array( 'never', 'less_than_weekly', '1_2_days', '3_4_days', 'most_days' ), 'store' => 'answers', 'rules' => array( 'R-HW-SAFE-05', 'R-HW-NUM-05', 'R-HW-ALC-01', 'R-HW-ALC-02', 'R-HW-STEP-02', 'R-HW-BLOCK-01' ) ),
 		'alcohol_amount'    => array( 'asked_in' => 'joining', 'values' => array( '1_2', '3_4', '5_plus' ), 'store' => 'answers', 'rules' => array( 'R-HW-SAFE-05', 'R-HW-NUM-05', 'R-HW-ALC-01' ) ),
 		// Getting-to-know-you questions (FR3-99), in the R-HW-QOD-01 order.
-		'food_rules'        => array( 'asked_in' => 'track_start', 'qod' => 'food_rules_allergies', 'values' => 'multi', 'choices' => array( 'halal', 'kosher', 'no_pork', 'no_beef', 'pescatarian', 'vegetarian', 'vegan', 'no_eggs', 'dairy_free', 'no_onion_garlic', 'no_grains_pulses_fasting_days', 'jain' ), 'store' => 'food_preferences', 'rules' => array( 'R-HW-FOOD-01', 'R-HW-STEP-02' ) ),
+		'food_rules'        => array( 'asked_in' => 'track_start', 'qod' => 'food_rules_allergies', 'values' => 'multi', 'choices' => array( 'halal', 'kosher', 'no_pork', 'no_beef', 'pescatarian', 'vegetarian', 'vegan', 'no_eggs', 'dairy_free', 'no_onion_garlic', 'no_grains_pulses_fasting_days', 'jain', 'none' ), 'store' => 'food_preferences', 'rules' => array( 'R-HW-FOOD-01', 'R-HW-STEP-02' ) ),
 		'fasts'             => array( 'asked_in' => 'track_start', 'qod' => 'food_rules_allergies', 'values' => 'multi', 'choices' => 'festival_calendar', 'store' => 'food_preferences', 'rules' => array( 'R-HW-FOOD-03', 'R-HW-BLOCK-01', 'R-HW-BLOCK-02', 'R-HW-BLOCK-03' ) ),
-		'allergies'         => array( 'asked_in' => 'track_start', 'qod' => 'food_rules_allergies', 'values' => 'multi', 'choices' => array( 'gluten', 'milk', 'egg', 'peanuts', 'nuts', 'sesame', 'soy', 'fish', 'shellfish', 'celery', 'mustard', 'buckwheat' ), 'store' => 'food_preferences', 'rules' => array( 'R-HW-FOOD-01' ) ),
+		'allergies'         => array( 'asked_in' => 'track_start', 'qod' => 'food_rules_allergies', 'values' => 'multi', 'choices' => array( 'gluten', 'milk', 'egg', 'peanuts', 'nuts', 'sesame', 'soy', 'fish', 'shellfish', 'celery', 'mustard', 'buckwheat', 'none' ), 'store' => 'food_preferences', 'rules' => array( 'R-HW-FOOD-01' ) ),
 		'breakfast'         => array( 'asked_in' => 'track_start', 'qod' => 'eating_pattern', 'values' => array( 'most_days', 'some_days', 'rarely' ), 'store' => 'answers', 'rules' => array( 'R-HW-STEP-02' ) ),
-		'breakfast_protein' => array( 'asked_in' => 'track_start', 'qod' => 'eating_pattern', 'values' => array( 'yes', 'no', 'notsure' ), 'store' => 'answers', 'rules' => array( 'R-HW-STEP-02' ) ),
-		'snack_time'        => array( 'asked_in' => 'track_start', 'qod' => 'snack_time', 'values' => array( 'mid_morning', 'afternoon', 'early_evening', 'after_evening_meal', 'late', 'hardly' ), 'store' => 'answers', 'rules' => array( 'R-HW-REM-01' ) ),
-		'sugary_drinks'     => array( 'asked_in' => 'track_start', 'qod' => 'sugary_drinks', 'values' => array( 'never', 'less_than_weekly', '1_3_days', '4_6_days', 'daily' ), 'store' => 'answers', 'rules' => array( 'R-HW-STEP-02' ) ),
+		'breakfast_protein' => array( 'asked_in' => 'track_start', 'qod' => 'eating_pattern', 'values' => array( 'yes', 'no', 'not_sure' ), 'store' => 'answers', 'rules' => array( 'R-HW-STEP-02' ) ),
+		'snack_time'        => array( 'asked_in' => 'track_start', 'qod' => 'snack_time', 'values' => array( '10:30', '15:30', '18:00', '20:00', '21:00', 'none' ), 'store' => 'answers', 'rules' => array( 'R-HW-REM-01' ) ),
+		'sugary_drinks'     => array( 'asked_in' => 'track_start', 'qod' => 'sugary_drinks', 'values' => array( 'never', 'less_than_weekly', 'weekly', '4_6_days', 'daily' ), 'store' => 'answers', 'rules' => array( 'R-HW-STEP-02' ) ),
 		'eats_out'          => array( 'asked_in' => 'track_start', 'qod' => 'eating_out', 'values' => array( 'less_than_weekly', '1_2', '3_plus' ), 'store' => 'answers', 'rules' => array( 'R-HW-STEP-02', 'R-HW-BLOCK-01' ) ),
 		'cooking_time'      => array( 'asked_in' => 'track_start', 'qod' => 'cooking_time_skill', 'values' => array( 'under_15', '15_30', 'over_30' ), 'store' => 'answers', 'rules' => array( 'R-HW-FOOD-02' ) ),
-		'cooking_skill'     => array( 'asked_in' => 'track_start', 'qod' => 'cooking_time_skill', 'values' => array( 'starting', 'follow_recipe', 'love_cooking' ), 'store' => 'answers', 'rules' => array( 'R-HW-FOOD-02' ) ),
+		'cooking_skill'     => array( 'asked_in' => 'track_start', 'qod' => 'cooking_time_skill', 'values' => array( 'beginner', 'follows_recipes', 'loves_cooking' ), 'store' => 'answers', 'rules' => array( 'R-HW-FOOD-02' ) ),
 		'budget'            => array( 'asked_in' => 'track_start', 'qod' => 'food_budget', 'values' => array( 'tight', 'some_room', 'not_a_worry' ), 'store' => 'answers', 'rules' => array( 'R-HW-FOOD-02' ) ),
-		'cuisines'          => array( 'asked_in' => 'track_start', 'qod' => 'favourite_cuisines', 'values' => 'multi', 'choices' => array( 'everyday', 'south_asian', 'italian_mediterranean', 'chinese', 'mexican_latin', 'west_african', 'all' ), 'store' => 'answers', 'rules' => array( 'R-HW-FOOD-02' ) ),
-		'enjoyment'         => array( 'asked_in' => 'track_start', 'qod' => 'activity_enjoyment', 'values' => 'multi', 'choices' => array( 'walking', 'dancing', 'swimming', 'cycling', 'home_workouts', 'yoga', 'sport', 'gardening', 'not_sure' ), 'store' => 'answers', 'rules' => array( 'R-HW-STEP-06' ) ),
+		'cuisines'          => array( 'asked_in' => 'track_start', 'qod' => 'favourite_cuisines', 'values' => 'multi', 'choices' => array( 'everyday-british-american', 'south-asian', 'italian-mediterranean', 'chinese', 'mexican-latin-american', 'west-african', 'all' ), 'store' => 'answers', 'rules' => array( 'R-HW-FOOD-02' ) ),
+		'enjoyment'         => array( 'asked_in' => 'track_start', 'qod' => 'activity_enjoyment', 'values' => 'multi', 'choices' => array( 'walking', 'dancing', 'swimming', 'cycling', 'home_workouts', 'yoga_stretching', 'sport', 'gardening', 'not_sure' ), 'store' => 'answers', 'rules' => array( 'R-HW-STEP-06' ) ),
 	);
 
 	/** The approved content's answer keys that differ from these (HW-QW-14 is "festivals"; the store is "fasts"). */
 	const ALIASES = array( 'festivals' => 'fasts' );
 
 	/**
-	 * Snack-time choices as clock times (HW-QW-17). Only the two evening choices are an "evening snacker" for the
-	 * reminder (R-HW-REM-01), so only they are passed to the engine as a time.
+	 * The values above are the one value set of each question, the same as the approved content's
+	 * (LLD_Members_HW_Content::ANSWERS: a CI test keeps the two equal), read as they are by the screens, the engine and
+	 * the recipes. Snack times are clock times (R-HW-REM-01 sets the reminder 30 minutes before); allergies are the
+	 * recipe allergen keys (LLD_Members_HW_Rules::allergen() reads the recipes' names, "tree nuts", "soya"…, as these);
+	 * cuisines are the recipes' cuisine names. "none" in a multi-choice clears the others.
+	 *
+	 * Values stored before the value sets were joined, read as the value they meant.
 	 */
-	const SNACK_TIMES = array(
-		'after_evening_meal' => '20:00',
-		'late'               => 'after 9 pm',
+	const VALUE_ALIASES = array(
+		'reason'            => array( 'something_else' => 'other' ),
+		'food_rules'        => array( 'no_grains_pulses_fasting' => 'no_grains_pulses_fasting_days' ), // the engine's name, given by mistake
+		'allergies'         => array( 'eggs' => 'egg', 'tree nuts' => 'nuts', 'tree_nuts' => 'nuts', 'soya' => 'soy' ),
+		'breakfast_protein' => array( 'notsure' => 'not_sure' ),
+		'snack_time'        => array( 'mid_morning' => '10:30', 'afternoon' => '15:30', 'early_evening' => '18:00', 'after_evening_meal' => '20:00', 'late' => '21:00', 'after 9 pm' => '21:00', 'hardly' => 'none' ),
+		'sugary_drinks'     => array( '1_3_days' => 'weekly' ),
+		'cooking_skill'     => array( 'starting' => 'beginner', 'follow_recipe' => 'follows_recipes', 'love_cooking' => 'loves_cooking' ),
+		'cuisines'          => array( 'everyday' => 'everyday-british-american', 'south_asian' => 'south-asian', 'italian_mediterranean' => 'italian-mediterranean', 'mexican_latin' => 'mexican-latin-american', 'west_african' => 'west-african' ),
+		'enjoyment'         => array( 'yoga' => 'yoga_stretching' ),
 	);
 
 	/** The data model's food-rule value for the fasting-day rule, and the engine's. */
@@ -203,7 +215,7 @@ class LLD_Members_HW_Answers {
 			if ( ! isset( self::KEYS[ $key ] ) || isset( $out[ $key ] ) ) {
 				continue;
 			}
-			$value       = null === $row['answer'] ? null : json_decode( (string) $row['answer'], true );
+			$value       = null === $row['answer'] ? null : self::canonical( $key, json_decode( (string) $row['answer'], true ) );
 			$out[ $key ] = array(
 				'value'      => ! empty( $row['skipped'] ) ? null : $value,
 				'skipped'    => ! empty( $row['skipped'] ),
@@ -215,9 +227,9 @@ class LLD_Members_HW_Answers {
 		if ( $prefs ) {
 			$rules = self::json_list( isset( $prefs['food_rules'] ) ? $prefs['food_rules'] : null );
 			if ( null !== $rules ) {
-				$out['food_rules'] = self::stored( array_values( array_filter( $rules, function ( $r ) {
+				$out['food_rules'] = self::stored( self::canonical( 'food_rules', array_values( array_filter( $rules, function ( $r ) {
 					return 0 !== strpos( (string) $r, 'fast:' );
-				} ) ), $prefs );
+				} ) ) ), $prefs );
 				$fasts             = array();
 				foreach ( $rules as $r ) {
 					if ( 0 === strpos( (string) $r, 'fast:' ) ) {
@@ -231,7 +243,7 @@ class LLD_Members_HW_Answers {
 			}
 			$allergies = self::json_list( isset( $prefs['allergies'] ) ? $prefs['allergies'] : null );
 			if ( null !== $allergies ) {
-				$out['allergies'] = self::stored( $allergies, $prefs );
+				$out['allergies'] = self::stored( self::canonical( 'allergies', $allergies ), $prefs );
 			}
 		}
 		$level = self::profile_activity( $member_id );
@@ -388,7 +400,7 @@ class LLD_Members_HW_Answers {
 			'medicines'         => in_array( 'heart_rate_medicine', $situations, true ),
 			'eating_disorder'   => self::eating( $situations, $v( 'eating_disorder' ) ),
 			'pregnant'          => in_array( 'pregnancy', $situations, true ) ? 'yes' : 'no',
-			'snack_time'        => isset( self::SNACK_TIMES[ (string) $snack ] ) ? self::SNACK_TIMES[ (string) $snack ] : null,
+			'snack_time'        => is_string( $snack ) && preg_match( '/^\d\d:\d\d$/', $snack ) ? $snack : null, // a clock time; "none" is no snack time
 			'wake_time'         => $v( 'wake_time' ),
 			'cooking_time'      => $v( 'cooking_time' ),
 			'budget'            => $v( 'budget' ),
@@ -519,6 +531,7 @@ class LLD_Members_HW_Answers {
 		$def  = self::KEYS[ $key ];
 		$kind = $def['values'];
 		$bad  = new WP_Error( 'lld_hw_answer', 'Choose one of the answers.', array( 'key' => $key ) );
+		$value = self::canonical( $key, $value );
 		if ( is_array( $kind ) ) {
 			return in_array( (string) $value, $kind, true ) ? (string) $value : $bad;
 		}
@@ -531,6 +544,9 @@ class LLD_Members_HW_Answers {
 				return is_string( $value ) && preg_match( '/^\d{4}-\d\d-\d\d$/', $value ) ? $value : $bad;
 			case 'multi':
 				$list    = is_array( $value ) ? $value : array( $value );
+				if ( in_array( 'none', array_map( 'strval', $list ), true ) ) {
+					return array(); // "None of these" clears every other choice
+				}
 				$choices = isset( $def['choices'] ) ? $def['choices'] : array();
 				$fasts = 'festival_calendar' === $choices;
 				if ( $fasts ) {
@@ -567,6 +583,31 @@ class LLD_Members_HW_Answers {
 				return $out;
 		}
 		return $bad;
+	}
+
+	/**
+	 * A value read as the question's one value set: an old stored value becomes the value it meant (VALUE_ALIASES).
+	 *
+	 * @param string $key   A KEYS key.
+	 * @param mixed  $value Value, or list for a multi-choice.
+	 * @return mixed
+	 */
+	public static function canonical( $key, $value ) {
+		$map = isset( self::VALUE_ALIASES[ $key ] ) ? self::VALUE_ALIASES[ $key ] : array();
+		if ( ! $map ) {
+			return $value;
+		}
+		if ( is_array( $value ) ) {
+			$out = array();
+			foreach ( $value as $v ) {
+				$v = isset( $map[ (string) $v ] ) ? $map[ (string) $v ] : $v;
+				if ( ! in_array( $v, $out, true ) ) {
+					$out[] = $v;
+				}
+			}
+			return $out;
+		}
+		return is_scalar( $value ) && isset( $map[ (string) $value ] ) ? $map[ (string) $value ] : $value;
 	}
 
 	/** @param int $member_id Member number. */

@@ -153,15 +153,16 @@ class LLD_Members_HW_Content {
 			'follow_up' => array( 'key' => 'alcohol_amount', 'when' => array( 'less_than_weekly', '1_2_days', '3_4_days', 'most_days' ), 'question' => 'HW-QW-12' ),
 		),
 		'HW-QW-12' => array( 'key' => 'alcohol_amount', 'type' => 'choice', 'values' => array( '1_2', '3_4', '5_plus' ) ),
-		'HW-QW-13' => array( 'key' => 'food_rules', 'type' => 'multi', 'values' => array( 'halal', 'kosher', 'no_pork', 'no_beef', 'pescatarian', 'vegetarian', 'vegan', 'no_eggs', 'dairy_free', 'no_onion_garlic', 'no_grains_pulses_fasting', 'jain', 'none' ) ),
+		'HW-QW-13' => array( 'key' => 'food_rules', 'type' => 'multi', 'values' => array( 'halal', 'kosher', 'no_pork', 'no_beef', 'pescatarian', 'vegetarian', 'vegan', 'no_eggs', 'dairy_free', 'no_onion_garlic', 'no_grains_pulses_fasting_days', 'jain', 'none' ) ), // the data model's value; the engine's name is mapped in LLD_Members_HW_Answers::engine()
 		'HW-QW-14' => array(
 			'key'    => 'festivals',
 			'type'   => 'multi',
 			// The approved calendar's entry ids (HW-P3-35-09); a member's festival is every dated entry with that id.
 			'values' => array( 'CAL-RAM', 'CAL-EIDF', 'CAL-EIDA', 'CAL-ARAF', 'CAL-LENT', 'CAL-EAST', 'CAL-GLENT', 'CAL-PASCHA', 'CAL-NATF', 'CAL-DORM', 'CAL-XMAS', 'CAL-DIW', 'CAL-NAV-C', 'CAL-NAV-S', 'CAL-EKA', 'CAL-HOLI', 'CAL-VAIS', 'CAL-PARY-S', 'CAL-PARY-D', 'CAL-PES', 'CAL-YK', 'CAL-HAN', 'CAL-LNY', 'CAL-BFAST', 'CAL-NAWRUZ', 'none' ),
 		),
-		// The allergen names the recipes record (the bundle's allergens field), so R-HW-FOOD-01 matches them.
-		'HW-QW-15' => array( 'key' => 'allergies', 'type' => 'multi', 'values' => array( 'gluten', 'milk', 'eggs', 'peanuts', 'tree nuts', 'sesame', 'soya', 'fish', 'shellfish', 'celery', 'mustard', 'buckwheat', 'none' ) ),
+		// The members' allergy keys (LLD_Members_Recipes::ALLERGENS, FR3-36); the recipes' own names ("tree nuts", "soya",
+		// "egg") are read as these by LLD_Members_HW_Rules::allergen(), so R-HW-FOOD-01 matches them.
+		'HW-QW-15' => array( 'key' => 'allergies', 'type' => 'multi', 'values' => array( 'gluten', 'milk', 'egg', 'peanuts', 'nuts', 'sesame', 'soy', 'fish', 'shellfish', 'celery', 'mustard', 'buckwheat', 'none' ) ),
 		'HW-QW-16' => array(
 			'key'       => 'breakfast',
 			'type'      => 'choice',
