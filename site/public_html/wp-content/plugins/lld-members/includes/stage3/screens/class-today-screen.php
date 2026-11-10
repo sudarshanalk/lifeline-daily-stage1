@@ -785,7 +785,7 @@ class LLD_Members_Today_Screen {
 
 		// The Stage 2 track check-in, untouched, for members on a track.
 		if ( class_exists( 'LLD_Members_Programme' ) && LLD_Members_Programme::active( $member_id ) ) {
-			$html .= '<section class="lld-card" data-lld-section="track-check-in"><h2>Track check-in</h2>' . LLD_Members_Programme::check_in_html( $member_id ) . '</section>';
+			$html .= '<section class="lld-card" data-lld-section="track-check-in"><h2>Track check-in</h2>' . self::track_ids( LLD_Members_Programme::check_in_html( $member_id ) ) . '</section>';
 		}
 		$html .= '<p><a href="' . esc_url( home_url( '/members/home/' ) ) . '">Back to Today</a></p></div>';
 		self::output( 'Weekly check-in', $html );
@@ -900,6 +900,17 @@ class LLD_Members_Today_Screen {
 			}
 		}
 		return '' === $html ? '' : '<section class="lld-card lld-hw-replies" data-lld-section="hw-way-replies">' . $html . '</section>';
+	}
+
+	/**
+	 * The Stage 2 track check-in shown on this page uses the same field ids as the weekly check-in above (lld_weight,
+	 * lld_waist …), so a label would point at the wrong box. Inside this page its ids, and the labels that name them,
+	 * get a "lld-track-" prefix; the field names, and so what the Stage 2 form posts, stay exactly as they are.
+	 *
+	 * @param string $html The Stage 2 track check-in.
+	 */
+	private static function track_ids( $html ) {
+		return (string) preg_replace( '/(?<![\w-])(id|for|aria-describedby)="lld_([a-z0-9_-]+)"/', '$1="lld-track-$2"', (string) $html );
 	}
 
 	/** What the check-in asks for, from the goal's measure. */

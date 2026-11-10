@@ -147,6 +147,7 @@ class LLD_Members_Hw_Screen_Parts {
 		'alcohol_amount'       => 'HW-QW-12',
 		'food_rules'           => 'HW-QW-13',
 		'festivals'            => 'HW-QW-14',
+		'fasts'                => 'HW-QW-14',
 		'allergies'            => 'HW-QW-15',
 		'eating_pattern'       => 'HW-QW-16',
 		'snack_time'           => 'HW-QW-17',

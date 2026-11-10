@@ -98,7 +98,8 @@ test.describe.serial('P3-35 pace and plan (FR3-100, FR3-102)', () => {
     await answer(page, CONFIDENT);
     const step = page.locator('[data-lld-section="hw-pace"]');
     await expect(step.getByRole('heading')).toHaveText('You could go a little faster: 0.75 kg a week');
-    const offered = await step.locator('input[name="lld_hw_pace"]').evaluateAll((els) => els.map((e) => Number(e.value)));
+    // The paces offered (the last choice, "By a date instead", is a date, not a pace).
+    const offered = await step.locator('input[name="lld_hw_pace"]:not([value="date"])').evaluateAll((els) => els.map((e) => Number(e.value)));
     expect(offered).toContain(0.75);
     expect(Math.max(...offered)).toBeLessThanOrEqual(0.8); // the safe limit: 1 % of 80 kg a week
     // A pace above the limit, posted by hand, is refused.

@@ -401,3 +401,40 @@ test('hw screens: the plateau and goal cards from the plan view keep their own s
   expect(html).toMatch(/value="keep">Start Keep It Off<\/button>/);
   expect((html.match(/data-lld-hw-dismiss/g) || []).length).toBe(1);
 });
+
+test('hw screens: a follow-up that is one of the eight is shown once, and the quick questions asked together share one card', () => {
+  // The loader nests the wake-up time under work and the drinks a time under alcohol; the screen shows each once, in
+  // its own place, so no id or field appears twice.
+  const nested = { ...base, questions: { ...questions,
+    work: { ...questions.work, follow_up: { key: 'wake_time', text: 'Nested wake-up?', type: 'time', when: ['shifts'] } },
+    alcohol_freq: { ...questions.alcohol_freq, follow_up: { key: 'alcohol_amount', text: 'Nested amount?', choices: [{ value: '1_2', label: '1 to 2' }], when: ['most_days'] } },
+    food_rules: { text: 'A made-up food rules question?', why: 'A made-up reason.', multi: true, choices: [{ value: 'halal', label: 'Test rule' }] },
+    festivals: { text: 'A made-up fasts question?', why: 'A made-up reason.', multi: true, choices: [{ value: 'CAL-RAM', label: 'Ramadan' }] },
+    allergies: { text: 'A made-up allergies question?', why: 'A made-up reason.', multi: true, choices: [{ value: 'gluten', label: 'Test allergen' }] } } };
+  const r = run(`$f = ${phpFacts(facts())};
+    $html = LLD_Members_Hw_Questions_Screen::html(7, $f, 'joining', '/x', '');
+    $qod = LLD_Members_Hw_Questions_Screen::qod_html([['key' => 'food_rules_allergies'], ['key' => 'snack_time'], ['key' => 'sugary_drinks']]);
+    $_POST['lld_hw_qod_key'] = 'food_rules_allergies'; $_POST['lld_hw'] = ['festivals' => ['CAL-RAM']];
+    $saved = LLD_Members_Hw_Questions_Screen::save_qod(7);
+    return [$html, $qod, $saved, $GLOBALS['writes']];`, nested);
+  const [html, qod, saved, writes] = r;
+  expect((html.match(/id="lld-hw-wake-time"/g) || []).length).toBe(1);
+  expect((html.match(/data-lld-question="alcohol_amount"/g) || []).length).toBe(1);
+  expect(html).not.toContain('Nested');
+  const ids = [...html.matchAll(/\bid="([^"]+)"/g)].map((m) => m[1]);
+  expect(ids.length).toBe(new Set(ids).size);
+  // food_rules_allergies is one quick question of three approved questions; two quick questions a day in all.
+  expect(qod).toContain('data-lld-qod="2"');
+  expect(qod).toMatch(/data-lld-qod-key="food_rules_allergies"[\s\S]*data-lld-question="food_rules"[\s\S]*data-lld-question="festivals"[\s\S]*data-lld-question="allergies"/);
+  expect(qod).not.toContain('sugary_drinks');
+  expect(saved).toBe(true);
+  expect(writes).toEqual([['set', 'festivals', ['CAL-RAM']]]);
+  // P2 names the group by its first question (food_rules): the same three questions come together.
+  const byFirst = run(`return LLD_Members_Hw_Questions_Screen::qod_html([['key' => 'food_rules']]);`, nested);
+  expect(byFirst).toMatch(/data-lld-qod-key="food_rules"[\s\S]*data-lld-question="festivals"[\s\S]*data-lld-question="allergies"/);
+});
+
+test('hw screens: the track check-in on the weekly check-in page gets its own field ids, so no id is used twice', () => {
+  const r = run(`return lld_test_call('LLD_Members_Today_Screen', 'track_ids', ['<p><label for="lld_weight">W</label><input id="lld_weight" name="lld_weight" aria-describedby="lld_weight-hint"></p><input id="lld_track_nonce" name="lld_track_nonce" data-x="lld_weight">']);`, base);
+  expect(r).toBe('<p><label for="lld-track-weight">W</label><input id="lld-track-weight" name="lld_weight" aria-describedby="lld-track-weight-hint"></p><input id="lld-track-track_nonce" name="lld_track_nonce" data-x="lld_weight">');
+});

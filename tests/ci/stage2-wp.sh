@@ -30,7 +30,7 @@ wp lld-members db-update --path="$DIR"
 # Stage 3 (NFR3-09 live tests): the interface's switches at test_accounts, so only test accounts see the Stage 3
 # screens: the two listed test members and the owner admin (an admin is always a test account, so it sees every
 # Stage 3 screen whose switch is at test_accounts). Every other Stage 2 member stays exactly as Stage 2
-# (content_new stays off here on purpose).
+# (content_new stays off here on purpose; only the Stage 3 browser job puts it at test_accounts, with its test content, below).
 for f in api account_hub goals today progress insights food_tracker barcode health_logging calculators_new reminders sign_in_social sign_in_code; do wp lld-members feature "$f" test_accounts --path="$DIR" --quiet; done
 # P3-44: one made-up packaged food with a barcode (GS1 prefix 2, never a real product) for the scan screen's live tests
 wp lld-members food import --source=off --file="$REPO/tests/stage3/e2e/screens/barcode-foods.jsonl" --path="$DIR" --quiet
@@ -49,6 +49,9 @@ if [ "${LLD_CI_STAGE1_TOOLS:-}" = "1" ]; then
   # P3-87b: the standalone tools and their tools/status.json switch, copied into this throwaway site so the admin
   # Tools page can turn one off and on (FR3-89) without touching the repository's files.
   cp -R "$REPO/site/public_html/tools" "$DIR/tools"
+  # P3-35: the synthetic Healthy Weight test content (made-up questions, notes, focus blocks and festival calendar)
+  # through the real content loader, for the hw-*.spec.mjs journeys; shown only to the test accounts (content_new).
+  bash "$REPO/tests/ci/stage3-hw-content.sh" "$DIR"
 fi
 # Router: without one, PHP's built-in server answers 404 itself for any missing path with a dot (/sitemap.xml)
 # instead of passing it to WordPress, unlike Apache/LiteSpeed with the WordPress .htaccess on staging and production

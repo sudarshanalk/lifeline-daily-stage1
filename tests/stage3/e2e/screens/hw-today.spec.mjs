@@ -14,6 +14,21 @@ async function join(page, email, start, fields = {}, answers = CONFIDENT) {
   return m;
 }
 
+/**
+ * Weeks 1 to 8 as the member lives them: level 1 runs four weeks, then "Carry on to week 5" (Owner Question 161) starts
+ * level 2 that day (day 30, after level 1's last day), and its four weeks end on day 57, so day 58 is week 9, when the
+ * focus blocks open (FR3-104).
+ */
+async function toWeek9(page, email, start) {
+  await clock(page, email, at(start, 30));
+  await page.goto('/members/home/');
+  const carry = page.locator('[data-lld-section="hw-carry-on"]').getByRole('button', { name: 'Carry on to week 5' });
+  await expect(carry).toBeVisible();
+  await submit(page, carry, '/members/home/');
+  await expect(page.locator('[data-lld-section="hw-carry-on"]')).toHaveCount(0);
+  await clock(page, email, at(start, 58));
+}
+
 /** The notes the signed rules can bring forward (R-HW-NOTE-01 to -05 and R-HW-WEEK-01), any week. */
 const BROUGHT_FORWARD = ['HW-MN-W4-4', 'HW-MN-W8-1', 'HW-MN-W1-6', 'HW-MN-W2-6', 'HW-MN-W1-4', 'HW-MN-W7-4', 'HW-MN-W6-5', 'HW-MN-W3-3'];
 
@@ -34,10 +49,14 @@ test.describe.serial('P3-35 Today (FR3-99, FR3-105)', () => {
   });
 
   test("TC-FR3-105-AS-01 On each of days 1 to 56 a Premium test member sees one note on the Today screen, with that week's theme", async ({ page }) => {
+    test.setTimeout(15 * 60000); // 56 programme days, each one its own Today page
     await join(page, A, '2026-08-03', { access_state: 'Premium' });
     for (let day = 1; day <= 56; day++) {
       await clock(page, A, at('2026-08-03', day - 1));
       await page.goto('/members/home/');
+      // Week 4 runs straight into week 5 with one tap (Owner Question 161).
+      const carry = page.locator('[data-lld-section="hw-carry-on"]').getByRole('button', { name: 'Carry on to week 5' });
+      if (day === 28) { await expect(carry).toBeVisible(); await submit(page, carry, '/members/home/'); }
       const note = page.locator('[data-lld-section="hw-note"]');
       await expect(note, `day ${day}`).toHaveCount(1);
       await expect(note.locator('h2'), `day ${day}`).not.toBeEmpty();
@@ -87,7 +106,7 @@ test.describe.serial('P3-35 the weekly check-in (FR3-107)', () => {
 test.describe.serial('P3-35 focus blocks (FR3-104)', () => {
   test('TC-FR3-104-AS-01 A member finishing week 8 short of their goal is offered a focus block with a one-line reason, and can choose another', async ({ page }) => {
     await join(page, A, '2026-08-03', { access_state: 'Premium' }, { ...CONFIDENT, stress: '8' });
-    await clock(page, A, at('2026-08-03', 56));
+    await toWeek9(page, A, '2026-08-03');
     await page.goto('/members/goal/?hw=blocks');
     const step = page.locator('[data-lld-goal-step="blocks"]');
     await expect(step.getByRole('heading', { name: 'Choose your next four weeks' })).toBeVisible();
@@ -101,7 +120,7 @@ test.describe.serial('P3-35 focus blocks (FR3-104)', () => {
   });
 
   test("TC-FR3-104-AS-03 'Festivals and fasting' is offered before Ramadan only to members who said they keep that fast", async ({ page }) => {
-    // Week 9 on 18 January 2027, three weeks before Ramadan 2027.
+    // Week 9 on 20 January 2027, nearly three weeks before Ramadan 2027 (8 February).
     for (const [email, keeps] of [[A, true], [B, false]]) {
       await join(page, email, '2026-11-23', { access_state: 'Premium' });
       if (keeps) {
@@ -119,7 +138,7 @@ test.describe.serial('P3-35 focus blocks (FR3-104)', () => {
           if (await form.count()) await submit(page, form.getByRole('button', { name: 'Skip' }), '/members/home/');
         }
       }
-      await clock(page, email, at('2026-11-23', 56));
+      await toWeek9(page, email, '2026-11-23');
       await page.goto('/members/goal/?hw=blocks');
       const suggested = await page.locator('[data-lld-goal-step="blocks"]').getAttribute('data-lld-suggested');
       if (keeps) expect(suggested, email).toBe('festivals-and-fasting');
@@ -129,12 +148,13 @@ test.describe.serial('P3-35 focus blocks (FR3-104)', () => {
 
   test('TC-FR3-104-AS-05 A member who reaches their goal during a block is offered Keep It Off', async ({ page }) => {
     await join(page, A, '2026-07-06', { access_state: 'Premium' });
-    await clock(page, A, at('2026-07-06', 56));
+    await toWeek9(page, A, '2026-07-06');
     await page.goto('/members/goal/?hw=blocks');
     await submit(page, page.getByRole('button', { name: 'Start this block' }), '/members/goal/');
-    // The goal weight held for a week inside the block.
-    for (let day = 57; day <= 63; day++) await weighIn(page, at('2026-07-06', day, 7), 60);
-    await clock(page, A, at('2026-07-06', 63));
+    // The goal weight held for a week inside the block; Today sees the goal reached (FR3-15).
+    for (let day = 59; day <= 65; day++) await weighIn(page, at('2026-07-06', day, 7), 60);
+    await clock(page, A, at('2026-07-06', 65));
+    await page.goto('/members/home/');
     await page.goto('/members/goal/?hw=blocks');
     const keep = page.locator('[data-lld-section="hw-keep-it-off"]');
     await expect(keep.getByRole('button', { name: 'Start Keep It Off' })).toBeVisible();

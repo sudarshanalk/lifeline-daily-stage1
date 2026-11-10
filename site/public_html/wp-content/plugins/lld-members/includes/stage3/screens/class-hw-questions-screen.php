@@ -32,6 +32,14 @@ class LLD_Members_Hw_Questions_Screen {
 		'alcohol_amount' => array( 'alcohol_freq', '!never' ),
 	);
 
+	/** R-HW-QOD-01 keys that are asked as two or three approved questions together (HW-QW-13 to -15, -20 and -21). */
+	const QOD_GROUPS = array(
+		'food_rules_allergies' => array( 'food_rules', 'festivals', 'allergies' ),
+		'food_rules'           => array( 'food_rules', 'festivals', 'allergies' ),
+		'cooking_time_skill'   => array( 'cooking_time', 'cooking_skill' ),
+		'cooking_time'         => array( 'cooking_time', 'cooking_skill' ),
+	);
+
 	/** Alcohol questions (skipped when the food rules exclude alcohol). */
 	const ALCOHOL = array( 'alcohol_freq', 'alcohol_amount' );
 
@@ -55,6 +63,13 @@ class LLD_Members_Hw_Questions_Screen {
 		}
 		if ( isset( $out['alcohol_amount'] ) && ! isset( $out['alcohol_freq'] ) ) {
 			unset( $out['alcohol_amount'] ); // the follow-up never stands alone
+		}
+		foreach ( $out as $key => $q ) {
+			// A follow-up that is one of the eight's own questions (the wake-up time, the drinks a time) is shown once,
+			// in its own place with its own condition, never a second time under the question that leads to it.
+			if ( ! empty( $q['follow_up'] ) && in_array( $q['follow_up']['key'], self::JOINING, true ) ) {
+				$out[ $key ]['follow_up'] = null;
+			}
 		}
 		return $out;
 	}
@@ -171,7 +186,27 @@ class LLD_Members_Hw_Questions_Screen {
 	}
 
 	/**
-	 * Today's "Quick question" card (FR3-99, R-HW-QOD-01): at most two approved questions a day, each with Skip.
+	 * The approved questions behind one quick-question key of R-HW-QOD-01. Most keys are one question; two are asked
+	 * together (the approved wording asks the fasts and allergies "with the food rules", and the cooking time with the
+	 * cooking skill). A question that is not loaded is left out.
+	 *
+	 * @param string $key Quick-question key, or a question's own key.
+	 * @return array<int,array> norm_question() each.
+	 */
+	public static function qod_questions( $key ) {
+		$keys = isset( self::QOD_GROUPS[ $key ] ) ? self::QOD_GROUPS[ $key ] : array( $key );
+		$out  = array();
+		foreach ( $keys as $k ) {
+			$q = LLD_Members_Hw_Screen_Parts::question( $k );
+			if ( $q ) {
+				$out[] = $q;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Today's "Quick question" card (FR3-99, R-HW-QOD-01): at most two quick questions a day, each with Skip.
 	 *
 	 * @param array $qod Today view's qod (keys, or {key}).
 	 */
@@ -180,9 +215,9 @@ class LLD_Members_Hw_Questions_Screen {
 		$list = array();
 		foreach ( $qod as $item ) {
 			$key = is_array( $item ) ? ( isset( $item['key'] ) ? (string) $item['key'] : '' ) : (string) $item;
-			$q   = '' !== $key ? $c::question( $key ) : null;
-			if ( $q ) {
-				$list[] = $q;
+			$qs  = '' !== $key ? self::qod_questions( $key ) : array();
+			if ( $qs ) {
+				$list[ $key ] = $qs;
 			}
 			if ( count( $list ) >= 2 ) {
 				break; // never more than two a day (TC-FR3-99-AS-02)
@@ -192,16 +227,18 @@ class LLD_Members_Hw_Questions_Screen {
 			return '';
 		}
 		$html = '<section class="lld-card lld-hw-qod" data-lld-section="hw-qod" data-lld-qod="' . count( $list ) . '"><h2>' . esc_html( $c::LABELS['qod_title'] ) . '</h2>';
-		foreach ( $list as $q ) {
-			$html .= '<form method="post" class="lld-form lld-hw-qod-form">' . wp_nonce_field( 'lld_hw_qod', 'lld_hw_qod_nonce', true, false ) . '<input type="hidden" name="lld_hw_qod_key" value="' . esc_attr( $q['key'] ) . '">';
-			$html .= $c::question_html( $q, null, 'lld_hw' );
+		foreach ( $list as $key => $qs ) {
+			$html .= '<form method="post" class="lld-form lld-hw-qod-form" data-lld-qod-key="' . esc_attr( $key ) . '">' . wp_nonce_field( 'lld_hw_qod', 'lld_hw_qod_nonce', true, false ) . '<input type="hidden" name="lld_hw_qod_key" value="' . esc_attr( $key ) . '">';
+			foreach ( $qs as $q ) {
+				$html .= $c::question_html( $q, null, 'lld_hw' );
+			}
 			$html .= '<div class="lld-row"><button class="lld-button" type="submit" name="lld_hw_qod_do" value="answer">' . esc_html( $c::LABELS['next'] ) . '</button> <button class="lld-button lld-button-secondary" type="submit" name="lld_hw_qod_do" value="skip" formnovalidate>' . esc_html( $c::LABELS['skip'] ) . '</button></div></form>';
 		}
 		return $html . '<p class="lld-hint">' . esc_html( $c::LABELS['qod_intro'] ) . '</p></section>';
 	}
 
 	/**
-	 * Save a quick question's answer, or its skip.
+	 * Save a quick question's answers, or its skip (every question behind its key).
 	 *
 	 * @param int $member_id Member number.
 	 * @return true|WP_Error|null Null when nothing valid was posted.
@@ -209,23 +246,31 @@ class LLD_Members_Hw_Questions_Screen {
 	public static function save_qod( $member_id ) {
 		$c   = 'LLD_Members_Hw_Screen_Parts';
 		$key = isset( $_POST['lld_hw_qod_key'] ) ? sanitize_key( wp_unslash( $_POST['lld_hw_qod_key'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- checked by the caller.
-		$q   = '' !== $key ? $c::question( $key ) : null;
-		if ( ! $q ) {
+		$qs  = '' !== $key ? self::qod_questions( $key ) : array();
+		if ( ! $qs ) {
 			return null;
 		}
 		if ( isset( $_POST['lld_hw_qod_do'] ) && 'skip' === $_POST['lld_hw_qod_do'] ) { // phpcs:ignore WordPress.Security.NonceVerification
-			if ( $c::has( $c::ANSWERS, 'skip' ) ) {
-				LLD_Members_HW_Answers::skip( (int) $member_id, $key );
-				return true;
+			foreach ( $qs as $q ) {
+				$got = $c::has( $c::ANSWERS, 'skip' ) ? LLD_Members_HW_Answers::skip( (int) $member_id, $q['key'] ) : $c::set_answer( $member_id, $q['key'], null );
+				if ( is_wp_error( $got ) ) {
+					return $got;
+				}
 			}
-			return $c::set_answer( $member_id, $key, null );
+			return true;
 		}
 		$posted = isset( $_POST['lld_hw'] ) && is_array( $_POST['lld_hw'] ) ? wp_unslash( $_POST['lld_hw'] ) : array(); // phpcs:ignore WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput -- checked in clean().
-		$v      = self::clean( $q, isset( $posted[ $key ] ) ? $posted[ $key ] : null );
-		if ( null === $v ) {
+		$values = array();
+		foreach ( $qs as $q ) {
+			$v = self::clean( $q, isset( $posted[ $q['key'] ] ) ? $posted[ $q['key'] ] : null );
+			if ( null !== $v ) {
+				$values = $values + array( $q['key'] => $v ) + self::follow_up_value( $q, $v, $posted );
+			}
+		}
+		if ( ! $values ) {
 			return null;
 		}
-		foreach ( array( $key => $v ) + self::follow_up_value( $q, $v, $posted ) as $k => $value ) {
+		foreach ( $values as $k => $value ) {
 			$got = $c::set_answer( $member_id, $k, $value );
 			if ( is_wp_error( $got ) ) {
 				return $got;

@@ -223,7 +223,10 @@ test.describe.serial('P3-31 goal setting, starting measurements and the plan', (
     await weightGoal(page, { current: 90, target: 84, pace: null });
     const paceStep = page.locator('[data-lld-goal-step="pace"]');
     await expect(paceStep.locator('input[name="lld_hw_pace"][value="1"]')).toHaveCount(0);
+    // rows() reads the members' interface from Today, so the pace step is opened again after it.
+    const paceUrl = page.url();
     const before = (await rows(page, 'goals')).find((g) => g.role === 'main');
+    await page.goto(paceUrl);
     await paceStep.locator('input[name="lld_hw_pace"][value="date"]').check();
     await page.locator('#lld_date').fill(dateOf(28)); // 1.5 kg a week
     await step(page, paceStep.getByRole('button', { name: 'Next' }));
@@ -235,6 +238,7 @@ test.describe.serial('P3-31 goal setting, starting measurements and the plan', (
     expect(after.chosen_rate ?? null).toBeNull();
     expect(after.target_date).toBe(before.target_date);
     // A faster pace sent anyway is refused the same way.
+    await page.goto(paceUrl);
     await page.locator('[data-lld-goal-step="pace"] input[name="lld_hw_pace"]').first().evaluate((el) => { el.value = '1'; el.checked = true; });
     await step(page, page.locator('[data-lld-goal-step="pace"]').getByRole('button', { name: 'Next' }));
     await expect(page).toHaveURL(/\/members\/goal\/\?done=\d+&hw=pace$/);
