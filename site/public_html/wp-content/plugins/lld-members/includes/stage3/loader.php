@@ -35,6 +35,7 @@ require_once __DIR__ . '/class-installable.php';
 require_once __DIR__ . '/class-consent-stage3.php';
 require_once __DIR__ . '/class-export-stage3.php';
 require_once __DIR__ . '/class-content-stage3.php';
+require_once __DIR__ . '/class-content-hw.php';
 require_once __DIR__ . '/class-safety-stage3.php';
 require_once __DIR__ . '/engine/class-rule-catalogue.php';
 require_once __DIR__ . '/engine/class-decision-engine.php';
@@ -72,6 +73,7 @@ function lld_members_stage3_boot() {
 	lld_members_stage3_screens_boot();
 	LLD_Members_Stage3_Erasure::boot();
 	LLD_Members_Stage3_Content::boot();
+	LLD_Members_HW_Content::boot();
 	LLD_Members_Stage3_Safety::boot();
 	LLD_Members_Insights_Runner::boot();
 	LLD_Members_Stripe_API::boot();
