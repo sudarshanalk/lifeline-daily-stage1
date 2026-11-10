@@ -1,0 +1,236 @@
+{
+  "group": "Weekly drinks and drink calories DRK-01 to DRK-10 (P3-35 method sheet 5.4, D3-55 to D3-57)",
+  "tool": "healthy-weight-programme",
+  "fixtures": [
+    {
+      "id": "FX-HWP-DRK-01",
+      "purpose": "DRK-01: never, - a time",
+      "inputs": {
+        "source_id": "DRK-01",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "never"
+        }
+      },
+      "expected": {
+        "weekly_drinks": null,
+        "weekly_kcal": null,
+        "daily_kcal": null,
+        "support_card": false,
+        "alcohol_step": "none",
+        "line": null
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-DRK-02",
+      "purpose": "DRK-02: less_than_weekly, 1_2 a time",
+      "inputs": {
+        "source_id": "DRK-02",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "less_than_weekly",
+          "alcohol_amount": "1_2"
+        }
+      },
+      "expected": {
+        "weekly_drinks": 0.75,
+        "weekly_kcal": 100,
+        "daily_kcal": 10,
+        "support_card": false,
+        "alcohol_step": "none"
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-DRK-03",
+      "purpose": "DRK-03: 1_2_days, 1_2 a time",
+      "inputs": {
+        "source_id": "DRK-03",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "1_2_days",
+          "alcohol_amount": "1_2"
+        }
+      },
+      "expected": {
+        "weekly_drinks": 2.25,
+        "weekly_kcal": 290,
+        "daily_kcal": 40,
+        "support_card": false,
+        "alcohol_step": "none"
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-DRK-04",
+      "purpose": "DRK-04: 1_2_days, 3_4 a time",
+      "inputs": {
+        "source_id": "DRK-04",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "1_2_days",
+          "alcohol_amount": "3_4"
+        }
+      },
+      "expected": {
+        "weekly_drinks": 5.25,
+        "weekly_kcal": 680,
+        "daily_kcal": 100,
+        "support_card": false,
+        "alcohol_step": "none"
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-DRK-05",
+      "purpose": "DRK-05: 3_4_days, 1_2 a time",
+      "inputs": {
+        "source_id": "DRK-05",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "3_4_days",
+          "alcohol_amount": "1_2"
+        }
+      },
+      "expected": {
+        "weekly_drinks": 5.25,
+        "weekly_kcal": 680,
+        "daily_kcal": 100,
+        "support_card": false,
+        "alcohol_step": "free_day"
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-DRK-06",
+      "purpose": "DRK-06: 3_4_days, 3_4 a time",
+      "inputs": {
+        "source_id": "DRK-06",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "3_4_days",
+          "alcohol_amount": "3_4"
+        }
+      },
+      "expected": {
+        "weekly_drinks": 12.25,
+        "weekly_kcal": 1590,
+        "daily_kcal": 230,
+        "support_card": true,
+        "alcohol_step": "free_day"
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-DRK-07",
+      "purpose": "DRK-07: most_days, 1_2 a time",
+      "inputs": {
+        "source_id": "DRK-07",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "most_days",
+          "alcohol_amount": "1_2"
+        }
+      },
+      "expected": {
+        "weekly_drinks": 9,
+        "weekly_kcal": 1170,
+        "daily_kcal": 170,
+        "support_card": true,
+        "alcohol_step": "free_day"
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-DRK-08",
+      "purpose": "DRK-08: most_days, 3_4 a time",
+      "inputs": {
+        "source_id": "DRK-08",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "most_days",
+          "alcohol_amount": "3_4"
+        }
+      },
+      "expected": {
+        "weekly_drinks": 21,
+        "weekly_kcal": 2730,
+        "daily_kcal": 390,
+        "support_card": true,
+        "alcohol_step": "free_day"
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-DRK-09",
+      "purpose": "DRK-09: less_than_weekly, 5_plus a time",
+      "inputs": {
+        "source_id": "DRK-09",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "less_than_weekly",
+          "alcohol_amount": "5_plus"
+        }
+      },
+      "expected": {
+        "weekly_drinks": 2.5,
+        "weekly_kcal": 330,
+        "daily_kcal": 50,
+        "support_card": true,
+        "alcohol_step": "free_day"
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-DRK-10",
+      "purpose": "DRK-10: most_days, 5_plus a time",
+      "inputs": {
+        "source_id": "DRK-10",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "most_days",
+          "alcohol_amount": "5_plus"
+        }
+      },
+      "expected": {
+        "weekly_drinks": 30,
+        "weekly_kcal": 3900,
+        "daily_kcal": 560,
+        "support_card": true,
+        "alcohol_step": "one_fewer"
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    }
+  ]
+}
