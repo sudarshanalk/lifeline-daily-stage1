@@ -44,6 +44,10 @@ class LLD_Members_Hw_Screen_Parts {
 		'q.waist'                 => 'Waist (optional)',
 		'q.bg'                    => 'Your family background',
 		'q.mixed'                 => 'Does your family background include any of the groups above?',
+		'q.eat'                   => 'Do you have, or have you had, an eating disorder, or are you worried about your eating?',
+		'q.eatWhy'                => 'We ask because numbers about weight are not helpful for everyone. Your answer stays on this page.',
+		'options.eat'             => '[["yes","Yes"],["no","No"],["prefer","Prefer not to say"]]',
+		'errors.eat'              => 'Please choose an answer.',
 		'q.submit'                => 'See my result',
 		'options.bg'              => '[["White","White"],["Indian","Indian"],["Pakistani","Pakistani"],["Bangladeshi","Bangladeshi"],["OtherSouthAsian","Other South Asian"],["Chinese","Chinese"],["OtherAsian","Other Asian"],["MiddleEastern","Middle Eastern"],["BlackAfrican","Black African"],["BlackCaribbean","Black Caribbean (African-Caribbean)"],["Mixed","Mixed or other"],["NotSay","Prefer not to say"]]',
 		'options.mixed'           => '[["yes","Yes"],["no","No"],["notsure","Not sure"]]',
@@ -156,7 +160,7 @@ class LLD_Members_Hw_Screen_Parts {
 	);
 
 	/** Food rules that exclude alcohol: its questions are skipped and "never" is recorded (FR3-98 AS-08). */
-	const NO_ALCOHOL_RULES = array( 'halal', 'jain', 'no_alcohol' );
+	const NO_ALCOHOL_RULES = array( 'halal', 'jain' );
 
 	// ---- Guards and data (P2) -----------------------------------------------------------------------------------------
 
@@ -274,7 +278,49 @@ class LLD_Members_Hw_Screen_Parts {
 	 * @param array $facts LLD_Members_Goal_Journey::facts().
 	 */
 	public static function ed( array $facts ) {
-		return in_array( 'eating_disorder', isset( $facts['situations'] ) ? (array) $facts['situations'] : array(), true );
+		if ( in_array( 'eating_disorder', isset( $facts['situations'] ) ? (array) $facts['situations'] : array(), true ) ) {
+			return true;
+		}
+		// The Check's own question on "where you are now": yes, or prefer not to say (S1).
+		$answer = isset( $facts['member_id'] ) ? self::answer( (int) $facts['member_id'], 'eating_disorder' ) : null;
+		return in_array( $answer, array( 'yes', 'prefer' ), true );
+	}
+
+	/**
+	 * Whether P2 says R-HW-SAFE-01 stops the programme for this view (pregnancy or an eating disorder reported, at any
+	 * time): the screen then shows only the stop.
+	 *
+	 * @param array|null $view plan_view(), today() or blocks().
+	 */
+	public static function stopped( $view ) {
+		return is_array( $view ) && ! empty( $view['stopped'] ) && isset( $view['stop'] ) && is_array( $view['stop'] );
+	}
+
+	/**
+	 * The SCR-26 stop: the Healthy Weight Check's own stop wording, then the safety matrix's note. No number.
+	 *
+	 * @param array $stop The view's stop: {rule, stop: pregnancy|eating|under18, screen, note_key, note}.
+	 */
+	public static function stop_html( array $stop ) {
+		$key  = isset( $stop['stop'] ) ? (string) $stop['stop'] : '';
+		$html = '<section class="lld-card lld-hw-stop" data-lld-section="hw-stop" data-lld-hw-stop="' . esc_attr( $key ) . '" data-lld-screen="SCR-26">';
+		if ( '' !== self::check( 'stops.' . $key . '.title' ) ) {
+			$html .= '<h2>' . esc_html( self::check( 'stops.' . $key . '.title' ) ) . '</h2><p>' . self::linked( self::check( 'stops.' . $key . '.body' ) ) . '</p>';
+		}
+		if ( ! empty( $stop['note'] ) && is_string( $stop['note'] ) ) {
+			$html .= '<p data-lld-matrix-note="' . esc_attr( isset( $stop['note_key'] ) ? (string) $stop['note_key'] : '' ) . '">' . esc_html( $stop['note'] ) . '</p>';
+		}
+		return $html . '</section>';
+	}
+
+	/**
+	 * The goal's pace is not chosen yet (S6): "Your pace", with the button back to the pace step.
+	 *
+	 * @param int $goal_id The weight-loss goal.
+	 */
+	public static function pace_pending_html( $goal_id ) {
+		$href = home_url( '/members/goal/?done=' . (int) $goal_id . '&hw=pace' );
+		return '<section class="lld-card" data-lld-section="hw-pace-pending" data-lld-pace="not-chosen"><h2>' . esc_html( self::LABELS['pace_title'] ) . '</h2><p>' . lld_button( array( 'label' => self::LABELS['next'], 'href' => $href ) ) . '</p></section>';
 	}
 
 	// ---- Approved content (P3) ----------------------------------------------------------------------------------------

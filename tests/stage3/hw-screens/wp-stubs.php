@@ -114,6 +114,9 @@ if ( getenv( 'LLD_HW_STUBS' ) ) {
 			$GLOBALS['writes'][] = array( 'carry_on' );
 			return true;
 		}
+		public static function pending_pace( $m ) {
+			return isset( $GLOBALS['fx']['pending_pace'] ) ? $GLOBALS['fx']['pending_pace'] : null;
+		}
 	}
 	/** P2 stand-in. */
 	class LLD_Members_HW_Answers {

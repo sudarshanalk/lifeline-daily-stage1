@@ -35,13 +35,14 @@ class LLD_Members_Hw_Where_Screen {
 		}
 		$sit = isset( $facts['situations'] ) ? (array) $facts['situations'] : array();
 		$age = isset( $facts['age'] ) ? (int) $facts['age'] : 0;
+		$eat = isset( $answers['eating_disorder'] ) ? $answers['eating_disorder'] : null; // the Check's own question (S1)
 		$in  = array(
 			'weight_kg'       => isset( $facts['weight_kg'] ) ? $facts['weight_kg'] : null,
 			'height_cm'       => isset( $facts['height_cm'] ) ? $facts['height_cm'] : null,
 			'waist_cm'        => self::waist( $member_id, $facts ),
 			'age'             => $age > 0 ? $age : null,
 			'pregnant'        => in_array( 'pregnancy', $sit, true ) ? 'yes' : 'no',
-			'eating_disorder' => in_array( 'eating_disorder', $sit, true ) ? 'yes' : 'no',
+			'eating_disorder' => in_array( 'eating_disorder', $sit, true ) || 'yes' === $eat ? 'yes' : ( 'prefer' === $eat ? 'pnts' : 'no' ),
 			'ethnicity'       => self::ethnicity( $member_id, $facts ),
 			'bmi_background'  => isset( $answers['bmi_background'] ) ? $answers['bmi_background'] : null,
 		);
@@ -171,6 +172,14 @@ class LLD_Members_Hw_Where_Screen {
 		if ( is_array( $where ) && ! empty( $where['stop'] ) ) {
 			return '';
 		}
+		if ( self::ask_eating( $answers, $facts ) ) {
+			// The Healthy Weight Check's own approved question, asked once (the Stage 2 profile holds only yes or no).
+			$html .= '<div class="lld-hw-question" data-lld-question="eating_disorder"><fieldset class="lld-options" aria-describedby="lld-hw-eat-why"><legend>' . esc_html( $c::check( 'q.eat' ) ) . '</legend>';
+			foreach ( $c::check_options( 'options.eat' ) as $o ) {
+				$html .= '<div class="lld-option"><label><input type="radio" name="lld_hw_eat" value="' . esc_attr( $o[0] ) . '"> ' . esc_html( $o[1] ) . '</label></div>';
+			}
+			$html .= '</fieldset><p class="lld-hint" id="lld-hw-eat-why">' . esc_html( $c::check( 'q.eatWhy' ) ) . '</p></div>';
+		}
 		if ( is_array( $where ) && ! empty( $where['ask_background'] ) ) {
 			// The Check's question and its mixed follow-up (D3-54), with the reason line signed with the method sheet.
 			$q     = $c::question( 'bmi_background' );
@@ -251,13 +260,46 @@ class LLD_Members_Hw_Where_Screen {
 	}
 
 	/**
+	 * Whether "where you are now" asks the Check's eating-disorder question: P2 is there, the Stage 2 profile does not
+	 * flag an eating disorder, and the question is not answered yet.
+	 *
+	 * @param array $answers Answers.
+	 * @param array $facts   facts().
+	 */
+	public static function ask_eating( array $answers, array $facts ) {
+		$sit = isset( $facts['situations'] ) ? (array) $facts['situations'] : array();
+		return LLD_Members_Hw_Screen_Parts::has( LLD_Members_Hw_Screen_Parts::ANSWERS, 'set' ) && ! in_array( 'eating_disorder', $sit, true ) && ( ! isset( $answers['eating_disorder'] ) || null === $answers['eating_disorder'] );
+	}
+
+	/**
+	 * Save the posted eating-disorder answer (yes, no or prefer not to say) as a sealed programme answer. Nothing when
+	 * none was chosen.
+	 *
+	 * @param int $member_id Member number.
+	 * @return string|null|WP_Error The answer saved, null when none was posted.
+	 */
+	public static function save_eating( $member_id ) {
+		$c   = 'LLD_Members_Hw_Screen_Parts';
+		$eat = isset( $_POST['lld_hw_eat'] ) ? sanitize_key( wp_unslash( $_POST['lld_hw_eat'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- checked by the caller.
+		if ( '' === $eat || ! in_array( $eat, array_column( $c::check_options( 'options.eat' ), 0 ), true ) ) {
+			return null;
+		}
+		$got = $c::set_answer( $member_id, 'eating_disorder', $eat );
+		return is_wp_error( $got ) ? $got : $eat;
+	}
+
+	/**
 	 * Save the background and activity answers posted with fields_html().
 	 *
 	 * @param int $member_id Member number.
 	 * @return true|WP_Error
 	 */
 	public static function save_fields( $member_id ) {
-		$c  = 'LLD_Members_Hw_Screen_Parts';
+		$c   = 'LLD_Members_Hw_Screen_Parts';
+		$got = self::save_eating( $member_id );
+		if ( is_wp_error( $got ) ) {
+			return $got;
+		}
 		$bg = isset( $_POST['lld_hw_bg'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_hw_bg'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- checked by the caller.
 		if ( '' !== $bg && in_array( $bg, array_column( $c::check_options( 'options.bg' ), 0 ), true ) ) {
 			$mixed = isset( $_POST['lld_hw_mixed'] ) ? sanitize_key( wp_unslash( $_POST['lld_hw_mixed'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification

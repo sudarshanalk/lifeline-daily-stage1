@@ -116,6 +116,10 @@ class LLD_Members_Hw_Plan_Screen {
 	 */
 	public static function pace_html( array $view, array $facts, $action, $error = '' ) {
 		$c       = 'LLD_Members_Hw_Screen_Parts';
+		if ( $c::stopped( $view ) ) {
+			// R-HW-SAFE-01 at any time (pregnancy or an eating disorder): the SCR-26 stop and no number at all.
+			return '<div class="lld-stage3-goal lld-hw" data-lld-goal-step="pace"><h1>' . esc_html( $c::LABELS['pace_title'] ) . '</h1>' . $c::stop_html( $view['stop'] ) . '</div>';
+		}
 		$pace    = isset( $view['pace'] ) && is_array( $view['pace'] ) ? $view['pace'] : array();
 		$lines   = self::pace_lines( $pace );
 		$chosen  = isset( $pace['chosen'] ) ? (float) $pace['chosen'] : ( isset( $pace['recommended'] ) ? (float) $pace['recommended'] : 0.5 );
@@ -263,6 +267,9 @@ class LLD_Members_Hw_Plan_Screen {
 	 */
 	public static function plan_html( array $view, array $facts ) {
 		$c     = 'LLD_Members_Hw_Screen_Parts';
+		if ( $c::stopped( $view ) ) {
+			return $c::stop_html( $view['stop'] ); // the SCR-26 stop: no target, milestones, drinks line or reasons
+		}
 		$ed    = $c::ed( $facts );
 		$cards = isset( $view['cards'] ) && is_array( $view['cards'] ) ? $view['cards'] : array();
 		$drink = false; // the drinking card: nothing about weight or calories beside it (R-HW-SAFE-05)

@@ -103,6 +103,11 @@ class LLD_Members_Goal_Setting {
 			if ( 'help' === $action ) {
 				$suggestion = LLD_Members_Goal_Rules::suggest( $facts );
 			} elseif ( 'save' === $action && '' !== $type ) {
+				if ( 'lose_weight' === $type && self::hw_flow() && 'yes' === LLD_Members_Hw_Where_Screen::save_eating( $member_id ) ) {
+					// P3-35 (SAFE-01): an eating disorder told on "where you are now" stops here, with no weight goal saved.
+					wp_safe_redirect( home_url( '/members/goal/?hw=where' ) );
+					exit;
+				}
 				$id = LLD_Members_Goal_Journey::create_goal( $member_id, $role, $type, self::posted( $facts ) + array( 'facts' => $facts ) );
 				if ( is_wp_error( $id ) ) {
 					$error = $id->get_error_message();
@@ -244,8 +249,8 @@ class LLD_Members_Goal_Setting {
 				if ( 'lose_weight' === $type && $hw_on ) {
 					$target = isset( $offered['goal_kg'] ) ? LLD_Members_Goal_Rules::plain( $imp ? LLD_Members_Goal_Rules::round1( $offered['goal_kg'] / 0.45359237 ) : $offered['goal_kg'] ) : ( $p['lld_target'] ?? '' );
 					$html  .= self::number( 'lld_target', 'Goal weight, in ' . ( $imp ? 'pounds' : 'kilograms' ), $target, 0.1 );
-					$rate   = isset( $offered['rate'] ) ? (float) $offered['rate'] : LLD_Members_Goal_Rules::DEFAULT_RATE;
-					$html  .= '<input type="hidden" name="lld_rate" value="' . esc_attr( LLD_Members_Goal_Rules::plain( $rate ) ) . '">';
+					// No rate is sent with the goal: the member chooses the pace on the next step (S6), so the goal step
+					// never refuses a rate the member did not choose (a member under 50 kg reaches the pace step).
 					$html  .= '<p class="lld-hint">' . esc_html( LLD_Members_Goal_Rules::MESSAGES['plateau'] ) . '</p>';
 				} elseif ( 'lose_weight' === $type ) {
 					$target = isset( $offered['goal_kg'] ) ? LLD_Members_Goal_Rules::plain( $imp ? LLD_Members_Goal_Rules::round1( $offered['goal_kg'] / 0.45359237 ) : $offered['goal_kg'] ) : ( $p['lld_target'] ?? '' );
@@ -340,7 +345,9 @@ class LLD_Members_Goal_Setting {
 		// P3-35: the Healthy Weight plan (pace, calorie target, why, support cards) replaces the general targets.
 		$hw_view = 'main' === (string) $goal['role'] && 'lose_weight' === (string) $goal['goal_type'] && self::hw_flow() ? LLD_Members_Hw_Screen_Parts::plan_view( $member_id, (string) $facts['today'] ) : null;
 		if ( $hw_view ) {
-			$html .= LLD_Members_Hw_Plan_Screen::plan_html( $hw_view, $facts );
+			// Until a pace is chosen the goal reads as "pace not chosen", with the way back to the pace step (S6).
+			$pending = LLD_Members_Hw_Screen_Parts::call( LLD_Members_Hw_Screen_Parts::PROGRAMME, 'pending_pace', array( (int) $member_id ) );
+			$html   .= is_numeric( $pending ) && (int) $pending === (int) $goal['id'] ? LLD_Members_Hw_Screen_Parts::pace_pending_html( (int) $goal['id'] ) : LLD_Members_Hw_Plan_Screen::plan_html( $hw_view, $facts );
 		}
 		if ( 'extra' === (string) $goal['role'] ) {
 			$html .= '<p>' . lld_button( array( 'label' => 'Go to Today', 'href' => home_url( '/members/home/' ) ) ) . '</p></div>';

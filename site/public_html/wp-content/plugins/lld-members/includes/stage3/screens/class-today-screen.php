@@ -126,6 +126,8 @@ class LLD_Members_Today_Screen {
 		$html .= self::next_step_html( $member_id, $facts, $hw );
 		if ( $hw ) {
 			$html .= self::hw_today_html( $member_id, $facts, $hw );
+		} elseif ( $facts['health'] ) {
+			$html .= self::hw_pace_pending_html( $member_id );
 		}
 		$html .= '<div class="lld-dash-pair">' . self::ring_html( $member_id, $facts ) . self::tiles_html( $member_id, $facts ) . '</div>';
 		$html .= self::goal_card_html( $member_id, $facts, $main_goal );
@@ -153,6 +155,9 @@ class LLD_Members_Today_Screen {
 	 */
 	private static function hw_today_html( $member_id, array $facts, array $hw ) {
 		$c    = 'LLD_Members_Hw_Screen_Parts';
+		if ( $c::stopped( $hw ) ) {
+			return $c::stop_html( $hw['stop'] ); // R-HW-SAFE-01 at any time: only the SCR-26 stop
+		}
 		$html = '';
 		// The note (FR3-105): readable on a 360-pixel screen with no sideways scroll (AS-04).
 		$note = isset( $hw['note'] ) && is_array( $hw['note'] ) ? $hw['note'] : null;
@@ -213,6 +218,20 @@ class LLD_Members_Today_Screen {
 			$html .= '<p>' . lld_button( array( 'label' => $c::LABELS['next'], 'href' => home_url( '/members/goal/?hw=blocks' ) ) ) . '</p></section>';
 		}
 		return $html;
+	}
+
+	/**
+	 * A weight-loss goal saved at the goal step whose pace is still to choose (S6): Today asks the member to finish
+	 * choosing it.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function hw_pace_pending_html( $member_id ) {
+		if ( ! class_exists( 'LLD_Members_Hw_Screen_Parts' ) || ! LLD_Members_Goal_Setting::hw_flow() ) {
+			return '';
+		}
+		$goal = LLD_Members_Hw_Screen_Parts::call( LLD_Members_Hw_Screen_Parts::PROGRAMME, 'pending_pace', array( (int) $member_id ) );
+		return is_numeric( $goal ) && (int) $goal > 0 ? LLD_Members_Hw_Screen_Parts::pace_pending_html( (int) $goal ) : '';
 	}
 
 	/**
