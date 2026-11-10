@@ -1,0 +1,38 @@
+{
+  "approval_id": "APR-HEALTHY-WEIGHT-PROGRAMME-2026-11-10",
+  "tool_slug": "healthy-weight-programme",
+  "version_hash": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+  "engine_name": "Healthy Weight programme engine (P3-35; FR3-97 to FR3-110, FR3-36): \"where you are now\" from the Healthy Weight Check engine ported to PHP (BMI 1 dp half-up; standard bands 18.5, 25, 30 and the lower cut-offs 23 and 27.5; waist-to-height 2 dp, not shown at BMI 35 or more; healthy range 18.45 x h2 rounded up to 22.95 or 24.95 x h2 rounded down, to 0.1 kg), the background choice D3-54, milestones (5 %, 10 %, top of the healthy range, the goal; weeks rounded up as P3-56), weekly drinks (days x drinks a time, \"5 or more\" = 5) at 130 kcal a pictured drink rounded to the nearest 10, the drinking card above 8 a week or at 5 or more a time, and the rule catalogue v1.3 section 9 rules (pace, steps, notes, reminders, food, plateau, focus blocks and the festival day map).",
+  "intended_use": "Builds and adjusts a Healthy Weight member's plan from their saved measurements, answers and logs. Pure functions with no database; package P2 calls them and shows only owner-approved wording and content.",
+  "eligibility": "Members on Healthy Weight with health consent. Not offered in pregnancy or breastfeeding, with an eating disorder, or under 18 (R-HW-SAFE-01); no BMI bands in pregnancy or under 18; no drink calorie figure with an eating-disorder flag.",
+  "sources": [
+    "04 Health Tools/Stage 3/P3-35-Where-You-Are-Now-Method-Sheet.md (signed 6 Nov 2026, D3-54 to D3-57; record Signoff-P3-35-Where-You-Are-Now.md).",
+    "Healthy Weight Check (FR2-39), signed off as AS-19 on 31 Oct 2026; frozen fixtures fixtures/healthy-weight/, oracle ORC-05.",
+    "Rule catalogue v1.3 section 9 (D3-58, D3-59): approvals/stage3/decision-rules.json.",
+    "Approved food-rule tags for recipes R-103 to R-176 (10 Nov 2026, FT-Q1 to FT-Q5 all A)."
+  ],
+  "limitations": [
+    "BMI and waist-to-height ratio are screening measures, not a diagnosis; self-reported measurements.",
+    "One pictured drink is an average (about 12.5 g of alcohol, 130 kcal); drinks differ.",
+    "The Healthy Weight Check itself is not changed; the port is proved equal on every frozen fixture."
+  ],
+  "regulatory_statement": "Method sheet signed by the owner as clinical reviewer on 6 November 2026 (NFR3-14; D3-54 to D3-57); rules and templates signed as catalogue versions 1.2 (D3-58, 6 Nov 2026) and 1.3 (D3-59, 10 Nov 2026). General health information, not a diagnosis or a medical device. Frozen: any change needs a new decision.",
+  "licence": "Lifeline Daily's own rules; BMI and waist-to-height thresholds from NICE NG246 and WHO.",
+  "copy_hashes": {},
+  "decisions_ratified": [
+    "D3-54",
+    "D3-55",
+    "D3-56",
+    "D3-57",
+    "D3-58",
+    "D3-59"
+  ],
+  "clinical_signoff": {
+    "name": "Product owner (sudarshanalk), acting as clinical reviewer",
+    "date": "2026-11-10",
+    "decision": "approved",
+    "notes": "P3-35 method sheet signed 6 Nov 2026 (\"Yes, all four\": D3-54 A background from the profile or the Check's question once; D3-55 A card above 8 pictured drinks a week or 5 or more a time; D3-56 A 130 kcal a drink; D3-57 A \"5 or more\" counts as 5). The wording is the rule catalogue's, hashed in approvals/stage3/decision-rules.json, so copy_hashes here is empty. Fixtures fixtures/healthy-weight-programme/ are taken from the fixture tables of the signed rule draft (sections 2 to 12, members A and B), the R-HW-BLOCK-03 change draft (HWB-03a to f) and this sheet (DRK-01 to 10)."
+  },
+  "review_date": "2026-11-10",
+  "next_review_date": "2027-11-10"
+}

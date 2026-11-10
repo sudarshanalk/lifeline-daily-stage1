@@ -1,0 +1,476 @@
+{
+  "_about": "Content metadata for the Healthy Weight programme engine tests (P3-35): the 56 approved level 1 and 2 activities with their programme week (level 2 weeks 1 to 4 are programme weeks 5 to 8), day and habit tags, and the one high-intensity item with its steady-walk alternative, from the approved `02 Content/Programme content/healthy-weight-programme/HW-P3-35-06-Stretch-Versions-and-Habit-Tags.md` (9 Nov 2026). IDs and tags only: no member-facing wording. Not a fixture file (no `fixtures` key).",
+  "source": "HW-P3-35-06 v0.1, approved 9 Nov 2026 (H1 to H6 all A)",
+  "activities": [
+    {
+      "id": "HW-W1-A1",
+      "week": 1,
+      "day": 1,
+      "tags": [
+        "mindset"
+      ]
+    },
+    {
+      "id": "HW-W1-A2",
+      "week": 1,
+      "day": 2,
+      "tags": [
+        "tracking"
+      ]
+    },
+    {
+      "id": "HW-W1-A3",
+      "week": 1,
+      "day": 3,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW-W1-A4",
+      "week": 1,
+      "day": 4,
+      "tags": [
+        "drinks"
+      ]
+    },
+    {
+      "id": "HW-W1-A5",
+      "week": 1,
+      "day": 5,
+      "tags": [
+        "activity",
+        "walking"
+      ]
+    },
+    {
+      "id": "HW-W1-A6",
+      "week": 1,
+      "day": 6,
+      "tags": [
+        "evening-eating",
+        "stress-eating",
+        "snacking"
+      ]
+    },
+    {
+      "id": "HW-W1-A7",
+      "week": 1,
+      "day": 7,
+      "tags": [
+        "mindset"
+      ]
+    },
+    {
+      "id": "HW-W2-A1",
+      "week": 2,
+      "day": 1,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW-W2-A2",
+      "week": 2,
+      "day": 2,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW-W2-A3",
+      "week": 2,
+      "day": 3,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW-W2-A4",
+      "week": 2,
+      "day": 4,
+      "tags": [
+        "breakfast-protein",
+        "meals"
+      ]
+    },
+    {
+      "id": "HW-W2-A5",
+      "week": 2,
+      "day": 5,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW-W2-A6",
+      "week": 2,
+      "day": 6,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW-W2-A7",
+      "week": 2,
+      "day": 7,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW-W3-A1",
+      "week": 3,
+      "day": 1,
+      "tags": [
+        "drink-swap"
+      ]
+    },
+    {
+      "id": "HW-W3-A2",
+      "week": 3,
+      "day": 2,
+      "tags": [
+        "snacking"
+      ]
+    },
+    {
+      "id": "HW-W3-A3",
+      "week": 3,
+      "day": 3,
+      "tags": [
+        "evening-eating"
+      ]
+    },
+    {
+      "id": "HW-W3-A4",
+      "week": 3,
+      "day": 4,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW-W3-A5",
+      "week": 3,
+      "day": 5,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW-W3-A6",
+      "week": 3,
+      "day": 6,
+      "tags": [
+        "snacking",
+        "stress-eating",
+        "evening-eating"
+      ]
+    },
+    {
+      "id": "HW-W3-A7",
+      "week": 3,
+      "day": 7,
+      "tags": [
+        "eating-out"
+      ]
+    },
+    {
+      "id": "HW-W4-A1",
+      "week": 4,
+      "day": 1,
+      "tags": [
+        "activity",
+        "walking"
+      ]
+    },
+    {
+      "id": "HW-W4-A2",
+      "week": 4,
+      "day": 2,
+      "tags": [
+        "activity",
+        "short-activity"
+      ]
+    },
+    {
+      "id": "HW-W4-A3",
+      "week": 4,
+      "day": 3,
+      "tags": [
+        "activity",
+        "short-activity",
+        "walking"
+      ]
+    },
+    {
+      "id": "HW-W4-A4",
+      "week": 4,
+      "day": 4,
+      "tags": [
+        "mindset"
+      ]
+    },
+    {
+      "id": "HW-W4-A5",
+      "week": 4,
+      "day": 5,
+      "tags": [
+        "mindset"
+      ]
+    },
+    {
+      "id": "HW-W4-A6",
+      "week": 4,
+      "day": 6,
+      "tags": [
+        "mindset"
+      ]
+    },
+    {
+      "id": "HW-W4-A7",
+      "week": 4,
+      "day": 7,
+      "tags": [
+        "mindset"
+      ]
+    },
+    {
+      "id": "HW2-W1-A1",
+      "week": 5,
+      "day": 1,
+      "tags": [
+        "mindset"
+      ]
+    },
+    {
+      "id": "HW2-W1-A2",
+      "week": 5,
+      "day": 2,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW2-W1-A3",
+      "week": 5,
+      "day": 3,
+      "tags": [
+        "snacking",
+        "meals"
+      ]
+    },
+    {
+      "id": "HW2-W1-A4",
+      "week": 5,
+      "day": 4,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW2-W1-A5",
+      "week": 5,
+      "day": 5,
+      "tags": [
+        "activity",
+        "tracking"
+      ]
+    },
+    {
+      "id": "HW2-W1-A6",
+      "week": 5,
+      "day": 6,
+      "tags": [
+        "mindset"
+      ]
+    },
+    {
+      "id": "HW2-W1-A7",
+      "week": 5,
+      "day": 7,
+      "tags": [
+        "mindset"
+      ]
+    },
+    {
+      "id": "HW2-W2-A1",
+      "week": 6,
+      "day": 1,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW2-W2-A2",
+      "week": 6,
+      "day": 2,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW2-W2-A3",
+      "week": 6,
+      "day": 3,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW2-W2-A4",
+      "week": 6,
+      "day": 4,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW2-W2-A5",
+      "week": 6,
+      "day": 5,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW2-W2-A6",
+      "week": 6,
+      "day": 6,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW2-W2-A7",
+      "week": 6,
+      "day": 7,
+      "tags": [
+        "meals"
+      ]
+    },
+    {
+      "id": "HW2-W3-A1",
+      "week": 7,
+      "day": 1,
+      "tags": [
+        "activity",
+        "walking"
+      ]
+    },
+    {
+      "id": "HW2-W3-A2",
+      "week": 7,
+      "day": 2,
+      "tags": [
+        "activity",
+        "strength"
+      ]
+    },
+    {
+      "id": "HW2-W3-A3",
+      "week": 7,
+      "day": 3,
+      "tags": [
+        "activity",
+        "walking"
+      ]
+    },
+    {
+      "id": "HW2-W3-A4",
+      "week": 7,
+      "day": 4,
+      "tags": [
+        "activity",
+        "walking"
+      ]
+    },
+    {
+      "id": "HW2-W3-A5",
+      "week": 7,
+      "day": 5,
+      "tags": [
+        "activity",
+        "strength"
+      ]
+    },
+    {
+      "id": "HW2-W3-A6",
+      "week": 7,
+      "day": 6,
+      "tags": [
+        "activity",
+        "walking"
+      ],
+      "high_intensity": true,
+      "alt_id": "HW2-W3-A6-ALT"
+    },
+    {
+      "id": "HW2-W3-A7",
+      "week": 7,
+      "day": 7,
+      "tags": [
+        "activity",
+        "short-activity"
+      ]
+    },
+    {
+      "id": "HW2-W4-A1",
+      "week": 8,
+      "day": 1,
+      "tags": [
+        "stress-eating",
+        "stress"
+      ]
+    },
+    {
+      "id": "HW2-W4-A2",
+      "week": 8,
+      "day": 2,
+      "tags": [
+        "sleep"
+      ]
+    },
+    {
+      "id": "HW2-W4-A3",
+      "week": 8,
+      "day": 3,
+      "tags": [
+        "eating-out"
+      ]
+    },
+    {
+      "id": "HW2-W4-A4",
+      "week": 8,
+      "day": 4,
+      "tags": [
+        "alcohol"
+      ]
+    },
+    {
+      "id": "HW2-W4-A5",
+      "week": 8,
+      "day": 5,
+      "tags": [
+        "mindset"
+      ]
+    },
+    {
+      "id": "HW2-W4-A6",
+      "week": 8,
+      "day": 6,
+      "tags": [
+        "stress"
+      ]
+    },
+    {
+      "id": "HW2-W4-A7",
+      "week": 8,
+      "day": 7,
+      "tags": [
+        "mindset"
+      ]
+    }
+  ]
+}

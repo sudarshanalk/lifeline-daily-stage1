@@ -1,8 +1,14 @@
 <?php
 /**
- * Decision engine rule catalogue, version 1 (P3-34 from P3-02; FR3-17, NFR3-17), written from the owner-signed
+ * Decision engine rule catalogue, version 1.3 (P3-34 from P3-02; FR3-17, NFR3-17), written from the owner-signed
  * `04 Health Tools/Stage 3/P3-02-Decision-Engine-Rule-Catalogue-v1.md` (approval record
  * `approvals/stage3/decision-rules.json`, frozen fixtures `fixtures/decision-rules/`).
+ *
+ * Version 1.2 (D3-58, 6 Nov 2026) added section 9, the Healthy Weight programme rules R-HW-* and their T-HW-*
+ * templates (`P3-02-Healthy-Weight-Programme-Rules-Draft.md`, wording from `P3-02-Healthy-Weight-Templates.md`);
+ * version 1.3 (D3-59, 10 Nov 2026) added R-HW-BLOCK-03. The R-HW rules build and adjust the member's plan: they are a
+ * programme class of their own, outside the insight quota, and are run by `includes/stage3/healthy-weight/`, not by
+ * the nightly engine below. Sections 1 to 8 (the 23 rules) are unchanged.
  *
  * The 23 rules and their message templates. Every template is the owner's wording verbatim: the engine fills only
  * the numbers and dates in braces (FR3-17 AS-04). The test hashes every string against the approval record, so a
@@ -20,13 +26,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Rule_Catalogue {
 
-	const VERSION = '1.1';
+	const VERSION = '1.3';
 
 	const CLASS_SAFETY     = 'safety';
 	const CLASS_STEP       = 'today_step';
 	const CLASS_ADJUSTMENT = 'plan_adjustment';
 	const CLASS_INSIGHT    = 'insight';
 	const CLASS_EVENT      = 'event';
+	const CLASS_PROGRAMME  = 'programme';
 
 	const QUOTA_PER_WEEK    = 3;
 	const QUOTA_WINDOW_DAYS = 7;
@@ -62,6 +69,81 @@ class LLD_Members_Rule_Catalogue {
 		'rule.R-INS-09'             => '**{days}** days in a row of logging. Consistency is what turns small changes into results.',
 		'rule.R-INS-10'             => "You've reached your goal: **{goal}**. [Keep it off] [Set a new goal]",
 		'template.T-GEN-01'         => "Keep logging: we'll start spotting patterns after {n} days",
+	);
+
+	/**
+	 * The Healthy Weight programme templates (catalogue section 9, versions 1.2 and 1.3; D3-58), verbatim from the signed
+	 * templates pack `04 Health Tools/Stage 3/P3-02-Healthy-Weight-Templates.md`, which wins where the rule draft
+	 * differs. Buttons stay on the same line as the text, as in TEMPLATES above. Labels, reason phrases and step titles
+	 * that a template names are keyed under it. Hashed in the approval record's copy_hashes (NFR3-17).
+	 */
+	const HW_TEMPLATES = array(
+		'hw.T-HW-SAFE-03'                          => 'Poor sleep and high stress are hard on anyone. If this goes on for more than two weeks, talk to your doctor. You can try the Sleep and stress check, or add Sleep and Stress as your extra goal. [Sleep and stress check] [Add Sleep and Stress] [Not now]',
+		'hw.T-HW-SAFE-05'                          => 'Drinking less is good for your health as well as your weight, and help is there if you want it. If you drink heavily every day, talk to your doctor before you cut down, because stopping suddenly can be dangerous. [Where to get help] [Not now]',
+		'hw.T-HW-NUM-02'                           => 'A healthy weight range for your height: **{low} to {high} kg**. A guide for your height, not a target. Health is about more than one number.',
+		'hw.T-HW-NUM-04'                           => '**{kg} kg** · {label} · around {date}',
+		'hw.T-HW-NUM-04.label.5pct'                => '5 % of your starting weight',
+		'hw.T-HW-NUM-04.label.10pct'               => '10 % of your starting weight',
+		'hw.T-HW-NUM-04.label.healthy'             => 'Into the healthy range',
+		'hw.T-HW-NUM-04.label.goal'                => 'Your goal',
+		'hw.T-HW-NUM-05'                           => 'Your {target} kcal a day includes drinks. Your usual week of drinks is about {weekly} kcal, roughly {daily} a day.',
+		'hw.T-HW-PACE-01.heading.gentle'           => 'We suggest a gentle pace: 0.25 kg a week',
+		'hw.T-HW-PACE-01.heading.steady'           => 'We suggest a steady pace: 0.5 kg a week',
+		'hw.T-HW-PACE-01.heading.faster'           => 'You could go a little faster: 0.75 kg a week',
+		'hw.T-HW-PACE-01'                          => 'Because {reasons}. A pace you can keep beats a fast start. You can change it.',
+		'hw.T-HW-PACE-01.reason.confidence'        => 'you rated your confidence {n} out of 10',
+		'hw.T-HW-PACE-01.reason.time'              => 'you have less than 10 minutes on most days',
+		'hw.T-HW-PACE-01.reason.shifts'            => 'you work shifts',
+		'hw.T-HW-PACE-01.reason.nights'            => 'you work nights',
+		'hw.T-HW-PACE-01.reason.irregular'         => 'your hours change a lot',
+		'hw.T-HW-PACE-01.reason.stress'            => "you're under a lot of stress right now",
+		'hw.T-HW-PACE-01.reason.faster'            => 'you feel confident, have time and are sleeping well',
+		'hw.T-HW-PACE-01.reason.older'             => 'at 65 and over a steady pace is the safest',
+		'hw.T-HW-PACE-01.reason.steady'            => "it's a pace most people can keep",
+		'hw.T-HW-STEP-01'                          => 'Chosen first because you said {barrier} gets in the way.',
+		'hw.T-HW-STEP-01.barrier.evening_snacking' => 'evening snacking',
+		'hw.T-HW-STEP-01.barrier.stress_eating'    => 'eating when stressed',
+		'hw.T-HW-STEP-01.barrier.eating_out'       => 'eating out',
+		'hw.T-HW-STEP-01.barrier.no_time'          => 'not having time',
+		'hw.T-HW-STEP-01.barrier.alcohol'          => 'drinking',
+		'hw.T-HW-STEP-02'                          => "We've skipped a few steps you already do.",
+		'hw.T-HW-STEP-04'                          => 'Added because short sleep makes us hungrier.',
+		'hw.T-HW-STEP-05'                          => "Added because stress can lead to eating when we're not hungry.",
+		'hw.T-HW-STEP-06'                          => 'Starting where you are: {minutes} minutes.',
+		'hw.T-HW-STEP-06.very_active'              => "Keep your usual exercise. We've added strength twice a week.",
+		'hw.T-HW-ALC-01'                           => 'Added because drinks add calories and can lead to more snacking and poorer sleep.',
+		'hw.T-HW-ALC-01.title.free_day'            => 'Pick one alcohol-free day this week',
+		'hw.T-HW-ALC-01.title.second_day'          => 'Add a second alcohol-free day',
+		'hw.T-HW-ALC-01.title.one_fewer'           => 'Have one drink fewer on one day this week',
+		'hw.R-HW-ALC-02.button'                    => 'Add a drink',
+		'hw.T-HW-FOOD-02.quick'                    => 'Quick to make',
+		'hw.T-HW-FOOD-02.low_cost'                 => 'Low cost',
+		'hw.T-HW-FOOD-02.cuisine'                  => '{cuisine} dish',
+		'hw.T-HW-MOT-01'                           => 'For {reason}: {weeks} weeks to go.',
+		'hw.T-HW-MOT-01.event'                     => "By {event}, you're on course for about {kg} kg.",
+		'hw.T-HW-MOT-02.5pct'                      => "You've reached your first milestone: {kg} kg. Losing 5 % of your weight can lower blood pressure and blood sugar, so this is a real health change.",
+		'hw.T-HW-MOT-02.10pct'                     => "You've reached 10 % of your starting weight: {kg} kg. That brings bigger benefits again, for blood sugar, blood pressure and your joints.",
+		'hw.T-HW-MOT-02.healthy'                   => "You're now in the healthy weight range for your height.",
+		'hw.T-HW-MOT-02.goal'                      => "You've reached your goal of {kg} kg. Next, we'll help you keep it there. [Start Keep It Off]",
+		'hw.T-HW-WEEK-01a'                         => 'Busy weeks happen. Next week your daily steps use the easier versions.',
+		'hw.T-HW-WEEK-01b'                         => "Family life can make it harder. Next week's note has ideas for getting the people you live with on side.",
+		'hw.T-HW-WEEK-01c'                         => "Cravings rise and fall, like a wave. Next week includes a planned snack, so you're ready for them.",
+		'hw.T-HW-WEEK-01d'                         => 'Stress makes all of this harder. Next week includes a short step to help with it.',
+		'hw.T-HW-WEEK-01e'                         => 'Social events are part of life. Next week includes your eating-out plan.',
+		'hw.T-HW-WEEK-01f'                         => "We hope you're feeling better. Next week's steps are easier, and your plan won't change because of this week.",
+		'hw.T-HW-WEEK-01g'                         => 'Good week. Your plan carries on as it is.',
+		'hw.T-HW-WEEK-02'                          => "Your weight has stayed about the same for 3 weeks. That's normal, and it doesn't mean the plan has stopped working. [Start 'Breaking a plateau'] [Keep my current plan]",
+		'hw.T-HW-BLOCK-01'                         => 'Suggested for you, because {reason}.',
+		'hw.T-HW-BLOCK-01.reason.plateau'          => 'your weight has stayed about the same for 3 weeks',
+		'hw.T-HW-BLOCK-01.reason.festival'         => '{festival} starts in {n} weeks',
+		'hw.T-HW-BLOCK-01.reason.barrier'          => 'you said {barrier} gets in the way',
+		'hw.T-HW-BLOCK-01.reason.stress'           => 'you rated your stress {n} out of 10',
+		'hw.T-HW-BLOCK-01.reason.sleep'            => 'you usually sleep less than 7 hours',
+		'hw.T-HW-BLOCK-01.reason.alcohol'          => 'of how often you drink',
+		'hw.T-HW-BLOCK-01.reason.eating_out'       => 'you eat out 3 or more times a week',
+		'hw.T-HW-BLOCK-01.reason.shift_work'       => 'you work shifts or nights',
+		'hw.T-HW-BLOCK-01.reason.getting_stronger' => "it builds on everything you've done so far",
+		'hw.T-HW-REM-01'                           => 'Your next step is ready on Lifeline Daily.',
 	);
 
 	/**
@@ -124,6 +206,89 @@ class LLD_Members_Rule_Catalogue {
 	}
 
 	/**
+	 * The 36 Healthy Weight programme rules (catalogue section 9; v1.2 D3-58, R-HW-BLOCK-03 v1.3 D3-59). They build and
+	 * adjust the member's Healthy Weight plan, so they are class `programme`: never counted in the 3-a-week insight
+	 * quota (QUOTA_PER_WEEK applies to insights only) and not run by the nightly engine; `LLD_Members_HW_Where`,
+	 * `LLD_Members_HW_Rules` and `LLD_Members_HW_Festival` apply them. `group` and `order` give the section 9 precedence
+	 * (safety 1; the signed Today steps R-STEP-01 to -05 are 2; numbers and pace 3; steps, alcohol, food, notes,
+	 * reminders and motivation 4; weekly changes and focus blocks 5). `tier` is the owner's rule question 12: free
+	 * (safety, the numbers, pace, milestones, the reason on Today, the food-rule and allergy filter) or premium
+	 * (personalised step order and versions, extra steps, notes brought forward, food preferences, focus block
+	 * suggestions); null where question 12 names neither. `low_mood` true: the rule keeps running in the 7 days after
+	 * R-SAFE-04 (R-HW-SAFE, the calorie target and the low-mood note); every other R-HW rule pauses. `templates` are
+	 * HW_TEMPLATES keys.
+	 *
+	 * @return array<string,array<string,mixed>>
+	 */
+	public static function programme_rules() {
+		$r = function ( $id, $key, $group, $order, $tier, array $templates, $low_mood = false, $version = '1.2' ) {
+			return array(
+				'id'               => $id,
+				'key'              => $key,
+				'class'            => self::CLASS_PROGRAMME,
+				'group'            => $group,
+				'order'            => $order,
+				'tier'             => $tier,
+				'templates'        => $templates,
+				'low_mood'         => $low_mood,
+				'counted_in_quota' => false,
+				'version'          => $version,
+			);
+		};
+		return array(
+			'R-HW-SAFE-01'  => $r( 1001, 'hw_who_can_start', 'safety', 1, 'free', array(), true ),
+			'R-HW-SAFE-02'  => $r( 1002, 'hw_safe_goal_and_pace', 'safety', 1, 'free', array(), true ),
+			'R-HW-SAFE-03'  => $r( 1003, 'hw_stress_sleep_card', 'safety', 1, 'free', array( 'hw.T-HW-SAFE-03' ), true ),
+			'R-HW-SAFE-04'  => $r( 1004, 'hw_doctor_line', 'safety', 1, 'free', array(), true ),
+			'R-HW-SAFE-05'  => $r( 1005, 'hw_drinking_card', 'safety', 1, 'free', array( 'hw.T-HW-SAFE-05' ), true ),
+			'R-HW-NUM-01'   => $r( 1011, 'hw_bands', 'numbers', 3, 'free', array() ),
+			'R-HW-NUM-02'   => $r( 1012, 'hw_range', 'numbers', 3, 'free', array( 'hw.T-HW-NUM-02' ) ),
+			'R-HW-NUM-03'   => $r( 1013, 'hw_calorie_target', 'numbers', 3, 'free', array(), true ),
+			'R-HW-NUM-04'   => $r( 1014, 'hw_milestones', 'numbers', 3, 'free', array( 'hw.T-HW-NUM-04', 'hw.T-HW-NUM-04.label.5pct', 'hw.T-HW-NUM-04.label.10pct', 'hw.T-HW-NUM-04.label.healthy', 'hw.T-HW-NUM-04.label.goal' ) ),
+			'R-HW-NUM-05'   => $r( 1015, 'hw_drink_calories', 'numbers', 3, 'free', array( 'hw.T-HW-NUM-05' ) ),
+			'R-HW-PACE-01'  => $r( 1021, 'hw_pace', 'pace', 3, 'free', array( 'hw.T-HW-PACE-01', 'hw.T-HW-PACE-01.heading.gentle', 'hw.T-HW-PACE-01.heading.steady', 'hw.T-HW-PACE-01.heading.faster' ) ),
+			'R-HW-STEP-01'  => $r( 1031, 'hw_barrier_first', 'steps', 4, 'premium', array( 'hw.T-HW-STEP-01' ) ),
+			'R-HW-STEP-02'  => $r( 1032, 'hw_habits_left_out', 'steps', 4, 'premium', array( 'hw.T-HW-STEP-02' ) ),
+			'R-HW-STEP-03'  => $r( 1033, 'hw_step_version', 'steps', 4, 'premium', array() ),
+			'R-HW-STEP-04'  => $r( 1034, 'hw_sleep_step', 'steps', 4, 'premium', array( 'hw.T-HW-STEP-04' ) ),
+			'R-HW-STEP-05'  => $r( 1035, 'hw_stress_step', 'steps', 4, 'premium', array( 'hw.T-HW-STEP-05' ) ),
+			'R-HW-STEP-06'  => $r( 1036, 'hw_exercise_level', 'steps', 4, null, array( 'hw.T-HW-STEP-06', 'hw.T-HW-STEP-06.very_active' ) ),
+			'R-HW-ALC-01'   => $r( 1041, 'hw_alcohol_step', 'alcohol', 4, 'premium', array( 'hw.T-HW-ALC-01', 'hw.T-HW-ALC-01.title.free_day', 'hw.T-HW-ALC-01.title.second_day', 'hw.T-HW-ALC-01.title.one_fewer' ) ),
+			'R-HW-ALC-02'   => $r( 1042, 'hw_add_a_drink', 'alcohol', 4, null, array( 'hw.R-HW-ALC-02.button' ) ),
+			'R-HW-FOOD-01'  => $r( 1051, 'hw_food_rules', 'food', 4, 'free', array() ),
+			'R-HW-FOOD-02'  => $r( 1052, 'hw_food_preferences', 'food', 4, 'premium', array( 'hw.T-HW-FOOD-02.quick', 'hw.T-HW-FOOD-02.low_cost', 'hw.T-HW-FOOD-02.cuisine' ) ),
+			'R-HW-FOOD-03'  => $r( 1053, 'hw_fasting_meals', 'food', 4, null, array() ),
+			'R-HW-NOTE-01'  => $r( 1061, 'hw_note_low_mood', 'notes', 4, 'premium', array(), true ),
+			'R-HW-NOTE-02'  => $r( 1062, 'hw_note_sleep_stress', 'notes', 4, 'premium', array() ),
+			'R-HW-NOTE-03'  => $r( 1063, 'hw_note_missed_log', 'notes', 4, 'premium', array() ),
+			'R-HW-NOTE-04'  => $r( 1064, 'hw_note_weight_up', 'notes', 4, 'premium', array() ),
+			'R-HW-NOTE-05'  => $r( 1065, 'hw_note_plateau', 'notes', 4, 'premium', array() ),
+			'R-HW-REM-01'   => $r( 1071, 'hw_reminder_times', 'reminders', 4, null, array( 'hw.T-HW-REM-01' ) ),
+			'R-HW-MOT-01'   => $r( 1081, 'hw_reason_on_today', 'motivation', 4, 'free', array( 'hw.T-HW-MOT-01', 'hw.T-HW-MOT-01.event' ) ),
+			'R-HW-MOT-02'   => $r( 1082, 'hw_milestone_reached', 'motivation', 4, 'free', array( 'hw.T-HW-MOT-02.5pct', 'hw.T-HW-MOT-02.10pct', 'hw.T-HW-MOT-02.healthy', 'hw.T-HW-MOT-02.goal' ) ),
+			'R-HW-WEEK-01'  => $r( 1091, 'hw_what_got_in_the_way', 'weekly', 5, null, array( 'hw.T-HW-WEEK-01a', 'hw.T-HW-WEEK-01b', 'hw.T-HW-WEEK-01c', 'hw.T-HW-WEEK-01d', 'hw.T-HW-WEEK-01e', 'hw.T-HW-WEEK-01f', 'hw.T-HW-WEEK-01g' ) ),
+			'R-HW-WEEK-02'  => $r( 1092, 'hw_plateau', 'weekly', 5, 'premium', array( 'hw.T-HW-WEEK-02' ) ),
+			'R-HW-BLOCK-01' => $r( 1101, 'hw_block_suggested', 'blocks', 5, 'premium', array( 'hw.T-HW-BLOCK-01' ) ),
+			'R-HW-BLOCK-02' => $r( 1102, 'hw_festival_offer', 'blocks', 5, 'premium', array() ),
+			'R-HW-BLOCK-03' => $r( 1103, 'hw_festival_timing', 'blocks', 5, 'premium', array(), false, '1.3' ),
+			'R-HW-QOD-01'   => $r( 1104, 'hw_quick_questions', 'blocks', 5, null, array() ),
+		);
+	}
+
+	/**
+	 * A template's text from TEMPLATES or HW_TEMPLATES, or null.
+	 *
+	 * @param string $template Template key.
+	 * @return string|null
+	 */
+	public static function text( $template ) {
+		if ( isset( self::TEMPLATES[ $template ] ) ) {
+			return self::TEMPLATES[ $template ];
+		}
+		return isset( self::HW_TEMPLATES[ $template ] ) ? self::HW_TEMPLATES[ $template ] : null;
+	}
+
+	/**
 	 * One rule's record, or null.
 	 *
 	 * @param string $name R-… name.
@@ -156,10 +321,10 @@ class LLD_Members_Rule_Catalogue {
 	 * @return string|null Null for an unknown template.
 	 */
 	public static function fill( $template, array $values ) {
-		if ( ! isset( self::TEMPLATES[ $template ] ) ) {
+		$text = self::text( $template );
+		if ( null === $text ) {
 			return null;
 		}
-		$text = self::TEMPLATES[ $template ];
 		foreach ( $values as $gap => $value ) {
 			if ( ! preg_match( '/^[a-z_]+$/', (string) $gap ) ) {
 				continue;
@@ -176,10 +341,11 @@ class LLD_Members_Rule_Catalogue {
 	 * @return string[]
 	 */
 	public static function gaps( $template ) {
-		if ( ! isset( self::TEMPLATES[ $template ] ) ) {
+		$text = self::text( $template );
+		if ( null === $text ) {
 			return array();
 		}
-		preg_match_all( '/\{([a-z_]+)\}/', self::TEMPLATES[ $template ], $m );
+		preg_match_all( '/\{([a-z_]+)\}/', $text, $m );
 		return $m[1];
 	}
 
