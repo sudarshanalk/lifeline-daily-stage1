@@ -239,6 +239,7 @@ A new track for members who have reached a weight goal, focused on keeping the w
 |---|---|
 | TC-FR3-20-AS-01 | The track has owner-approved content for every week. |
 | TC-FR3-20-AS-02 | A member who reaches a weight-loss goal is offered this track. |
+| TC-FR3-20-AS-03 | A test member who reaches their goal and starts Keep It Off gets a target equal to their daily use rounded to 10 (no deficit), shown as a guide, and no approved Keep It Off item says calorie numbers never appear. |
 
 #### FR3-21 Healthy Weight, level 2
 
