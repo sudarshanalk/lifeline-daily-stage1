@@ -17,7 +17,12 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Recipes {
 
-	const ALLERGENS = array( 'nuts', 'peanuts', 'gluten', 'milk', 'egg', 'fish', 'shellfish', 'soy', 'sesame', 'celery', 'mustard', 'sulphites', 'lupin', 'molluscs' );
+	// Buckwheat joined the list with the fasting-day recipes (owner, 10 Nov 2026; data model: Approved recipe tags).
+	const ALLERGENS = array( 'nuts', 'peanuts', 'gluten', 'milk', 'egg', 'fish', 'shellfish', 'soy', 'sesame', 'celery', 'mustard', 'sulphites', 'lupin', 'molluscs', 'buckwheat' );
+
+	/** Approved recipes that carry the vegetarian hard cheese line (Food-Rule-Tags FT-Q4 = A, 10 Nov 2026). */
+	const PARMESAN_RECIPES = array( 'R-118', 'R-161' );
+	const PARMESAN_LINE    = 'Choose a vegetarian hard cheese if you prefer.';
 
 	/**
 	 * Owner-facing tip list for the weekly summary (FR3-34). Plain, factual wording only.
@@ -351,7 +356,8 @@ class LLD_Members_Recipes {
 				$dislikes[] = $d;
 			}
 		}
-		$out = array();
+		$member = self::food_member( $prefs, $allergies );
+		$out    = array();
 		foreach ( $library as $recipe ) {
 			if ( ! is_array( $recipe ) || empty( $recipe['approved'] ) ) {
 				continue;
@@ -385,7 +391,19 @@ class LLD_Members_Recipes {
 					continue 2;
 				}
 			}
-			$out[] = array(
+			// R-HW-FOOD-01 (FR3-36, FR3-99): every food rule the member keeps, through the approved food-rule tags.
+			$lines = array();
+			if ( $member ) {
+				$ok = LLD_Members_HW_Rules::food_ok( $recipe + array( 'diets' => isset( $recipe['diets'] ) ? $recipe['diets'] : array() ), $member );
+				if ( ! $ok['ok'] ) {
+					continue;
+				}
+				$lines = $ok['lines'];
+			}
+			if ( isset( $recipe['key'] ) && in_array( (string) $recipe['key'], self::PARMESAN_RECIPES, true ) ) {
+				$lines[] = self::PARMESAN_LINE;
+			}
+			$item = array(
 				'id'               => (int) ( $recipe['id'] ?? 0 ),
 				'name'             => (string) ( $recipe['name'] ?? '' ),
 				'kcal_per_serving' => (float) $recipe['kcal_per_serving'],
@@ -394,8 +412,97 @@ class LLD_Members_Recipes {
 				'approved'         => true,
 				'source'           => 'approved_library',
 			);
+			if ( $lines ) {
+				$item['lines'] = $lines;
+			}
+			$out[] = $item;
 		}
-		return array( 'recipes' => $out );
+		$result = array( 'recipes' => $out );
+		// The halal vanilla and soy-sauce line, once a list (FT-Q3 = A).
+		if ( $member && in_array( 'halal', $member['food_rules'], true ) ) {
+			$result['lines'] = array( LLD_Members_HW_Rules::FOOD_LINES['halal_extras'] );
+		}
+		return $result;
+	}
+
+	/**
+	 * The member's side of R-HW-FOOD-01, or null when they keep no food rule and no allergy, or the Healthy Weight rules
+	 * are absent (allergies are also matched through the food-rule tags, rule draft reading 37).
+	 *
+	 * @param array    $prefs     prefs_of(): allergies, dislikes, food_rules, fasting_day.
+	 * @param string[] $allergies Clean allergies.
+	 * @return array|null {food_rules, allergies, fasting_day}
+	 */
+	private static function food_member( array $prefs, array $allergies ) {
+		if ( ! class_exists( 'LLD_Members_HW_Rules' ) ) {
+			return null;
+		}
+		$rules = array();
+		foreach ( isset( $prefs['food_rules'] ) && is_array( $prefs['food_rules'] ) ? $prefs['food_rules'] : array() as $r ) {
+			$r = (string) $r;
+			if ( 0 === strpos( $r, 'fast:' ) ) {
+				continue; // a fast kept is a calendar entry, not a food rule
+			}
+			$rules[] = 'no_grains_pulses_fasting_days' === $r ? 'no_grains_pulses_fasting' : $r;
+		}
+		if ( ! $rules && ! $allergies ) {
+			return null;
+		}
+		return array(
+			'food_rules'  => $rules,
+			'allergies'   => $allergies,
+			'fasting_day' => ! empty( $prefs['fasting_day'] ),
+		);
+	}
+
+	/**
+	 * R-HW-FOOD-01 and -02 for one meal type of a meal plan (FR3-99): only matching approved items, the empty state
+	 * below 5, preferences only reorder (Premium, R-HW-FOOD-02), and the approved halal and kosher lines.
+	 *
+	 * @param int         $member_id Member number.
+	 * @param string|null $meal_type breakfast, lunch, dinner, snack, or null.
+	 * @param string      $date      Local date (a fasting day changes the grains and pulses rule).
+	 * @return array LLD_Members_HW_Rules::food_filter() result.
+	 */
+	public static function for_meal_type( $member_id, $meal_type, $date ) {
+		$prefs  = self::prefs_of( $member_id, $date );
+		$member = self::food_member( $prefs, isset( $prefs['allergies'] ) ? (array) $prefs['allergies'] : array() );
+		$member = $member ? $member : array(
+			'food_rules'  => array(),
+			'allergies'   => (array) $prefs['allergies'],
+			'fasting_day' => false,
+		);
+		if ( LLD_Members_Food_Log::premium( $member_id ) && class_exists( 'LLD_Members_HW_Answers' ) ) {
+			$member['cooking_time'] = LLD_Members_HW_Answers::get( $member_id, 'cooking_time' );
+			$member['budget']       = LLD_Members_HW_Answers::get( $member_id, 'budget' );
+			$member['cuisines']     = (array) LLD_Members_HW_Answers::get( $member_id, 'cuisines' );
+		}
+		return LLD_Members_HW_Rules::food_filter( self::library(), $member, $meal_type );
+	}
+
+	/**
+	 * R-HW-FOOD-03 (FR3-99 AS-07): during a dawn-to-sunset fast the member keeps, the approved fasting meal plan (pre-dawn
+	 * meal, breaking the fast, evening meal), with the same calorie target; back to the usual plan the day after. A member
+	 * with type 2 diabetes keeps the usual plan and sees the approved line. The switch is Premium; the line is free (Q163).
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $date      Local date.
+	 * @return array{rule:string,plan:string,fast:string|null,target_changes:bool,line:string|null}
+	 */
+	public static function meal_plan_for( $member_id, $date ) {
+		$fasts = class_exists( 'LLD_Members_HW_Answers' ) ? (array) LLD_Members_HW_Answers::get( $member_id, 'fasts' ) : array();
+		$facts = class_exists( 'LLD_Members_Goal_Journey' ) ? LLD_Members_Goal_Journey::facts( $member_id ) : array( 'situations' => array() );
+		$out   = LLD_Members_HW_Rules::meal_timing(
+			array(
+				'date'       => (string) $date,
+				'fasts'      => LLD_Members_HW_Programme::meal_fasts( $fasts ),
+				'conditions' => in_array( 'diabetes', (array) $facts['situations'], true ) ? array( 'type2_diabetes' ) : array(),
+			)
+		);
+		if ( 'fasting' === $out['plan'] && ! LLD_Members_Food_Log::premium( $member_id ) ) {
+			$out['plan'] = 'usual';
+		}
+		return $out;
 	}
 
 	/**
@@ -461,7 +568,7 @@ class LLD_Members_Recipes {
 			}
 			return self::suggestions(
 				self::library(),
-				self::prefs_of( $member_id ),
+				self::prefs_of( $member_id, $date ),
 				$left,
 				self::main_goal( $member_id ),
 				$premium
@@ -474,14 +581,25 @@ class LLD_Members_Recipes {
 	 * @param int $member_id Member number.
 	 * @return array{allergies: array<int,string>, dislikes: array<int,string>}
 	 */
-	private static function prefs_of( $member_id ) {
+	private static function prefs_of( $member_id, $date = null ) {
 		$rows = self::rows_for( 'food_preferences', $member_id );
 		$row  = $rows ? $rows[0] : array();
 		$a    = isset( $row['allergies'] ) ? ( is_string( $row['allergies'] ) ? json_decode( $row['allergies'], true ) : $row['allergies'] ) : array();
 		$d    = isset( $row['dislikes'] ) ? ( is_string( $row['dislikes'] ) ? json_decode( $row['dislikes'], true ) : $row['dislikes'] ) : array();
+		// The food rules the member keeps, with the fasts as "fast:<entry>" (P3-35, one store reused by FR3-99).
+		$f     = isset( $row['food_rules'] ) ? ( is_string( $row['food_rules'] ) ? json_decode( $row['food_rules'], true ) : $row['food_rules'] ) : array();
+		$f     = is_array( $f ) ? array_map( 'strval', $f ) : array();
+		$fasts = array();
+		foreach ( $f as $r ) {
+			if ( 0 === strpos( $r, 'fast:' ) ) {
+				$fasts[] = substr( $r, 5 );
+			}
+		}
 		return array(
-			'allergies' => is_array( $a ) ? $a : array(),
-			'dislikes'  => is_array( $d ) ? $d : array(),
+			'allergies'   => is_array( $a ) ? $a : array(),
+			'dislikes'    => is_array( $d ) ? $d : array(),
+			'food_rules'  => $f,
+			'fasting_day' => null !== $date && $fasts && class_exists( 'LLD_Members_HW_Programme' ) && LLD_Members_HW_Programme::fasting_day( $fasts, (string) $date ),
 		);
 	}
 
@@ -555,13 +673,29 @@ class LLD_Members_Recipes {
 		if ( ! is_array( $suits ) ) {
 			$suits = array();
 		}
+		$list = function ( $v ) {
+			if ( is_string( $v ) ) {
+				$v = array_values( array_filter( array_map( 'trim', explode( ',', $v ) ) ) );
+			}
+			return is_array( $v ) ? array_values( array_map( 'strval', $v ) ) : array();
+		};
+		// Approved recipe tags (P3-35): food-rule tags, diet suitability, meal type and the R-HW-FOOD-02 order tags.
+		$tags = isset( $item['tags'] ) && is_array( $item['tags'] ) ? $item['tags'] : array();
 		return array(
 			'id'               => (int) ( $item['parent_id'] ?? $parent_id ),
 			'name'             => (string) ( $item['title'] ?? '' ),
 			'kcal_per_serving' => (float) $fields['kcal_per_serving'],
+			'kcal'             => (float) $fields['kcal_per_serving'],
 			'allergens'        => array_values( $allergens ),
 			'suits_goals'      => array_values( $suits ),
 			'approved'         => true,
+			'key'              => isset( $fields['recipe_key'] ) ? (string) $fields['recipe_key'] : null,
+			'food_rules'       => $list( $fields['food_rules'] ?? array() ),
+			'diets'            => $list( $fields['diet'] ?? array() ),
+			'meal_type'        => isset( $fields['meal_type'] ) ? (string) $fields['meal_type'] : null,
+			'quick'            => in_array( 'quick', $tags, true ),
+			'low_cost'         => in_array( 'low-cost', $tags, true ),
+			'cuisine'          => isset( $fields['cuisine'] ) ? (string) $fields['cuisine'] : null,
 		);
 	}
 

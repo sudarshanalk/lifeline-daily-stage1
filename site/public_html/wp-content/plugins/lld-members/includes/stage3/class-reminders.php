@@ -27,8 +27,17 @@ class LLD_Members_Reminders {
 		'email.body.workout'        => "Hi {first_name},\n\nThis is your reminder for a workout on Lifeline Daily.\n\n{link}\n\n— Lifeline Daily",
 		'email.body.weigh_in'       => "Hi {first_name},\n\nThis is your weigh-in reminder on Lifeline Daily.\n\n{link}\n\n— Lifeline Daily",
 		'email.body.check_in'       => "Hi {first_name},\n\nThis is your check-in reminder on Lifeline Daily.\n\n{link}\n\n— Lifeline Daily",
+		// R-HW-REM-01 (P3-35): every Healthy Weight reminder says only the signed T-HW-REM-01 line.
+		'email.body.hw_step'        => "Hi {first_name},\n\nYour next step is ready on Lifeline Daily.\n\n{link}\n\n— Lifeline Daily",
+		'email.body.hw_snack'       => "Hi {first_name},\n\nYour next step is ready on Lifeline Daily.\n\n{link}\n\n— Lifeline Daily",
 		'free.second'               => 'Free includes one reminder. Premium has as many as you like.',
 		'hidden.weigh_in'           => 'Not available.',
+	);
+
+	/** The Healthy Weight reminder types, by R-HW-REM-01 kind (P3-35). */
+	const HW_TYPES = array(
+		'step'  => 'hw_step',
+		'snack' => 'hw_snack',
 	);
 
 	/** Types the eating-disorder flag hides (Part B reminders column). */
@@ -305,6 +314,62 @@ class LLD_Members_Reminders {
 			$date
 		);
 		return (int) $wpdb->query( $sql ) > 0; // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+	}
+
+	/**
+	 * R-HW-REM-01 (P3-35, FR3-98 AS-09): the Healthy Weight reminders at the times the answers give. Existing ones move to
+	 * the new times; new ones are made only when the member asked for reminders ($create); a kind the rule no longer
+	 * gives (or "ask for the wake-up time first") is paused. Free (Q163); the Free one-reminder limit still applies when
+	 * they are sent. No health detail is ever in a reminder: the text is the T-HW-REM-01 line.
+	 *
+	 * @param int   $member_id Member number.
+	 * @param array $answers   LLD_Members_HW_Answers::engine(): work, snack_time, wake_time.
+	 * @param bool  $create    Make reminders that do not exist yet.
+	 * @return array{times:array,ask_wake_up:bool} The rule's answer.
+	 */
+	public static function sync_hw( $member_id, array $answers, $create = false ) {
+		$member_id = (int) $member_id;
+		$r         = LLD_Members_HW_Rules::reminder_times(
+			array(
+				'work'       => isset( $answers['work'] ) ? $answers['work'] : null,
+				'snack_time' => isset( $answers['snack_time'] ) ? $answers['snack_time'] : null,
+				'wake_time'  => isset( $answers['wake_time'] ) ? $answers['wake_time'] : null,
+				'bedtime'    => isset( $answers['bedtime'] ) ? $answers['bedtime'] : null,
+			)
+		);
+		$want = array();
+		foreach ( $r['reminders'] as $x ) {
+			$want[ self::HW_TYPES[ $x['kind'] ] ] = $x['time'] . ':00';
+		}
+		$have = array();
+		foreach ( LLD_Members_Stage3_Data::rows( 'reminders', $member_id, array(), '', 50 ) as $row ) {
+			if ( empty( $row['deleted_at'] ) && in_array( (string) $row['reminder_type'], self::HW_TYPES, true ) ) {
+				$have[ (string) $row['reminder_type'] ] = $row;
+			}
+		}
+		foreach ( self::HW_TYPES as $type ) {
+			if ( isset( $want[ $type ] ) && isset( $have[ $type ] ) ) {
+				LLD_Members_Stage3_Data::update( 'reminders', $member_id, (int) $have[ $type ]['id'], array( 'time_local' => $want[ $type ] ) );
+			} elseif ( isset( $want[ $type ] ) && $create ) {
+				LLD_Members_Stage3_Data::insert(
+					'reminders',
+					$member_id,
+					array(
+						'reminder_type' => $type,
+						'channel'       => 'email',
+						'time_local'    => $want[ $type ],
+						'days'          => 'Mon,Tue,Wed,Thu,Fri,Sat,Sun',
+						'active'        => 1,
+					)
+				);
+			} elseif ( ! isset( $want[ $type ] ) && isset( $have[ $type ] ) ) {
+				LLD_Members_Stage3_Data::update( 'reminders', $member_id, (int) $have[ $type ]['id'], array( 'active' => 0 ) );
+			}
+		}
+		return array(
+			'times'       => $r['reminders'],
+			'ask_wake_up' => $r['ask_wake_up'],
+		);
 	}
 
 	/**
