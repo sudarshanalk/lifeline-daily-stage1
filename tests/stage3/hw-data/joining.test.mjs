@@ -114,7 +114,8 @@ test('TC-FR3-99-AS-01', () => {
   `);
   expect(out.started).toEqual([[7, 'healthy-weight']]);
   expect(out.answered).toEqual({ answered: [], known: [] });
-  expect(out.today.qod.map((q) => q.key)).toEqual(['food_rules_allergies', 'eating_pattern']);
+  // Each R-HW-QOD-01 group asks its first question still to answer: food rules, then breakfast (eating pattern).
+  expect(out.today.qod.map((q) => q.key)).toEqual(['food_rules', 'breakfast']);
   expect(out.set).toEqual(['food_rules', 'fasts', 'allergies', 'breakfast', 'breakfast_protein', 'snack_time', 'sugary_drinks', 'eats_out', 'cooking_time', 'cooking_skill', 'budget', 'cuisines', 'enjoyment']);
 });
 
@@ -127,8 +128,10 @@ test('TC-FR3-99-AS-03', () => {
     LLD_Members_HW_Programme::join(7, $gid, []);
     return ['state' => LLD_Members_HW_Answers::qod_state(7), 'qod' => array_column(LLD_Members_HW_Programme::today(7)['qod'], 'key'), 'allergies' => LLD_Members_HW_Answers::get(7, 'allergies')];
   `);
-  expect(out.state.known).toEqual(['food_rules_allergies']);
-  expect(out.qod).toEqual(['eating_pattern', 'snack_time']);
+  // The allergies answer is reused and never asked again; the rest of its group (food rules, fasts) still is.
+  expect(out.state.known).toEqual([]);
+  expect(out.qod).not.toContain('allergies');
+  expect(out.qod).toEqual(['food_rules', 'breakfast']);
   expect(out.allergies).toEqual(['nuts']);
 });
 

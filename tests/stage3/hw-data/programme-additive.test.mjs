@@ -112,7 +112,7 @@ test('P3-35 content shapes (package P3): the activity id, an -ALT item standing 
         return ['id' => ((int) $pid >= 2000 ? 'HW2' : 'HW') . "-W$w-A$k", 'habit_tags' => ['activity'], 'alt_for' => ''];
       }
       static function block($key) { return ['key' => $key, 'weeks' => [1 => ['activities' => [1 => ['id' => 'HW-FB07-W1-A1'], 2 => ['id' => 'HW-FB07-W1-A2']]]]]; }
-      static function question($key) { return 'food_rules_allergies' === $key ? ['title' => 'Do you follow any of these food rules?', 'why' => 'So your meal plans and recipes only include food you eat.', 'choices' => ['Halal']] : null; }
+      static function question($key) { return 'food_rules' === $key ? ['title' => 'Do you follow any of these food rules?', 'why' => 'So your meal plans and recipes only include food you eat.', 'choices' => ['Halal']] : null; }
       static function questions() { return []; }
       static function notes($t) { return []; }
       static function festivals() { return []; }
@@ -131,6 +131,6 @@ test('P3-35 content shapes (package P3): the activity id, an -ALT item standing 
   `);
   expect(out.w2.activity_key).toBe('HW-W2-A4-ALT'); // high blood pressure: the steady-walk alternative (R-HW-SAFE-04)
   expect(out.block.activity_key).toBe('HW-FB07-W1-A2');
-  expect(out.qod).toMatchObject({ key: 'food_rules_allergies', wording: 'Do you follow any of these food rules?', reason: 'So your meal plans and recipes only include food you eat.' });
+  expect(out.qod).toMatchObject({ key: 'food_rules', wording: 'Do you follow any of these food rules?', reason: 'So your meal plans and recipes only include food you eat.' });
   expect(out.q.key).toBe('food_rules');
 });

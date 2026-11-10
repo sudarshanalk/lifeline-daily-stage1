@@ -464,7 +464,15 @@ class LLD_Members_HW_Programme {
 		$qs  = LLD_Members_HW_Answers::qod_state( $member_id );
 		$qod = array();
 		$q   = LLD_Members_HW_Rules::qod( $qs + array( 'eating_disorder' => $a['eating_disorder'] ) );
-		foreach ( $q['questions'] as $key ) {
+		$asks = array(); // a group key (food_rules_allergies) becomes the answer keys it asks (food_rules, fasts, allergies)
+		foreach ( $q['questions'] as $group ) {
+			$left = LLD_Members_HW_Answers::group_keys( $member_id, $group );
+			if ( $left ) { // one question per group a day, the group's first still to answer (R-HW-QOD-01 order)
+				$asks[ $left[0] ] = $q['rules'][ $group ];
+			}
+		}
+		$q['rules'] = $asks;
+		foreach ( array_keys( $asks ) as $key ) {
 			$content = class_exists( 'LLD_Members_HW_Content' ) && method_exists( 'LLD_Members_HW_Content', 'question' ) ? LLD_Members_HW_Content::question( $key ) : null;
 			$qod[]   = array(
 				'key'     => $key,

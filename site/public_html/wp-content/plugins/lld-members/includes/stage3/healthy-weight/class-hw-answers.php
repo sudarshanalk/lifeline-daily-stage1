@@ -408,8 +408,14 @@ class LLD_Members_HW_Answers {
 		$all      = self::details( $member_id );
 		$answered = array();
 		$known    = array();
+		$open = array(); // a group counts as answered only when every one of its keys is answered or skipped
 		foreach ( self::KEYS as $key => $def ) {
-			if ( empty( $def['qod'] ) || ! isset( $all[ $key ] ) ) {
+			if ( ! empty( $def['qod'] ) && ! isset( $all[ $key ] ) ) {
+				$open[ $def['qod'] ] = true;
+			}
+		}
+		foreach ( self::KEYS as $key => $def ) {
+			if ( empty( $def['qod'] ) || ! isset( $all[ $key ] ) || isset( $open[ $def['qod'] ] ) ) {
 				continue;
 			}
 			if ( 'food_preferences' === $def['store'] ) {
@@ -422,6 +428,29 @@ class LLD_Members_HW_Answers {
 			'answered' => array_values( array_unique( $answered ) ),
 			'known'    => array_values( array_unique( $known ) ),
 		);
+	}
+
+	/**
+	 * The answer keys a quick-question group asks, in KEYS order, leaving out those already answered or skipped.
+	 * A group key (for example food_rules_allergies) comes from the engine's R-HW-QOD-01 order; the screens and the
+	 * approved wording use the answer keys (food_rules, fasts, allergies).
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $group     A KEYS 'qod' group key, or an answer key.
+	 * @return string[] Answer keys still to ask.
+	 */
+	public static function group_keys( $member_id, $group ) {
+		if ( isset( self::KEYS[ $group ] ) ) {
+			return array( $group );
+		}
+		$all  = self::details( $member_id );
+		$keys = array();
+		foreach ( self::KEYS as $key => $def ) {
+			if ( isset( $def['qod'] ) && $group === $def['qod'] && ! isset( $all[ $key ] ) ) {
+				$keys[] = $key;
+			}
+		}
+		return $keys;
 	}
 
 	// ---- Helpers --------------------------------------------------------------------------------------------------
