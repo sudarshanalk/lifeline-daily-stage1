@@ -408,7 +408,9 @@ test.describe.serial('P3-31 goal setting, starting measurements and the plan', (
     const plan = page.locator('[data-lld-goal-step="plan"]');
     await expect(plan).toHaveAttribute('data-lld-premium', 'no');
     await expect(plan.locator('[data-lld-section="track"] h2')).toHaveText('Healthy Weight');
-    await expect(plan.locator('[data-lld-kcal]')).toHaveCount(0);
+    // Healthy Weight's calorie target is free (rule question 12, signed 6 Nov 2026: safety, the numbers, pace and
+    // milestones are free; FR3-47 'Free to use'), so a Free member sees it; the rest of the plan stays Premium.
+    await expect(plan.locator('[data-lld-kcal]').first()).toBeVisible();
     await expect(plan.locator('[data-lld-section="targets"]')).toContainText('Premium');
     await page.goto('/members/home/');
     await expect(page.locator('[data-lld-goal-progress] [data-lld-progress]')).toHaveAttribute('data-lld-pct', '0');
