@@ -67,6 +67,29 @@ class LLD_Members_Stage3_Erasure {
 			LLD_Members_Stage3_Data::purge( $suffix, (int) $member_id );
 		}
 		self::delete_orphan_baselines();
+		self::forget_note_reasons( (int) $member_id );
+	}
+
+	/**
+	 * The notes shown stay (personal data, kept 13 months), but which rule chose a note can tell a health answer
+	 * (low mood, sleep, stress, weight), so on health-consent withdrawal it goes: rule_id and reason become empty.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function forget_note_reasons( $member_id ) {
+		global $wpdb;
+		if ( (int) $member_id < 1 ) {
+			return 0;
+		}
+		$n = $wpdb->update(
+			LLD_Members_Stage3_Schema::table( 'notes_shown' ),
+			array(
+				'rule_id' => null,
+				'reason'  => null,
+			),
+			array( 'member_id' => (int) $member_id )
+		);
+		return false === $n ? 0 : (int) $n;
 	}
 
 	/**

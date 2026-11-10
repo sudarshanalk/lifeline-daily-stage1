@@ -544,7 +544,7 @@ class LLD_Members_Stage3_Schema {
 			member_id BIGINT UNSIGNED NOT NULL,
 			note_key VARCHAR(48) NOT NULL,
 			shown_on DATE NOT NULL,
-			reason VARCHAR(8) NOT NULL DEFAULT "default",
+			reason VARCHAR(8) NULL DEFAULT "default",
 			rule_id BIGINT UNSIGNED NULL,
 			created_at DATETIME NOT NULL,
 			PRIMARY KEY (id),

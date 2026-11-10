@@ -617,6 +617,12 @@ class LLD_Members_Stage3_API {
 		if ( ! LLD_Members_Access::has_health_consent( $member_id ) ) {
 			return self::refuse( 403, 'Health consent is needed first.' );
 		}
+		// The shared gate's safety and access rules, as every other type (type healthy-weight): safety before access.
+		self::$request = $request;
+		$refusal       = apply_filters( 'lld_members_stage3_api_refuse', null, 'healthy-weight', $member_id );
+		if ( $refusal instanceof WP_REST_Response ) {
+			return $refusal;
+		}
 		$body = $request->get_json_params();
 		$body = is_array( $body ) ? $body : array();
 		switch ( (string) $request['action'] ) {
@@ -1187,6 +1193,9 @@ class LLD_Members_Stage3_API {
 			$result = LLD_Members_Food_Log::log_drink( $member_id, (string) $clean['size'], (int) $clean['food_id'], (string) $clean['entry_date'] );
 			if ( isset( $result['error'] ) ) {
 				return self::refuse( isset( $result['status'] ) ? (int) $result['status'] : 422, $result['error'] );
+			}
+			if ( class_exists( 'LLD_Members_Stage3_Safety' ) ) {
+				$result = LLD_Members_Stage3_Safety::api_rows( $result, 'food-drink', $member_id ); // FR3-69: no numbers back
 			}
 			return new WP_REST_Response( $result, 201 );
 		}

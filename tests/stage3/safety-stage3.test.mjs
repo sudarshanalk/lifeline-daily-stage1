@@ -98,6 +98,24 @@ test('TC-FR3-69-AS-01', () => {
   expect(src('class-safety-stage3.php')).toMatch(/add_filter\( 'lld_members_stage3_api_rows'/);
 });
 
+test('TC-FR3-69-AS-01 (Healthy Weight food types): the drinks list, the repeat meal and a logged drink lose their numbers in the interface rows', () => {
+  const r = run(`
+    LLD_Members_Safety::$stage2 = [7 => ['eating-disorder'], 9 => ['kidney']]; profile(7, ['eating-disorder']); profile(9, ['kidney']); LLD_Members_Features::$on[9] = true; LLD_Members_Account::$consent[9] = true;
+    $drinks = ['drinks' => [['key' => 'wine_175', 'label' => 'Glass of wine, 175 ml', 'ml' => 175, 'kind' => 'drink', 'food_id' => 5, 'kcal' => 140]]];
+    $repeat = ['meal' => ['meal' => 'lunch', 'from_date' => '2026-11-10', 'items' => 2, 'kcal' => 390, 'times' => 2]];
+    $drink = ['id' => 4, 'entry' => ['entry_date' => '2026-11-12', 'portion_label' => 'Glass of wine, 175 ml', 'kcal' => 140, 'protein_g' => 0.2, 'carb_g' => 3.5, 'fat_g' => 0, 'fibre_g' => 0]];
+    $out = [];
+    foreach ([7, 8, 9] as $m) $out[$m] = [LLD_Members_Stage3_Safety::api_rows($drinks, 'food-drinks', $m), LLD_Members_Stage3_Safety::api_rows($repeat, 'food-repeat', $m), LLD_Members_Stage3_Safety::api_rows($drink, 'food-drink', $m)];
+    return $out;
+  `);
+  const [drinks, repeat, drink] = r[7];
+  expect(drinks.drinks[0]).toMatchObject({ key: 'wine_175', label: 'Glass of wine, 175 ml', kcal: null, nutrition_hidden: true });
+  expect(repeat.meal).toMatchObject({ meal: 'lunch', kcal: null, nutrition_hidden: true });
+  expect(drink.entry).toMatchObject({ portion_label: 'Glass of wine, 175 ml', kcal: null, protein_g: null, carb_g: null, fat_g: null, fibre_g: null, nutrition_hidden: true });
+  expect(r[8][0].drinks[0].kcal).toBe(140); // the matrix off: Stage 2 behaviour
+  expect(r[9][2].entry).toMatchObject({ kcal: 140, protein_g: null }); // kidney disease: only protein goes
+});
+
 test('TC-FR3-69-AS-02', () => {
   // For the same member, requests for calorie data through the programming interface are refused: the nutrition
   // targets type answers 403 for an eating-disorder member, before any row is read, and the engine never fires a

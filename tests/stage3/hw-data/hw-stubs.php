@@ -381,6 +381,17 @@ class LLD_Members_Stage3_Safety {
 	public static function situations( $m, $known = array() ) { return isset( self::$situations[ (int) $m ] ) ? self::$situations[ (int) $m ] : array( 'none' ); }
 	public static function allows_rule( $s, $r ) { return true; }
 	public static function warning_level( $type, $values, $flags ) { return array( 'level' => 'none', 'message' => null ); }
+	/** The food-tracker row of the matrix for an eating-disorder flag (as class-safety-stage3.php), nothing else. */
+	public static function applies( $m, $feature, $context = array() ) {
+		$ed = in_array( 'eating_disorder', self::situations( $m ), true ) && 'food_tracker' === $feature;
+		return array( 'active' => true, 'situations' => self::situations( $m ), 'hidden' => $ed ? array( 'calories', 'barcode_calories' ) : array(), 'refused' => array(), 'notes' => array() );
+	}
+	public static function nutrition_hidden( array $a ) {
+		$all = ! empty( $a['active'] ) && ( in_array( 'barcode_calories', $a['hidden'], true ) || in_array( 'calories', $a['hidden'], true ) );
+		return array( 'all' => $all, 'protein' => $all || in_array( 'protein_target', $a['hidden'], true ) );
+	}
+	/** Passes the rows through, so a test sees what the class itself returns. */
+	public static function api_rows( $rows, $type, $m ) { return $rows; }
 }
 
 class LLD_Members_Safety {
