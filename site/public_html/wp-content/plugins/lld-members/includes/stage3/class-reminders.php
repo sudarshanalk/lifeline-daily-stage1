@@ -281,10 +281,20 @@ class LLD_Members_Reminders {
 		}
 		$link = home_url( '/members/home/' );
 		$date = $local->format( 'Y-m-d' );
+		$hw_held = null;
 		foreach ( $list as $row ) {
 			$id = (int) $row['id'];
 			if ( ! in_array( $id, $due, true ) ) {
 				continue;
+			}
+			if ( in_array( (string) $row['reminder_type'], self::HW_TYPES, true ) ) {
+				// P3-35: none while R-HW-SAFE-01 stops the programme or R-HW-REM-01 is paused (low mood).
+				if ( null === $hw_held ) {
+					$hw_held = class_exists( 'LLD_Members_HW_Programme' ) && LLD_Members_HW_Programme::reminders_held( $member_id );
+				}
+				if ( $hw_held ) {
+					continue;
+				}
 			}
 			if ( ! self::claim( $member_id, 'reminder:' . $id, $date ) ) {
 				continue;

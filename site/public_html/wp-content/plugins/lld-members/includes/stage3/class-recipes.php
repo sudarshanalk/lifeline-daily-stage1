@@ -475,7 +475,8 @@ class LLD_Members_Recipes {
 			'allergies'   => (array) $prefs['allergies'],
 			'fasting_day' => false,
 		);
-		if ( LLD_Members_Food_Log::premium( $member_id ) && class_exists( 'LLD_Members_HW_Answers' ) ) {
+		$paused = class_exists( 'LLD_Members_HW_Programme' ) && LLD_Members_HW_Programme::paused_for( $member_id, 'R-HW-FOOD-02' ); // low-mood pause
+		if ( LLD_Members_Food_Log::premium( $member_id ) && class_exists( 'LLD_Members_HW_Answers' ) && ! $paused ) {
 			$member['cooking_time'] = LLD_Members_HW_Answers::get( $member_id, 'cooking_time' );
 			$member['budget']       = LLD_Members_HW_Answers::get( $member_id, 'budget' );
 			$member['cuisines']     = (array) LLD_Members_HW_Answers::get( $member_id, 'cuisines' );
@@ -502,8 +503,8 @@ class LLD_Members_Recipes {
 				'conditions' => in_array( 'diabetes', (array) $facts['situations'], true ) ? array( 'type2_diabetes' ) : array(),
 			)
 		);
-		if ( 'fasting' === $out['plan'] && ! LLD_Members_Food_Log::premium( $member_id ) ) {
-			$out['plan'] = 'usual';
+		if ( 'fasting' === $out['plan'] && ( ! LLD_Members_Food_Log::premium( $member_id ) || ( class_exists( 'LLD_Members_HW_Programme' ) && LLD_Members_HW_Programme::paused_for( $member_id, 'R-HW-FOOD-03' ) ) ) ) {
+			$out['plan'] = 'usual'; // Premium, and paused in the low-mood week; the safety line stays
 		}
 		return $out;
 	}

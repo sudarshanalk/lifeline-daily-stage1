@@ -322,6 +322,9 @@ class LLD_Members_HW_Answers {
 		global $wpdb;
 		$member_id = (int) $member_id;
 		unset( self::$cache[ $member_id ] );
+		if ( class_exists( 'LLD_Members_HW_Programme' ) ) {
+			LLD_Members_HW_Programme::flush(); // the programme's cached contexts read these answers
+		}
 		if ( $member_id < 1 ) {
 			return 0;
 		}
@@ -414,6 +417,23 @@ class LLD_Members_HW_Answers {
 			return 'yes';
 		}
 		return 'prefer' === $answer ? 'pnts' : 'no';
+	}
+
+	/**
+	 * The lld_members_stage3_safety_situations filter: a stored "yes" to the Healthy Weight Check's eating question is
+	 * the eating_disorder situation, so the safety matrix hides calorie numbers everywhere, as for the Stage 2 flag.
+	 * "Prefer not to say" adds nothing (Owner Question 164).
+	 *
+	 * @param string[] $situations Situations so far.
+	 * @param int      $member_id  Member number.
+	 * @return string[]
+	 */
+	public static function safety_situations( $situations, $member_id = 0 ) {
+		$situations = is_array( $situations ) ? $situations : array();
+		if ( (int) $member_id > 0 && ! in_array( 'eating_disorder', $situations, true ) && 'yes' === self::get( (int) $member_id, 'eating_disorder' ) ) {
+			$situations[] = 'eating_disorder';
+		}
+		return $situations;
 	}
 
 	/**

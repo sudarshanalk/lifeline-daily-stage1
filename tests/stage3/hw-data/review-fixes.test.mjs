@@ -536,6 +536,7 @@ test('TC-FR3-100-AS-05 (prefer not to say, by a date): a date implying 0.6 kg a 
 test('P3-35 Owner Question 164: "prefer not to say" sees the calorie target and the other numbers, paced at 0.25 or 0.5; "yes" and the profile flag see none', () => {
   const out = run(`
     ${WINE}
+    LLD_Members_HW_Programme::boot(); // as the loader does: the safety situations filter
     member(7); member(8); member(9, ['situations' => ['eating_disorder']]);
     LLD_Members_Clock::$now = '2026-11-12 19:00:00';
     $g = weight_goal(7); weight_goal(8); weight_goal(9);
@@ -571,4 +572,198 @@ test('P3-35 Owner Question 164: "prefer not to say" sees the calorie target and 
   expect(out.yes[2]).toBeNull();
   expect(out.yes[3]).toBeNull();
   expect(out.flag).toEqual(['lld_hw_not_offered', null]);
+});
+
+// ---- Second review --------------------------------------------------------------------------------------------------
+
+test('TC-FR3-69-AS-01 (the Check\'s "yes" in the matrix): a stored "yes" with no profile flag is an eating-disorder situation everywhere; "prefer" is not', () => {
+  const out = run(`
+    ${WINE}
+    LLD_Members_HW_Programme::boot();
+    member(7); member(8);
+    LLD_Members_HW_Answers::set(7, 'eating_disorder', 'yes');
+    LLD_Members_HW_Answers::set(8, 'eating_disorder', 'prefer');
+    $out = [];
+    foreach ([7, 8] as $m) {
+      LLD_Members_Stage3_Data::insert('food_log', $m, ['entry_date' => '2026-11-11', 'meal' => 'lunch', 'food_id' => 7, 'food_kind' => 'food', 'grams' => 150, 'kcal' => 195, 'source' => 'search']);
+      LLD_Members_Stage3_Data::insert('food_log', $m, ['entry_date' => '2026-11-10', 'meal' => 'lunch', 'food_id' => 7, 'food_kind' => 'food', 'grams' => 150, 'kcal' => 195, 'source' => 'search']);
+      $f = LLD_Members_Goal_Journey::facts($m);
+      $goal = LLD_Members_Goal_Journey::create_goal($m, 'main', 'lose_weight', ['current' => 80, 'target' => 70, 'facts' => $f, 'hw_flow' => true]);
+      $out[$m] = ['situations' => $f['situations'], 'targets' => LLD_Members_Goal_Journey::calorie_targets($f, 'lose', 0.5), 'goal' => is_wp_error($goal) ? $goal->get_error_code() : 'saved',
+        'food' => LLD_Members_Stage3_Safety::nutrition_hidden(LLD_Members_Stage3_Safety::applies($m, 'food_tracker')), 'drinks' => LLD_Members_Food_Log::drinks_for($m, ['wine' => ${WINE_ROW}])[0]['kcal'],
+        'repeat' => LLD_Members_Food_Log::view('repeat', $m, ['date' => '2026-11-12'])['meal']['kcal']];
+    }
+    return $out;
+  `);
+  expect(out[7].situations).toContain('eating_disorder');
+  expect(out[7].targets).toBeNull();
+  expect(out[7].goal).toBe('lld_goal_refused'); // a resubmitted goal form cannot make a weight goal
+  expect(out[7].food).toEqual({ all: true, protein: true });
+  expect(out[7].drinks).toBeNull();
+  expect(out[7].repeat).toBeNull();
+  expect(out[8].situations).not.toContain('eating_disorder'); // Owner Question 164
+  expect(out[8].targets.calorie_target).toBeGreaterThan(1200);
+  expect(out[8].goal).toBe('saved');
+  expect(out[8].drinks).toBe(100);
+  // Today's totals and goal card, and the goal page's daily targets, read the same situations.
+  const today = src('screens/class-today-screen.php');
+  expect(today).toContain("$ed     = in_array( 'eating_disorder', $facts['situations'], true );");
+  expect(today).toContain("! in_array( 'eating_disorder', $facts['situations'], true ) ) {");
+  const gs = src('screens/class-goal-setting.php');
+  expect(gs).toContain("! in_array( 'eating_disorder', $facts['situations'], true ) ) {");
+  expect(gs).toContain("'yes' === LLD_Members_Hw_Screen_Parts::answer( $member_id, 'eating_disorder' )");
+  expect(src('healthy-weight/class-hw-programme.php')).toContain("add_filter( 'lld_members_stage3_safety_situations', array( 'LLD_Members_HW_Answers', 'safety_situations' ), 10, 2 );");
+});
+
+test('TC-FR3-106-AS-04 (every rule\'s flag): the pause follows each rule\'s catalogue low_mood flag; where, milestones, pace reasons, the check-in and block choices pause too', () => {
+  const out = run(`
+    member(7); member(8);
+    $g = weight_goal(7); $g8 = weight_goal(8);
+    LLD_Members_HW_Programme::join(7, $g, ['stress' => 8]); LLD_Members_HW_Programme::join(8, $g8, ['stress' => 8]);
+    LLD_Members_Stage3_Data::insert('insights', 7, ['rule_id' => 5, 'template_id' => 5, 'shown_at' => '2026-11-11 08:00:00', 'updated_at' => '2026-11-11 08:00:00']);
+    $bar = LLD_Members_HW_Programme::record_barrier(7, '2026-11-12', ['family', 'illness'], '');
+    $usual = LLD_Members_HW_Programme::record_barrier(8, '2026-11-12', ['family', 'illness'], '');
+    $state = json_decode(LLD_Members_Goal_Journey::plan(7, $g)['log_schedule'], true)['hw'];
+    $v7 = LLD_Members_HW_Programme::plan_view(7); $v8 = LLD_Members_HW_Programme::plan_view(8);
+    LLD_Members_Programme::$enrolment[7] = ['id' => 77, 'track_key' => 'healthy-weight-2', 'status' => 'finished', 'first' => '2026-10-01'];
+    LLD_Members_HW_Programme::flush();
+    $rules = LLD_Members_Rule_Catalogue::programme_rules();
+    return ['pause' => LLD_Members_HW_Programme::pause_rules(), 'flags' => array_map(function ($r) { return $r['low_mood']; }, $rules), 'keep' => LLD_Members_HW_Programme::KEEP_IN_PAUSE,
+      'v7' => $v7, 'v8' => $v8, 'bar' => $bar, 'usual' => $usual, 'pending' => $state['pending'] ?? [], 'rows' => count(raw('check_in_barriers')),
+      'block' => LLD_Members_HW_Programme::choose_block(7, 'getting-stronger')->get_error_code(), 'held' => LLD_Members_HW_Programme::reminders_held(7), 'held8' => LLD_Members_HW_Programme::reminders_held(8)];
+  `);
+  // Every rule with low_mood false pauses, except the food-rules filter; every rule with low_mood true runs.
+  const expected = Object.entries(out.flags).filter(([id, f]) => !f && !out.keep.includes(id)).map(([id]) => id);
+  expect(out.pause).toEqual(expected);
+  expect(out.keep).toEqual(['R-HW-FOOD-01']);
+  for (const id of ['R-HW-SAFE-01', 'R-HW-SAFE-02', 'R-HW-SAFE-03', 'R-HW-SAFE-04', 'R-HW-SAFE-05', 'R-HW-NUM-03', 'R-HW-NOTE-01']) expect(out.pause).not.toContain(id);
+  // Each paused rule is checked where it acts: the programme, the recipes (FOOD-02, -03) and the reminders (REM-01).
+  const code = ['healthy-weight/class-hw-programme.php', 'class-recipes.php', 'class-reminders.php'].map(src).join('\n');
+  const gated = new Set();
+  for (const line of code.split('\n')) if (/paused(?:_any|_for)?\(/.test(line)) for (const m of line.matchAll(/'(R-HW-[A-Z]+-\d\d)'/g)) gated.add(m[1]);
+  for (const id of expected) expect(gated.has(id), id).toBe(true);
+  for (const id of Object.keys(out.flags).filter((id) => out.flags[id])) expect(gated.has(id), id).toBe(false);
+  expect(src('class-reminders.php')).toMatch(/LLD_Members_HW_Programme::reminders_held\( \$member_id \)/);
+  // Behaviour: where you are now, milestones and the pace reasons; the check-in recorded, nothing applied; no block.
+  expect(out.v8.where.category).toBe('obese1');
+  expect(out.v7.where).toEqual({ bmi: null, category: null, adjusted: false, range: null, waist: null });
+  expect(out.v8.milestones.length).toBe(4);
+  expect(out.v7.milestones).toEqual([]);
+  expect(out.v7.pace.reasons).toEqual([]);
+  expect(out.v7.reasons.map((r) => r.rule)).not.toContain('R-HW-PACE-01');
+  expect(out.v7.target_kcal).toBe(out.v8.target_kcal); // R-HW-NUM-03 runs
+  expect(out.bar).toEqual({ saved: true, replies: [] });
+  expect(out.usual.replies.length).toBeGreaterThan(0);
+  expect(out.pending).toEqual([]);
+  expect(out.rows).toBe(2);
+  expect(out.block).toBe('lld_hw_paused');
+  expect(out.held).toBe(true);
+  expect(out.held8).toBe(false);
+});
+
+test('P3-35 reminders: no Healthy Weight reminder email goes out while the programme is stopped or in the low-mood pause', () => {
+  const out = run(`
+    member(7); member(8); member(9);
+    foreach ([7, 8, 9] as $m) { $g = weight_goal($m); LLD_Members_HW_Programme::join($m, $g, ['work' => 'days', 'reminders_on' => true]); }
+    LLD_Members_Stage3_Safety::$situations[8] = ['pregnancy'];
+    LLD_Members_Stage3_Data::insert('insights', 9, ['rule_id' => 5, 'template_id' => 5, 'shown_at' => '2026-11-11 08:00:00', 'updated_at' => '2026-11-11 08:00:00']);
+    LLD_Members_Clock::$now = '2026-11-12 08:00:00';
+    LLD_Members_Reminders::tick();
+    return ['mail' => array_column($GLOBALS['lld_mail'], 'to'), 'rows' => count(raw('reminders'))];
+  `);
+  expect(out.rows).toBeGreaterThanOrEqual(3);
+  expect(out.mail).toEqual(['member7@example.test']);
+});
+
+test('P3-35 S6: in the Healthy Weight flow the plan stores no rate and no calorie target until the pace is chosen', () => {
+  const out = run(`
+    member(7); member(8);
+    $f = LLD_Members_Goal_Journey::facts(7);
+    $id = LLD_Members_Goal_Journey::create_goal(7, 'main', 'lose_weight', ['current' => 80, 'target' => 60, 'facts' => $f, 'hw_flow' => true]);
+    $other = LLD_Members_Goal_Journey::create_goal(8, 'main', 'lose_weight', ['current' => 80, 'target' => 60, 'facts' => LLD_Members_Goal_Journey::facts(8)]);
+    $plan = LLD_Members_Goal_Journey::plan(7, $id);
+    $nt = count(array_filter(raw('nutrition_targets'), function ($r) { return 7 === (int) $r['member_id']; }));
+    LLD_Members_HW_Programme::join(7, ['pace' => 0.5, 'today' => '2026-11-12']);
+    $after = LLD_Members_Goal_Journey::plan(7, $id);
+    return ['before' => [$plan['schedule'], $plan['calorie_target'], $nt], 'other' => LLD_Members_Goal_Journey::plan(8, $other)['schedule']['rate_kg_week'] ?? null,
+      'after' => [$after['schedule']['rate_kg_week'], $after['calorie_target']]];
+  `);
+  expect(out.before[0]).not.toHaveProperty('rate_kg_week');
+  expect(out.before[1]).toBeNull();
+  expect(out.before[2]).toBe(0);
+  expect(out.other).toBe(0.5); // other flows unchanged
+  expect(out.after[0]).toBe(0.5);
+  expect(out.after[1]).toBeGreaterThan(1200);
+});
+
+test('P3-35 blocks: while a block is paused for a festival block, the festival block is the running one, for all its days', () => {
+  const out = run(`
+    member(7);
+    $g = weight_goal(7);
+    LLD_Members_HW_Programme::join(7, $g, []);
+    LLD_Members_Programme::$enrolment[7] = ['id' => 77, 'track_key' => 'healthy-weight-2', 'status' => 'finished', 'first' => '2026-11-01'];
+    LLD_Members_Stage3_Data::insert('block_choices', 7, ['chosen_block_key' => 'getting-stronger', 'started_at' => '2027-01-01 09:00:00', 'paused_at' => '2027-01-10 00:00:00', 'resumed_at' => '2027-02-20 00:00:00']);
+    LLD_Members_Stage3_Data::insert('block_choices', 7, ['chosen_block_key' => 'festivals-and-fasting', 'started_at' => '2027-01-10 00:00:00']);
+    $plan = LLD_Members_Goal_Journey::plan(7, $g);
+    $s = $plan['schedule']; $s['hw']['festival'] = ['entry' => 1, 'from' => '2027-01-10', 'to' => '2027-02-19', 'days' => [], 'resume' => ['from' => '2027-02-20']];
+    LLD_Members_Stage3_Data::update('plans', 7, (int) $plan['id'], ['log_schedule' => json_encode($s)]);
+    $at = function ($d) { LLD_Members_Programme::$today = $d; LLD_Members_Clock::$now = "$d 09:00:00"; LLD_Members_HW_Programme::flush(); return LLD_Members_HW_Programme::blocks(7); };
+    $early = $at('2027-01-15'); $late = $at('2027-02-15'); $back = $at('2027-02-20');
+    return ['early' => [$early['stage'], $early['current']['block']], 'late' => [$late['stage'], $late['current']['block'], $late['current']['week']], 'back' => [$back['current']['block'], $back['current']['week'], $back['current']['day']]];
+  `);
+  expect(out.early).toEqual(['block', 'festivals-and-fasting']);
+  expect(out.late).toEqual(['block', 'festivals-and-fasting', 4]); // day 37 of a 41-day festival block
+  expect(out.back).toEqual(['getting-stronger', 2, 3]); // day 10 again, after the festival block
+});
+
+test('TC-FR3-98-AS-08 (stand-in): a step left out gets a library stand-in that keeps the food rules, never the track\'s or an alcohol item', () => {
+  const out = run(`
+    LLD_Members_Programme::$acts[] = ['id' => 'LIB-A', 'week' => 1, 'day' => 0, 'tags' => ['alcohol'], 'pid' => 3001];
+    LLD_Members_Programme::$acts[] = ['id' => 'LIB-W', 'week' => 1, 'day' => 0, 'tags' => ['zzz-unrelated'], 'pid' => 3002];
+    LLD_Members_Programme::$acts[] = ['id' => 'LIB-X', 'week' => 1, 'day' => 0, 'tags' => ['zzz-unrelated'], 'pid' => 3003];
+    LLD_Members_Safety::$blocked = [3002]; // the week's library pick is one the safety matrix leaves out
+    member(7, ['premium' => false]);
+    $g = weight_goal(7);
+    LLD_Members_HW_Programme::join(7, $g, []);
+    LLD_Members_HW_Answers::set(7, 'food_rules', ['halal']);
+    LLD_Members_Programme::$enrolment[7] = ['id' => 107, 'track_key' => 'healthy-weight-2', 'status' => 'active', 'first' => '2026-11-01'];
+    LLD_Members_Programme::$today = '2026-11-25';
+    return array_column(LLD_Members_HW_Programme::day_items([['parent_id' => 2025, 'title' => 'HW2-W4-A4']], 7, '2026-11-25'), 'title');
+  `);
+  expect(out).toEqual(['LIB-X']); // not the track's alcohol item, not the alcohol library item, not the blocked one
+});
+
+test('P3-35 day items: forgetting the answers clears the cached context', () => {
+  const out = run(`
+    member(7, ['premium' => false]);
+    $g = weight_goal(7);
+    LLD_Members_HW_Programme::join(7, $g, ['alcohol_freq' => 'never']);
+    LLD_Members_Programme::$enrolment[7] = ['id' => 107, 'track_key' => 'healthy-weight-2', 'status' => 'active', 'first' => '2026-11-01'];
+    LLD_Members_Programme::$today = '2026-11-25';
+    $items = [['parent_id' => 2025, 'title' => 'HW2-W4-A4']];
+    $never = array_column(LLD_Members_HW_Programme::day_items($items, 7, '2026-11-25'), 'title');
+    LLD_Members_HW_Answers::forget(7);
+    return [$never, array_column(LLD_Members_HW_Programme::day_items($items, 7, '2026-11-25'), 'title')];
+  `);
+  expect(out[0]).not.toContain('HW2-W4-A4');
+  expect(out[1]).toEqual(['HW2-W4-A4']);
+});
+
+test('P3-35 food recent: the free history window counts from the member\'s local date; alcoholic foods are found in one query', () => {
+  const out = run(`
+    ${WINE}
+    member(7, ['premium' => false]);
+    LLD_Members_Programme::$today = '2020-01-10';
+    LLD_Members_Stage3_Data::insert('food_log', 7, ['entry_date' => '2020-01-09', 'meal' => 'lunch', 'food_id' => 7, 'food_kind' => 'food', 'grams' => 100, 'kcal' => 130, 'source' => 'search', 'created_at' => '2020-01-09 12:00:00']);
+    $recent = LLD_Members_Food_Log::view('recent', 7, []);
+    global $wpdb;
+    $n = count($wpdb->log);
+    $e = [['entry_date' => '2020-01-10', 'food_id' => 5, 'food_kind' => 'food'], ['entry_date' => '2020-01-10', 'food_id' => 6, 'food_kind' => 'food'], ['entry_date' => '2020-01-10', 'food_id' => 7, 'food_kind' => 'food']];
+    $ids = LLD_Members_Food_Log::alcoholic_food_ids($e, '2020-01-10');
+    return ['recent' => array_column($recent['foods'], 'food_id'), 'ids' => $ids, 'queries' => array_values(array_slice($wpdb->log, $n))];
+  `);
+  expect(out.recent).toEqual([7]);
+  expect(out.ids).toEqual([5]);
+  expect(out.queries).toHaveLength(1);
+  expect(out.queries[0]).toMatch(/WHERE id IN \(5,6,7\) AND alcohol_100g > 0/);
 });

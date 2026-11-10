@@ -378,7 +378,8 @@ class LLD_Members_Access_Tiers {
 
 class LLD_Members_Stage3_Safety {
 	public static $situations = array();
-	public static function situations( $m, $known = array() ) { return isset( self::$situations[ (int) $m ] ) ? self::$situations[ (int) $m ] : array( 'none' ); }
+	/** As class-safety-stage3.php, the list goes through lld_members_stage3_safety_situations. */
+	public static function situations( $m, $known = array() ) { return array_values( array_unique( apply_filters( 'lld_members_stage3_safety_situations', isset( self::$situations[ (int) $m ] ) ? self::$situations[ (int) $m ] : array( 'none' ), (int) $m ) ) ); }
 	public static function allows_rule( $s, $r ) { return true; }
 	public static function warning_level( $type, $values, $flags ) { return array( 'level' => 'none', 'message' => null ); }
 	/** The food-tracker row of the matrix for an eating-disorder flag (as class-safety-stage3.php), nothing else. */

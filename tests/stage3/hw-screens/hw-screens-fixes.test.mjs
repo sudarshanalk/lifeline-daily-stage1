@@ -70,7 +70,8 @@ test('P3-35 "where you are now" asks the Check\'s eating-disorder question once,
 });
 
 test('P3-35 Owner Question 164 on the screens: "yes" to the Check\'s question hides calorie numbers; "prefer not to say" sees them', () => {
-  const show = (answer) => run(`return [LLD_Members_Hw_Screen_Parts::ed(${phpJson(facts())}), LLD_Members_Hw_Plan_Screen::plan_html(${phpJson(planView)}, ${phpJson(facts())}), lld_test_call('LLD_Members_Today_Screen', 'hw_today_html', [7, ${phpJson(facts())}, ${phpJson(todayView)}])];`, { ...base, today: todayView, answers: { eating_disorder: answer } });
+  // A stored "yes" reaches facts()['situations'] through the safety situations filter (LLD_Members_HW_Answers::safety_situations, tested in hw-data).
+  const show = (answer) => { const f = facts({ situations: answer === 'yes' ? ['eating_disorder'] : [] }); return run(`return [LLD_Members_Hw_Screen_Parts::ed(${phpJson(f)}), LLD_Members_Hw_Plan_Screen::plan_html(${phpJson(planView)}, ${phpJson(f)}), lld_test_call('LLD_Members_Today_Screen', 'hw_today_html', [7, ${phpJson(f)}, ${phpJson(todayView)}])];`, { ...base, today: todayView, answers: { eating_disorder: answer } }); };
   const yes = show('yes');
   expect(yes[0]).toBe(true);
   for (const html of yes.slice(1)) expect(html).not.toMatch(/data-lld-kcal|kcal|calorie|data-lld-add-drink|hw-milestones/i);

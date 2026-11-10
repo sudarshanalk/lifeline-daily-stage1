@@ -279,13 +279,9 @@ class LLD_Members_Hw_Screen_Parts {
 	 * @param array $facts LLD_Members_Goal_Journey::facts().
 	 */
 	public static function ed( array $facts ) {
-		if ( in_array( 'eating_disorder', isset( $facts['situations'] ) ? (array) $facts['situations'] : array(), true ) ) {
-			return true;
-		}
-		// The Check's own question on "where you are now": "yes" only. "Prefer not to say" sees the numbers, with the
-		// pace limited to 0.25 or 0.5 kg a week (Owner Question 164).
-		$answer = isset( $facts['member_id'] ) ? self::answer( (int) $facts['member_id'], 'eating_disorder' ) : null;
-		return 'yes' === $answer;
+		// A "yes" to the Check's own question reaches the situations through the safety matrix's filter
+		// (LLD_Members_HW_Answers::safety_situations). "Prefer not to say" sees the numbers (Owner Question 164).
+		return in_array( 'eating_disorder', isset( $facts['situations'] ) ? (array) $facts['situations'] : array(), true );
 	}
 
 	/**

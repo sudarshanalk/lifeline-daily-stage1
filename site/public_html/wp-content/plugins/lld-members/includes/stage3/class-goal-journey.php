@@ -375,7 +375,9 @@ class LLD_Members_Goal_Journey {
 		}
 		if ( 'main' === $role ) {
 			$goal = LLD_Members_Stage3_Data::row( 'goals', $member_id, $goal_id, self::SEALED_GOAL );
-			self::build_plan( $member_id, $goal, $facts, $check );
+			// The Healthy Weight flow (P3-35): the pace is chosen on the next step, so the plan stores no rate and no
+			// calorie target until it is (LLD_Members_HW_Programme::join).
+			self::build_plan( $member_id, $goal, $facts, $check, array( 'no_rate' => ! empty( $in['hw_flow'] ) && 'lose_weight' === $type ) );
 		}
 		return $goal_id;
 	}
@@ -463,7 +465,7 @@ class LLD_Members_Goal_Journey {
 	 * @param array|null $check     The weight_check() answer for a weight goal.
 	 * @return int Plan id.
 	 */
-	public static function build_plan( $member_id, array $goal, array $facts, $check = null ) {
+	public static function build_plan( $member_id, array $goal, array $facts, $check = null, array $opts = array() ) {
 		$types = LLD_Members_Goal_Rules::types();
 		$type  = (string) $goal['goal_type'];
 		$def   = isset( $types[ $type ] ) ? $types[ $type ] : $types['activity'];
@@ -487,7 +489,9 @@ class LLD_Members_Goal_Journey {
 			'valid_from'            => $today,
 			'created_by'            => 'engine',
 		);
-		if ( in_array( $type, array( 'lose_weight', 'keep_weight' ), true ) && is_array( $check ) ) {
+		if ( in_array( $type, array( 'lose_weight', 'keep_weight' ), true ) && ! empty( $opts['no_rate'] ) ) {
+			$schedule['weigh_ins'] = 'weekly'; // P3-35: no rate and no calorie target before the pace is chosen
+		} elseif ( in_array( $type, array( 'lose_weight', 'keep_weight' ), true ) && is_array( $check ) ) {
 			// The rate only: the cap and the 5 % milestone derive from the sealed starting weight, so they are recomputed
 			// from the opened goal where needed and never written in plain text (NFR3-10, Build Method §3.6).
 			$schedule['rate_kg_week'] = $check['rate'];

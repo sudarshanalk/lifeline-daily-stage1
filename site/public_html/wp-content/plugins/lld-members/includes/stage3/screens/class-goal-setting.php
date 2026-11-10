@@ -103,12 +103,13 @@ class LLD_Members_Goal_Setting {
 			if ( 'help' === $action ) {
 				$suggestion = LLD_Members_Goal_Rules::suggest( $facts );
 			} elseif ( 'save' === $action && '' !== $type ) {
-				if ( 'lose_weight' === $type && self::hw_flow() && 'yes' === LLD_Members_Hw_Where_Screen::save_eating( $member_id ) ) {
+				// The answer posted now, or one stored before (a resubmitted form): "yes" never gets a weight goal.
+				if ( 'lose_weight' === $type && self::hw_flow() && ( 'yes' === LLD_Members_Hw_Where_Screen::save_eating( $member_id ) || 'yes' === LLD_Members_Hw_Screen_Parts::answer( $member_id, 'eating_disorder' ) ) ) {
 					// P3-35 (SAFE-01): an eating disorder told on "where you are now" stops here, with no weight goal saved.
 					wp_safe_redirect( home_url( '/members/goal/?hw=where' ) );
 					exit;
 				}
-				$id = LLD_Members_Goal_Journey::create_goal( $member_id, $role, $type, self::posted( $facts ) + array( 'facts' => $facts ) );
+				$id = LLD_Members_Goal_Journey::create_goal( $member_id, $role, $type, self::posted( $facts ) + array( 'facts' => $facts, 'hw_flow' => 'lose_weight' === $type && self::hw_flow() ) );
 				if ( is_wp_error( $id ) ) {
 					$error = $id->get_error_message();
 					$data  = $id->get_error_data();

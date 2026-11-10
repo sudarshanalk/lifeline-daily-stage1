@@ -723,7 +723,7 @@ class LLD_Members_Food_Log {
 			return array( 'meal' => $meal );
 		}
 		if ( 'recent' === $which ) {
-			$rows = self::limit_history( self::rows_for( 'food_log', $member_id ), self::premium( $member_id ), gmdate( 'Y-m-d' ) );
+			$rows = self::limit_history( self::rows_for( 'food_log', $member_id ), self::premium( $member_id ), self::local_today( $member_id ) );
 			return array( 'foods' => self::recent( $rows ) );
 		}
 		return array( 'error' => 'Not available.' );
@@ -913,15 +913,13 @@ class LLD_Members_Food_Log {
 				$ids[ (int) $e['food_id'] ] = true;
 			}
 		}
-		$out   = array();
-		$table = LLD_Members_Stage3_Schema::table( 'foods' );
-		foreach ( array_keys( $ids ) as $id ) {
-			$hit = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE id = %d AND alcohol_100g > 0", $id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
-			if ( null !== $hit ) {
-				$out[] = (int) $id;
-			}
+		if ( ! $ids ) {
+			return array();
 		}
-		return $out;
+		$table = LLD_Members_Stage3_Schema::table( 'foods' );
+		$list  = implode( ',', array_map( 'intval', array_keys( $ids ) ) ); // whole numbers only
+		$hits  = $wpdb->get_col( "SELECT id FROM {$table} WHERE id IN ({$list}) AND alcohol_100g > 0" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- internal table name and cast ids.
+		return array_values( array_intersect( array_keys( $ids ), array_map( 'intval', is_array( $hits ) ? $hits : array() ) ) );
 	}
 
 	/**
@@ -1063,13 +1061,8 @@ class LLD_Members_Food_Log {
 		if ( ! class_exists( 'LLD_Members_Stage3_Safety' ) || ! method_exists( 'LLD_Members_Stage3_Safety', 'nutrition_hidden' ) || ! method_exists( 'LLD_Members_Stage3_Safety', 'applies' ) ) {
 			return array( 'all' => false, 'protein' => false );
 		}
-		$h = LLD_Members_Stage3_Safety::nutrition_hidden( LLD_Members_Stage3_Safety::applies( (int) $member_id, 'food_tracker' ) );
-		// "Yes" to the Healthy Weight Check's own eating question counts as the profile flag ("prefer not to say" does
-		// not, Owner Question 164).
-		if ( ! $h['all'] && class_exists( 'LLD_Members_HW_Answers' ) && 'yes' === LLD_Members_HW_Answers::get( (int) $member_id, 'eating_disorder' ) ) {
-			$h = array( 'all' => true, 'protein' => true );
-		}
-		return $h;
+		// A "yes" to the Healthy Weight Check's eating question is in the situations (the safety situations filter).
+		return LLD_Members_Stage3_Safety::nutrition_hidden( LLD_Members_Stage3_Safety::applies( (int) $member_id, 'food_tracker' ) );
 	}
 
 	/**
