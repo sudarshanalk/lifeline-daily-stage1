@@ -89,6 +89,8 @@ class LLD_Members_HW_Programme {
 	private static $activities = null;
 	private static $plans      = array();
 	private static $busy       = false;
+	/** Contexts for the day-items hook, by member (cleared by every write). */
+	private static $ctx = array();
 
 	public static function boot() {
 		add_filter( 'lld_members_day_items', array( __CLASS__, 'day_items' ), 10, 3 );
@@ -99,6 +101,7 @@ class LLD_Members_HW_Programme {
 	 */
 	public static function flush() {
 		self::$plans = array();
+		self::$ctx   = array();
 	}
 
 	/**
@@ -160,6 +163,12 @@ class LLD_Members_HW_Programme {
 		if ( ! $goal || 'lose_weight' !== (string) $goal['goal_type'] || 'active' !== (string) $goal['status'] ) {
 			return new WP_Error( 'lld_hw_goal', 'Healthy Weight follows a weight-loss goal.' );
 		}
+		// Already joined with this goal: nothing is reset (a second tap, a resent form). A new goal has a new plan with
+		// no programme state, so joining after it starts fresh.
+		$current = LLD_Members_Goal_Journey::plan( $member_id, (int) $goal['id'] );
+		if ( $current && ! empty( $current['schedule']['hw'] ) ) {
+			return self::plan_view( $member_id, $facts['today'] );
+		}
 		$known = LLD_Members_HW_Answers::engine( $member_id, $facts );
 		$elig  = LLD_Members_HW_Rules::eligibility(
 			array(
@@ -203,6 +212,22 @@ class LLD_Members_HW_Programme {
 					'eating_pnts' => 'pnts' === $known['eating_disorder'],
 				)
 			);
+			if ( ! empty( $check['ok'] ) && 'pnts' === $known['eating_disorder'] && (float) $check['rate'] > 0.5 + 1e-9 ) {
+				// HWS-01b: "prefer not to say" keeps the pace at 0.25 or 0.5 by a date too. The signed timeline's date path
+				// checks only the cap, so the implied rate is put to its rate path, which refuses it with the signed message.
+				$check = LLD_Members_Goal_Rules::weight_check(
+					array(
+						'current_kg'  => is_numeric( $goal['start_value'] ) ? (float) $goal['start_value'] : $facts['weight_kg'],
+						'goal_kg'     => is_numeric( $goal['target_value'] ) ? (float) $goal['target_value'] : null,
+						'height_cm'   => $facts['height_cm'],
+						'rate'        => (float) $check['rate'],
+						'today'       => (string) $facts['today'],
+						'situations'  => (array) $facts['situations'],
+						'imperial'    => ! empty( $facts['imperial'] ),
+						'eating_pnts' => true,
+					)
+				);
+			}
 			if ( empty( $check['ok'] ) ) {
 				return new WP_Error( 'lld_hw_pace', (string) $check['message'], array( 'code' => $check['code'], 'offered' => $check['offered'] ) );
 			}
@@ -240,7 +265,7 @@ class LLD_Members_HW_Programme {
 		if ( class_exists( 'LLD_Members_Reminders' ) ) {
 			LLD_Members_Reminders::sync_hw( $member_id, $engine, ! empty( $answers['reminders_on'] ) );
 		}
-		self::$plans = array();
+		self::flush();
 		return self::plan_view( $member_id, $facts['today'] );
 	}
 
@@ -267,6 +292,9 @@ class LLD_Members_HW_Programme {
 		$c = self::context( $member_id, $today, true );
 		if ( ! $c ) {
 			return null;
+		}
+		if ( $c['stop'] ) {
+			return self::stopped_plan( $c );
 		}
 		$facts  = $c['facts'];
 		$a      = $c['answers'];
@@ -300,7 +328,8 @@ class LLD_Members_HW_Programme {
 		}
 		$state     = $c['state'];
 		$celebrate = null;
-		if ( ! $ed && ! empty( $state['celebrate'] ) ) {
+		// The celebration shows once, on the member's own today (marking it shown is a write), never in the low-mood pause.
+		if ( ! $ed && $c['live'] && ! self::paused( $c, 'R-HW-MOT-02' ) && ! empty( $state['celebrate'] ) ) {
 			$card = self::celebration( $member_id, $c, (string) $state['celebrate'] );
 			if ( $card ) {
 				$cards[]   = $card;
@@ -312,7 +341,8 @@ class LLD_Members_HW_Programme {
 				);
 			}
 		}
-		if ( ! $ed && ! empty( $state['plateau'] ) && empty( $sc['no_weight_message'] ) ) {
+		// The plateau card is Premium (R-HW-WEEK-02) and pauses in the low-mood week.
+		if ( ! $ed && $c['premium'] && ! self::paused( $c, 'R-HW-WEEK-02' ) && ! empty( $state['plateau'] ) && empty( $sc['no_weight_message'] ) ) {
 			$cards[] = array(
 				'rule'     => 'R-HW-WEEK-02',
 				'key'      => 'hw.T-HW-WEEK-02',
@@ -332,7 +362,7 @@ class LLD_Members_HW_Programme {
 				'text' => $pace['because'],
 			),
 		);
-		if ( $drinks['line'] && ! $ed ) {
+		if ( $drinks['line'] && ! $ed && ! self::paused( $c, 'R-HW-NUM-05' ) ) {
 			$reasons[] = array(
 				'rule' => 'R-HW-NUM-05',
 				'key'  => 'hw.T-HW-NUM-05',
@@ -340,7 +370,7 @@ class LLD_Members_HW_Programme {
 			);
 		}
 		$pos = self::position( $member_id, $c );
-		if ( 'level' === $pos['stage'] && $c['premium'] ) {
+		if ( 'level' === $pos['stage'] && $c['premium'] && ! self::paused( $c, 'R-HW-STEP-02' ) ) {
 			$week = self::week_plan( $member_id, $c, $pos['programme_week'] );
 			if ( $week['notice'] ) {
 				$reasons[] = array(
@@ -409,6 +439,60 @@ class LLD_Members_HW_Programme {
 	}
 
 	/**
+	 * The plan view when R-HW-SAFE-01 stops the programme: the SCR-26 stop and its matrix note, with no number at all.
+	 *
+	 * @param array $c context().
+	 */
+	private static function stopped_plan( array $c ) {
+		return array(
+			'where'             => array(
+				'bmi'      => null,
+				'category' => null,
+				'adjusted' => false,
+				'range'    => null,
+				'waist'    => null,
+			),
+			'activity'          => $c['answers']['activity_level'],
+			'tdee'              => null,
+			'target_kcal'       => null,
+			'pace'              => null,
+			'drinks'            => null,
+			'milestones'        => array(),
+			'cards'             => array(),
+			'reasons'           => array(),
+			'milestone_reached' => null,
+			'celebrated'        => array(),
+			'stopped'           => true,
+			'stop'              => self::stop_view( $c['stop'] ),
+		);
+	}
+
+	/**
+	 * Today when R-HW-SAFE-01 stops the programme: nothing but the stop.
+	 *
+	 * @param array $c context().
+	 */
+	private static function stopped_today( array $c ) {
+		return array(
+			'note'           => null,
+			'step'           => null,
+			'qod'            => array(),
+			'drink_shortcut' => array(
+				'rule'  => 'R-HW-ALC-02',
+				'show'  => false,
+				'label' => null,
+				'from'  => null,
+			),
+			'repeat_meal'    => null,
+			'reason_line'    => null,
+			'carry_on'       => false,
+			'cards'          => array(),
+			'stopped'        => true,
+			'stop'           => self::stop_view( $c['stop'] ),
+		);
+	}
+
+	/**
 	 * The engine kinds of the goal's milestones already celebrated.
 	 *
 	 * @param int   $member_id Member number.
@@ -441,11 +525,15 @@ class LLD_Members_HW_Programme {
 		if ( ! $c ) {
 			return null;
 		}
+		if ( $c['stop'] ) {
+			return self::stopped_today( $c );
+		}
 		$today = $c['today'];
 		$a     = $c['answers'];
 		$ed    = 'no' !== $a['eating_disorder'];
 		$shown = self::note_row( $member_id, $today );
-		if ( ! $shown ) {
+		if ( ! $shown && $c['live'] ) {
+			// First sight of the member's own today: the nightly part runs now. Another date is only read.
 			self::nightly( $member_id, $today );
 			$c     = self::context( $member_id, $today );
 			$shown = self::note_row( $member_id, $today );
@@ -464,6 +552,9 @@ class LLD_Members_HW_Programme {
 		$qs  = LLD_Members_HW_Answers::qod_state( $member_id );
 		$qod = array();
 		$q   = LLD_Members_HW_Rules::qod( $qs + array( 'eating_disorder' => $a['eating_disorder'] ) );
+		if ( self::paused( $c, 'R-HW-QOD-01' ) ) {
+			$q['questions'] = array(); // no quick questions in the low-mood pause
+		}
 		$asks = array(); // a group key (food_rules_allergies) becomes the answer keys it asks (food_rules, fasts, allergies)
 		foreach ( $q['questions'] as $group ) {
 			$left = LLD_Members_HW_Answers::group_keys( $member_id, $group );
@@ -483,16 +574,21 @@ class LLD_Members_HW_Programme {
 			);
 		}
 		$entries   = LLD_Members_Stage3_Data::rows( 'food_log', $member_id, array(), '', 2000 );
+		$alcoholic = LLD_Members_Food_Log::alcoholic_food_ids( $entries, $today );
 		$counts    = ! $ed && 'calorie_count' === ( isset( $c['plan']['eating_method'] ) ? $c['plan']['eating_method'] : 'calorie_count' );
 		$now       = self::local_time( $member_id );
+		// The clock time goes over the answers: the answers' own 'time' key is the time-for-the-plan question.
 		$shortcut  = LLD_Members_HW_Rules::drink_shortcut(
-			$a + array(
+			array(
 				'counts_calories'    => $counts,
 				'time'               => $now,
 				'sleep_time'         => self::sleep_time( $a ),
-				'drink_logged_today' => LLD_Members_Food_Log::drink_logged( $entries, $today ),
-			)
+				'drink_logged_today' => LLD_Members_Food_Log::drink_logged( $entries, $today, $alcoholic ),
+			) + $a
 		);
+		if ( self::paused( $c, 'R-HW-ALC-02' ) ) {
+			$shortcut['show'] = false;
+		}
 		$repeat = $counts && $c['premium'] ? LLD_Members_Food_Log::repeat_meal( $entries, $today ) : null;
 		return array(
 			'note'           => $note,
@@ -505,11 +601,35 @@ class LLD_Members_HW_Programme {
 				'from'  => $shortcut['from'],
 			),
 			'repeat_meal'    => $repeat,
-			'reason_line'    => $ed ? null : self::reason_line( $c ),
+			'reason_line'    => $ed || self::paused( $c, 'R-HW-MOT-01' ) ? null : self::reason_line( $c ),
 			// Package P4: the "Carry on to week 5" button (Q161) and the free support cards.
 			'carry_on'       => self::position( $member_id, $c, $today )['carry_on'],
 			'cards'          => self::support_card_list( $member_id, $c ),
 		);
+	}
+
+	/**
+	 * The weight-loss goal whose pace is still to choose (S6): saved at the goal step, the programme not joined yet.
+	 * Today asks the member to finish choosing a pace.
+	 *
+	 * @param int $member_id Member number.
+	 * @return int|null The goal id, or null.
+	 */
+	public static function pending_pace( $member_id ) {
+		$member_id = (int) $member_id;
+		if ( $member_id < 1 || ! LLD_Members_Access::has_health_consent( $member_id ) ) {
+			return null;
+		}
+		$goal = self::hw_goal( $member_id );
+		if ( ! $goal || 'active' !== (string) $goal['status'] || is_numeric( $goal['chosen_rate'] ) ) {
+			return null;
+		}
+		$plan = LLD_Members_Goal_Journey::plan( $member_id, (int) $goal['id'] );
+		if ( ! $plan || ! empty( $plan['schedule']['hw'] ) ) {
+			return null;
+		}
+		$c = self::context( $member_id, null, true );
+		return $c && ! $c['stop'] ? (int) $goal['id'] : null;
 	}
 
 	/**
@@ -634,16 +754,29 @@ class LLD_Members_HW_Programme {
 		}
 		self::$busy = true;
 		try {
-			$c = self::context( $member_id, $date );
-			if ( ! $c ) {
-				return $items;
+			// One context a request and member: a Stage 2 programme page asks for every day of the track.
+			$key = (int) $member_id;
+			if ( ! array_key_exists( $key, self::$ctx ) ) {
+				self::$ctx[ $key ] = self::context( $member_id, null );
 			}
+			$c = self::$ctx[ $key ];
+			if ( ! $c || $c['stop'] ) {
+				return $items; // not joined, or stopped by R-HW-SAFE-01: the Stage 2 items exactly as they are
+			}
+			$c['today']    = (string) $date;
+			$c['live']     = (string) $date === (string) $c['facts']['today'];
+			$c['low_mood'] = self::low_mood_on( $c['safe04'], (string) $date );
 			$pos = self::position( $member_id, $c, $date );
 			if ( 'level' !== $pos['stage'] ) {
 				return $items;
 			}
 			$plan = self::week_plan( $member_id, $c, $pos['programme_week'] );
 			$day  = isset( $plan['days'][ $pos['day'] - 1 ] ) ? $plan['days'][ $pos['day'] - 1 ] : null;
+			if ( $day && null === $day['id'] && 'R-HW-STEP-02' === $day['rule'] ) {
+				// A step the food rules or "never drinks" leave out (the free part of R-HW-STEP-02), with no approved
+				// library step to stand in: the track's own item is not shown either.
+				return array();
+			}
 			$snap = $day ? self::snapshot( $member_id, (string) $day['id'] ) : null;
 			if ( ! $snap || ( class_exists( 'LLD_Members_Safety' ) && ! LLD_Members_Safety::allows( (int) $member_id, $snap ) ) ) {
 				return $items;
@@ -734,7 +867,7 @@ class LLD_Members_HW_Programme {
 				$replies[] = $effects['texts'][ $i ];
 			}
 		}
-		self::$plans = array();
+		self::flush();
 		return array(
 			'saved'   => true,
 			'replies' => $replies,
@@ -775,8 +908,23 @@ class LLD_Members_HW_Programme {
 		if ( ! $c ) {
 			return null;
 		}
+		if ( $c['stop'] ) {
+			return array(
+				'stage'          => 'none',
+				'programme_week' => null,
+				'carry_on'       => false,
+				'current'        => null,
+				'suggested'      => null,
+				'choices'        => array(),
+				'keep_it_off'    => false,
+				'due'            => false,
+				'festival'       => null,
+				'stopped'        => true,
+				'stop'           => self::stop_view( $c['stop'] ),
+			);
+		}
 		$pos     = self::position( $member_id, $c );
-		$choices = self::block_rows( $member_id );
+		$choices = self::block_rows( $member_id, $c );
 		$current = null;
 		foreach ( $choices as $r ) {
 			if ( $r['started_at'] && ! $r['finished_at'] && $r['chosen_block_key'] ) {
@@ -803,7 +951,7 @@ class LLD_Members_HW_Programme {
 				'to'    => $c['state']['festival']['to'],
 			),
 		);
-		if ( $c['premium'] && ! $current && ( 'between' === $pos['stage'] || $c['reached'] ) ) {
+		if ( $c['premium'] && ! self::paused( $c, 'R-HW-BLOCK-01' ) && ! $current && ( 'between' === $pos['stage'] || $c['reached'] ) ) {
 			$s = LLD_Members_HW_Rules::suggest_block( self::block_input( $member_id, $c, $pos, $choices ) );
 			if ( $s['block'] ) {
 				$out['suggested'] = array(
@@ -838,11 +986,14 @@ class LLD_Members_HW_Programme {
 		if ( ! $c ) {
 			return new WP_Error( 'lld_hw_block', 'Join Healthy Weight first.' );
 		}
+		if ( $c['stop'] ) {
+			return new WP_Error( 'lld_hw_not_offered', 'Healthy Weight is not offered.', array( 'stop' => $c['stop'], 'screen' => 'SCR-26' ) );
+		}
 		if ( ! $c['premium'] ) {
 			return new WP_Error( 'lld_premium', 'Focus blocks are part of Premium.' );
 		}
 		$pos     = self::position( $member_id, $c );
-		$rows    = self::block_rows( $member_id );
+		$rows    = self::block_rows( $member_id, $c );
 		$suggest = LLD_Members_HW_Rules::suggest_block( self::block_input( $member_id, $c, $pos, $rows ) );
 		$now     = lld_members_now_mysql( $member_id );
 		$entry   = null;
@@ -941,7 +1092,7 @@ class LLD_Members_HW_Programme {
 			self::save_state( $member_id, $state );
 		}
 		LLD_Members_Stage3_Data::insert( 'block_choices', $member_id, $row );
-		self::$plans = array();
+		self::flush();
 		return self::blocks( $member_id, $c['today'] );
 	}
 
@@ -957,6 +1108,9 @@ class LLD_Members_HW_Programme {
 		if ( ! $c ) {
 			return new WP_Error( 'lld_hw_carry_on', 'Join Healthy Weight first.' );
 		}
+		if ( $c['stop'] ) {
+			return new WP_Error( 'lld_hw_not_offered', 'Healthy Weight is not offered.', array( 'stop' => $c['stop'], 'screen' => 'SCR-26' ) );
+		}
 		$pos = self::position( $member_id, $c );
 		if ( ! $pos['carry_on'] ) {
 			return new WP_Error( 'lld_hw_carry_on', 'Week 5 opens at the end of week 4.' );
@@ -969,7 +1123,7 @@ class LLD_Members_HW_Programme {
 		$state          = $c['state'];
 		$state['level'] = 2;
 		self::save_state( $member_id, $state );
-		self::$plans = array();
+		self::flush();
 		return self::blocks( $member_id, $c['today'] );
 	}
 
@@ -998,16 +1152,28 @@ class LLD_Members_HW_Programme {
 		if ( ! $c ) {
 			return $out;
 		}
+		if ( $c['stop'] ) {
+			$out['status'] = 'stopped'; // R-HW-SAFE-01: nothing runs and nothing is written
+			return $out;
+		}
+		if ( ! $c['live'] ) {
+			$out['status'] = 'not_today'; // only the member's own today is written
+			return $out;
+		}
 		$out['status'] = 'ran';
 		$today         = $c['today'];
 		$a             = $c['answers'];
 		$ed            = 'no' !== $a['eating_disorder'];
 		$state         = $c['state'];
-		$safe04        = in_array( 'R-SAFE-04', isset( $engine_out['safety'] ) ? (array) $engine_out['safety'] : array(), true ) ? $today : self::safe04_date( $member_id );
-		$low           = null !== $safe04 && LLD_Members_HW_Festival::days_between( $safe04, $today ) >= 0 && LLD_Members_HW_Festival::days_between( $safe04, $today ) < 7;
+		$safe04        = in_array( 'R-SAFE-04', isset( $engine_out['safety'] ) ? (array) $engine_out['safety'] : array(), true ) ? $today : $c['safe04'];
+		$low           = self::low_mood_on( $safe04, $today );
+		$c['safe04']   = $safe04;
+		$c['low_mood'] = $low;
 		$out['low_mood_pause'] = $low;
 		$weights = LLD_Members_Goal_Journey::daily( $member_id, 'weight' );
 		$plateau = array( 'fires' => false );
+		// The plateau check is Premium and pauses in the low-mood week; whenever it does not run, no plateau is kept.
+		$state['plateau'] = false;
 		if ( ! $low && ! $ed && $c['premium'] ) {
 			$plateau = LLD_Members_HW_Rules::plateau(
 				array(
@@ -1067,13 +1233,13 @@ class LLD_Members_HW_Programme {
 		if ( ! $low && ! $ed ) {
 			$out['milestone'] = self::milestones_reached( $member_id, $c, $weights, $state );
 		}
-		$pos = self::position( $member_id, $c, $today );
-		if ( 'level' === $pos['stage'] ) {
+		$pos = self::position( $member_id, $c, $today ); // also closes a focus block whose days have passed
+		if ( 'level' === $pos['stage'] && ! self::paused( $c, 'R-HW-STEP-03' ) ) {
 			$plan = self::week_plan( $member_id, $c, $pos['programme_week'] );
 			$state['versions'][ (string) $pos['programme_week'] ] = $plan['version'];
 		}
 		self::save_state( $member_id, $state );
-		self::$plans = array();
+		self::flush();
 		return $out;
 	}
 
@@ -1443,14 +1609,29 @@ class LLD_Members_HW_Programme {
 	 */
 	private static function week_plan( $member_id, array $c, $week ) {
 		$week = max( 1, min( 8, (int) $week ) );
-		$key  = (int) $member_id . ':' . $week;
+		// In the low-mood pause the step rules pause (R-HW-STEP-01 to -06, R-HW-ALC-01): the track's own order in the
+		// standard version, as for a Free member, with the safety swaps and the food-rules filter.
+		$own  = $c['premium'] && ! self::paused( $c, 'R-HW-STEP-03' );
+		$key  = (int) $member_id . ':' . $week . ':' . ( $own ? 'p' : 'f' );
 		if ( isset( self::$plans[ $key ] ) ) {
 			return self::$plans[ $key ];
 		}
 		$acts    = self::activities( $member_id );
-		$answers = $c['premium'] ? $c['answers'] : array( 'conditions' => $c['answers']['conditions'] );
+		$a       = $c['answers'];
+		$in      = array();
+		if ( $own ) {
+			$answers = $a;
+		} else {
+			// Free: the R-HW-SAFE-04 swaps, and the alcohol part of R-HW-STEP-02 as part of the free food-rules filter
+			// (rule question 12): a member who never drinks, or whose food rules exclude alcohol, gets no alcohol step.
+			$answers         = array(
+				'conditions' => $a['conditions'],
+				'food_rules' => $a['food_rules'],
+			);
+			$in['never_drinks'] = 'never' === $a['alcohol_freq'];
+		}
 		$history = array();
-		if ( $c['premium'] && $week > 1 ) {
+		if ( $own && $week > 1 ) {
 			$state   = $c['state'];
 			$history = array(
 				'version'  => isset( $state['versions'][ (string) ( $week - 1 ) ] ) ? $state['versions'][ (string) ( $week - 1 ) ] : null,
@@ -1459,11 +1640,12 @@ class LLD_Members_HW_Programme {
 			);
 		}
 		self::$plans[ $key ] = LLD_Members_HW_Rules::week_plan(
-			array(
+			$in + array(
 				'week'       => $week,
 				'answers'    => $answers,
 				'activities' => $acts['activities'],
-				'library'    => $c['premium'] ? $acts['library'] : array(),
+				// The approved library fills a slot left out; for Free only the food-rules filter leaves one out.
+				'library'    => $acts['library'],
 				'history'    => $history,
 			)
 		);
@@ -1537,7 +1719,7 @@ class LLD_Members_HW_Programme {
 			'finished'       => false,
 		);
 		$done = 0;
-		foreach ( self::block_rows( $member_id ) as $r ) {
+		foreach ( self::block_rows( $member_id, $c, $date ) as $r ) {
 			if ( ! $r['chosen_block_key'] || ! $r['started_at'] ) {
 				continue;
 			}
@@ -1546,6 +1728,9 @@ class LLD_Members_HW_Programme {
 				continue;
 			}
 			$days = LLD_Members_HW_Festival::days_between( substr( (string) $r['started_at'], 0, 10 ), $date );
+			if ( ! empty( $r['resumed_at'] ) && $date >= substr( (string) $r['resumed_at'], 0, 10 ) ) {
+				$days -= self::paused_days( $r ); // the block resumed after a festival block: its days carry on from there
+			}
 			if ( $days >= 0 && $days < 28 ) {
 				$out['stage']          = 'block';
 				$out['block']          = (string) $r['chosen_block_key'];
@@ -1615,16 +1800,86 @@ class LLD_Members_HW_Programme {
 		if ( empty( $plan['schedule']['hw'] ) && ( ! $preview || 'active' !== (string) $goal['status'] ) ) {
 			return null;
 		}
-		$facts = LLD_Members_Goal_Journey::facts( $member_id );
+		$facts   = LLD_Members_Goal_Journey::facts( $member_id );
+		$answers = LLD_Members_HW_Answers::engine( $member_id, $facts );
+		$date    = null === $today ? (string) $facts['today'] : (string) $today;
+		// R-HW-SAFE-01 on the member's situations now, not only when joining: pregnancy or an eating disorder reported
+		// later stops the programme (SCR-26, no numbers at all).
+		$elig   = LLD_Members_HW_Rules::eligibility(
+			array(
+				'pregnant'        => $answers['pregnant'],
+				'eating_disorder' => $answers['eating_disorder'],
+				'age'             => $facts['age'],
+			)
+		);
+		$safe04 = self::safe04_date( $member_id );
 		return array(
-			'facts'   => $facts,
-			'answers' => LLD_Members_HW_Answers::engine( $member_id, $facts ),
-			'goal'    => $goal,
-			'plan'    => $plan,
-			'state'   => empty( $plan['schedule']['hw'] ) ? array() : (array) $plan['schedule']['hw'],
-			'premium' => ! empty( $facts['premium'] ),
-			'reached' => 'reached' === (string) $goal['status'],
-			'today'   => null === $today ? (string) $facts['today'] : (string) $today,
+			'facts'    => $facts,
+			'answers'  => $answers,
+			'goal'     => $goal,
+			'plan'     => $plan,
+			'state'    => empty( $plan['schedule']['hw'] ) ? array() : (array) $plan['schedule']['hw'],
+			'premium'  => ! empty( $facts['premium'] ),
+			'reached'  => 'reached' === (string) $goal['status'],
+			'today'    => $date,
+			// Writes happen only for the member's own today: a view of another date (?date=) is read-only.
+			'live'     => $date === (string) $facts['today'],
+			'stop'     => $elig['offered'] ? null : (string) $elig['stop'],
+			'safe04'   => $safe04,
+			'low_mood' => self::low_mood_on( $safe04, $date ),
+		);
+	}
+
+	/**
+	 * The R-SAFE-04 pause: the 7 days from the day R-SAFE-04 (low mood) last showed.
+	 *
+	 * @param string|null $safe04 Local date R-SAFE-04 showed, or null.
+	 * @param string      $date   Local date.
+	 */
+	private static function low_mood_on( $safe04, $date ) {
+		if ( null === $safe04 ) {
+			return false;
+		}
+		$d = LLD_Members_HW_Festival::days_between( $safe04, $date );
+		return $d >= 0 && $d < 7;
+	}
+
+	/**
+	 * Whether a programme rule is paused today: during the R-SAFE-04 pause every R-HW rule whose catalogue `low_mood`
+	 * flag is false pauses (R-HW-SAFE, the calorie target and R-HW-NOTE-01 keep running).
+	 *
+	 * @param array  $c    context().
+	 * @param string $rule Rule id.
+	 */
+	private static function paused( array $c, $rule ) {
+		if ( empty( $c['low_mood'] ) ) {
+			return false;
+		}
+		$rules = LLD_Members_Rule_Catalogue::programme_rules();
+		return empty( $rules[ $rule ]['low_mood'] );
+	}
+
+	/**
+	 * The SCR-26 stop (R-HW-SAFE-01) with the safety matrix's note: {rule, stop, screen, note_key, note}. No number.
+	 *
+	 * @param string $stop pregnancy, eating or under18.
+	 */
+	private static function stop_view( $stop ) {
+		$keys = array(
+			'pregnancy' => 'pregnancy.calorie-target',
+			'eating'    => 'ed.weight-goal-screen',
+		);
+		$key  = isset( $keys[ $stop ] ) ? $keys[ $stop ] : null;
+		$text = null;
+		if ( null !== $key && class_exists( 'LLD_Members_Stage3_Safety' ) && defined( 'LLD_Members_Stage3_Safety::MESSAGES' ) && isset( LLD_Members_Stage3_Safety::MESSAGES[ $key ] ) ) {
+			$text = LLD_Members_Stage3_Safety::MESSAGES[ $key ];
+		}
+		return array(
+			'rule'     => 'R-HW-SAFE-01',
+			'stop'     => (string) $stop,
+			'screen'   => 'SCR-26',
+			'note_key' => $key,
+			'note'     => $text,
 		);
 	}
 
@@ -1668,6 +1923,7 @@ class LLD_Members_HW_Programme {
 		}
 		$schedule       = $plan['schedule'];
 		$schedule['hw'] = $state;
+		self::$ctx      = array();
 		return LLD_Members_Stage3_Data::update( 'plans', (int) $member_id, (int) $plan['id'], array( 'log_schedule' => wp_json_encode( $schedule ) ) );
 	}
 
@@ -1757,6 +2013,7 @@ class LLD_Members_HW_Programme {
 			'weight_kg'       => $facts['weight_kg'],
 			'activity_level'  => $a['activity_level'] ? $a['activity_level'] : str_replace( '-', '_', (string) $facts['activity'] ),
 			'eating_disorder' => $a['eating_disorder'],
+			'pregnant'        => $a['pregnant'],
 		);
 	}
 
@@ -1999,8 +2256,15 @@ class LLD_Members_HW_Programme {
 		return $out;
 	}
 
-	/** @param int $member_id Member number. */
-	private static function block_rows( $member_id ) {
+	/**
+	 * The member's block choices, oldest first. With the context, a block whose days have passed reads as finished on
+	 * $date, and on the member's own today finished_at is written (in nightly() and position()).
+	 *
+	 * @param int         $member_id Member number.
+	 * @param array|null  $c         context(), to close finished blocks.
+	 * @param string|null $date      Local date (the context's today by default).
+	 */
+	private static function block_rows( $member_id, $c = null, $date = null ) {
 		$rows = LLD_Members_Stage3_Data::rows( 'block_choices', (int) $member_id, array(), '', 100 );
 		usort(
 			$rows,
@@ -2009,13 +2273,59 @@ class LLD_Members_HW_Programme {
 			}
 		);
 		foreach ( $rows as $i => $r ) {
-			foreach ( array( 'chosen_block_key', 'started_at', 'finished_at', 'festival_entry_id', 'declined_festival' ) as $k ) {
+			foreach ( array( 'chosen_block_key', 'started_at', 'finished_at', 'paused_at', 'resumed_at', 'festival_entry_id', 'declined_festival' ) as $k ) {
 				if ( ! isset( $rows[ $i ][ $k ] ) ) {
 					$rows[ $i ][ $k ] = null;
 				}
 			}
 		}
+		if ( ! is_array( $c ) ) {
+			return $rows;
+		}
+		$date  = null === $date ? (string) $c['today'] : (string) $date;
+		$write = ! empty( $c['live'] ) && $date === (string) $c['facts']['today'];
+		foreach ( $rows as $i => $r ) {
+			if ( ! $r['chosen_block_key'] || ! $r['started_at'] || $r['finished_at'] ) {
+				continue;
+			}
+			$end = self::block_end( $r, $c );
+			if ( $date >= $end ) {
+				$rows[ $i ]['finished_at'] = $end . ' 00:00:00';
+				if ( $write ) {
+					LLD_Members_Stage3_Data::update( 'block_choices', (int) $member_id, (int) $r['id'], array( 'finished_at' => $end . ' 00:00:00' ) );
+				}
+			}
+		}
 		return $rows;
+	}
+
+	/**
+	 * The first day after a focus block (FR3-104): 28 days from its start, plus the days a festival block paused it
+	 * (paused_at to resumed_at, R-HW-BLOCK-03). The festival block itself ends after its week 4 (the day map's last day).
+	 *
+	 * @param array $r Block choice row.
+	 * @param array $c context().
+	 * @return string Y-m-d.
+	 */
+	private static function block_end( array $r, array $c ) {
+		$start = substr( (string) $r['started_at'], 0, 10 );
+		$fest  = isset( $c['state']['festival'] ) && is_array( $c['state']['festival'] ) ? $c['state']['festival'] : null;
+		if ( LLD_Members_HW_Festival::BLOCK === (string) $r['chosen_block_key'] && $fest && ! empty( $fest['to'] ) && isset( $fest['from'] ) && (string) $fest['from'] === $start ) {
+			return LLD_Members_HW_Festival::add_days( (string) $fest['to'], 1 );
+		}
+		return LLD_Members_HW_Festival::add_days( $start, 28 + self::paused_days( $r ) );
+	}
+
+	/**
+	 * Days a block was paused for a festival block (0 when it was not).
+	 *
+	 * @param array $r Block choice row.
+	 */
+	private static function paused_days( array $r ) {
+		if ( empty( $r['paused_at'] ) || empty( $r['resumed_at'] ) ) {
+			return 0;
+		}
+		return max( 0, LLD_Members_HW_Festival::days_between( substr( (string) $r['paused_at'], 0, 10 ), substr( (string) $r['resumed_at'], 0, 10 ) ) );
 	}
 
 	/**
@@ -2138,7 +2448,7 @@ class LLD_Members_HW_Programme {
 	 *
 	 * @param array $a Engine answers.
 	 */
-	private static function sleep_time( array $a ) {
+	public static function sleep_time( array $a ) {
 		if ( empty( $a['wake_time'] ) || ! preg_match( '/^(\d\d):(\d\d)$/', (string) $a['wake_time'], $m ) ) {
 			return null;
 		}

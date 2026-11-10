@@ -539,6 +539,7 @@ class LLD_Members_HW_Content {
 				$found = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE name = %s AND starts_on = %s", (string) $entry['name'], (string) $entry['starts_on'] ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			}
 			if ( $found ) {
+				unset( $row['created_at'] );
 				$ok = false !== $wpdb->update( $table, $row, array( 'id' => (int) $found ) );
 				$out['updated'] += $ok ? 1 : 0;
 			} else {
@@ -830,9 +831,10 @@ class LLD_Members_HW_Content {
 	 * @param array  $entry   Festival entry.
 	 * @param array  $columns The table's columns.
 	 * @param string $keycol  Column that holds the key, or ''.
+	 * @param string $now     Y-m-d H:i:s for created_at and updated_at (now by default).
 	 * @return array<string,mixed>
 	 */
-	public static function festival_row( array $entry, array $columns, $keycol = '' ) {
+	public static function festival_row( array $entry, array $columns, $keycol = '', $now = null ) {
 		$row = array();
 		foreach ( self::FESTIVAL_FIELDS as $field ) {
 			if ( 'key' === $field ) {
@@ -846,6 +848,13 @@ class LLD_Members_HW_Content {
 			}
 			$value         = $entry[ $field ] ?? '';
 			$row[ $field ] = is_bool( $value ) ? ( $value ? 1 : 0 ) : (string) $value;
+		}
+		// The table's own times (both NOT NULL): set on every write; an update keeps the first created_at.
+		$now = null === $now ? gmdate( 'Y-m-d H:i:s' ) : (string) $now;
+		foreach ( array( 'created_at', 'updated_at' ) as $col ) {
+			if ( in_array( $col, $columns, true ) ) {
+				$row[ $col ] = $now;
+			}
 		}
 		return $row;
 	}

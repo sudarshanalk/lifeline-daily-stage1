@@ -37,13 +37,13 @@ Each is the reading closest to the signed text. A change needs a new decision.
 14. The default order is a queue. A note brought forward does not leave the queue; when its slot comes round within 30 days it is skipped. This gives member B's worked example in the approved notes file.
 15. A candidate note shown in the last 30 days does not qualify, so the next rule may bring its note forward that day.
 16. R-HW-NOTE-02 brings both notes forward ("Stress and eating" day 2, "Sleep and appetite" day 4) when sleep is under 7 hours **or** stress is 7 or more (FR3-109 and the approved notes table).
-17. Low mood: only during the 7 days after R-SAFE-04 are the other note rules paused. A mood of 2 or less without R-SAFE-04 brings the kindness note but pauses nothing.
+17. Low mood: only during the 7 days after R-SAFE-04 are the other note rules paused. A mood of 2 or less without R-SAFE-04 brings the kindness note but pauses nothing. In those 7 days every R-HW rule whose catalogue `low_mood` flag is false pauses (package P2 applies it): no quick questions, "Add a drink", reason line, block suggestion, plateau or celebration card, drinks line or R-HW-STEP-02 notice, and the steps are the track's own order in the standard version (no version is recorded). Safety, the calorie target and R-HW-NOTE-01 stay, and so do the plan's stored numbers (where you are now, the pace and the milestones).
 18. R-HW-WEEK-01's notes (family, cravings, stress) are held as `pending` and brought forward one a day, after the R-HW-NOTE rules.
 19. The weight rise is taken to 0.1 kg, so 80.0 to 80.3 counts as 0.3.
 
 **Reminders and the drinks shortcut**
 20. An "evening snacker" has a usual snacking time at or after 18:00. "after 9 pm" is read as 21:00, so the reminder is at 20:30.
-21. A shift worker with no wake-up time gets no reminders and `ask_wake_up`. With one, the step reminder is 30 minutes after waking (fixture HWR-01b). With a bedtime, no reminder falls between bedtime and waking.
+21. A shift worker with no wake-up time gets no reminders and `ask_wake_up`. With one, the step reminder is 30 minutes after waking (fixture HWR-01b). No reminder falls between bedtime and waking; without a bedtime given, bedtime is 16 hours after waking (the D3-60 reading).
 22. The "Add a drink" shortcut shows from 18:00 to midnight. For shift and night workers with a wake-up time it shows from 10 hours after they wake (D3-60, catalogue v1.3.1) until their next wake-up, when their new day starts; without a wake-up time, from 18:00.
 
 **Support cards**
@@ -69,7 +69,7 @@ Each is the reading closest to the signed text. A change needs a new decision.
 36. Quick questions with no signed rule are never asked: "stress eating" and "what they have tried before". Each other question names the rule that reads it.
 37. Allergies are also matched through food-rule tags (shellfish, egg, milk or dairy, fish).
 38. With more than one preference, quick comes first, then low cost, then cuisine. Fewer than 5 items, counted after any calories-left filter, gives the empty state.
-39. The halal vanilla and soy-sauce line (FT-Q3 = A) is returned once per list.
+39. The halal vanilla and soy-sauce line (FT-Q3 = A) is returned once per list, to Jain members too, after the approved Jain line (Food-Rule-Tags-Jain.md, J1 to J5 = A: vegetarian, no egg, root vegetables, mushrooms, honey or alcohol).
 40. Milestones that land on the same weight are not merged. kg is shown to 0.1 ("60.0 kg").
 41. When several milestones are passed at once, the furthest one is celebrated and the others are marked passed.
 42. "{weeks} weeks to go" is the weeks to the goal date, rounded up. The event weight never goes below the goal.
@@ -81,3 +81,11 @@ Each is the reading closest to the signed text. A change needs a new decision.
 44. FR3-101 AS-01: the healthy-range milestone is 66.2 kg, not 66.
 45. FR3-100 AS-01: the pace is 0.25 for confidence 3, not "0.25 or 0.5".
 46. FR3-109 and FR3-110: the R-HW-BLOCK-01 order applies (plateau, festival, barrier, stress 7+, sleep under 7, alcohol, eating out, shifts, getting stronger).
+
+**Wiring (package P2, after the independent review of 10 Nov 2026)**
+47. R-HW-SAFE-01 runs on the member's situations every time the programme is read, not only when joining: pregnancy, or an eating disorder (the Stage 2 flag or the Check's own question) reported later, stops it. Every view then returns the SCR-26 stop with the safety matrix's note and no number at all; nightly runs nothing, and the Stage 2 day items are left exactly as they are.
+48. The Stage 2 profile holds only yes or no for an eating disorder, so "where you are now" asks the Healthy Weight Check's own question (copy `q.eat`, `options.eat`) once, as a sealed programme answer: "yes" stops, "prefer not to say" is the engine's `pnts` (paces 0.25 and 0.5, by a date too, and no calorie number on the screens).
+49. Writes happen only for the member's own today: a view of another date is read-only, and nightly() for another date returns `not_today`.
+50. A focus block finishes on the day after its 28 days (plus the days a festival block paused it); the festival block finishes after its week 4. finished_at is written on the member's own today.
+51. The alcohol part of R-HW-STEP-02 is part of the Free food-rules filter: a member who never drinks, or whose food rules exclude alcohol (halal, Jain), gets no alcohol step at any tier; a Free member who drinks keeps the track's own item.
+52. The plateau card is Premium; whenever the check does not run, no plateau is kept.

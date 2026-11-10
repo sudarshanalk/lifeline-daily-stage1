@@ -44,6 +44,9 @@ class LLD_Members_HW_Answers {
 		'activity_level'    => array( 'asked_in' => 'joining', 'values' => array( 'low', 'some', 'active', 'very_active' ), 'store' => 'profile', 'rules' => array( 'R-HW-NUM-03', 'R-HW-STEP-06' ) ),
 		'bmi_background'    => array( 'asked_in' => 'joining', 'values' => array( 'White', 'Indian', 'Pakistani', 'Bangladeshi', 'OtherSouthAsian', 'Chinese', 'OtherAsian', 'MiddleEastern', 'BlackAfrican', 'BlackCaribbean', 'Mixed', 'NotSay' ), 'store' => 'answers', 'rules' => array( 'R-HW-NUM-01', 'R-HW-NUM-02' ) ),
 		'bmi_mixed'         => array( 'asked_in' => 'joining', 'values' => array( 'yes', 'no', 'notsure' ), 'store' => 'answers', 'rules' => array( 'R-HW-NUM-01', 'R-HW-NUM-02' ) ),
+		// The Healthy Weight Check's own question (copy q.eat, options.eat), asked once on "where you are now" when the
+		// Stage 2 profile has no answer (it holds only yes or no): "yes" stops (SAFE-01), "prefer" limits the pace (HWS-01b).
+		'eating_disorder'   => array( 'asked_in' => 'joining', 'values' => array( 'yes', 'no', 'prefer' ), 'store' => 'answers', 'rules' => array( 'R-HW-SAFE-01', 'R-HW-SAFE-02', 'R-HW-PACE-01' ) ),
 		// The eight quick questions when joining (FR3-98), with the drinks-a-time tap and the optional wake-up time.
 		'reason'            => array( 'asked_in' => 'joining', 'values' => array( 'health', 'confidence', 'family', 'wedding', 'holiday', 'event', 'something_else' ), 'store' => 'answers', 'rules' => array( 'R-HW-MOT-01' ) ),
 		'event_date'        => array( 'asked_in' => 'joining', 'values' => 'date', 'store' => 'answers', 'rules' => array( 'R-HW-MOT-01' ) ),
@@ -57,7 +60,7 @@ class LLD_Members_HW_Answers {
 		'alcohol_freq'      => array( 'asked_in' => 'joining', 'values' => array( 'never', 'less_than_weekly', '1_2_days', '3_4_days', 'most_days' ), 'store' => 'answers', 'rules' => array( 'R-HW-SAFE-05', 'R-HW-NUM-05', 'R-HW-ALC-01', 'R-HW-ALC-02', 'R-HW-STEP-02', 'R-HW-BLOCK-01' ) ),
 		'alcohol_amount'    => array( 'asked_in' => 'joining', 'values' => array( '1_2', '3_4', '5_plus' ), 'store' => 'answers', 'rules' => array( 'R-HW-SAFE-05', 'R-HW-NUM-05', 'R-HW-ALC-01' ) ),
 		// Getting-to-know-you questions (FR3-99), in the R-HW-QOD-01 order.
-		'food_rules'        => array( 'asked_in' => 'track_start', 'qod' => 'food_rules_allergies', 'values' => 'multi', 'choices' => array( 'halal', 'kosher', 'no_pork', 'no_beef', 'pescatarian', 'vegetarian', 'vegan', 'no_eggs', 'dairy_free', 'no_onion_garlic', 'no_grains_pulses_fasting_days' ), 'store' => 'food_preferences', 'rules' => array( 'R-HW-FOOD-01', 'R-HW-STEP-02' ) ),
+		'food_rules'        => array( 'asked_in' => 'track_start', 'qod' => 'food_rules_allergies', 'values' => 'multi', 'choices' => array( 'halal', 'kosher', 'no_pork', 'no_beef', 'pescatarian', 'vegetarian', 'vegan', 'no_eggs', 'dairy_free', 'no_onion_garlic', 'no_grains_pulses_fasting_days', 'jain' ), 'store' => 'food_preferences', 'rules' => array( 'R-HW-FOOD-01', 'R-HW-STEP-02' ) ),
 		'fasts'             => array( 'asked_in' => 'track_start', 'qod' => 'food_rules_allergies', 'values' => 'multi', 'choices' => 'festival_calendar', 'store' => 'food_preferences', 'rules' => array( 'R-HW-FOOD-03', 'R-HW-BLOCK-01', 'R-HW-BLOCK-02', 'R-HW-BLOCK-03' ) ),
 		'allergies'         => array( 'asked_in' => 'track_start', 'qod' => 'food_rules_allergies', 'values' => 'multi', 'choices' => array( 'gluten', 'milk', 'egg', 'peanuts', 'nuts', 'sesame', 'soy', 'fish', 'shellfish', 'celery', 'mustard', 'buckwheat' ), 'store' => 'food_preferences', 'rules' => array( 'R-HW-FOOD-01' ) ),
 		'breakfast'         => array( 'asked_in' => 'track_start', 'qod' => 'eating_pattern', 'values' => array( 'most_days', 'some_days', 'rarely' ), 'store' => 'answers', 'rules' => array( 'R-HW-STEP-02' ) ),
@@ -380,7 +383,7 @@ class LLD_Members_HW_Answers {
 			'fasts'             => (array) $v( 'fasts' ),
 			'conditions'        => $conditions,
 			'medicines'         => in_array( 'heart_rate_medicine', $situations, true ),
-			'eating_disorder'   => in_array( 'eating_disorder', $situations, true ) ? 'yes' : 'no',
+			'eating_disorder'   => self::eating( $situations, $v( 'eating_disorder' ) ),
 			'pregnant'          => in_array( 'pregnancy', $situations, true ) ? 'yes' : 'no',
 			'snack_time'        => isset( self::SNACK_TIMES[ (string) $snack ] ) ? self::SNACK_TIMES[ (string) $snack ] : null,
 			'wake_time'         => $v( 'wake_time' ),
@@ -391,11 +394,41 @@ class LLD_Members_HW_Answers {
 			'event_date'        => $v( 'event_date' ),
 			'bmi_background'    => 'Mixed' === $v( 'bmi_background' ) ? array( 'bg' => 'Mixed', 'mixed' => $v( 'bmi_mixed' ) ) : $v( 'bmi_background' ),
 		);
-		if ( array_intersect( array( 'halal', 'no_alcohol', 'jain' ), $rules ) ) {
+		if ( array_intersect( LLD_Members_HW_Rules::NO_ALCOHOL_RULES, $rules ) ) {
 			$out['alcohol_freq']   = 'never'; // FR3-98 AS-08: not asked, "never" recorded
 			$out['alcohol_amount'] = null;
 		}
 		return $out;
+	}
+
+	/**
+	 * The eating-disorder answer the engine reads: the Stage 2 profile's flag first, else the programme's own answer
+	 * ("prefer" is the engine's pnts).
+	 *
+	 * @param string[]    $situations Safety situations.
+	 * @param string|null $answer     The programme answer (yes, no, prefer), or null.
+	 * @return string yes, pnts or no.
+	 */
+	public static function eating( array $situations, $answer ) {
+		if ( in_array( 'eating_disorder', $situations, true ) || 'yes' === $answer ) {
+			return 'yes';
+		}
+		return 'prefer' === $answer ? 'pnts' : 'no';
+	}
+
+	/**
+	 * Whether "where you are now" asks the eating-disorder question: the Stage 2 profile holds only yes or no, so a
+	 * member it does not flag is asked the Check's own question once, until it is answered (yes, no or prefer not to say).
+	 *
+	 * @param int   $member_id  Member number.
+	 * @param array $situations Safety situations.
+	 */
+	public static function ask_eating( $member_id, array $situations ) {
+		if ( in_array( 'eating_disorder', $situations, true ) ) {
+			return false;
+		}
+		$all = self::details( $member_id );
+		return ! ( isset( $all['eating_disorder'] ) && null !== $all['eating_disorder']['value'] );
 	}
 
 	/**

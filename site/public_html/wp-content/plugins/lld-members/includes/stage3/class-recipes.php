@@ -419,7 +419,10 @@ class LLD_Members_Recipes {
 		}
 		$result = array( 'recipes' => $out );
 		// The halal vanilla and soy-sauce line, once a list (FT-Q3 = A).
-		if ( $member && in_array( 'halal', $member['food_rules'], true ) ) {
+		// The Jain line, then the same vanilla and soy-sauce line for Jain members (Food-Rule-Tags-Jain.md, J1 to J5 = A).
+		if ( $member && in_array( 'jain', $member['food_rules'], true ) ) {
+			$result['lines'] = array( LLD_Members_HW_Rules::FOOD_LINES['jain'], LLD_Members_HW_Rules::FOOD_LINES['halal_extras'] );
+		} elseif ( $member && in_array( 'halal', $member['food_rules'], true ) ) {
 			$result['lines'] = array( LLD_Members_HW_Rules::FOOD_LINES['halal_extras'] );
 		}
 		return $result;

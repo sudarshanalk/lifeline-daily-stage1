@@ -20,7 +20,7 @@
  *   sugary_drinks: never | less_than_weekly | weekly | daily (anything else keeps the drink-swap steps)
  *   eats_out: less_than_weekly | 1_2 | 3_plus, or a number a week
  *   food_rules: halal, kosher, no_pork, no_beef, pescatarian, vegetarian, vegan, no_eggs, dairy_free,
- *               no_onion_garlic, no_grains_pulses_fasting, no_alcohol
+ *               no_onion_garlic, no_grains_pulses_fasting, jain (halal and jain exclude alcohol)
  *   conditions: high_blood_pressure, heart_disease, type2_diabetes, … ; eating_disorder: no | pnts | yes
  *
  * @package LLD_Members
@@ -124,7 +124,12 @@ class LLD_Members_HW_Rules {
 		'halal'        => 'Use halal meat and chicken in these recipes.',
 		'kosher'       => 'Use kosher meat and chicken in these recipes.',
 		'halal_extras' => 'Some vanilla extracts and soy sauces contain alcohol. Choose alcohol-free or halal-certified versions if you prefer.',
+		// The Jain choice (Food-Rule-Tags-Jain.md, approved 10 Nov 2026, J1 to J5 = A).
+		'jain'         => 'Practice varies, so check each recipe against your own rules. Leave out any optional honey or root vegetables. Meal times, seasonal rules and how long food is kept are up to you.',
 	);
+
+	/** Food rules that exclude alcohol: no alcohol question, "never" recorded (FR3-98 AS-08), no alcohol step. */
+	const NO_ALCOHOL_RULES = array( 'halal', 'jain' );
 
 	/** Food rule → food-rule tags left out (R-HW-FOOD-01 mapping, approved 10 Nov 2026). */
 	const FOOD_RULE_TAGS = array(
@@ -136,7 +141,8 @@ class LLD_Members_HW_Rules {
 		'no_eggs'         => array( 'contains-egg' ),
 		'dairy_free'      => array( 'contains-dairy' ),
 		'no_onion_garlic' => array( 'contains-onion-or-garlic' ),
-		'no_alcohol'      => array( 'contains-alcohol' ),
+		// Jain: vegetarian (the diet type, checked in food_ok), and these tags (Food-Rule-Tags-Jain.md).
+		'jain'            => array( 'contains-egg', 'contains-root-vegetables', 'contains-mushrooms', 'contains-honey', 'contains-alcohol' ),
 	);
 
 	/** Allergens that a food-rule tag also proves (so an allergy is filtered even where the allergen list is short). */
@@ -220,7 +226,8 @@ class LLD_Members_HW_Rules {
 	/**
 	 * R-HW-NUM-03: the daily calorie target (signed P3-55, through LLD_Members_Calorie_Target).
 	 *
-	 * @param array $in sex (F|M|PNTS), age, height_cm, weight_kg, activity_level, pace (kg a week), eating_disorder.
+	 * @param array $in sex (F|M|PNTS), age, height_cm, weight_kg, activity_level, pace (kg a week), eating_disorder,
+	 *                  pregnant (yes|no|notsure|breastfeeding; default no).
 	 * @return array {rule, target: kcal|null, tdee: unrounded, tdee_shown: nearest 10, deficit: 1100 × pace, rate,
 	 *               floor, notes, why: {tdee, deficit, rate} for the signed "Why this number" text}
 	 */
@@ -234,7 +241,8 @@ class LLD_Members_HW_Rules {
 				'activity'       => isset( $in['activity_level'] ) ? str_replace( '_', ' ', (string) $in['activity_level'] ) : '',
 				'goal'           => 'lose',
 				'rateKgWeek'     => isset( $in['pace'] ) ? $in['pace'] : 0.5,
-				'pregnant'       => 'no',
+				// The member's pregnancy answer (breastfeeding counts as pregnancy for P3-55): the signed calculator stops.
+				'pregnant'       => isset( $in['pregnant'] ) && in_array( (string) $in['pregnant'], array( 'yes', 'breastfeeding' ), true ) ? 'yes' : ( isset( $in['pregnant'] ) && 'notsure' === (string) $in['pregnant'] ? 'notsure' : 'no' ),
 				'eatingDisorder' => isset( $in['eating_disorder'] ) ? $in['eating_disorder'] : 'no',
 			)
 		);
@@ -605,7 +613,8 @@ class LLD_Members_HW_Rules {
 	 *                  library (approved action-library items {id, tags[]}), steps (optional ids: sleep[week],
 	 *                  stress[week], alcohol {free_day, second_day, one_fewer}), history ({version: last week's
 	 *                  version, done_pct: last week's percentage done, alcohol_done: last week's alcohol step done,
-	 *                  check_in: last check-in's "what got in the way" choices}).
+	 *                  check_in: last check-in's "what got in the way" choices}), never_drinks (optional bool: the
+	 *                  member does not drink, said outright when the answers carry no alcohol answer, as for Free).
 	 * @return array {rule list, week, version, days: list of 7 {day, id, version, rule, reason: {template, values,
 	 *               text}|null, minutes|null}, left_out: ids, notice: 'hw.T-HW-STEP-02'|null, exercise: {…},
 	 *               check_in: check_in() effects applied}
@@ -692,7 +701,9 @@ class LLD_Members_HW_Rules {
 		$steps    = isset( $in['steps'] ) && is_array( $in['steps'] ) ? $in['steps'] : array();
 		$drinks   = self::drinks( $a );
 		$heavy    = 'one_fewer' === $drinks['alcohol_step'];
-		$no_drink = ! $drinks['drinks'];
+		// The caller may say outright whether the member drinks (a Free plan has no alcohol answers, only the food-rules
+		// filter: never_drinks true for "never" or food rules that exclude alcohol).
+		$no_drink = array_key_exists( 'never_drinks', $in ) ? (bool) $in['never_drinks'] : ! $drinks['drinks'];
 		$used     = array();
 		foreach ( $acts as $x ) {
 			$used[ $x['id'] ] = true;
@@ -1241,7 +1252,7 @@ class LLD_Members_HW_Rules {
 	 * R-HW-REM-01: reminder times. Every reminder says only the T-HW-REM-01 line (no health details, NFR3-16).
 	 *
 	 * @param array $in work, snack_time (HH:MM or "after 9 pm"), wake_time (HH:MM, shift workers), bedtime (HH:MM,
-	 *                  optional), reminders_on (default true).
+	 *                  optional: 16 hours after waking when not given), reminders_on (default true).
 	 * @return array {rule, reminders: list of {kind: step|snack, time}, ask_wake_up: bool, text}
 	 */
 	public static function reminder_times( array $in ) {
@@ -1268,8 +1279,11 @@ class LLD_Members_HW_Rules {
 			);
 			if ( null !== $snack ) {
 				$t   = ( $snack - 30 + 1440 ) % 1440;
+				// Bedtime: the member's own, else 16 hours after waking (the D3-60 reading), so a snack reminder never
+				// falls in their main sleep.
 				$bed = isset( $in['bedtime'] ) ? self::minutes( $in['bedtime'] ) : null;
-				if ( null === $bed || ! self::between( $t, $bed, $wake ) ) {
+				$bed = null === $bed ? ( $wake + 16 * 60 ) % 1440 : $bed;
+				if ( ! self::between( $t, $bed, $wake ) ) {
 					$out['reminders'][] = array(
 						'kind' => 'snack',
 						'time' => self::hhmm( $t ),
@@ -1347,6 +1361,9 @@ class LLD_Members_HW_Rules {
 			if ( ( 'vegetarian' === $r || 'vegan' === $r ) && ! in_array( $r, $diets, true ) ) {
 				$reasons[] = $r . ':diet';
 			}
+			if ( 'jain' === $r && ! in_array( 'vegetarian', $diets, true ) ) {
+				$reasons[] = 'jain:diet'; // lacto-vegetarian
+			}
 			if ( 'no_grains_pulses_fasting' === $r && ! empty( $member['fasting_day'] ) && in_array( 'contains-grains-or-pulses', $tags, true ) ) {
 				$reasons[] = $r . ':contains-grains-or-pulses';
 			}
@@ -1422,8 +1439,12 @@ class LLD_Members_HW_Rules {
 			);
 		}
 		$general = array();
-		if ( in_array( 'halal', self::lower_list( isset( $member['food_rules'] ) ? $member['food_rules'] : array() ), true ) ) {
-			$general[] = self::FOOD_LINES['halal_extras'];
+		$mrules  = self::lower_list( isset( $member['food_rules'] ) ? $member['food_rules'] : array() );
+		if ( in_array( 'jain', $mrules, true ) ) {
+			$general[] = self::FOOD_LINES['jain'];
+		}
+		if ( in_array( 'halal', $mrules, true ) || in_array( 'jain', $mrules, true ) ) {
+			$general[] = self::FOOD_LINES['halal_extras']; // shown to Jain members too
 		}
 		if ( count( $kept ) < 5 ) {
 			return array(
@@ -1562,7 +1583,7 @@ class LLD_Members_HW_Rules {
 	/** How often the member drinks, "never" when their food rules exclude alcohol. */
 	private static function alcohol_freq( array $in ) {
 		$rules = self::lower_list( isset( $in['food_rules'] ) ? $in['food_rules'] : array() );
-		if ( array_intersect( array( 'halal', 'no_alcohol' ), $rules ) ) {
+		if ( array_intersect( self::NO_ALCOHOL_RULES, $rules ) ) {
 			return 'never';
 		}
 		return isset( $in['alcohol_freq'] ) && '' !== $in['alcohol_freq'] ? $in['alcohol_freq'] : null;
