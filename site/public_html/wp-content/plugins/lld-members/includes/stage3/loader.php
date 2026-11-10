@@ -42,6 +42,8 @@ require_once __DIR__ . '/engine/class-insights-runner.php';
 require_once __DIR__ . '/healthy-weight/class-hw-where.php';
 require_once __DIR__ . '/healthy-weight/class-hw-festival.php';
 require_once __DIR__ . '/healthy-weight/class-hw-rules.php';
+require_once __DIR__ . '/healthy-weight/class-hw-answers.php';
+require_once __DIR__ . '/healthy-weight/class-hw-programme.php';
 require_once __DIR__ . '/class-stripe-api.php';
 require_once __DIR__ . '/class-access-tiers.php';
 require_once __DIR__ . '/class-membership.php';
@@ -81,6 +83,7 @@ function lld_members_stage3_boot() {
 	LLD_Members_Calculator_Count::boot();
 	LLD_Members_Sign_In::boot();
 	LLD_Members_Goal_Journey::boot();
+	LLD_Members_HW_Programme::boot(); // P3-35: the day's step on a Healthy Weight track (lld_members_day_items)
 	LLD_Members_Reminders::boot();
 	LLD_Members_Shares::boot();
 	LLD_Members_Installable::boot();
