@@ -582,7 +582,8 @@ class LLD_Members_Recipes {
 	 * @return array{allergies: array<int,string>, dislikes: array<int,string>}
 	 */
 	private static function prefs_of( $member_id, $date = null ) {
-		$rows = self::rows_for( 'food_preferences', $member_id );
+		// The food rules are sealed (P3-35): opened here for this member only.
+		$rows = class_exists( 'LLD_Members_Stage3_Data' ) ? LLD_Members_Stage3_Data::rows( 'food_preferences', (int) $member_id, array( 'food_rules' ), '', 1 ) : array();
 		$row  = $rows ? $rows[0] : array();
 		$a    = isset( $row['allergies'] ) ? ( is_string( $row['allergies'] ) ? json_decode( $row['allergies'], true ) : $row['allergies'] ) : array();
 		$d    = isset( $row['dislikes'] ) ? ( is_string( $row['dislikes'] ) ? json_decode( $row['dislikes'], true ) : $row['dislikes'] ) : array();

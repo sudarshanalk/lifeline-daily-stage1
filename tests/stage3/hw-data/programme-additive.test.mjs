@@ -100,3 +100,37 @@ test('TC-FR3-103-AS-05 (wiring)', () => {
   expect(out.hw[0].title).not.toBe('HW-W1-A3');
   for (const k of ['unsafe', 'off', 'other', 'fit']) expect(out[k], k).toEqual(out.orig);
 });
+
+test('P3-35 content shapes (package P3): the activity id, an -ALT item standing in, block weeks and question wording', () => {
+  // LLD_Members_HW_Content as package P3 built it: activity_meta() gives the draft id as `id` and an -ALT item its
+  // `alt_for`; block() gives weeks: {n: {activities: day => activity}}; question() gives title and why.
+  const out = run(`
+    class LLD_Members_HW_Content {
+      static function activity_meta($pid) {
+        if (5000 === (int) $pid) return ['id' => 'HW-W2-A4-ALT', 'habit_tags' => ['activity'], 'alt_for' => 'HW-W2-A4'];
+        $d = (int) $pid % 1000; $w = (int) ceil($d / 7); $k = (($d - 1) % 7) + 1;
+        return ['id' => ((int) $pid >= 2000 ? 'HW2' : 'HW') . "-W$w-A$k", 'habit_tags' => ['activity'], 'alt_for' => ''];
+      }
+      static function block($key) { return ['key' => $key, 'weeks' => [1 => ['activities' => [1 => ['id' => 'HW-FB07-W1-A1'], 2 => ['id' => 'HW-FB07-W1-A2']]]]]; }
+      static function question($key) { return 'food_rules_allergies' === $key ? ['title' => 'Do you follow any of these food rules?', 'why' => 'So your meal plans and recipes only include food you eat.', 'choices' => ['Halal']] : null; }
+      static function questions() { return []; }
+      static function notes($t) { return []; }
+      static function festivals() { return []; }
+    }
+    LLD_Members_Programme::$acts[] = ['id' => 'HW-W2-A4-ALT', 'week' => 2, 'day' => 4, 'tags' => ['activity'], 'pid' => 5000];
+    member(7, ['situations' => ['blood_pressure']]);
+    $gid = weight_goal(7);
+    LLD_Members_HW_Programme::join(7, $gid, []);
+    $w2 = LLD_Members_HW_Programme::today(7, '2026-11-22')['step']; // week 2, day 4
+    LLD_Members_Programme::$enrolment[7] = ['id' => 77, 'track_key' => 'healthy-weight-2', 'status' => 'finished', 'first' => '2026-10-01'];
+    LLD_Members_Clock::$now = '2027-01-08 09:00:00';
+    LLD_Members_HW_Programme::choose_block(7, 'getting-stronger', '2027-01-08');
+    $block = LLD_Members_HW_Programme::today(7, '2027-01-09')['step'];
+    $q = LLD_Members_HW_Answers::questions('track_start');
+    return ['w2' => $w2, 'block' => $block, 'qod' => LLD_Members_HW_Programme::today(7, '2026-11-12')['qod'][0], 'q' => $q[0]];
+  `);
+  expect(out.w2.activity_key).toBe('HW-W2-A4-ALT'); // high blood pressure: the steady-walk alternative (R-HW-SAFE-04)
+  expect(out.block.activity_key).toBe('HW-FB07-W1-A2');
+  expect(out.qod).toMatchObject({ key: 'food_rules_allergies', wording: 'Do you follow any of these food rules?', reason: 'So your meal plans and recipes only include food you eat.' });
+  expect(out.q.key).toBe('food_rules');
+});

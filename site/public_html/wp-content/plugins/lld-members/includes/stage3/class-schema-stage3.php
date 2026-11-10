@@ -521,9 +521,11 @@ class LLD_Members_Stage3_Schema {
 			PRIMARY KEY (id),
 			KEY member_updated (member_id, updated_at)
 			',
-			// Festival calendar entry (P3-35; FR3-99, FR3-104): owner-approved content, no member data.
+			// Festival calendar entry (P3-35; FR3-99, FR3-104): owner-approved content, no member data. festival_key is the
+			// approved entry key the content loader (P3) writes by, so a member's fasts name an entry that never renumbers.
 			'festival_calendar' => '
 			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			festival_key VARCHAR(64) NULL,
 			name VARCHAR(190) NOT NULL,
 			kind VARCHAR(24) NOT NULL,
 			starts_on DATE NOT NULL,
@@ -533,6 +535,7 @@ class LLD_Members_Stage3_Schema {
 			created_at DATETIME NOT NULL,
 			updated_at DATETIME NOT NULL,
 			PRIMARY KEY (id),
+			UNIQUE KEY festival_key (festival_key),
 			KEY starts_on (starts_on)
 			',
 			// Mindset note shown (P3-35; FR3-105, FR3-106): one a day, no note twice within 30 days; kept 13 months.
@@ -607,12 +610,13 @@ class LLD_Members_Stage3_Schema {
 		self::ensure_column( 'member', 'blocked_at', 'DATETIME NULL' );
 		self::ensure_column( 'member', 'blocked_reason', 'TEXT NULL' );
 		// Version 7 (P3-35, FR3-100, FR3-102, FR3-36, FR3-99): the goal's pace, the plan's eating method and the member's
-		// food rules (one store, reused by the getting-to-know-you questions).
+		// food rules (one store, reused by the getting-to-know-you questions). The food rules and the fasts kept can show
+		// a member's religion (special category), so they are sealed like every other health value: food_rules_ct.
 		self::ensure_column( 'goals', 'recommended_rate', 'DECIMAL(4,2) NULL' );
 		self::ensure_column( 'goals', 'chosen_rate', 'DECIMAL(4,2) NULL' );
 		self::ensure_column( 'goals', 'pace_rule_id', 'BIGINT UNSIGNED NULL' );
 		self::ensure_column( 'plans', 'eating_method', 'VARCHAR(16) NULL' );
-		self::ensure_column( 'food_preferences', 'food_rules', 'TEXT NULL' );
+		self::ensure_column( 'food_preferences', 'food_rules_ct', 'TEXT NULL' );
 	}
 
 	/**

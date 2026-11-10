@@ -59,13 +59,20 @@ test('P3-35 interface: routes for join, answers, barrier, block choice and carry
 test('P3-35 interface views: hw-plan, hw-today, hw-questions and hw-festivals for a member', () => {
   const out = run(`
     member(7);
+    $none = LLD_Members_HW_Programme::view('hw-plan', 7);
     $gid = weight_goal(7);
-    $before = LLD_Members_HW_Programme::view('hw-plan', 7);
+    $preview = LLD_Members_HW_Programme::view('hw-plan', 7);
+    $today_before = LLD_Members_HW_Programme::view('hw-today', 7);
     LLD_Members_HW_Programme::join(7, $gid, ['stress' => 4]);
-    return ['before' => $before, 'plan' => array_keys(LLD_Members_HW_Programme::view('hw-plan', 7)), 'today' => array_keys(LLD_Members_HW_Programme::view('hw-today', 7)),
+    return ['before' => $none, 'preview' => $preview, 'today_before' => $today_before, 'notes' => count(raw('notes_shown')), 'plan' => array_keys(LLD_Members_HW_Programme::view('hw-plan', 7)), 'today' => array_keys(LLD_Members_HW_Programme::view('hw-today', 7)),
       'q' => LLD_Members_HW_Programme::view('hw-questions', 7), 'f' => LLD_Members_HW_Programme::view('hw-festivals', 7), 'x' => LLD_Members_HW_Programme::view('nope', 7)];
   `);
-  expect(out.before).toEqual({ joined: false });
+  expect(out.before).toEqual({ joined: false }); // no weight goal yet
+  // With a weight goal but before joining, the plan previews the pace and milestones for the pace step (FR3-100)
+  // and writes nothing; Today waits for the join.
+  expect(out.preview.pace).toMatchObject({ recommended: 0.5, chosen: 0.5, paces: [0.25, 0.5, 0.75] });
+  expect(out.preview.milestones.map((m) => m.kg)).toEqual([76, 72, 66.2, 60]);
+  expect(out.today_before).toEqual({ joined: false });
   expect(out.plan).toContain('target_kcal');
   expect(out.today).toContain('note');
   expect(out.q.answered).toEqual(expect.arrayContaining(['stress', 'activity_level']));

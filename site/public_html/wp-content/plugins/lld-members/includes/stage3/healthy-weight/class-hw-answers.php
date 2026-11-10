@@ -28,6 +28,9 @@ class LLD_Members_HW_Answers {
 
 	const SEALED = array( 'answer' );
 
+	/** Sealed fields of the food preferences row: the food rules with the fasts kept (they can show religion). */
+	const PREF_SEALED = array( 'food_rules' );
+
 	/** Where a question is asked (data model asked_in), and the account hub for a change. */
 	const ASKED_IN = array( 'joining', 'track_start', 'today', 'recheck', 'account_hub' );
 
@@ -114,8 +117,8 @@ class LLD_Members_HW_Answers {
 				'choices'  => $choices,
 				'multiple' => 'multi' === $def['values'],
 				'rules'    => $def['rules'],
-				'wording'  => isset( $content['wording'] ) ? (string) $content['wording'] : null,
-				'reason'   => isset( $content['reason'] ) ? (string) $content['reason'] : null,
+				'wording'  => isset( $content['title'] ) ? (string) $content['title'] : ( isset( $content['wording'] ) ? (string) $content['wording'] : null ),
+				'reason'   => isset( $content['why'] ) ? (string) $content['why'] : ( isset( $content['reason'] ) ? (string) $content['reason'] : null ),
 			);
 		}
 		return $out;
@@ -488,7 +491,7 @@ class LLD_Members_HW_Answers {
 
 	/** @param int $member_id Member number. */
 	private static function preferences_row( $member_id ) {
-		$rows = LLD_Members_Stage3_Data::rows( 'food_preferences', $member_id, array(), '', 1 );
+		$rows = LLD_Members_Stage3_Data::rows( 'food_preferences', $member_id, self::PREF_SEALED, '', 1 );
 		return $rows ? $rows[0] : null;
 	}
 
@@ -521,13 +524,13 @@ class LLD_Members_HW_Answers {
 			$data['food_rules'] = wp_json_encode( array_values( $keep ) );
 		}
 		if ( $row ) {
-			LLD_Members_Stage3_Data::update( 'food_preferences', $member_id, (int) $row['id'], $data );
+			LLD_Members_Stage3_Data::update( 'food_preferences', $member_id, (int) $row['id'], $data, self::PREF_SEALED );
 			return true;
 		}
 		if ( ! isset( $data['allergies'] ) ) {
 			$data['allergies'] = null;
 		}
-		return LLD_Members_Stage3_Data::insert( 'food_preferences', $member_id, $data ) > 0 ? true : new WP_Error( 'lld_hw_answer', 'Try again.' );
+		return LLD_Members_Stage3_Data::insert( 'food_preferences', $member_id, $data, self::PREF_SEALED ) > 0 ? true : new WP_Error( 'lld_hw_answer', 'Try again.' );
 	}
 
 	/**

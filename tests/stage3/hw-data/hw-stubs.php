@@ -416,7 +416,7 @@ class LLD_Members_Programme {
 			$level = $a['week'] > 4 ? 12 : 11;
 			$d     = ( ( $a['week'] - 1 ) % 4 ) * 7 + $a['day'];
 			if ( $level === (int) $track && $d === (int) $day ) {
-				$out[] = array( 'parent_id' => ( 12 === $level ? 2000 : 1000 ) + $d, 'title' => $a['id'], 'tags' => $a['tags'], 'fields' => array( 'track_id' => $level, 'day_number' => $d ) );
+				$out[] = array( 'parent_id' => isset( $a['pid'] ) ? $a['pid'] : ( 12 === $level ? 2000 : 1000 ) + $d, 'title' => $a['id'], 'tags' => $a['tags'], 'fields' => array( 'track_id' => $level, 'day_number' => $d ) );
 			}
 		}
 		return $out;
