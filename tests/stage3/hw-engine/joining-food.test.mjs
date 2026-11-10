@@ -153,3 +153,13 @@ test('TC-FR3-36-AS-05', () => {
   expect(fast.item_ids).toEqual(['R-165', 'R-171', 'R-172', 'R-173', 'R-175', 'R-176']);
   expect(normal.item_ids).toHaveLength(9);
 });
+
+test('P3-35 R-HW-FOOD-02: the cuisine reason line uses the approved choice label, never the raw value', () => {
+  const items = [1, 2, 3, 4, 5].map((n) => ({ id: `R-${n}`, meal_type: 'dinner', cuisine: 'south-asian', food_rules: [], allergens: [], diets: ['everything', 'vegetarian'], approved: true }));
+  const [labelled, raw] = call([
+    ['food_filter', { items, member: { cuisines: ['south-asian'], cuisine_labels: { 'south-asian': 'South Asian' } }, meal_type: 'dinner' }],
+    ['food_filter', { items, member: { cuisines: ['south-asian'] }, meal_type: 'dinner' }],
+  ]);
+  expect(labelled.items[0].reason).toBe('South Asian dish');
+  expect(raw.items.map((i) => i.reason)).not.toContain('south-asian dish');
+});

@@ -481,6 +481,15 @@ class LLD_Members_Recipes {
 			$member['budget']       = LLD_Members_HW_Answers::get( $member_id, 'budget' );
 			$member['cuisines']     = (array) LLD_Members_HW_Answers::get( $member_id, 'cuisines' );
 		}
+		// T-HW-FOOD-02 names the cuisine with the approved HW-QW-23 choice label (value => label).
+		$q = class_exists( 'LLD_Members_HW_Content' ) ? LLD_Members_HW_Content::question( 'cuisines' ) : null;
+		if ( is_array( $q ) && ! empty( $q['choices'] ) ) {
+			foreach ( $q['choices'] as $choice ) {
+				if ( isset( $choice['value'], $choice['label'] ) ) {
+					$member['cuisine_labels'][ (string) $choice['value'] ] = (string) $choice['label'];
+				}
+			}
+		}
 		return LLD_Members_HW_Rules::food_filter( self::library(), $member, $meal_type );
 	}
 

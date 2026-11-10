@@ -1451,7 +1451,7 @@ class LLD_Members_HW_Rules {
 			}
 			if ( ! empty( $item['cuisine'] ) && in_array( strtolower( $item['cuisine'] ), $cuisines, true ) ) {
 				$score += 1;
-				$reason = $reason ? $reason : LLD_Members_Rule_Catalogue::fill( 'hw.T-HW-FOOD-02.cuisine', array( 'cuisine' => $item['cuisine'] ) );
+				$reason = $reason ? $reason : ( isset( $member['cuisine_labels'][ $item['cuisine'] ] ) ? LLD_Members_Rule_Catalogue::fill( 'hw.T-HW-FOOD-02.cuisine', array( 'cuisine' => $member['cuisine_labels'][ $item['cuisine'] ] ) ) : null ); // the approved choice label, never the raw value
 			}
 			$kept[] = array(
 				'id'     => $item['id'],

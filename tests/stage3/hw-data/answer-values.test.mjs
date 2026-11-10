@@ -69,7 +69,7 @@ test('TC-FR3-99-AS-01 (every choice end to end): each choice the screens offer i
     $none = $set('food_rules', ['halal', 'none'])['food_rules'];
     $e = $set('cuisines', ['south-asian']);
     $five = []; for ($i = 1; $i <= 5; $i++) $five[] = $item(['id' => $i, 'cuisine' => 1 === $i ? 'south-asian' : 'chinese']);
-    $cuisine = LLD_Members_HW_Rules::food_filter($five, $e)['items'][0]['reason'];
+    $cuisine = LLD_Members_HW_Rules::food_filter($five, $e + ['cuisine_labels' => ['south-asian' => 'South Asian']])['items'][0]['reason'];
     $e = $set('sugary_drinks', 'weekly');
     return compact('refused', 'allergy', 'rem', 'none_snack', 'jain', 'fasting', 'none', 'cuisine') + ['sugary' => $e['sugary_drinks'], 'protein' => $set('breakfast_protein', 'not_sure')['breakfast_protein']];
   `);
@@ -80,7 +80,7 @@ test('TC-FR3-99-AS-01 (every choice end to end): each choice the screens offer i
   expect(out.jain).toEqual([false, 'never']);
   expect(out.fasting).toEqual([false, true]); // only on a fasting day
   expect(out.none).toEqual([]); // "None of these" clears the others
-  expect(out.cuisine).toContain('south-asian'); // R-HW-FOOD-02 matched the recipes' cuisine name
+  expect(out.cuisine).toBe('South Asian dish'); // R-HW-FOOD-02 matched the recipes' cuisine name, shown by its approved label
   expect(out.sugary).toBe('weekly');
   expect(out.protein).toBe(false);
 });
