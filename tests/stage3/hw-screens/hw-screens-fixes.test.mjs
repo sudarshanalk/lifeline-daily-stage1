@@ -69,11 +69,19 @@ test('P3-35 "where you are now" asks the Check\'s eating-disorder question once,
   expect(gs.indexOf("'yes' === LLD_Members_Hw_Where_Screen::save_eating( $member_id )")).toBeLessThan(gs.indexOf('LLD_Members_Goal_Journey::create_goal( $member_id, $role, $type'));
 });
 
-test('P3-35 the eating-disorder answer hides calorie numbers on the screens: "yes" and "prefer not to say"', () => {
-  const r = run(`return [LLD_Members_Hw_Screen_Parts::ed(${phpJson(facts())}), LLD_Members_Hw_Plan_Screen::plan_html(${phpJson(planView)}, ${phpJson(facts())})];`, { ...base, answers: { eating_disorder: 'prefer' } });
-  expect(r[0]).toBe(true);
-  expect(r[1]).not.toContain('data-lld-kcal');
-  expect(run(`return LLD_Members_Hw_Screen_Parts::ed(${phpJson(facts())});`, { ...base, answers: { eating_disorder: 'no' } })).toBe(false);
+test('P3-35 Owner Question 164 on the screens: "yes" to the Check\'s question hides calorie numbers; "prefer not to say" sees them', () => {
+  const show = (answer) => run(`return [LLD_Members_Hw_Screen_Parts::ed(${phpJson(facts())}), LLD_Members_Hw_Plan_Screen::plan_html(${phpJson(planView)}, ${phpJson(facts())}), lld_test_call('LLD_Members_Today_Screen', 'hw_today_html', [7, ${phpJson(facts())}, ${phpJson(todayView)}])];`, { ...base, today: todayView, answers: { eating_disorder: answer } });
+  const yes = show('yes');
+  expect(yes[0]).toBe(true);
+  for (const html of yes.slice(1)) expect(html).not.toMatch(/data-lld-kcal|kcal|calorie|data-lld-add-drink|hw-milestones/i);
+  const prefer = show('prefer');
+  expect(prefer[0]).toBe(false);
+  expect(prefer[1]).toContain('data-lld-kcal="1310"');
+  expect(prefer[1]).toContain('data-lld-drinks-line');
+  expect(prefer[1]).toContain('lld-hw-milestones');
+  expect(prefer[2]).toContain('data-lld-add-drink');
+  // The pace step's own paces for "prefer" (when P2 gives none): 0.25 and 0.5.
+  expect(run(`return LLD_Members_Hw_Plan_Screen::paces([], ${phpJson(facts())});`, { ...base, answers: { eating_disorder: 'prefer' } })).toEqual([0.25, 0.5]);
 });
 
 test('TC-FR3-100-AS-06 (pace not chosen): Today asks the member to finish choosing a pace, with the way back to the pace step', () => {

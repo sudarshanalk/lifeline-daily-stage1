@@ -273,7 +273,8 @@ class LLD_Members_Hw_Screen_Parts {
 	}
 
 	/**
-	 * The member has an eating-disorder flag (now, in the past, or not said): no calorie number anywhere.
+	 * The member has an eating-disorder flag (the Stage 2 profile, or "yes" to the Check's question): no calorie number
+	 * anywhere.
 	 *
 	 * @param array $facts LLD_Members_Goal_Journey::facts().
 	 */
@@ -281,9 +282,10 @@ class LLD_Members_Hw_Screen_Parts {
 		if ( in_array( 'eating_disorder', isset( $facts['situations'] ) ? (array) $facts['situations'] : array(), true ) ) {
 			return true;
 		}
-		// The Check's own question on "where you are now": yes, or prefer not to say (S1).
+		// The Check's own question on "where you are now": "yes" only. "Prefer not to say" sees the numbers, with the
+		// pace limited to 0.25 or 0.5 kg a week (Owner Question 164).
 		$answer = isset( $facts['member_id'] ) ? self::answer( (int) $facts['member_id'], 'eating_disorder' ) : null;
-		return in_array( $answer, array( 'yes', 'prefer' ), true );
+		return 'yes' === $answer;
 	}
 
 	/**

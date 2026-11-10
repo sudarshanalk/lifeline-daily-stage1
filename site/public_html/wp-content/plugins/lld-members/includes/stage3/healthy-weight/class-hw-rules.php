@@ -319,7 +319,7 @@ class LLD_Members_HW_Rules {
 			'reask'    => array(),
 			'passed'   => array(),
 		);
-		if ( isset( $in['eating_disorder'] ) && 'no' !== $in['eating_disorder'] && null !== $in['eating_disorder'] ) {
+		if ( isset( $in['eating_disorder'] ) && 'yes' === $in['eating_disorder'] ) { // Owner Question 164: not for pnts
 			return $none;
 		}
 		if ( ! isset( $in['mean7'] ) || ! is_numeric( $in['mean7'] ) ) {
@@ -388,7 +388,7 @@ class LLD_Members_HW_Rules {
 			$out['weekly_kcal']    = self::r10( $kcal );
 			$out['daily_kcal']     = self::r10( $kcal / 7 );
 			$out['support_card']   = $weekly > self::DRINK_LIMIT + 1e-9 || $five;
-			if ( 'no' === $ed || '' === $ed ) {
+			if ( 'yes' !== $ed ) { // Owner Question 164: pnts sees the line
 				$values = array(
 					'target' => isset( $in['target'] ) && null !== $in['target'] ? number_format( (float) $in['target'], 0, '.', ',' ) : '',
 					'weekly' => number_format( $out['weekly_kcal'], 0, '.', ',' ),
@@ -430,7 +430,7 @@ class LLD_Members_HW_Rules {
 			$out['reason'] = 'does_not_drink';
 			return $out;
 		}
-		if ( isset( $in['eating_disorder'] ) && ! in_array( $in['eating_disorder'], array( 'no', null, '' ), true ) ) {
+		if ( isset( $in['eating_disorder'] ) && 'yes' === $in['eating_disorder'] ) { // Owner Question 164: not for pnts
 			$out['reason'] = 'eating_disorder';
 			return $out;
 		}
@@ -1003,7 +1003,7 @@ class LLD_Members_HW_Rules {
 		$queue   = isset( $in['queue'] ) ? array_values( (array) $in['queue'] ) : array();
 		$shown   = isset( $in['shown'] ) && is_array( $in['shown'] ) ? $in['shown'] : array();
 		$pending = isset( $in['pending'] ) ? array_values( (array) $in['pending'] ) : array();
-		$ed      = isset( $in['eating_disorder'] ) && ! in_array( $in['eating_disorder'], array( 'no', null, '' ), true );
+		$ed      = isset( $in['eating_disorder'] ) && 'yes' === $in['eating_disorder']; // Owner Question 164
 		$day     = isset( $in['programme_day'] ) ? (int) $in['programme_day'] : 0;
 		$recent  = function ( $id ) use ( $shown, $date ) {
 			return isset( $shown[ $id ] ) && self::days_between( $shown[ $id ], $date ) < self::NOTE_REPEAT_DAYS;

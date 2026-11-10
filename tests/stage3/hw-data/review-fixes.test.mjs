@@ -532,3 +532,43 @@ test('TC-FR3-100-AS-05 (prefer not to say, by a date): a date implying 0.6 kg a 
   expect(out.ok).toBe(0.4);
   expect(out.date).toBe('2027-10-28');
 });
+
+test('P3-35 Owner Question 164: "prefer not to say" sees the calorie target and the other numbers, paced at 0.25 or 0.5; "yes" and the profile flag see none', () => {
+  const out = run(`
+    ${WINE}
+    member(7); member(8); member(9, ['situations' => ['eating_disorder']]);
+    LLD_Members_Clock::$now = '2026-11-12 19:00:00';
+    $g = weight_goal(7); weight_goal(8); weight_goal(9);
+    LLD_Members_HW_Answers::set(7, 'eating_disorder', 'prefer');
+    LLD_Members_HW_Answers::set(8, 'eating_disorder', 'yes');
+    $ans = ['reason' => 'health', 'alcohol_freq' => '1_2_days', 'alcohol_amount' => '1_2'];
+    $refused = LLD_Members_HW_Programme::join(7, $g, $ans + ['chosen_rate' => 0.75]);
+    $joined = LLD_Members_HW_Programme::join(7, $g, $ans + ['chosen_rate' => 0.5]);
+    foreach ([7, 8] as $m) foreach (['2026-11-10', '2026-11-11'] as $d) LLD_Members_Stage3_Data::insert('food_log', $m, ['entry_date' => $d, 'meal' => 'lunch', 'food_id' => 7, 'food_kind' => 'food', 'grams' => 150, 'kcal' => 195, 'source' => 'search']);
+    $found = ['wine' => ${WINE_ROW}];
+    $out = ['refused' => $refused->get_error_code(), 'plan' => LLD_Members_HW_Programme::plan_view(7), 'today' => LLD_Members_HW_Programme::today(7),
+      'nt' => raw('nutrition_targets'), 'drinks' => LLD_Members_Food_Log::drinks_for(7, $found)[0]['kcal'], 'repeat' => LLD_Members_Food_Log::view('repeat', 7, ['date' => '2026-11-12'])['meal']['kcal']];
+    $out['yes'] = [LLD_Members_HW_Programme::join(8, ['pace' => 0.5])->get_error_code(), LLD_Members_HW_Programme::plan_view(8), LLD_Members_Food_Log::drinks_for(8, $found)[0]['kcal'], LLD_Members_Food_Log::view('repeat', 8, ['date' => '2026-11-12'])['meal']['kcal']];
+    $out['flag'] = [LLD_Members_HW_Programme::join(9, ['pace' => 0.5])->get_error_code(), LLD_Members_Food_Log::drinks_for(9, $found)[0]['kcal']];
+    return $out;
+  `);
+  expect(out.refused).toBe('lld_hw_pace');
+  expect(out.plan.pace.paces).toEqual([0.25, 0.5]);
+  expect(out.plan.pace.chosen).toBe(0.5);
+  expect(out.plan.target_kcal).toBeGreaterThan(1200);
+  expect(out.plan.tdee).toBeGreaterThan(out.plan.target_kcal); // a weight-loss target at the limited pace
+  expect(out.plan.target_kcal).toBe(Number(out.nt[out.nt.length - 1].kcal)); // the same target as the food tracker's
+  expect(out.plan.milestones).toHaveLength(4);
+  expect(out.plan.drinks).toEqual({ weekly: 290, daily: 40 });
+  expect(out.plan.reasons.map((r) => r.rule)).toContain('R-HW-NUM-05');
+  expect(out.today.drink_shortcut.show).toBe(true);
+  expect(out.drinks).toBe(100);
+  expect(out.repeat).toBe(195);
+  // "Yes" (the Check's question) and the profile flag: stopped, and no number from the food types either.
+  expect(out.yes[0]).toBe('lld_hw_not_offered');
+  expect(out.yes[1].stopped).toBe(true);
+  expect(numbers(out.yes[1])).toEqual([]);
+  expect(out.yes[2]).toBeNull();
+  expect(out.yes[3]).toBeNull();
+  expect(out.flag).toEqual(['lld_hw_not_offered', null]);
+});

@@ -43,7 +43,7 @@ class LLD_Members_Hw_Plan_Screen {
 		$in = array(
 			'weight_kg'       => isset( $facts['weight_kg'] ) ? $facts['weight_kg'] : null,
 			'age'             => isset( $facts['age'] ) && (int) $facts['age'] > 0 ? (int) $facts['age'] : null,
-			'eating_disorder' => LLD_Members_Hw_Screen_Parts::ed( $facts ) ? 'pnts' : 'no',
+			'eating_disorder' => isset( $facts['member_id'] ) && 'prefer' === LLD_Members_Hw_Screen_Parts::answer( (int) $facts['member_id'], 'eating_disorder' ) ? 'pnts' : 'no',
 		);
 		$p = LLD_Members_Hw_Screen_Parts::call( 'LLD_Members_HW_Rules', 'allowed_paces', array( $in ), array( 0.25 ) );
 		return array_map( 'floatval', (array) $p );

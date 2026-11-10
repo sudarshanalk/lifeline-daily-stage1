@@ -1063,7 +1063,13 @@ class LLD_Members_Food_Log {
 		if ( ! class_exists( 'LLD_Members_Stage3_Safety' ) || ! method_exists( 'LLD_Members_Stage3_Safety', 'nutrition_hidden' ) || ! method_exists( 'LLD_Members_Stage3_Safety', 'applies' ) ) {
 			return array( 'all' => false, 'protein' => false );
 		}
-		return LLD_Members_Stage3_Safety::nutrition_hidden( LLD_Members_Stage3_Safety::applies( (int) $member_id, 'food_tracker' ) );
+		$h = LLD_Members_Stage3_Safety::nutrition_hidden( LLD_Members_Stage3_Safety::applies( (int) $member_id, 'food_tracker' ) );
+		// "Yes" to the Healthy Weight Check's own eating question counts as the profile flag ("prefer not to say" does
+		// not, Owner Question 164).
+		if ( ! $h['all'] && class_exists( 'LLD_Members_HW_Answers' ) && 'yes' === LLD_Members_HW_Answers::get( (int) $member_id, 'eating_disorder' ) ) {
+			$h = array( 'all' => true, 'protein' => true );
+		}
+		return $h;
 	}
 
 	/**

@@ -327,7 +327,7 @@ class LLD_Members_HW_Programme {
 		}
 		$facts  = $c['facts'];
 		$a      = $c['answers'];
-		$ed     = 'no' !== $a['eating_disorder'];
+		$ed     = 'yes' === $a['eating_disorder']; // numbers hidden for "yes" and the profile flag only (Owner Question 164)
 		$where  = self::where( $facts, $a );
 		$goal   = $c['goal'];
 		$chosen = is_numeric( $goal['chosen_rate'] ) ? (float) $goal['chosen_rate'] : null;
@@ -559,7 +559,7 @@ class LLD_Members_HW_Programme {
 		}
 		$today = $c['today'];
 		$a     = $c['answers'];
-		$ed    = 'no' !== $a['eating_disorder'];
+		$ed    = 'yes' === $a['eating_disorder']; // Owner Question 164: "prefer not to say" sees the numbers
 		$shown = self::note_row( $member_id, $today );
 		if ( ! $shown && $c['live'] ) {
 			// First sight of the member's own today: the nightly part runs now. Another date is only read.
@@ -1192,7 +1192,7 @@ class LLD_Members_HW_Programme {
 		$out['status'] = 'ran';
 		$today         = $c['today'];
 		$a             = $c['answers'];
-		$ed            = 'no' !== $a['eating_disorder'];
+		$ed            = 'yes' === $a['eating_disorder']; // Owner Question 164
 		$state         = $c['state'];
 		$safe04        = in_array( 'R-SAFE-04', isset( $engine_out['safety'] ) ? (array) $engine_out['safety'] : array(), true ) ? $today : $c['safe04'];
 		$low           = self::low_mood_on( $safe04, $today );
@@ -2041,7 +2041,9 @@ class LLD_Members_HW_Programme {
 			'height_cm'       => $facts['height_cm'],
 			'weight_kg'       => $facts['weight_kg'],
 			'activity_level'  => $a['activity_level'] ? $a['activity_level'] : str_replace( '-', '_', (string) $facts['activity'] ),
-			'eating_disorder' => $a['eating_disorder'],
+			// Owner Question 164: "prefer not to say" gets the weight-loss target at its limited pace (0.25 or 0.5), as the
+			// plan's own target does; only "yes" (stopped before this) reaches the calculator as an eating disorder.
+			'eating_disorder' => 'yes' === $a['eating_disorder'] ? 'yes' : 'no',
 			'pregnant'        => $a['pregnant'],
 		);
 	}
