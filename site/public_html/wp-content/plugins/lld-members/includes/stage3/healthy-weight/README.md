@@ -44,7 +44,7 @@ Each is the reading closest to the signed text. A change needs a new decision.
 **Reminders and the drinks shortcut**
 20. An "evening snacker" has a usual snacking time at or after 18:00. "after 9 pm" is read as 21:00, so the reminder is at 20:30.
 21. A shift worker with no wake-up time gets no reminders and `ask_wake_up`. With one, the step reminder is 30 minutes after waking (fixture HWR-01b). With a bedtime, no reminder falls between bedtime and waking.
-22. The "Add a drink" shortcut shows from 18:00 to midnight. For shift workers it shows for 6 hours from 6 hours before their usual sleep time.
+22. The "Add a drink" shortcut shows from 18:00 to midnight. For shift and night workers with a wake-up time it shows from 10 hours after they wake (D3-60, catalogue v1.3.1) until their next wake-up, when their new day starts; without a wake-up time, from 18:00.
 
 **Support cards**
 23. At the first two check-ins the card shows only when the caller says the answers are `unchanged` since joining.
@@ -75,7 +75,7 @@ Each is the reading closest to the signed text. A change needs a new decision.
 42. "{weeks} weeks to go" is the weeks to the goal date, rounded up. The event weight never goes below the goal.
 
 **Tiers**
-43. `programme_rules()['tier']` follows question 12. It is null where question 12 names neither tier: R-HW-STEP-06, R-HW-ALC-02, R-HW-FOOD-03, R-HW-REM-01, R-HW-WEEK-01 and R-HW-QOD-01.
+43. `programme_rules()['tier']` follows question 12, and Owner Question 163 (10 Nov 2026) for the six it did not name: R-HW-STEP-06 premium (the R-HW-SAFE-04 limits stay free), R-HW-ALC-02 free, R-HW-FOOD-03 premium (its safety lines free), R-HW-REM-01 free, R-HW-QOD-01 free, and R-HW-WEEK-01 `split` with `tiers` {question: free, next_week: premium, illness_wording: free}. The caller applies the split.
 
 **Requirement corrections followed (signed method over requirement text)**
 44. FR3-101 AS-01: the healthy-range milestone is 66.2 kg, not 66.

@@ -273,7 +273,7 @@ test('TC-NFR3-17-AS-03', () => {
   // frozen, the catalogue's strings are hashed against it (AS-02 above), the fixtures' expected values are protected by
   // oracle-guard and validated by validate-artefacts, and the engine holds no second copy of any wording.
   expect(approval.clinical_signoff.decision).toBe('approved');
-  expect(approval.decisions_ratified).toEqual(['D3-43', 'D3-44', 'D3-45', 'D3-46', 'D3-47', 'D3-48', 'D3-49', 'D3-58', 'D3-59']); // D3-49: version 1.1, R-ADJ-03 for every calorie plan (Owner Q68); D3-58: v1.2, the Healthy Weight rules; D3-59: v1.3, R-HW-BLOCK-03
+  expect(approval.decisions_ratified).toEqual(['D3-43', 'D3-44', 'D3-45', 'D3-46', 'D3-47', 'D3-48', 'D3-49', 'D3-58', 'D3-59', 'D3-60']); // D3-49: version 1.1, R-ADJ-03 for every calorie plan (Owner Q68); D3-58: v1.2, the Healthy Weight rules; D3-59: v1.3, R-HW-BLOCK-03; D3-60: v1.3.1, R-HW-ALC-02 timing
   expect(approval.regulatory_statement).toMatch(/Frozen: any change needs a new decision/);
   expect(approval.version_hash).toMatch(/^[0-9a-f]{64}$/); // SHA-256 of the signed catalogue file (outside the repository)
   const validator = readFileSync(resolve(root, 'tests/ci/validate-artefacts.py'), 'utf8');

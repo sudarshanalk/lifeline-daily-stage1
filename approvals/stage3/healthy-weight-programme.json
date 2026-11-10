@@ -16,7 +16,7 @@
     "One pictured drink is an average (about 12.5 g of alcohol, 130 kcal); drinks differ.",
     "The Healthy Weight Check itself is not changed; the port is proved equal on every frozen fixture."
   ],
-  "regulatory_statement": "Method sheet signed by the owner as clinical reviewer on 6 November 2026 (NFR3-14; D3-54 to D3-57); rules and templates signed as catalogue versions 1.2 (D3-58, 6 Nov 2026) and 1.3 (D3-59, 10 Nov 2026). General health information, not a diagnosis or a medical device. Frozen: any change needs a new decision.",
+  "regulatory_statement": "Method sheet signed by the owner as clinical reviewer on 6 November 2026 (NFR3-14; D3-54 to D3-57); rules and templates signed as catalogue versions 1.2 (D3-58, 6 Nov 2026) , 1.3 (D3-59, 10 Nov 2026) and 1.3.1 (D3-60, 10 Nov 2026). General health information, not a diagnosis or a medical device. Frozen: any change needs a new decision.",
   "licence": "Lifeline Daily's own rules; BMI and waist-to-height thresholds from NICE NG246 and WHO.",
   "copy_hashes": {},
   "decisions_ratified": [
@@ -25,13 +25,14 @@
     "D3-56",
     "D3-57",
     "D3-58",
-    "D3-59"
+    "D3-59",
+    "D3-60"
   ],
   "clinical_signoff": {
     "name": "Product owner (sudarshanalk), acting as clinical reviewer",
     "date": "2026-11-10",
     "decision": "approved",
-    "notes": "P3-35 method sheet signed 6 Nov 2026 (\"Yes, all four\": D3-54 A background from the profile or the Check's question once; D3-55 A card above 8 pictured drinks a week or 5 or more a time; D3-56 A 130 kcal a drink; D3-57 A \"5 or more\" counts as 5). The wording is the rule catalogue's, hashed in approvals/stage3/decision-rules.json, so copy_hashes here is empty. Fixtures fixtures/healthy-weight-programme/ are taken from the fixture tables of the signed rule draft (sections 2 to 12, members A and B), the R-HW-BLOCK-03 change draft (HWB-03a to f) and this sheet (DRK-01 to 10)."
+    "notes": "P3-35 method sheet signed 6 Nov 2026 (\"Yes, all four\": D3-54 A background from the profile or the Check's question once; D3-55 A card above 8 pictured drinks a week or 5 or more a time; D3-56 A 130 kcal a drink; D3-57 A \"5 or more\" counts as 5). The wording is the rule catalogue's, hashed in approvals/stage3/decision-rules.json, so copy_hashes here is empty. Fixtures fixtures/healthy-weight-programme/ are taken from the fixture tables of the signed rule draft (sections 2 to 12, members A and B), the R-HW-BLOCK-03 change draft (HWB-03a to f) and this sheet (DRK-01 to 10). D3-60 (10 Nov 2026, catalogue v1.3.1): the \"Add a drink\" shortcut for shift and night workers from 10 hours after their wake-up time, 18:00 without one; fixtures HWA-02d to -02f."
   },
   "review_date": "2026-11-10",
   "next_review_date": "2027-11-10"

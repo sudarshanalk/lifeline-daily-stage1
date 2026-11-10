@@ -1,12 +1,13 @@
 <?php
 /**
- * Decision engine rule catalogue, version 1.3 (P3-34 from P3-02; FR3-17, NFR3-17), written from the owner-signed
+ * Decision engine rule catalogue, version 1.3.1 (P3-34 from P3-02; FR3-17, NFR3-17), written from the owner-signed
  * `04 Health Tools/Stage 3/P3-02-Decision-Engine-Rule-Catalogue-v1.md` (approval record
  * `approvals/stage3/decision-rules.json`, frozen fixtures `fixtures/decision-rules/`).
  *
  * Version 1.2 (D3-58, 6 Nov 2026) added section 9, the Healthy Weight programme rules R-HW-* and their T-HW-*
  * templates (`P3-02-Healthy-Weight-Programme-Rules-Draft.md`, wording from `P3-02-Healthy-Weight-Templates.md`);
- * version 1.3 (D3-59, 10 Nov 2026) added R-HW-BLOCK-03. The R-HW rules build and adjust the member's plan: they are a
+ * version 1.3 (D3-59, 10 Nov 2026) added R-HW-BLOCK-03; version 1.3.1 (D3-60, 10 Nov 2026) times R-HW-ALC-02 for shift
+ * and night workers from 10 hours after their wake-up time. The R-HW rules build and adjust the member's plan: they are a
  * programme class of their own, outside the insight quota, and are run by `includes/stage3/healthy-weight/`, not by
  * the nightly engine below. Sections 1 to 8 (the 23 rules) are unchanged.
  *
@@ -26,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Rule_Catalogue {
 
-	const VERSION = '1.3';
+	const VERSION = '1.3.1';
 
 	const CLASS_SAFETY     = 'safety';
 	const CLASS_STEP       = 'today_step';
@@ -214,7 +215,10 @@ class LLD_Members_Rule_Catalogue {
 	 * reminders and motivation 4; weekly changes and focus blocks 5). `tier` is the owner's rule question 12: free
 	 * (safety, the numbers, pace, milestones, the reason on Today, the food-rule and allergy filter) or premium
 	 * (personalised step order and versions, extra steps, notes brought forward, food preferences, focus block
-	 * suggestions); null where question 12 names neither. `low_mood` true: the rule keeps running in the 7 days after
+	 * suggestions); the six rules question 12 did not name follow Owner Question 163 (10 Nov 2026): R-HW-STEP-06 Premium
+	 * (the R-HW-SAFE-04 limits stay free), R-HW-ALC-02 free, R-HW-FOOD-03 Premium (its safety lines free), R-HW-REM-01
+	 * free, R-HW-WEEK-01 split (`tiers`: the question free, the changes to next week Premium, the illness wording free),
+	 * R-HW-QOD-01 free. `low_mood` true: the rule keeps running in the 7 days after
 	 * R-SAFE-04 (R-HW-SAFE, the calorie target and the low-mood note); every other R-HW rule pauses. `templates` are
 	 * HW_TEMPLATES keys.
 	 *
@@ -252,26 +256,35 @@ class LLD_Members_Rule_Catalogue {
 			'R-HW-STEP-03'  => $r( 1033, 'hw_step_version', 'steps', 4, 'premium', array() ),
 			'R-HW-STEP-04'  => $r( 1034, 'hw_sleep_step', 'steps', 4, 'premium', array( 'hw.T-HW-STEP-04' ) ),
 			'R-HW-STEP-05'  => $r( 1035, 'hw_stress_step', 'steps', 4, 'premium', array( 'hw.T-HW-STEP-05' ) ),
-			'R-HW-STEP-06'  => $r( 1036, 'hw_exercise_level', 'steps', 4, null, array( 'hw.T-HW-STEP-06', 'hw.T-HW-STEP-06.very_active' ) ),
+			'R-HW-STEP-06'  => $r( 1036, 'hw_exercise_level', 'steps', 4, 'premium', array( 'hw.T-HW-STEP-06', 'hw.T-HW-STEP-06.very_active' ) ),
 			'R-HW-ALC-01'   => $r( 1041, 'hw_alcohol_step', 'alcohol', 4, 'premium', array( 'hw.T-HW-ALC-01', 'hw.T-HW-ALC-01.title.free_day', 'hw.T-HW-ALC-01.title.second_day', 'hw.T-HW-ALC-01.title.one_fewer' ) ),
-			'R-HW-ALC-02'   => $r( 1042, 'hw_add_a_drink', 'alcohol', 4, null, array( 'hw.R-HW-ALC-02.button' ) ),
+			'R-HW-ALC-02'   => $r( 1042, 'hw_add_a_drink', 'alcohol', 4, 'free', array( 'hw.R-HW-ALC-02.button' ), false, '1.3.1' ),
 			'R-HW-FOOD-01'  => $r( 1051, 'hw_food_rules', 'food', 4, 'free', array() ),
 			'R-HW-FOOD-02'  => $r( 1052, 'hw_food_preferences', 'food', 4, 'premium', array( 'hw.T-HW-FOOD-02.quick', 'hw.T-HW-FOOD-02.low_cost', 'hw.T-HW-FOOD-02.cuisine' ) ),
-			'R-HW-FOOD-03'  => $r( 1053, 'hw_fasting_meals', 'food', 4, null, array() ),
+			'R-HW-FOOD-03'  => $r( 1053, 'hw_fasting_meals', 'food', 4, 'premium', array() ),
 			'R-HW-NOTE-01'  => $r( 1061, 'hw_note_low_mood', 'notes', 4, 'premium', array(), true ),
 			'R-HW-NOTE-02'  => $r( 1062, 'hw_note_sleep_stress', 'notes', 4, 'premium', array() ),
 			'R-HW-NOTE-03'  => $r( 1063, 'hw_note_missed_log', 'notes', 4, 'premium', array() ),
 			'R-HW-NOTE-04'  => $r( 1064, 'hw_note_weight_up', 'notes', 4, 'premium', array() ),
 			'R-HW-NOTE-05'  => $r( 1065, 'hw_note_plateau', 'notes', 4, 'premium', array() ),
-			'R-HW-REM-01'   => $r( 1071, 'hw_reminder_times', 'reminders', 4, null, array( 'hw.T-HW-REM-01' ) ),
+			'R-HW-REM-01'   => $r( 1071, 'hw_reminder_times', 'reminders', 4, 'free', array( 'hw.T-HW-REM-01' ) ),
 			'R-HW-MOT-01'   => $r( 1081, 'hw_reason_on_today', 'motivation', 4, 'free', array( 'hw.T-HW-MOT-01', 'hw.T-HW-MOT-01.event' ) ),
 			'R-HW-MOT-02'   => $r( 1082, 'hw_milestone_reached', 'motivation', 4, 'free', array( 'hw.T-HW-MOT-02.5pct', 'hw.T-HW-MOT-02.10pct', 'hw.T-HW-MOT-02.healthy', 'hw.T-HW-MOT-02.goal' ) ),
-			'R-HW-WEEK-01'  => $r( 1091, 'hw_what_got_in_the_way', 'weekly', 5, null, array( 'hw.T-HW-WEEK-01a', 'hw.T-HW-WEEK-01b', 'hw.T-HW-WEEK-01c', 'hw.T-HW-WEEK-01d', 'hw.T-HW-WEEK-01e', 'hw.T-HW-WEEK-01f', 'hw.T-HW-WEEK-01g' ) ),
+			'R-HW-WEEK-01'  => array_merge(
+				$r( 1091, 'hw_what_got_in_the_way', 'weekly', 5, 'split', array( 'hw.T-HW-WEEK-01a', 'hw.T-HW-WEEK-01b', 'hw.T-HW-WEEK-01c', 'hw.T-HW-WEEK-01d', 'hw.T-HW-WEEK-01e', 'hw.T-HW-WEEK-01f', 'hw.T-HW-WEEK-01g' ) ),
+				array(
+					'tiers' => array(
+						'question'        => 'free',
+						'next_week'       => 'premium',
+						'illness_wording' => 'free',
+					),
+				)
+			),
 			'R-HW-WEEK-02'  => $r( 1092, 'hw_plateau', 'weekly', 5, 'premium', array( 'hw.T-HW-WEEK-02' ) ),
 			'R-HW-BLOCK-01' => $r( 1101, 'hw_block_suggested', 'blocks', 5, 'premium', array( 'hw.T-HW-BLOCK-01' ) ),
 			'R-HW-BLOCK-02' => $r( 1102, 'hw_festival_offer', 'blocks', 5, 'premium', array() ),
 			'R-HW-BLOCK-03' => $r( 1103, 'hw_festival_timing', 'blocks', 5, 'premium', array(), false, '1.3' ),
-			'R-HW-QOD-01'   => $r( 1104, 'hw_quick_questions', 'blocks', 5, null, array() ),
+			'R-HW-QOD-01'   => $r( 1104, 'hw_quick_questions', 'blocks', 5, 'free', array() ),
 		);
 	}
 
