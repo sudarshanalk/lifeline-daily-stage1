@@ -7,6 +7,10 @@
  * applies to; for everyone else the Stage 2 dispatcher answers as before (NFR3-06). Adds its own rewrite rule
  * through LLD_Members_Goal_Journey and edits no Stage 2 file.
  *
+ * Healthy Weight (P3-35): once the programme is built (P2), a weight-loss goal follows the signed order: where you are
+ * now (FR3-97) with the goal on the same step, then the eight questions (FR3-98), then the pace (FR3-100), then the
+ * plan. The same address hosts ?hw=where, ?hw=answers (editing the answers) and ?hw=blocks (the focus blocks).
+ *
  * @package LLD_Members
  */
 
@@ -76,6 +80,11 @@ class LLD_Members_Goal_Setting {
 			self::output( 'Your goal', $main, $post ? 403 : 200 );
 			return;
 		}
+		// The Healthy Weight screens hosted here (P3-35): where you are now, editing the answers, the focus blocks.
+		$hw = isset( $_GET['hw'] ) ? sanitize_key( (string) wp_unslash( $_GET['hw'] ) ) : '';
+		if ( in_array( $hw, array( 'where', 'answers', 'blocks' ), true ) && self::hw_screen( $member_id, $facts, $hw ) ) {
+			return;
+		}
 		$allowed = LLD_Members_Goal_Rules::allowed_types( $facts['situations'] );
 		if ( ! $allowed ) {
 			$main = '<h1>Your goal</h1>' . lld_info( LLD_Members_Goal_Journey::note_texts()['general_wellbeing_path'] );
@@ -100,6 +109,12 @@ class LLD_Members_Goal_Setting {
 					$data  = $id->get_error_data();
 					$check = is_array( $data ) && isset( $data['code'] ) ? $data : null;
 				} else {
+					if ( 'lose_weight' === $type && self::hw_flow() ) {
+						// P3-35: where you are now and the goal are saved; the eight questions, then the pace, come next.
+						LLD_Members_Hw_Where_Screen::save_fields( $member_id );
+						wp_safe_redirect( home_url( '/members/goal/?done=' . (int) $id . '&hw=questions' ) );
+						exit;
+					}
 					wp_safe_redirect( home_url( '/members/goal/?done=' . (int) $id ) );
 					exit;
 				}
@@ -118,6 +133,9 @@ class LLD_Members_Goal_Setting {
 		$done = isset( $_GET['done'] ) ? (int) $_GET['done'] : 0;
 		if ( $done > 0 ) {
 			$goal = LLD_Members_Stage3_Data::row( 'goals', $member_id, $done, LLD_Members_Goal_Journey::SEALED_GOAL );
+			if ( $goal && 'lose_weight' === (string) $goal['goal_type'] && in_array( $hw, array( 'questions', 'pace' ), true ) && self::hw_flow() && self::hw_joining( $member_id, $facts, $goal, $hw ) ) {
+				return;
+			}
 			if ( $goal ) {
 				self::output( 'Your plan', self::plan_html( $member_id, $goal, $facts, $error, ! empty( $_GET['started'] ) ) );
 				return;
@@ -208,6 +226,13 @@ class LLD_Members_Goal_Setting {
 		$html .= wp_nonce_field( 'lld_goal3', 'lld_goal3_nonce', true, false );
 		$html .= '<input type="hidden" name="type" value="' . esc_attr( $type ) . '">';
 		$offered = $check && ! empty( $check['offered'] ) ? $check['offered'] : array();
+		$hw_on   = 'lose_weight' === $type && self::hw_flow();
+		if ( $hw_on ) {
+			// P3-35 (FR3-97): where you are now comes first, then the goal; the pace follows the eight questions.
+			$answers = LLD_Members_Hw_Screen_Parts::answers( $member_id );
+			$where   = LLD_Members_Hw_Where_Screen::where( $member_id, $facts, $answers );
+			$html   .= LLD_Members_Hw_Where_Screen::result_html( $where, $answers ) . LLD_Members_Hw_Where_Screen::fields_html( $where, $answers, $facts );
+		}
 		switch ( $type ) {
 			case 'lose_weight':
 			case 'keep_weight':
@@ -216,7 +241,13 @@ class LLD_Members_Goal_Setting {
 				}
 				$current = $p['lld_current'] ?? ( null !== $facts['weight_kg'] ? LLD_Members_Goal_Rules::plain( $imp ? LLD_Members_Goal_Rules::round1( $facts['weight_kg'] / 0.45359237 ) : $facts['weight_kg'] ) : '' );
 				$html   .= self::number( 'lld_current', 'Your weight now, in ' . ( $imp ? 'pounds' : 'kilograms' ), $current, 0.1 );
-				if ( 'lose_weight' === $type ) {
+				if ( 'lose_weight' === $type && $hw_on ) {
+					$target = isset( $offered['goal_kg'] ) ? LLD_Members_Goal_Rules::plain( $imp ? LLD_Members_Goal_Rules::round1( $offered['goal_kg'] / 0.45359237 ) : $offered['goal_kg'] ) : ( $p['lld_target'] ?? '' );
+					$html  .= self::number( 'lld_target', 'Goal weight, in ' . ( $imp ? 'pounds' : 'kilograms' ), $target, 0.1 );
+					$rate   = isset( $offered['rate'] ) ? (float) $offered['rate'] : LLD_Members_Goal_Rules::DEFAULT_RATE;
+					$html  .= '<input type="hidden" name="lld_rate" value="' . esc_attr( LLD_Members_Goal_Rules::plain( $rate ) ) . '">';
+					$html  .= '<p class="lld-hint">' . esc_html( LLD_Members_Goal_Rules::MESSAGES['plateau'] ) . '</p>';
+				} elseif ( 'lose_weight' === $type ) {
 					$target = isset( $offered['goal_kg'] ) ? LLD_Members_Goal_Rules::plain( $imp ? LLD_Members_Goal_Rules::round1( $offered['goal_kg'] / 0.45359237 ) : $offered['goal_kg'] ) : ( $p['lld_target'] ?? '' );
 					$html  .= self::number( 'lld_target', 'Goal weight, in ' . ( $imp ? 'pounds' : 'kilograms' ), $target, 0.1 );
 					$rates  = $check && ! empty( $check['rates'] ) ? $check['rates'] : self::rates_for( $facts );
@@ -306,6 +337,11 @@ class LLD_Members_Goal_Setting {
 			$html .= '<p>' . esc_html( LLD_Members_Goal_Journey::note_texts()['muscle_note'] ) . '</p>';
 		}
 		$html .= '</section>';
+		// P3-35: the Healthy Weight plan (pace, calorie target, why, support cards) replaces the general targets.
+		$hw_view = 'main' === (string) $goal['role'] && 'lose_weight' === (string) $goal['goal_type'] && self::hw_flow() ? LLD_Members_Hw_Screen_Parts::plan_view( $member_id, (string) $facts['today'] ) : null;
+		if ( $hw_view ) {
+			$html .= LLD_Members_Hw_Plan_Screen::plan_html( $hw_view, $facts );
+		}
 		if ( 'extra' === (string) $goal['role'] ) {
 			$html .= '<p>' . lld_button( array( 'label' => 'Go to Today', 'href' => home_url( '/members/home/' ) ) ) . '</p></div>';
 			return $html;
@@ -340,7 +376,8 @@ class LLD_Members_Goal_Setting {
 		$html .= '<section class="lld-card" data-lld-section="targets">';
 		if ( $facts['premium'] ) {
 			$html .= '<h2>Daily targets</h2>';
-			if ( $plan && is_numeric( $plan['calorie_target'] ) && ! in_array( 'eating_disorder', $facts['situations'], true ) ) {
+			if ( $hw_view ) { // phpcs:ignore Generic.CodeAnalysis.EmptyStatement -- the calorie target is in the Healthy Weight plan above, from the same signed calculator.
+			} elseif ( $plan && is_numeric( $plan['calorie_target'] ) && ! in_array( 'eating_disorder', $facts['situations'], true ) ) {
 				$html .= '<p class="lld-stat" data-lld-kcal="' . (int) $plan['calorie_target'] . '">About <strong>' . esc_html( number_format( (int) $plan['calorie_target'] ) ) . ' kcal</strong> a day</p><ul class="lld-plan-targets">';
 				foreach ( array( 'protein_g' => 'Protein', 'carb_g' => 'Carbohydrate', 'fat_g' => 'Fat', 'fibre_g' => 'Fibre' ) as $k => $label ) {
 					if ( is_numeric( $plan[ $k ] ) ) {
@@ -421,6 +458,124 @@ class LLD_Members_Goal_Setting {
 			}
 		}
 		return $html . '</section>';
+	}
+
+	// ---- Healthy Weight (P3-35) ----------------------------------------------------------------------------------------
+
+	/** The Healthy Weight joining order applies: the programme and its answers are built (P2). */
+	public static function hw_flow() {
+		return class_exists( 'LLD_Members_Hw_Screen_Parts' ) && LLD_Members_Hw_Screen_Parts::programme_on() && LLD_Members_Hw_Screen_Parts::has( LLD_Members_Hw_Screen_Parts::ANSWERS, 'set' );
+	}
+
+	/**
+	 * The Healthy Weight screens with no goal step: where you are now, editing the answers and the focus blocks.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param array  $facts     facts().
+	 * @param string $hw        where|answers|blocks.
+	 * @return bool True when the screen was printed.
+	 */
+	private static function hw_screen( $member_id, array $facts, $hw ) {
+		if ( ! class_exists( 'LLD_Members_Hw_Screen_Parts' ) ) {
+			return false;
+		}
+		$post  = 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' );
+		$error = '';
+		$parts = 'LLD_Members_Hw_Screen_Parts';
+		if ( 'where' === $hw ) {
+			if ( ! $parts::has( 'LLD_Members_HW_Where', 'where_now' ) ) {
+				return false;
+			}
+			if ( $post && isset( $_POST['lld_hw_where_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_hw_where_nonce'] ) ), 'lld_hw_where' ) ) {
+				$got = LLD_Members_Hw_Where_Screen::save( $member_id, $facts );
+				if ( ! is_wp_error( $got ) ) {
+					wp_safe_redirect( home_url( '/members/goal/?hw=where' ) );
+					exit;
+				}
+				$error = $got->get_error_message();
+			}
+			$facts = LLD_Members_Goal_Journey::facts( $member_id );
+			$parts::output( $parts::LABELS['where_title'], LLD_Members_Hw_Where_Screen::html( $member_id, $facts, $error ) );
+			return true;
+		}
+		if ( ! self::hw_flow() ) {
+			return false;
+		}
+		if ( 'answers' === $hw ) {
+			if ( $post && isset( $_POST['lld_hw_questions_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_hw_questions_nonce'] ) ), 'lld_hw_questions' ) ) {
+				$got = LLD_Members_Hw_Questions_Screen::save( $member_id );
+				if ( ! is_wp_error( $got ) ) {
+					$got = LLD_Members_Hw_Where_Screen::save_fields( $member_id );
+				}
+				if ( ! is_wp_error( $got ) ) {
+					wp_safe_redirect( home_url( '/members/settings/?section=profile&saved=1' ) );
+					exit;
+				}
+				$error = $got->get_error_message();
+			}
+			$parts::output( $parts::LABELS['questions_title'], LLD_Members_Hw_Questions_Screen::html( $member_id, $facts, 'edit', home_url( '/members/goal/?hw=answers' ), $error ) );
+			return true;
+		}
+		$data = LLD_Members_Hw_Blocks_Screen::data( $member_id, (string) $facts['today'] );
+		if ( null === $data ) {
+			return false;
+		}
+		if ( $post && isset( $_POST['lld_hw_block_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_hw_block_nonce'] ) ), 'lld_hw_block' ) ) {
+			$got = LLD_Members_Hw_Blocks_Screen::save( $member_id, $data, (string) $facts['today'] );
+			if ( true === $got ) {
+				wp_safe_redirect( home_url( '/members/home/' ) );
+				exit;
+			}
+			$error = is_wp_error( $got ) ? $got->get_error_message() : '';
+		}
+		$parts::output( $parts::LABELS['blocks_title'], LLD_Members_Hw_Blocks_Screen::html( $data, $facts, $error ) );
+		return true;
+	}
+
+	/**
+	 * The joining steps after the weight goal: the eight questions, then the pace (FR3-98, FR3-100).
+	 *
+	 * @param int    $member_id Member number.
+	 * @param array  $facts     facts().
+	 * @param array  $goal      The goal row.
+	 * @param string $hw        questions|pace.
+	 * @return bool True when a step was printed.
+	 */
+	private static function hw_joining( $member_id, array $facts, array $goal, $hw ) {
+		$parts = 'LLD_Members_Hw_Screen_Parts';
+		$base  = '/members/goal/?done=' . (int) $goal['id'];
+		$post  = 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' );
+		$error = '';
+		if ( 'questions' === $hw ) {
+			if ( ! LLD_Members_Hw_Questions_Screen::joining_questions( $parts::answers( $member_id ) ) ) {
+				wp_safe_redirect( home_url( $base . '&hw=pace' ) ); // no approved question loaded: straight to the pace
+				exit;
+			}
+			if ( $post && isset( $_POST['lld_hw_questions_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_hw_questions_nonce'] ) ), 'lld_hw_questions' ) ) {
+				$got = LLD_Members_Hw_Questions_Screen::save( $member_id );
+				if ( ! is_wp_error( $got ) ) {
+					wp_safe_redirect( home_url( $base . '&hw=pace' ) );
+					exit;
+				}
+				$error = $got->get_error_message();
+			}
+			$parts::output( $parts::LABELS['questions_title'], LLD_Members_Hw_Questions_Screen::html( $member_id, $facts, 'joining', home_url( $base . '&hw=questions' ), $error ) );
+			return true;
+		}
+		$view = $parts::plan_view( $member_id, (string) $facts['today'] );
+		if ( ! $view ) {
+			return false; // no plan view yet: the plan page answers
+		}
+		if ( $post && isset( $_POST['lld_hw_pace_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_hw_pace_nonce'] ) ), 'lld_hw_pace' ) ) {
+			$got = LLD_Members_Hw_Plan_Screen::save_pace( $member_id, $view, $facts, (string) $facts['today'] );
+			if ( ! is_wp_error( $got ) ) {
+				wp_safe_redirect( home_url( $base ) );
+				exit;
+			}
+			$error = $got->get_error_message();
+		}
+		$parts::output( $parts::LABELS['pace_title'], LLD_Members_Hw_Plan_Screen::pace_html( $view, $facts, home_url( $base . '&hw=pace' ), $error ) );
+		return true;
 	}
 
 	// ---- Helpers -----------------------------------------------------------------------------------------------------
@@ -559,6 +714,11 @@ class LLD_Members_Goal_Setting {
 	 * @param int    $status HTTP status.
 	 */
 	public static function output( $title, $main, $status = 200 ) {
+		if ( class_exists( 'LLD_Members_Hw_Screen_Parts' ) && preg_match( '/data-lld-(?:hw-dismiss|show-when)/', (string) $main ) ) {
+			// The Healthy Weight parts need the Stage 3 script (closing a support card, follow-up questions).
+			LLD_Members_Hw_Screen_Parts::output( $title, $main, false, $status );
+			return;
+		}
 		wp_enqueue_style( self::HANDLE, plugins_url( 'assets/stage3.css', LLD_MEMBERS_FILE ), array(), LLD_MEMBERS_VERSION );
 		ob_start();
 		lld_members_layout( array( 'title' => $title, 'main' => $main, 'signed_in' => true, 'status' => $status ) );
