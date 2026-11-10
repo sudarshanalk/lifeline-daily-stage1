@@ -50,6 +50,11 @@
       "file": "tests/stage2/e2e/payments.spec.mjs",
       "decision": "Owner, 8 Nov 2026 (Terms of Sale answers, D2a): web and app for every member, features differ by plan (FR4-11); TC-FR2-13-AS-05 revised in the requirements to 'Every member's record shows they are entitled to the future app, monthly and yearly alike'",
       "change": "TC-FR2-13-AS-05 checks that both the yearly and the monthly member see 'The Lifeline Daily app is included with your membership when it launches.' and that both records show the app as included, in place of yearly-only."
+    },
+    {
+      "file": "tests/stage2/e2e/accounts-privacy.spec.mjs",
+      "decision": "Requirements FR3-60 (TC-FR3-60-AS-01) and the data model (Healthy Weight programme records, owner-approved 6 to 10 Nov 2026): the five P3-35 member tables are in 'Download my data'; built in S3-P35.",
+      "change": "TC-FR2-04-AS-01 only: STAGE3_DOWNLOAD_TABLES gains profile_answers, goal_milestones, block_choices, notes_shown and check_in_barriers, and each one's row count is checked against the database like the others. Nothing is removed or loosened."
     }
   ]
 }
