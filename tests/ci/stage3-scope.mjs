@@ -87,8 +87,12 @@ function toolsFor(ids) {
   return [...tools];
 }
 
-/** NFR3-05: file scope for one Stage 3 pull request. `review` lists declared Stage 2 files touched. */
-export function stage3Scope({ title, files, decisions = loadDecisions() }) {
+/**
+ * NFR3-05: file scope for one Stage 3 pull request. `review` lists declared Stage 2 files touched. `all` is every file
+ * the branch changes, including those a merged branch brought in (which `files` leaves out): a Stage 2 file an owner
+ * decision opens to the package is listed for the lead's review wherever its change came from.
+ */
+export function stage3Scope({ title, files, all = [], decisions = loadDecisions() }) {
   const c = classify(title);
   if (!c) return { ok: false, problems: [`title "${title}" is not S3-Pnn: <name> (Build Method Stage 3 §2)`], review: [] };
   const problems = [];
@@ -109,6 +113,9 @@ export function stage3Scope({ title, files, decisions = loadDecisions() }) {
       continue;
     }
     if (!matches(f, allowed)) problems.push(`${f} is outside the files of ${c.id}'s tools (${toolsFor(c.ids).join(', ')}; Build Method Stage 3 §4)`);
+  }
+  for (const id of c.ids) {
+    for (const f of DECISION_STAGE2[id] || []) if (all.includes(f) && !review.includes(f)) review.push(f);
   }
   return { ok: problems.length === 0, problems, review, package: c.id };
 }
@@ -208,7 +215,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const files = changedFiles(base, head);
     r = stage3Guards({ files, diffs: (f) => diffLines(base, head, f), texts: (f) => headText(head, f) });
   } else {
-    r = stage3Scope({ title: arg('--title', process.env.PR_TITLE || ''), files: changedFiles(base, head) });
+    const all = git(['diff', '--name-only', `${base}...${head}`]).split(/\r?\n/).filter(Boolean);
+    r = stage3Scope({ title: arg('--title', process.env.PR_TITLE || ''), files: changedFiles(base, head), all });
     for (const f of r.review) console.log('stage3-scope: lead-review ' + f);
   }
   for (const p of r.problems) console.log('stage3-scope: ' + p);

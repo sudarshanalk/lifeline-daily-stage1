@@ -95,6 +95,19 @@ test('TC-NFR3-05-AS-02', () => {
   }
 });
 
+test('TC-NFR3-05-AS-02 (P3-35): both Stage 2 files the P3-35 decision opens are listed for lead review, even when a merged branch brought the change', () => {
+  // Owner Question 160: additions to class-content.php and class-programme.php. changedFiles() leaves out what a merged
+  // branch brought in; the full diff (`all`) still names the decision's files for the lead-review label.
+  const content = `${PLUGIN}/includes/class-content.php`;
+  const programme = `${PLUGIN}/includes/class-programme.php`;
+  const r = stage3Scope({ title: 'S3-P35: Healthy Weight programme', files: [content], all: [content, programme] });
+  expect(r.ok).toBe(true);
+  expect(r.review).toEqual([content, programme]);
+  // Another package gets no review line for them (and is refused if it changes them itself).
+  expect(stage3Scope({ title: 'S3-P40: food search', files: [], all: [content, programme] }).review).toEqual([]);
+  expect(stage3Scope({ title: 'S3-P40: food search', files: [programme] }).ok).toBe(false);
+});
+
 test('every Stage 3 test id in tests/stage3 is a check in docs/stage3/03', () => {
   const r = unknownTestIds();
   expect(r.problems).toEqual([]);
