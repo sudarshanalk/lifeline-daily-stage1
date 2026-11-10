@@ -57,12 +57,22 @@ function lld_membership_lock( $line ) {
 	return '<article class="lld-lock"><p>' . esc_html( $line ) . '</p></article>';
 }
 class WP_Error {
+	private $c;
 	private $m;
-	public function __construct( $code = '', $message = '' ) {
+	private $d;
+	public function __construct( $code = '', $message = '', $data = null ) {
+		$this->c = (string) $code;
 		$this->m = (string) $message;
+		$this->d = $data;
+	}
+	public function get_error_code() {
+		return $this->c;
 	}
 	public function get_error_message() {
 		return $this->m;
+	}
+	public function get_error_data() {
+		return $this->d;
 	}
 }
 
@@ -87,6 +97,9 @@ if ( getenv( 'LLD_HW_STUBS' ) ) {
 		}
 		public static function join( $m, $args ) {
 			$GLOBALS['writes'][] = array( 'join', $args );
+			if ( isset( $args['target_date'] ) && isset( $GLOBALS['fx']['join_refuses_date'] ) ) {
+				return new WP_Error( 'lld_hw_pace', 'refused', array( 'code' => 'rate_cap' ) );
+			}
 			return true;
 		}
 		public static function choose_block( $m, $slug, $today ) {

@@ -106,23 +106,32 @@ class LLD_Members_Hw_Plan_Screen {
 	}
 
 	/**
-	 * Step 4: the pace and the milestones, with the paces to choose from.
+	 * Step 4: the pace and the milestones, with the paces to choose from or a date instead (FR3-100: "or pick a date
+	 * instead"; the signed P3-56 timeline checks it).
 	 *
-	 * @param array  $view   plan_view().
-	 * @param array  $facts  facts().
-	 * @param string $action Form address.
-	 * @param string $error  Error text.
+	 * @param array           $view   plan_view().
+	 * @param array           $facts  facts().
+	 * @param string          $action Form address.
+	 * @param string|WP_Error $error  Error text, or the refusal from save_pace() (data: code, date, by_date).
 	 */
 	public static function pace_html( array $view, array $facts, $action, $error = '' ) {
-		$c      = 'LLD_Members_Hw_Screen_Parts';
-		$pace   = isset( $view['pace'] ) && is_array( $view['pace'] ) ? $view['pace'] : array();
-		$lines  = self::pace_lines( $pace );
-		$chosen = isset( $pace['chosen'] ) ? (float) $pace['chosen'] : ( isset( $pace['recommended'] ) ? (float) $pace['recommended'] : 0.5 );
-		$rec    = isset( $pace['recommended'] ) ? (float) $pace['recommended'] : null;
-		$imp    = ! empty( $facts['imperial'] );
-		$html   = '<div class="lld-stage3-goal lld-hw" data-lld-goal-step="pace"><h1>' . esc_html( $c::LABELS['pace_title'] ) . '</h1>';
-		if ( '' !== $error ) {
-			$html .= '<div class="lld-error-box" role="alert"><p>' . esc_html( $error ) . '</p></div>';
+		$c       = 'LLD_Members_Hw_Screen_Parts';
+		$pace    = isset( $view['pace'] ) && is_array( $view['pace'] ) ? $view['pace'] : array();
+		$lines   = self::pace_lines( $pace );
+		$chosen  = isset( $pace['chosen'] ) ? (float) $pace['chosen'] : ( isset( $pace['recommended'] ) ? (float) $pace['recommended'] : 0.5 );
+		$rec     = isset( $pace['recommended'] ) ? (float) $pace['recommended'] : null;
+		$imp     = ! empty( $facts['imperial'] );
+		$data    = is_wp_error( $error ) ? (array) $error->get_error_data() : array();
+		$message = is_wp_error( $error ) ? $error->get_error_message() : (string) $error;
+		$by_date = ! empty( $data['by_date'] );
+		$date    = ! empty( $data['date'] ) ? (string) $data['date'] : ( isset( $_POST['lld_date'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_date'] ) ) : '' ); // phpcs:ignore WordPress.Security.NonceVerification -- the posted form shown again.
+		$html    = '<div class="lld-stage3-goal lld-hw" data-lld-goal-step="pace"><h1>' . esc_html( $c::LABELS['pace_title'] ) . '</h1>';
+		if ( '' !== $message ) {
+			$html .= '<div class="lld-error-box" role="alert" data-lld-refused="' . esc_attr( isset( $data['code'] ) ? (string) $data['code'] : 'error' ) . '"><p>' . esc_html( $message ) . '</p>';
+			if ( ! empty( $data['date'] ) ) {
+				$html .= '<p class="lld-hint">The suggestion is filled in below.</p>';
+			}
+			$html .= '</div>';
 		}
 		$html .= '<section class="lld-card" data-lld-section="hw-pace" data-lld-pace-recommended="' . esc_attr( null === $rec ? '' : (string) $rec ) . '">';
 		if ( '' !== $lines['heading'] ) {
@@ -134,9 +143,12 @@ class LLD_Members_Hw_Plan_Screen {
 		$html .= '<form method="post" class="lld-form" action="' . esc_url( $action ) . '">' . wp_nonce_field( 'lld_hw_pace', 'lld_hw_pace_nonce', true, false );
 		$html .= '<fieldset class="lld-options"><legend class="lld-sr">' . esc_html( $c::LABELS['pace_title'] ) . '</legend>';
 		foreach ( self::paces( $view, $facts ) as $p ) {
-			$html .= '<div class="lld-option"><label><input type="radio" name="lld_hw_pace" value="' . esc_attr( (string) $p ) . '"' . ( abs( $p - $chosen ) < 0.001 ? ' checked' : '' ) . '> ' . esc_html( LLD_Members_Goal_Setting::rate_label( $p, $imp ) ) . ( null !== $rec && abs( $p - $rec ) < 0.001 ? ' <span class="lld-pill" data-lld-suggested>' . esc_html( $c::LABELS['suggested'] ) . '</span>' : '' ) . '</label></div>';
+			$html .= '<div class="lld-option"><label><input type="radio" name="lld_hw_pace" value="' . esc_attr( (string) $p ) . '"' . ( ! $by_date && abs( $p - $chosen ) < 0.001 ? ' checked' : '' ) . '> ' . esc_html( LLD_Members_Goal_Setting::rate_label( $p, $imp ) ) . ( null !== $rec && abs( $p - $rec ) < 0.001 ? ' <span class="lld-pill" data-lld-suggested>' . esc_html( $c::LABELS['suggested'] ) . '</span>' : '' ) . '</label></div>';
 		}
+		// The goal screen's own "By a date instead" choice and date field (P3-31, signed P3-56), now on the pace step.
+		$html .= '<div class="lld-option"><label><input type="radio" name="lld_hw_pace" value="date"' . ( $by_date ? ' checked' : '' ) . '> By a date instead</label></div>';
 		$html .= '</fieldset>';
+		$html .= '<div class="lld-field"><label for="lld_date">Date to reach it (optional)</label><input id="lld_date" name="lld_date" type="date" value="' . esc_attr( $date ) . '"></div>';
 		$html .= '<div class="lld-row"><button class="lld-button" type="submit" name="lld_action" value="hw_pace">' . esc_html( $c::LABELS['next'] ) . '</button></div></form></section>';
 		$ms    = isset( $view['milestones'] ) && is_array( $view['milestones'] ) && ! $c::ed( $facts ) ? self::milestones_html( $view['milestones'] ) : '';
 		if ( '' !== $ms ) {
@@ -146,51 +158,100 @@ class LLD_Members_Hw_Plan_Screen {
 	}
 
 	/**
-	 * Check and save the chosen pace through P2. A pace above the safe limit is refused (R-HW-SAFE-02).
+	 * Check and save the chosen pace, or the date instead, through P2. A pace above the safe limit, or a date that would
+	 * need one, is refused with the signed P3-56 message and the earliest safe date (R-HW-SAFE-02), and nothing changes.
 	 *
-	 * @param int    $member_id Member number.
-	 * @param array  $view      plan_view().
-	 * @param array  $facts     facts().
-	 * @param string $today     Y-m-d.
-	 * @return true|WP_Error
+	 * @param int        $member_id Member number.
+	 * @param array      $view      plan_view().
+	 * @param array      $facts     facts().
+	 * @param string     $today     Y-m-d.
+	 * @param array|null $goal      The weight-loss goal row (start_value, target_value), for the refusal.
+	 * @return true|WP_Error Refusals carry data {code, date (the safe date), by_date}.
 	 */
-	public static function save_pace( $member_id, array $view, array $facts, $today ) {
-		$raw  = isset( $_POST['lld_hw_pace'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_hw_pace'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- checked by the caller.
+	public static function save_pace( $member_id, array $view, array $facts, $today, $goal = null ) {
+		$raw = isset( $_POST['lld_hw_pace'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_hw_pace'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification -- checked by the caller.
+		if ( 'date' === $raw ) {
+			$date = isset( $_POST['lld_date'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_date'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification
+			if ( ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+				return new WP_Error( 'lld_hw_pace', 'Choose a date in the future.', array( 'code' => 'invalid', 'by_date' => true ) );
+			}
+			$got = LLD_Members_Hw_Screen_Parts::call( LLD_Members_Hw_Screen_Parts::PROGRAMME, 'join', array( (int) $member_id, array( 'target_date' => $date, 'today' => (string) $today ) ), false );
+			if ( is_wp_error( $got ) ) {
+				$d = (array) $got->get_error_data();
+				if ( isset( $d['code'] ) && 'rate_cap' === $d['code'] ) {
+					return self::refused( $view, $facts, $today, $goal, true );
+				}
+				return new WP_Error( 'lld_hw_pace', $got->get_error_message(), array( 'code' => isset( $d['code'] ) ? (string) $d['code'] : 'error', 'by_date' => true ) );
+			}
+			return true;
+		}
 		$want = is_numeric( $raw ) ? (float) $raw : null;
 		$ok   = false;
 		foreach ( self::paces( $view, $facts ) as $p ) {
 			$ok = $ok || ( null !== $want && abs( $p - $want ) < 0.001 );
 		}
 		if ( ! $ok ) {
-			return new WP_Error( 'lld_hw_pace', self::refusal( $view, $facts ) );
+			return self::refused( $view, $facts, $today, $goal, false );
 		}
 		$got = LLD_Members_Hw_Screen_Parts::call( LLD_Members_Hw_Screen_Parts::PROGRAMME, 'join', array( (int) $member_id, array( 'pace' => $want, 'today' => (string) $today ) ), false );
+		if ( is_wp_error( $got ) && 'lld_hw_pace' === $got->get_error_code() ) {
+			return self::refused( $view, $facts, $today, $goal, false );
+		}
 		return is_wp_error( $got ) ? $got : true;
 	}
 
 	/**
-	 * The signed P3-56 refusal for a pace above the safe limit, filled with the cap and the goal's safe date; '' when the
-	 * goal milestone is not known.
+	 * A rate-cap refusal as a WP_Error with its code and the safe date.
 	 *
-	 * @param array $view  plan_view().
-	 * @param array $facts facts().
+	 * @param array      $view    plan_view().
+	 * @param array      $facts   facts().
+	 * @param string     $today   Y-m-d.
+	 * @param array|null $goal    Goal row.
+	 * @param bool       $by_date The member chose a date.
 	 */
-	public static function refusal( array $view, array $facts ) {
-		if ( ! class_exists( 'LLD_Members_Goal_Timeline' ) || ! defined( 'LLD_Members_Goal_Timeline::MESSAGES' ) || ! isset( LLD_Members_Goal_Timeline::MESSAGES['refusals.rate-cap'] ) ) {
-			return '';
+	private static function refused( array $view, array $facts, $today, $goal, $by_date ) {
+		$r = self::refusal( $view, $facts, $today, $goal );
+		return new WP_Error( 'lld_hw_pace', $r['text'], array( 'code' => 'rate_cap', 'date' => $r['date'], 'by_date' => $by_date ) );
+	}
+
+	/**
+	 * The signed P3-56 rate-cap refusal (LLD_Members_Goal_Timeline::MESSAGES['refusals.rate-cap']): {cap} is the
+	 * member's safe rate (LLD_Members_Goal_Timeline::rate_cap: 1 % of the starting weight, at most 1 kg, 0.5 kg from 65)
+	 * and {safe date} the date the goal is reached at that rate (the signed weeks, rounded up), as the goal screen
+	 * printed it. Text '' when the goal's weights are not known.
+	 *
+	 * @param array      $view  plan_view().
+	 * @param array      $facts facts().
+	 * @param string     $today Y-m-d.
+	 * @param array|null $goal  The goal row (start_value, target_value).
+	 * @return array{text:string,date:string,cap:float|null}
+	 */
+	public static function refusal( array $view, array $facts, $today, $goal ) {
+		$none = array(
+			'text' => '',
+			'date' => '',
+			'cap'  => null,
+		);
+		if ( ! class_exists( 'LLD_Members_Goal_Timeline' ) || ! isset( LLD_Members_Goal_Timeline::MESSAGES['refusals.rate-cap'] ) || ! is_array( $goal ) || ! isset( $goal['start_value'], $goal['target_value'] ) || ! is_numeric( $goal['start_value'] ) || ! is_numeric( $goal['target_value'] ) ) {
+			return $none;
 		}
-		$goal = null;
-		foreach ( isset( $view['milestones'] ) ? (array) $view['milestones'] : array() as $m ) {
-			if ( is_array( $m ) && isset( $m['kind'], $m['kg'], $m['date'] ) && 'goal' === $m['kind'] ) {
-				$goal = $m;
-			}
+		$start  = (float) $goal['start_value'];
+		$target = (float) $goal['target_value'];
+		$over65 = in_array( 'age_65_plus', isset( $facts['situations'] ) ? (array) $facts['situations'] : array(), true );
+		$cap    = LLD_Members_Goal_Timeline::rate_cap( $start, $over65 );
+		$d      = DateTimeImmutable::createFromFormat( '!Y-m-d', (string) $today, new DateTimeZone( 'UTC' ) );
+		if ( ! $d || $cap <= 0 ) {
+			return $none;
 		}
-		$paces = self::paces( $view, $facts );
-		if ( ! $goal || ! $paces ) {
-			return '';
-		}
-		$cap = rtrim( rtrim( number_format( max( $paces ), 2, '.', '' ), '0' ), '.' );
-		return str_replace( array( '{cap}', '{goal}', '{safe date}' ), array( $cap, LLD_Members_Hw_Screen_Parts::kg( $goal['kg'] ) . ' kg', LLD_Members_Hw_Screen_Parts::date( $goal['date'] ) ), LLD_Members_Goal_Timeline::MESSAGES['refusals.rate-cap'] );
+		$weeks = LLD_Members_Goal_Timeline::weeks_for( $start - $target, $cap );
+		$date  = $d->modify( '+' . ( 7 * (int) $weeks ) . ' days' )->format( 'Y-m-d' );
+		$imp   = ! empty( $facts['imperial'] );
+		$show  = $imp ? LLD_Members_Goal_Rules::plain( LLD_Members_Goal_Rules::round1( $target / 0.45359237 ) ) . ' lb' : LLD_Members_Goal_Rules::plain( $target ) . ' kg';
+		return array(
+			'text' => str_replace( array( '{cap}', '{goal}', '{safe date}' ), array( LLD_Members_Goal_Rules::plain( $cap ), $show, LLD_Members_Goal_Rules::nice_date( $date ) ), LLD_Members_Goal_Timeline::MESSAGES['refusals.rate-cap'] ),
+			'date' => $date,
+			'cap'  => $cap,
+		);
 	}
 
 	/**

@@ -272,3 +272,24 @@ test('P3-35 package P4 calls: join({pace, today}), record_barrier($choices, $tod
   expect(out.r).toBe('lld_hw_repeat');
   expect(out.blocks).toMatchObject({ due: false, keep_it_off: false });
 });
+
+test('TC-FR3-100-AS-02 or a date instead: the signed P3-56 timeline keeps a safe date and refuses one above the cap', () => {
+  // FR3-100: "or pick a date instead". 20 kg by 11 Nov 2027 (52 weeks) asks for 0.38 kg a week, inside the 0.8 cap: the
+  // date is kept and the implied rate is the chosen pace. 20 kg by 1 January 2027 (2.5 kg a week) is refused.
+  const out = run(`
+    member(7); member(8);
+    $g7 = weight_goal(7); $g8 = weight_goal(8);
+    $ok = LLD_Members_HW_Programme::join(7, ['target_date' => '2027-11-11', 'today' => '2026-11-12']);
+    $no = LLD_Members_HW_Programme::join(8, ['target_date' => '2027-01-01', 'today' => '2026-11-12']);
+    $g = array_values(array_filter(raw('goals'), function ($r) { return 7 === (int) $r['member_id']; }))[0];
+    $h = array_values(array_filter(raw('goals'), function ($r) { return 8 === (int) $r['member_id']; }))[0];
+    return ['ok' => is_wp_error($ok) ? $ok->get_error_message() : $ok['pace'], 'goal' => $g, 'no' => [$no->get_error_code(), $no->get_error_message(), $no->get_error_data()], 'other' => $h];
+  `);
+  expect(out.ok).toMatchObject({ chosen: 0.38, rule: 'R-HW-PACE-01' });
+  expect(out.goal).toMatchObject({ chosen_rate: 0.38, target_date: '2027-11-11', pace_rule_id: 1021 });
+  expect(out.no[0]).toBe('lld_hw_pace');
+  expect(out.no[1]).toBe("That's faster than the safe rate of about 0.8 kg a week. At a safe rate you'd reach 60 kg by about Thursday 6 May 2027. Shall we use that date?");
+  expect(out.no[2]).toEqual({ code: 'rate_cap', offered: { rate: 0.8, weeks: 25, date: '2027-05-06' } });
+  expect(out.other.chosen_rate).toBeNull(); // nothing is stored for a refused date
+  expect(out.other.target_date).toBe('2027-12-31');
+});

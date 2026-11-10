@@ -194,19 +194,36 @@ test('TC-FR3-99-AS-02 Today shows at most two quick questions a day (source)', (
 test('TC-FR3-100-AS-02 a confident member with time can choose 0.75 kg a week, never more than the safe limit (source)', () => {
   const r = run(`$f = ${phpFacts(facts())}; $v = json_decode(${JSON.stringify(JSON.stringify(planView))}, true);
     $html = LLD_Members_Hw_Plan_Screen::pace_html($v, $f, '/x');
-    $_POST['lld_hw_pace'] = '1'; $refused = LLD_Members_Hw_Plan_Screen::save_pace(7, $v, $f, '2026-11-10');
-    $_POST['lld_hw_pace'] = '0.75'; $ok = LLD_Members_Hw_Plan_Screen::save_pace(7, $v, $f, '2026-11-10');
-    return [$html, is_wp_error($refused) ? $refused->get_error_message() : 'saved', $ok, $GLOBALS['writes']];`, base);
-  const [html, refused, ok, writes] = r;
+    $goal = ['start_value' => 80, 'target_value' => 60];
+    $_POST['lld_hw_pace'] = '1'; $refused = LLD_Members_Hw_Plan_Screen::save_pace(7, $v, $f, '2026-11-10', $goal);
+    $again = LLD_Members_Hw_Plan_Screen::pace_html($v, $f, '/x', $refused);
+    $_POST['lld_hw_pace'] = '0.75'; $ok = LLD_Members_Hw_Plan_Screen::save_pace(7, $v, $f, '2026-11-10', $goal);
+    return [$html, is_wp_error($refused) ? [$refused->get_error_message(), $refused->get_error_data()] : 'saved', $ok, $GLOBALS['writes'], $again];`, base);
+  const [html, [refused, data], ok, writes, again] = r;
   expect(text(html)).toContain('You could go a little faster: 0.75 kg a week');
   expect(text(html)).toContain('Because you feel confident, have time and are sleeping well. A pace you can keep beats a fast start. You can change it.');
-  expect([...html.matchAll(/name="lld_hw_pace" value="([^"]+)"/g)].map((m) => m[1])).toEqual(['0.25', '0.5', '0.75']);
+  expect([...html.matchAll(/name="lld_hw_pace" value="([^"]+)"/g)].map((m) => m[1])).toEqual(['0.25', '0.5', '0.75', 'date']);
   expect(html).toMatch(/value="0\.75" checked/);
-  expect(refused).toContain("That's faster than the safe rate of about 0.75 kg a week");
+  // The signed P3-56 refusal: {cap} is the member's rate_cap() (1 % of 80 kg), {safe date} the goal reached at that cap.
+  expect(refused).toBe("That's faster than the safe rate of about 0.8 kg a week. At a safe rate you'd reach 60 kg by about Tuesday 4 May 2027. Shall we use that date?");
+  expect(data).toEqual({ code: 'rate_cap', date: '2027-05-04', by_date: false });
+  expect(again).toContain('data-lld-refused="rate_cap"');
+  expect(again).toMatch(/id="lld_date" name="lld_date" type="date" value="2027-05-04"/);
+  // "Or pick a date instead" (FR3-100): the goal screen's own choice and date field.
+  expect(html).toMatch(/name="lld_hw_pace" value="date"> By a date instead/);
+  expect(html).toContain('<label for="lld_date">Date to reach it (optional)</label>');
   expect(ok).toBe(true);
   expect(writes).toEqual([['join', { pace: 0.75, today: '2026-11-10' }]]);
   // The milestones in T-HW-NUM-04's words.
   expect(text(html)).toContain('66.2 kg · Into the healthy range · around 23 February 2027');
+  // A date instead goes to P2 with the date; a date the signed timeline refuses comes back as the same refusal.
+  const d = run(`$f = ${phpFacts(facts())}; $v = json_decode(${JSON.stringify(JSON.stringify(planView))}, true); $goal = ['start_value' => 80, 'target_value' => 60];
+    $_POST['lld_hw_pace'] = 'date'; $_POST['lld_date'] = '2027-01-01'; $r = LLD_Members_Hw_Plan_Screen::save_pace(7, $v, $f, '2026-11-10', $goal);
+    return [$GLOBALS['writes'], $r->get_error_data(), LLD_Members_Hw_Plan_Screen::pace_html($v, $f, '/x', $r)];`, { ...base, join_refuses_date: true });
+  expect(d[0]).toEqual([['join', { target_date: '2027-01-01', today: '2026-11-10' }]]);
+  expect(d[1]).toEqual({ code: 'rate_cap', date: '2027-05-04', by_date: true });
+  expect(d[2]).toMatch(/name="lld_hw_pace" value="date" checked/);
+  expect(d[2]).toMatch(/value="2027-05-04"/);
   expect(text(html)).toContain('60.0 kg · Your goal · around 13 April 2027');
 });
 
@@ -371,4 +388,16 @@ test('hw screens: every new screen file is one class with no boot(), escapes its
     expect(src, f).not.toMatch(/add_action|add_filter|add_rewrite_rule/);
   }
   expect(readdirSync(screensDir).filter((f) => f.startsWith('class-hw-')).sort()).toEqual(NEW.slice().sort());
+});
+
+test('hw screens: the plateau and goal cards from the plan view keep their own signed buttons', () => {
+  const html = run(`return LLD_Members_Hw_Screen_Parts::cards_html([
+    ['rule' => 'R-HW-WEEK-02', 'template' => 'hw.T-HW-WEEK-02', 'text' => LLD_Members_Rule_Catalogue::text('hw.T-HW-WEEK-02')],
+    ['rule' => 'R-HW-MOT-02', 'template' => 'hw.T-HW-MOT-02.goal', 'text' => LLD_Members_Rule_Catalogue::fill('hw.T-HW-MOT-02.goal', ['kg' => '60.0'])]]);`, base);
+  // Start 'Breaking a plateau' chooses that block; Keep my current plan closes the card; Start Keep It Off is the
+  // Goal reached choice. None of them is mistaken for "Not now".
+  expect(html).toMatch(/name="lld_hw_block" value="breaking-a-plateau"><button class="lld-button" type="submit" name="lld_action" value="hw_block">Start &#0?39;Breaking a plateau&#0?39;<\/button>/);
+  expect(html).toMatch(/data-lld-hw-dismiss>Keep my current plan</);
+  expect(html).toMatch(/value="keep">Start Keep It Off<\/button>/);
+  expect((html.match(/data-lld-hw-dismiss/g) || []).length).toBe(1);
 });

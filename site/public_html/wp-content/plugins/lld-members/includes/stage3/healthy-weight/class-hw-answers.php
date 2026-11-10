@@ -72,6 +72,9 @@ class LLD_Members_HW_Answers {
 		'enjoyment'         => array( 'asked_in' => 'track_start', 'qod' => 'activity_enjoyment', 'values' => 'multi', 'choices' => array( 'walking', 'dancing', 'swimming', 'cycling', 'home_workouts', 'yoga', 'sport', 'gardening', 'not_sure' ), 'store' => 'answers', 'rules' => array( 'R-HW-STEP-06' ) ),
 	);
 
+	/** The approved content's answer keys that differ from these (HW-QW-14 is "festivals"; the store is "fasts"). */
+	const ALIASES = array( 'festivals' => 'fasts' );
+
 	/**
 	 * Snack-time choices as clock times (HW-QW-17). Only the two evening choices are an "evening snacker" for the
 	 * reminder (R-HW-REM-01), so only they are passed to the engine as a time.
@@ -105,10 +108,8 @@ class LLD_Members_HW_Answers {
 			$content = self::content_question( $key );
 			$choices = is_array( $def['values'] ) ? $def['values'] : ( isset( $def['choices'] ) ? $def['choices'] : $def['values'] );
 			if ( 'festival_calendar' === $choices ) {
-				$choices = array();
-				foreach ( LLD_Members_HW_Programme::festivals() as $f ) {
-					$choices[] = (string) $f['id'];
-				}
+				// The festival families (CAL-RAM …), so a fast kept carries from one year's calendar entry to the next.
+				$choices = LLD_Members_HW_Programme::festival_families();
 			}
 			$out[] = array(
 				'key'      => $key,
@@ -132,6 +133,7 @@ class LLD_Members_HW_Answers {
 	 * @return mixed
 	 */
 	public static function get( $member_id, $key ) {
+		$key = isset( self::ALIASES[ $key ] ) ? self::ALIASES[ $key ] : $key;
 		$all = self::details( $member_id );
 		return isset( $all[ $key ] ) ? $all[ $key ]['value'] : null;
 	}
@@ -161,6 +163,7 @@ class LLD_Members_HW_Answers {
 	 * @return true|WP_Error
 	 */
 	public static function skip( $member_id, $key ) {
+		$key = isset( self::ALIASES[ $key ] ) ? self::ALIASES[ $key ] : $key;
 		if ( isset( self::KEYS[ $key ] ) ) {
 			return self::set( $member_id, $key, null, 'today' );
 		}
@@ -215,7 +218,10 @@ class LLD_Members_HW_Answers {
 				$fasts             = array();
 				foreach ( $rules as $r ) {
 					if ( 0 === strpos( (string) $r, 'fast:' ) ) {
-						$fasts[] = substr( (string) $r, 5 );
+						$fam = LLD_Members_HW_Programme::festival_family( substr( (string) $r, 5 ) ); // an older entry id reads as its family
+						if ( ! in_array( $fam, $fasts, true ) ) {
+							$fasts[] = $fam;
+						}
 					}
 				}
 				$out['fasts'] = self::stored( $fasts, $prefs );
@@ -250,6 +256,7 @@ class LLD_Members_HW_Answers {
 	 */
 	public static function set( $member_id, $key, $value, $asked_in = null ) {
 		$member_id = (int) $member_id;
+		$key       = isset( self::ALIASES[ $key ] ) ? self::ALIASES[ $key ] : $key;
 		if ( ! isset( self::KEYS[ $key ] ) ) {
 			return new WP_Error( 'lld_hw_answer', 'Not a question.' );
 		}
@@ -443,17 +450,30 @@ class LLD_Members_HW_Answers {
 			case 'multi':
 				$list    = is_array( $value ) ? $value : array( $value );
 				$choices = isset( $def['choices'] ) ? $def['choices'] : array();
-				if ( 'festival_calendar' === $choices ) {
-					$choices = array();
-					foreach ( LLD_Members_HW_Programme::festivals() as $f ) {
-						$choices[] = (string) $f['id'];
-					}
+				$fasts = 'festival_calendar' === $choices;
+				if ( $fasts ) {
+					$choices = LLD_Members_HW_Programme::festival_families();
 				}
 				$out = array();
 				foreach ( $list as $item ) {
 					$item = (string) $item;
 					if ( 'none' === $item ) {
 						continue; // "None of these"
+					}
+					if ( $fasts ) {
+						// One year's entry id is stored as its family; a family named for a tradition's entries counts.
+						$item  = LLD_Members_HW_Programme::festival_family( $item );
+						$known = in_array( $item, $choices, true );
+						foreach ( $choices as $fam ) {
+							$known = $known || 0 === strpos( $fam, $item . '-' );
+						}
+						if ( ! $known ) {
+							return $bad;
+						}
+						if ( ! in_array( $item, $out, true ) ) {
+							$out[] = $item;
+						}
+						continue;
 					}
 					if ( ! in_array( $item, $choices, true ) ) {
 						return $bad;
@@ -496,7 +516,7 @@ class LLD_Members_HW_Answers {
 	}
 
 	/**
-	 * The food rules (with the fasts as "fast:<entry id>") and the allergies, in the one food-preferences store.
+	 * The food rules (with the fasts as "fast:<festival family>", e.g. "fast:CAL-RAM") and the allergies, in the one food-preferences store.
 	 *
 	 * @param int    $member_id Member number.
 	 * @param string $key       food_rules, fasts or allergies.

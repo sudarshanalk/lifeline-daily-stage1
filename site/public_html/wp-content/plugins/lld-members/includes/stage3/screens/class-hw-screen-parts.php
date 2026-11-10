@@ -540,6 +540,14 @@ class LLD_Members_Hw_Screen_Parts {
 	 * @param int    $count    Buttons on the card.
 	 */
 	private static function card_button( $template, $i, $label, $count ) {
+		if ( 'hw.T-HW-MOT-02.goal' === $template ) {
+			// [Start Keep It Off]: the Goal reached choice on Today (FR3-15).
+			return '<form method="post" class="lld-inline-form" action="' . esc_url( home_url( '/members/home/' ) ) . '" data-lld-keep-it-off>' . wp_nonce_field( 'lld_reached', 'lld_reached_nonce', true, false ) . '<button class="lld-button" type="submit" name="lld_next" value="keep">' . esc_html( $label ) . '</button></form> ';
+		}
+		if ( 'hw.T-HW-WEEK-02' === $template && 0 === $i ) {
+			// [Start 'Breaking a plateau']: that focus block, chosen on the blocks screen (R-HW-WEEK-02).
+			return '<form method="post" class="lld-inline-form" action="' . esc_url( home_url( '/members/goal/?hw=blocks' ) ) . '">' . wp_nonce_field( 'lld_hw_block', 'lld_hw_block_nonce', true, false ) . '<input type="hidden" name="lld_hw_block" value="breaking-a-plateau"><button class="lld-button" type="submit" name="lld_action" value="hw_block">' . esc_html( $label ) . '</button></form> ';
+		}
 		if ( $i === $count - 1 ) {
 			// "Not now": closes the card on this page; nothing is saved.
 			return '<button type="button" class="lld-button lld-button-secondary" data-lld-hw-dismiss>' . esc_html( $label ) . '</button> ';

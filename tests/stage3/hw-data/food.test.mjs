@@ -162,3 +162,40 @@ test('TC-FR3-20-AS-03: Keep It Off keeps a target as a guide at the P3-55 mainta
   expect(out.nt).toBe(rounded);
   expect(out.lose).toBeLessThan(rounded);
 });
+
+test('TC-FR3-99-AS-07 a fast kept carries over: a member who keeps Ramadan gets the fasting plan in the 2027 and the 2028 entries', () => {
+  // The member keeps the festival family (CAL-RAM), not one year's calendar entry, so the next year's entry counts too.
+  const out = run(`
+    global $wpdb;
+    $wpdb->insert('wp_lld_festival_calendar', ['festival_key' => 'CAL-RAM-2027', 'name' => 'Ramadan', 'kind' => 'dawn_to_sunset_fast', 'starts_on' => '2027-02-08', 'ends_on' => '2027-03-08', 'expected' => 0, 'approved_on' => '2026-11-10']);
+    $wpdb->insert('wp_lld_festival_calendar', ['festival_key' => 'CAL-RAM-2028', 'name' => 'Ramadan', 'kind' => 'dawn_to_sunset_fast', 'starts_on' => '2028-01-28', 'ends_on' => '2028-02-25', 'expected' => 1, 'approved_on' => '2026-11-10']);
+    $wpdb->insert('wp_lld_festival_calendar', ['festival_key' => 'CAL-LENT-2027', 'name' => 'Lent', 'kind' => 'food_avoiding_fast', 'starts_on' => '2027-02-10', 'ends_on' => '2027-03-27', 'expected' => 0, 'approved_on' => '2026-11-10']);
+    member(7); member(8);
+    $set = LLD_Members_HW_Answers::set(7, 'fasts', ['CAL-RAM']);
+    // One year's entry id, as stored before, and the approved question's own key ("festivals"), are kept as the family.
+    $old = LLD_Members_HW_Answers::set(8, 'festivals', ['CAL-RAM-2027']);
+    $bad = LLD_Members_HW_Answers::set(7, 'fasts', ['CAL-NOPE']);
+    $choices = [];
+    foreach (LLD_Members_HW_Answers::questions() as $q) { if ('fasts' === $q['key']) $choices = $q['choices']; }
+    return ['set' => $set, 'old' => $old, 'bad' => is_wp_error($bad), 'kept' => LLD_Members_HW_Answers::get(7, 'fasts'), 'kept8' => LLD_Members_HW_Answers::get(8, 'fasts'),
+      'choices' => $choices,
+      'y2027' => LLD_Members_Recipes::meal_plan_for(7, '2027-02-20'), 'y2028' => LLD_Members_Recipes::meal_plan_for(7, '2028-02-01'),
+      'old2028' => LLD_Members_Recipes::meal_plan_for(8, '2028-02-01'), 'between' => LLD_Members_Recipes::meal_plan_for(7, '2027-06-01'),
+      'family' => [LLD_Members_HW_Programme::festival_family('CAL-RAM-2028'), LLD_Members_HW_Programme::festival_family('CAL-EKA-20270115-V'), LLD_Members_HW_Programme::festival_family('7')],
+      'tradition' => LLD_Members_HW_Programme::keeps(['CAL-NATF'], 'CAL-NATF-N-2027'),
+      'lent' => LLD_Members_HW_Programme::fasting_day(['CAL-RAM'], '2027-03-20')];
+  `);
+  expect(out.set).toBe(true);
+  expect(out.old).toBe(true);
+  expect(out.bad).toBe(true);
+  expect(out.kept).toEqual(['CAL-RAM']);
+  expect(out.kept8).toEqual(['CAL-RAM']);
+  expect(out.choices).toEqual(['CAL-RAM', 'CAL-LENT']);
+  expect(out.y2027).toMatchObject({ rule: 'R-HW-FOOD-03', plan: 'fasting', fast: 'CAL-RAM-2027' });
+  expect(out.y2028).toMatchObject({ rule: 'R-HW-FOOD-03', plan: 'fasting', fast: 'CAL-RAM-2028' });
+  expect(out.old2028).toMatchObject({ plan: 'fasting', fast: 'CAL-RAM-2028' });
+  expect(out.between.plan).toBe('usual');
+  expect(out.family).toEqual(['CAL-RAM', 'CAL-EKA', '7']);
+  expect(out.tradition).toBe(true);
+  expect(out.lent).toBe(false); // a fast the member does not keep never counts
+});

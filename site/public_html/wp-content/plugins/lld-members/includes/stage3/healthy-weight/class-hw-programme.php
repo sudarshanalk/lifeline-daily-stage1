@@ -140,6 +140,9 @@ class LLD_Members_HW_Programme {
 			if ( array_key_exists( 'reminders_on', $opts ) ) {
 				$answers['reminders_on'] = $opts['reminders_on'];
 			}
+			if ( isset( $opts['target_date'] ) && is_string( $opts['target_date'] ) ) {
+				$answers['target_date'] = $opts['target_date']; // "or pick a date instead" (FR3-100)
+			}
 			$goal_id = 0;
 			foreach ( LLD_Members_Goal_Journey::goals( $member_id ) as $g ) {
 				if ( 'main' === (string) $g['role'] && 'lose_weight' === (string) $g['goal_type'] && 'active' === (string) $g['status'] ) {
@@ -180,9 +183,31 @@ class LLD_Members_HW_Programme {
 			}
 		}
 		$preview = array_merge( $known, self::engine_preview( $pending ) );
-		$pace    = self::pace_for( $preview, $facts, $goal, isset( $answers['chosen_rate'] ) ? $answers['chosen_rate'] : null );
+		$by_date = isset( $answers['target_date'] ) && is_string( $answers['target_date'] ) && '' !== $answers['target_date'];
+		$pace    = self::pace_for( $preview, $facts, $goal, $by_date || ! isset( $answers['chosen_rate'] ) ? null : $answers['chosen_rate'] );
 		if ( $pace['refused'] ) {
 			return new WP_Error( 'lld_hw_pace', 'That pace is above your safe limit.', array( 'refusal' => $pace['refusal'], 'safe_pace' => $pace['safe_pace'] ) );
+		}
+		if ( $by_date ) {
+			// A date instead of a pace (FR3-100): the signed P3-56 timeline checks the implied rate against the cap, keeps
+			// the member's date when it is safe and refuses it with the earliest safe date when it is not.
+			$check = LLD_Members_Goal_Rules::weight_check(
+				array(
+					'current_kg'  => is_numeric( $goal['start_value'] ) ? (float) $goal['start_value'] : $facts['weight_kg'],
+					'goal_kg'     => is_numeric( $goal['target_value'] ) ? (float) $goal['target_value'] : null,
+					'height_cm'   => $facts['height_cm'],
+					'target_date' => (string) $answers['target_date'],
+					'today'       => (string) $facts['today'],
+					'situations'  => (array) $facts['situations'],
+					'imperial'    => ! empty( $facts['imperial'] ),
+					'eating_pnts' => 'pnts' === $known['eating_disorder'],
+				)
+			);
+			if ( empty( $check['ok'] ) ) {
+				return new WP_Error( 'lld_hw_pace', (string) $check['message'], array( 'code' => $check['code'], 'offered' => $check['offered'] ) );
+			}
+			$pace['chosen'] = (float) $check['rate'];
+			$pace['date']   = (string) $check['target_date'];
 		}
 		foreach ( $pending as $key => $clean ) {
 			$saved = LLD_Members_HW_Answers::set( $member_id, $key, $clean, 'joining' );
@@ -840,7 +865,7 @@ class LLD_Members_HW_Programme {
 				array(
 					'suggested_block_key' => LLD_Members_HW_Festival::BLOCK,
 					'rule_id'             => self::rule_id( 'R-HW-BLOCK-02' ),
-					'festival_entry_id'   => (int) $entry['id'],
+					'festival_entry_id'   => self::entry_row_id( $entry['id'] ),
 					'declined_festival'   => 1,
 				)
 			);
@@ -872,7 +897,7 @@ class LLD_Members_HW_Programme {
 			'chosen_block_key'    => $block,
 			'chosen_block_id'     => self::track_post( $block ),
 			'started_at'          => $festival ? null : $now,
-			'festival_entry_id'   => $entry ? (int) $entry['id'] : null,
+			'festival_entry_id'   => $entry ? self::entry_row_id( $entry['id'] ) : null,
 		);
 		$state = $c['state'];
 		if ( $festival ) {
@@ -1110,9 +1135,11 @@ class LLD_Members_HW_Programme {
 			if ( ! $start ) {
 				continue;
 			}
+			// The approved entry key (festival_key, e.g. CAL-RAM-2027) names the entry when the table holds it.
+			$id    = isset( $f['festival_key'] ) && '' !== (string) $f['festival_key'] ? (string) $f['festival_key'] : (string) $f['id'];
 			$out[] = array(
-				'id'       => (string) $f['id'],
-				'name'     => isset( $f['name'] ) ? (string) $f['name'] : (string) $f['id'],
+				'id'       => $id,
+				'name'     => isset( $f['name'] ) ? (string) $f['name'] : $id,
 				'kind'     => isset( $f['kind'] ) ? (string) $f['kind'] : 'one_day_festival',
 				'start'    => (string) $start,
 				'end'      => (string) $end,
@@ -1123,14 +1150,93 @@ class LLD_Members_HW_Programme {
 	}
 
 	/**
+	 * The calendar row number of an entry (block_choices.festival_entry_id is that row's id), from its key.
+	 *
+	 * @param string $id Calendar entry id (its festival_key, or the row number itself).
+	 * @return int|null
+	 */
+	private static function entry_row_id( $id ) {
+		if ( is_numeric( $id ) ) {
+			return (int) $id;
+		}
+		global $wpdb;
+		if ( ! isset( $wpdb ) || ! class_exists( 'LLD_Members_Stage3_Schema' ) ) {
+			return null;
+		}
+		$row = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Stage3_Schema::table( 'festival_calendar' ) . ' WHERE festival_key = %s', (string) $id ) );
+		return null === $row ? null : (int) $row;
+	}
+
+	/**
+	 * The entry id festivals() uses for a stored calendar row number (its festival_key when it has one).
+	 *
+	 * @param int $row_id Calendar row number.
+	 */
+	private static function entry_key( $row_id ) {
+		global $wpdb;
+		if ( isset( $wpdb ) && class_exists( 'LLD_Members_Stage3_Schema' ) ) {
+			$key = $wpdb->get_var( $wpdb->prepare( 'SELECT festival_key FROM ' . LLD_Members_Stage3_Schema::table( 'festival_calendar' ) . ' WHERE id = %d', (int) $row_id ) );
+			if ( is_string( $key ) && '' !== $key ) {
+				return $key;
+			}
+		}
+		return (string) (int) $row_id;
+	}
+
+	/**
+	 * The festival family a calendar entry belongs to: its key without the year or date the content loader adds
+	 * ("CAL-RAM-2027" and "CAL-RAM-2028" are both "CAL-RAM"; "CAL-EKA-20270115-V" is "CAL-EKA"). A member keeps a
+	 * family, so a fast carries from one year's entry to the next. An entry with no such ending is its own family.
+	 *
+	 * @param string $id Calendar entry id (its festival_key).
+	 */
+	public static function festival_family( $id ) {
+		return (string) preg_replace( '/-(?:\d{4}|\d{8})(?:-V)?$/', '', (string) $id );
+	}
+
+	/**
+	 * The festival families of the approved calendar, in calendar order: the choices of the fasts question (HW-QW-14).
+	 *
+	 * @return string[]
+	 */
+	public static function festival_families() {
+		$out = array();
+		foreach ( self::festivals() as $f ) {
+			$fam = self::festival_family( $f['id'] );
+			if ( ! in_array( $fam, $out, true ) ) {
+				$out[] = $fam;
+			}
+		}
+		return $out;
+	}
+
+	/**
+	 * Whether a member who keeps these families keeps this calendar entry: the entry's family, or a tradition of it
+	 * ("CAL-NATF" keeps "CAL-NATF-N-2027"). An entry id saved before families (one year's key) still counts.
+	 *
+	 * @param array  $fasts Families (or entry ids) the member keeps.
+	 * @param string $id    Calendar entry id.
+	 */
+	public static function keeps( array $fasts, $id ) {
+		$fam = self::festival_family( $id );
+		foreach ( $fasts as $kept ) {
+			$kept = self::festival_family( (string) $kept );
+			if ( '' !== $kept && ( $kept === $fam || 0 === strpos( $fam, $kept . '-' ) ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Whether a date is one of the member's fasting days (a fast they keep from the calendar).
 	 *
-	 * @param array  $fasts Festival ids the member keeps.
+	 * @param array  $fasts Festival families the member keeps (keeps()).
 	 * @param string $date  Local date.
 	 */
 	public static function fasting_day( array $fasts, $date ) {
 		foreach ( self::festivals() as $f ) {
-			if ( in_array( $f['id'], $fasts, true ) && in_array( $f['kind'], self::FASTING_KINDS, true ) && $f['start'] <= $date && $date <= $f['end'] ) {
+			if ( self::keeps( $fasts, $f['id'] ) && in_array( $f['kind'], self::FASTING_KINDS, true ) && $f['start'] <= $date && $date <= $f['end'] ) {
 				return true;
 			}
 		}
@@ -1140,13 +1246,13 @@ class LLD_Members_HW_Programme {
 	/**
 	 * The member's dawn-to-sunset fasts as R-HW-FOOD-03 reads them: {id, start, end}.
 	 *
-	 * @param array $fasts Festival ids the member keeps.
+	 * @param array $fasts Festival families the member keeps (keeps()): every year's entry of each.
 	 * @return array<int,array{id:string,start:string,end:string}>
 	 */
 	public static function meal_fasts( array $fasts ) {
 		$out = array();
 		foreach ( self::festivals() as $f ) {
-			if ( in_array( $f['id'], $fasts, true ) && 'dawn_to_sunset_fast' === $f['kind'] ) {
+			if ( self::keeps( $fasts, $f['id'] ) && 'dawn_to_sunset_fast' === $f['kind'] ) {
 				$out[] = array(
 					'id'    => $f['id'],
 					'start' => $f['start'],
@@ -1832,12 +1938,12 @@ class LLD_Members_HW_Programme {
 		$fest     = array();
 		foreach ( $rows as $r ) {
 			if ( ! empty( $r['declined_festival'] ) && $r['festival_entry_id'] ) {
-				$declined[] = (string) $r['festival_entry_id'];
+				$declined[] = self::entry_key( $r['festival_entry_id'] );
 			}
 			if ( $r['finished_at'] && $r['chosen_block_key'] ) {
 				$finished[] = (string) $r['chosen_block_key'];
 				if ( $r['festival_entry_id'] ) {
-					$fest[] = (string) $r['festival_entry_id'];
+					$fest[] = self::entry_key( $r['festival_entry_id'] );
 				}
 			}
 		}
@@ -1878,7 +1984,7 @@ class LLD_Members_HW_Programme {
 	private static function member_festivals( array $c ) {
 		$out = array();
 		foreach ( self::festivals() as $f ) {
-			if ( in_array( $f['id'], (array) $c['answers']['fasts'], true ) ) {
+			if ( self::keeps( (array) $c['answers']['fasts'], $f['id'] ) ) {
 				$out[] = $f;
 			}
 		}

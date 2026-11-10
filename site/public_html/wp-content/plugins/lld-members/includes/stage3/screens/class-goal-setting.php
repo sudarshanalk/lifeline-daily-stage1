@@ -567,12 +567,12 @@ class LLD_Members_Goal_Setting {
 			return false; // no plan view yet: the plan page answers
 		}
 		if ( $post && isset( $_POST['lld_hw_pace_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_hw_pace_nonce'] ) ), 'lld_hw_pace' ) ) {
-			$got = LLD_Members_Hw_Plan_Screen::save_pace( $member_id, $view, $facts, (string) $facts['today'] );
+			$got = LLD_Members_Hw_Plan_Screen::save_pace( $member_id, $view, $facts, (string) $facts['today'], $goal );
 			if ( ! is_wp_error( $got ) ) {
 				wp_safe_redirect( home_url( $base ) );
 				exit;
 			}
-			$error = $got->get_error_message();
+			$error = $got; // the refusal keeps its code and the safe date for the date field
 		}
 		$parts::output( $parts::LABELS['pace_title'], LLD_Members_Hw_Plan_Screen::pace_html( $view, $facts, home_url( $base . '&hw=pace' ), $error ) );
 		return true;
