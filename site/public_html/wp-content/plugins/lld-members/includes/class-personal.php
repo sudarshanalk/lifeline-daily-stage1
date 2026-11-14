@@ -403,7 +403,8 @@ class LLD_Members_Personal {
 	/**
 	 * The latest saved result from each calculator, as the calculator showed it (C4).
 	 *
-	 * @param int $member_id Member number.
+	 * @param int  $member_id  Member number.
+	 * @param bool $no_figures Leave out a saved Healthy Weight Check result, whose headline is a BMI (safety matrix).
 	 */
 	private static function calculator_lines( $member_id, $no_figures = false ) {
 		global $wpdb;
