@@ -48,7 +48,11 @@ test.describe.serial('P3-35 the eight questions (FR3-98)', () => {
     // Where you are now comes first, then the goal on the same step.
     const details = page.locator('[data-lld-goal-step="details"]');
     await expect(details.locator('[data-lld-section="hw-where"]')).toBeVisible();
+    // The page's own script moves focus to the heading once it has loaded; a fill before that can lose its text
+    // (WebKit), leaving the required goal box empty so the form is never sent. Wait for the load, then check the box.
+    await page.waitForLoadState('load');
     await page.locator('#lld_target').fill('60');
+    await expect(page.locator('#lld_target')).toHaveValue('60');
     await submit(page, page.getByRole('button', { name: 'Save my goal' }), '/members/goal/');
     await expect(page).toHaveURL(/hw=questions$/);
     const step = page.locator('[data-lld-goal-step="questions"]');
