@@ -549,6 +549,40 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 	}
 
 	/**
+	 * Stored insight rows through the interface (FR3-69): the matrix is asked again for each row's rule, because the
+	 * row was checked when it was written and the member may have declared a situation since. A list loses the rows
+	 * the member may not see now, and the rows that only hold a Today step's numbers (they are not insights); a
+	 * single row keeps its id and loses its sealed values.
+	 *
+	 * @param array $rows      Opened insights rows, or one row.
+	 * @param int   $member_id Member number.
+	 * @return array
+	 */
+	private static function insights_shown( array $rows, $member_id ) {
+		if ( ! class_exists( 'LLD_Members_Rule_Catalogue' ) ) {
+			return $rows;
+		}
+		$situations = self::situations( $member_id );
+		$single     = isset( $rows['id'] ) && ! isset( $rows[0] );
+		$out        = array();
+		foreach ( $single ? array( $rows ) : $rows as $row ) {
+			$name = is_array( $row ) && isset( $row['rule_id'] ) ? LLD_Members_Rule_Catalogue::name_for_id( (int) $row['rule_id'] ) : '';
+			$rule = '' !== $name ? LLD_Members_Rule_Catalogue::rule( $name ) : null;
+			$show = $rule && self::allows_rule( $situations, $name );
+			if ( $single ) {
+				if ( ! $show ) {
+					unset( $row['values'] );
+				}
+				return $row;
+			}
+			if ( $show && LLD_Members_Rule_Catalogue::CLASS_STEP !== $rule['class'] ) {
+				$out[] = $row;
+			}
+		}
+		return $out;
+	}
+
+	/**
 	 * Strip calorie and nutrient fields from interface rows for an eating-disorder member, and the protein target
 	 * for kidney disease, so no screen and no app can show them (FR3-69 AS-01 to AS-03).
 	 *
@@ -575,6 +609,9 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 		}
 		if ( 'food-search' === $type && isset( $rows['foods'] ) && is_array( $rows['foods'] ) ) {
 			return self::search_shown( $rows, self::applies( $member_id, 'food_tracker' ) );
+		}
+		if ( 'insights' === $type ) {
+			return self::insights_shown( $rows, $member_id );
 		}
 		if ( ! in_array( $type, array( 'food-log', 'food-recent', 'recipes', 'custom-foods', 'targets', 'plans' ), true ) ) {
 			return $rows;
