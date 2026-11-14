@@ -6,7 +6,9 @@
  *   Inert everywhere else: production has no LLD_ENV, and local and CI use Mailpit (lld-members LLD_SMTP_HOST).
  *   `wp lld mail [--last=<n>]` prints the newest captured messages (sign-in codes for staging tests).
  *   One exception: when every recipient is on staging's LLD_STAGING_MAIL_ALLOW list (the admin's own inbox), the
- *   message is also delivered, subject prefixed "[Staging]", and logged with "delivered".
+ *   message is also delivered, subject prefixed "[Staging]", and logged with "delivered". A '*' on the list delivers
+ *   to every real address (owner, 14 Nov 2026, so sign-up and sign-in codes reach the member's own inbox); reserved
+ *   test domains such as @test.lifelinedaily.invalid and @example.com stay caught.
  * Second and third layers live in staging's wp-config.php: WPMS_DO_NOT_SEND, and WP Mail SMTP pointed at a closed
  * local port. The pure builders take plain values so they are tested without WordPress (tests/lead/staging-mail.test.mjs).
  */
@@ -22,11 +24,27 @@ function lld_mail_catching(?string $env): bool { return $env === 'staging'; }
  *  codes (NFR2-02) reach its own inbox. Empty list, empty recipients, or any other recipient: not delivered. */
 function lld_mail_allowed(array $to, string $allow): bool {
   $norm = fn($a) => strtolower(trim(preg_match('/<([^>]+)>/', (string)$a, $m) ? $m[1] : (string)$a));
-  $list = array_values(array_filter(array_map($norm, explode(',', $allow)), fn($a) => filter_var($a, FILTER_VALIDATE_EMAIL)));
+  $entries = array_map($norm, explode(',', $allow));
+  // '*' (owner, 14 Nov 2026): every real address, so a member's sign-in code reaches the inbox they joined with.
+  // Test addresses never leave staging: reserved test domains (RFC 2606/6761) and anything that isn't an address.
+  $all = in_array('*', $entries, true);
+  $list = array_values(array_filter($entries, fn($a) => filter_var($a, FILTER_VALIDATE_EMAIL)));
   $to = array_values(array_filter(array_map($norm, $to), 'strlen'));
-  if (!$list || !$to) return false;
-  foreach ($to as $a) if (!in_array($a, $list, true)) return false;
+  if ((!$list && !$all) || !$to) return false;
+  foreach ($to as $a) {
+    if (in_array($a, $list, true)) continue;
+    if ($all && filter_var($a, FILTER_VALIDATE_EMAIL) && !lld_mail_test_address($a)) continue;
+    return false;
+  }
   return true;
+}
+
+/** Reserved test domains (RFC 2606 and 6761): .test, .invalid, .example, .localhost and example.com/.net/.org. */
+function lld_mail_test_address(string $address): bool {
+  $domain = strtolower(substr(strrchr($address, '@') ?: '', 1));
+  if ($domain === '') return true;
+  if (preg_match('/(^|\.)(test|invalid|example|localhost)$/', $domain)) return true;
+  return (bool)preg_match('/(^|\.)example\.(com|net|org)$/', $domain);
 }
 
 /** One captured message as a log record. Attachments are listed by file name only. */
