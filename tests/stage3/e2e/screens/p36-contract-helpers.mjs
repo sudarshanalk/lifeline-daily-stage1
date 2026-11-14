@@ -7,7 +7,7 @@ export const B = 'p3-api-b@test.lifelinedaily.invalid';
 export const DAY = '2026-11-07';
 export const AT = `${DAY} 09:00:00`;
 
-export async function fresh(page, { email = A, conditions = [], access_state = 'Premium', health = true } = {}) {
+export async function fresh(page, { email = A, conditions = [], access_state = 'Premium', health = true, profile = true } = {}) {
   const reset = await page.request.post('/wp-json/lld-members/v1/test/reset', { data: { email } });
   expect(reset.ok(), await reset.text()).toBeTruthy();
   const member = await createMember(page.request, { email, password, first_name: 'Alex',
@@ -16,7 +16,7 @@ export async function fresh(page, { email = A, conditions = [], access_state = '
   const clock = await page.request.post('/wp-json/lld-members/v1/test/clock', { data: { email, utc: `${DAY} 12:00:00` } });
   expect(clock.ok(), await clock.text()).toBeTruthy();
   await page.goto('/members/health/');
-  if (health) {
+  if (health && profile) {
     const response = await page.request.post(`/wp-json/lld-members/v1/members/${member.member_id}/health`, {
       headers: { 'X-WP-Nonce': await restNonce(page) }, data: { kind: 'profile', confirmed: true,
         sex: 'female', height_cm: 175, weight_kg: 90, activity_level: 'some',

@@ -249,7 +249,7 @@ class LLD_Members_Food_Screen {
 							<?php
 							echo $ed_mode
 								? esc_html( LLD_Members_Stage3_Safety::MESSAGES['ed.food-tracker.calorie-total'] )
-								: 'Log what you eat and drink across four meals each day.';
+								: 'Log what you eat and drink, meal by meal.';
 							?>
 						</p>
 					</div>
