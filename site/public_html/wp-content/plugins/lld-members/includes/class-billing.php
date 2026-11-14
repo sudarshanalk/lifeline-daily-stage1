@@ -1114,7 +1114,14 @@ class LLD_Members_Billing {
 		if ( $switch_failed ) {
 			$main .= '<div class="lld-fail" role="alert"><p>Your plan was not changed. ' . esc_html( LLD_Members_Stripe::try_again_message() ) . '</p></div>';
 		}
-		if ( ! $sub || 'free' === strtolower( (string) $sub->access_state ) ) {
+		// P3-36 A1 (TC-FR3-64-AS-04): free Premium given by the Owner reads as Premium, with its end date and no offer to buy.
+		$status = LLD_Members_Access::premium_status( $member_id );
+		if ( 'grant' === $status['source'] ) {
+			// The Stage 3 membership card already says it, with the end date; say it once.
+			if ( ! ( class_exists( 'LLD_Members_Features' ) && LLD_Members_Features::enabled( 'membership_card', $member_id ) ) ) {
+				$main .= '<p data-lld-premium-source="grant">' . esc_html( LLD_Members_Access::grant_line( $status ) ) . '</p>';
+			}
+		} elseif ( ! $sub || 'free' === strtolower( (string) $sub->access_state ) ) {
 			$main .= '<p>Your membership is Free.</p>';
 			$main .= '<p><a href="' . esc_url( home_url( '/pricing/' ) ) . '">See pricing</a></p>';
 		} else {
@@ -1148,14 +1155,15 @@ class LLD_Members_Billing {
 		$main .= '<button type="button" class="lld-button lld-button-secondary" data-lld-share="' . esc_attr( $link ) . '" hidden>Share referral link</button></p>';
 		$main .= '<form method="post" id="lld-plan-actions">';
 		$main .= wp_nonce_field( 'lld_sub', 'lld_sub_nonce', true, false );
-		if ( $switching && $sub && 'monthly' === (string) $sub->plan && self::paid_open( $member_id ) && ! $sub->pending_yearly_on ) {
+		if ( 'grant' !== $status['source'] && $switching && $sub && 'monthly' === (string) $sub->plan && self::paid_open( $member_id ) && ! $sub->pending_yearly_on ) {
 			$main .= '<button class="lld-button" type="submit" name="lld_sub_action" value="switch">Switch to yearly</button> ';
 		}
 		if ( $sub && $sub->pending_yearly_on ) {
 			$main .= '<button class="lld-button" type="submit" name="lld_sub_action" value="undo">Undo</button> ';
 		}
 		// paid_state: a paused member can still cancel.
-		if ( self::paid_state( $member_id ) && ( ! $sub || 'cancelled' !== strtolower( (string) $sub->access_state ) ) ) {
+		// A grant has no payment to cancel (P3-36 A1): the Owner removes it.
+		if ( 'grant' !== $status['source'] && self::paid_state( $member_id ) && ( ! $sub || 'cancelled' !== strtolower( (string) $sub->access_state ) ) ) {
 			$confirm = isset( $_GET['confirm'] );
 			if ( ! $confirm ) {
 				$main .= '<p><a href="' . esc_url( home_url( '/members/subscription/?confirm=1' ) ) . '">Cancel</a></p>';

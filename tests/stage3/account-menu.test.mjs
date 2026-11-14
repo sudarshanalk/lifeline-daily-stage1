@@ -49,7 +49,7 @@ function layout({ who = 'member', v2 = false, screen = 'home', account = false, 
     function wp_register_script($h, $src) { $GLOBALS['src'][$h] = $src; }
     function wp_print_styles($hs) { foreach ($hs as $h) { if (empty($GLOBALS['printed'][$h . 'css'])) { $GLOBALS['printed'][$h . 'css'] = 1; echo '<link rel="stylesheet" id="' . $h . '-css" href="' . $GLOBALS['src'][$h] . '">'; } } }
     function wp_print_scripts($hs) { foreach ($hs as $h) { if (empty($GLOBALS['printed'][$h])) { $GLOBALS['printed'][$h] = 1; echo '<script id="' . $h . '-js" src="' . $GLOBALS['src'][$h] . '"></script>'; } } }
-    class LLD_Members_Access { static function current_member_id() { return ${who === 'member' ? 7 : 0}; } static function access_state($id) { return 'Free'; } }
+    class LLD_Members_Access { static function current_member_id() { return ${who === 'member' ? 7 : 0}; } static function access_state($id) { return 'Free'; } static function premium_status($id) { return ['premium' => false, 'source' => 'free', 'until' => '']; } }
     class LLD_Members_Schema { static function table($t) { return 'wp_lld_' . $t; } }
     class FakeDb { function prepare($q, ...$a) { return $q; } function get_row($q) { return (object) ['first_name' => 'Alex', 'display_name' => 'Alex A']; } }
     $GLOBALS['wpdb'] = new FakeDb();
