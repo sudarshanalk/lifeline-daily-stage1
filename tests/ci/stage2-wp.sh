@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # stage2-wp: throwaway WordPress for the Stage 2 browser journeys in CI (stage2-e2e job). Not for staging or production.
 # Needs: wp-cli, PHP 8.1 with mysqli, MariaDB on 127.0.0.1:3306 (root / ci-only, database wp), Mailpit on 127.0.0.1:1025.
-# Installs Paid Memberships Pro from wordpress.org, copies the lld-members plugin from this checkout, activates both,
+# Copies the lld-members plugin from this checkout and activates it (Paid Memberships Pro was retired on 6 Nov 2026, FR3-96),
 # runs the plugin database update, then serves the site on 127.0.0.1:8090 in the background.
 set -euo pipefail
 DIR=${1:?target directory}
@@ -21,13 +21,6 @@ if [ -n "${LLD_STRIPE_SECRET:-}" ]; then wp config set --path="$DIR" LLD_STRIPE_
 ADMIN_PW=$(openssl rand -hex 16)   # throwaway admin, never printed
 wp core install --path="$DIR" --url="$URL" --title="LLD CI" --admin_user=ci-admin --admin_password="$ADMIN_PW" --admin_email=ci-admin@example.test --skip-email --quiet
 wp rewrite structure '/%postname%/' --path="$DIR" --quiet
-# Paid Memberships Pro left wordpress.org in October 2024 (its "latest-stable" there is the old 3.2.2), so CI, local and
-# staging all use the vendor's tagged release from GitHub, pinned to the same version
-PMPRO_VERSION=3.8.9
-curl -fsSL --retry 3 -o "$DIR/../pmpro.zip" "https://codeload.github.com/strangerstudios/paid-memberships-pro/zip/refs/tags/$PMPRO_VERSION"
-unzip -q -o "$DIR/../pmpro.zip" -d "$DIR/../pmpro"
-mv "$DIR/../pmpro/paid-memberships-pro-$PMPRO_VERSION" "$DIR/wp-content/plugins/paid-memberships-pro"
-wp plugin activate paid-memberships-pro --path="$DIR" --quiet
 cp -R "$REPO/site/public_html/wp-content/plugins/lld-members" "$DIR/wp-content/plugins/lld-members"
 # the member layout points its @font-face rules at lld-tools' self-hosted fonts (S2-L1): copy them so CI matches staging
 mkdir -p "$DIR/wp-content/mu-plugins/lld-tools/assets"
@@ -46,6 +39,17 @@ wp lld-members test-accounts p3-api-a@test.lifelinedaily.invalid p3-api-b@test.l
 # the callback is never reached (the tests complete provider sign-ins through the test route instead)
 wp config set --path="$DIR" LLD_GOOGLE_CLIENT_ID ci-google-client.apps.googleusercontent.com --quiet
 wp config set --path="$DIR" LLD_GOOGLE_CLIENT_SECRET ci-only --quiet
+# P3-83: the Stage 3 browser job (LLD_CI_STAGE1_TOOLS=1) also loads the Stage 1 mu-plugin and the Health Tools hub page
+# ([lld_tools_hub], as `wp lld pages` makes it on staging), so the hub and its Stage 3 cards are checked as the live code
+# renders them. The Stage 2 job keeps its plain site, as before.
+if [ "${LLD_CI_STAGE1_TOOLS:-}" = "1" ]; then
+  cp -R "$REPO/site/public_html/wp-content/mu-plugins/lld-tools/." "$DIR/wp-content/mu-plugins/lld-tools/"
+  cp "$REPO/site/public_html/wp-content/mu-plugins/lld-tools-loader.php" "$DIR/wp-content/mu-plugins/lld-tools-loader.php"
+  wp post create --path="$DIR" --post_type=page --post_name=health-tools --post_title="Health Tools" --post_status=publish --post_content='[lld_tools_hub]' --quiet
+  # P3-87b: the standalone tools and their tools/status.json switch, copied into this throwaway site so the admin
+  # Tools page can turn one off and on (FR3-89) without touching the repository's files.
+  cp -R "$REPO/site/public_html/tools" "$DIR/tools"
+fi
 # Router: without one, PHP's built-in server answers 404 itself for any missing path with a dot (/sitemap.xml)
 # instead of passing it to WordPress, unlike Apache/LiteSpeed with the WordPress .htaccess on staging and production
 nohup php -S 127.0.0.1:8090 -t "$DIR" "$REPO/tools/local/router.php" > "$DIR/../php-server.log" 2>&1 &

@@ -1,9 +1,9 @@
 # Stage 2 local WordPress for Cursor and Claude (Build Method P0-6). Windows, no Docker.
-# A clean site with no production data: WordPress + Paid Memberships Pro + the lld-members plugin linked live from this
+# A clean site with no production data: WordPress + the lld-members plugin linked live from this
 # checkout, MariaDB on 127.0.0.1:3399 (shared with the Stage 1 stack, separate database), Mailpit for every email.
 #
 # Usage: powershell -File tools\local\stage2-local.ps1 <init|serve|stop|reset|dbupdate|status|wp ...>
-#   init      create the database and site, install Paid Memberships Pro, link lld-members, write local\stage2.env
+#   init      create the database and site, link lld-members, write local\stage2.env
 #   serve     start MariaDB and Mailpit, then serve http://localhost:8090 (Ctrl+C to stop)
 #   stop      stop Mailpit (MariaDB is stopped with local-stack.ps1 stop)
 #   reset     drop and rebuild the database and site settings (plugin code is untouched)
@@ -90,28 +90,8 @@ function Install-Site {
   Wp core install --url=$Url --title="Lifeline Daily Stage 2 (local)" --admin_user=lld-admin "--admin_password=$($e['LLD_ADMIN_PASSWORD'])" --admin_email=lld-admin@test.lifelinedaily.invalid --skip-email --quiet
   Wp rewrite structure '/%postname%/' --quiet
   Wp option update blog_public 0 --quiet
-  Install-Pmpro
   Link-Plugin
   Write-Output "Stage 2 site ready at $Url (settings in $EnvFile)"
-}
-function Install-Pmpro {
-  # Paid Memberships Pro left wordpress.org in October 2024, so this takes the vendor's tagged release from GitHub,
-  # the same version as CI (tests/ci/stage2-wp.sh) and staging; unpacked here for the same reason as WordPress itself.
-  $version = '3.8.9'
-  $dir = "$Site\wp-content\plugins\paid-memberships-pro"
-  $main = "$dir\paid-memberships-pro.php"
-  if (-not ((Test-Path $main) -and (Select-String -Path $main -SimpleMatch "Version: $version" -Quiet))) {
-    $zip = Join-Path $env:TMP 'pmpro.zip'
-    $tmp = Join-Path $env:TMP 'pmpro-unpack'
-    [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-    Invoke-WebRequest -Uri "https://codeload.github.com/strangerstudios/paid-memberships-pro/zip/refs/tags/$version" -OutFile $zip -UseBasicParsing
-    if (Test-Path $tmp) { Remove-Item -Recurse -Force $tmp }
-    Expand-Archive -Path $zip -DestinationPath $tmp -Force
-    if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
-    Move-Item "$tmp\paid-memberships-pro-$version" $dir
-    Remove-Item -Recurse -Force $zip, $tmp
-  }
-  Wp plugin activate paid-memberships-pro --quiet
 }
 function Link-Plugin {
   if (-not (Test-Path $Plugin)) { New-Item -ItemType Directory -Force $Plugin | Out-Null }

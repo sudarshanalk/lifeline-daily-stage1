@@ -76,12 +76,17 @@ img, svg, iframe, video, pre, table { max-width: 100%; }
 .lld-skip {
   position: absolute;
   left: 16px;
-  top: -40px;
+  top: -60px;
   z-index: 20;
   background: var(--lld-card);
   color: var(--lld-ink);
   padding: 8px 12px;
   border-radius: var(--lld-radius-sm);
+  /* P3-83 (TC-NFR3-12-AS-02): a 44 px target once it is focused */
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  box-sizing: border-box;
 }
 
 .lld-skip:focus { top: 8px; }
@@ -379,6 +384,13 @@ a { color: var(--lld-green); }
   cursor: not-allowed;
 }
 
+/* a stand-alone link on its own line (P3-83, TC-NFR3-12-AS-02): a 44 px target without looking like a button */
+.lld-link-row a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
 .lld-text-button {
   background: none;
   border: 0;
@@ -413,21 +425,70 @@ input[type="file"] { font: inherit; min-height: 44px; display: block; width: 100
 
 .lld-field-row { display: grid; gap: 0 16px; grid-template-columns: 1fr; }
 
-.lld-password-row { display: flex; gap: 8px; align-items: center; }
-.lld-password-row input { flex: 1; }
+/* P3-36 C4: the show-password button is an eye icon inside the right end of the box. Its text ("Show password" /
+   "Hide password", swapped by lld-members.js) stays in the button for screen readers and is only hidden from view;
+   the icon is drawn by CSS, so the script and the Stage 2 tests that read the text are unchanged. */
+.lld-password-row { position: relative; display: flex; align-items: center; }
+.lld-password-row input { flex: 1; min-width: 0; padding-right: 52px; }
 .lld-eye {
-  flex: 0 0 auto;
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
   min-height: 44px;
-  padding: 8px 14px;
-  border: 1.5px solid var(--lld-border);
-  border-radius: 999px;
-  background: var(--lld-card);
-  color: var(--lld-ink);
-  font: inherit;
-  font-size: 14px;
-  font-weight: 600;
+  padding: 0;
+  border: 0;
+  border-radius: var(--lld-radius-sm);
+  background: transparent;
+  color: var(--lld-muted);
+  font-size: 0;
+  line-height: 0;
+  overflow: hidden;
+  white-space: nowrap;
   cursor: pointer;
 }
+.lld-eye::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 22px;
+  height: 22px;
+  background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center / contain no-repeat;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.lld-eye[aria-pressed="true"]::before {
+  -webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M3 3l18 18'/%3E%3C/svg%3E");
+  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='black' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z'/%3E%3Ccircle cx='12' cy='12' r='3'/%3E%3Cpath d='M3 3l18 18'/%3E%3C/svg%3E");
+}
+.lld-eye:hover { color: var(--lld-ink); }
+.lld-eye:focus-visible { outline: 3px solid var(--lld-green); outline-offset: -3px; }
+@media (forced-colors: active) { .lld-eye::before { background: ButtonText; } }
+/* The v2 form look (lld-tools' lld-v2.css, on sign-in, join, reset and Agreements) styles the old pill button with
+   !important; these win over it by being more specific, so the eye sits inside the box there too. */
+body.lld-members-v2-form .lld-password-row.lld-password-row { position: relative !important; gap: 0 !important; align-items: center !important; }
+/* lld-v2.css sets the box padding with body.lld-members-v2-form .lld-main input[type=password] (and [type=text] once shown)
+   and prints after this sheet, so this rule is one class stronger to keep the typed text clear of the eye. */
+body.lld-members-v2-form .lld-main .lld-password-row.lld-password-row input { padding-right: 52px !important; min-width: 0 !important; }
+body.lld-members-v2-form .lld-password-row .lld-eye {
+  position: absolute !important;
+  top: 50% !important;
+  right: 2px !important;
+  transform: translateY(-50%) !important;
+  width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: #5c6b64 !important;
+  font-size: 0 !important;
+}
+body.lld-members-v2-form .lld-password-row .lld-eye:hover { color: #1d4e48 !important; }
+body.mode-night.lld-members-v2-form .lld-password-row .lld-eye { color: #c9d6d2 !important; background: transparent !important; }
 
 .lld-error { color: var(--lld-danger); font-size: 14px; font-weight: 600; }
 
@@ -1268,7 +1329,7 @@ main h1[tabindex="-1"]:focus, main h1[tabindex="-1"]:focus-visible { outline: no
   .lld-header-inner { flex-wrap: nowrap; }
   .lld-logo-name { font-size: 16px; }
   .lld-logo-tagline { font-size: 9px; }
-  .lld-chip { gap: 6px; padding: 3px 5px 3px 3px; }
+  .lld-chip { gap: 6px; padding: 3px 5px 3px 3px; min-width: 44px; justify-content: center; }
   .lld-chip-initial { width: 30px; height: 30px; }
   .lld-chip-badge { font-size: 10px; padding: 3px 7px; }
 }
@@ -1284,3 +1345,6 @@ main h1[tabindex="-1"]:focus, main h1[tabindex="-1"]:focus-visible { outline: no
 @media (prefers-reduced-motion: reduce) {
   * { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
 }
+
+/* P3-36 D8: the Google "G" mark before "Continue with Google" (inline SVG, class-sign-in.php). */
+.lld-provider-mark { display: inline-block; flex: 0 0 auto; width: 18px; height: 18px; margin-right: 10px; vertical-align: -3px; }

@@ -1,0 +1,55 @@
+{
+  "ev_id": "EV-NFR1-15-20261109-1302",
+  "req_id": "NFR1-15",
+  "tc_id": "TC-NFR1-15",
+  "commit": "c8299f021022a4d81ccfd249b0d69b933437d6cf",
+  "tool_hashes": {
+    "protein": "48696de472ee353094542f8cc7ee3dfe5f851bafc6c1bfc0d325fd67997ba365",
+    "diabetes": "4ebf15240ef7eff74a5bd8c93753c4957213f3d52579f26e3f6da61cff16834d"
+  },
+  "fixtures": [],
+  "results": [
+    {
+      "assertion": "TC-NFR1-15-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-15-AS-02",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-NFR1-15-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-21-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-21-AS-03",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    },
+    {
+      "assertion": "TC-FR1-21-AS-05",
+      "outcome": "pass",
+      "artefact": "artefacts/playwright.json",
+      "oracle": "none"
+    }
+  ],
+  "mutations": [],
+  "red_run": null,
+  "green_run": "local-20261109-1302",
+  "human_gate": null,
+  "started_at": "2026-11-09T13:03:19Z",
+  "finished_at": "2026-11-09T13:03:19Z"
+}

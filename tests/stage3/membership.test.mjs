@@ -482,6 +482,19 @@ test('TC-FR3-65-AS-01 (emails): EM-31 when the pause starts, EM-32 seven days be
   expect(out.copy.body).not.toContain('end the pause early');
 });
 
+test('TC-FR3-65-AS-01 (email query): the live site looks only at pauses near today; a test-clock site looks at every open pause', () => {
+  const out = php(`${mailStubs}
+    if (!function_exists('lld_members_test_clock_allowed')) { function lld_members_test_clock_allowed() { return $GLOBALS['test_clock'] ?? false; } }
+    class QueryDb extends ClaimDb { public $asked = []; function get_results($q) { $this->asked[] = $q; return []; } }
+    $GLOBALS['wpdb'] = new QueryDb(); LLD_Members_Pause::daily_mail(); $live = $GLOBALS['wpdb']->asked[0];
+    $GLOBALS['test_clock'] = true;
+    $GLOBALS['wpdb'] = new QueryDb(); LLD_Members_Pause::daily_mail(); $clock = $GLOBALS['wpdb']->asked[0];
+    echo json_encode(['live' => $live, 'clock' => $clock]);`);
+  expect(out.live).toContain("status IN ('scheduled', 'active') AND starts_at <= %s AND ends_at >= %s");
+  expect(out.clock).toContain("status IN ('scheduled', 'active')");
+  expect(out.clock).not.toContain('starts_at <=');
+});
+
 test('TC-FR3-65-AS-06 (emails): no pause email once Premium is not coming back, and none for an undone pause', () => {
   const out = php(`${mailStubs}
     $r = [];
@@ -527,4 +540,27 @@ test('TC-FR3-65-AS-06 (emails): no pause email once the plan is cancelled or the
     LLD_Members_Pause::daily_mail(); $GLOBALS['today'] = '2027-04-10'; LLD_Members_Pause::on_event('renewed', 5, []);
     echo json_encode(['cancelled' => $cancelled, 'other' => $GLOBALS['sent']]);`);
   expect(out).toEqual({ cancelled: [], other: [] });
+});
+
+test('TC-FR3-65-AS-07: one pause in any 12 months; within 12 months no pause is offered and a new one is refused with the date, an undone pause does not count', () => {
+  const out = php(`${stubs}
+    LLD_Members_Billing::$sub = sub('monthly'); $GLOBALS['today'] = '2027-03-01';
+    // The last pause (not undone) started on 10 September 2026 and has ended.
+    $GLOBALS['wpdb']->pause = ['id' => 1, 'member_id' => 5, 'months' => 1, 'starts_at' => '2026-09-10', 'ends_at' => '2026-10-10', 'status' => 'ended', 'subscription_ref' => 'sub_TEST1'];
+    fresh();
+    $from = LLD_Members_Pause::next_pause_from('2026-09-10');
+    $until = LLD_Members_Pause::limited_until(5, '2027-03-10');
+    $later = LLD_Members_Pause::limited_until(5, '2027-09-10');
+    $refused = LLD_Members_Pause::start(5, 1);
+    echo json_encode(['from' => $from, 'until' => $until, 'later' => $later, 'none' => LLD_Members_Pause::next_pause_from(''), 'refused' => is_wp_error($refused) ? $refused->get_error_message() : $refused]);`);
+  expect(out.from).toBe('2027-09-10');
+  expect(out.until).toBe('2027-09-10');      // a pause starting 10 March 2027 comes too soon
+  expect(out.later).toBe('');                // from 10 September 2027 it is allowed again
+  expect(out.none).toBe('');                 // no earlier pause: no limit
+  expect(out.refused).toBe('You can pause once in any 12 months. You can pause again from 10 September 2027.');
+  // The offer on My subscription and before cancelling both respect the limit; latest() leaves undone pauses out.
+  const pause = src('includes/stage3/class-pause.php');
+  expect(pause).toContain('data-lld-pause="limit"');
+  expect(pause).toContain("if ( '' !== self::limited_until( $member_id, (string) $sub->period_ends_on ) ) {");
+  expect(pause).toContain("WHERE member_id = %d AND status <> 'cancelled' ORDER BY id DESC LIMIT 1");
 });

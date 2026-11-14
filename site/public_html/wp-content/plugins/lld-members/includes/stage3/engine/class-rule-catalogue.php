@@ -151,17 +151,25 @@ class LLD_Members_Rule_Catalogue {
 	 * Fill a template's gaps. Only the named gaps are replaced, only with numbers, dates or the plain goal text the
 	 * engine computed; every other character of the template stays (FR3-17 AS-04, NFR3-17 AS-02).
 	 *
+	 * P3-36 A4: a stored insight row's values column holds {"values": {...}, "text", "notes": [...], "template"}, and
+	 * the goal journey passes that whole object here. Its gaps are then read from the inner "values"; a list-valued
+	 * field (notes, offers, the inner values themselves) is never a gap's value, so it is left out instead of
+	 * printing "Array" with an "Array to string conversion" warning.
+	 *
 	 * @param string              $template Template key.
-	 * @param array<string,mixed> $values   Gap name => value.
+	 * @param array<string,mixed> $values   Gap name => value, or a stored insight row's values.
 	 * @return string|null Null for an unknown template.
 	 */
 	public static function fill( $template, array $values ) {
 		if ( ! isset( self::TEMPLATES[ $template ] ) ) {
 			return null;
 		}
+		if ( isset( $values['values'] ) && is_array( $values['values'] ) ) {
+			$values = $values['values'];
+		}
 		$text = self::TEMPLATES[ $template ];
 		foreach ( $values as $gap => $value ) {
-			if ( ! preg_match( '/^[a-z_]+$/', (string) $gap ) ) {
+			if ( ! preg_match( '/^[a-z_]+$/', (string) $gap ) || ! ( is_scalar( $value ) || null === $value ) ) {
 				continue;
 			}
 			$text = str_replace( '{' . $gap . '}', self::plain( $value ), $text );

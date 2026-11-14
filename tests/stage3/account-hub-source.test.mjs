@@ -56,10 +56,17 @@ test('account hub: assets are enqueued through WordPress, never hand-written tag
   expect(hub).not.toMatch(/<script\b/);
 });
 
-test('account hub: no password or two-step writes, no consent writes, no home-made sign-out', () => {
+test('account hub: password and two-step go through Account helpers; health consent and sign-out stay Stage 2', () => {
+  // P3-36 C2: Profile, security, notifications and marketing save here via LLD_Members_Account::save_hub_*.
+  // The hub itself never writes the password, two-step flag or consent rows.
   expect(hub).not.toMatch(/wp_set_password|wp_set_auth_cookie/);
   expect(hub).not.toMatch(/'two_step'\s*=>/);
   expect(hub).not.toMatch(/\$wpdb->insert|\bINSERT\b/i);
+  expect(hub).toMatch(/LLD_Members_Account::save_hub_profile/);
+  expect(hub).toMatch(/LLD_Members_Account::save_hub_security/);
+  expect(hub).toMatch(/LLD_Members_Account::save_hub_notifications/);
+  expect(hub).toMatch(/LLD_Members_Account::save_hub_marketing/);
+  expect(hub).toMatch(/lld_security_nonce|lld_privacy_nonce|lld_notifications_nonce|lld_profile_nonce/);
   expect(hub).not.toMatch(/lld_members_withdraw_health/);
   expect(hub).toMatch(/home_url\( '\/members\/withdraw\/' \)/);
   // Sign out is a POST form to the Stage 2 sign-out (the More screen) with its nonce, never a logout link.
@@ -73,8 +80,8 @@ test('account hub: no password or two-step writes, no consent writes, no home-ma
   }
   // No fixed price is shown: prices come from Stage 2 billing, not the hub.
   expect(hub).not.toMatch(/US\$\d/);
-  // Pause and notifications have no save handler.
-  expect(hub).not.toMatch(/lld_pause_nonce|lld_notif_nonce|lld_security_nonce|lld_privacy_nonce/);
+  // Pause still has no save; the old placeholder notif nonce names stay unused.
+  expect(hub).not.toMatch(/lld_pause_nonce|lld_notif_nonce/);
 });
 
 test('account hub: no requirement or test ID in any member-facing string', () => {

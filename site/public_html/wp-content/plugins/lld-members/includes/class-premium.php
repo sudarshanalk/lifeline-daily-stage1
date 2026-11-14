@@ -147,6 +147,7 @@ class LLD_Members_Premium {
 			$main .= '<p class="lld-hint">' . esc_html( $note ) . '</p>';
 		}
 		$main .= '<p class="lld-hint">Each meal can be swapped for a safe alternative.</p></div>';
+		$main .= self::forms_assets();
 		$nonce = $consent ? wp_create_nonce( 'lld_swap' ) : '';
 		$first = new DateTimeImmutable( $plan['week']['starting'] );
 		foreach ( $plan['days'] as $day => $meals ) {
@@ -154,7 +155,7 @@ class LLD_Members_Premium {
 			$main .= '<section data-lld-day="' . (int) $day . '" data-lld-date="' . esc_attr( $date->format( 'Y-m-d' ) ) . '"><h2>Day ' . (int) $day . ', ' . esc_html( $date->format( 'l j F' ) ) . '</h2><div class="lld-recipes">';
 			foreach ( $meals as $slot => $recipe ) {
 				$key   = (int) $day . '-' . $slot;
-				$badge = '' !== trim( (string) $recipe['diet'] ) ? (string) $recipe['diet'] : ( '' !== trim( (string) $recipe['servings'] ) ? (string) $recipe['servings'] . ' servings' : '' );
+				$badge = self::meal_diet_chip( isset( $recipe['diet'] ) ? (string) $recipe['diet'] : '', isset( $recipe['servings'] ) ? (string) $recipe['servings'] : '' );
 				$main .= '<article class="lld-meal lld-recipe" data-lld-meal="' . esc_attr( $key ) . '">';
 				$main .= '<div class="lld-recipe-top"><span class="lld-recipe-slot">' . esc_html( ucfirst( (string) $slot ) ) . '</span>' . ( '' !== $badge ? '<span class="lld-recipe-badge">' . esc_html( $badge ) . '</span>' : '' ) . '</div>';
 				$main .= '<div class="lld-recipe-body"><p><span class="lld-sr">' . esc_html( ucfirst( (string) $slot ) ) . ': </span>' . esc_html( $recipe['title'] ) . '</p></div>';
@@ -169,6 +170,12 @@ class LLD_Members_Premium {
 						$main .= '<option value="' . (int) $option['id'] . '">' . esc_html( $option['title'] ) . '</option>';
 					}
 					$main .= '</select></p>';
+					// The same alternatives as a tap list. Hidden until Swap opens it; with scripts off the select above is used.
+					$main .= '<ul class="lld-recipe-swap-list" data-lld-swap-panel hidden aria-label="' . esc_attr( 'Swap Day ' . (int) $day . ' ' . $slot ) . '">';
+					foreach ( $recipe['options'] as $option ) {
+						$main .= '<li><button type="button" data-lld-swap-pick="' . (int) $option['id'] . '">' . esc_html( $option['title'] ) . '</button></li>';
+					}
+					$main .= '</ul>';
 					$main .= lld_button( array( 'label' => 'Swap', 'variant' => 'secondary' ) );
 					$main .= '</form>';
 				} elseif ( $consent ) {
@@ -604,16 +611,17 @@ class LLD_Members_Premium {
 			return '';
 		}
 		$chosen = self::month_measures( $member_id, (string) $finished->track_key );
+		$imp    = self::member_uses_imperial( $member_id );
 		$html   = '<h2>Monthly check-in</h2><p>Measures from ' . esc_html( (string) $finished->track_key ) . '.</p>';
 		$html  .= '<form method="post" class="lld-form">';
 		$html  .= wp_nonce_field( 'lld_month', 'lld_month_nonce', true, false );
 		$html  .= '<fieldset><legend>Measures</legend>';
 		foreach ( self::measure_choices() as $key => $label ) {
-			$html .= '<label class="lld-check"><input type="checkbox" name="lld_month_measure[]" value="' . esc_attr( $key ) . '"' . ( in_array( $key, $chosen, true ) ? ' checked' : '' ) . '> ' . esc_html( $label ) . '</label>';
+			$html .= '<label class="lld-check"><input type="checkbox" name="lld_month_measure[]" value="' . esc_attr( $key ) . '"' . ( in_array( $key, $chosen, true ) ? ' checked' : '' ) . '> ' . esc_html( self::measure_label( $key, $label, $imp ) ) . '</label>';
 		}
 		$html .= '</fieldset>';
 		foreach ( array_keys( self::measure_choices() ) as $key ) {
-			$html .= self::month_field( $key );
+			$html .= self::month_field( $key, $imp );
 		}
 		$html .= lld_button( array( 'label' => 'Save monthly check-in' ) );
 		$html .= '</form>';
@@ -644,8 +652,8 @@ class LLD_Members_Premium {
 			'month_key'         => substr( $today, 0, 7 ),
 			'local_date'        => $today,
 			'measures'          => implode( ',', $chosen ),
-			'weight_kg'         => self::posted_decimal( 'lld_weight' ),
-			'waist_cm'          => self::posted_decimal( 'lld_waist' ),
+			'weight_kg'         => self::posted_measure( 'lld_weight', $member_id, 0.45359237 ),
+			'waist_cm'          => self::posted_measure( 'lld_waist', $member_id, 2.54 ),
 			'activity_minutes'  => self::posted_int( 'lld_activity' ),
 			'chair_stands'      => self::posted_int( 'lld_chair' ),
 			'push_ups'          => self::posted_int( 'lld_push' ),
@@ -844,8 +852,8 @@ class LLD_Members_Premium {
 				. '<input type="hidden" name="lld_water" value="' . (int) $value . '"><button class="lld-step ' . $class . '" type="submit" aria-label="' . esc_attr( $label ) . '">' . $sign . '</button></form>';
 		};
 		$html  = '<div class="lld-water"><p><strong>Water today</strong><span class="lld-hint">' . esc_html( $water . ( 1 === $water ? ' glass' : ' glasses' ) . ' logged' ) . '</span></p>';
-		$html .= '<div class="lld-water-count">' . ( $water > 0 ? $step( $water - 1, 'lld-step-down', 'One glass of water fewer', '&minus;' ) : '' );
-		$html .= '<output aria-live="polite">' . $water . '</output>' . ( $water < 40 ? $step( $water + 1, 'lld-step-up', 'One more glass of water', '+' ) : '' ) . '</div></div>';
+		$html .= '<div class="lld-water-count">' . ( $water > 0 ? $step( $water - 1, 'lld-step-down', 'Remove a glass of water', '&minus;' ) : '' );
+		$html .= '<output aria-live="polite">' . $water . '</output>' . ( $water < 40 ? $step( $water + 1, 'lld-step-up', 'Add a glass of water', '+' ) : '' ) . '</div></div>';
 		if ( LLD_Members_Billing::paid_open( $member_id ) ) {
 			$slot  = self::next_slot( $member_id, $today );
 			$html .= '<form method="post" action="' . esc_url( $diary ) . '" class="lld-one-tap"><input type="hidden" name="lld_diary_nonce" value="' . esc_attr( $nonce ) . '">';
@@ -1343,19 +1351,9 @@ class LLD_Members_Premium {
 			return null;
 		}
 		$fields = isset( $snap['fields'] ) && is_array( $snap['fields'] ) ? $snap['fields'] : array();
-		$lines  = array();
-		$aisles = array();
-		$raw    = (string) ( $fields['ingredients'] ?? '' );
-		foreach ( preg_split( '/\r\n|\r|\n/', $raw ) as $line ) {
-			$line = trim( (string) $line );
-			if ( '' === $line ) {
-				continue;
-			}
-			$parts           = array_map( 'trim', explode( '|', $line ) );
-			$text            = $parts[0] . ( isset( $parts[1] ) && '' !== $parts[1] ? ', ' . $parts[1] . ( isset( $parts[2] ) && '' !== $parts[2] ? ' ' . $parts[2] : '' ) : '' );
-			$lines[]         = $text;
-			$aisles[ $text ] = self::aisle_of( $parts[0], $parts[3] ?? '' );
-		}
+		$read   = self::ingredient_lines( $fields['ingredients'] ?? '' );
+		$lines  = $read['lines'];
+		$aisles = $read['aisles'];
 		return array(
 			'id'          => (int) $snap['parent_id'],
 			'version_key' => self::version_key( $snap ),
@@ -1364,6 +1362,45 @@ class LLD_Members_Premium {
 			'aisles'      => $aisles,
 			'servings'    => (string) ( $fields['servings'] ?? '' ),
 			'diet'        => (string) ( $fields['diet'] ?? '' ),
+		);
+	}
+
+	/**
+	 * A recipe's ingredients as display lines and their shopping-list groups. The content library saves them as rows
+	 * (name, amount, unit); older or test content may still hold the owner's text lines ("name | amount | unit | group").
+	 *
+	 * @param mixed $raw Stored ingredients: a list of rows, or text lines.
+	 * @return array{lines:array<int,string>,aisles:array<string,string>}
+	 */
+	private static function ingredient_lines( $raw ) {
+		$split = array();
+		if ( is_array( $raw ) ) {
+			foreach ( $raw as $row ) {
+				if ( is_array( $row ) ) {
+					$split[] = array( (string) ( $row['name'] ?? '' ), (string) ( $row['amount'] ?? '' ), (string) ( $row['unit'] ?? '' ), (string) ( $row['group'] ?? '' ) );
+				} elseif ( is_string( $row ) ) {
+					$split[] = explode( '|', $row );
+				}
+			}
+		} else {
+			foreach ( preg_split( '/\r\n|\r|\n/', (string) $raw ) as $line ) {
+				$split[] = explode( '|', (string) $line );
+			}
+		}
+		$lines  = array();
+		$aisles = array();
+		foreach ( $split as $parts ) {
+			$parts = array_map( 'trim', array_map( 'strval', $parts ) );
+			if ( '' === ( $parts[0] ?? '' ) ) {
+				continue;
+			}
+			$text            = $parts[0] . ( isset( $parts[1] ) && '' !== $parts[1] ? ', ' . $parts[1] . ( isset( $parts[2] ) && '' !== $parts[2] ? ' ' . $parts[2] : '' ) : '' );
+			$lines[]         = $text;
+			$aisles[ $text ] = self::aisle_of( $parts[0], $parts[3] ?? '' );
+		}
+		return array(
+			'lines'  => $lines,
+			'aisles' => $aisles,
 		);
 	}
 
@@ -1399,6 +1436,23 @@ class LLD_Members_Premium {
 	/**
 	 * @param int $member_id Member number.
 	 */
+	/**
+	 * One meal-plan diet chip: the strictest diet the recipe suits (E7 badge A). Everything-only shows servings.
+	 *
+	 * @param string $diet     Raw diet field.
+	 * @param string $servings Servings count.
+	 */
+	private static function meal_diet_chip( $diet, $servings ) {
+		$parts = array_filter( array_map( 'trim', explode( ',', strtolower( (string) $diet ) ) ) );
+		if ( in_array( 'vegan', $parts, true ) ) {
+			return 'Vegan';
+		}
+		if ( in_array( 'vegetarian', $parts, true ) ) {
+			return 'Vegetarian';
+		}
+		return '' !== trim( (string) $servings ) ? (string) $servings . ' servings' : '';
+	}
+
 	private static function diet_of( $member_id ) {
 		global $wpdb;
 		$diet = $wpdb->get_var( $wpdb->prepare( 'SELECT diet_type FROM ' . LLD_Members_Schema::table( 'health_profile' ) . ' WHERE member_id = %d', $member_id ) );
@@ -2444,9 +2498,54 @@ class LLD_Members_Premium {
 	}
 
 	/**
-	 * @param string $key Measure key.
+	 * @param int $member_id Member number.
 	 */
-	private static function month_field( $key ) {
+	private static function member_uses_imperial( $member_id ) {
+		global $wpdb;
+		return 'imperial' === (string) $wpdb->get_var( $wpdb->prepare( 'SELECT units FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+	}
+
+	/**
+	 * Weight and waist labels follow the one units setting. Other labels stay as they are.
+	 *
+	 * @param string $key   Measure key.
+	 * @param string $label Metric label.
+	 * @param bool   $imp   Imperial units.
+	 */
+	private static function measure_label( $key, $label, $imp ) {
+		if ( ! $imp ) {
+			return $label;
+		}
+		if ( 'weight' === $key ) {
+			return 'Weight in pounds';
+		}
+		if ( 'waist' === $key ) {
+			return 'Waist in inches';
+		}
+		return $label;
+	}
+
+	/**
+	 * A posted weight or waist, converted to the stored metric unit when the member uses imperial.
+	 *
+	 * @param string $name      Field name.
+	 * @param int    $member_id Member number.
+	 * @param float  $factor    Multiply an imperial entry by this to store metric.
+	 * @return float|null
+	 */
+	private static function posted_measure( $name, $member_id, $factor ) {
+		$value = self::posted_decimal( $name );
+		if ( null === $value || ! self::member_uses_imperial( $member_id ) ) {
+			return $value;
+		}
+		return round( $value * $factor, 1 );
+	}
+
+	/**
+	 * @param string $key Measure key.
+	 * @param bool   $imp Imperial units.
+	 */
+	private static function month_field( $key, $imp = false ) {
 		$map = array(
 			'weight'   => array( 'lld_weight', 'Weight in kilograms' ),
 			'waist'    => array( 'lld_waist', 'Waist in centimetres' ),
@@ -2461,7 +2560,8 @@ class LLD_Members_Premium {
 		if ( ! isset( $map[ $key ] ) ) {
 			return '';
 		}
-		return '<p><label for="' . esc_attr( $map[ $key ][0] ) . '">' . esc_html( $map[ $key ][1] ) . '</label><input id="' . esc_attr( $map[ $key ][0] ) . '" name="' . esc_attr( $map[ $key ][0] ) . '" inputmode="decimal"></p>';
+		$label = self::measure_label( $key, $map[ $key ][1], $imp );
+		return '<p><label for="' . esc_attr( $map[ $key ][0] ) . '">' . esc_html( $label ) . '</label><input id="' . esc_attr( $map[ $key ][0] ) . '" name="' . esc_attr( $map[ $key ][0] ) . '" inputmode="decimal"></p>';
 	}
 
 	/**
@@ -2687,15 +2787,48 @@ class LLD_Members_Premium {
 		if ( ! $writable ) {
 			return $html;
 		}
-		$html .= '<form method="post" class="lld-form">';
+		$html .= '<form method="post" class="lld-form" data-lld-day-form>';
 		$html .= wp_nonce_field( 'lld_diary', 'lld_diary_nonce', true, false );
 		$html .= '<input type="hidden" name="lld_day_save" value="1">';
+		// Each field is sent visible with its tap control hidden; stage3-forms.js swaps them, so the form still
+		// saves with scripts off and the posted names and limits are unchanged (P3-36 D3).
 		$html .= '<p><label for="lld_water">Glasses of water</label><input id="lld_water" name="lld_water" type="number" min="0" max="40" step="1" inputmode="numeric" value="' . esc_attr( $water ) . '"></p>';
-		$html .= '<p><label for="lld_hunger">Hunger from 1 to 5</label><input id="lld_hunger" name="lld_hunger" type="number" min="1" max="5" step="1" inputmode="numeric" value="' . esc_attr( $hunger ) . '"></p>';
-		$html .= '<p><label for="lld_energy">Energy from 1 to 5</label><input id="lld_energy" name="lld_energy" type="number" min="1" max="5" step="1" inputmode="numeric" value="' . esc_attr( $energy ) . '"></p>';
+		$html .= '<div class="lld-control" hidden><span class="lld-control-label" id="lld_water_caption">Glasses of water</span>';
+		$html .= '<div class="lld-stepper" data-lld-stepper="lld_water" role="group" aria-labelledby="lld_water_caption"><button type="button" data-lld-step="-1" aria-label="Remove a glass of water">&minus;</button>';
+		$html .= '<output data-lld-stepper-value aria-live="polite">' . esc_html( '' === $water ? '0' : $water ) . '</output>';
+		$html .= '<button type="button" data-lld-step="1" aria-label="Add a glass of water">+</button></div></div>';
+		foreach ( array(
+			'hunger' => array( 'Hunger', $hunger ),
+			'energy' => array( 'Energy', $energy ),
+		) as $key => $tap ) {
+			$id    = 'lld_' . $key;
+			$html .= '<p><label for="' . $id . '">' . $tap[0] . ' from 1 to 5</label><input id="' . $id . '" name="' . $id . '" type="number" min="1" max="5" step="1" inputmode="numeric" value="' . esc_attr( $tap[1] ) . '"></p>';
+			$html .= '<div class="lld-control" hidden><span class="lld-control-label" id="' . $id . '_caption">' . $tap[0] . ' from 1 to 5</span>';
+			$html .= '<div class="lld-tap-row" data-lld-taps="' . $id . '" role="group" aria-labelledby="' . $id . '_caption">';
+			for ( $n = 1; $n <= 5; $n++ ) {
+				$on    = (string) $n === (string) $tap[1];
+				$html .= '<button type="button" data-lld-tap="' . $n . '"' . ( $on ? ' class="is-active"' : '' ) . ' aria-pressed="' . ( $on ? 'true' : 'false' ) . '" aria-label="' . esc_attr( $tap[0] . ' ' . $n . ' of 5' ) . '">' . $n . '</button>';
+			}
+			$html .= '</div></div>';
+		}
 		$html .= lld_button( array( 'label' => 'Save today' ) );
 		$html .= '</form>';
+		$html .= self::forms_assets();
 		return $html;
+	}
+
+	/**
+	 * Shared Stage 3 form stylesheet and script (P3-36 D3).
+	 */
+	private static function forms_assets() {
+		if ( ! function_exists( 'plugins_url' ) || ! defined( 'LLD_MEMBERS_FILE' ) ) {
+			return '';
+		}
+		$ver = defined( 'LLD_MEMBERS_VERSION' ) ? LLD_MEMBERS_VERSION : '1';
+		$css = plugins_url( 'assets/stage3-forms.css', LLD_MEMBERS_FILE );
+		$js  = plugins_url( 'assets/stage3-forms.js', LLD_MEMBERS_FILE );
+		return '<link rel="stylesheet" href="' . esc_url( $css ) . '?ver=' . esc_attr( $ver ) . '">'
+			. '<script src="' . esc_url( $js ) . '?ver=' . esc_attr( $ver ) . '"></script>';
 	}
 
 	/**

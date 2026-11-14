@@ -45,7 +45,8 @@ export const PACKAGE_TOOLS = {
   // The calculator engines: P3-55 was built by the lead; P3-56 and P3-5B are delegated to Cursor in full (owner, 3 Nov 2026);
   // P3-57 to P3-5A were taken over by the lead (owner, 3 Nov 2026) before Cursor started them.
   55: ['cursor', 'claude'], 56: ['cursor'], 57: ['cursor', 'claude'], 58: ['cursor', 'claude'], 59: ['cursor', 'claude'], '5A': ['cursor', 'claude'], '5B': ['cursor'],
-  80: ['codex'], 81: ['codex'], 82: ['codex'], 83: ['antigravity'], 85: ['cursor'], 86: ['cursor'],
+  // P3-83: Antigravity checks the pages; the lead fixes what it reports in the lead's files (5 Nov 2026).
+  80: ['codex'], 81: ['codex'], 82: ['codex'], 83: ['antigravity', 'claude'], 85: ['cursor'], 86: ['cursor'],
 };
 
 // Stage 2 files any tool may touch additively; a change labels the PR for the lead's review (NFR3-05 AS-02).
@@ -60,7 +61,21 @@ export const LEAD_STAGE2 = [`${PLUGIN}/includes/class-billing.php`, `${PLUGIN}/i
 // Owner decisions that open a named Stage 2 file to one lead package (as Stage 2's LEAD_EXTRA); the change labels the PR
 // for review. P3-03: Owner_Questions 93 = B (3 Nov 2026), the Sleep and Stress screening in class-personal.php uses the
 // approved wording file (screening-sleep-and-stress.md), as the Stage 3 engine does.
-export const DECISION_STAGE2 = { '03': [`${PLUGIN}/includes/class-personal.php`] };
+// P3-90: owner, 5 Nov 2026 ("Yes, open it"): the meal-plan code in class-premium.php reads recipe ingredients saved as
+// rows, found broken in the owner's test checkout (warnings and "Array" on /members/meals/).
+// P3-36 (member area build list): the owner approved the four-tool combined plan on 14 Nov 2026 (P3-36_Combined_Plan.md):
+// the Stage 2 settings, library, programme, diary and meal-plan, health profile, sign-in and More files the plan names.
+// Package 36 is the lead's, so every S3-P36 pull request is listed for the lead's review before it merges.
+export const DECISION_STAGE2 = {
+  '03': [`${PLUGIN}/includes/class-personal.php`],
+  90: [`${PLUGIN}/includes/class-premium.php`],
+  36: ['class-account.php', 'class-content.php', 'class-programme.php', 'class-premium.php', 'class-personal.php', 'class-auth.php', 'class-growth.php'].map((f) => `${PLUGIN}/includes/${f}`),
+};
+// New plugin files one package may add outside includes/stage3/ (P3-36: each tool's own stylesheet or script, so no two
+// tools edit stage3.css or stage3.js at once). Exact paths, as for every other plugin file outside includes/stage3/.
+export const PACKAGE_FILES = {
+  36: ['stage3-account.css', 'stage3-forms.css', 'stage3-forms.js', 'stage3-logging.js'].map((f) => `${PLUGIN}/assets/${f}`),
+};
 const STAGE2_TESTS = ['tests/stage2/**'];
 // The Stage 1 and 2 calculators and their approvals. Stage 3 sign-offs live in approvals/stage3/ (Build Method §7.4).
 const PROTECTED = ['site/public_html/tools/**', 'approvals/*', 'manifests/**', 'copy/**'];
@@ -87,7 +102,8 @@ export function stage3Scope({ title, files, decisions = loadDecisions() }) {
   if (!c) return { ok: false, problems: [`title "${title}" is not S3-Pnn: <name> (Build Method Stage 3 §2)`], review: [] };
   const problems = [];
   const review = [];
-  const allowed = toolsFor(c.ids).flatMap((t) => TOOL_FILES[t]);
+  const lead = toolsFor(c.ids).every((t) => t === 'claude');
+  const allowed = toolsFor(c.ids).flatMap((t) => TOOL_FILES[t]).concat(lead ? c.ids.flatMap((id) => PACKAGE_FILES[id] || []) : []);
   for (const f of files) {
     if (matches(f, PROTECTED)) { problems.push(`${f} is a Stage 1 calculator, approval, manifest or copy file: owner decision needed`); continue; }
     if (DECLARED_STAGE2.includes(f)) { review.push(f); continue; }
@@ -182,10 +198,10 @@ function walk(dir, out = []) {
 /** Stage 3 test ids used under tests/stage3 that are not checks in docs/stage3/03 (Build Method §3 rule 3). */
 export function unknownTestIds({ root = ROOT } = {}) {
   const doc = readFileSync(resolve(root, 'docs', 'stage3', '03_Test_Criteria_Stage3.md'), 'utf8');
-  const known = new Set(doc.match(/TC-(?:FR3|NFR3)-\d{2}-AS-\d{2}/g) || []);
+  const known = new Set(doc.match(/TC-(?:FR3|NFR3)-\d{2,3}-AS-\d{2}/g) || []); // FR3-100 and above are valid (P3-35, P3-36)
   const problems = [];
   for (const file of walk(resolve(root, 'tests', 'stage3'))) {
-    const ids = readFileSync(file, 'utf8').match(/TC-(?:FR3|NFR3)-\d{2}-AS-\d{2}/g) || [];
+    const ids = readFileSync(file, 'utf8').match(/TC-(?:FR3|NFR3)-\d{2,3}-AS-\d{2}/g) || [];
     for (const id of new Set(ids)) if (!known.has(id)) problems.push(`${relative(root, file).replace(/\\/g, '/')}: ${id} is not a check in docs/stage3/03`);
   }
   return { ok: problems.length === 0, problems, known: known.size };

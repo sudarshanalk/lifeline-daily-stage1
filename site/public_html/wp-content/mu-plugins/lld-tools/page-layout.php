@@ -681,6 +681,7 @@ add_filter('the_content', function ($content) {
 
 add_action('template_redirect', function () {
   if (is_admin() || wp_doing_ajax() || is_feed() || (defined('REST_REQUEST') && REST_REQUEST)) return;
+  if (function_exists('lld_page_v2_view') && lld_page_v2_view() !== '') return;   // the v2 page template draws these pages itself
   if ((function_exists('is_singular') && is_singular('post')) ||
       (function_exists('is_page') && is_page()) ||
       (function_exists('is_search') && is_search()) ||
