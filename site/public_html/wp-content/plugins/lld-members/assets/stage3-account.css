@@ -280,3 +280,55 @@ body.mode-night .lld-v2-menu-signout { color: #f2a196; }
   accent-color: var(--lld-green, #1d4e48);
   flex: 0 0 auto;
 }
+
+/* ---- Phones: Account tabs and Admin sections on one row that scrolls sideways (P3-36 C5) ------------------------- */
+/* The Account tabs wrapped into two rows and the Admin sections showed 3 of 11 pills with nothing saying there were
+   more. On phones both are one row that scrolls sideways inside itself (the page never scrolls sideways), with a fade
+   at the right edge to show there is more. Layout from the member UI foundations sheet (pill row, 44 px targets). */
+@media (max-width: 760px) {
+  .lld-account-nav .lld-account-tabs,
+  .lld-adm-body .lld-adm-tabs {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+
+  .lld-account-nav .lld-account-tabs::-webkit-scrollbar,
+  .lld-adm-body .lld-adm-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lld-account-nav .lld-account-tabs {
+    flex-wrap: nowrap;
+    max-width: 100%;
+    padding-right: 32px;
+  }
+
+  .lld-account-nav .lld-account-tabs > li {
+    flex: 0 0 auto;
+  }
+
+  .lld-account-nav .lld-account-tab {
+    white-space: nowrap;
+  }
+
+  .lld-adm-body .lld-adm-tabs ul {
+    padding-right: 32px;
+  }
+
+  /* A scrolling row clips anything outside it, so the focus ring sits inside each tab, with room above and below. */
+  .lld-account-nav .lld-account-tabs,
+  .lld-adm-body .lld-adm-tabs ul {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .lld-account-nav .lld-account-tab:focus-visible,
+  .lld-adm-body .lld-adm-tabs a:focus-visible {
+    outline: 3px solid var(--lld-green, #1d4e48);
+    outline-offset: -3px;
+  }
+}
