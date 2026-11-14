@@ -42,6 +42,9 @@ async function save(page) {
   return { response, body: await response.json() };
 }
 const history = (page) => page.getByRole('table').first();
+const chartName = (type) => type === 'activity' ? 'Weekly activity' : `${type === 'glucose' ? 'Blood sugar' : TYPES[type].label} trend`;
+const chart = (page, type) => page.getByRole('img', { name: chartName(type), exact: true });
+const chartData = (page, type) => page.getByRole('table', { name: `${chartName(type)} data`, exact: true });
 async function units(page, imperial) {
   await page.goto('/members/settings/?section=profile');
   await page.getByRole('checkbox', { name: /Show imperial units/i }).setChecked(imperial);
@@ -68,7 +71,9 @@ for (const [id, type] of [['TC-FR3-38-AS-01', 'blood_pressure'], ['TC-FR3-40-AS-
       await expect(page.locator('main')).toContainText(/30.*150|150.*30/);
     }
     // Every chart has an accessible equivalent containing the logged value.
-    await expect(page.getByRole('table').last()).toContainText(TYPES[type].value);
+    await expect(chart(page, type)).toBeVisible();
+    await expect(chartData(page, type)).toContainText(TYPES[type].value);
+    if (type === 'mood') await expect(page.locator('main .lld-safety')).toHaveCount(0);
   });
 }
 for (const [id, type, v1, v2] of [['TC-FR3-38-AS-02', 'blood_pressure', 128, 130],
@@ -78,7 +83,7 @@ for (const [id, type, v1, v2] of [['TC-FR3-38-AS-02', 'blood_pressure', 128, 130
   ['TC-FR3-45-AS-02', 'glucose', 5.6, 5.8]]) {
   test(id, async ({ page }) => {
     await fresh(page);
-    const entry = await reading(page, type, v1, type === 'blood_pressure' ? { value_2: 82, value_3: 70 } : {});
+    const entry = await reading(page, type, v1, type === 'blood_pressure' ? { value_2: 82, value_3: 70 } : type === 'sleep' ? { taken_at: `${DAY} 07:00:00`, value_2: 1380 } : {});
     await open(page, type);
     const row = history(page).getByRole('row').filter({ hasText: String(v1) });
     await row.getByRole('button', { name: 'Edit', exact: true }).click();
@@ -90,12 +95,14 @@ for (const [id, type, v1, v2] of [['TC-FR3-38-AS-02', 'blood_pressure', 128, 130
     const patched = await acted(page, `readings/${entry.id}`, () => page.getByRole('button', { name: /Save reading|Save changes/, exact: true }).click(), 'PATCH');
     expect(patched.ok(), await patched.text()).toBeTruthy();
     await expect(history(page)).toContainText(String(v2));
+    await expect(chartData(page, type)).toContainText(String(v2));
     const saved = rows(await api(page, 'readings')).find(r => String(r.id) === String(entry.id));
     expect(Number(saved.value_1)).toBeCloseTo(v2, 1);
     page.once('dialog', dialog => dialog.accept());
     const removed = await acted(page, `readings/${entry.id}`, () => history(page).getByRole('row').filter({ hasText: String(v2) }).getByRole('button', { name: 'Delete', exact: true }).click(), 'DELETE');
     expect(removed.ok()).toBeTruthy(); expect(rows(await api(page, 'readings'))).toEqual([]);
     await expect(history(page).getByRole('row').filter({ hasText: String(v2) })).toHaveCount(0);
+    await expect(chartData(page, type).getByRole('row').filter({ hasText: String(v2) })).toHaveCount(0);
   });
 }
 for (const id of ['TC-FR3-38-AS-03', 'TC-FR3-39-AS-03']) test(id, async ({ page }) => {
@@ -108,6 +115,8 @@ for (const id of ['TC-FR3-38-AS-03', 'TC-FR3-39-AS-03']) test(id, async ({ page 
   await page.getByRole('button', { name: /Apply|Show history|Filter/, exact: true }).click();
   await expect(history(page)).toContainText(type === 'weight' ? '81' : '130');
   await expect(history(page)).not.toContainText(type === 'weight' ? '80' : '128');
+  await expect(chartData(page, type)).toContainText(type === 'weight' ? '81' : '130');
+  await expect(chartData(page, type)).not.toContainText(type === 'weight' ? '80' : '128');
 });
 test('TC-FR3-38-AS-04', async ({ page }) => {
   await fresh(page); await open(page); await fill(page, 'blood_pressure', { 'Systolic (mmHg)': 400, 'Diastolic (mmHg)': 20 });
@@ -128,9 +137,10 @@ test('TC-FR3-40-AS-03', async ({ page }) => {
 });
 test('TC-FR3-41-AS-03', async ({ page }) => {
   await fresh(page); await reading(page, 'activity', 30); await open(page, 'activity');
-  await expect(page.locator('main')).toContainText('150');
-  await expect(page.getByRole('table').last()).toContainText('30');
-  await expect(page.locator('svg, canvas, [role="img"]').first()).toBeVisible();
+  await expect(chart(page, 'activity')).toBeVisible();
+  const figure = chart(page, 'activity').locator('xpath=ancestor::figure');
+  await expect(figure).toContainText('150');
+  await expect(chartData(page, 'activity')).toContainText('30');
 });
 test('TC-FR3-42-AS-02', async ({ page }) => {
   await fresh(page); await open(page, 'sleep'); await fill(page, 'sleep');
@@ -164,11 +174,58 @@ for (const [id, type, values] of [['TC-FR3-45-AS-03', 'glucose', { value_1: 3.0 
     const alert = page.locator('main [role="alert"]').filter({ hasText: signed.message.split('\n')[0] });
     await expect(alert).toBeVisible();
     // Inner text must preserve every signed sentence; no heading or shortened prototype version is accepted.
-    expect((await alert.evaluate(el => { const copy = el.cloneNode(true); copy.querySelectorAll('a').forEach(a => a.remove()); return copy.textContent; })).replace(/\s+/g, ' ').trim()).toBe(signed.message.replace(/\s+/g, ' ').trim());
+    const expected = signed.message.replace('[When to seek urgent care]', 'When to seek urgent care');
+    expect((await alert.innerText()).replace(/\s+/g, ' ').trim()).toBe(expected.replace(/\s+/g, ' ').trim());
+    if (signed.message.includes('[When to seek urgent care]')) {
+      const link = alert.getByRole('link', { name: 'When to seek urgent care', exact: true });
+      await expect(link).toBeVisible(); await expect(link).toHaveAttribute('href', /^(?:https?:|\/)/);
+    }
   }
 });
 test('TC-FR3-46-AS-02', async ({ page }) => {
   await fresh(page); await open(page); await fill(page, 'blood_pressure');
   const { body } = await save(page); expect(body.warning.level).toBe('none');
   await expect(page.locator('main .lld-safety')).toHaveCount(0);
+});
+test('TC-FR3-69-AS-05', async ({ page }) => {
+  const member = await fresh(page, { profile: false });
+  const nonce = await page.locator('meta[name="lld-rest-nonce"]').getAttribute('content');
+  await page.goto('/members/readings/');
+  await expect(page.locator('main')).toContainText(/conditions/i);
+  const link = page.locator('main').getByRole('link', { name: /health profile|conditions|health questions/i });
+  await expect(link).toHaveAttribute('href', /\/members\/health\//);
+  const refused = await page.request.post('/wp-json/lld-members/v1/me/readings', {
+    headers: { 'X-WP-Nonce': nonce }, data: { reading_type: 'weight', value_1: 80, taken_at: AT, source: 'manual' },
+  });
+  expect(refused.status()).toBe(403); const refusal = await refused.json();
+  expect(refusal.message).toMatch(/conditions/i); expect(refusal.link).toContain('/members/health/');
+  await page.goto('/members/health/');
+  const answered = await page.request.post(`/wp-json/lld-members/v1/members/${member.member_id}/health`, {
+    headers: { 'X-WP-Nonce': await page.locator('meta[name="lld-rest-nonce"]').getAttribute('content') },
+    data: { kind: 'profile', conditions_answered: 'none', confirmed: true, sex: 'female', height_cm: 175, weight_kg: 90, activity_level: 'some' },
+  });
+  expect(answered.ok()).toBeTruthy(); expect(rows(await api(page, 'readings'))).toEqual([]);
+});
+test('TC-FR3-08-AS-02', async ({ page }) => {
+  await fresh(page); await open(page);
+  const empty = page.getByText(/No readings logged yet/i);
+  await expect(empty).toBeVisible();
+  const guide = page.getByRole('link', { name: /measur.*blood pressure|blood pressure.*guide/i });
+  await expect(guide).toBeVisible(); await expect(guide).not.toHaveAttribute('href', /^#/);
+  await expect(page.getByRole('button', { name: /first reading|record.*reading|log a reading/i })).toBeVisible();
+});
+test('TC-FR3-63-AS-02', async ({ page }) => {
+  await fresh(page, { access_state: 'Free' });
+  await reading(page, 'weight', 77, { taken_at: '2026-10-01 09:00:00' });
+  await reading(page, 'weight', 80);
+  await open(page, 'weight');
+  await expect(history(page)).toContainText('80'); await expect(history(page)).not.toContainText(/\b77\b/);
+  await expect(page.locator('main')).toContainText(/14 days/);
+  await expect(page.getByRole('link', { name: /upgrade|premium/i }).first()).toHaveAttribute('href', /\/pricing\//);
+});
+test('TC-FR3-41-AS-01', async ({ page }) => {
+  await fresh(page); await open(page, 'activity'); await fill(page, 'activity');
+  await page.getByLabel('Or steps', { exact: true }).fill('6000');
+  const { response, body } = await save(page); expect(response.ok()).toBeTruthy();
+  expect(Number(body.value_1)).toBe(30); expect(Number(body.value_2)).toBe(6000);
 });
