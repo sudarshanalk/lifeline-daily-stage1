@@ -284,8 +284,11 @@ class LLD_Members_Personal {
 		if ( ! $saved && self::returning_to_goal( $member_id ) && class_exists( 'LLD_Members_Goal_Journey' ) && 'missing' === LLD_Members_Stage3_Safety::conditions_state_of( $profile ) ) {
 			$main .= lld_info( LLD_Members_Goal_Journey::note_texts()['general_wellbeing_path'] );
 		}
-		$main .= $hub_units ? self::measure_tiles( $profile ) : self::stored_lines( $profile );
-		$main .= self::calculator_lines( $member_id );
+		// P3-36 (safety matrix, eating disorder: "no BMI shown on the dashboard"): BMI and waist-to-height are left
+		// out for a member the matrix hides them from, as tiles and as Stage 2 lines alike.
+		$no_figures = self::body_figures_hidden( $member_id );
+		$main .= $hub_units ? self::measure_tiles( $profile, $no_figures ) : self::stored_lines( $profile, $no_figures );
+		$main .= self::calculator_lines( $member_id, $no_figures );
 		$main .= '<form method="post" class="lld-form">';
 		$main .= wp_nonce_field( 'lld_health', 'lld_health_nonce', true, false );
 		if ( $warnings ) {
@@ -400,9 +403,10 @@ class LLD_Members_Personal {
 	/**
 	 * The latest saved result from each calculator, as the calculator showed it (C4).
 	 *
-	 * @param int $member_id Member number.
+	 * @param int  $member_id  Member number.
+	 * @param bool $no_figures Leave out a saved Healthy Weight Check result, whose headline is a BMI (safety matrix).
 	 */
-	private static function calculator_lines( $member_id ) {
+	private static function calculator_lines( $member_id, $no_figures = false ) {
 		global $wpdb;
 		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT calculator, headline, unit, band FROM ' . LLD_Members_Schema::table( 'calculator_result' ) . ' WHERE member_id = %d ORDER BY id DESC', $member_id ) );
 		if ( ! $rows ) {
@@ -413,10 +417,11 @@ class LLD_Members_Personal {
 			'diabetes' => 'Diabetes Risk Check',
 		);
 		$seen  = array();
-		$html  = '<h2>Calculator results</h2>';
+		$html  = '';
 		foreach ( $rows as $result ) {
 			$which = (string) $result->calculator;
-			if ( isset( $seen[ $which ] ) ) {
+			// A saved Healthy Weight Check result's headline is a BMI: left out with the figures (safety matrix).
+			if ( isset( $seen[ $which ] ) || ( $no_figures && 'healthy-weight' === $which ) ) {
 				continue;
 			}
 			$seen[ $which ] = true;
@@ -424,7 +429,7 @@ class LLD_Members_Personal {
 			$name           = isset( $names[ $which ] ) ? $names[ $which ] : ucfirst( $which );
 			$html          .= '<p data-lld-calculator="' . esc_attr( $which ) . '">' . esc_html( $name . ': ' . (string) $result->headline . $unit . ', ' . (string) $result->band ) . '</p>';
 		}
-		return $html;
+		return '' === $html ? '' : '<h2>Calculator results</h2>' . $html;
 	}
 
 	/**
@@ -1287,9 +1292,25 @@ class LLD_Members_Personal {
 	}
 
 	/**
-	 * @param object|null $profile Profile row.
+	 * P3-36: whether the Stage 3 safety matrix hides BMI from this member (eating-disorder row, health_logging:
+	 * dashboard_bmi). Waist-to-height goes with it: it is the same kind of body-size figure. With the matrix off for
+	 * the member, nothing changes and Stage 2 stands.
+	 *
+	 * @param int $member_id Member number.
 	 */
-	private static function stored_lines( $profile ) {
+	public static function body_figures_hidden( $member_id ) {
+		if ( ! class_exists( 'LLD_Members_Stage3_Safety' ) ) {
+			return false;
+		}
+		$a = LLD_Members_Stage3_Safety::applies( (int) $member_id, 'health_logging' );
+		return ! empty( $a['active'] ) && in_array( 'dashboard_bmi', $a['hidden'], true );
+	}
+
+	/**
+	 * @param object|null $profile Profile row.
+	 * @param bool        $no_figures Leave out BMI and waist-to-height (safety matrix).
+	 */
+	private static function stored_lines( $profile, $no_figures = false ) {
 		if ( ! $profile || null === $profile->height_cm || '' === (string) $profile->height_cm ) {
 			return '';
 		}
@@ -1297,13 +1318,13 @@ class LLD_Members_Personal {
 		if ( null !== $profile->weight_kg && '' !== (string) $profile->weight_kg ) {
 			$html .= '<p>Stored weight: ' . esc_html( self::one_decimal( $profile->weight_kg ) ) . ' kg</p>';
 			$metres = (float) $profile->height_cm / 100;
-			if ( $metres > 0 ) {
+			if ( $metres > 0 && ! $no_figures ) {
 				$html .= '<p>BMI: ' . esc_html( self::one_decimal( (float) $profile->weight_kg / ( $metres * $metres ) ) ) . '</p>';
 			}
 		}
 		if ( null !== $profile->waist_cm && '' !== (string) $profile->waist_cm ) {
 			$html .= '<p>Stored waist: ' . esc_html( self::one_decimal( $profile->waist_cm ) ) . ' cm</p>';
-			if ( (float) $profile->height_cm > 0 ) {
+			if ( (float) $profile->height_cm > 0 && ! $no_figures ) {
 				$html .= '<p>Waist-to-height: ' . esc_html( number_format( (float) $profile->waist_cm / (float) $profile->height_cm, 2, '.', '' ) ) . '</p>';
 			}
 		}
@@ -1390,9 +1411,10 @@ class LLD_Members_Personal {
 	 * BMI and waist-to-height tiles when height is present (FR2-25 AS-04 / FR2-09 AS-03).
 	 *
 	 * @param object|null $profile Profile row.
+	 * @param bool        $no_figures Leave out both tiles (safety matrix).
 	 */
-	private static function measure_tiles( $profile ) {
-		if ( ! $profile || null === $profile->height_cm || '' === (string) $profile->height_cm ) {
+	private static function measure_tiles( $profile, $no_figures = false ) {
+		if ( $no_figures || ! $profile || null === $profile->height_cm || '' === (string) $profile->height_cm ) {
 			return '';
 		}
 		$html = '<div class="lld-measure-tiles">';

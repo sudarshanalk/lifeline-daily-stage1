@@ -36,8 +36,8 @@ function lld_info($t) { return '<div class="info">' . esc_html($t) . '</div>'; }
 function lld_button($a) { return isset($a['href']) ? '<a class="lld-button" href="' . esc_url($a['href']) . '">' . esc_html($a['label']) . '</a>' : '<button>' . esc_html($a['label'] ?? 'Continue') . '</button>'; }
 function lld_members_layout($a) { $GLOBALS['page'] = $a; }
 class LLD_Members_Schema { static function table($s) { return 'wp_lld_' . $s; } }
-class LLD_Members_Features { public static $on = [7 => true, 8 => false]; static function enabled($f, $m = 0) { return !empty(self::$on[$m]); } static function state($f) { return 'test_accounts'; } }
-class LLD_Members_Safety { static function situations($m) { return ['unknown']; } }
+class LLD_Members_Features { public static $on = [7 => true, 8 => false]; public static $off = []; static function enabled($f, $m = 0) { return !empty(self::$on[$m]) && !in_array($f, self::$off, true); } static function state($f) { return 'test_accounts'; } }
+class LLD_Members_Safety { public static $s = ['unknown']; static function situations($m) { return self::$s; } }
 class LLD_Members_Access { public static $me = 7; static function preview_state() { return ''; } static function current_member_id() { return self::$me; } }
 class LLD_Members_Account {
   public static $saved = [];
@@ -53,7 +53,7 @@ class FakeDb {
     $this->profile[$m] = $row;
   }
   function get_row($p) { [$q, $m] = $p; if (strpos($q, 'health_profile') !== false) { return $this->profile[$m] ?? null; } return strpos($q, 'wp_lld_member ') !== false || strpos($q, 'wp_lld_member WHERE') !== false ? (object) ['units' => $GLOBALS['units'] ?? 'metric'] : null; }
-  function get_results() { return []; } function get_var() { return null; } function update() { return 1; }
+  function get_results() { return $GLOBALS['calc'] ?? []; } function get_var() { return null; } function update() { return 1; }
 }
 $GLOBALS['wpdb'] = new FakeDb();
 require ${toPhpPath(inc('stage3/engine/class-rule-catalogue.php'))};
@@ -385,4 +385,57 @@ test('TC-FR2-25-AS-01 (sex pills)', () => {
   const pills = [...r.html.matchAll(/<button type="button" data-lld-pill="([^"]+)"( class="is-active")? aria-pressed="(true|false)">([^<]+)<\/button>/g)].map((m) => [m[1], m[3], m[4]]);
   expect(pills).toEqual([['female', 'false', 'Female'], ['male', 'true', 'Male'], ['prefer-not-to-say', 'false', 'Prefer not to say']]);
   expect(r.html).not.toContain('lld-visually-hidden');
+});
+
+// P3-36 (inbox 12:35, wording log row 19): the signed matrix shows no BMI to a member with an eating-disorder flag
+// (health_logging: dashboard_bmi). The Health profile leaves out BMI and waist-to-height for them, as tiles (hub on)
+// and as Stage 2 lines (hub off, matrix live); every other member, and Stage 2 with the matrix off, still sees both.
+test('P3-36 safety matrix: BMI and waist-to-height are not shown on the Health profile to an eating-disorder member', () => {
+  const r = run(`
+    $out = [];
+    $profile = ['height_cm' => 170, 'weight_kg' => 70, 'waist_cm' => 85, 'conditions_answered' => 'some', 'conditions' => '["eating-disorder"]'];
+    $GLOBALS['wpdb']->store(7, $profile);
+    LLD_Members_Safety::$s = ['eating-disorder'];
+    // A Healthy Weight Check result saved earlier: its headline is a BMI. Another calculator's result stays.
+    $GLOBALS['calc'] = [(object) ['calculator' => 'healthy-weight', 'headline' => '24.2', 'unit' => 'kg/m²', 'band' => 'Healthy weight'], (object) ['calculator' => 'protein', 'headline' => '56', 'unit' => 'g a day', 'band' => 'result']];
+    $out['ed_hub'] = health_get();
+    $out['ed_hidden'] = LLD_Members_Personal::body_figures_hidden(7);
+    // Hub off but the matrix live (health_logging on): the Stage 2 lines leave the figures out too.
+    LLD_Members_Features::$off = ['account_hub'];
+    $out['ed_lines'] = health_get();
+    LLD_Members_Features::$off = [];
+    // Every switch off for the member (Stage 2): the matrix is off and Stage 2's lines stand unchanged.
+    LLD_Members_Features::$on[7] = false;
+    $out['ed_matrix_off'] = health_get();
+    LLD_Members_Features::$on = [7 => true, 8 => false];
+    // Another condition: both figures stay.
+    $GLOBALS['wpdb']->store(7, ['conditions' => '["high-cholesterol"]']);
+    LLD_Members_Safety::$s = ['cholesterol'];
+    $out['other'] = health_get();
+    // Only the Healthy Weight Check result was saved: no "Calculator results" heading over nothing.
+    LLD_Members_Safety::$s = ['eating-disorder'];
+    $GLOBALS['calc'] = [$GLOBALS['calc'][0]];
+    $out['ed_only_hw'] = health_get();
+    LLD_Members_Safety::$s = ['unknown'];
+    return $out;
+  `);
+  expect(r.ed_hidden).toBe(true);
+  expect(r.ed_lines).toContain('<p>Stored height: 170.0 cm</p><p>Stored weight: 70.0 kg</p><p>Stored waist: 85.0 cm</p>');
+  for (const html of [r.ed_hub, r.ed_lines]) {
+    expect(html).not.toContain('lld-measure-tile');
+    expect(html).not.toContain('BMI');
+    expect(html).not.toContain('Waist-to-height');
+  }
+  expect(r.ed_matrix_off).toContain('<p>BMI: 24.2</p>');
+  expect(r.ed_matrix_off).toContain('<p>Waist-to-height: 0.50</p>');
+  expect(r.ed_hub).toContain('<h2>Calculator results</h2><p data-lld-calculator="protein">');
+  expect(r.ed_hub).not.toContain('data-lld-calculator="healthy-weight"');
+  expect(r.ed_only_hw).not.toContain('Calculator results');
+  expect(r.ed_matrix_off).toContain('data-lld-calculator="healthy-weight"');
+  expect(r.other).toContain('data-lld-calculator="healthy-weight"');
+  expect(r.other).toContain('<div class="lld-measure-tile"><span>BMI</span><strong>24.2</strong></div>');
+  expect(r.other).toContain('<div class="lld-measure-tile"><span>Waist-to-height</span><strong>0.50</strong></div>');
+  // The rule comes from the signed matrix row, not a copy.
+  const rows = run("return LLD_Members_Stage3_Safety::rows()['eating_disorder']['health_logging'];");
+  expect(rows.hidden).toContain('dashboard_bmi');
 });
