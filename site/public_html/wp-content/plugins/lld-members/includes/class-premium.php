@@ -604,16 +604,17 @@ class LLD_Members_Premium {
 			return '';
 		}
 		$chosen = self::month_measures( $member_id, (string) $finished->track_key );
+		$imp    = self::member_uses_imperial( $member_id );
 		$html   = '<h2>Monthly check-in</h2><p>Measures from ' . esc_html( (string) $finished->track_key ) . '.</p>';
 		$html  .= '<form method="post" class="lld-form">';
 		$html  .= wp_nonce_field( 'lld_month', 'lld_month_nonce', true, false );
 		$html  .= '<fieldset><legend>Measures</legend>';
 		foreach ( self::measure_choices() as $key => $label ) {
-			$html .= '<label class="lld-check"><input type="checkbox" name="lld_month_measure[]" value="' . esc_attr( $key ) . '"' . ( in_array( $key, $chosen, true ) ? ' checked' : '' ) . '> ' . esc_html( $label ) . '</label>';
+			$html .= '<label class="lld-check"><input type="checkbox" name="lld_month_measure[]" value="' . esc_attr( $key ) . '"' . ( in_array( $key, $chosen, true ) ? ' checked' : '' ) . '> ' . esc_html( self::measure_label( $key, $label, $imp ) ) . '</label>';
 		}
 		$html .= '</fieldset>';
 		foreach ( array_keys( self::measure_choices() ) as $key ) {
-			$html .= self::month_field( $key );
+			$html .= self::month_field( $key, $imp );
 		}
 		$html .= lld_button( array( 'label' => 'Save monthly check-in' ) );
 		$html .= '</form>';
@@ -644,8 +645,8 @@ class LLD_Members_Premium {
 			'month_key'         => substr( $today, 0, 7 ),
 			'local_date'        => $today,
 			'measures'          => implode( ',', $chosen ),
-			'weight_kg'         => self::posted_decimal( 'lld_weight' ),
-			'waist_cm'          => self::posted_decimal( 'lld_waist' ),
+			'weight_kg'         => self::posted_measure( 'lld_weight', $member_id, 0.45359237 ),
+			'waist_cm'          => self::posted_measure( 'lld_waist', $member_id, 2.54 ),
 			'activity_minutes'  => self::posted_int( 'lld_activity' ),
 			'chair_stands'      => self::posted_int( 'lld_chair' ),
 			'push_ups'          => self::posted_int( 'lld_push' ),
@@ -2473,9 +2474,54 @@ class LLD_Members_Premium {
 	}
 
 	/**
-	 * @param string $key Measure key.
+	 * @param int $member_id Member number.
 	 */
-	private static function month_field( $key ) {
+	private static function member_uses_imperial( $member_id ) {
+		global $wpdb;
+		return 'imperial' === (string) $wpdb->get_var( $wpdb->prepare( 'SELECT units FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
+	}
+
+	/**
+	 * Weight and waist labels follow the one units setting. Other labels stay as they are.
+	 *
+	 * @param string $key   Measure key.
+	 * @param string $label Metric label.
+	 * @param bool   $imp   Imperial units.
+	 */
+	private static function measure_label( $key, $label, $imp ) {
+		if ( ! $imp ) {
+			return $label;
+		}
+		if ( 'weight' === $key ) {
+			return 'Weight in pounds';
+		}
+		if ( 'waist' === $key ) {
+			return 'Waist in inches';
+		}
+		return $label;
+	}
+
+	/**
+	 * A posted weight or waist, converted to the stored metric unit when the member uses imperial.
+	 *
+	 * @param string $name      Field name.
+	 * @param int    $member_id Member number.
+	 * @param float  $factor    Multiply an imperial entry by this to store metric.
+	 * @return float|null
+	 */
+	private static function posted_measure( $name, $member_id, $factor ) {
+		$value = self::posted_decimal( $name );
+		if ( null === $value || ! self::member_uses_imperial( $member_id ) ) {
+			return $value;
+		}
+		return round( $value * $factor, 1 );
+	}
+
+	/**
+	 * @param string $key Measure key.
+	 * @param bool   $imp Imperial units.
+	 */
+	private static function month_field( $key, $imp = false ) {
 		$map = array(
 			'weight'   => array( 'lld_weight', 'Weight in kilograms' ),
 			'waist'    => array( 'lld_waist', 'Waist in centimetres' ),
@@ -2490,7 +2536,8 @@ class LLD_Members_Premium {
 		if ( ! isset( $map[ $key ] ) ) {
 			return '';
 		}
-		return '<p><label for="' . esc_attr( $map[ $key ][0] ) . '">' . esc_html( $map[ $key ][1] ) . '</label><input id="' . esc_attr( $map[ $key ][0] ) . '" name="' . esc_attr( $map[ $key ][0] ) . '" inputmode="decimal"></p>';
+		$label = self::measure_label( $key, $map[ $key ][1], $imp );
+		return '<p><label for="' . esc_attr( $map[ $key ][0] ) . '">' . esc_html( $label ) . '</label><input id="' . esc_attr( $map[ $key ][0] ) . '" name="' . esc_attr( $map[ $key ][0] ) . '" inputmode="decimal"></p>';
 	}
 
 	/**
