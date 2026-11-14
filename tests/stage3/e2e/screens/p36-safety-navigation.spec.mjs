@@ -1,0 +1,237 @@
+// P3-36 X-2: expected A7/C1 behaviour. No pending markers: builders run these contracts before landing.
+import { test, expect } from '@playwright/test';
+import { createMember, signIn, password, fixture, startTrack } from '../../key-journeys/helpers.mjs';
+import { mailCode, restNonce, submitAndWait, leanAdmin } from '../../../stage2/e2e/helpers.mjs';
+
+// Listed Stage 3 test account; workers are serial and reset it before each independent case.
+const EMAIL = 'p3-api-a@test.lifelinedaily.invalid';
+async function member(page, fields = {}) {
+  const reset = await page.request.post('/wp-json/lld-members/v1/test/reset', { data: { email: EMAIL } });
+  expect(reset.ok(), await reset.text()).toBeTruthy();
+  const created = await createMember(page.request, {
+    email: EMAIL, password, first_name: 'Alex', consents: ['terms'], health_consent: false, ...fields,
+  });
+  await loginMember(page, fields.role === 'owner_admin');
+  return created;
+}
+
+async function loginMember(page, owner = false) {
+  if (owner) await leanAdmin(page);
+  await signIn(page, EMAIL, password);
+  if (owner) {
+    await page.locator('#lld_code').fill(await mailCode(EMAIL));
+    await submitAndWait(page, page.getByRole('button', { name: 'Continue', exact: true }));
+    await expect(page.locator('#lld_code')).toHaveCount(0);
+  }
+}
+
+async function openMenu(page) {
+  const chip = page.locator('.lld-chip:visible');
+  await expect(chip).toHaveCount(1);
+  await chip.click();
+  const menu = page.locator('#lld-desktop-user-menu');
+  await expect(menu).toBeVisible();
+  await expect(menu.getByRole('menuitem')).toHaveText(['Profile', 'My subscription', 'My data', 'Help', 'Sign out']);
+  return menu;
+}
+
+async function loggedOut(page) {
+  await expect(page).toHaveURL(/\/members\/sign-in\//);
+  await page.goto('/members/settings/');
+  await expect(page).toHaveURL(/\/members\/sign-in\//);
+  await expect(page.locator('#lld_email')).toBeVisible();
+}
+
+async function readyMember(page, owner = false) {
+  const m = await member(page, { health_consent: true, consents: ['terms', 'health'],
+    access_state: 'Premium', ...(owner ? { role: 'owner_admin' } : {}) });
+  await page.goto('/members/health/');
+  const headers = { 'X-WP-Nonce': await restNonce(page) };
+  const profile = await page.request.post(`/wp-json/lld-members/v1/members/${m.member_id}/health`, {
+    headers, data: { kind: 'profile', sex: 'female', height_cm: 175, weight_kg: 90,
+      activity_level: 'some', conditions_answered: 'none', confirmed: true },
+  });
+  expect(profile.ok(), await profile.text()).toBeTruthy();
+  const goal = await page.request.post('/wp-json/lld-members/v1/me/goals', { headers,
+    data: { role: 'main', goal_type: 'activity', measure: 'activity_minutes', unit: 'minutes',
+      start_value: 0, target_value: 150, status: 'active' } });
+  expect(goal.ok(), await goal.text()).toBeTruthy();
+  return m;
+}
+
+test('TC-FR3-07-AS-04', async ({ page }) => {
+  test.setTimeout(900000);
+  // Resource downloads, POST-only mutations and public authentication screens have no member layout.
+  // Food/readings are covered by X-4/X-5 once those routes exist.
+  const memberPaths = ['home', 'settings', 'health', 'goal', 'progress', 'check-in', 'tracks', 'meals',
+    'diary', 'library', 'subscription', 'data', 'help', 'more', 'delete', 'withdraw',
+    'suggestions', 'screening', 'plan', 'workout', 'challenge', 'badges', 'group', 'track', 'review'];
+  const adminPaths = ['', 'members/', 'tools/', 'features/', 'activity/', 'helpers/', 'payments/',
+    'report/', 'group/', 'emails/', 'ai/'];
+  await page.setViewportSize({ width: 1280, height: 900 });
+  const made = await fixture(page.request, 'days');
+  await readyMember(page);
+  await startTrack(page, made.track);
+  for (const path of [...memberPaths.map((p) => `/members/${p}/`),
+    ...['security', 'notifications', 'privacy', 'membership'].map((p) => `/members/settings/?section=${p}`),
+    `/members/library/${made.items[0].id}/`]) {
+    await test.step(`Member ${path}`, async () => {
+      await loginMember(page);
+      const response = await page.goto(path);
+      expect(response.status()).toBe(200);
+      expect(new URL(page.url()).pathname + new URL(page.url()).search).toBe(path);
+      await expect(page.locator('main h1')).toBeVisible();
+      await (await openMenu(page)).getByRole('menuitem', { name: 'Sign out', exact: true }).click();
+      await loggedOut(page);
+    });
+  }
+  const target = await createMember(page.request, { email: 'p36-menu-target@test.lifelinedaily.invalid', password, first_name: 'Target', consents: ['terms'] });
+  await readyMember(page, true);
+  const mailPage = await page.request.post('/wp-json/lld-members/v1/test/admin', { data: { op: 'mailpage' } });
+  expect(mailPage.ok(), await mailPage.text()).toBeTruthy();
+  for (const path of [...adminPaths.map((p) => `/members/admin/${p}`),
+    `/members/admin/members/?member=${target.member_id}`]) {
+    await test.step(`Owner ${path}`, async () => {
+      await loginMember(page, true);
+      const response = await page.goto(path);
+      expect(response.status()).toBe(200);
+      expect(new URL(page.url()).pathname + new URL(page.url()).search).toBe(path);
+      await expect(page.locator('main h1')).toBeVisible();
+      const protectedHeading = await page.locator('main h1').innerText();
+      await (await openMenu(page)).getByRole('menuitem', { name: 'Sign out', exact: true }).click();
+      await loggedOut(page);
+      const denied = await page.goto(path);
+      expect(denied.status() === 404 || new URL(page.url()).pathname.includes('/members/sign-in/')).toBeTruthy();
+      await expect(page.getByRole('heading', { name: protectedHeading, exact: true })).toHaveCount(0);
+    });
+  }
+});
+
+test('TC-FR3-07-AS-05', async ({ page }) => {
+  await page.setViewportSize({ width: 360, height: 800 });
+  for (const owner of [false, true]) {
+    await readyMember(page, owner);
+    await page.goto(owner ? '/members/admin/' : '/members/settings/');
+    const header = page.locator('header').first();
+    const toggle = header.getByRole('button', { name: /menu/i }).first();
+    await expect(toggle).toBeVisible();
+    await toggle.click();
+    const out = header.getByRole('button', { name: 'Sign out', exact: true });
+    await expect(out).toBeVisible();
+    const box = await out.boundingBox();
+    expect(box.x).toBeGreaterThanOrEqual(0);
+    expect(box.x + box.width).toBeLessThanOrEqual(360);
+    await out.click();
+    await loggedOut(page);
+  }
+});
+
+test('TC-FR3-07-AS-06', async ({ page, browser }) => {
+  await member(page);
+  // Independent browser storage for a second real sign-in; no shared cookie copying.
+  const otherContext = await browser.newContext({ ...test.info().project.use });
+  try {
+    const other = await otherContext.newPage();
+    await signIn(other, EMAIL, password);
+    await other.goto('/members/settings/?section=security');
+    await expect(other.locator('.lld-account-content')).toBeVisible();
+    await page.goto('/members/settings/?section=security');
+    const security = page.locator('.lld-account-content');
+    await expect(security.getByRole('button', { name: 'Sign out everywhere', exact: true })).toBeVisible();
+    await security.getByRole('button', { name: 'Sign out of this device', exact: true }).click();
+    await loggedOut(page);
+    await other.reload();
+    await expect(other).toHaveURL(/\/members\/settings\/\?section=security/);
+    await expect(other.locator('.lld-account-content')).toBeVisible();
+  } finally {
+    await otherContext.close();
+  }
+});
+
+async function healthFields(page) {
+  await page.locator('#lld_sex').selectOption('female');
+  await page.locator('#lld_height').fill('175');
+  await page.locator('#lld_weight').fill('90');
+  await page.locator('#lld_activity').selectOption('some');
+  await page.locator('#lld_confirm').check();
+}
+
+test('TC-FR3-69-AS-06', async ({ page }) => {
+  for (const answer of ['None of these', 'Prefer not to answer']) {
+    await test.step(answer, async () => {
+      await member(page, { health_consent: true, consents: ['terms', 'health'] });
+      await page.goto('/members/health/');
+      await healthFields(page);
+      await submitAndWait(page, page.getByRole('button', { name: 'Save', exact: true }));
+      await expect(page.getByText('Saved', { exact: true })).toHaveCount(0);
+      await expect(page.locator('main')).toContainText(/conditions/i);
+      // Reload clears unsaved post values: a rejected submission must not persist the measurements.
+      await page.goto('/members/health/');
+      await expect(page.locator('main')).not.toContainText(/Stored height: 175/);
+      await healthFields(page);
+      await page.getByRole('checkbox', { name: answer, exact: true }).check();
+      await submitAndWait(page, page.getByRole('button', { name: 'Save', exact: true }));
+      await expect(page.getByText('Saved', { exact: true })).toBeVisible();
+      await page.goto('/members/health/');
+      await expect(page.getByRole('checkbox', { name: answer, exact: true })).toBeChecked();
+      await expect(page.locator('main')).toContainText('Stored height: 175');
+    });
+  }
+});
+
+test('TC-FR3-69-AS-05', async ({ page }) => {
+  await member(page, { health_consent: true, consents: ['terms', 'health'] });
+  await page.goto('/members/health/');
+  const headers = { 'X-WP-Nonce': await restNonce(page) };
+  const response = await page.request.post('/wp-json/lld-members/v1/me/readings', {
+    headers, data: { taken_at: '2026-09-28 09:00:00', reading_type: 'weight', value_1: 90, unit_shown: 'kg', source: 'manual' },
+  });
+  expect(response.status()).toBe(403);
+  const refusal = await response.json();
+  expect(JSON.stringify(refusal)).toMatch(/conditions/i);
+  expect(JSON.stringify(refusal)).toMatch(/\/members\/health\//);
+  const goalRefusal = await page.request.post('/wp-json/lld-members/v1/me/goals', { headers,
+    data: { role: 'main', goal_type: 'activity', measure: 'activity_minutes', unit: 'minutes',
+      start_value: 0, target_value: 150, status: 'active' } });
+  expect(goalRefusal.status()).toBe(403);
+  const refusedGoal = await goalRefusal.json();
+  expect(JSON.stringify(refusedGoal)).toMatch(/conditions/i);
+  expect(JSON.stringify(refusedGoal)).toMatch(/\/members\/health\//);
+  await page.goto('/members/goal/?type=lose_weight');
+  // Following the explanation must land on the actual missing question.
+  if (!new URL(page.url()).pathname.endsWith('/members/health/')) {
+    await expect(page.locator('main')).toContainText(/conditions/i);
+    await page.locator('main').getByRole('link', { name: /health|conditions|question/i }).click();
+  }
+  await expect(page).toHaveURL(/\/members\/health\//);
+  await expect(page.getByRole('group', { name: 'Conditions', exact: true })).toBeVisible();
+  // Answering exposes the lists, letting the test check no refused reading/goal was stored.
+  await healthFields(page);
+  await page.getByRole('checkbox', { name: 'None of these', exact: true }).check();
+  await submitAndWait(page, page.getByRole('button', { name: 'Save', exact: true }));
+  await page.goto('/members/health/');
+  const nonce = await restNonce(page);
+  for (const type of ['readings', 'goals']) {
+    const result = await page.request.get(`/wp-json/lld-members/v1/me/${type}`, { headers: { 'X-WP-Nonce': nonce } });
+    expect(result.ok(), await result.text()).toBeTruthy();
+    const body = await result.json();
+    expect(Array.isArray(body) ? body : body.rows || body.items).toEqual([]);
+  }
+});
+
+test('TC-FR3-09-AS-08', async ({ page }) => {
+  await member(page, { health_consent: true, consents: ['terms', 'health'] });
+  await page.goto('/members/goal/?type=lose_weight');
+  await expect(page).toHaveURL(/\/members\/health\//);
+  await expect(page.getByRole('group', { name: 'Conditions', exact: true })).toBeVisible();
+  await healthFields(page);
+  await page.getByRole('checkbox', { name: 'None of these', exact: true }).check();
+  await submitAndWait(page, page.getByRole('button', { name: 'Save', exact: true }));
+  await expect(page).toHaveURL(/\/members\/goal\//);
+  await page.goto('/members/goal/?type=lose_weight');
+  await page.locator('#lld_target').fill('84');
+  await submitAndWait(page, page.getByRole('button', { name: 'Save my goal', exact: true }));
+  await expect(page.locator('[data-lld-goal-step="plan"]')).toBeVisible();
+  await page.goto('/members/goal/');
+  await expect(page.locator('main')).toContainText('84');
+});
