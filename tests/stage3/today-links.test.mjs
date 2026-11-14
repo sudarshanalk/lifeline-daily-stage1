@@ -66,15 +66,16 @@ test('P3-36 B3: the five Today links use it, with their labels unchanged, and Mo
   const today = src('stage3/screens/class-today-screen.php');
   const food = "self::link_or( 'food', $member_id, '/members/diary/' )";
   const readings = "self::link_or( 'readings', $member_id, '/members/check-in/' )";
-  // Next step "Log a reading"; the "log a meal" line; the Quick log Meals tile; Today's totals "Food diary"; "Log one".
-  expect(today).toContain(`'log_reading' => array( ${readings}, 'Log a reading' ),`);
-  expect(today).toContain(`<a href="' . esc_url( ${food} ) . '">log a meal</a>`);
-  expect(today).toContain(`data-lld-tile="meals" href="' . esc_url( ${food} ) . '"><span class="lld-tile-label">Meals</span><span class="lld-tile-action">Log a meal</span></a>`);
-  expect(today).toContain(`<p><a href="' . esc_url( ${food} ) . '">Food diary</a></p></section>`);
-  expect(today).toContain(`<p>No readings yet. <a href="' . esc_url( ${readings} ) . '">Log one</a></p>`);
-  // The weekly check-in links, the "Log something" step and insights_html() are not touched.
-  expect(today).toContain("'log_food'    => array( home_url( '/members/diary/' ), 'Log something' ),");
-  expect(today).toContain("'check_in'    => array( home_url( '/members/check-in/' ), 'Start check-in' ),");
+  // Addresses only, so the labels on these lines can change (Cursor's wording pull request) without this test:
+  // Next step "Log a reading"; the "log a meal" sentence; the Meals tile; Today's totals "Food diary"; "Log one".
+  expect(today).toContain(`'log_reading' => array( ${readings},`);
+  expect(today.split(`esc_url( ${food} )`).length - 1).toBe(3);
+  expect(today.split(`esc_url( ${readings} )`).length - 1).toBe(1);
+  expect(today).toContain(`data-lld-tile="meals" href="' . esc_url( ${food} ) . '"`);
+  // Not moved: the "Log something" step (it stays on the diary until the labels and targets are settled), the weekly
+  // check-in links, and insights_html().
+  expect(today).toMatch(/'log_food'\s+=> array\( home_url\( '\/members\/diary\/' \),/);
+  expect(today).toMatch(/'check_in'\s+=> array\( home_url\( '\/members\/check-in\/' \),/);
   const insights = today.slice(today.indexOf('private static function insights_html('), today.indexOf('private static function reached_html('));
   expect(insights).not.toContain('link_or');
 
