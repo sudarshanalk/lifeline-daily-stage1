@@ -21,10 +21,15 @@
   line-height: 44px;
 }
 
-summary {
+/* Stage 3 disclosures: 44 px tall, browser's open/close arrow kept (display: list-item). */
+.lld-calc-guide > summary,
+.lld-calc-used > summary,
+details[data-lld-chart-table] > summary {
+  display: list-item;
   min-height: 44px;
-  display: flex;
-  align-items: center;
+  padding: 10px 0;
+  box-sizing: border-box;
+  line-height: 24px;
   cursor: pointer;
 }
 

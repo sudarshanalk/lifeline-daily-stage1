@@ -1,7 +1,6 @@
 // phone-a11y (P3-83 · NFR3-12, NFR3-13): Phone layout and accessibility of every Stage 3 page.
 // Checks 360px viewport sideways scrolling, >= 44x44px tap targets (with inline link exemption),
 // 4-tap blood pressure logging, axe-core WCAG 2.2 AA zero critical/serious violations, and "Show as table" chart parity.
-import { readFileSync } from 'node:fs';
 import { test, expect } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { createMember, signIn, password, startTrack } from '../../key-journeys/helpers.mjs';
@@ -104,17 +103,20 @@ async function checkCalc(page) {
 
 const heartData = { age: 55, sex: 'male', country: 'United Kingdom', smoke: 'yes', sbp: 150, diabetes: 'no', tc: '6.2', heightCm: 178, weightKg: 88, cvd: 'no', preg: 'no', eat: 'no' };
 
-/** Check that at 360x800 the page does not scroll horizontally, and capture phone and desktop screenshots */
+// Screenshots for tests/stage3/look/p83/ are written only when LLD_LOOK=1 (review item 4).
+const LOOK = process.env.LLD_LOOK === '1';
+
+/** Check that at 360x800 the page does not scroll horizontally; with LLD_LOOK=1 also capture phone and desktop screenshots */
 async function captureAndCheckScroll(page, label, slug) {
   // Phone 360x800
   await page.setViewportSize({ width: 360, height: 800 });
   const scrollWidth = await page.evaluate(() => document.documentElement.scrollWidth);
   expect(scrollWidth, `${label} at 360px horizontal scroll`).toBeLessThanOrEqual(360);
-  await page.screenshot({ path: `tests/stage3/look/p83/${slug}-360.png`, fullPage: true });
+  if (LOOK) await page.screenshot({ path: `tests/stage3/look/p83/${slug}-360.png`, fullPage: true });
 
   // Desktop 1280x800
   await page.setViewportSize({ width: 1280, height: 800 });
-  await page.screenshot({ path: `tests/stage3/look/p83/${slug}-1280.png`, fullPage: true });
+  if (LOOK) await page.screenshot({ path: `tests/stage3/look/p83/${slug}-1280.png`, fullPage: true });
 
   // Reset to phone
   await page.setViewportSize({ width: 360, height: 800 });
@@ -153,8 +155,19 @@ async function checkTapTargets(page, contextSelector = null) {
         const parent = el.parentElement;
         const parentTag = parent ? parent.tagName.toLowerCase() : '';
         const isTextParent = ['p', 'li', 'span', 'blockquote', 'dd', 'figcaption', 'label'].includes(parentTag);
-        const textAround = parent ? (parent.textContent || '').replace(el.textContent || '', '').trim() : '';
-        const hasSurroundingText = textAround.length > 0;
+        // Surrounding text = text directly beside the link in the same parent: plain text nodes
+        // or inline text elements, never other links, buttons or form controls (review item 2).
+        const sideText = (node) => {
+          if (!node) return '';
+          if (node.nodeType === 3) return node.textContent || '';
+          if (node.nodeType !== 1) return '';
+          if (node.matches('a, button, input, select, textarea, [role="button"], [role="link"]')) return '';
+          if (node.querySelector('a, button, input, select, textarea, [role="button"], [role="link"]')) return '';
+          const d = window.getComputedStyle(node).display;
+          return d.includes('inline') ? (node.textContent || '') : '';
+        };
+        const textAround = (sideText(el.previousSibling) + sideText(el.nextSibling)).replace(/\s+/g, ' ').trim();
+        const hasSurroundingText = /[A-Za-z0-9]/.test(textAround);
         const lh = parseFloat(style.lineHeight) || (parent ? parseFloat(window.getComputedStyle(parent).lineHeight) : 0);
 
         if ((isInline || isTextParent) && hasSurroundingText && lh >= 24) {
@@ -213,7 +226,7 @@ test.describe.serial('Stage 3 Phone layout and accessibility (P3-83)', () => {
     await chip.click();
     const menu = page.locator('#lld-desktop-user-menu');
     await expect(menu).toBeVisible();
-    await page.screenshot({ path: 'tests/stage3/look/p83/account-desktop-menu-1280.png' });
+    if (LOOK) await page.screenshot({ path: 'tests/stage3/look/p83/account-desktop-menu-1280.png' });
 
     // Keyboard navigation on menu chip
     await page.keyboard.press('Escape');
@@ -611,21 +624,13 @@ test.describe.serial('Stage 3 Phone layout and accessibility (P3-83)', () => {
   // HEALTH TOOLS HUB, SIGN-IN, SUBSCRIPTION, COOKIE BANNER, OFFLINE
   // -------------------------------------------------------------
   test('TC-NFR3-12-AS-01 and TC-NFR3-13-AS-01 Health Tools hub at 360 px and 1280 px: layout and accessibility', async ({ page }) => {
-    await page.context().clearCookies();
-    const origin = new URL(page.url() || 'http://127.0.0.1:8090').origin;
-
-    // In throwaway CI (stage2-wp.sh), the Stage 1 mu-plugin lld-tools and /health-tools/ page
-    // are not present in the clean WordPress core database. Check if 404 and fulfill with fixture.
-    const probe = await page.request.get('/health-tools/');
-    if (probe.status() === 404) {
-      await page.route('**/health-tools/', async (route) => {
-        const fixturePath = new URL('./hub-page-fixture.html', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
-        const fixtureHtml = readFileSync(fixturePath, 'utf8').replaceAll('http://localhost:8090', origin);
-        await route.fulfill({ status: 200, contentType: 'text/html; charset=UTF-8', body: fixtureHtml });
-      });
-    }
-
+    // Real hub page (Stage 1 mu-plugin and [lld_tools_hub], served by the Stage 3 CI job since #220).
+    // Signed in as a test account: guests don't see the Stage 3 cards while calculators_new is at test_accounts in CI.
+    await signIn(page, MEMBER_PREMIUM, password);
     await page.goto('/health-tools/');
+    for (const tool of ['heart-risk-check', 'blood-pressure-check', 'metabolic-health-check', 'fitness-age', 'heart-rate-zones', 'sleep-and-stress-check']) {
+      await expect(page.locator(`.lld-tools-hub [data-tool="${tool}"]`), `hub card ${tool}`).toHaveCount(1);
+    }
     await captureAndCheckScroll(page, 'Health Tools hub', 'health-tools-hub');
 
     const { issues } = await checkTapTargets(page, '.lld-tools-hub');
@@ -640,10 +645,7 @@ test.describe.serial('Stage 3 Phone layout and accessibility (P3-83)', () => {
     await page.goto('/members/sign-in/?code=1');
     await captureAndCheckScroll(page, 'Sign in with code option', 'signin-code');
     const { issues: signinIssues } = await checkTapTargets(page);
-    // Note: .lld-skip (40px) and footer links from class-sign-in.php / lld-members.css are lead-owned files
-    const leadOwned = ['lld-skip', 'Sign in with your password instead', 'Join free'];
-    const filteredSignin = signinIssues.filter((i) => !leadOwned.includes(i.className) && !leadOwned.includes(i.text));
-    expect(filteredSignin, 'unexpected signin tap target issues').toEqual([]);
+    expect(signinIssues, 'signin tap target issues').toEqual([]);
     await scanA11y(page, 'signin screen');
 
     // 2. Code entry & wrong code
@@ -659,8 +661,7 @@ test.describe.serial('Stage 3 Phone layout and accessibility (P3-83)', () => {
     await captureAndCheckScroll(page, 'Wrong code alert', 'signin-wrong-code');
 
     const { issues: codeIssues } = await checkTapTargets(page);
-    const filteredCode = codeIssues.filter((i) => i.className !== 'lld-skip');
-    expect(filteredCode, 'unexpected code entry tap target issues').toEqual([]);
+    expect(codeIssues, 'code entry tap target issues').toEqual([]);
     await scanA11y(page, 'code entry screen');
   });
 
@@ -689,9 +690,7 @@ test.describe.serial('Stage 3 Phone layout and accessibility (P3-83)', () => {
       await expect(banner).toBeVisible();
       await captureAndCheckScroll(page, 'Cookie banner open', 'cookie-banner');
       const { issues: bannerIssues } = await checkTapTargets(page);
-      const leadOwnedBanner = ['lld-skip', 'Privacy policy'];
-      const filteredBanner = bannerIssues.filter((i) => !leadOwnedBanner.includes(i.className) && !leadOwnedBanner.includes(i.text));
-      expect(filteredBanner, 'cookie banner tap target issues').toEqual([]);
+      expect(bannerIssues, 'cookie banner tap target issues').toEqual([]);
       await scanA11y(page, 'cookie banner');
     } finally {
       await request.post('/wp-json/lld-members/v1/test/analytics', { data: { id: '' } });
