@@ -319,11 +319,11 @@ class LLD_Members_Readings_Screen {
 		$html      .= '</div>';
 		$html      .= '<div class="lld-row-2">';
 		$html      .= '<div class="lld-field"><label for="lld-act-min">Minutes</label><input id="lld-act-min" type="number" inputmode="numeric" step="1" class="lld-input" placeholder="30" data-lld-act-min></div>';
-		$html      .= '<div class="lld-field"><label for="lld-act-effort">Effort (optional)</label><select id="lld-act-effort" class="lld-input" data-lld-act-effort><option value="">Not rated</option><option value="1">Easy: you can sing</option><option value="2">Moderate: you can talk but not sing</option><option value="3">Hard: only a few words at a time</option></select></div>';
+		$html      .= '<div class="lld-field"><label for="lld-act-effort">Effort</label><select id="lld-act-effort" class="lld-input" data-lld-act-effort><option value="">Not rated</option><option value="1">Easy: you can sing</option><option value="2">Moderate: you can talk but not sing</option><option value="3">Hard: only a few words at a time</option></select></div>';
 		$html      .= '</div>';
 		$html      .= '<div class="lld-row-2">';
 		$html      .= '<div class="lld-field"><label for="lld-act-steps">Or steps</label><input id="lld-act-steps" type="number" inputmode="numeric" step="1" class="lld-input" placeholder="6000" data-lld-act-steps></div>';
-		$html      .= '<div class="lld-field"><label for="lld-act-detail">Activity type (optional)</label><input id="lld-act-detail" type="text" maxlength="200" class="lld-input" placeholder="Brisk walk" data-lld-act-detail></div>';
+		$html      .= '<div class="lld-field"><label for="lld-act-detail">Activity type</label><input id="lld-act-detail" type="text" maxlength="200" class="lld-input" placeholder="Brisk walk" data-lld-act-detail></div>';
 		$html      .= '</div></div>';
 
 		// 5. Sleep
@@ -335,7 +335,7 @@ class LLD_Members_Readings_Screen {
 		$html        .= '</div>';
 		$html        .= '<div class="lld-row-2">';
 		$html        .= '<div class="lld-field"><label for="lld-sleep-hours">Hours slept (optional)</label><input id="lld-sleep-hours" type="number" inputmode="decimal" step="0.1" class="lld-input" placeholder="8" data-lld-sleep-hours data-lld-auto="1" aria-describedby="lld-sleep-hint"></div>';
-		$html        .= '<div class="lld-field"><label for="lld-sleep-rested">How rested (1 to 5, optional)</label><select id="lld-sleep-rested" class="lld-input" data-lld-sleep-rested><option value="">Not rated</option><option value="1">1 &mdash; Very tired</option><option value="2">2 &mdash; Tired</option><option value="3">3 &mdash; OK</option><option value="4">4 &mdash; Rested</option><option value="5">5 &mdash; Very rested</option></select></div>';
+		$html        .= '<div class="lld-field"><label for="lld-sleep-rested">How rested (1 to 5)</label><select id="lld-sleep-rested" class="lld-input" data-lld-sleep-rested><option value="">Not rated</option><option value="1">1 &mdash; Very tired</option><option value="2">2 &mdash; Tired</option><option value="3">3 &mdash; OK</option><option value="4">4 &mdash; Rested</option><option value="5">5 &mdash; Very rested</option></select></div>';
 		$html        .= '</div>';
 		$html        .= '<p class="lld-hint" id="lld-sleep-hint">Calculated from bedtime and wake time, or enter hours slept directly.</p>';
 		$html        .= '</div>';
