@@ -233,6 +233,9 @@ class LLD_Members_Personal {
 			$fields = self::profile_from_post();
 			if ( ! empty( $fields['reject'] ) ) {
 				$error = (string) $fields['reject'];
+			} elseif ( self::conditions_needed( $member_id, $profile, $fields ) ) {
+				// P3-36 A7 (FR3-69 AS-06): with the Stage 3 matrix live, health details wait for the Conditions answer.
+				$error = LLD_Members_Stage3_Safety::CONDITIONS_WORDING['conditions.required'];
 			} else {
 				$warnings = empty( $_POST['lld_hide_ok'] ) ? self::hiding_warnings( $profile, $fields ) : array();
 				if ( ! $warnings ) {
@@ -253,6 +256,11 @@ class LLD_Members_Personal {
 						}
 						$profile = self::profile_row( $member_id );
 						$row     = self::member_row( $member_id );
+						// P3-36 A7 (FR3-09 AS-08): sent here from goal setting, an answered profile goes back to the goal.
+						if ( self::returning_to_goal( $member_id ) && 'answered' === LLD_Members_Stage3_Safety::conditions_state_of( $profile ) ) {
+							wp_safe_redirect( home_url( '/members/goal/' ) );
+							exit;
+						}
 					}
 				}
 			}
@@ -260,6 +268,9 @@ class LLD_Members_Personal {
 		$keep     = $posted && ! $saved;
 		$imperial = $posted ? ! empty( $_POST['lld_imperial'] ) : ( $row && 'imperial' === $row->units );
 		$main     = '<h1>Health profile</h1>' . self::fail( $error ) . ( $saved ? lld_state_saved() : '' );
+		if ( ! $saved && self::returning_to_goal( $member_id ) && class_exists( 'LLD_Members_Goal_Journey' ) ) {
+			$main .= lld_info( LLD_Members_Goal_Journey::note_texts()['general_wellbeing_path'] );
+		}
 		$main    .= self::stored_lines( $profile );
 		$main    .= self::calculator_lines( $member_id );
 		$main    .= '<form method="post" class="lld-form">';
@@ -284,7 +295,7 @@ class LLD_Members_Personal {
 		$main .= self::choice_field( 'lld_activity', 'Activity level', self::activity_choices(), $posted ? self::posted_text( 'lld_activity' ) : ( $profile ? (string) $profile->activity_level : '' ) );
 		$main .= self::choice_field( 'lld_diet', 'Diet type', self::diet_choices(), $posted ? self::posted_text( 'lld_diet' ) : ( $profile ? (string) $profile->diet_type : '' ) );
 		$main .= self::choice_field( 'lld_ethnicity', 'Ethnicity', self::ethnicity_choices(), $posted ? self::posted_text( 'lld_ethnicity' ) : ( $profile ? (string) $profile->ethnicity : '' ) );
-		$main .= '<fieldset><legend>Conditions</legend>';
+		$main .= '<fieldset id="lld-conditions"><legend>Conditions</legend>';
 		$selected = self::selected_conditions( $profile, $keep );
 		$main    .= '<label class="lld-check"><input type="checkbox" name="lld_condition[]" value="none"' . ( in_array( 'none', $selected, true ) ? ' checked' : '' ) . '> None of these</label>';
 		$main    .= '<label class="lld-check"><input type="checkbox" name="lld_condition[]" value="prefer-not"' . ( in_array( 'prefer-not', $selected, true ) ? ' checked' : '' ) . '> Prefer not to answer</label>';
@@ -1175,8 +1186,10 @@ class LLD_Members_Personal {
 		} elseif ( in_array( 'prefer-not', $chosen, true ) && count( $chosen ) > 1 ) {
 			$fields['reject'] = 'Prefer not to answer cannot be combined with a condition.';
 		} elseif ( in_array( 'prefer-not', $chosen, true ) ) {
+			// Still not_answered, so both matrices treat the conditions as unknown; the list keeps the answer itself
+			// so the form shows it again and it counts as answered (P3-36 A7, FR3-69 AS-06).
 			$fields['conditions_answered'] = 'not_answered';
-			$fields['conditions']          = '';
+			$fields['conditions']          = wp_json_encode( array( 'prefer-not' ) );
 		} elseif ( in_array( 'none', $chosen, true ) ) {
 			$fields['conditions_answered'] = 'none';
 			$fields['conditions']          = '';
@@ -1185,6 +1198,39 @@ class LLD_Members_Personal {
 			$fields['conditions']          = wp_json_encode( $chosen );
 		}
 		return $fields;
+	}
+
+	/**
+	 * True when this save holds health details but the Conditions question is unanswered, both in the post and in
+	 * the stored profile, for a member the Stage 3 safety matrix is live for (P3-36 A7, FR3-69 AS-06). "None of
+	 * these" and "Prefer not to answer" both count. Stage 2 members keep Stage 2's behaviour (FR2-25 AS-01, AS-03).
+	 *
+	 * @param int                 $member_id Member number.
+	 * @param object|null         $profile   Stored profile row.
+	 * @param array<string,mixed> $fields    profile_from_post().
+	 */
+	private static function conditions_needed( $member_id, $profile, array $fields ) {
+		if ( ! class_exists( 'LLD_Members_Stage3_Safety' ) || ! method_exists( 'LLD_Members_Stage3_Safety', 'conditions_state_of' ) || ! LLD_Members_Stage3_Safety::active( $member_id, 'health_logging' ) ) {
+			return false;
+		}
+		if ( isset( $fields['conditions_answered'] ) || 'missing' !== LLD_Members_Stage3_Safety::conditions_state_of( $profile ) ) {
+			return false;
+		}
+		foreach ( array( 'sex', 'height_cm', 'weight_kg', 'waist_cm', 'activity_level', 'diet_type', 'ethnicity' ) as $key ) {
+			if ( isset( $fields[ $key ] ) && '' !== (string) $fields[ $key ] ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * Whether the member came here from goal setting (?return=goal) and goal setting is on for them.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function returning_to_goal( $member_id ) {
+		return isset( $_GET['return'] ) && 'goal' === $_GET['return'] && class_exists( 'LLD_Members_Features' ) && LLD_Members_Features::enabled( 'goals', $member_id ) && method_exists( 'LLD_Members_Stage3_Safety', 'conditions_state_of' );
 	}
 
 	/**
