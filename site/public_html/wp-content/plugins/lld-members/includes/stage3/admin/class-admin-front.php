@@ -310,7 +310,7 @@ class LLD_Members_Admin_Front {
 		$html  = '<div class="lld-adm" data-lld-admin>';
 		$html .= '<aside class="lld-adm-side" aria-label="Admin"><div class="lld-adm-who"><span class="lld-adm-avatar" aria-hidden="true">' . esc_html( strtoupper( substr( $name, 0, 1 ) ) ) . '</span><span><strong>' . esc_html( $name ) . '</strong><span class="lld-adm-role">' . ( $owner ? 'Owner' : 'Support helper' ) . '</span></span></div>';
 		$html .= '<nav aria-label="Admin pages">' . $nav . '</nav>' . $wp . '</aside>';
-		$html .= '<div class="lld-adm-body"><nav class="lld-adm-tabs" aria-label="Admin pages (phone)"><ul>' . $tabs . ( $owner ? '<li><a href="' . esc_url( admin_url( 'admin.php?page=lld-approvals' ) ) . '">WordPress</a></li>' : '' ) . '</ul></nav>';
+		$html .= '<div class="lld-adm-body"><nav class="lld-adm-tabs" aria-label="Admin sections"><ul>' . $tabs . ( $owner ? '<li><a href="' . esc_url( admin_url( 'admin.php?page=lld-approvals' ) ) . '">WordPress</a></li>' : '' ) . '</ul></nav>';
 		$html .= self::notice() . $main . '</div></div>';
 		return $html;
 	}

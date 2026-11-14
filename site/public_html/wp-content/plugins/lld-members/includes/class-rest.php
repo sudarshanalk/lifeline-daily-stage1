@@ -677,7 +677,9 @@ class LLD_Members_Rest {
 		$params = $request->get_json_params();
 		$email  = isset( $params['email'] ) ? sanitize_email( (string) $params['email'] ) : '';
 		global $wpdb;
-		$wpdb->delete( LLD_Members_Schema::table( 'sign_in_lock' ), array( 'email' => $email ), array( '%s' ) );
+		foreach ( LLD_Members_Auth::lock_keys( $email ) as $lock_key ) { // the email and its hash (P3-36 F1)
+			$wpdb->delete( LLD_Members_Schema::table( 'sign_in_lock' ), array( 'email' => $lock_key ), array( '%s' ) );
+		}
 		$ids   = array();
 		$by_email = get_user_by( 'email', $email );
 		if ( $by_email ) {
