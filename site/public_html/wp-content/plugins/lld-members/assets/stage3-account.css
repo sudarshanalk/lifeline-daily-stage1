@@ -346,13 +346,15 @@ body.mode-night .lld-v2-menu-signout { color: #f2a196; }
   @media (max-width: 760px) {
     body.lld-members-v2-app .lld-account-nav .lld-account-tab { flex: 0 0 auto !important; }
     body.lld-members-v2-app .lld-account-nav .lld-account-tab:focus-visible { outline-offset: -3px !important; }
+  }
+}
 
 /* D6 ------------------------------------------------------------------------------------------------------------- */
 /* P3-36 D6 (UI audit 3.3): the header's topic icons (lld_members_topic_icon()) on the More cards, Today's Quick log
    tiles and the track weeks. lld-v2.css sizes .lld-topic-icon everywhere but colours its tones only inside the
    header menu, so the same tone colours are set here for member pages, Day and Night. Decoration only (aria-hidden). */
 @layer components {
-  body.lld-members-v2-app .lld-member-icon { width: 2.25rem !important; height: 2.25rem !important; flex: none !important; margin: 0 !important; }
+  body.lld-members-v2-app .lld-member-icon { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 2.25rem !important; height: 2.25rem !important; border-radius: 9999px !important; flex: none !important; margin: 0 !important; }
   body.lld-members-v2-app .lld-member-icon svg { width: 20px !important; height: 20px !important; }
   body.lld-members-v2-app .lld-member-icon.tone-amber { color: #a35a12 !important; background: #fdf0e1 !important; }
   body.lld-members-v2-app .lld-member-icon.tone-rose { color: #a3253f !important; background: #fce8ec !important; }
@@ -379,8 +381,9 @@ body.mode-night .lld-v2-menu-signout { color: #f2a196; }
   /* Quick log tiles: the icon above the tile's label. */
   body.lld-members-v2-app .lld-tile .lld-member-icon { margin-bottom: 6px !important; }
 
-  /* Track weeks: the icon before the week's title. */
-  body.lld-members-v2-app .lld-week h3 { display: flex !important; align-items: center !important; gap: 10px !important; }
+  /* Track weeks: a smaller icon in line before the week's title, so the title keeps its full width and wraps normally. */
+  body.lld-members-v2-app .lld-week h3 .lld-member-icon { width: 1.75rem !important; height: 1.75rem !important; vertical-align: middle !important; margin: 0 8px 2px 0 !important; }
+  body.lld-members-v2-app .lld-week h3 .lld-member-icon svg { width: 16px !important; height: 16px !important; }
 }
 
 /* D7 ------------------------------------------------------------------------------------------------------------- */
