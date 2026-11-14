@@ -1116,7 +1116,7 @@ class LLD_Members_Billing {
 		}
 		if ( ! $sub || 'free' === strtolower( (string) $sub->access_state ) ) {
 			$main .= '<p>Your membership is Free.</p>';
-			$main .= '<p><a href="' . esc_url( home_url( '/pricing/' ) ) . '">See pricing</a></p>';
+			$main .= '<p class="lld-pill-actions"><a href="' . esc_url( home_url( '/pricing/' ) ) . '">See pricing</a></p>';
 		} else {
 			$main .= '<p>Plan: ' . esc_html( ucfirst( (string) $sub->plan ) ) . '</p>';
 			$main .= '<p>Your membership is ' . esc_html( (string) $sub->access_state ) . '.</p>';

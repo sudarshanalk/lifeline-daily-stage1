@@ -219,7 +219,7 @@ class LLD_Members_Today_Screen {
 		$html .= '<p class="lld-kicker">' . ( 'done' === $status ? 'Done today' : ( 'skipped' === $status ? 'Skipped today' : 'Next step' ) ) . '</p>';
 		if ( 'shown' === $status ) {
 			$html .= '<h2 class="lld-next-step-text">' . self::rich( $text ) . '</h2>';
-			$html .= '<p><a href="' . esc_url( $link[0] ) . '">' . esc_html( $link[1] ) . '</a></p>';
+			$html .= '<p class="lld-pill-actions"><a href="' . esc_url( $link[0] ) . '">' . esc_html( $link[1] ) . '</a></p>';
 			$html .= '<form method="post" class="lld-row">' . wp_nonce_field( 'lld_today', 'lld_today_nonce', true, false ) . '<input type="hidden" name="lld_action_type" value="' . esc_attr( $type ) . '">';
 			$html .= '<button class="lld-button" type="submit" name="lld_step" value="done">Done</button> <button class="lld-button lld-button-secondary" type="submit" name="lld_step" value="skipped">Skip</button></form>';
 		} else {
