@@ -84,7 +84,8 @@ class LLD_Members_Auth {
 		$home = home_url( '/members/home/' );
 		$to   = self::$code_redirect;
 		if ( current_user_can( 'manage_options' ) ) {
-			return '' !== $to ? (string) wp_validate_redirect( $to, admin_url() ) : admin_url();
+			$panel = current_user_can( 'lld_admin_panel' ) ? home_url( '/members/admin/' ) : admin_url(); // P3-36: the owner lands on My account → Admin
+			return '' !== $to ? (string) wp_validate_redirect( $to, $panel ) : $panel;
 		}
 		if ( '' === $to || 0 === strpos( $to, admin_url() ) || false !== strpos( $to, 'wp-login.php' ) ) {
 			return $home;
