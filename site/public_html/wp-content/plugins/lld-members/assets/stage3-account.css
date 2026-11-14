@@ -236,4 +236,17 @@ body.mode-night .lld-v2-menu-signout { color: #f2a196; }
   .lld-adm-body .lld-adm-tabs ul {
     padding-right: 32px;
   }
+
+  /* A scrolling row clips anything outside it, so the focus ring sits inside each tab, with room above and below. */
+  .lld-account-nav .lld-account-tabs,
+  .lld-adm-body .lld-adm-tabs ul {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .lld-account-nav .lld-account-tab:focus-visible,
+  .lld-adm-body .lld-adm-tabs a:focus-visible {
+    outline: 3px solid var(--lld-green, #1d4e48);
+    outline-offset: -3px;
+  }
 }

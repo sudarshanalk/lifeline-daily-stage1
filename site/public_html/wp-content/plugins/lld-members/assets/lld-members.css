@@ -470,7 +470,9 @@ input[type="file"] { font: inherit; min-height: 44px; display: block; width: 100
 /* The v2 form look (lld-tools' lld-v2.css, on sign-in, join, reset and Agreements) styles the old pill button with
    !important; these win over it by being more specific, so the eye sits inside the box there too. */
 body.lld-members-v2-form .lld-password-row.lld-password-row { position: relative !important; gap: 0 !important; align-items: center !important; }
-body.lld-members-v2-form .lld-password-row.lld-password-row input { padding-right: 52px !important; min-width: 0 !important; }
+/* lld-v2.css sets the box padding with body.lld-members-v2-form .lld-main input[type=password] (and [type=text] once shown)
+   and prints after this sheet, so this rule is one class stronger to keep the typed text clear of the eye. */
+body.lld-members-v2-form .lld-main .lld-password-row.lld-password-row input { padding-right: 52px !important; min-width: 0 !important; }
 body.lld-members-v2-form .lld-password-row .lld-eye {
   position: absolute !important;
   top: 50% !important;

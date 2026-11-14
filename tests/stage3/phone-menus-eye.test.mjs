@@ -38,6 +38,9 @@ test('TC-NFR3-12-AS-02 (C4 password eye inside the box, 44 px, name kept)', () =
   expect(rule(base, '.lld-eye:focus-visible')).toContain('outline: 3px solid');
   // The v2 sign-in look (lld-v2.css) styles the old pill with !important; the more specific rules here win on those pages.
   expect(base).toMatch(/body\.lld-members-v2-form \.lld-password-row \.lld-eye \{[^}]*position: absolute !important;[^}]*font-size: 0 !important;/);
+  // ...and the typed text stays clear of the eye there: one class stronger than lld-v2.css's
+  // body.lld-members-v2-form .lld-main input[type=password] (0,3,2), which prints after this sheet.
+  expect(base).toContain('body.lld-members-v2-form .lld-main .lld-password-row.lld-password-row input { padding-right: 52px !important;');
 });
 
 test('TC-NFR3-12-AS-01 (C5 one scrolling row for the Account tabs and Admin sections)', () => {
@@ -45,6 +48,8 @@ test('TC-NFR3-12-AS-01 (C5 one scrolling row for the Account tabs and Admin sect
   expect(phone).toMatch(/\.lld-account-nav \.lld-account-tabs,\s*\.lld-adm-body \.lld-adm-tabs \{[^}]*overflow-x: auto;[^}]*mask-image: linear-gradient\(to right, #000 calc\(100% - 32px\), transparent\);/);
   expect(phone).toMatch(/\.lld-account-nav \.lld-account-tabs \{[^}]*flex-wrap: nowrap;[^}]*max-width: 100%;/);
   expect(phone).toMatch(/\.lld-account-nav \.lld-account-tab \{[^}]*white-space: nowrap;/);
+  // Focus rings stay visible inside the scrolling rows.
+  expect(phone).toMatch(/\.lld-account-nav \.lld-account-tab:focus-visible,\s*\.lld-adm-body \.lld-adm-tabs a:focus-visible \{[^}]*outline-offset: -3px;/);
   // The phone row of Admin pages is named for what it is.
   expect(read('includes/stage3/admin/class-admin-front.php')).toContain('<nav class="lld-adm-tabs" aria-label="Admin sections">');
 });
