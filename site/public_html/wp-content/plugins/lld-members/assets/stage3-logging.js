@@ -1961,27 +1961,17 @@
 			const links = linksCfg();
 			let safe = rdEsc(rawText);
 			const safetyHref = rdEsc(links.safety || '/safety/');
-			const helpHref = rdEsc(links.helpline || 'https://findahelpline.com');
 			safe = safe.replace(
 				/\[When to seek urgent care\]/g,
 				'<a href="' + safetyHref + '">When to seek urgent care</a>'
-			);
-			safe = safe.replace(
-				/findahelpline\.com/g,
-				'<a href="' + helpHref + '" target="_blank" rel="noopener noreferrer">findahelpline.com</a>'
 			);
 			return safe;
 		}
 
 		function formatInsightText(rawText) {
-			const links = linksCfg();
-			const helpHref = rdEsc(links.helpline || 'https://findahelpline.com');
-			let safe = rdEsc(rawText);
+			// The insight card as Today prints it: the catalogue text, escaped, bold only. Nothing is added.
+			let safe = rdEsc(String(rawText == null ? '' : rawText).replace(/\s*\[[^\]]+\]/g, '').trim());
 			safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-			safe = safe.replace(
-				/findahelpline\.com/g,
-				'<a href="' + helpHref + '" target="_blank" rel="noopener noreferrer">findahelpline.com</a>'
-			);
 			return safe;
 		}
 
@@ -2004,6 +1994,7 @@
 			const html = lines.map(function (line) {
 				return '<p>' + formatSafetyText(line) + '</p>';
 			}).join(' ');
+			if (!html) return; // the server sent no wording: the page adds none of its own
 			els.urgent.innerHTML = html;
 			els.urgent.classList.add('lld-safety');
 			els.urgent.hidden = false;
@@ -2399,9 +2390,6 @@
 			const hasFilter = Boolean(state.from || state.to);
 			const allowed = Boolean(cfg.canStore && cfg.hasConsent);
 			if (els.empty) els.empty.hidden = !allowed || !isEmpty || hasFilter;
-			if (els.emptyText) {
-				els.emptyText.textContent = 'No ' + (TYPE_LABELS[state.type] || 'readings').toLowerCase() + ' entries logged yet. Choose a measurement above to record your first entry.';
-			}
 			if (els.tableBox) els.tableBox.innerHTML = '';
 			if (els.historySection) {
 				els.historySection.hidden = !allowed || (isEmpty && cfg.hasFullHistory && !hasFilter);
@@ -2586,9 +2574,10 @@
 		}
 
 		function buildPayload(isEdit, existingRow) {
-			const takenAt = isEdit && existingRow && existingRow.taken_at
+			const typedAt = els.takenAt ? String(els.takenAt.value || '').trim() : '';
+			const takenAt = isEdit && existingRow && existingRow.taken_at && !typedAt
 				? String(existingRow.taken_at)
-				: rdFormatTakenAt(els.takenAt ? els.takenAt.value : '', cfg.today);
+				: rdFormatTakenAt(typedAt, cfg.today);
 			const base = { reading_type: state.type, taken_at: takenAt, source: 'manual' };
 
 			if (state.type === 'blood_pressure') {
@@ -2694,10 +2683,15 @@
 			const res = await rdRequest(cfg, 'insights');
 			if (!res.ok || !res.data) return;
 			const rows = Array.isArray(res.data) ? res.data : (Array.isArray(res.data.rows) ? res.data.rows : (Array.isArray(res.data.insights) ? res.data.insights : []));
-			const found = rows.find(function (item) {
-				if (!item || Number(item.dismissed)) return false;
-				return Number(item.rule_id) === 5 || item.rule === 'R-SAFE-04' || item.rule_code === 'R-SAFE-04';
-			});
+			const ruleId = Number(cfg.lowMoodRuleId || 0);
+			const oldest = rdShiftDate(cfg.today, -7);
+			const found = rows.filter(function (item) {
+				if (!item || Number(item.dismissed) || !ruleId || Number(item.rule_id) !== ruleId) return false;
+				const shown = String(item.shown_at || '').slice(0, 10);
+				return !shown || !oldest || shown >= oldest;
+			}).sort(function (a, b) {
+				return String(b.shown_at || '').localeCompare(String(a.shown_at || ''));
+			})[0];
 			let parsed = null;
 			if (found && found.values) {
 				if (typeof found.values === 'string') {

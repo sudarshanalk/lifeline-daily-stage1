@@ -169,6 +169,11 @@ class LLD_Members_Readings_Screen {
 		$insights_on      = class_exists( 'LLD_Members_Features' ) && LLD_Members_Features::enabled( 'insights', $member_id );
 
 		$low_mood_html = '';
+		$low_mood_rule = 0;
+		if ( class_exists( 'LLD_Members_Rule_Catalogue' ) ) {
+			$safe_04       = LLD_Members_Rule_Catalogue::rule( 'R-SAFE-04' );
+			$low_mood_rule = is_array( $safe_04 ) && isset( $safe_04['id'] ) ? (int) $safe_04['id'] : 0;
+		}
 		if ( $consent && $insights_on && class_exists( 'LLD_Members_Stage3_Data' ) && class_exists( 'LLD_Members_Rule_Catalogue' ) ) {
 			foreach ( LLD_Members_Stage3_Data::rows( 'insights', $member_id, array( 'values' ), '', 50 ) as $ins ) {
 				$rule_name = LLD_Members_Rule_Catalogue::name_for_id( (int) ( $ins['rule_id'] ?? 0 ) );
@@ -200,6 +205,7 @@ class LLD_Members_Readings_Screen {
 			'hasTrends'       => $has_trends,
 			'hasFullHistory'  => $has_full_history,
 			'insightsEnabled' => $insights_on,
+			'lowMoodRuleId'   => $low_mood_rule,
 			'imperial'        => $imperial,
 			'links'           => array(
 				'health'     => home_url( '/members/health/' ),
@@ -209,13 +215,10 @@ class LLD_Members_Readings_Screen {
 				'safety'     => home_url( '/safety/' ),
 				'home'       => home_url( '/members/home/' ),
 				'bpCheck'    => home_url( '/health-tools/blood-pressure-check/' ),
-				'helpline'   => 'https://findahelpline.com',
 			),
 			'messages'        => array(
 				'trendsUpgrade'      => $trends_msg,
 				'historyUpgrade'     => $history_msg,
-				'conditionsMissing'  => $safety ? LLD_Members_Stage3_Safety::CONDITIONS_WORDING['conditions.missing'] : 'Answer the Conditions question in your health profile first.',
-				'conditionsRequired' => $safety ? LLD_Members_Stage3_Safety::CONDITIONS_WORDING['conditions.required'] : 'Answer the Conditions question to save these details.',
 			),
 		);
 
@@ -224,7 +227,7 @@ class LLD_Members_Readings_Screen {
 		$html .= '<header class="lld-readings-header">';
 		$html .= '<p class="lld-eyebrow">Member area</p>';
 		$html .= '<h1>Log a reading</h1>';
-		$html .= '<p class="lld-lead">Record your readings and view your recent history.</p>';
+		$html .= '<p class="lld-lead">Record your readings and view your history.</p>';
 		$html .= '</header>';
 
 		if ( ! $consent ) {
@@ -232,13 +235,17 @@ class LLD_Members_Readings_Screen {
 			$html .= function_exists( 'lld_health_consent_notice' ) ? lld_health_consent_notice() : '<div class="lld-caution" role="status"><p><strong>Health consent is needed first.</strong></p><p>Before you save health readings, please agree to storing that information in your account. <a href="' . esc_url( home_url( '/members/settings/' ) ) . '">Review health consent</a></p></div>';
 			$html .= '</div>';
 		} elseif ( ! $can_store ) {
-			$cond_copy = 'missing' === $cond_state
-				? ( $safety ? LLD_Members_Stage3_Safety::CONDITIONS_WORDING['conditions.missing'] : 'Answer the Conditions question in your health profile first.' )
-				: ( $safety ? LLD_Members_Stage3_Safety::CONDITIONS_WORDING['conditions.required'] : 'Answer the Conditions question to save these details.' );
-			$html     .= '<div class="lld-caution lld-readings-conditions-notice" role="status" data-lld-conditions-gate>';
-			$html     .= '<p>' . esc_html( $cond_copy ) . '</p>';
-			$html     .= '<p><a class="lld-pill-btn lld-btn-secondary" href="' . esc_url( $cond_link ) . '">Health profile</a></p>';
-			$html     .= '</div>';
+			// The refusal the interface gives on a save (P3-36 A7, FR3-69 AS-05): its message and its link, unchanged.
+			$refusal = array( 'error' => 'Not available.', 'status' => 403 );
+			if ( $safety && method_exists( 'LLD_Members_Stage3_Safety', 'conditions_refusal' ) ) {
+				$refusal = LLD_Members_Stage3_Safety::conditions_refusal( $member_id, $refusal );
+			}
+			$html .= '<div class="lld-caution lld-readings-conditions-notice" role="status" data-lld-conditions-gate>';
+			$html .= '<p>' . esc_html( (string) $refusal['error'] ) . '</p>';
+			if ( ! empty( $refusal['link'] ) ) {
+				$html .= '<p><a class="lld-pill-btn lld-btn-secondary" href="' . esc_url( (string) $refusal['link'] ) . '">Health profile</a></p>';
+			}
+			$html .= '</div>';
 		}
 
 		// Server-driven alerts rendered in place; focus moves here on response.
@@ -274,8 +281,8 @@ class LLD_Members_Readings_Screen {
 		$bp_hidden = 'blood_pressure' !== $initial_type ? ' hidden' : '';
 		$html     .= '<div id="lld-rpanel-blood_pressure" role="tabpanel" aria-labelledby="lld-rtab-blood_pressure" data-lld-type-panel="blood_pressure"' . $bp_hidden . '>';
 		$html     .= '<div class="lld-row-2">';
-		$html     .= '<div class="lld-field"><label for="lld-bp-sys">Systolic (mmHg)</label><input id="lld-bp-sys" type="number" inputmode="numeric" step="1" class="lld-input" placeholder="120" data-lld-bp-sys></div>';
-		$html     .= '<div class="lld-field"><label for="lld-bp-dia">Diastolic (mmHg)</label><input id="lld-bp-dia" type="number" inputmode="numeric" step="1" class="lld-input" placeholder="80" data-lld-bp-dia></div>';
+		$html     .= '<div class="lld-field"><label for="lld-bp-sys">Top number (systolic, mmHg)</label><input id="lld-bp-sys" type="number" inputmode="numeric" step="1" class="lld-input" placeholder="120" data-lld-bp-sys></div>';
+		$html     .= '<div class="lld-field"><label for="lld-bp-dia">Bottom number (diastolic, mmHg)</label><input id="lld-bp-dia" type="number" inputmode="numeric" step="1" class="lld-input" placeholder="80" data-lld-bp-dia></div>';
 		$html     .= '</div>';
 		$html     .= '<div class="lld-field"><label for="lld-bp-pulse">Pulse (bpm, optional)</label><input id="lld-bp-pulse" type="number" inputmode="numeric" step="1" class="lld-input" placeholder="72" data-lld-bp-pulse></div>';
 		$html     .= '<div class="lld-field"><label class="lld-check-label" for="lld-bp-dizzy"><input id="lld-bp-dizzy" type="checkbox" data-lld-bp-dizzy> <span>I feel dizzy or faint</span></label></div>';
@@ -312,7 +319,7 @@ class LLD_Members_Readings_Screen {
 		$html      .= '</div>';
 		$html      .= '<div class="lld-row-2">';
 		$html      .= '<div class="lld-field"><label for="lld-act-min">Minutes</label><input id="lld-act-min" type="number" inputmode="numeric" step="1" class="lld-input" placeholder="30" data-lld-act-min></div>';
-		$html      .= '<div class="lld-field"><label for="lld-act-effort">Effort (optional)</label><select id="lld-act-effort" class="lld-input" data-lld-act-effort><option value="">Not rated</option><option value="1">1 &mdash; Easy</option><option value="2">2 &mdash; Moderate</option><option value="3">3 &mdash; Hard</option></select></div>';
+		$html      .= '<div class="lld-field"><label for="lld-act-effort">Effort (optional)</label><select id="lld-act-effort" class="lld-input" data-lld-act-effort><option value="">Not rated</option><option value="1">Easy: you can sing</option><option value="2">Moderate: you can talk but not sing</option><option value="3">Hard: only a few words at a time</option></select></div>';
 		$html      .= '</div>';
 		$html      .= '<div class="lld-row-2">';
 		$html      .= '<div class="lld-field"><label for="lld-act-steps">Or steps</label><input id="lld-act-steps" type="number" inputmode="numeric" step="1" class="lld-input" placeholder="6000" data-lld-act-steps></div>';
@@ -356,7 +363,7 @@ class LLD_Members_Readings_Screen {
 			5 => 'Great',
 		);
 		$html       .= '<div id="lld-rpanel-mood" role="tabpanel" aria-labelledby="lld-rtab-mood" data-lld-type-panel="mood"' . $mood_hidden . '>';
-		$html       .= '<div class="lld-field"><span id="lld-mood-label" class="lld-label">Mood (1 to 5)</span>';
+		$html       .= '<div class="lld-field"><span id="lld-mood-label" class="lld-label">Mood</span>';
 		$html       .= '<div class="lld-mood-row" role="group" aria-labelledby="lld-mood-label">';
 		foreach ( $mood_labels as $score => $word ) {
 			$html .= '<button type="button" class="lld-mood-button" aria-pressed="false" data-lld-mood-btn="' . esc_attr( (string) $score ) . '">' . esc_html( (string) $score ) . ' <span>' . esc_html( $word ) . '</span></button>';
@@ -373,7 +380,7 @@ class LLD_Members_Readings_Screen {
 		$html      .= '<div class="lld-field"><label for="lld-glu-unit">Unit</label><select id="lld-glu-unit" class="lld-input" data-lld-glu-unit><option value="mmol/L"' . ( ! $imperial ? ' selected' : '' ) . '>mmol/L</option><option value="mg/dL"' . ( $imperial ? ' selected' : '' ) . '>mg/dL</option></select></div>';
 		$html      .= '</div>';
 		$html      .= '<div class="lld-field"><label for="lld-glu-timing">Timing</label><select id="lld-glu-timing" class="lld-input" data-lld-glu-timing><option value="before_meal">Before a meal</option><option value="after_meal">After a meal</option></select></div>';
-		$html      .= '<fieldset class="lld-field lld-symptoms-group"><legend>Symptoms</legend>';
+		$html      .= '<fieldset class="lld-field lld-symptoms-group"><legend>Do you have any of these right now?</legend>';
 		$symptoms   = array(
 			'vomiting'       => 'Vomiting',
 			'drowsiness'     => 'Drowsiness',
@@ -397,8 +404,7 @@ class LLD_Members_Readings_Screen {
 		$html .= '<div class="lld-empty-visual" aria-hidden="true">';
 		$html .= '<svg class="lld-empty-icon" viewBox="0 0 64 64" width="56" height="56" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="24"/><path d="M22 36l6-8 6 5 8-11"/><circle cx="42" cy="22" r="2.5" fill="currentColor"/></svg>';
 		$html .= '</div>';
-		$html .= '<h2>No readings logged yet</h2>';
-		$html .= '<p data-lld-empty-text>No readings logged yet. Choose a measurement above to record your first entry.</p>';
+		$html .= '<p class="lld-readings-empty-text" data-lld-empty-text>No readings yet. Choose a type above to add your first.</p>';
 		$html .= '<div class="lld-empty-actions"><button type="button" class="lld-pill-btn lld-btn-secondary" data-lld-focus-form>Record first reading</button>';
 		$html .= '<a class="lld-btn-ghost" href="' . esc_url( home_url( '/health-tools/blood-pressure-check/' ) ) . '" data-lld-empty-bp-link' . ( 'blood_pressure' !== $initial_type ? ' hidden' : '' ) . '>How to measure blood pressure</a>';
 		$html .= '</div></section>';
@@ -432,16 +438,16 @@ class LLD_Members_Readings_Screen {
 	}
 
 	/**
-	 * Format an insight line safely with helpline links and bold text.
+	 * An insight line as the Today screen prints it (escaped, bold only): the catalogue text with nothing added.
 	 *
 	 * @param string $text Raw insight text.
 	 * @return string
 	 */
 	private static function format_insight_text( $text ) {
-		$safe = esc_html( (string) $text );
-		$safe = (string) preg_replace( '/\*\*([^*]+)\*\*/', '<strong>$1</strong>', $safe );
-		$safe = str_replace( 'findahelpline.com', '<a href="https://findahelpline.com" target="_blank" rel="noopener noreferrer">findahelpline.com</a>', $safe );
-		return $safe;
+		// The same three steps as LLD_Members_Today_Screen::rich(): link tokens out, escaped, bold only. No link is added.
+		$text = preg_replace( '/\s*\[[^\]]+\]/', '', (string) $text );
+		$safe = esc_html( trim( (string) $text ) );
+		return (string) preg_replace( '/\*\*(.+?)\*\*/s', '<strong>$1</strong>', $safe );
 	}
 
 	/**
