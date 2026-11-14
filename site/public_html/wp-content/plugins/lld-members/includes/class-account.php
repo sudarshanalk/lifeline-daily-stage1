@@ -578,12 +578,17 @@ class LLD_Members_Account {
 		$main .= '<form method="post" class="lld-form">';
 		$main .= wp_nonce_field( 'lld_agree', 'lld_agree_nonce', true, false );
 		// Nothing here is pre-ticked (Screen Design principle 8); the health box is the explicit consent of GDPR Article 9.
+		// P3-36 A6: a member who already gave health or marketing consent (sent here later by the terms gate) sees that box
+		// ticked as it stands, so accepting the terms does not record the consent as withdrawn. A new member has neither,
+		// so nothing is ticked for them, as before.
+		$has_health    = self::has_consent( $member_id, 'health' ) ? ' checked' : '';
+		$has_marketing = self::has_consent( $member_id, 'marketing' ) ? ' checked' : '';
 		$main .= '<div class="lld-card"><label class="lld-check"><input type="checkbox" name="lld_terms" value="1"> <span>I accept the <a href="' . esc_url( home_url( '/terms/' ) ) . '">terms</a> and <a href="' . esc_url( home_url( '/privacy/' ) ) . '">privacy policy</a></span></label></div>';
 		$main .= '<fieldset class="lld-card"><legend>Health information</legend>';
 		$main .= '<p>This allows goals, tracks, a health profile, a food diary and check-ins. Without it you can still use the calculators, read articles and manage a membership.</p>';
-		$main .= '<label class="lld-check"><input type="checkbox" name="lld_health" value="1"> <span>Allow Lifeline Daily to store my health information</span></label></fieldset>';
+		$main .= '<label class="lld-check"><input type="checkbox" name="lld_health" value="1"' . $has_health . '> <span>Allow Lifeline Daily to store my health information</span></label></fieldset>';
 		$main .= '<fieldset class="lld-card"><legend>Marketing emails</legend>';
-		$main .= '<label class="lld-check"><input type="checkbox" name="lld_marketing" value="1"> <span>Send me marketing emails</span></label></fieldset>';
+		$main .= '<label class="lld-check"><input type="checkbox" name="lld_marketing" value="1"' . $has_marketing . '> <span>Send me marketing emails</span></label></fieldset>';
 		$main .= lld_button( array( 'label' => 'Continue' ) );
 		$main .= '</form>';
 		self::layout( 'Agreements', $main, true );

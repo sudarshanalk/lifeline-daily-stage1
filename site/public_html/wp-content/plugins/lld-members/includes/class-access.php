@@ -137,6 +137,9 @@ class LLD_Members_Access {
 	 * P3-36 A1 (TC-FR3-64-AS-04): is this member Premium, and why. The one answer the chip, Account → Membership and
 	 * My subscription all use, so they never disagree.
 	 *
+	 * For display only, never an access check: 'premium' is true for a paused member, whose Premium features are
+	 * closed. To decide access, use LLD_Members_Billing::has_premium() (or LLD_Members_Access_Tiers::allows()).
+	 *
 	 * source: 'free'; 'paid' (a Premium subscription, or cancelled within its paid period); 'paused' (paid, with a
 	 * Stage 3 pause running: still a Premium member); 'grant' (free Premium given by the Owner, with no paid
 	 * subscription behind it); 'preview' (the owner's own preview). until: the grant's end date as the Owner set it

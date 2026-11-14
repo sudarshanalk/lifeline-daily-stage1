@@ -51,9 +51,26 @@ require ${toPhpPath(inc('stage3/class-membership.php'))};
 require ${toPhpPath(inc('stage3/class-terms-gate.php'))};
 function sub($state, $plan = 'monthly', $ends = '2027-03-10') { return (object) ['plan' => $plan, 'access_state' => $state, 'period_ends_on' => $ends, 'pending_yearly_on' => null, 'locked_amount' => null, 'locked_currency' => 'usd']; }
 function grant($ends) { return (object) ['ends_at' => $ends . ' 00:00:00', 'starts_at' => '2026-11-01 00:00:00']; }
-function visit($method, $uri, $get = []) {
-  $_SERVER['REQUEST_METHOD'] = $method; $_SERVER['REQUEST_URI'] = $uri; $_GET = $get;
-  try { LLD_Members_Terms_Gate::gate(); } catch (Redirected $r) { return $r->getMessage(); }
+function sanitize_text_field($s) { return trim((string) $s); } function wp_verify_nonce($n, $a) { return 'good' === $n && 'lld_sign_out' === $a; }
+// The screen WordPress would hand the dispatchers for this address: lld_screen in the query string wins (a public
+// query var), then the plugin's rewrite rules, also under /index.php/ (path-info permalinks).
+function screen_for($uri) {
+  parse_str((string) parse_url($uri, PHP_URL_QUERY), $q);
+  if (isset($q['lld_screen'])) { return (string) $q['lld_screen']; }
+  $path = preg_replace('#^index\\.php/#', '', trim((string) parse_url($uri, PHP_URL_PATH), '/'));
+  if (preg_match('#^members/admin(?:/[a-z-]+)?$#', $path)) { return 'admin3'; }
+  if ('members/food/scan' === $path) { return 'food-scan'; }
+  if (preg_match('#^members/(read|record|photo|diary-photo)/[0-9]+$#', $path, $m)) { return $m[1]; }
+  if (preg_match('#^members/([a-z-]+)$#', $path, $m)) { return $m[1]; }
+  if (in_array($path, ['pricing', 'programmes', 'safety'], true)) { return $path; }
+  if (preg_match('#^programmes/[a-z-]+$#', $path)) { return 'sales'; }
+  if (preg_match('#^health-tools/(protein|diabetes-risk-check|healthy-weight-check)$#', $path)) { return 'landing'; }
+  if (preg_match('#^health-tools/[a-z-]+$#', $path)) { return 'calc3'; }
+  return '';
+}
+function visit($method, $uri, $get = [], $post = []) {
+  $_SERVER['REQUEST_METHOD'] = $method; $_SERVER['REQUEST_URI'] = $uri; $_GET = $get; $_POST = $post; $GLOBALS['screen'] = screen_for($uri);
+  try { LLD_Members_Terms_Gate::gate(); } catch (Redirected $r) { return $r->getMessage(); } finally { $GLOBALS['screen'] = ''; $_POST = []; }
   return 'opens';
 }
 `;
@@ -99,6 +116,10 @@ test('TC-FR3-64-AS-04', () => {
   expect(r.card).toContain('data-lld-membership="grant"');
   expect(r.card).toContain('Your membership is Premium, given free until 14 December 2026.');
   expect(r.card).not.toMatch(/Go Premium|See Premium|a month|a year|Manage my plan/);
+  // The same date the Owner chose and Admin shows for this grant ("Until 2026-12-14", "Free Premium given until
+  // 2026-12-14"): both read the grant's stored end date, so the member and the Owner never see different days.
+  expect(src('stage3/admin/class-admin-front.php')).toContain("'<p>Until ' . esc_html( substr( (string) $grant->ends_at, 0, 10 ) ) . '</p>'");
+  expect(src('class-access.php')).toContain("$until = substr( (string) $grant->ends_at, 0, 10 );");
   expect(r.no_row).toBe('grant');
   expect(r.no_end).toBe('Your membership is Premium, given free with no end date.');
   expect(r.paid_and_grant).toEqual({ premium: true, source: 'paid', until: '' });
@@ -180,16 +201,77 @@ test('TC-FR3-113-AS-02', () => {
   expect(r.track).toBe('https://stg.example.test/members/agreements/?redirect_to=%2Fmembers%2Ftrack%2F%3Fweek%3D2');
   expect(r.goal).toContain('/members/agreements/?redirect_to=');
   expect(r.settings).toContain('/members/agreements/?redirect_to=');
+
+  // The screens are dispatched on the public lld_screen query var, so the gate decides from it, not from the
+  // address: neither /?lld_screen=tracks nor /index.php/members/tracks/ reaches the screen, opening or starting.
+  const by = run(`return [
+    'query' => visit('GET', '/?lld_screen=tracks'),
+    'query_start' => visit('POST', '/?lld_screen=tracks'),
+    'query_on_public' => visit('GET', '/pricing/?lld_screen=tracks'),
+    'query_on_open' => visit('GET', '/members/help/?lld_screen=tracks'),
+    'path_info' => visit('GET', '/index.php/members/tracks/'),
+    'path_info_start' => visit('POST', '/index.php/members/tracks/'),
+    'path_info_goal' => visit('GET', '/index.php/members/goal/'),
+    // A screen added later is a member page until it is listed as public.
+    'new_screen' => visit('GET', '/?lld_screen=something-new'),
+    // The other way round: a public screen asked for on a member address is the public page the dispatcher shows.
+    'public_on_member' => visit('GET', '/members/tracks/?lld_screen=pricing'),
+    // The More list is a member page; only its sign-out form (a POST with the sign-out nonce) is open.
+    'more' => visit('GET', '/members/more/'),
+    'more_query' => visit('GET', '/?lld_screen=more'),
+    'more_post' => visit('POST', '/members/more/'),
+    'more_bad_nonce' => visit('POST', '/members/more/', [], ['lld_sign_out_nonce' => 'bad']),
+    'sign_out' => visit('POST', '/members/more/', [], ['lld_sign_out_nonce' => 'good']),
+  ];`);
+  const agreements = 'https://stg.example.test/members/agreements/';
+  // No /members/ address to return to, so the member goes on from Agreements as a new member does.
+  for (const k of ['query', 'query_start', 'query_on_public', 'path_info', 'path_info_start', 'path_info_goal', 'new_screen', 'more_query']) expect(by[k], k).toBe(agreements);
+  expect(by.query_on_open).toBe(agreements);
+  expect(by.public_on_member).toBe('opens');
+  expect(by.more).toBe(`${agreements}?redirect_to=%2Fmembers%2Fmore%2F`);
+  expect(by.more_post).toBe(by.more);
+  expect(by.more_bad_nonce).toBe(by.more);
+  expect(by.sign_out).toBe('opens');
+
+  // Every screen the plugin registers outside /members/ is listed as public, and nothing under /members/ is: a
+  // member screen can never be opened by being left off a list. The gate reads the same query var as the dispatchers.
+  const gate = src('stage3/class-terms-gate.php');
+  const list = (name) => [...gate.match(new RegExp(`const ${name}\\s*=\\s*array\\(([^)]*)\\)`))[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+  const open = list('OPEN_SCREENS');
+  const pub = list('PUBLIC_SCREENS');
+  const rules = ['class-plugin.php', 'stage3/class-goal-journey.php', 'stage3/screens/class-barcode-scan.php']
+    .flatMap((f) => [...src(f).matchAll(/add_rewrite_rule\(\s*'\^([^']+)',\s*'index\.php\?lld_screen=([a-z0-9-]+|\$matches\[1\])/g)])
+    .flatMap((m) => (m[2].startsWith('$') ? m[1].match(/\(([^)]+)\)/)[1].split('|') : [m[2]]).map((screen) => ({ member: m[1].startsWith('members/'), screen })));
+  expect(rules.length).toBeGreaterThan(50);
+  for (const r of rules) {
+    if (r.member) expect(pub, r.screen).not.toContain(r.screen);
+    else expect(pub, r.screen).toContain(r.screen);
+  }
+  // The two screens whose rules are built from constants: the calculators (public) and My account → Admin (open).
+  expect(src('stage3/screens/class-calculator-pages.php')).toMatch(/const SCREEN\s*=\s*'calc3';/);
+  expect(src('stage3/admin/class-admin-front.php')).toMatch(/const SCREEN\s*=\s*'admin3';/);
+  expect(pub).toContain('calc3');
+  expect(open).toContain('admin3');
+  for (const s of ['home', 'tracks', 'track', 'goal', 'goals', 'settings', 'health', 'diary', 'more', 'subscription', 'checkout', 'food-scan', 'progress']) {
+    expect(open, s).not.toContain(s);
+    expect(pub, s).not.toContain(s);
+  }
+  expect(gate).toContain("$screen = get_query_var( 'lld_screen' );");
+  expect(src('class-screens.php')).toContain("$screen = get_query_var( 'lld_screen' );");
 });
 
 test('TC-FR3-113-AS-03', () => {
   const r = run(`
     $out = [];
     foreach (['/health-tools/', '/health-tools/protein/', '/tools/protein-requirement-tool.html', '/articles/', '/some-article/', '/members/help/', '/pricing/',
-      '/members/agreements/', '/members/sign-in/', '/members/confirm/', '/members/more/', '/members/data/', '/members/delete/', '/members/withdraw/', '/members/unsubscribe/', '/members/admin/'] as $p) {
+      '/members/agreements/', '/members/sign-in/', '/members/confirm/', '/members/data/', '/members/delete/', '/members/withdraw/', '/members/unsubscribe/', '/members/admin/'] as $p) {
       $out[$p] = visit('GET', $p);
     }
-    $out['sign_out'] = visit('POST', '/members/more/');
+    foreach (['/health-tools/calorie-target/', '/programmes/', '/programmes/healthy-weight/', '/safety/', '/index.php/members/help/', '/?lld_screen=help'] as $p) {
+      $out[$p] = visit('GET', $p);
+    }
+    // A member can always sign out: the sign-out form posts to the More screen with its nonce.
+    $out['sign_out'] = visit('POST', '/members/more/', [], ['lld_sign_out_nonce' => 'good']);
     return $out;
   `);
   for (const [path, result] of Object.entries(r)) expect(result, path).toBe('opens');
@@ -211,6 +293,11 @@ test('TC-FR3-113-AS-04', () => {
     $out['protocol_relative'] = $after('//example.com/members/home/');
     $out['public'] = $after('/pricing/');
     $out['backslash'] = $after('/members/\\\\example.com');
+    // No '..' part, plain or encoded, so the address cannot climb out of the member area.
+    $out['dots'] = $after('/members/../wp-admin/');
+    $out['dots_deep'] = $after('/members/tracks/../../wp-login.php');
+    $out['dots_encoded'] = $after('/members/%2e%2e/pricing/');
+    $out['dots_in_name'] = $after('/members/track/?note=a..b');
     // Only the "accepted" redirect to the goal step is changed.
     $out['other_redirect'] = LLD_Members_Terms_Gate::after_accepting(home_url('/members/confirm/'));
     $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -226,6 +313,10 @@ test('TC-FR3-113-AS-04', () => {
   expect(r.protocol_relative).toBe(goals);
   expect(r.public).toBe(goals);
   expect(r.backslash).toBe(goals);
+  expect(r.dots).toBe(goals);
+  expect(r.dots_deep).toBe(goals);
+  expect(r.dots_encoded).toBe(goals);
+  expect(r.dots_in_name).toBe('https://stg.example.test/members/track/?note=a..b');
   expect(r.other_redirect).toBe('https://stg.example.test/members/confirm/');
   expect(r.get).toBe(goals);
   // Stage 2's Agreements form posts back to its own address (no action), so the page to return to travels with it,
@@ -234,4 +325,62 @@ test('TC-FR3-113-AS-04', () => {
   const agreements = account.slice(account.indexOf('private static function agreements() {'), account.indexOf('private static function goals() {'));
   expect(agreements).toContain("$main .= '<form method=\"post\" class=\"lld-form\">';");
   expect(agreements).toContain("wp_safe_redirect( home_url( '/members/goals/' ) );");
+});
+
+// The Agreements step itself (Stage 2's own function, run as it is): a member the gate sends there who already gave
+// health or marketing consent keeps it. The boxes arrive ticked as the consents stand, so accepting the terms sends
+// them back and nothing is recorded as withdrawn; a new member's form and records are exactly Stage 2's.
+test('TC-FR3-113-AS-04: accepting the terms keeps the consents a member already gave', () => {
+  const account = src('class-account.php');
+  const fn = account.slice(account.indexOf('private static function agreements() {'), account.indexOf('private static function goals() {')).replace('private static function agreements()', 'public static function agreements()');
+  const php = `
+define('ABSPATH', '/');
+class Redirected extends Exception {}
+function home_url($p = '') { return 'https://stg.example.test' . $p; } function esc_url($s) { return (string) $s; }
+function wp_unslash($v) { return $v; } function sanitize_text_field($s) { return trim((string) $s); }
+function wp_verify_nonce($n, $a) { return 'n' === $n && 'lld_agree' === $a; } function wp_nonce_field() { return '<input type="hidden" name="lld_agree_nonce" value="n">'; }
+function wp_safe_redirect($u) { throw new Redirected($u); }
+function lld_steps() { return ''; } function lld_button($a) { return '<button>' . $a['label'] . '</button>'; }
+class LLD_Members_Access { static function current_member_id() { return 5; } }
+class Agreements {
+  const TERMS = 't1'; const PRIVACY = 'p1';
+  public static $consents = []; public static $added = []; public static $page = '';
+  static function require_confirmed() {} static function error_box($e) { return $e ? '<p class="error">' . $e . '</p>' : ''; }
+  static function layout($t, $main, $in) { self::$page = $main; }
+  static function has_consent($m, $type) { return 'given' === (self::$consents[$type] ?? ''); }
+  static function add_consent($m, $type, $kind, $v) { self::$consents[$type] = $kind; self::$added[] = $type . ':' . $kind; }
+  ${fn}
+}
+// Opens the form, then posts it back as a browser would: every ticked box, plus the terms box the member ticks.
+function accept($consents) {
+  Agreements::$consents = $consents; Agreements::$added = []; $_SERVER['REQUEST_METHOD'] = 'GET'; $_POST = [];
+  Agreements::agreements(); $form = Agreements::$page;
+  preg_match_all('/<input type="checkbox" name="([a-z_]+)" value="1"( checked)?>/', $form, $m, PREG_SET_ORDER);
+  $post = ['lld_agree_nonce' => 'n', 'lld_terms' => '1']; $ticked = [];
+  foreach ($m as $box) { if (!empty($box[2])) { $post[$box[1]] = '1'; $ticked[] = $box[1]; } }
+  $_SERVER['REQUEST_METHOD'] = 'POST'; $_POST = $post; $to = '';
+  try { Agreements::agreements(); } catch (Redirected $r) { $to = $r->getMessage(); }
+  return ['boxes' => count($m), 'ticked' => $ticked, 'added' => Agreements::$added, 'now' => Agreements::$consents, 'to' => $to];
+}
+echo json_encode([
+  'new' => accept([]),
+  'both' => accept(['health' => 'given', 'marketing' => 'given']),
+  'health' => accept(['health' => 'given', 'marketing' => 'withdrawn']),
+  'marketing' => accept(['marketing' => 'given']),
+]);`;
+  const r = JSON.parse(execFileSync('php', ['-d', 'display_errors=stderr', '-r', php], { encoding: 'utf8', timeout: 120000 }).trim());
+  // A new member: nothing ticked, and what Stage 2 records is unchanged (FR2-03; Screen Design principle 8).
+  expect(r.new.boxes).toBe(3);
+  expect(r.new.ticked).toEqual([]);
+  expect(r.new.added).toEqual(['terms:given', 'privacy:given', 'health:withdrawn', 'marketing:withdrawn']);
+  expect(r.new.to).toBe('https://stg.example.test/members/goals/');
+  // An existing member with both consents: both boxes ticked as they stand, and both still given after accepting.
+  expect(r.both.ticked).toEqual(['lld_health', 'lld_marketing']);
+  expect(r.both.added).toEqual(['terms:given', 'privacy:given', 'health:given', 'marketing:given']);
+  expect(r.both.now).toMatchObject({ terms: 'given', health: 'given', marketing: 'given' });
+  // Each box follows its own consent; a withdrawn or never-given one is not ticked. The terms box is never ticked.
+  expect(r.health.ticked).toEqual(['lld_health']);
+  expect(r.health.now).toMatchObject({ health: 'given', marketing: 'withdrawn' });
+  expect(r.marketing.ticked).toEqual(['lld_marketing']);
+  expect(r.marketing.now).toMatchObject({ health: 'withdrawn', marketing: 'given' });
 });
