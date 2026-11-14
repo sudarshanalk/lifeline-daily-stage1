@@ -16,6 +16,8 @@ const TYPES = {
   mood: { label: 'Mood', values: [], value: '2' },
   glucose: { label: /Blood sugar|Glucose/, values: [['Blood sugar', 5.6]], value: '5.6' },
 };
+// The form field with that label: the type's panel carries the type's name too (it is labelled by its tab).
+const field = (page, label) => page.locator('input, select, textarea').and(page.getByLabel(label, { exact: true }));
 async function choose(page, type) {
   const label = TYPES[type].label;
   const control = page.getByRole('tab', { name: label, exact: true })
@@ -32,7 +34,7 @@ async function open(page, type = 'blood_pressure') {
 }
 async function fill(page, type, overrides = {}) {
   await page.getByLabel('Date and time', { exact: true }).fill(`${DAY}T09:00`);
-  for (const [label, value] of TYPES[type].values) await page.getByLabel(label, { exact: true }).fill(String(overrides[label] ?? value));
+  for (const [label, value] of TYPES[type].values) await field(page, label).fill(String(overrides[label] ?? value));
   if (type === 'mood') {
     const mood = page.getByRole('radio', { name: /^2\b/ }).or(page.getByRole('button', { name: /^2\b/ }));
     if (await mood.getAttribute('type') === 'radio') await mood.check(); else await mood.click();
@@ -95,7 +97,7 @@ for (const [id, type, v1, v2] of [['TC-FR3-38-AS-02', 'blood_pressure', 128, 130
     if (type === 'mood') {
       const choice = page.getByRole('radio', { name: /^3\b/ }).or(page.getByRole('button', { name: /^3\b/ }));
       if (await choice.getAttribute('type') === 'radio') await choice.check(); else await choice.click();
-    } else await page.getByLabel(label, { exact: true }).fill(type === 'sleep' ? '00:00' : String(v2));
+    } else await field(page, label).fill(type === 'sleep' ? '00:00' : String(v2));
     const patched = await acted(page, `readings/${entry.id}`, () => page.getByRole('button', { name: /Save reading|Save changes/, exact: true }).click(), 'PATCH');
     expect(patched.ok(), await patched.text()).toBeTruthy();
     await expect(history(page)).toContainText(String(v2));
