@@ -331,13 +331,18 @@ scenario('UC12-S3', 'TC-FR3-80-AS-03', async ({ page }) => {
   const result = await page.request.post('/wp-json/lld-members/v1/test/admin', { data: { op: 'member', member: member.member_id } }); expect((await result.json()).premium).toBe(false);
 });
 for (const [id, on, assertion] of [['UC12-S4', false, 'TC-FR3-89-AS-01'], ['UC12-S5', true, 'TC-FR3-89-AS-03']]) scenario(id, assertion, async ({ page }) => {
-  await asOwner(page);await page.goto('/members/admin/tools/');const toggle=page.locator('#lld-adm-t-healthy-weight');const original=await toggle.isChecked();
+  await asOwner(page);await page.goto('/members/admin/tools/');const original=await page.locator('#lld-adm-t-healthy-weight').isChecked();
   const status=async()=>{const r=await page.request.get('/tools/status.json');expect(r.ok()).toBeTruthy();return (await r.json()).tools['healthy-weight'].status;};
+  // A toggle saves at once by sending its form, and the page loads again with a "Saved" line. Wait for that line
+  // before the next step: opening a page while the toggle's own page is still loading interrupts both.
+  const set=async(to)=>{
+    const toggle=page.locator('#lld-adm-t-healthy-weight');
+    if(await toggle.isChecked()!==to){await toggle.setChecked(to);await expect(page.locator('[data-lld-adm-notice]')).toContainText(to?'Healthy Weight Check is on':'Healthy Weight Check is off.');}
+    await expect(page.locator('#lld-adm-t-healthy-weight')).toBeChecked({checked:to});await expect.poll(status).toBe(to?'active':'withdrawn');
+  };
   try {
-    await toggle.setChecked(!on);await expect.poll(status).toBe(on?'withdrawn':'active');
-    await toggle.setChecked(on);await expect.poll(status).toBe(on?'active':'withdrawn');
+    await set(!on);await set(on);
   } finally {
-    await page.goto('/members/admin/tools/');await page.locator('#lld-adm-t-healthy-weight').setChecked(original);
-    await expect.poll(status).toBe(original?'active':'withdrawn');
+    await page.goto('/members/admin/tools/');await set(original);
   }
 });
