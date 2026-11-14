@@ -2580,7 +2580,12 @@
 				const resTrend = await rdRequest(cfg, 'readings-trend?' + query);
 				if (stale()) return;
 				if (resTrend.ok && Array.isArray(resTrend.data.points)) {
-					state.trendPoints = resTrend.data.points;
+					// Oldest first, whatever order the interface lists them in (it lists the last change first), so the
+					// line runs left to right in time and "Latest" is the latest reading.
+					state.trendPoints = resTrend.data.points.slice().sort(function (a, b) {
+						const cmp = String(a.taken_at || a.date || '').localeCompare(String(b.taken_at || b.date || ''));
+						return cmp !== 0 ? cmp : (Number(a.id || 0) - Number(b.id || 0));
+					});
 					renderChart(state.trendPoints, null);
 				} else {
 					state.trendPoints = [];

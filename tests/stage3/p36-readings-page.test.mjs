@@ -176,6 +176,7 @@ test('TC-FR3-38-AS-03 the history and trend lists ask for one reading type and a
   expect(load).toContain("'type=' + encodeURIComponent(type)");
   expect(load).toContain("'&from=' + encodeURIComponent(state.from)");
   expect(load).toContain("'&to=' + encodeURIComponent(state.to)");
+  expect(load).toContain('resTrend.data.points.slice().sort('); // the chart runs oldest to newest, however the rows are listed
   // A reply for a type or range the member has left is dropped before it reaches the list, the chart or Edit.
   expect(load.match(/if \(stale\(\)\) return;/g)).toHaveLength(2);
   // ?type=weight is a query value: WordPress would hand it back for $request['type'] in place of the route's own
