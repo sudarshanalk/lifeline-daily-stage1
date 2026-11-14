@@ -139,7 +139,7 @@ class LLD_Members_Goal_Setting {
 			return;
 		}
 		if ( 'extra' === $role && ( ! $active_main || LLD_Members_Goal_Journey::active_goal( $member_id, 'extra' ) ) ) {
-			$main = '<h1>Add a goal</h1>' . lld_info( LLD_Members_Goal_Rules::MESSAGES['third_goal'] ) . '<p><a href="' . esc_url( home_url( '/members/goal/' ) ) . '">Back to your goal</a></p>';
+			$main = '<h1>Add a goal</h1>' . lld_info( LLD_Members_Goal_Rules::MESSAGES['third_goal'] ) . '<p><a class="lld-button lld-button-secondary" href="' . esc_url( home_url( '/members/goal/' ) ) . '">Back to your goal</a></p>';
 			self::output( 'Add a goal', $main );
 			return;
 		}
