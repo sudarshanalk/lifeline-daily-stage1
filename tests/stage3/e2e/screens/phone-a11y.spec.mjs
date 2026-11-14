@@ -705,7 +705,8 @@ test.describe.serial('Stage 3 Phone layout and accessibility (P3-83)', () => {
       const banner = page.locator('#lld-consent');
       await expect(banner).toBeVisible();
       await captureAndCheckScroll(page, 'Cookie banner open', 'cookie-banner');
-      const { issues: bannerIssues } = await checkTapTargets(page);
+      // The banner itself; the Stage 2 /pricing/ page under it is not a Stage 3 page (its "Terms of sale" line height is listed for P3-91).
+      const { issues: bannerIssues } = await checkTapTargets(page, '#lld-consent');
       expect(bannerIssues, 'cookie banner tap target issues').toEqual([]);
       await scanA11y(page, 'cookie banner');
     } finally {
