@@ -1271,7 +1271,7 @@ class LLD_Members_Stage3_API {
 			}
 			$filled = LLD_Members_Health_Log::for_member( $member_id, array_merge( $clean, $extras ) );
 			if ( isset( $filled['error'] ) ) {
-				return self::refuse( isset( $filled['status'] ) ? (int) $filled['status'] : 400, $filled['error'] );
+				return self::refuse( isset( $filled['status'] ) ? (int) $filled['status'] : 400, $filled['error'], array_intersect_key( $filled, array( 'question' => 1, 'link' => 1 ) ) );
 			}
 			$clean   = $filled['row'];
 			$warning = $filled['warning'];
@@ -1385,7 +1385,7 @@ class LLD_Members_Stage3_API {
 			}
 			$filled = LLD_Members_Health_Log::for_member( $member_id, array_merge( $clean, $extras ), $row );
 			if ( isset( $filled['error'] ) ) {
-				return self::refuse( isset( $filled['status'] ) ? (int) $filled['status'] : 400, $filled['error'] );
+				return self::refuse( isset( $filled['status'] ) ? (int) $filled['status'] : 400, $filled['error'], array_intersect_key( $filled, array( 'question' => 1, 'link' => 1 ) ) );
 			}
 			$clean   = $filled['row'];
 			$warning = $filled['warning'];
@@ -1678,7 +1678,8 @@ class LLD_Members_Stage3_API {
 	 * @param int    $status  HTTP status.
 	 * @param string $message Plain wording; never a health value.
 	 */
-	private static function refuse( $status, $message ) {
-		return new WP_REST_Response( array( 'message' => $message ), $status );
+	private static function refuse( $status, $message, array $extra = array() ) {
+		// $extra: the Conditions question and its link on a logging refusal (P3-36 A7), never health data.
+		return new WP_REST_Response( array_merge( array( 'message' => $message ), $extra ), $status );
 	}
 }
