@@ -250,6 +250,8 @@ test('TC-FR3-113-AS-02', () => {
   // The two screens whose rules are built from constants: the calculators (public) and My account → Admin (open).
   expect(src('stage3/screens/class-calculator-pages.php')).toMatch(/const SCREEN\s*=\s*'calc3';/);
   expect(src('stage3/admin/class-admin-front.php')).toMatch(/const SCREEN\s*=\s*'admin3';/);
+  // The open list is exactly this: adding a screen to it later fails here until it is looked at.
+  expect([...open].sort()).toEqual(['admin3', 'agreements', 'confirm', 'data', 'delete', 'email', 'help', 'join', 'reset', 'sign-in', 'two-step', 'unsubscribe', 'withdraw']);
   expect(pub).toContain('calc3');
   expect(open).toContain('admin3');
   for (const s of ['home', 'tracks', 'track', 'goal', 'goals', 'settings', 'health', 'diary', 'more', 'subscription', 'checkout', 'food-scan', 'progress']) {
@@ -297,7 +299,8 @@ test('TC-FR3-113-AS-04', () => {
     $out['dots'] = $after('/members/../wp-admin/');
     $out['dots_deep'] = $after('/members/tracks/../../wp-login.php');
     $out['dots_encoded'] = $after('/members/%2e%2e/pricing/');
-    $out['dots_in_name'] = $after('/members/track/?note=a..b');
+    $out['backslash_encoded'] = $after('/members/..%5c..%5cwp-admin/');
+    $out['dots_in_name'] =$after('/members/track/?note=a..b');
     // Only the "accepted" redirect to the goal step is changed.
     $out['other_redirect'] = LLD_Members_Terms_Gate::after_accepting(home_url('/members/confirm/'));
     $_SERVER['REQUEST_METHOD'] = 'GET';
@@ -316,6 +319,7 @@ test('TC-FR3-113-AS-04', () => {
   expect(r.dots).toBe(goals);
   expect(r.dots_deep).toBe(goals);
   expect(r.dots_encoded).toBe(goals);
+  expect(r.backslash_encoded).toBe(goals);
   expect(r.dots_in_name).toBe('https://stg.example.test/members/track/?note=a..b');
   expect(r.other_redirect).toBe('https://stg.example.test/members/confirm/');
   expect(r.get).toBe(goals);

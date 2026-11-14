@@ -5,7 +5,8 @@
  * A confirmed member who has not accepted the terms is taken to Agreements before any member page, and after
  * accepting is returned to the page they were going to (TC-FR3-113-AS-01 to AS-04). Calculators, articles and
  * Help stay open: they are public pages, and /members/help/ is left out below. The gate decides from the screen
- * that will be dispatched (the lld_screen query var), not from the address, so no other address reaches a member page. Sign-in, the email steps,
+ * that will be dispatched (the lld_screen query var), not from the address, so no other address opens a member
+ * screen. It covers the screens only: the members' programming interface (/wp-json/.../me/) has its own checks. Sign-in, the email steps,
  * Agreements itself and the privacy pages (download, withdraw, delete, unsubscribe) stay open too, so a member can
  * always leave or take their data.
  *
@@ -111,7 +112,10 @@ class LLD_Members_Terms_Gate {
 				return '';
 			}
 		}
-		// No '.' or '..' part, plain or encoded, so the address cannot climb out of /members/.
+		// No '.' or '..' part, plain or encoded (nor an encoded backslash), so the address cannot climb out of /members/.
+		if ( false !== strpos( rawurldecode( $parts['path'] ), '\\' ) ) {
+			return '';
+		}
 		foreach ( explode( '/', rawurldecode( $parts['path'] ) ) as $part ) {
 			if ( '.' === $part || '..' === $part ) {
 				return '';
