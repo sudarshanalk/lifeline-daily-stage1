@@ -182,8 +182,13 @@ async function ingredients(page) {
 }
 test('TC-FR3-35-AS-01', async ({ page }) => {
   await fresh(page); const foods = await ingredients(page); await openFood(page);
-  await page.locator('[data-lld-toggle-recipe-form]').click();
   const form = page.locator('[data-lld-recipe-form]');
+  // A click that lands before the page's script has attached its handler opens nothing (seen once in WebKit): press
+  // again while the form is still closed, and go on only when it is open.
+  await expect(async () => {
+    if (await form.isHidden()) await page.locator('[data-lld-toggle-recipe-form]').click();
+    await expect(form).toBeVisible({ timeout: 1000 });
+  }).toPass({ timeout: 15000 });
   await form.getByLabel('Recipe name', { exact: true }).fill('Synthetic three ingredient recipe');
   await form.getByLabel('Servings', { exact: true }).fill('4');
   for (const food of foods) await ingredientUi(page, food);
