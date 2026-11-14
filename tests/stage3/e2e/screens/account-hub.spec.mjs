@@ -43,13 +43,20 @@ test.describe.serial('P3-30 account hub and desktop menu', () => {
       await expect(page.locator('main')).not.toContainText(/\b(?:TC-)?N?FR\d-\d\d/);
     }
 
-    // The section strip wraps at 360 px: no horizontal scroll.
+    // At 360 px the section strip is one row that scrolls sideways inside itself (P3-36 C5, member area build list):
+    // every tab on the same line, the strip within the screen, and the page itself never scrolls sideways.
     await page.setViewportSize({ width: 360, height: 780 });
     await page.goto('/members/settings/');
-    const strip = await page.locator('.lld-account-tabs').evaluate((el) => ({ scroll: el.scrollWidth, client: el.clientWidth, right: el.getBoundingClientRect().right, overflowX: getComputedStyle(el.parentElement).overflowX }));
-    expect(strip.scroll).toBeLessThanOrEqual(strip.client);
+    const strip = await page.locator('.lld-account-tabs').evaluate((el) => ({
+      right: el.getBoundingClientRect().right,
+      overflowX: getComputedStyle(el).overflowX,
+      rows: new Set([...el.querySelectorAll('.lld-account-tab')].map((a) => Math.round(a.getBoundingClientRect().top))).size,
+      page: document.documentElement.scrollWidth,
+    }));
+    expect(strip.rows).toBe(1);
     expect(strip.right).toBeLessThanOrEqual(360);
-    expect(strip.overflowX).not.toBe('auto');
+    expect(strip.overflowX).toBe('auto');
+    expect(strip.page).toBeLessThanOrEqual(360);
   });
 
   test('TC-FR3-06-AS-02 Change the display name in Profile and press Save: only Profile is saved and a confirmation is shown', async ({ page }) => {
