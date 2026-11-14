@@ -742,7 +742,7 @@
 					var kind = fav.food_kind || 'food';
 					var id = Number(fav.food_id || 0);
 					var cat = state.catalog[favKey(kind, id)];
-					var title = cat && cat.name ? cat.name : 'Saved ' + (kind === 'recipe' ? 'recipe' : kind === 'custom' ? 'custom food' : 'food') + ' #' + id;
+					var title = cat && cat.name ? cat.name : fav.name ? String(fav.name) : 'Saved ' + (kind === 'recipe' ? 'recipe' : kind === 'custom' ? 'custom food' : 'food');
 					var meta = '';
 					if (!state.edMode && cat && cat.grams) {
 						meta = kind === 'recipe' ? Number(Number(cat.grams).toFixed(1)) + (Number(cat.grams) === 1 ? ' serving' : ' servings') : Number(Number(cat.grams).toFixed(1)) + ' g';
@@ -1551,7 +1551,7 @@
 					'</label>' +
 					'<input id="' +
 					esc(inpId) +
-					'" type="number" step="0.5" min="0.1" max="5000" value="' +
+					'" type="number" step="0.1" min="0.1" max="5000" value="' +
 					esc(curG) +
 					'" required />' +
 					'<button type="submit" class="lld-pill-btn lld-btn-sm">Save</button>' +

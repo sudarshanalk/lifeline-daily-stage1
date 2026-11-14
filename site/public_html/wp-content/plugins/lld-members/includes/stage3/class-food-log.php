@@ -726,7 +726,7 @@ class LLD_Members_Food_Log {
 	 * @param string|null                    $date      Only name the rows of this day (the others are returned as they are).
 	 * @return array<int,array<string,mixed>>
 	 */
-	private static function named( $member_id, array $rows, $date = null ) {
+	public static function named( $member_id, array $rows, $date = null ) {
 		global $wpdb;
 		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) || ! class_exists( 'LLD_Members_Stage3_Schema' ) ) {
 			return $rows;
