@@ -204,14 +204,9 @@ function lld_members_chip() {
 	global $wpdb;
 	$row   = $wpdb->get_row( $wpdb->prepare( 'SELECT first_name, display_name FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
 	$name  = $row && '' !== trim( (string) $row->first_name ) ? trim( (string) $row->first_name ) : ( $row && '' !== trim( (string) $row->display_name ) ? trim( (string) $row->display_name ) : 'Member' );
-	$state = strtolower( LLD_Members_Access::access_state( $member_id ) );
-	if ( 'free' === $state ) {
-		$premium = false;
-	} elseif ( 0 === strpos( $state, 'premium' ) && false === strpos( $state, 'ended' ) ) {
-		$premium = true;
-	} else {
-		$premium = class_exists( 'LLD_Members_Billing' ) && LLD_Members_Billing::has_premium( $member_id );
-	}
+	// P3-36 A1: the same answer as Account → Membership and My subscription.
+	$status  = LLD_Members_Access::premium_status( $member_id );
+	$premium = $status['premium'];
 	$initial = function_exists( 'mb_substr' ) ? mb_substr( $name, 0, 1 ) : substr( $name, 0, 1 );
 	$html    = '<a class="lld-chip" href="' . esc_url( home_url( '/members/settings/' ) ) . '">';
 	$html   .= '<span class="lld-chip-initial" aria-hidden="true">' . esc_html( strtoupper( $initial ) ) . '</span>';
