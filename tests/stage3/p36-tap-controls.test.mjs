@@ -96,8 +96,8 @@ test('TC-FR2-37-AS-06 (water stepper)', () => {
   const form = premium.slice(premium.indexOf('data-lld-day-form'), premium.indexOf("lld_button( array( 'label' => 'Save today' ) )"));
   expect(form).toContain('<p><label for="lld_water">Glasses of water</label><input id="lld_water" name="lld_water" type="number" min="0" max="40" step="1" inputmode="numeric" value="');
   expect(form).toContain('<div class="lld-control" hidden><span class="lld-control-label" id="lld_water_caption">Glasses of water</span>');
-  expect(form).toContain('<button type="button" data-lld-step="-1" aria-label="One glass of water fewer">&minus;</button>');
-  expect(form).toContain('<button type="button" data-lld-step="1" aria-label="One more glass of water">+</button>');
+  expect(form).toContain('<button type="button" data-lld-step="-1" aria-label="Remove a glass of water">&minus;</button>');
+  expect(form).toContain('<button type="button" data-lld-step="1" aria-label="Add a glass of water">+</button>');
   expect(form).not.toContain('lld-visually-hidden');
   // The summary line the Stage 2 spec reads is unchanged.
   expect(premium).toContain("'<p data-lld-day-extras>Water: ' . esc_html( '' === $water ? 'not logged' : $water . ' glasses' ) . '. Hunger: ' . esc_html( '' === $hunger ? 'not logged' : $hunger . ' of 5' ) . '. Energy: '");

@@ -155,7 +155,7 @@ class LLD_Members_Premium {
 			$main .= '<section data-lld-day="' . (int) $day . '" data-lld-date="' . esc_attr( $date->format( 'Y-m-d' ) ) . '"><h2>Day ' . (int) $day . ', ' . esc_html( $date->format( 'l j F' ) ) . '</h2><div class="lld-recipes">';
 			foreach ( $meals as $slot => $recipe ) {
 				$key   = (int) $day . '-' . $slot;
-				$badge = '' !== trim( (string) $recipe['diet'] ) ? (string) $recipe['diet'] : ( '' !== trim( (string) $recipe['servings'] ) ? (string) $recipe['servings'] . ' servings' : '' );
+				$badge = self::meal_diet_chip( isset( $recipe['diet'] ) ? (string) $recipe['diet'] : '', isset( $recipe['servings'] ) ? (string) $recipe['servings'] : '' );
 				$main .= '<article class="lld-meal lld-recipe" data-lld-meal="' . esc_attr( $key ) . '">';
 				$main .= '<div class="lld-recipe-top"><span class="lld-recipe-slot">' . esc_html( ucfirst( (string) $slot ) ) . '</span>' . ( '' !== $badge ? '<span class="lld-recipe-badge">' . esc_html( $badge ) . '</span>' : '' ) . '</div>';
 				$main .= '<div class="lld-recipe-body"><p><span class="lld-sr">' . esc_html( ucfirst( (string) $slot ) ) . ': </span>' . esc_html( $recipe['title'] ) . '</p></div>';
@@ -852,8 +852,8 @@ class LLD_Members_Premium {
 				. '<input type="hidden" name="lld_water" value="' . (int) $value . '"><button class="lld-step ' . $class . '" type="submit" aria-label="' . esc_attr( $label ) . '">' . $sign . '</button></form>';
 		};
 		$html  = '<div class="lld-water"><p><strong>Water today</strong><span class="lld-hint">' . esc_html( $water . ( 1 === $water ? ' glass' : ' glasses' ) . ' logged' ) . '</span></p>';
-		$html .= '<div class="lld-water-count">' . ( $water > 0 ? $step( $water - 1, 'lld-step-down', 'One glass of water fewer', '&minus;' ) : '' );
-		$html .= '<output aria-live="polite">' . $water . '</output>' . ( $water < 40 ? $step( $water + 1, 'lld-step-up', 'One more glass of water', '+' ) : '' ) . '</div></div>';
+		$html .= '<div class="lld-water-count">' . ( $water > 0 ? $step( $water - 1, 'lld-step-down', 'Remove a glass of water', '&minus;' ) : '' );
+		$html .= '<output aria-live="polite">' . $water . '</output>' . ( $water < 40 ? $step( $water + 1, 'lld-step-up', 'Add a glass of water', '+' ) : '' ) . '</div></div>';
 		if ( LLD_Members_Billing::paid_open( $member_id ) ) {
 			$slot  = self::next_slot( $member_id, $today );
 			$html .= '<form method="post" action="' . esc_url( $diary ) . '" class="lld-one-tap"><input type="hidden" name="lld_diary_nonce" value="' . esc_attr( $nonce ) . '">';
@@ -1436,6 +1436,23 @@ class LLD_Members_Premium {
 	/**
 	 * @param int $member_id Member number.
 	 */
+	/**
+	 * One meal-plan diet chip: the strictest diet the recipe suits (E7 badge A). Everything-only shows servings.
+	 *
+	 * @param string $diet     Raw diet field.
+	 * @param string $servings Servings count.
+	 */
+	private static function meal_diet_chip( $diet, $servings ) {
+		$parts = array_filter( array_map( 'trim', explode( ',', strtolower( (string) $diet ) ) ) );
+		if ( in_array( 'vegan', $parts, true ) ) {
+			return 'Vegan';
+		}
+		if ( in_array( 'vegetarian', $parts, true ) ) {
+			return 'Vegetarian';
+		}
+		return '' !== trim( (string) $servings ) ? (string) $servings . ' servings' : '';
+	}
+
 	private static function diet_of( $member_id ) {
 		global $wpdb;
 		$diet = $wpdb->get_var( $wpdb->prepare( 'SELECT diet_type FROM ' . LLD_Members_Schema::table( 'health_profile' ) . ' WHERE member_id = %d', $member_id ) );
@@ -2777,9 +2794,9 @@ class LLD_Members_Premium {
 		// saves with scripts off and the posted names and limits are unchanged (P3-36 D3).
 		$html .= '<p><label for="lld_water">Glasses of water</label><input id="lld_water" name="lld_water" type="number" min="0" max="40" step="1" inputmode="numeric" value="' . esc_attr( $water ) . '"></p>';
 		$html .= '<div class="lld-control" hidden><span class="lld-control-label" id="lld_water_caption">Glasses of water</span>';
-		$html .= '<div class="lld-stepper" data-lld-stepper="lld_water" role="group" aria-labelledby="lld_water_caption"><button type="button" data-lld-step="-1" aria-label="One glass of water fewer">&minus;</button>';
+		$html .= '<div class="lld-stepper" data-lld-stepper="lld_water" role="group" aria-labelledby="lld_water_caption"><button type="button" data-lld-step="-1" aria-label="Remove a glass of water">&minus;</button>';
 		$html .= '<output data-lld-stepper-value aria-live="polite">' . esc_html( '' === $water ? '0' : $water ) . '</output>';
-		$html .= '<button type="button" data-lld-step="1" aria-label="One more glass of water">+</button></div></div>';
+		$html .= '<button type="button" data-lld-step="1" aria-label="Add a glass of water">+</button></div></div>';
 		foreach ( array(
 			'hunger' => array( 'Hunger', $hunger ),
 			'energy' => array( 'Energy', $energy ),

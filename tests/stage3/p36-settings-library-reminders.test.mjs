@@ -78,12 +78,12 @@ test('FR3-69 a weigh-in reminder is not listed, changed or added for a member th
   expect(out.hide_ids).toEqual([1, 4]);
   expect(out.open_ids).toEqual([1, 2, 4]);
   for (const html of [out.ed_html, out.hide_html]) {
-    expect(html).not.toMatch(/Weigh in/);
+    expect(html).not.toMatch(/Weigh-?in/);
     expect(html).not.toMatch(/weigh_in/);
     expect(html).not.toMatch(/lld_reminder_active\[2\]/);
   }
   expect(out.open_html).toMatch(/lld_reminder_active\[2\]/);
-  expect(out.open_html).toMatch(/<option value="weigh_in">Weigh in<\/option>/);
+  expect(out.open_html).toMatch(/<option value="weigh_in">Weigh-in<\/option>/);
   // A crafted post that names the hidden row refuses the whole save: nothing is planned, so nothing is written.
   expect(out.ed_update).toEqual({ error: 'Not available.' });
   expect(out.hide_update).toEqual({ error: 'Not available.' });
@@ -147,7 +147,7 @@ test('P3-36 B4: reminders are email only, every row is checked before any is sav
   // A row the tab does not list (here a Healthy Weight step reminder) cannot be changed through it.
   expect(out.other_row).toEqual({ error: 'Not available.' });
   expect(out.html).not.toMatch(/Hw step|hw_step|lld_reminder_active\[3\]/);
-  expect(out.html).toMatch(/<p class="lld-reminder-title">Check in<\/p>/);
+  expect(out.html).toMatch(/<p class="lld-reminder-title">Check-in<\/p>/);
   // The two forms' nonce fields have their own ids.
   const ids = [...out.html.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
   expect(ids).toContain('lld_reminders_nonce_list');
@@ -201,7 +201,7 @@ test('TC-FR3-111-AS-04', () => {
   const css = readFileSync(file('assets/stage3-forms.css'), 'utf8');
   expect(css).toMatch(/\.lld-chip-filter\.is-active \{\s+background: var\(--lld-ink, #1f2a37\);\s+border-color: var\(--lld-ink, #1f2a37\);\s+color: var\(--lld-card, #fff\);/);
   expect(css).not.toMatch(/background: currentColor/);
-  expect(src).toMatch(/role="status" aria-live="polite" data-lld-library-status data-lld-library-none="No matching items\."/);
+  expect(src).toMatch(/role="status" aria-live="polite" data-lld-library-status data-lld-library-none="Nothing matches that\. Try another word or type\." data-lld-library-empty="Nothing here yet\."/);
 });
 
 test('P3-36 C2: app connections and their Withdraw are on Sign-in & security, and the long page\'s guards are kept', () => {
@@ -222,6 +222,6 @@ test('P3-36 C2: app connections and their Withdraw are on Sign-in & security, an
   // Carried over from the long page: Terms of sale, the consent history and the joining date.
   expect(hub).toMatch(/'sale'\s+=> 'Terms of sale'/);
   expect(hub).toMatch(/<summary>Consent history<\/summary>/);
-  expect(hub).toMatch(/<p>Joined on ' \. esc_html\( \(string\) \$row->joined_on \)/);
+  expect(hub).toMatch(/Joined on ' \. esc_html\( self::member_date\( \(string\) \$row->joined_on \) \)/);
   expect(hub).not.toMatch(/lld_email_display/);
 });
