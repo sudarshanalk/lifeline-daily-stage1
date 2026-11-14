@@ -189,6 +189,45 @@ test('TC-FR3-69-AS-05', () => {
   expect(api).toMatch(/private static function refuse\( \$status, \$message, array \$extra = array\(\) \) \{\s*\/\/[^\n]*\n\s*return new WP_REST_Response\( array_merge\( array\( 'message' => \$message \), \$extra \), \$status \);/);
 });
 
+// P3-36 (left over from A7): POST /me/goals refuses a goal while the Conditions answer is missing, before any insert.
+test('TC-FR3-69-AS-05 (goals interface)', () => {
+  const r = run(`
+    class FakeReq { public $m; function __construct($m) { $this->m = $m; } function get_method() { return $this->m; } }
+    $out = [];
+    unset($GLOBALS['wpdb']->profile[7]);
+    LLD_Members_Stage3_API::$request = new FakeReq('POST');
+    $res = LLD_Members_Stage3_Safety::api_refuse(null, 'goals', 7);
+    $out['missing'] = $res ? [$res->status, $res->data] : null;
+    LLD_Members_Stage3_API::$request = new FakeReq('PATCH');
+    $out['patch'] = (bool) LLD_Members_Stage3_Safety::api_refuse(null, 'goals', 7);
+    // Reading and deleting goals stay open.
+    LLD_Members_Stage3_API::$request = new FakeReq('GET');
+    $out['get'] = LLD_Members_Stage3_Safety::api_refuse(null, 'goals', 7);
+    LLD_Members_Stage3_API::$request = new FakeReq('DELETE');
+    $out['delete'] = LLD_Members_Stage3_Safety::api_refuse(null, 'goals', 7);
+    // Answered ("None of these") or "Prefer not to answer": the goal is accepted, as on the goal-setting screen.
+    LLD_Members_Stage3_API::$request = new FakeReq('POST');
+    $GLOBALS['wpdb']->store(7, ['conditions_answered' => 'none', 'conditions' => null]);
+    $out['answered'] = LLD_Members_Stage3_Safety::api_refuse(null, 'goals', 7);
+    $GLOBALS['wpdb']->store(7, ['conditions_answered' => 'not_answered', 'conditions' => '["prefer-not"]']);
+    $out['prefer'] = LLD_Members_Stage3_Safety::api_refuse(null, 'goals', 7);
+    return $out;
+  `);
+  expect(r.missing).toEqual([403, { message: 'Answer the Conditions question in your health profile first.', question: 'conditions', link: goalLink }]);
+  expect(r.patch).toBe(true);
+  expect(r.get).toBeNull();
+  expect(r.delete).toBeNull();
+  expect(r.answered).toBeNull();
+  expect(r.prefer).toBeNull();
+  // The members' interface applies this filter in gate(), which create() runs before LLD_Members_Stage3_Data::insert.
+  const api = readFileSync(inc('stage3/class-api.php'), 'utf8');
+  const create = api.slice(api.indexOf('public static function create( $request ) {'), api.indexOf('LLD_Members_Stage3_Data::insert( $def'));
+  expect(create).toContain('$gate = self::gate( $request );');
+  const gate = api.slice(api.indexOf('private static function gate( $request ) {'), api.indexOf('public static function calculate('));
+  expect(gate.indexOf('self::$request = $request;')).toBeGreaterThan(-1);
+  expect(gate.indexOf("apply_filters( 'lld_members_stage3_api_refuse'")).toBeGreaterThan(gate.indexOf('self::$request = $request;'));
+});
+
 test('TC-FR3-09-AS-08', () => {
   const r = goalRun(`
     $out = [];
