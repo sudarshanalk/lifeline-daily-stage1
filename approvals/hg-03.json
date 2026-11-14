@@ -1,0 +1,20 @@
+{
+  "gate": "HG-03",
+  "decision": "approved",
+  "signer": "Product owner (sudarshanalk), acting as release owner and privacy reviewer",
+  "role": "ACT-04 release owner and privacy reviewer",
+  "date": "2026-10-28",
+  "ratified_decisions": [
+    "DEC-11",
+    "DEC-21",
+    "DEC-32",
+    "DEC-36"
+  ],
+  "deferred_items": [
+    "FR1-16",
+    "NFR1-06",
+    "NFR1-13"
+  ],
+  "tag": "rc-2026-10-28",
+  "notes": "Owner in chat, 28 Oct 2026: \"Stage 1 release -approved.\" Signed as release owner and privacy reviewer for the release candidate rc-2026-10-28 (releases/rc-2026-10-28.json): release record, privacy checklist (NFR1-01), ratification of DEC-11, DEC-21, DEC-32 and DEC-36 as written, and deployment authorisation. SHOULD items FR1-16, NFR1-06 and NFR1-13 stay deferred to Stage 2 (DEC-84). Open at signing and listed in the release record's signoffs.evidence_exceptions: NFR1-08 AS-05 (7-day RPO window, needs a week of daily backups), FR1-19 AS-03 (production smoke at +0 h, +1 h, +24 h after the deploy), FR1-06 AS-03 (deployed-version marker on the landing pages), FR1-15 AS-06 (staging withdrawal drill record), NFR1-03 AS-02/AS-03 (ZAP and WPScan), NFR1-16 AS-02 (log-retention artefact). Not in this release: the Healthy Weight Check stays off production until its clinical sign-off (FR2-39 AS-19); the Stage 2 membership plugin files are deployed but not activated."
+}
