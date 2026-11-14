@@ -163,7 +163,9 @@ class LLD_Members_Readings_Screen {
 		$initial_type = isset( $types[ $raw_type ] ) ? $raw_type : 'blood_pressure';
 
 		$has_trends       = ! class_exists( 'LLD_Members_Access_Tiers' ) || LLD_Members_Access_Tiers::allows( $member_id, 'trends' );
-		$has_full_history = ! class_exists( 'LLD_Members_Access_Tiers' ) || LLD_Members_Access_Tiers::allows( $member_id, 'full_history' );
+		// The 14-day line follows the interface's own rule (LLD_Members_Health_Log::view() limits the lists by the stored
+		// access state), not the tiers switch, so the page never says "full history" while the lists stop at 14 days.
+		$has_full_history = class_exists( 'LLD_Members_Food_Log' ) ? (bool) LLD_Members_Food_Log::premium( $member_id ) : ( ! class_exists( 'LLD_Members_Access_Tiers' ) || LLD_Members_Access_Tiers::allows( $member_id, 'full_history' ) );
 		$trends_msg       = class_exists( 'LLD_Members_Access_Tiers' ) && isset( LLD_Members_Access_Tiers::PREMIUM['trends'] ) ? LLD_Members_Access_Tiers::PREMIUM['trends'] : 'Long-term trends and insights are part of Premium.';
 		$history_msg      = class_exists( 'LLD_Members_Access_Tiers' ) && isset( LLD_Members_Access_Tiers::PREMIUM['full_history'] ) ? LLD_Members_Access_Tiers::PREMIUM['full_history'] : 'Free shows the last 14 days.';
 		$insights_on      = class_exists( 'LLD_Members_Features' ) && LLD_Members_Features::enabled( 'insights', $member_id );

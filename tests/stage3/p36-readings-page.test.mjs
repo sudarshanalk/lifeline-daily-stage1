@@ -37,6 +37,7 @@ function page(state = {}) {
     class LLD_Members_Account { static function has_consent($id, $k) { return (bool) $GLOBALS['S']['consent']; } }
     class LLD_Members_Access { static function has_health_consent($id) { return (bool) $GLOBALS['S']['consent']; } }
     class LLD_Members_Features { static function enabled($f, $id = 0) { return true; } static function state($f) { return 'on'; } }
+    class LLD_Members_Food_Log { static function premium($id) { return (bool) $GLOBALS['S']['premium']; } }
     class LLD_Members_Billing { static function has_premium($id) { return (bool) $GLOBALS['S']['premium']; } }
     class LLD_Members_Stage3_Data { static function rows($t) { return 'insights' === $t ? $GLOBALS['S']['insights'] : array(); } }
     class LLD_Members_Goal_Journey { static function facts($id) { return array('today' => '2026-11-07', 'imperial' => false); } }
@@ -141,6 +142,7 @@ test('TC-FR3-63-AS-02 Free: the 14-day line is the access rule\'s own sentence, 
   expect(text(free)).toContain(`${premium.full_history} See Premium`);
   expect(free).toContain('href="https://example.test/pricing/"');
   expect(config(free)).toMatchObject({ hasFullHistory: false, hasTrends: false });
+  expect(source).toContain('LLD_Members_Food_Log::premium( $member_id )'); // the rule the interface limits the lists by
   expect(config(free).messages.trendsUpgrade).toBe(premium.trends);
   expect(text(page())).not.toContain(premium.full_history);
 });
