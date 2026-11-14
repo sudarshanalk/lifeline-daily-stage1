@@ -433,6 +433,17 @@ class LLD_Members_Growth {
 			array( 'My data', '/members/data/', 'Download everything we hold about you.' ),
 			array( 'Help', '/members/help/', 'Questions and answers, and the contact form.' ),
 		);
+		// P3-36 B3: the Food page and Log a reading, first, once each page is built and on for the member.
+		if ( class_exists( 'LLD_Members_Today_Screen' ) && method_exists( 'LLD_Members_Today_Screen', 'new_page' ) ) {
+			$new = array();
+			if ( '' !== LLD_Members_Today_Screen::new_page( 'food', $member_id ) ) {
+				$new[] = array( 'Food & meals', '/members/food/', 'Log what you eat and drink, meal by meal.' );
+			}
+			if ( '' !== LLD_Members_Today_Screen::new_page( 'readings', $member_id ) ) {
+				$new[] = array( 'Log a reading', '/members/readings/', 'Record your readings and view your history.' );
+			}
+			$items = array_merge( $new, $items );
+		}
 		$main = '<h1>More</h1><ul class="lld-more-list">';
 		foreach ( $items as $item ) {
 			$main .= '<li><a href="' . esc_url( home_url( $item[1] ) ) . '"' . lld_members_current( home_url( $item[1] ) ) . '><strong>' . esc_html( $item[0] ) . '</strong><span>' . esc_html( $item[2] ) . '</span></a></li>';

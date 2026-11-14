@@ -207,7 +207,7 @@ class LLD_Members_Today_Screen {
 			$type      = '' !== $plan_card ? 'activity' : ( $facts['health'] ? 'log_food' : 'read' );
 		}
 		$links = array(
-			'log_reading' => array( home_url( '/members/check-in/' ), 'Log a reading' ),
+			'log_reading' => array( self::link_or( 'readings', $member_id, '/members/check-in/' ), 'Log a reading' ),
 			'log_food'    => array( home_url( '/members/diary/' ), 'Log something' ),
 			'check_in'    => array( home_url( '/members/check-in/' ), 'Start check-in' ),
 			'read'        => array( home_url( '/members/library/' ), 'Open the library' ),
@@ -230,7 +230,7 @@ class LLD_Members_Today_Screen {
 			if ( '' !== $plan_card && 'activity' !== $type ) {
 				$html .= $plan_card;
 			} else {
-				$html .= '<p>Keep the day going: <a href="' . esc_url( home_url( '/members/diary/' ) ) . '">log a meal</a>, a glass of water or your mood below.</p>';
+				$html .= '<p>Keep the day going: <a href="' . esc_url( self::link_or( 'food', $member_id, '/members/diary/' ) ) . '">log a meal</a>, a glass of water or your mood below.</p>';
 			}
 			$html .= '</div>';
 		}
@@ -273,7 +273,7 @@ class LLD_Members_Today_Screen {
 		$html .= '<div class="lld-tiles">';
 		$html .= '<form method="post" class="lld-tile" data-lld-tile="water">' . wp_nonce_field( 'lld_quick', 'lld_quick_nonce', true, false ) . '<input type="hidden" name="lld_quick" value="water"><input type="hidden" name="lld_value" value="1">';
 		$html .= '<button type="submit" class="lld-tile-button"><span class="lld-tile-label">Water</span><span class="lld-tile-value">' . (int) round( $ml / LLD_Members_Goal_Journey::GLASS_ML ) . ' glasses</span><span class="lld-tile-action">+1 glass</span></button></form>';
-		$html .= '<a class="lld-tile lld-tile-link" data-lld-tile="meals" href="' . esc_url( home_url( '/members/diary/' ) ) . '"><span class="lld-tile-label">Meals</span><span class="lld-tile-action">Log a meal</span></a>';
+		$html .= '<a class="lld-tile lld-tile-link" data-lld-tile="meals" href="' . esc_url( self::link_or( 'food', $member_id, '/members/diary/' ) ) . '"><span class="lld-tile-label">Meals</span><span class="lld-tile-action">Log a meal</span></a>';
 		$html .= '<form method="post" class="lld-tile" data-lld-tile="mood">' . wp_nonce_field( 'lld_quick', 'lld_quick_nonce', true, false ) . '<input type="hidden" name="lld_quick" value="mood"><span class="lld-tile-label">Mood' . ( isset( $mood[ $facts['today'] ] ) ? ' · ' . esc_html( LLD_Members_Goal_Rules::plain( (float) $mood[ $facts['today'] ] ) ) . ' of 5' : '' ) . '</span><span class="lld-mood-row">';
 		foreach ( array( 1 => 'Low', 2 => 'Down', 3 => 'OK', 4 => 'Good', 5 => 'Great' ) as $n => $label ) {
 			$html .= '<button type="submit" name="lld_value" value="' . $n . '" class="lld-mood-button" aria-label="' . esc_attr( 'Mood ' . $n . ' of 5, ' . $label ) . '">' . $n . '</button>';
@@ -450,7 +450,7 @@ class LLD_Members_Today_Screen {
 		} else {
 			$html .= '<p>Log meals in the food diary to see today\'s totals.</p>';
 		}
-		$html .= '<p><a href="' . esc_url( home_url( '/members/diary/' ) ) . '">Food diary</a></p></section>';
+		$html .= '<p><a href="' . esc_url( self::link_or( 'food', $member_id, '/members/diary/' ) ) . '">Food diary</a></p></section>';
 		// Latest readings.
 		$html .= '<section class="lld-card" data-lld-section="readings"><h2>Latest readings</h2><ul class="lld-readings">';
 		$any   = false;
@@ -464,7 +464,7 @@ class LLD_Members_Today_Screen {
 			$v    = $daily[ $date ];
 			$html .= '<li data-lld-reading="' . esc_attr( $type ) . '"><span>' . esc_html( $label ) . '</span> <strong>' . esc_html( self::show_value( $type, $v, $facts['imperial'] ) ) . '</strong> <small>' . esc_html( LLD_Members_Goal_Rules::nice_date( $date ) ) . '</small></li>';
 		}
-		$html .= $any ? '</ul>' : '</ul><p>No readings yet. <a href="' . esc_url( home_url( '/members/check-in/' ) ) . '">Log one</a></p>';
+		$html .= $any ? '</ul>' : '</ul><p>No readings yet. <a href="' . esc_url( self::link_or( 'readings', $member_id, '/members/check-in/' ) ) . '">Log one</a></p>';
 		$html .= '</section></div>';
 		// The current track and week (AS-02), as the programme page says it.
 		$html .= '<section class="lld-card" data-lld-section="track"><h2>Your track</h2>';
@@ -732,6 +732,36 @@ class LLD_Members_Today_Screen {
 	}
 
 	// ---- Helpers -----------------------------------------------------------------------------------------------------
+
+	/**
+	 * P3-36 B3: the new Food page or Log a reading page, when that page is built and on for the member: its screen class
+	 * is loaded and its switch (food_tracker, health_logging) is enabled for them. '' otherwise.
+	 *
+	 * @param string $page      food or readings.
+	 * @param int    $member_id Member number.
+	 */
+	public static function new_page( $page, $member_id ) {
+		$pages = array(
+			'food'     => array( 'LLD_Members_Food_Screen', 'food_tracker', '/members/food/' ),
+			'readings' => array( 'LLD_Members_Readings_Screen', 'health_logging', '/members/readings/' ),
+		);
+		if ( ! isset( $pages[ $page ] ) || ! class_exists( $pages[ $page ][0] ) || ! class_exists( 'LLD_Members_Features' ) || ! LLD_Members_Features::enabled( $pages[ $page ][1], (int) $member_id ) ) {
+			return '';
+		}
+		return home_url( $pages[ $page ][2] );
+	}
+
+	/**
+	 * P3-36 B3: Today's link to that page, or the address it has always had while the page is not there.
+	 *
+	 * @param string $page      food or readings.
+	 * @param int    $member_id Member number.
+	 * @param string $fallback  Current address, for example /members/diary/.
+	 */
+	private static function link_or( $page, $member_id, $fallback ) {
+		$url = self::new_page( $page, $member_id );
+		return '' !== $url ? $url : home_url( $fallback );
+	}
 
 	/** A template's **bold** marks as <strong>, its [buttons] removed, everything else escaped. */
 	public static function rich( $text ) {
