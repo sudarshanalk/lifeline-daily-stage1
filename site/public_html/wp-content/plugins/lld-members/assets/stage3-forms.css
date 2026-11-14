@@ -82,6 +82,9 @@
 	background: transparent;
 	border-radius: 999px;
 	padding: 0.4rem 0.9rem;
+	min-height: 44px;
+	font: inherit;
+	color: inherit;
 	cursor: pointer;
 }
 
@@ -123,7 +126,7 @@
 	display: block;
 	margin-top: 0.25rem;
 	font-size: 0.95rem;
-	opacity: 0.8;
+	color: var(--lld-muted, #5c6b64);
 }
 
 .lld-library-status:empty {

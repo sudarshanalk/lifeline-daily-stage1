@@ -666,6 +666,10 @@ class LLD_Members_Reminders {
 		$changes   = array();
 		$turned_on = false;
 		foreach ( $shown as $id => $row ) {
+			// A row the form did not carry (added in another tab since the page loaded) is left as it is.
+			if ( ! isset( $times[ $id ] ) && ! isset( $days[ $id ] ) && ! isset( $ons[ $id ] ) ) {
+				continue;
+			}
 			$time = self::clean_time( isset( $times[ $id ] ) && is_scalar( $times[ $id ] ) ? (string) $times[ $id ] : (string) $row['time_local'] );
 			if ( '' === $time ) {
 				return array( 'error' => 'Choose a time.' );
