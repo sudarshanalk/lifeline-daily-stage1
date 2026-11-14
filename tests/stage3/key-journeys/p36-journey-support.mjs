@@ -53,9 +53,19 @@ export async function activityGoal(page) {
 export async function weightGoal(page, options = {}) {
   const m = await fresh(page, options);
   await page.goto('/members/goal/?type=lose_weight');
+  await page.waitForLoadState('load'); // the page's heading focus can take a fill's text if it lands mid-fill (WebKit)
   await page.locator('#lld_current').fill('90'); await page.locator('#lld_target').fill('84');
-  await page.locator('input[name="lld_rate"][value="0.5"]').check();
+  await expect(page.locator('#lld_current')).toHaveValue('90'); await expect(page.locator('#lld_target')).toHaveValue('84');
   await submitAndWait(page, page.getByRole('button', { name: 'Save my goal', exact: true }));
+  // The signed Healthy Weight order (P3-35; FR3-98, FR3-100): the quick questions (skipped here) and then the pace,
+  // 0.5 kg a week, come after the goal is saved and before the plan.
+  await expect(page).toHaveURL(/\/members\/goal\/\?done=\d+&hw=(questions|pace)$/);
+  if (/&hw=questions$/.test(page.url())) {
+    await submitAndWait(page, page.locator('[data-lld-goal-step="questions"] form').getByRole('button', { name: 'Next' }));
+  }
+  const pace = page.locator('[data-lld-goal-step="pace"]');
+  await pace.locator('input[name="lld_hw_pace"][value="0.5"]').check();
+  await submitAndWait(page, pace.getByRole('button', { name: 'Next' }));
   await expect(page.locator('[data-lld-goal-step="plan"]')).toBeVisible(); return m;
 }
 export async function resetPassword(page, email) {
