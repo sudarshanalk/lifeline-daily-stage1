@@ -29,13 +29,19 @@ function lld_members_now_mysql($m = 0) { return '${TODAY} 08:00:00'; }
 class LLD_Members_Schema { static function table($s) { return 'wp_lld_' . $s; } }
 class LLD_Members_Stage3_Schema { static function table($s) { return 'wp_lld_' . $s; } }
 class LLD_Members_Programme { static function timezone($m) { return new DateTimeZone('UTC'); } }
-class FakeDb { function prepare($q, ...$a) { return $q; } function get_var($q = '') { return null; } function get_row($q = '') { return null; } }
+class WP_Error { public $code; function __construct($c = '', $m = '') { $this->code = $c; } }
+class LLD_Members_Safety { public static $stage2 = []; static function situations($m) { return self::$stage2[$m] ?? ['none']; } }
+class LLD_Members_Account { static function has_consent($m, $t) { return true; } }
+// Member 7 has no health profile (the matrix's "Unknown" row); profile() gives a member an answered one.
+class FakeDb { public $profile = []; function prepare($q, ...$a) { return $a[0] ?? $q; } function get_var($q = '') { return null; } function get_row($m = '') { return $this->profile[$m] ?? null; } }
+function profile($m, array $stage2) { LLD_Members_Safety::$stage2[$m] = $stage2 ?: ['none']; $GLOBALS['wpdb']->profile[$m] = (object) ['conditions' => json_encode([]), 'conditions_answered' => 'answered', 'age' => 40, 'height_cm' => 170, 'weight_kg' => 70]; }
 $GLOBALS['wpdb'] = new FakeDb();
 // The stored rows, as LLD_Members_Insights_Runner writes them: values is {"values": {...}, "text", "notes", "template"}.
 class LLD_Members_Stage3_Data {
   public static $tables = []; public static $inserted = [];
   static function rows($suffix, $member_id, array $sealed = [], $since = '', $limit = 500) { return self::$tables[$suffix] ?? []; }
   static function row($suffix, $member_id, $id, array $sealed = []) { foreach (self::$tables[$suffix] ?? [] as $r) { if ((int) $r['id'] === (int) $id) { return $r; } } return null; }
+  static function update($suffix, $member_id, $id, array $row) { self::$inserted[] = ['update:' . $suffix, $row, []]; return true; }
   static function insert($suffix, $member_id, array $row, array $sealed = []) { self::$inserted[] = [$suffix, $row, $sealed]; return count(self::$inserted); }
 }
 function insight($id, $rule, array $values) {
@@ -163,4 +169,43 @@ test("Today's step (R-STEP-04): the stored minutes fill the approved text, and a
   // When the step has no text, the Next step card is the plan's item, not labelled with the rule.
   const today = src('screens/class-today-screen.php');
   expect(today).toMatch(/step_text\( \$member_id, \$step, \$today, \$facts\['situations'\] \)[\s\S]{0,400}if \( '' === \$text \) \{\s*\$rule = '';/);
+});
+
+test('FR3-69: the interface does not return a stored insight after the member declares an eating disorder or kidney disease', () => {
+  const r = php(`${STORED}
+    LLD_Members_Stage3_Data::$tables['insights'][] = insight(5, 'R-STEP-04', ['done' => 40, 'target' => 150, 'suggest' => 30]);
+    $rows = LLD_Members_Stage3_Data::$tables['insights'];
+    $S = 'LLD_Members_Stage3_Safety';
+    $ids = function ($m) use ($rows, $S) { return array_column($S::api_rows($rows, 'insights', $m), 'id'); };
+    profile(9, []); profile(10, ['eating-disorder']); profile(11, ['kidney']);
+    return ['situations' => [$S::situations(9), $S::situations(10), $S::situations(11)], 'none' => $ids(9), 'eating_disorder' => $ids(10), 'kidney' => $ids(11), 'unknown' => $ids(7),
+      'single_shown' => array_keys($S::api_rows($rows[1], 'insights', 9)), 'single_hidden' => array_keys($S::api_rows($rows[1], 'insights', 11)),
+      'other_type' => count($S::api_rows($rows, 'readings', 10))];`);
+  expect(r.situations[0]).toEqual([]);
+  expect(r.situations[1]).toContain('eating_disorder');
+  expect(r.situations[2]).toContain('kidney');
+  // The Today step's numbers (id 5) are not an insight in any list.
+  expect(r.none).toEqual([1, 2, 3, 4]);
+  expect(r.eating_disorder).toEqual([]);
+  expect(r.kidney).toEqual([1, 3, 4]);
+  expect(r.unknown).toEqual([]);
+  expect(r.single_shown).toContain('values');
+  expect(r.single_hidden).toContain('id');
+  expect(r.single_hidden).not.toContain('values');
+  expect(r.other_type).toBe(5);
+  // Both interface reads of a stored row go through the filter.
+  expect(src('class-api.php').match(/apply_filters\( 'lld_members_stage3_api_rows', \$rows?, \(string\) \$request\['type'\], \$member_id \)/g)).toHaveLength(2);
+});
+
+test('FR3-69: a stored plan offer cannot be accepted after the member declares an eating disorder; keeping the plan stays open', () => {
+  const r = php(`${STORED}
+    $J = 'LLD_Members_Goal_Journey';
+    $refused = $J::answer_adjustment(7, 9, 'later_date', facts(['eating_disorder']));
+    $writes = count(LLD_Members_Stage3_Data::$inserted);
+    $keep = $J::answer_adjustment(7, 9, 'keep', facts(['eating_disorder']));
+    return ['refused' => $refused instanceof WP_Error ? $refused->code : $refused, 'writes' => $writes, 'keep' => $keep, 'kept' => LLD_Members_Stage3_Data::$inserted];`);
+  expect(r.refused).toBe('lld_adjust');
+  expect(r.writes).toBe(0);
+  expect(r.keep).toBe(true);
+  expect(r.kept).toEqual([['update:plan_adjustments', { accepted: 0 }, []]]);
 });

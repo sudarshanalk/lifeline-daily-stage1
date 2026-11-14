@@ -662,6 +662,11 @@ class LLD_Members_Goal_Journey {
 		if ( empty( $facts['premium'] ) ) {
 			return new WP_Error( 'lld_premium', 'Plan adjustments are part of Premium.' );
 		}
+		// An offer the safety matrix no longer allows (FR3-69) is not listed by pending_adjustments(), and cannot be
+		// accepted from an old page either; "keep" above stays open.
+		if ( ! self::rule_allowed( isset( $facts['situations'] ) && is_array( $facts['situations'] ) ? $facts['situations'] : self::situations_now( $member_id ), class_exists( 'LLD_Members_Rule_Catalogue' ) ? LLD_Members_Rule_Catalogue::name_for_id( (int) $adj['rule_id'] ) : '' ) ) {
+			return new WP_Error( 'lld_adjust', 'This offer is no longer open.' );
+		}
 		$goal = self::active_goal( $member_id, 'main' );
 		$plan = $goal ? self::plan( $member_id, (int) $goal['id'] ) : null;
 		if ( ! $goal || ! $plan ) {
