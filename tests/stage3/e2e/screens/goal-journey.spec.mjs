@@ -114,9 +114,14 @@ async function joining(page, pace = '0.5', date = '', refused = '') {
 async function weightGoal(page, { current = 90, target = 84, pace = '0.5', date = '', waist = '', refused = '' } = {}) {
   await page.goto('/members/goal/?type=lose_weight');
   await expect(page.locator('[data-lld-goal-step="details"]')).toBeVisible();
+  // The page's own script moves focus to the heading once it has loaded; a fill before that can lose its text (WebKit)
+  // and the form goes back with an empty box. Wait for the load, fill, and check each box before saving.
+  await page.waitForLoadState('load');
   await page.locator('#lld_current').fill(String(current));
   await page.locator('#lld_target').fill(String(target));
   if (waist) await page.locator('#lld_waist').fill(String(waist));
+  await expect(page.locator('#lld_current')).toHaveValue(String(current));
+  await expect(page.locator('#lld_target')).toHaveValue(String(target));
   await saveGoal(page);
   if (refused && !date) {
     await expect(page.locator('[data-lld-refused]')).toHaveAttribute('data-lld-refused', refused);

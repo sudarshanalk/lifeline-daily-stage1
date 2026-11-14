@@ -57,8 +57,13 @@ export async function weightGoal(page, { current = 80, target = 60 } = {}) {
   const details = page.locator('[data-lld-goal-step="details"]');
   await expect(details).toBeVisible();
   await expect(details.locator('[data-lld-section="hw-where"]')).toBeVisible();
+  // The page's own script moves focus to the heading once it has loaded; a fill before that can lose its text (WebKit),
+  // leaving a required box empty so the form is never sent. Wait for the load, fill, and check each box before saving.
+  await page.waitForLoadState('load');
   await page.locator('#lld_current').fill(String(current));
   await page.locator('#lld_target').fill(String(target));
+  await expect(page.locator('#lld_current')).toHaveValue(String(current));
+  await expect(page.locator('#lld_target')).toHaveValue(String(target));
   await submit(page, page.getByRole('button', { name: 'Save my goal' }), '/members/goal/');
   await expect(page).toHaveURL(/\/members\/goal\/\?done=\d+&hw=questions$/);
 }
