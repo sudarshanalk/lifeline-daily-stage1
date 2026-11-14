@@ -147,6 +147,7 @@ class LLD_Members_Premium {
 			$main .= '<p class="lld-hint">' . esc_html( $note ) . '</p>';
 		}
 		$main .= '<p class="lld-hint">Each meal can be swapped for a safe alternative.</p></div>';
+		$main .= self::forms_assets();
 		$nonce = $consent ? wp_create_nonce( 'lld_swap' ) : '';
 		$first = new DateTimeImmutable( $plan['week']['starting'] );
 		foreach ( $plan['days'] as $day => $meals ) {
@@ -164,11 +165,16 @@ class LLD_Members_Premium {
 					$main .= '<form method="post" class="lld-form lld-recipe-swap" data-lld-swap="' . esc_attr( $key ) . '">';
 					$main .= '<input type="hidden" name="lld_swap_nonce" value="' . esc_attr( $nonce ) . '">';
 					$main .= '<input type="hidden" name="lld_slot" value="' . esc_attr( $key ) . '">';
-					$main .= '<p><label for="' . esc_attr( $field ) . '">Swap Day ' . (int) $day . ' ' . esc_html( $slot ) . '</label> <select id="' . esc_attr( $field ) . '" name="lld_recipe">';
+					$main .= '<p class="lld-visually-hidden"><label for="' . esc_attr( $field ) . '">Swap Day ' . (int) $day . ' ' . esc_html( $slot ) . '</label> <select id="' . esc_attr( $field ) . '" name="lld_recipe">';
 					foreach ( $recipe['options'] as $option ) {
 						$main .= '<option value="' . (int) $option['id'] . '">' . esc_html( $option['title'] ) . '</option>';
 					}
 					$main .= '</select></p>';
+					$main .= '<ul class="lld-recipe-swap-list" data-lld-swap-panel>';
+					foreach ( $recipe['options'] as $option ) {
+						$main .= '<li><button type="button" data-lld-swap-pick="' . (int) $option['id'] . '">' . esc_html( $option['title'] ) . '</button></li>';
+					}
+					$main .= '</ul>';
 					$main .= lld_button( array( 'label' => 'Swap', 'variant' => 'secondary' ) );
 					$main .= '</form>';
 				} elseif ( $consent ) {
@@ -2716,15 +2722,40 @@ class LLD_Members_Premium {
 		if ( ! $writable ) {
 			return $html;
 		}
-		$html .= '<form method="post" class="lld-form">';
+		$html .= '<form method="post" class="lld-form" data-lld-day-form>';
 		$html .= wp_nonce_field( 'lld_diary', 'lld_diary_nonce', true, false );
 		$html .= '<input type="hidden" name="lld_day_save" value="1">';
 		$html .= '<p><label for="lld_water">Glasses of water</label><input id="lld_water" name="lld_water" type="number" min="0" max="40" step="1" inputmode="numeric" value="' . esc_attr( $water ) . '"></p>';
+		$html .= '<div class="lld-stepper" data-lld-stepper="lld_water"><button type="button" data-lld-step="-1" aria-label="One glass of water fewer">&minus;</button>';
+		$html .= '<output data-lld-stepper-value aria-live="polite">' . esc_html( '' === $water ? '0' : $water ) . '</output>';
+		$html .= '<button type="button" data-lld-step="1" aria-label="One more glass of water">+</button></div>';
 		$html .= '<p><label for="lld_hunger">Hunger from 1 to 5</label><input id="lld_hunger" name="lld_hunger" type="number" min="1" max="5" step="1" inputmode="numeric" value="' . esc_attr( $hunger ) . '"></p>';
+		$html .= '<div class="lld-tap-row" data-lld-taps="lld_hunger" role="group" aria-label="Hunger from 1 to 5">';
+		for ( $n = 1; $n <= 5; $n++ ) {
+			$html .= '<button type="button" data-lld-tap="' . $n . '" aria-label="' . esc_attr( 'Hunger ' . $n . ' of 5' ) . '">' . $n . '</button>';
+		}
+		$html .= '</div>';
 		$html .= '<p><label for="lld_energy">Energy from 1 to 5</label><input id="lld_energy" name="lld_energy" type="number" min="1" max="5" step="1" inputmode="numeric" value="' . esc_attr( $energy ) . '"></p>';
+		$html .= '<div class="lld-tap-row" data-lld-taps="lld_energy" role="group" aria-label="Energy from 1 to 5">';
+		for ( $n = 1; $n <= 5; $n++ ) {
+			$html .= '<button type="button" data-lld-tap="' . $n . '" aria-label="' . esc_attr( 'Energy ' . $n . ' of 5' ) . '">' . $n . '</button>';
+		}
+		$html .= '</div>';
 		$html .= lld_button( array( 'label' => 'Save today' ) );
 		$html .= '</form>';
+		$html .= self::forms_assets();
 		return $html;
+	}
+
+	/**
+	 * Shared Stage 3 form stylesheet and script (P3-36 D3).
+	 */
+	private static function forms_assets() {
+		$ver = defined( 'LLD_MEMBERS_VERSION' ) ? LLD_MEMBERS_VERSION : '1';
+		$css = plugins_url( 'assets/stage3-forms.css', LLD_MEMBERS_FILE );
+		$js  = plugins_url( 'assets/stage3-forms.js', LLD_MEMBERS_FILE );
+		return '<link rel="stylesheet" href="' . esc_url( $css ) . '?ver=' . esc_attr( $ver ) . '">'
+			. '<script src="' . esc_url( $js ) . '?ver=' . esc_attr( $ver ) . '"></script>';
 	}
 
 	/**

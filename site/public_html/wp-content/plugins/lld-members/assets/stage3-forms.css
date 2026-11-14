@@ -1,0 +1,227 @@
+/* Stage 3 form controls (P3-36 C2 / A8 / B4 / D3 / D4). */
+
+.lld-file {
+	position: relative;
+}
+
+.lld-file label {
+	display: inline-block;
+	padding: 0.55rem 1rem;
+	border: 1px solid currentColor;
+	border-radius: 999px;
+	cursor: pointer;
+}
+
+.lld-file input[type="file"] {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.lld-file:focus-within label {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+.lld-file-name:empty {
+	display: none;
+}
+
+.lld-file-name {
+	display: inline-block;
+	margin-left: 0.75rem;
+}
+
+.lld-library-tools {
+	margin: 1rem 0 1.5rem;
+}
+
+.lld-library-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-top: 0.75rem;
+}
+
+.lld-chip-filter {
+	appearance: none;
+	border: 1px solid currentColor;
+	background: transparent;
+	border-radius: 999px;
+	padding: 0.4rem 0.9rem;
+	cursor: pointer;
+}
+
+.lld-chip-filter.is-active {
+	background: currentColor;
+	color: #fff;
+}
+
+.lld-chip-filter:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+.lld-library-cards {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 0.75rem;
+}
+
+.lld-library-card a {
+	display: block;
+	padding: 0.85rem 1rem;
+	border: 1px solid rgba(0, 0, 0, 0.12);
+	border-radius: 0.75rem;
+	text-decoration: none;
+}
+
+.lld-library-card-title {
+	display: block;
+	font-weight: 600;
+}
+
+.lld-library-card-meta,
+.lld-library-card-tracks {
+	display: block;
+	margin-top: 0.25rem;
+	font-size: 0.95rem;
+	opacity: 0.8;
+}
+
+.lld-library-group[hidden],
+.lld-library-card[hidden] {
+	display: none !important;
+}
+
+.lld-reminders-hub {
+	margin-top: 1.5rem;
+}
+
+.lld-reminder-rows {
+	list-style: none;
+	margin: 0 0 1rem;
+	padding: 0;
+	display: grid;
+	gap: 1rem;
+}
+
+.lld-reminder-days {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 0.75rem;
+	border: 0;
+	margin: 0.5rem 0 0;
+	padding: 0;
+}
+
+.lld-stepper {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin: 0.5rem 0 1rem;
+}
+
+.lld-stepper button {
+	min-width: 2.75rem;
+	min-height: 2.75rem;
+}
+
+.lld-tap-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin: 0.5rem 0 1rem;
+}
+
+.lld-tap-row button {
+	min-width: 2.75rem;
+	min-height: 2.75rem;
+}
+
+.lld-tap-row button.is-active {
+	background: currentColor;
+	color: #fff;
+}
+
+.lld-pill-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin: 0.5rem 0 1rem;
+}
+
+.lld-pill-row button {
+	min-height: 2.75rem;
+	padding: 0.45rem 0.9rem;
+	border: 1px solid currentColor;
+	background: transparent;
+	border-radius: 999px;
+	cursor: pointer;
+}
+
+.lld-pill-row button.is-active {
+	background: currentColor;
+	color: #fff;
+}
+
+.lld-measure-tiles {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	margin: 0 0 1rem;
+}
+
+.lld-measure-tile {
+	padding: 0.75rem 1rem;
+	border: 1px solid rgba(0, 0, 0, 0.12);
+	border-radius: 0.75rem;
+	min-width: 7rem;
+}
+
+.lld-measure-tile strong {
+	display: block;
+}
+
+.lld-recipe-swap-panel[hidden] {
+	display: none !important;
+}
+
+.lld-recipe-swap-list {
+	list-style: none;
+	margin: 0.5rem 0 0;
+	padding: 0;
+	display: grid;
+	gap: 0.35rem;
+}
+
+.lld-recipe-swap-list button {
+	width: 100%;
+	text-align: left;
+	min-height: 2.75rem;
+	padding: 0.55rem 0.75rem;
+	border: 1px solid rgba(0, 0, 0, 0.12);
+	background: #fff;
+	cursor: pointer;
+}
+
+.lld-sr-only,
+.lld-visually-hidden {
+	position: absolute !important;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
