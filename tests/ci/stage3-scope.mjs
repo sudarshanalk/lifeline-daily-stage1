@@ -102,7 +102,8 @@ export function stage3Scope({ title, files, decisions = loadDecisions() }) {
   if (!c) return { ok: false, problems: [`title "${title}" is not S3-Pnn: <name> (Build Method Stage 3 §2)`], review: [] };
   const problems = [];
   const review = [];
-  const allowed = toolsFor(c.ids).flatMap((t) => TOOL_FILES[t]).concat(c.ids.flatMap((id) => PACKAGE_FILES[id] || []));
+  const lead = toolsFor(c.ids).every((t) => t === 'claude');
+  const allowed = toolsFor(c.ids).flatMap((t) => TOOL_FILES[t]).concat(lead ? c.ids.flatMap((id) => PACKAGE_FILES[id] || []) : []);
   for (const f of files) {
     if (matches(f, PROTECTED)) { problems.push(`${f} is a Stage 1 calculator, approval, manifest or copy file: owner decision needed`); continue; }
     if (DECLARED_STAGE2.includes(f)) { review.push(f); continue; }
@@ -197,10 +198,10 @@ function walk(dir, out = []) {
 /** Stage 3 test ids used under tests/stage3 that are not checks in docs/stage3/03 (Build Method §3 rule 3). */
 export function unknownTestIds({ root = ROOT } = {}) {
   const doc = readFileSync(resolve(root, 'docs', 'stage3', '03_Test_Criteria_Stage3.md'), 'utf8');
-  const known = new Set(doc.match(/TC-(?:FR3|NFR3)-\d{2}-AS-\d{2}/g) || []);
+  const known = new Set(doc.match(/TC-(?:FR3|NFR3)-\d{2,3}-AS-\d{2}/g) || []); // FR3-100 and above are valid (P3-35, P3-36)
   const problems = [];
   for (const file of walk(resolve(root, 'tests', 'stage3'))) {
-    const ids = readFileSync(file, 'utf8').match(/TC-(?:FR3|NFR3)-\d{2}-AS-\d{2}/g) || [];
+    const ids = readFileSync(file, 'utf8').match(/TC-(?:FR3|NFR3)-\d{2,3}-AS-\d{2}/g) || [];
     for (const id of new Set(ids)) if (!known.has(id)) problems.push(`${relative(root, file).replace(/\\/g, '/')}: ${id} is not a check in docs/stage3/03`);
   }
   return { ok: problems.length === 0, problems, known: known.size };

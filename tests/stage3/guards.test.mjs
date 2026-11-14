@@ -112,6 +112,9 @@ test('P3-36 opens the build list Stage 2 files and new assets to package 36 only
   expect(stage3Scope({ title: 'S3-P36: A8 library', files: [`${PLUGIN}/includes/class-photos.php`], decisions: [] }).ok).toBe(false);
   expect(stage3Scope({ title: 'S3-P36: A8 library', files: ['site/public_html/tools/protein-requirement-tool.html'], decisions: [] }).ok).toBe(false);
   expect(stage3Scope({ title: 'S3-P36: A8 library', files: [`${PLUGIN}/assets/stage3-other.js`], decisions: [] }).ok).toBe(false);
+  // A title joined with a builder's package keeps that builder's limits: no Stage 2 files and no new assets.
+  expect(stage3Scope({ title: 'S3-P36-P40: joined', files: [named[0]], decisions: [] }).ok).toBe(false);
+  expect(stage3Scope({ title: 'S3-P36-P40: joined', files: [PACKAGE_FILES[36][0]], decisions: [] }).ok).toBe(false);
 });
 
 test('every Stage 3 test id in tests/stage3 is a check in docs/stage3/03', () => {
