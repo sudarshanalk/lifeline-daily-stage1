@@ -15,6 +15,14 @@ async function fresh(page) {
   await signIn(page, B, password);
 }
 
+/** Day n of the journey on the member's own clock; day 0 is Monday 28 September 2026 (as goal-journey.spec.mjs). */
+async function clock(page, day) {
+  const d = new Date(Date.UTC(2026, 8, 28, 9));
+  d.setUTCDate(d.getUTCDate() + day);
+  const res = await page.request.post('/wp-json/lld-members/v1/test/clock', { data: { email: B, utc: d.toISOString().slice(0, 19).replace('T', ' ') } });
+  expect(res.ok(), await res.text()).toBeTruthy();
+}
+
 /** Every icon in the matched area is aria-hidden, and none adds an image or a name to the accessibility tree. */
 async function iconsHidden(page, scope) {
   const icons = page.locator(`${scope} .lld-member-icon`);
@@ -44,24 +52,40 @@ test.describe.serial('P3-36 D6 D7 D9 icons, chart numbers and week ring', () => 
   });
 
   test("TC-FR3-16-AS-02 D7 each weekly bar's count equals the table's value, with the 7-day guide", async ({ page }) => {
-    await signIn(page, B, password);
+    await fresh(page);
+    // Real counts: a full week (7 days logged) and 4 days of the next, through Today's water tile on the member's own
+    // test clock. Day 0 is Monday 28 September 2026, as in goal-journey.spec.mjs.
+    for (const day of [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]) {
+      await clock(page, day);
+      await page.goto('/members/home/');
+      await page.locator('[data-lld-tile="water"] button').click();
+      await expect(page).toHaveURL(/saved=water/);
+    }
     await page.goto('/members/progress/');
     const printed = await page.locator('[data-lld-section="weekly-bars"] .lld-bar-value').allTextContents();
     const table = await page.locator('[data-lld-table="weekly-bars"] td[data-lld-days-value]').allTextContents();
     expect(printed.length).toBe(4);
     expect(printed).toEqual(table);
+    expect(table).toContain('7 of 7');
+    expect(table).toContain('4 of 7');
     // Bars stay proportional (7 days is the full bar area) and the guide key reads as approved.
     const heights = await page.locator('[data-lld-section="weekly-bars"] .lld-bar > span').evaluateAll((els) => els.map((el) => el.style.height));
     expect(heights).toEqual(table.map((c) => `${Math.round((Number(c.split(' ')[0]) / 7) * 100)}%`));
     await expect(page.locator('.lld-bar-guide-key')).toHaveText('7-day guide');
-    // The guide line sits at the top of the bar area, below every printed count, so it never crosses one.
-    const clear = await page.locator('[data-lld-section="weekly-bars"] .lld-bar').evaluateAll((bars) => bars.every((bar) => {
-      const value = bar.querySelector('.lld-bar-value').getBoundingClientRect();
-      const fill = bar.querySelector(':scope > span').getBoundingClientRect();
-      const top = fill.bottom - (fill.height / Math.max(Number(bar.dataset.lldBarDays), 1)) * 7; // where 7 of 7 would reach
-      return value.bottom <= top + 1;
-    }));
-    expect(clear).toBe(true);
+    // The guide is the top of the bar area: the 7-of-7 bar reaches it, the 4-of-7 bar stays below it, and every
+    // printed count ends above it, so the line never crosses a label.
+    const geometry = await page.locator('[data-lld-section="weekly-bars"] .lld-bar').evaluateAll((bars) => bars.map((bar) => ({
+      days: Number(bar.dataset.lldBarDays),
+      valueBottom: bar.querySelector('.lld-bar-value').getBoundingClientRect().bottom,
+      barTop: bar.querySelector(':scope > span').getBoundingClientRect().top,
+      barHeight: bar.querySelector(':scope > span').getBoundingClientRect().height,
+    })));
+    const full = geometry.find((g) => g.days === 7);
+    const four = geometry.find((g) => g.days === 4);
+    const guide = full.barTop;
+    for (const g of geometry) expect(g.valueBottom, `${g.days} of 7 label`).toBeLessThanOrEqual(guide + 0.5);
+    expect(four.barTop).toBeGreaterThan(guide + 10);
+    expect(Math.abs(four.barHeight / full.barHeight - 4 / 7)).toBeLessThan(0.03);
     await page.getByRole('button', { name: 'Show as table' }).first().click();
     await expect(page.locator('[data-lld-table="weekly-bars"]')).toBeVisible();
   });

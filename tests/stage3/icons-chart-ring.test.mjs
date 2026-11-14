@@ -57,8 +57,11 @@ test('P3-36 D9: the ring keeps data-lld-ring-done, carries the count before, and
   const today = read('includes/stage3/screens/class-today-screen.php');
   expect(today).toContain(`data-lld-ring-done="' . (int) $ring['done'] . '"`);
   expect(today).toContain("$was = self::ring( $member_id, $facts )['done'];");
-  expect(today).toContain("'/members/home/?saved=' . rawurlencode( $got ) . '&ring_was=' . (int) $was");
-  expect(today).toContain("$rose  = null !== $was && $ring['done'] > $was;");
+  expect(today).toContain("'/members/home/?saved=' . rawurlencode( $got ) . '&ring_was=' . (int) $was . '&ring_on=' . rawurlencode( $today )");
+  // Only the link's own day counts, "up" only for the one day just added, "already counted" only when it is.
+  expect(today).toContain("sanitize_text_field( wp_unslash( (string) $_GET['ring_on'] ) ) !== (string) $facts['today']");
+  expect(today).toContain("$rose  = null !== $was && $ring['done'] === $was + 1;");
+  expect(today).toContain("in_array( (string) $facts['today'], LLD_Members_Goal_Journey::active_dates( $member_id, 14 ), true )");
   const css = read('assets/stage3-account.css');
   expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*body\.lld-members-v2-app \.lld-ring-rose \.lld-ring-fill,\s*body\.lld-members-v2-app \.lld-ring-card\.lld-ring-rose \{\s*animation: none;/);
 });

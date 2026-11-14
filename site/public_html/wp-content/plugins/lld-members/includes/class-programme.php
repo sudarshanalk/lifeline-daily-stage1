@@ -2248,18 +2248,6 @@ class LLD_Members_Programme {
 	}
 
 	/**
-	 * The four-week timeline (SCR-10, package 6 of the prototype): each week done, open, not open yet or locked, with
-	 * its theme; the open week lists its seven days as done, skipped, today or upcoming; a locked week says when it
-	 * opens, or that it is part of Premium.
-	 *
-	 * @param int    $member_id Member number.
-	 * @param object $row       Enrolment.
-	 * @param int    $track     Track post.
-	 * @param int    $reached   Programme day reached.
-	 * @param int    $limit     Last day open to this member.
-	 * @param array  $periods   Active periods.
-	 */
-	/**
 	 * P3-36 D6: the topic icon and tone for a track's weeks, as the header shows the track's topic.
 	 *
 	 * @param string $key Track key.
@@ -2275,6 +2263,18 @@ class LLD_Members_Programme {
 		return isset( $icons[ $key ] ) ? $icons[ $key ] : array( 'compass', 'stone' );
 	}
 
+	/**
+	 * The four-week timeline (SCR-10, package 6 of the prototype): each week done, open, not open yet or locked, with
+	 * its theme; the open week lists its seven days as done, skipped, today or upcoming; a locked week says when it
+	 * opens, or that it is part of Premium.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param object $row       Enrolment.
+	 * @param int    $track     Track post.
+	 * @param int    $reached   Programme day reached.
+	 * @param int    $limit     Last day open to this member.
+	 * @param array  $periods   Active periods.
+	 */
 	private static function weeks_html( $member_id, $row, $track, $reached, $limit, $periods ) {
 		$results = self::results( $member_id, (int) $row->id );
 		$html    = '<ol class="lld-weeks">';
