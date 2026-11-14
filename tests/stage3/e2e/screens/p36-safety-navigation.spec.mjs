@@ -170,13 +170,6 @@ async function healthFields(page) {
 // The "Saved" line of a saved form (it also holds an Undo button, so its text is not "Saved" alone).
 const saved = (page) => page.locator('main [role="status"]').filter({ hasText: 'Saved' });
 
-// The stored height as the Health profile shows it: the "Stored height" line, or, with the account hub on (P3-36 D4,
-// where the stored measurements are the values in the boxes), 175 in the height box.
-async function storedHeight(page) {
-  if ((await page.locator('main').innerText()).includes('Stored height: 175')) return true;
-  return Number(await page.locator('#lld_height').inputValue()) === 175;
-}
-
 test('TC-FR3-69-AS-06', async ({ page }) => {
   test.slow(); // two fresh members, each saving twice
   for (const answer of ['None of these', 'Prefer not to answer']) {
@@ -189,14 +182,15 @@ test('TC-FR3-69-AS-06', async ({ page }) => {
       await expect(page.locator('main').getByRole('alert')).toContainText('Answer the Conditions question to save these details.');
       // Reload clears unsaved post values: a rejected submission must not persist the measurements.
       await page.goto('/members/health/');
-      expect(await storedHeight(page)).toBe(false);
+      // With the account hub on, the stored height is shown in its box (P3-36 D4, #256), not as a "Stored height" line.
+      await expect(page.locator('#lld_height')).not.toHaveValue(/^175(\.0+)?$/);
       await healthFields(page);
       await page.getByRole('checkbox', { name: answer, exact: true }).check();
       await submitAndWait(page, page.getByRole('button', { name: 'Save', exact: true }));
       await expect(saved(page)).toBeVisible();
       await page.goto('/members/health/');
       await expect(page.getByRole('checkbox', { name: answer, exact: true })).toBeChecked();
-      await expect.poll(() => storedHeight(page)).toBe(true);
+      await expect(page.locator('#lld_height')).toHaveValue(/^175(\.0+)?$/);
     });
   }
 });
