@@ -1778,8 +1778,1159 @@
 		loadSuggestions(state.date);
 	}
 
+	function rdEsc(str) {
+		return String(str == null ? '' : str)
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#39;');
+	}
+
+	function rdNum(val) {
+		if (val == null || String(val).trim() === '') return null;
+		const n = Number(val);
+		return Number.isFinite(n) ? n : null;
+	}
+
+	function rdShiftDate(ymd, deltaDays) {
+		const parts = String(ymd || '').split('-').map(Number);
+		if (parts.length !== 3 || parts.some(Number.isNaN)) return '';
+		const d = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2] + deltaDays));
+		return d.toISOString().slice(0, 10);
+	}
+
+	function rdFormatTakenAt(val, fallbackDay) {
+		const raw = String(val || '').trim();
+		if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(raw)) return raw.replace('T', ' ') + ':00';
+		if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(raw)) return raw.replace('T', ' ');
+		if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(raw)) return raw.length === 16 ? raw + ':00' : raw.slice(0, 19);
+		return (fallbackDay || new Date().toISOString().slice(0, 10)) + ' 09:00:00';
+	}
+
+	function rdDisplayDateTime(takenAt) {
+		const raw = String(takenAt || '');
+		const d = raw.slice(0, 10);
+		const t = raw.slice(11, 16);
+		if (!d) return raw;
+		return t ? d + ' \u00b7 ' + t : d;
+	}
+
+	function rdComputeSleepHours(bedtime, takenAtVal) {
+		const bMatch = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(bedtime || '').trim());
+		const wMatch = /T([01]\d|2[0-3]):([0-5]\d)/.exec(String(takenAtVal || '').trim());
+		if (!bMatch || !wMatch) return null;
+		const bedMin = Number(bMatch[1]) * 60 + Number(bMatch[2]);
+		const wakeMin = Number(wMatch[1]) * 60 + Number(wMatch[2]);
+		let diff = wakeMin - bedMin;
+		if (diff <= 0) diff += 24 * 60;
+		return Math.round((diff / 60) * 10) / 10;
+	}
+
+	async function rdRequest(cfg, path, options) {
+		const opts = Object.assign({ method: 'GET' }, options || {});
+		const headers = Object.assign({}, opts.headers || {});
+		if (cfg.nonce) headers['X-WP-Nonce'] = cfg.nonce;
+		if (opts.body !== undefined) {
+			headers['Content-Type'] = 'application/json';
+			opts.body = typeof opts.body === 'string' ? opts.body : JSON.stringify(opts.body);
+		}
+		opts.headers = headers;
+		opts.credentials = 'same-origin';
+		const url = String(cfg.apiBase || '').replace(/\/+$/, '') + '/' + String(path || '').replace(/^\/+/, '');
+		let res;
+		let data = {};
+		try {
+			res = await fetch(url, opts);
+			data = await res.json().catch(function () { return {}; });
+		} catch (e) {
+			return { ok: false, status: 0, data: { error: 'Network error. Please try again.' } };
+		}
+		return { ok: res.ok, status: res.status, data: data || {} };
+	}
+
+	function initReadings(root) {
+		let cfg = {};
+		try {
+			cfg = JSON.parse(root.getAttribute('data-lld-readings-config') || '{}');
+		} catch (e) {
+			return;
+		}
+
+		const qs = function (sel) { return root.querySelector(sel); };
+		const qsa = function (sel) { return Array.prototype.slice.call(root.querySelectorAll(sel)); };
+
+		const els = {
+			tabs: qsa('[data-lld-type-tab]'),
+			panels: qsa('[data-lld-type-panel]'),
+			heading: qs('[data-lld-form-heading]'),
+			form: qs('[data-lld-readings-form]'),
+			takenAt: qs('[data-lld-taken-at]'),
+			bpSys: qs('[data-lld-bp-sys]'),
+			bpDia: qs('[data-lld-bp-dia]'),
+			bpPulse: qs('[data-lld-bp-pulse]'),
+			bpDizzy: qs('[data-lld-bp-dizzy]'),
+			wVal: qs('[data-lld-w-val]'),
+			wUnit: qs('[data-lld-w-unit]'),
+			waistVal: qs('[data-lld-waist-val]'),
+			waistUnit: qs('[data-lld-waist-unit]'),
+			actMin: qs('[data-lld-act-min]'),
+			actEffort: qs('[data-lld-act-effort]'),
+			actSteps: qs('[data-lld-act-steps]'),
+			actDetail: qs('[data-lld-act-detail]'),
+			actWeekText: qs('[data-lld-activity-week-text]'),
+			actViewToggle: qs('[data-lld-act-view-toggle]'),
+			actChart: qs('[data-lld-activity-chart]'),
+			actTable: qs('[data-lld-activity-table]'),
+			actMeter: qs('[data-lld-activity-meter]'),
+			actFill: qs('[data-lld-activity-fill]'),
+			sleepHours: qs('[data-lld-sleep-hours]'),
+			sleepBed: qs('[data-lld-sleep-bed]'),
+			sleepWake: qs('[data-lld-sleep-wake]'),
+			sleepRested: qs('[data-lld-sleep-rested]'),
+			waterTotal: qs('[data-lld-water-total]'),
+			waterQuickBtns: qsa('[data-lld-water-quick]'),
+			waterVal: qs('[data-lld-water-val]'),
+			waterUnit: qs('[data-lld-water-unit]'),
+			moodBtns: qsa('[data-lld-mood-btn]'),
+			moodNote: qs('[data-lld-mood-note]'),
+			gluVal: qs('[data-lld-glu-val]'),
+			gluUnit: qs('[data-lld-glu-unit]'),
+			gluTiming: qs('[data-lld-glu-timing]'),
+			gluSymptoms: qsa('[data-lld-glu-symptom]'),
+			saveBtn: qs('[data-lld-save-btn]'),
+			cancelEditBtn: qs('[data-lld-cancel-edit]'),
+			urgent: qs('[data-lld-urgent]'),
+			caution: qs('[data-lld-caution]'),
+			pulseNote: qs('[data-lld-pulse-note]'),
+			error: qs('[data-lld-error]'),
+			status: qs('[data-lld-status]'),
+			insightsSlot: qs('[data-lld-insights-slot]'),
+			empty: qs('[data-lld-empty]'),
+			emptyText: qs('[data-lld-empty-text]'),
+			emptyBpLink: qs('[data-lld-empty-bp-link]'),
+			focusFormBtn: qs('[data-lld-focus-form]'),
+			historySection: qs('[data-lld-history-section]'),
+			historyHeading: qs('[data-lld-history-heading]'),
+			filterFrom: qs('[data-lld-filter-from]'),
+			filterTo: qs('[data-lld-filter-to]'),
+			filterApply: qs('[data-lld-filter-apply]'),
+			filterReset: qs('[data-lld-filter-reset]'),
+			viewToggle: qs('[data-lld-view-toggle]'),
+			chartBox: qs('[data-lld-chart-box]'),
+			tableBox: qs('[data-lld-table-box]'),
+			actSrBox: qs('[data-lld-act-sr-box]')
+		};
+
+		const TYPE_LABELS = {
+			blood_pressure: 'Blood pressure',
+			weight: 'Weight',
+			waist: 'Waist',
+			activity: 'Activity',
+			sleep: 'Sleep',
+			water: 'Water',
+			mood: 'Mood',
+			glucose: 'Blood sugar'
+		};
+
+		const MOOD_WORDS = { 1: 'Low', 2: 'Down', 3: 'OK', 4: 'Good', 5: 'Great' };
+		const EFFORT_WORDS = { 1: 'Easy', 2: 'Moderate', 3: 'Hard' };
+
+		const state = {
+			type: cfg.initialType || 'blood_pressure',
+			selectedMood: null,
+			viewMode: 'chart',
+			actViewMode: 'chart',
+			rows: [],
+			trendPoints: [],
+			from: '',
+			to: '',
+			editingId: null,
+			busy: false
+		};
+
+		function linksCfg() {
+			return cfg.links || {};
+		}
+
+		function msgsCfg() {
+			return cfg.messages || {};
+		}
+
+		function formatSafetyText(rawText) {
+			const links = linksCfg();
+			let safe = rdEsc(rawText);
+			const safetyHref = rdEsc(links.safety || '/safety/');
+			const helpHref = rdEsc(links.helpline || 'https://findahelpline.com');
+			safe = safe.replace(
+				/\[When to seek urgent care\]/g,
+				'<a href="' + safetyHref + '">When to seek urgent care</a>'
+			);
+			safe = safe.replace(
+				/findahelpline\.com/g,
+				'<a href="' + helpHref + '" target="_blank" rel="noopener noreferrer">findahelpline.com</a>'
+			);
+			return safe;
+		}
+
+		function formatInsightText(rawText) {
+			const links = linksCfg();
+			const helpHref = rdEsc(links.helpline || 'https://findahelpline.com');
+			let safe = rdEsc(rawText);
+			safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+			safe = safe.replace(
+				/findahelpline\.com/g,
+				'<a href="' + helpHref + '" target="_blank" rel="noopener noreferrer">findahelpline.com</a>'
+			);
+			return safe;
+		}
+
+		function clearFeedback() {
+			if (els.caution) { els.caution.hidden = true; els.caution.innerHTML = ''; }
+			if (els.pulseNote) { els.pulseNote.hidden = true; els.pulseNote.innerHTML = ''; }
+			if (els.error) { els.error.hidden = true; els.error.innerHTML = ''; }
+			if (els.status) { els.status.hidden = true; els.status.textContent = ''; }
+			if (els.urgent) {
+				els.urgent.hidden = true;
+				els.urgent.innerHTML = '';
+				els.urgent.classList.remove('lld-safety');
+			}
+		}
+
+		function renderUrgentWarning(warning) {
+			if (!els.urgent) return;
+			const msg = String(warning.message || '').trim();
+			const lines = msg.split(/\r\n|\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+			const html = lines.map(function (line) {
+				return '<p>' + formatSafetyText(line) + '</p>';
+			}).join(' ');
+			els.urgent.innerHTML = html;
+			els.urgent.classList.add('lld-safety');
+			els.urgent.hidden = false;
+			els.urgent.focus();
+		}
+
+		function renderServerError(status, data) {
+			if (!els.error) return;
+			const links = linksCfg();
+			const msg = (data && (data.error || data.message)) || 'Could not save reading. Please check your entry.';
+			let html = '<p>' + rdEsc(msg) + '</p>';
+			if (status === 403) {
+				if (data && data.link) {
+					html += '<p><a class="lld-pill-btn lld-btn-secondary" href="' + rdEsc(data.link) + '">Health profile</a></p>';
+				} else if (data && data.upgrade) {
+					html += '<p><a class="lld-pill-btn lld-btn-secondary" href="' + rdEsc(links.pricing || '/pricing/') + '">See Premium</a></p>';
+				} else if (!cfg.hasConsent || /consent/i.test(msg)) {
+					html += '<p><a class="lld-pill-btn lld-btn-secondary" href="' + rdEsc(links.settings || '/members/settings/') + '">Review health consent</a></p>';
+				}
+			}
+			els.error.innerHTML = html;
+			els.error.hidden = false;
+			els.error.focus();
+		}
+
+		function handleSaveWarning(res, savedVerb) {
+			const warning = res.data && res.data.warning ? res.data.warning : null;
+			let focused = false;
+			if (!warning || warning.level !== 'urgent') {
+				if (els.urgent) {
+					els.urgent.hidden = true;
+					els.urgent.innerHTML = '';
+					els.urgent.classList.remove('lld-safety');
+				}
+			}
+			if (warning && warning.pulse_left_out && warning.pulse_message && els.pulseNote) {
+				els.pulseNote.innerHTML = '<p>' + rdEsc(warning.pulse_message) + '</p>';
+				els.pulseNote.hidden = false;
+			}
+			if (warning && warning.level === 'urgent') {
+				renderUrgentWarning(warning);
+				return;
+			}
+			if (warning && (warning.level === 'caution' || warning.level === 'check') && warning.message && els.caution) {
+				els.caution.innerHTML = '<p>' + formatSafetyText(warning.message) + '</p>';
+				els.caution.hidden = false;
+				els.caution.focus();
+				focused = true;
+			}
+			if (warning && warning.pulse_left_out && els.pulseNote && !els.pulseNote.hidden && !focused) {
+				els.pulseNote.focus();
+				focused = true;
+			}
+			if (els.status) {
+				els.status.textContent = savedVerb || 'Reading saved.';
+				els.status.hidden = false;
+				if (!focused) els.status.focus();
+			}
+		}
+
+		function activeUnitFor(type, rowUnit) {
+			if (type === 'weight') {
+				return (els.wUnit && els.wUnit.value) || (cfg.imperial ? 'lb' : (rowUnit || 'kg'));
+			}
+			if (type === 'waist') {
+				return (els.waistUnit && els.waistUnit.value) || (cfg.imperial ? 'in' : (rowUnit || 'cm'));
+			}
+			if (type === 'glucose') {
+				return (els.gluUnit && els.gluUnit.value) || (cfg.imperial ? 'mg/dL' : (rowUnit || 'mmol/L'));
+			}
+			if (type === 'water') {
+				return (els.waterUnit && els.waterUnit.value) || (rowUnit || 'ml');
+			}
+			return rowUnit || '';
+		}
+
+		function convertMetricValue(type, metricVal, unit) {
+			if (metricVal === null || metricVal === undefined || isNaN(Number(metricVal))) {
+				return null;
+			}
+			const n = Number(metricVal);
+			if (type === 'weight' && unit === 'lb') {
+				return Math.round(n * 2.2046226218 * 10) / 10;
+			}
+			if (type === 'waist' && unit === 'in') {
+				return Math.round((n / 2.54) * 10) / 10;
+			}
+			if (type === 'glucose' && unit === 'mg/dL') {
+				return Math.round(n * 18.016);
+			}
+			if (type === 'water' && unit === 'glasses') {
+				return Math.round((n / 250) * 10) / 10;
+			}
+			return Math.round(n * 10) / 10;
+		}
+
+		function formatRowSummary(row) {
+			const type = row.reading_type;
+			const unit = activeUnitFor(type, row.display_unit || row.unit_shown || '');
+			const converted = convertMetricValue(type, row.value_1, unit);
+			const v1 = converted != null ? converted : (row.display_value_1 != null ? row.display_value_1 : row.value_1);
+			const v2 = row.value_2;
+			const v3 = row.value_3;
+			if (type === 'blood_pressure') {
+				let txt = (row.value_1 != null ? row.value_1 : '') + '/' + (v2 != null ? v2 : '') + ' mmHg';
+				if (v3 != null) txt += ' \u00b7 Pulse ' + v3 + ' bpm';
+				return txt;
+			}
+			if (type === 'weight') {
+				return (v1 != null ? v1 : '') + ' ' + (unit || 'kg');
+			}
+			if (type === 'waist') {
+				return (v1 != null ? v1 : '') + ' ' + (unit || 'cm');
+			}
+			if (type === 'activity') {
+				const parts = [(row.value_1 != null ? row.value_1 : 0) + ' min'];
+				if (v2 != null && Number(v2) > 0) parts.push(Number(v2).toLocaleString() + ' steps');
+				if (v3 != null && EFFORT_WORDS[Math.round(Number(v3))]) parts.push(EFFORT_WORDS[Math.round(Number(v3))]);
+				return parts.join(' \u00b7 ');
+			}
+			if (type === 'sleep') {
+				const parts = [(row.value_1 != null ? row.value_1 : '') + ' hrs'];
+				if (v3 != null) parts.push('Rested ' + v3 + '/5');
+				return parts.join(' \u00b7 ');
+			}
+			if (type === 'water') {
+				const ml = row.value_1 != null ? Math.round(Number(row.value_1)) : 0;
+				const glasses = Math.round((ml / 250) * 10) / 10;
+				if (unit === 'glasses') {
+					return glasses + (glasses === 1 ? ' glass' : ' glasses') + ' (' + ml + ' ml)';
+				}
+				return ml + ' ml (' + glasses + (glasses === 1 ? ' glass)' : ' glasses)');
+			}
+			if (type === 'mood') {
+				const score = row.value_1 != null ? Math.round(Number(row.value_1)) : '';
+				const label = MOOD_WORDS[score] || '';
+				return 'Mood ' + score + '/5' + (label ? ' (' + label + ')' : '');
+			}
+			if (type === 'glucose') {
+				return (v1 != null ? v1 : '') + ' ' + (unit || 'mmol/L');
+			}
+			return String(v1 != null ? v1 : '');
+		}
+
+		function extractRowNote(row) {
+			if (!row.detail) return '';
+			try {
+				const parsed = JSON.parse(row.detail);
+				if (parsed && typeof parsed === 'object') {
+					const bits = [];
+					if (parsed.activity_type) bits.push(parsed.activity_type);
+					if (parsed.timing) bits.push(String(parsed.timing).replace(/_/g, ' '));
+					if (Array.isArray(parsed.symptoms) && parsed.symptoms.length) {
+						bits.push(parsed.symptoms.map(function (s) { return String(s).replace(/_/g, ' '); }).join(', '));
+					}
+					if (parsed.note) bits.push(parsed.note);
+					return bits.join(' \u00b7 ');
+				}
+			} catch (e) {
+				/* plain text fallback */
+			}
+			return String(row.detail);
+		}
+
+		function renderWaterTotal(rows) {
+			if (!els.waterTotal) return;
+			const today = cfg.utcToday || cfg.today || '';
+			let ml = 0;
+			rows.forEach(function (r) {
+				if (r.reading_type === 'water' && String(r.taken_at || '').slice(0, 10) === today && r.value_1 != null) {
+					ml += Number(r.value_1) || 0;
+				}
+			});
+			ml = Math.round(ml);
+			const glasses = Math.round((ml / 250) * 10) / 10;
+			els.waterTotal.textContent = 'Today\u2019s water total: ' + ml.toLocaleString() + ' ml (' + glasses + (glasses === 1 ? ' glass)' : ' glasses)');
+		}
+
+		function renderChart(points, trendError) {
+			if (!els.chartBox) return;
+			if (!cfg.hasTrends) {
+				const links = linksCfg();
+				const msg = msgsCfg().trendsUpgrade || 'Long-term trends and insights are part of Premium.';
+				els.chartBox.innerHTML =
+					'<div class="lld-readings-chart-empty">' +
+					'<p>' + rdEsc(msg) + '</p>' +
+					'<p><a class="lld-pill-btn lld-btn-secondary" href="' + rdEsc(links.pricing || '/pricing/') + '">See Premium</a></p>' +
+					'</div>';
+				return;
+			}
+			if (trendError) {
+				if (trendError.status === 403 && trendError.data && trendError.data.upgrade) {
+					const links = linksCfg();
+					const msg = (trendError.data && (trendError.data.error || trendError.data.message)) || msgsCfg().trendsUpgrade || 'Long-term trends and insights are part of Premium.';
+					els.chartBox.innerHTML =
+						'<div class="lld-readings-chart-empty">' +
+						'<p>' + rdEsc(msg) + '</p>' +
+						'<p><a class="lld-pill-btn lld-btn-secondary" href="' + rdEsc(links.pricing || '/pricing/') + '">See Premium</a></p>' +
+						'</div>';
+					return;
+				}
+				els.chartBox.innerHTML = '<p class="lld-hint">' + rdEsc((trendError.data && (trendError.data.error || trendError.data.message)) || 'Chart unavailable right now.') + '</p>';
+				return;
+			}
+			const valid = (points || []).filter(function (p) { return p && p.value_1 != null && Number.isFinite(Number(p.value_1)); });
+			if (valid.length === 0) {
+				els.chartBox.innerHTML = '<p class="lld-hint">No trend points for the current selection.</p>';
+				return;
+			}
+
+			const w = 400;
+			const h = 96;
+			const padX = 16;
+			const padY = 14;
+			const unit = activeUnitFor(state.type, '');
+			const vals = valid.map(function (p) {
+				const c = convertMetricValue(state.type, p.value_1, unit);
+				return c != null ? c : Number(p.value_1);
+			});
+			if (state.type === 'blood_pressure') {
+				valid.forEach(function (p) { if (p.value_2 != null) vals.push(Number(p.value_2)); });
+			}
+			let min = Math.min.apply(null, vals);
+			let max = Math.max.apply(null, vals);
+			if (min === max) { min -= 1; max += 1; }
+
+			const xFor = function (idx) {
+				return valid.length === 1 ? w / 2 : padX + (idx / (valid.length - 1)) * (w - padX * 2);
+			};
+			const yFor = function (val) {
+				return padY + (1 - (val - min) / (max - min)) * (h - padY * 2);
+			};
+
+			const pts1 = valid.map(function (p, i) {
+				const c = convertMetricValue(state.type, p.value_1, unit);
+				return xFor(i).toFixed(1) + ',' + yFor(c != null ? c : Number(p.value_1)).toFixed(1);
+			});
+			const chartTitle = (TYPE_LABELS[state.type] || 'Readings') + ' trend';
+			const tableMode = state.viewMode === 'table';
+			let svg = '<figure class="lld-trend-figure"' + (tableMode ? ' hidden' : '') + '>';
+			const latest = valid[valid.length - 1];
+			const latestVal = convertMetricValue(state.type, latest.value_1, unit);
+			const summary = valid.length + (valid.length === 1 ? ' reading on ' + latest.date : ' readings, from ' + valid[0].date + ' to ' + latest.date) + '. Latest: ' + (latestVal != null ? latestVal : latest.value_1) + (state.type === 'blood_pressure' && latest.value_2 != null ? '/' + latest.value_2 : '') + (unit ? ' ' + unit : '') + '.';
+			svg += '<svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" height="96" role="img" aria-label="' + rdEsc(chartTitle) + '">';
+			if (valid.length > 1) {
+				svg += '<polyline class="lld-trend-line" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" points="' + pts1.join(' ') + '" />';
+			}
+			valid.forEach(function (p, i) {
+				const c = convertMetricValue(state.type, p.value_1, unit);
+				svg += '<circle class="lld-trend-dot" cx="' + xFor(i).toFixed(1) + '" cy="' + yFor(c != null ? c : Number(p.value_1)).toFixed(1) + '" r="4" fill="currentColor" />';
+			});
+			if (state.type === 'blood_pressure' && valid.every(function (p) { return p.value_2 != null; })) {
+				const pts2 = valid.map(function (p, i) { return xFor(i).toFixed(1) + ',' + yFor(Number(p.value_2)).toFixed(1); });
+				if (valid.length > 1) {
+					svg += '<polyline class="lld-trend-line-secondary" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="4 4" stroke-linecap="round" stroke-linejoin="round" points="' + pts2.join(' ') + '" />';
+				}
+				valid.forEach(function (p, i) {
+					svg += '<circle class="lld-trend-dot-secondary" cx="' + xFor(i).toFixed(1) + '" cy="' + yFor(Number(p.value_2)).toFixed(1) + '" r="3.5" fill="currentColor" />';
+				});
+			}
+			svg += '</svg><figcaption class="lld-hint">' + rdEsc(summary) + '</figcaption></figure>';
+			let tbl = '<div class="lld-table-wrap"><table class="lld-table' + (tableMode ? '' : ' lld-sr-only') + '" aria-label="' + rdEsc(chartTitle + ' data') + '" data-lld-trend-table><caption>' + rdEsc(chartTitle + ' data') + '</caption><thead><tr><th scope="col">Date</th><th scope="col">Reading</th></tr></thead><tbody>';
+			valid.forEach(function (p) {
+				const c = convertMetricValue(state.type, p.value_1, unit);
+				const vText = state.type === 'blood_pressure' && p.value_2 != null
+					? String(c != null ? c : p.value_1) + '/' + String(Math.round(Number(p.value_2))) + ' mmHg'
+					: String(c != null ? c : p.value_1) + (unit ? ' ' + unit : '');
+				tbl += '<tr><td>' + rdEsc(p.date || '') + '</td><td>' + rdEsc(vText) + '</td></tr>';
+			});
+			tbl += '</tbody></table></div>';
+			els.chartBox.innerHTML = svg + tbl;
+		}
+
+		function minutesToHm(totalMins) {
+			const m = ((Math.round(totalMins) % 1440) + 1440) % 1440;
+			const hh = String(Math.floor(m / 60)).padStart(2, '0');
+			const mm = String(m % 60).padStart(2, '0');
+			return hh + ':' + mm;
+		}
+
+		function startEditRow(row) {
+			state.editingId = Number(row.id);
+			if (els.saveBtn) els.saveBtn.textContent = 'Save changes';
+			if (els.cancelEditBtn) els.cancelEditBtn.hidden = false;
+
+			const dt = String(row.taken_at || '');
+			if (els.takenAt && dt.length >= 16) {
+				els.takenAt.value = dt.slice(0, 16).replace(' ', 'T');
+			}
+
+			const type = row.reading_type;
+			const rowUnit = row.display_unit || row.unit_shown || '';
+			let focusTarget = null;
+			if (els.bpDizzy) els.bpDizzy.checked = false;
+
+			if (type === 'blood_pressure') {
+				if (els.bpSys) els.bpSys.value = row.value_1 != null ? String(row.value_1) : '';
+				if (els.bpDia) els.bpDia.value = row.value_2 != null ? String(row.value_2) : '';
+				if (els.bpPulse) els.bpPulse.value = row.value_3 != null ? String(row.value_3) : '';
+				focusTarget = els.bpSys;
+			} else if (type === 'weight') {
+				const unit = activeUnitFor('weight', rowUnit || 'kg');
+				const val = convertMetricValue('weight', row.value_1, unit);
+				if (els.wUnit) els.wUnit.value = unit;
+				if (els.wVal) els.wVal.value = val != null ? String(val) : '';
+				focusTarget = els.wVal;
+			} else if (type === 'waist') {
+				const unit = activeUnitFor('waist', rowUnit || 'cm');
+				const val = convertMetricValue('waist', row.value_1, unit);
+				if (els.waistUnit) els.waistUnit.value = unit;
+				if (els.waistVal) els.waistVal.value = val != null ? String(val) : '';
+				focusTarget = els.waistVal;
+			} else if (type === 'activity') {
+				if (els.actMin) els.actMin.value = row.value_1 != null ? String(row.value_1) : '';
+				if (els.actSteps) els.actSteps.value = row.value_2 != null ? String(row.value_2) : '';
+				if (els.actEffort) els.actEffort.value = row.value_3 != null ? String(Math.round(Number(row.value_3))) : '';
+				if (els.actDetail) els.actDetail.value = row.detail ? String(row.detail) : '';
+				focusTarget = els.actMin;
+			} else if (type === 'sleep') {
+				const wake = dt.length >= 16 ? dt.slice(11, 16) : '07:00';
+				const hrs = Number(row.value_1 || 8);
+				let bed = '';
+				if (row.value_2 != null && Number.isFinite(Number(row.value_2))) {
+					bed = minutesToHm(Number(row.value_2));
+				} else {
+					const wakeParts = wake.split(':').map(Number);
+					const wakeMin = wakeParts[0] * 60 + wakeParts[1];
+					bed = minutesToHm(wakeMin - hrs * 60);
+				}
+				if (els.sleepWake) els.sleepWake.value = wake;
+				if (els.sleepBed) els.sleepBed.value = bed;
+				if (els.sleepHours) {
+					els.sleepHours.value = row.value_1 != null ? String(row.value_1) : '';
+					els.sleepHours.setAttribute('data-lld-auto', '1');
+				}
+				if (els.sleepRested) els.sleepRested.value = row.value_3 != null ? String(Math.round(Number(row.value_3))) : '';
+				focusTarget = els.sleepBed || els.sleepHours;
+			} else if (type === 'water') {
+				const unit = activeUnitFor('water', rowUnit || 'ml');
+				const val = convertMetricValue('water', row.value_1, unit);
+				if (els.waterUnit) els.waterUnit.value = unit;
+				if (els.waterVal) els.waterVal.value = val != null ? String(val) : '';
+				focusTarget = els.waterVal;
+			} else if (type === 'mood') {
+				const score = row.value_1 != null ? Math.round(Number(row.value_1)) : null;
+				state.selectedMood = score;
+				els.moodBtns.forEach(function (b) {
+					b.setAttribute('aria-pressed', Number(b.getAttribute('data-lld-mood-btn')) === score ? 'true' : 'false');
+				});
+				if (els.moodNote) els.moodNote.value = row.detail ? String(row.detail) : '';
+				focusTarget = els.moodBtns[0] || els.moodNote;
+			} else if (type === 'glucose') {
+				const unit = activeUnitFor('glucose', rowUnit || 'mmol/L');
+				const val = convertMetricValue('glucose', row.value_1, unit);
+				if (els.gluUnit) els.gluUnit.value = unit;
+				if (els.gluVal) els.gluVal.value = val != null ? String(val) : '';
+				let timing = 'before_meal';
+				let syms = [];
+				if (row.detail) {
+					try {
+						const parsed = JSON.parse(row.detail);
+						if (parsed && parsed.timing) timing = parsed.timing;
+						if (parsed && Array.isArray(parsed.symptoms)) syms = parsed.symptoms;
+					} catch (e) {
+						/* ignore */
+					}
+				}
+				if (els.gluTiming) els.gluTiming.value = timing === 'after_meal' ? 'after_meal' : 'before_meal';
+				els.gluSymptoms.forEach(function (c) {
+					c.checked = syms.indexOf(c.value) !== -1;
+				});
+				focusTarget = els.gluVal;
+			}
+
+			if (focusTarget) focusTarget.focus();
+		}
+
+		function cancelEditRow(restoreFocus) {
+			state.editingId = null;
+			if (els.bpDizzy) els.bpDizzy.checked = false;
+			if (els.saveBtn) els.saveBtn.textContent = 'Save reading';
+			if (restoreFocus && els.cancelEditBtn && document.activeElement === els.cancelEditBtn) {
+				const target = els.saveBtn || els.heading;
+				if (target) target.focus();
+			}
+			if (els.cancelEditBtn) els.cancelEditBtn.hidden = true;
+		}
+
+		function renderHistory() {
+			const rows = state.rows || [];
+			if (state.type === 'water') renderWaterTotal(rows);
+			const isEmpty = rows.length === 0;
+			const hasFilter = Boolean(state.from || state.to);
+			const allowed = Boolean(cfg.canStore && cfg.hasConsent);
+			if (els.empty) els.empty.hidden = !allowed || !isEmpty || hasFilter;
+			if (els.emptyText) {
+				els.emptyText.textContent = 'No ' + (TYPE_LABELS[state.type] || 'readings').toLowerCase() + ' entries logged yet. Choose a measurement above to record your first entry.';
+			}
+			if (els.tableBox) els.tableBox.innerHTML = '';
+			if (els.historySection) {
+				els.historySection.hidden = !allowed || (isEmpty && cfg.hasFullHistory && !hasFilter);
+			}
+			if (isEmpty) {
+				if (els.tableBox && hasFilter) {
+					els.tableBox.innerHTML = '<p class="lld-hint">No readings match the current date filter.</p>';
+				}
+				return;
+			}
+
+			if (els.tableBox) {
+				let tbl = '<div class="lld-table-wrap"><table class="lld-table"><caption>Recent ' + rdEsc((TYPE_LABELS[state.type] || '').toLowerCase()) + ' readings</caption>' +
+					'<thead><tr><th scope="col">Date</th><th scope="col">Reading</th><th scope="col">Notes</th><th scope="col">Actions</th></tr></thead><tbody>';
+				rows.forEach(function (r) {
+					const note = extractRowNote(r);
+					tbl += '<tr data-lld-row-id="' + r.id + '">' +
+						'<td>' + rdEsc(rdDisplayDateTime(r.taken_at)) + '</td>' +
+						'<td><strong>' + rdEsc(formatRowSummary(r)) + '</strong></td>' +
+						'<td>' + rdEsc(note || '\u2014') + '</td>' +
+						'<td class="lld-table-actions"><div class="lld-history-actions">' +
+						'<button type="button" class="lld-pill-btn lld-btn-secondary lld-btn-sm" data-lld-edit-row="' + r.id + '">Edit</button>' +
+						'<button type="button" class="lld-pill-btn lld-btn-secondary lld-btn-sm" data-lld-delete-row="' + r.id + '">Delete</button>' +
+						'</div></td></tr>';
+				});
+				tbl += '</tbody></table></div>';
+				els.tableBox.innerHTML = tbl;
+			}
+		}
+
+		function renderActivityWeekChart(daysMap, guide, totalMins) {
+			if (!els.actChart) return;
+			const keys = Object.keys(daysMap || {}).sort();
+			if (!keys.length) {
+				els.actChart.innerHTML = '';
+				if (els.actTable) els.actTable.innerHTML = '';
+				if (els.actSrBox) els.actSrBox.innerHTML = '';
+				return;
+			}
+			const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+			const vals = keys.map(function (k) { return Number(daysMap[k] || 0); });
+			const total = typeof totalMins === 'number' && !isNaN(totalMins)
+				? totalMins
+				: vals.reduce(function (a, b) { return a + b; }, 0);
+			const targetGuide = guide || 150;
+			const maxVal = Math.max.apply(null, [targetGuide].concat(vals));
+			const w = 360;
+			const h = 110;
+			const padX = 14;
+			const padTop = 12;
+			const padBot = 24;
+			const plotH = h - padTop - padBot;
+			const stepX = (w - padX * 2) / keys.length;
+			const barW = Math.max(18, Math.floor(stepX * 0.56));
+			const guideY = padTop + plotH * (1 - (targetGuide / (maxVal || 150)));
+
+			let fig = '<figure class="lld-activity-figure">';
+			fig += '<svg viewBox="0 0 ' + w + ' ' + h + '" width="100%" height="110" role="img" aria-label="Weekly activity">';
+			fig += '<line x1="' + padX + '" y1="' + guideY.toFixed(1) + '" x2="' + (w - padX) + '" y2="' + guideY.toFixed(1) + '" stroke="currentColor" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.7" />';
+			keys.forEach(function (k, idx) {
+				const mins = Number(daysMap[k] || 0);
+				const barH = Math.max(2, Math.round((mins / (maxVal || 150)) * plotH));
+				const x = Math.round(padX + idx * stepX + (stepX - barW) / 2);
+				const y = Math.round(padTop + plotH - barH);
+				const label = dayNames[idx] || k.slice(5);
+				fig += '<rect x="' + x + '" y="' + y + '" width="' + barW + '" height="' + barH + '" rx="4" fill="currentColor" />';
+				fig += '<text x="' + Math.round(x + barW / 2) + '" y="' + (h - 6) + '" text-anchor="middle" font-size="11" fill="currentColor">' + rdEsc(label) + '</text>';
+			});
+			fig += '</svg>';
+			fig += '<figcaption class="lld-hint">Weekly ' + rdEsc(targetGuide) + '-minute guide (' + rdEsc(total) + ' of ' + rdEsc(targetGuide) + ' min)</figcaption>';
+			fig += '</figure>';
+			els.actChart.innerHTML = fig;
+
+			let tbody = '<thead><tr><th scope="col">Date</th><th scope="col">Minutes</th></tr></thead><tbody>';
+			keys.forEach(function (k) {
+				tbody += '<tr><td>' + rdEsc(k) + '</td><td>' + rdEsc(daysMap[k] || 0) + ' min</td></tr>';
+			});
+			tbody += '</tbody>';
+			if (els.actTable) {
+				els.actTable.innerHTML = '<div class="lld-table-wrap"><table class="lld-table"><caption>Weekly activity by day</caption>' + tbody + '</table></div>';
+			}
+			if (els.actSrBox) {
+				els.actSrBox.innerHTML = '<div class="lld-table-wrap"><table class="lld-table lld-sr-only" aria-label="Weekly activity data"><caption>Weekly activity data</caption>' + tbody + '</table></div>';
+			}
+		}
+
+		async function loadActivityWeek() {
+			if (!els.actWeekText || !cfg.weekStart || !cfg.canStore || !cfg.hasConsent) {
+				if (els.actSrBox) els.actSrBox.innerHTML = '';
+				return;
+			}
+			const res = await rdRequest(cfg, 'readings-activity-week?week_start=' + encodeURIComponent(cfg.weekStart));
+			if (!res.ok) {
+				els.actWeekText.textContent = 'Weekly total unavailable.';
+				if (els.actSrBox) els.actSrBox.innerHTML = '';
+				return;
+			}
+			const mins = Number(res.data.minutes || 0);
+			const guide = Number(res.data.guide || 150);
+			els.actWeekText.innerHTML = '<strong>Weekly total:</strong> ' + rdEsc(mins) + ' of ' + rdEsc(guide) + ' minutes';
+			if (els.actMeter && els.actFill) {
+				const pct = Math.min(100, Math.round((mins / (guide || 150)) * 100));
+				els.actMeter.setAttribute('aria-valuenow', String(mins));
+				els.actFill.style.width = pct + '%';
+			}
+			if (res.data && res.data.days) {
+				renderActivityWeekChart(res.data.days, guide, mins);
+			}
+		}
+
+		async function loadHistory(type) {
+			if (!cfg.canStore || !cfg.hasConsent) {
+				state.rows = [];
+				renderHistory();
+				renderChart([], null);
+				if (els.actSrBox) els.actSrBox.innerHTML = '';
+				return;
+			}
+			if (type !== 'activity' && els.actSrBox) {
+				els.actSrBox.innerHTML = '';
+			}
+			let query = 'type=' + encodeURIComponent(type);
+			if (state.from) query += '&from=' + encodeURIComponent(state.from);
+			if (state.to) query += '&to=' + encodeURIComponent(state.to);
+
+			const resList = await rdRequest(cfg, 'readings?' + query);
+			if (resList.ok && Array.isArray(resList.data.rows)) {
+				state.rows = resList.data.rows.slice().sort(function (a, b) {
+					const cmp = String(b.taken_at || '').localeCompare(String(a.taken_at || ''));
+					return cmp !== 0 ? cmp : (Number(b.id || 0) - Number(a.id || 0));
+				});
+			} else {
+				state.rows = [];
+			}
+			renderHistory();
+
+			if (!cfg.hasTrends) {
+				state.trendPoints = [];
+				renderChart([], null);
+			} else {
+				const resTrend = await rdRequest(cfg, 'readings-trend?' + query);
+				if (resTrend.ok && Array.isArray(resTrend.data.points)) {
+					state.trendPoints = resTrend.data.points;
+					renderChart(state.trendPoints, null);
+				} else {
+					state.trendPoints = [];
+					renderChart([], resTrend);
+				}
+			}
+			if (type === 'activity') await loadActivityWeek();
+		}
+
+		function switchType(type, focusTab) {
+			if (!TYPE_LABELS[type]) return;
+			state.type = type;
+			cancelEditRow();
+			clearFeedback();
+			els.tabs.forEach(function (tab) {
+				const active = tab.getAttribute('data-lld-type-tab') === type;
+				tab.setAttribute('aria-selected', active ? 'true' : 'false');
+				tab.setAttribute('tabindex', active ? '0' : '-1');
+				if (active && focusTab) tab.focus();
+			});
+			els.panels.forEach(function (panel) {
+				panel.hidden = panel.getAttribute('data-lld-type-panel') !== type;
+			});
+			if (els.heading) els.heading.textContent = TYPE_LABELS[type];
+			if (els.historyHeading) els.historyHeading.textContent = 'Recent ' + TYPE_LABELS[type].toLowerCase() + ' readings';
+			if (els.emptyBpLink) els.emptyBpLink.hidden = type !== 'blood_pressure';
+			loadHistory(type);
+		}
+
+		function rdComputeSleepFromBedWake(bedtime, wakeTime) {
+			const bMatch = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(bedtime || '').trim());
+			const wMatch = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(String(wakeTime || '').trim());
+			if (!bMatch || !wMatch) return null;
+			const bedMin = Number(bMatch[1]) * 60 + Number(bMatch[2]);
+			const wakeMin = Number(wMatch[1]) * 60 + Number(wMatch[2]);
+			let diff = wakeMin - bedMin;
+			if (diff <= 0) diff += 24 * 60;
+			return Math.round((diff / 60) * 10) / 10;
+		}
+
+		function buildPayload(isEdit, existingRow) {
+			const takenAt = isEdit && existingRow && existingRow.taken_at
+				? String(existingRow.taken_at)
+				: rdFormatTakenAt(els.takenAt ? els.takenAt.value : '', cfg.today);
+			const base = { reading_type: state.type, taken_at: takenAt, source: 'manual' };
+
+			if (state.type === 'blood_pressure') {
+				const sys = rdNum(els.bpSys && els.bpSys.value);
+				const dia = rdNum(els.bpDia && els.bpDia.value);
+				const pulse = rdNum(els.bpPulse && els.bpPulse.value);
+				if (sys === null || dia === null) return { error: 'Enter both systolic and diastolic blood pressure numbers.' };
+				base.value_1 = sys;
+				base.value_2 = dia;
+				if (pulse !== null) base.value_3 = pulse;
+				else if (isEdit) base.value_3 = null;
+				if (els.bpDizzy && els.bpDizzy.checked) base.dizzy = true;
+				return { payload: base };
+			}
+			if (state.type === 'weight') {
+				const val = rdNum(els.wVal && els.wVal.value);
+				if (val === null) return { error: 'Enter your weight reading.' };
+				base.value_1 = val;
+				base.unit_shown = els.wUnit ? els.wUnit.value : 'kg';
+				return { payload: base };
+			}
+			if (state.type === 'waist') {
+				const val = rdNum(els.waistVal && els.waistVal.value);
+				if (val === null) return { error: 'Enter your waist measurement.' };
+				base.value_1 = val;
+				base.unit_shown = els.waistUnit ? els.waistUnit.value : 'cm';
+				return { payload: base };
+			}
+			if (state.type === 'activity') {
+				const mins = rdNum(els.actMin && els.actMin.value);
+				if (mins === null) return { error: 'Enter active minutes.' };
+				base.value_1 = mins;
+				const steps = rdNum(els.actSteps && els.actSteps.value);
+				if (steps !== null) base.value_2 = steps;
+				else if (isEdit) base.value_2 = null;
+				const effort = rdNum(els.actEffort && els.actEffort.value);
+				if (effort !== null) base.value_3 = effort;
+				else if (isEdit) base.value_3 = null;
+				const detailVal = els.actDetail ? els.actDetail.value.trim() : '';
+				if (detailVal) base.detail = detailVal;
+				else if (isEdit) base.detail = null;
+				return { payload: base };
+			}
+			if (state.type === 'sleep') {
+				const bed = els.sleepBed ? els.sleepBed.value.trim() : '';
+				const wake = els.sleepWake ? els.sleepWake.value.trim() : '';
+				const manualHrs = rdNum(els.sleepHours && els.sleepHours.value);
+				const isAuto = !els.sleepHours || els.sleepHours.value === '' || els.sleepHours.getAttribute('data-lld-auto') === '1';
+				const dayPart = takenAt.slice(0, 10) || cfg.today || '';
+				let hrs = manualHrs;
+				if (bed && wake && (isAuto || hrs === null)) {
+					const calc = rdComputeSleepFromBedWake(bed, wake);
+					if (calc !== null) {
+						hrs = calc;
+						base.bedtime = bed;
+						if (dayPart) base.taken_at = dayPart + ' ' + wake + ':00';
+					}
+				} else if (bed && hrs === null) {
+					const calcFromTaken = rdComputeSleepHours(bed, els.takenAt ? els.takenAt.value : '');
+					if (calcFromTaken !== null) {
+						hrs = calcFromTaken;
+						base.bedtime = bed;
+					}
+				}
+				if (hrs === null) return { error: 'Enter bedtime and wake time, or hours slept.' };
+				base.value_1 = hrs;
+				const rested = rdNum(els.sleepRested && els.sleepRested.value);
+				if (rested !== null) base.value_3 = rested;
+				else if (isEdit) base.value_3 = null;
+				return { payload: base };
+			}
+			if (state.type === 'water') {
+				const val = rdNum(els.waterVal && els.waterVal.value);
+				if (val === null) return { error: 'Enter a water amount.' };
+				base.value_1 = val;
+				base.unit_shown = els.waterUnit ? els.waterUnit.value : 'ml';
+				return { payload: base };
+			}
+			if (state.type === 'mood') {
+				if (state.selectedMood === null) return { error: 'Choose a mood rating from 1 to 5.' };
+				base.value_1 = state.selectedMood;
+				const note = els.moodNote ? els.moodNote.value.trim() : '';
+				if (note) base.detail = note;
+				else if (isEdit) base.detail = null;
+				return { payload: base };
+			}
+			if (state.type === 'glucose') {
+				const val = rdNum(els.gluVal && els.gluVal.value);
+				if (val === null) return { error: 'Enter your blood sugar reading.' };
+				base.value_1 = val;
+				base.unit_shown = els.gluUnit ? els.gluUnit.value : 'mmol/L';
+				const syms = els.gluSymptoms.filter(function (c) { return c.checked; }).map(function (c) { return c.value; });
+				if (syms.length > 0) base.symptoms = syms;
+				const timing = els.gluTiming ? els.gluTiming.value : 'before_meal';
+				base.detail = JSON.stringify({ timing: timing, symptoms: syms });
+				return { payload: base };
+			}
+			return { error: 'Unsupported reading type.' };
+		}
+
+		async function checkLowMoodSignal() {
+			if (!cfg.insightsEnabled || !cfg.hasConsent || !els.insightsSlot) return;
+			const res = await rdRequest(cfg, 'insights');
+			if (!res.ok || !res.data) return;
+			const rows = Array.isArray(res.data) ? res.data : (Array.isArray(res.data.rows) ? res.data.rows : (Array.isArray(res.data.insights) ? res.data.insights : []));
+			const found = rows.find(function (item) {
+				if (!item || Number(item.dismissed)) return false;
+				return Number(item.rule_id) === 5 || item.rule === 'R-SAFE-04' || item.rule_code === 'R-SAFE-04';
+			});
+			let parsed = null;
+			if (found && found.values) {
+				if (typeof found.values === 'string') {
+					try { parsed = JSON.parse(found.values); } catch (e) { parsed = null; }
+				} else if (typeof found.values === 'object') {
+					parsed = found.values;
+				}
+			}
+			const txt = found ? String((parsed && parsed.text) || found.text || found.message || '').trim() : '';
+			if (txt) {
+				els.insightsSlot.innerHTML = '<section class="lld-card" data-lld-section="insights"><p class="lld-insight" data-lld-rule="R-SAFE-04">' + formatInsightText(txt) + '</p></section>';
+			} else {
+				els.insightsSlot.innerHTML = '';
+			}
+		}
+
+		async function submitPayload(payload, savedVerb, editId) {
+			if (state.busy) return;
+			state.busy = true;
+			if (els.saveBtn) els.saveBtn.disabled = true;
+			clearFeedback();
+			const method = editId ? 'PATCH' : 'POST';
+			const endpoint = editId ? ('readings/' + editId) : 'readings';
+			const res = await rdRequest(cfg, endpoint, { method: method, body: payload });
+			state.busy = false;
+			if (els.saveBtn) els.saveBtn.disabled = false;
+			if (!res.ok) {
+				renderServerError(res.status, res.data);
+				return;
+			}
+			if (editId) cancelEditRow(false);
+			handleSaveWarning(res, savedVerb);
+			if (payload.reading_type === 'mood' && !(res.data && res.data.warning && res.data.warning.level === 'urgent')) {
+				await checkLowMoodSignal();
+			}
+			await loadHistory(state.type);
+		}
+
+		// Tab events + keyboard navigation
+		els.tabs.forEach(function (tab, idx) {
+			tab.addEventListener('click', function (ev) {
+				ev.preventDefault();
+				const slug = tab.getAttribute('data-lld-type-tab');
+				if (window.history && window.history.replaceState) {
+					const nextUrl = tab.getAttribute('href');
+					if (nextUrl) window.history.replaceState(null, '', nextUrl);
+				}
+				switchType(slug, false);
+			});
+			tab.addEventListener('keydown', function (ev) {
+				let next = -1;
+				if (ev.key === 'ArrowRight') next = (idx + 1) % els.tabs.length;
+				if (ev.key === 'ArrowLeft') next = (idx - 1 + els.tabs.length) % els.tabs.length;
+				if (ev.key === 'Home') next = 0;
+				if (ev.key === 'End') next = els.tabs.length - 1;
+				if (next !== -1) {
+					ev.preventDefault();
+					const slug = els.tabs[next].getAttribute('data-lld-type-tab');
+					if (window.history && window.history.replaceState) {
+						const nextUrl = els.tabs[next].getAttribute('href');
+						if (nextUrl) window.history.replaceState(null, '', nextUrl);
+					}
+					switchType(slug, true);
+				}
+			});
+		});
+
+		// Sleep auto-calc from bedtime + wake time unless hours manually typed
+		function syncSleepAuto() {
+			if (!els.sleepHours || !els.sleepBed || !els.sleepWake) return;
+			if (!els.sleepBed.value || !els.sleepWake.value) return;
+			const hrs = rdComputeSleepFromBedWake(els.sleepBed.value, els.sleepWake.value);
+			if (hrs !== null) {
+				els.sleepHours.value = String(hrs);
+				els.sleepHours.setAttribute('data-lld-auto', '1');
+			}
+		}
+		if (els.sleepBed) els.sleepBed.addEventListener('change', syncSleepAuto);
+		if (els.sleepWake) els.sleepWake.addEventListener('change', syncSleepAuto);
+		if (els.sleepHours) {
+			els.sleepHours.addEventListener('input', function () {
+				els.sleepHours.setAttribute('data-lld-auto', els.sleepHours.value === '' ? '1' : '0');
+			});
+		}
+
+		// Unit dropdowns re-render displayed values & trend chart immediately
+		[els.wUnit, els.waistUnit, els.gluUnit, els.waterUnit].forEach(function (sel) {
+			if (sel) {
+				sel.addEventListener('change', function () {
+					renderHistory();
+					if (cfg.hasTrends) renderChart(state.trendPoints, null);
+				});
+			}
+		});
+
+		// Water quick-add buttons
+		els.waterQuickBtns.forEach(function (btn) {
+			btn.addEventListener('click', function () {
+				const amount = Number(btn.getAttribute('data-lld-water-quick') || 250);
+				submitPayload({
+					reading_type: 'water',
+					value_1: amount,
+					unit_shown: 'ml',
+					taken_at: rdFormatTakenAt(els.takenAt ? els.takenAt.value : '', cfg.today),
+					source: 'quick_tile'
+				}, 'Added ' + amount + ' ml.', null);
+			});
+		});
+
+		// Mood 1-5 picker
+		els.moodBtns.forEach(function (btn) {
+			btn.addEventListener('click', function () {
+				const val = Number(btn.getAttribute('data-lld-mood-btn'));
+				state.selectedMood = val;
+				els.moodBtns.forEach(function (b) {
+					b.setAttribute('aria-pressed', Number(b.getAttribute('data-lld-mood-btn')) === val ? 'true' : 'false');
+				});
+			});
+		});
+
+		// Main form submit (create or save changes)
+		if (els.form) {
+			els.form.addEventListener('submit', function (ev) {
+				ev.preventDefault();
+				const existingRow = state.editingId ? state.rows.find(function (r) { return Number(r.id) === state.editingId; }) : null;
+				const built = buildPayload(Boolean(state.editingId), existingRow);
+				if (built.error) {
+					clearFeedback();
+					renderServerError(400, { error: built.error });
+					return;
+				}
+				submitPayload(built.payload, state.editingId ? 'Reading updated.' : 'Reading saved.', state.editingId);
+			});
+		}
+
+		if (els.cancelEditBtn) {
+			els.cancelEditBtn.addEventListener('click', function () {
+				cancelEditRow(true);
+			});
+		}
+
+		// Empty-state focus helper
+		if (els.focusFormBtn) {
+			els.focusFormBtn.addEventListener('click', function () {
+				const activePanel = qs('[data-lld-type-panel="' + state.type + '"]');
+				const target = activePanel ? activePanel.querySelector('input, select, button, textarea') : els.takenAt;
+				if (target) target.focus();
+			});
+		}
+
+		// Date range filter controls
+		if (els.filterApply) {
+			els.filterApply.addEventListener('click', function () {
+				state.from = els.filterFrom ? els.filterFrom.value : '';
+				state.to = els.filterTo ? els.filterTo.value : '';
+				loadHistory(state.type);
+			});
+		}
+		if (els.filterReset) {
+			els.filterReset.addEventListener('click', function () {
+				state.from = '';
+				state.to = '';
+				if (els.filterFrom) els.filterFrom.value = '';
+				if (els.filterTo) els.filterTo.value = '';
+				loadHistory(state.type);
+			});
+		}
+
+		// Activity week Chart <-> Table view toggle
+		if (els.actViewToggle) {
+			els.actViewToggle.addEventListener('click', function () {
+				const showTable = state.actViewMode !== 'table';
+				state.actViewMode = showTable ? 'table' : 'chart';
+				els.actViewToggle.setAttribute('aria-pressed', showTable ? 'true' : 'false');
+				els.actViewToggle.textContent = showTable ? 'Show as chart' : 'Show as table';
+				if (els.actChart) els.actChart.hidden = showTable;
+				if (els.actTable) els.actTable.hidden = !showTable;
+			});
+		}
+
+		// History Chart <-> Table view toggle (toggles chart figure vs accessible data table visibility)
+		if (els.viewToggle) {
+			els.viewToggle.addEventListener('click', function () {
+				const showTableOnly = els.viewToggle.getAttribute('aria-pressed') !== 'true';
+				state.viewMode = showTableOnly ? 'table' : 'chart';
+				els.viewToggle.setAttribute('aria-pressed', showTableOnly ? 'true' : 'false');
+				els.viewToggle.textContent = showTableOnly ? 'Show as chart' : 'Show as table';
+				if (els.chartBox) {
+					const fig = els.chartBox.querySelector('.lld-trend-figure');
+					const tbl = els.chartBox.querySelector('[data-lld-trend-table]');
+					if (fig) fig.hidden = showTableOnly;
+					if (tbl) tbl.classList.toggle('lld-sr-only', !showTableOnly);
+					if (!fig && !tbl) els.chartBox.hidden = showTableOnly;
+				}
+			});
+		}
+
+		// History edit / delete actions
+		root.addEventListener('click', async function (ev) {
+			const editBtn = ev.target.closest('[data-lld-edit-row]');
+			if (editBtn) {
+				const id = Number(editBtn.getAttribute('data-lld-edit-row'));
+				const row = state.rows.find(function (r) { return Number(r.id) === id; });
+				if (row) startEditRow(row);
+				return;
+			}
+			const delBtn = ev.target.closest('[data-lld-delete-row]');
+			if (delBtn) {
+				const id = Number(delBtn.getAttribute('data-lld-delete-row'));
+				clearFeedback();
+				const res = await rdRequest(cfg, 'readings/' + id, { method: 'DELETE' });
+				if (!res.ok) {
+					renderServerError(res.status, res.data);
+					return;
+				}
+				if (state.editingId === id) cancelEditRow(false);
+				if (els.status) {
+					els.status.textContent = 'Reading deleted.';
+					els.status.hidden = false;
+					els.status.focus();
+				}
+				if (state.type === 'mood') await checkLowMoodSignal();
+				await loadHistory(state.type);
+			}
+		});
+
+		syncSleepAuto();
+		switchType(state.type, false);
+	}
+
 	function boot() {
 		document.querySelectorAll('[data-lld-food-root]').forEach(initFood);
+		document.querySelectorAll('[data-lld-readings]').forEach(initReadings);
 	}
 
 	if (document.readyState === 'loading') {
