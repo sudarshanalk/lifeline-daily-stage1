@@ -257,8 +257,8 @@ class LLD_Members_Personal {
 						$profile = self::profile_row( $member_id );
 						$row     = self::member_row( $member_id );
 						// P3-36 A7 (FR3-09 AS-08): sent here from goal setting, an answered profile goes back to the goal.
-						if ( self::returning_to_goal( $member_id ) && 'answered' === LLD_Members_Stage3_Safety::conditions_state_of( $profile ) ) {
-							wp_safe_redirect( home_url( '/members/goal/' ) );
+						if ( self::returning_to_goal( $member_id ) && 'missing' !== LLD_Members_Stage3_Safety::conditions_state_of( $profile ) ) {
+							wp_safe_redirect( home_url( '/members/goal/' . ( isset( $_GET['role'] ) && 'extra' === $_GET['role'] ? '?role=extra' : '' ) ) );
 							exit;
 						}
 					}
@@ -268,7 +268,7 @@ class LLD_Members_Personal {
 		$keep     = $posted && ! $saved;
 		$imperial = $posted ? ! empty( $_POST['lld_imperial'] ) : ( $row && 'imperial' === $row->units );
 		$main     = '<h1>Health profile</h1>' . self::fail( $error ) . ( $saved ? lld_state_saved() : '' );
-		if ( ! $saved && self::returning_to_goal( $member_id ) && class_exists( 'LLD_Members_Goal_Journey' ) ) {
+		if ( ! $saved && self::returning_to_goal( $member_id ) && class_exists( 'LLD_Members_Goal_Journey' ) && 'missing' === LLD_Members_Stage3_Safety::conditions_state_of( $profile ) ) {
 			$main .= lld_info( LLD_Members_Goal_Journey::note_texts()['general_wellbeing_path'] );
 		}
 		$main    .= self::stored_lines( $profile );

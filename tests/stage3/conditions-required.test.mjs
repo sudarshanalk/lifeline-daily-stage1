@@ -61,6 +61,7 @@ require ${toPhpPath(inc('stage3/engine/class-decision-engine.php'))};
 require ${toPhpPath(inc('stage3/class-safety-stage3.php'))};
 require ${toPhpPath(inc('stage3/class-health-log.php'))};
 require ${toPhpPath(inc('class-personal.php'))};
+require ${toPhpPath(inc('stage3/class-api.php'))};
 function health_post($post, $get = []) {
   $_SERVER['REQUEST_METHOD'] = 'POST'; $_POST = $post + ['lld_health_nonce' => 'n']; $_GET = $get; $GLOBALS['page'] = null;
   try { LLD_Members_Personal::screen('health'); } catch (Redirected $r) { return ['redirect' => $r->getMessage()]; }
@@ -167,8 +168,13 @@ test('TC-FR3-69-AS-05', () => {
     goal_open('POST', ['lld_goal3_nonce' => 'n', 'lld_action' => 'save', 'type' => 'lose_weight']);
     $out['goal_page'] = $GLOBALS['page'];
     $out['created'] = LLD_Members_Goal_Journey::$created;
+    // The interface's refusal carries the question and the link in its 403 body.
+    $m = new ReflectionMethod('LLD_Members_Stage3_API', 'refuse'); $m->setAccessible(true);
+    $res = $m->invoke(null, $out['missing']['status'], $out['missing']['error'], array_intersect_key($out['missing'], ['question' => 1, 'link' => 1]));
+    $out['rest'] = [$res->status, $res->data];
     return $out;
   `);
+  expect(r.rest).toEqual([403, { message: 'Answer the Conditions question in your health profile first.', question: 'conditions', link }]);
   expect(r.missing).toEqual({ error: 'Answer the Conditions question in your health profile first.', status: 403, question: 'conditions', link });
   expect(r.prefer).toEqual({ error: 'Not available.', status: 403, question: 'conditions', link });
   expect(r.answered.error).toBeUndefined();
@@ -191,6 +197,8 @@ test('TC-FR3-09-AS-08', () => {
     // There, the approved goal-path line explains why; saving the answer returns to goal setting.
     $out['health'] = health_get(['return' => 'goal']);
     $out['back'] = health_post(['lld_height' => '170', 'lld_condition' => ['none']], ['return' => 'goal']);
+    $out['real_situations'] = LLD_Members_Stage3_Safety::situations(7);
+    $out['health_after'] = health_get(['return' => 'goal']);
     // Back on goal setting the goal is saved.
     $out['open_again'] = goal_open('GET');
     $out['saved'] = goal_open('POST', ['lld_goal3_nonce' => 'n', 'lld_action' => 'save', 'type' => 'lose_weight']);
@@ -198,12 +206,22 @@ test('TC-FR3-09-AS-08', () => {
     // "Prefer not to answer" is an answer: no redirect loop; the goal page shows the goal path and the link instead.
     LLD_Members_Access::$me = 7; $GLOBALS['wpdb']->store(7, ['conditions_answered' => 'not_answered', 'conditions' => '["prefer-not"]']);
     $out['prefer_open'] = goal_open('GET');
+    // An extra goal keeps its role there and back; Prefer not to answer also returns to goal setting.
+    unset($GLOBALS['wpdb']->profile[7]);
+    $out['extra_open'] = goal_open('GET', [], ['role' => 'extra']);
+    $out['extra_back'] = health_post(['lld_height' => '170', 'lld_condition' => ['prefer-not']], ['return' => 'goal', 'role' => 'extra']);
+    $GLOBALS['wpdb']->store(7, ['conditions_answered' => 'not_answered', 'conditions' => '["prefer-not"]']);
+    goal_open('GET');
     $out['prefer_page'] = $GLOBALS['page'];
     return $out;
   `);
   expect(r.open).toEqual({ redirect: goalLink });
   expect(r.health).toContain("Answer the health questions in your health profile first, and we&#039;ll set a goal together.");
   expect(r.back).toEqual({ redirect: 'https://stg.example/members/goal/' });
+  expect(r.real_situations).not.toContain('unknown');
+  expect(r.health_after).not.toContain("we&#039;ll set a goal together");
+  expect(r.extra_open).toEqual({ redirect: 'https://stg.example/members/health/?return=goal&role=extra#lld-conditions' });
+  expect(r.extra_back).toEqual({ redirect: 'https://stg.example/members/goal/?role=extra' });
   expect(r.open_again.redirect).toBeUndefined();
   expect(r.saved).toEqual({ redirect: 'https://stg.example/members/goal/?done=41' });
   expect(r.created).toEqual([[7, 'main', 'lose_weight']]);

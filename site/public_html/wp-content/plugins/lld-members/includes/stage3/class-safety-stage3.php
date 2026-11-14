@@ -865,9 +865,11 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 	 * The link to the Conditions question; with $return 'goal', saving there returns to goal setting.
 	 *
 	 * @param string $return '' or 'goal'.
+	 * @param string $role   main or extra (the goal being set).
 	 */
-	public static function conditions_link( $return = '' ) {
-		return home_url( '/members/health/' . ( 'goal' === $return ? '?return=goal' : '' ) . '#' . self::CONDITIONS_ANCHOR );
+	public static function conditions_link( $return = '', $role = 'main' ) {
+		$query = 'goal' === $return ? '?return=goal' . ( 'extra' === $role ? '&role=extra' : '' ) : '';
+		return home_url( '/members/health/' . $query . '#' . self::CONDITIONS_ANCHOR );
 	}
 
 	/**

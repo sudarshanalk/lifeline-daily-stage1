@@ -80,13 +80,13 @@ class LLD_Members_Goal_Setting {
 		// it; saving it there brings them back here to set the goal. Nothing is stored on the way.
 		$conditions = in_array( 'unknown', $facts['situations'], true ) && method_exists( 'LLD_Members_Stage3_Safety', 'conditions_state' ) ? LLD_Members_Stage3_Safety::conditions_state( $member_id ) : '';
 		if ( 'missing' === $conditions && ! $post && 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
-			wp_safe_redirect( LLD_Members_Stage3_Safety::conditions_link( 'goal' ) );
+			wp_safe_redirect( LLD_Members_Stage3_Safety::conditions_link( 'goal', $role ) );
 			exit;
 		}
 		$allowed = LLD_Members_Goal_Rules::allowed_types( $facts['situations'] );
 		if ( ! $allowed ) {
 			$line = 'missing' === $conditions ? LLD_Members_Stage3_Safety::CONDITIONS_WORDING['conditions.missing'] : LLD_Members_Goal_Journey::note_texts()['general_wellbeing_path'];
-			$link = '' !== $conditions ? LLD_Members_Stage3_Safety::conditions_link( 'goal' ) : home_url( '/members/health/' );
+			$link = '' !== $conditions ? LLD_Members_Stage3_Safety::conditions_link( 'goal', $role ) : home_url( '/members/health/' );
 			$main = '<h1>Your goal</h1>' . lld_info( $line );
 			$main .= '<p>' . lld_button( array( 'label' => 'Answer the health questions', 'href' => $link ) ) . ' <a href="' . esc_url( home_url( '/members/home/' ) ) . '">Go to Today</a></p>';
 			self::output( 'Your goal', $main, $post ? 403 : 200 );
