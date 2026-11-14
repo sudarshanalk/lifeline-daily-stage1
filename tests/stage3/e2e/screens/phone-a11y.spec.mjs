@@ -157,12 +157,14 @@ async function checkTapTargets(page, contextSelector = null) {
         const isTextParent = ['p', 'li', 'span', 'blockquote', 'dd', 'figcaption', 'label'].includes(parentTag);
         // Surrounding text = text directly beside the link in the same parent: plain text nodes
         // or inline text elements, never other links, buttons or form controls (review item 2).
+        const CONTROLS = 'a, button, input, select, textarea, summary, label, [contenteditable], [tabindex], '
+          + '[role="button"], [role="link"], [role="tab"], [role="checkbox"], [role="radio"], [role="switch"], '
+          + '[role="menuitem"], [role="option"], [role="combobox"], [role="slider"], [role="textbox"]';
         const sideText = (node) => {
           if (!node) return '';
           if (node.nodeType === 3) return node.textContent || '';
           if (node.nodeType !== 1) return '';
-          if (node.matches('a, button, input, select, textarea, [role="button"], [role="link"]')) return '';
-          if (node.querySelector('a, button, input, select, textarea, [role="button"], [role="link"]')) return '';
+          if (node.matches(CONTROLS) || node.querySelector(CONTROLS)) return '';
           const d = window.getComputedStyle(node).display;
           return d.includes('inline') ? (node.textContent || '') : '';
         };
