@@ -583,7 +583,7 @@ class LLD_Members_Admin_Front {
 			'Test account'    => $a['test'] ? 'Yes' : 'No',
 			'AI allowance'    => 'Not in use yet (Stage 5)',
 		);
-		$html .= '<div class="lld-adm-grid lld-adm-g2"><section class="lld-card"><h2>Account</h2><dl class="lld-facts lld-adm-facts">';
+		$html .= '<div class="lld-adm-grid lld-adm-g2 lld-adm-member-top"><section class="lld-card"><h2>Account</h2><dl class="lld-facts lld-adm-facts">';
 		foreach ( $facts as $label => $value ) {
 			$html .= '<dt>' . esc_html( $label ) . '</dt><dd>' . esc_html( (string) $value ) . '</dd>';
 		}
@@ -675,7 +675,7 @@ class LLD_Members_Admin_Front {
 	 */
 	private static function owner_actions( array $a, array $hide, $ptm ) {
 		$back  = self::url( 'members', array( 'member' => (int) $a['id'] ) );
-		$html  = '<h2 class="lld-adm-section">Owner actions</h2><div class="lld-adm-grid lld-adm-g3">';
+		$html  = '<h2 class="lld-adm-section">Owner actions</h2><div class="lld-adm-grid lld-adm-owner-actions">';
 
 		// Premium test member (FR3-91) and reset (FR3-92).
 		$html .= '<section class="lld-card" data-lld-adm="premium-test"><h3>Premium test member</h3><p class="lld-hint">See the site exactly as a paying member does, without paying. Left out of counts and revenue.</p>';
