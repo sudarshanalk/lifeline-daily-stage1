@@ -265,7 +265,7 @@ body.mode-night .lld-v2-menu-signout { color: #f2a196; }
   }
 
   body.lld-members-v2-app .lld-account-nav .lld-account-tab,
-  body.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle], p > a:only-child[href$="/pricing/"]) {
+  body.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle]):not(.lld-button) {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -280,13 +280,19 @@ body.mode-night .lld-v2-menu-signout { color: #f2a196; }
     font-weight: 600 !important;
     line-height: 1.3 !important;
     text-decoration: none !important;
-    white-space: nowrap !important;
+    white-space: normal !important;
+    text-align: center !important;
+    max-width: 100% !important;
     cursor: pointer !important;
     box-sizing: border-box !important;
   }
 
+  body.lld-members-v2-app .lld-account-nav .lld-account-tab {
+    white-space: nowrap !important;
+  }
+
   body.lld-members-v2-app .lld-account-nav .lld-account-tab:hover,
-  body.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle], p > a:only-child[href$="/pricing/"]):hover {
+  body.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle]):not(.lld-button):hover {
     border-color: #1d4e48 !important;
     color: #1d4e48 !important;
   }
@@ -298,9 +304,15 @@ body.mode-night .lld-v2-menu-signout { color: #f2a196; }
   }
 
   body.lld-members-v2-app .lld-account-nav .lld-account-tab:focus-visible,
-  body.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle], p > a:only-child[href$="/pricing/"]):focus-visible {
-    outline: 3px solid #79d1c3 !important;
+  body.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle]):not(.lld-button):focus-visible {
+    outline: 3px solid #1d4e48 !important;
     outline-offset: 2px !important;
+  }
+
+  body.mode-night.lld-members-v2-app .lld-account-nav .lld-account-tab:focus-visible,
+  body.mode-night.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle]):not(.lld-button):focus-visible,
+  body.lld-members-v2-app .lld-main .lld-next-step .lld-pill-actions > a:focus-visible {
+    outline-color: #79d1c3 !important;
   }
 
   /* Two actions side by side (Choose a track, Monthly challenge): a row, never run together. */
@@ -312,14 +324,14 @@ body.mode-night .lld-v2-menu-signout { color: #f2a196; }
 
   /* Night */
   body.mode-night.lld-members-v2-app .lld-account-nav .lld-account-tab,
-  body.mode-night.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle], p > a:only-child[href$="/pricing/"]) {
+  body.mode-night.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle]):not(.lld-button) {
     background: #16201e !important;
     border-color: #6f8a84 !important;
     color: #f4f1ea !important;
   }
 
   body.mode-night.lld-members-v2-app .lld-account-nav .lld-account-tab:hover,
-  body.mode-night.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle], p > a:only-child[href$="/pricing/"]):hover {
+  body.mode-night.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle]):not(.lld-button):hover {
     border-color: #79d1c3 !important;
     color: #79d1c3 !important;
   }
@@ -333,5 +345,6 @@ body.mode-night .lld-v2-menu-signout { color: #f2a196; }
   /* On phones the tab row keeps scrolling sideways (C5); the pills keep their size. */
   @media (max-width: 760px) {
     body.lld-members-v2-app .lld-account-nav .lld-account-tab { flex: 0 0 auto !important; }
+    body.lld-members-v2-app .lld-account-nav .lld-account-tab:focus-visible { outline-offset: -3px !important; }
   }
 }

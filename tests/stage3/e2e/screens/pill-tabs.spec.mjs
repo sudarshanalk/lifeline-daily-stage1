@@ -92,6 +92,43 @@ test.describe.serial('P3-36 D2 pill tabs and buttons', () => {
     }
   }
 
+  test('TC-NFR3-12-AS-01 Show as table on Progress is a pill, the page never scrolls sideways at 360 px, and running text stays underlined', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 900 });
+    await signIn(page, A, password);
+    for (const path of ['/members/progress/', '/members/settings/?section=security', '/members/subscription/']) {
+      await page.goto(path);
+      expect(await page.evaluate(() => document.documentElement.scrollWidth), path).toBeLessThanOrEqual(360);
+    }
+    await page.goto('/members/progress/');
+    const toggle = await measure(page, '[data-lld-table-toggle]');
+    expect(toggle.length).toBeGreaterThan(0);
+    expectPill(toggle[0], 'Show as table');
+    // Links inside sentences are never turned into pills.
+    const inText = await page.locator('.lld-main p').evaluateAll((ps) => ps.flatMap((p) => [...p.querySelectorAll(':scope > a:not(.lld-button)')]
+      .filter((a) => !p.classList.contains('lld-pill-actions') && p.textContent.trim().length > a.textContent.trim().length + 3)
+      .map((a) => parseFloat(getComputedStyle(a).borderTopLeftRadius))));
+    for (const radius of inText) expect(radius, 'a link inside a sentence is not turned into a pill').toBeLessThan(20);
+  });
+
+  test('TC-NFR3-12-AS-02 the focused tab shows a 3 px ring inside the scrolling row at 360 px', async ({ page }) => {
+    await page.setViewportSize({ width: 360, height: 900 });
+    await signIn(page, A, password);
+    await page.goto('/members/settings/');
+    const tab = page.locator('#tab-security');
+    await tab.focus();
+    await page.keyboard.press('Shift+Tab');
+    await page.keyboard.press('Tab');
+    const ring = await page.evaluate(() => {
+      const el = document.activeElement;
+      const s = getComputedStyle(el);
+      return { id: el.id, width: parseFloat(s.outlineWidth), style: s.outlineStyle, offset: parseFloat(s.outlineOffset) };
+    });
+    expect(ring.id).toBe('tab-security');
+    expect(ring.style).toBe('solid');
+    expect(ring.width).toBeGreaterThanOrEqual(3);
+    expect(ring.offset).toBeLessThan(0); // inside the pill, so the scrolling row cannot clip it
+  });
+
   test('TC-FR3-06-AS-01 the tabs keep their ids, class and aria-current with the pill style', async ({ page }) => {
     await signIn(page, A, password);
     await page.goto('/members/settings/?section=privacy');
