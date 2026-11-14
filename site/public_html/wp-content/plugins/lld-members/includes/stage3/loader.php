@@ -48,6 +48,7 @@ require_once __DIR__ . '/healthy-weight/class-hw-programme.php';
 require_once __DIR__ . '/class-stripe-api.php';
 require_once __DIR__ . '/class-access-tiers.php';
 require_once __DIR__ . '/class-membership.php';
+require_once __DIR__ . '/class-terms-gate.php';
 require_once __DIR__ . '/class-pause.php';
 require_once __DIR__ . '/class-analytics.php';
 require_once __DIR__ . '/class-weekly-report-stage3.php';
@@ -79,6 +80,7 @@ function lld_members_stage3_boot() {
 	LLD_Members_Stripe_API::boot();
 	LLD_Members_Access_Tiers::boot();
 	LLD_Members_Membership::boot();
+	LLD_Members_Terms_Gate::boot();
 	LLD_Members_Pause::boot();
 	LLD_Members_Analytics::boot();
 	LLD_Members_Stage3_Report::boot();

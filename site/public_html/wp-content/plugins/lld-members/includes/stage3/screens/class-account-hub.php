@@ -180,6 +180,74 @@ class LLD_Members_Account_Hub {
 	}
 
 	/**
+	 * Member-facing date: day, full month, year (E5 A).
+	 *
+	 * @param string $ymd Y-m-d or datetime.
+	 */
+	private static function member_date( $ymd ) {
+		$ts = strtotime( substr( (string) $ymd, 0, 10 ) . ' 00:00:00 UTC' );
+		return false === $ts ? (string) $ymd : gmdate( 'j F Y', $ts );
+	}
+
+	/**
+	 * One consent's status line (E1 A).
+	 *
+	 * @param string      $type Consent type.
+	 * @param object|null $line Latest consent row for the type, or null.
+	 */
+	private static function consent_status( $type, $line ) {
+		if ( ! $line ) {
+			if ( 'marketing' === $type ) {
+				return 'Off';
+			}
+			if ( 'health' === $type ) {
+				return 'Not given';
+			}
+			return 'Not accepted yet';
+		}
+		$when = self::member_date( (string) $line->occurred_at );
+		if ( 'given' === (string) $line->change_kind ) {
+			return 'Accepted on ' . $when;
+		}
+		if ( 'marketing' === $type ) {
+			return 'Off since ' . $when;
+		}
+		if ( 'health' === $type ) {
+			return 'Withdrawn on ' . $when;
+		}
+		return 'Not accepted yet';
+	}
+
+	/**
+	 * One consent-history sentence (E1 A).
+	 *
+	 * @param object $line Consent row.
+	 */
+	private static function consent_history_line( $line ) {
+		$labels = array(
+			'terms'     => 'Terms of use',
+			'privacy'   => 'Privacy policy',
+			'sale'      => 'Terms of sale',
+			'health'    => 'Store my health information',
+			'marketing' => 'marketing emails',
+		);
+		$type  = (string) $line->consent_type;
+		$label = isset( $labels[ $type ] ) ? $labels[ $type ] : $type;
+		$when  = self::member_date( (string) $line->occurred_at );
+		$kind  = (string) $line->change_kind;
+		$ver   = trim( (string) $line->document_version );
+		if ( 'marketing' === $type ) {
+			$what = 'given' === $kind ? 'on' : 'off';
+			return $when . ': you turned marketing emails ' . $what . '.';
+		}
+		if ( 'health' === $type && 'given' !== $kind ) {
+			return $when . ': you withdrew Store my health information.';
+		}
+		$tail = '' !== $ver ? ' (version ' . $ver . ')' : '';
+		return $when . ': you accepted ' . ( 'health' === $type ? '' : 'the ' ) . $label . $tail . '.';
+	}
+
+	/**
 	 * Saves the posted tab and returns its section slug. Null when this request is not a hub save.
 	 *
 	 * @param int    $member_id Member id.
@@ -201,7 +269,7 @@ class LLD_Members_Account_Hub {
 		}
 		if ( isset( $_POST['lld_reminders_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_reminders_nonce'] ) ), 'lld_reminders_save' ) ) {
 			if ( ! class_exists( 'LLD_Members_Reminders' ) ) {
-				return new WP_Error( 'lld_reminders', 'Reminders are not available.' );
+				return new WP_Error( 'lld_reminders', 'Reminders aren\'t available right now.' );
 			}
 			$result = LLD_Members_Reminders::save_hub( $member_id );
 			return is_wp_error( $result ) ? $result : 'notifications';
@@ -547,12 +615,12 @@ class LLD_Members_Account_Hub {
 				continue;
 			}
 			$is_given = LLD_Members_Account::has_consent( $member_id, $type );
-			$date_str = isset( $dates[ $type ] ) ? substr( (string) $dates[ $type ]->occurred_at, 0, 10 ) : '';
+			$line     = isset( $dates[ $type ] ) ? $dates[ $type ] : null;
 
 			$html .= '<li class="lld-consent-item" data-consent-type="' . esc_attr( $type ) . '">';
 			$html .= '<div class="lld-consent-meta">';
 			$html .= '<strong>' . esc_html( $label ) . '</strong>';
-			$html .= '<span class="lld-consent-date">Status: ' . ( $is_given && '' !== $date_str ? 'Accepted on ' . esc_html( $date_str ) : 'Withdrawn / Not given' ) . '</span>';
+			$html .= '<span class="lld-consent-date">' . esc_html( self::consent_status( $type, $line ) ) . '</span>';
 			$html .= '</div>';
 			if ( 'terms' === $type || 'privacy' === $type || 'sale' === $type ) {
 				$html .= '<p class="lld-hint">Needed for your account. <a href="' . esc_url( home_url( '/members/delete/' ) ) . '">Delete my account</a> to end it.</p>';
@@ -576,8 +644,8 @@ class LLD_Members_Account_Hub {
 		}
 		$html .= '</ul>';
 		$html .= '<details class="lld-card lld-consent-log"><summary>Consent history</summary><ul class="lld-consent-history">';
-		foreach ( $lines as $line ) {
-			$html .= '<li>' . esc_html( $line->consent_type . ' ' . $line->change_kind . ' ' . $line->document_version . ' ' . $line->occurred_at ) . '</li>';
+		foreach ( array_reverse( $lines ) as $line ) {
+			$html .= '<li>' . esc_html( self::consent_history_line( $line ) ) . '</li>';
 		}
 		$html .= '</ul></details>';
 		$html .= '<p class="lld-hint lld-account-links"><a href="' . esc_url( home_url( '/members/data/' ) ) . '">Download my data</a> <span aria-hidden="true">·</span> <a href="' . esc_url( home_url( '/members/delete/' ) ) . '">Delete my account</a></p>';
@@ -594,18 +662,25 @@ class LLD_Members_Account_Hub {
 	private static function section_membership( $member_id, $row ) {
 		$state   = ucfirst( LLD_Members_Access::access_state( $member_id ) );
 		$is_prem = class_exists( 'LLD_Members_Billing' ) && LLD_Members_Billing::has_premium( $member_id );
+		// P3-36 A1 (TC-FR3-64-AS-04): the same answer as the chip and My subscription. Free Premium given by the Owner
+		// says so with its end date, and has no subscription to pause.
+		$status  = method_exists( 'LLD_Members_Access', 'premium_status' ) ? LLD_Members_Access::premium_status( $member_id ) : null;
+		$grant   = $status && 'grant' === $status['source'];
 
 		$html  = '<section class="lld-account-section lld-card" aria-labelledby="lld-section-membership">';
 		$html .= '<h2 id="lld-section-membership">Membership</h2>';
 		$html .= '<p class="lld-muted">Your current membership status and subscription management.</p>';
 		$html .= '<div class="lld-membership-status">';
-		$html .= '<p><strong>Current plan:</strong> ' . esc_html( $state ) . '</p>';
+		$html .= '<p><strong>Current plan:</strong> ' . esc_html( $grant ? 'Premium' : $state ) . '</p>';
+		if ( $grant ) {
+			$html .= '<p data-lld-premium-source="grant">' . esc_html( LLD_Members_Access::grant_line( $status ) ) . '</p>';
+		}
 		if ( ! empty( $row->joined_on ) ) {
-			$html .= '<p>Joined on ' . esc_html( (string) $row->joined_on ) . '</p>';
+			$html .= '<p>Joined on ' . esc_html( self::member_date( (string) $row->joined_on ) ) . '</p>';
 		}
 		$html .= '</div>';
 
-		if ( $is_prem ) {
+		if ( $is_prem && ! $grant ) {
 			$html .= '<div class="lld-pause-box lld-card lld-coming-soon">';
 			$html .= '<h3>Pause subscription</h3>';
 			$html .= '<p class="lld-badge-soon">Coming soon</p>';

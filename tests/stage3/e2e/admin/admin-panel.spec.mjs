@@ -341,8 +341,16 @@ test.describe.serial('P3-87 admin module in My account', () => {
     await open(page, at('activity'));
     const href = await page.getByRole('link', { name: 'Download as CSV' }).getAttribute('href');
     const csv = await (await page.request.get(href)).text();
-    const what = (await page.locator('.lld-adm-log > li strong').first().innerText()).split(' · ')[0];
-    expect(csv.trim().split('\n')[1]).toContain(what);
+    // E6 A (owner, 14 Nov 2026): a row is now one plain sentence, so the newest row is matched to the CSV's first
+    // line by its entry number and by who did it, where the old layout matched the label.
+    const first = page.locator('.lld-adm-log > li').first();
+    const id = await first.getAttribute('data-lld-log-id');
+    const who = (await first.locator('> span:nth-child(2) > span').innerText()).split(' · ')[0];
+    expect(id).toMatch(/^\d+$/);
+    expect(who.length).toBeGreaterThan(0);
+    const line = csv.trim().split('\n')[1];
+    expect(line.split(',')[0].replace(/"/g, '')).toBe(id);
+    expect(line).toContain(who);
   });
 
   // ----- Members (FR3-75 to FR3-85) -----
@@ -418,7 +426,8 @@ test.describe.serial('P3-87 admin module in My account', () => {
     await page.locator('#lld-note').fill(`Called about sign-in ${stamp}`);
     await page.getByRole('button', { name: 'Add note' }).click();
     await expect(page.locator('.lld-note').first()).toContainText(`Called about sign-in ${stamp}`);
-    await expect(page.locator('.lld-note').first()).toContainText('UTC');
+    // E5 A (owner, 14 Nov 2026): Admin times read "11 Nov, 15:51" in the site's time zone.
+    await expect(page.locator('.lld-note').first()).toContainText(/\d{1,2} [A-Z][a-z]{2}, \d\d:\d\d/);
     await page.request.post('/wp-json/lld-members/v1/test/logout');
     await context.clearCookies();
     const { signIn } = await import('../../../stage2/e2e/helpers.mjs');

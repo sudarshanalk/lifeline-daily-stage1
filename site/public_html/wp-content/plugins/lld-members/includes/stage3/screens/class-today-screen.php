@@ -84,11 +84,12 @@ class LLD_Members_Today_Screen {
 		$notice = '';
 		$error  = '';
 		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
+			$was = self::ring( $member_id, $facts )['done']; // P3-36 D9: the count before, so the ring can show the change
 			$got = self::today_post( $member_id, $facts );
 			if ( is_wp_error( $got ) ) {
 				$error = $got->get_error_message();
 			} elseif ( is_string( $got ) && '' !== $got ) {
-				wp_safe_redirect( home_url( '/members/home/?saved=' . rawurlencode( $got ) ) );
+				wp_safe_redirect( home_url( '/members/home/?saved=' . rawurlencode( $got ) . '&ring_was=' . (int) $was . '&ring_on=' . rawurlencode( $today ) ) );
 				exit;
 			}
 		}
@@ -352,8 +353,8 @@ class LLD_Members_Today_Screen {
 			$type      = '' !== $plan_card ? 'activity' : ( $facts['health'] ? 'log_food' : 'read' );
 		}
 		$links = array(
-			'log_reading' => array( home_url( '/members/check-in/' ), 'Log a reading' ),
-			'log_food'    => array( home_url( '/members/diary/' ), 'Log something' ),
+			'log_reading' => array( self::link_or( 'readings', $member_id, '/members/check-in/' ), 'Log a reading' ),
+			'log_food'    => array( home_url( '/members/diary/' ), 'Open the diary' ),
 			'check_in'    => array( home_url( '/members/check-in/' ), 'Start check-in' ),
 			'read'        => array( home_url( '/members/library/' ), 'Open the library' ),
 			'activity'    => array( home_url( '/members/track/' ), 'Open the activity' ),
@@ -367,7 +368,7 @@ class LLD_Members_Today_Screen {
 			if ( '' !== $why ) {
 				$html .= '<p class="lld-hint" data-lld-step-reason>' . self::rich( $why ) . '</p>';
 			}
-			$html .= '<p><a href="' . esc_url( $link[0] ) . '">' . esc_html( $link[1] ) . '</a></p>';
+			$html .= '<p class="lld-pill-actions"><a href="' . esc_url( $link[0] ) . '">' . esc_html( $link[1] ) . '</a></p>';
 			$html .= '<form method="post" class="lld-row">' . wp_nonce_field( 'lld_today', 'lld_today_nonce', true, false ) . '<input type="hidden" name="lld_action_type" value="' . esc_attr( $type ) . '">';
 			$html .= '<button class="lld-button" type="submit" name="lld_step" value="done">Done</button> <button class="lld-button lld-button-secondary" type="submit" name="lld_step" value="skipped">Skip</button></form>';
 		} else {
@@ -378,11 +379,41 @@ class LLD_Members_Today_Screen {
 			if ( '' !== $plan_card && 'activity' !== $type ) {
 				$html .= $plan_card;
 			} else {
-				$html .= '<p>Keep the day going: <a href="' . esc_url( home_url( '/members/diary/' ) ) . '">log a meal</a>, a glass of water or your mood below.</p>';
+				$html .= '<p>Keep the day going: <a href="' . esc_url( self::link_or( 'food', $member_id, '/members/diary/' ) ) . '">log a meal</a>, a glass of water or your mood below.</p>';
 			}
 			$html .= '</div>';
 		}
 		return $html . '</section>';
+	}
+
+	/**
+	 * This week's ring: days active of 7 (FR3-12 AS-02, AS-04).
+	 *
+	 * @param int   $member_id Member number.
+	 * @param array $facts     facts().
+	 * @return array{done:int}
+	 */
+	private static function ring( $member_id, array $facts ) {
+		$goal = LLD_Members_Goal_Journey::active_goal( $member_id, 'main' );
+		$plan = $goal ? LLD_Members_Goal_Journey::plan( $member_id, (int) $goal['id'] ) : null;
+		return LLD_Members_Goal_Rules::weekly_ring( $facts['health'] ? LLD_Members_Goal_Journey::active_dates( $member_id, 14 ) : array(), (string) $facts['today'], $plan && $plan['valid_from'] ? (string) $plan['valid_from'] : null );
+	}
+
+	/**
+	 * P3-36 D9: after Done or a quick log, the ring's count before it (carried by the redirect), or null. Only for the
+	 * same day as the link (ring_on), so a link opened again later, or another day's, never shows a change.
+	 *
+	 * @param array $facts facts().
+	 */
+	private static function ring_was( array $facts ) {
+		if ( ! isset( $_GET['saved'], $_GET['ring_was'], $_GET['ring_on'] ) || ! is_scalar( $_GET['saved'] ) || ! is_scalar( $_GET['ring_was'] ) || ! is_scalar( $_GET['ring_on'] ) || ! in_array( sanitize_key( (string) wp_unslash( $_GET['saved'] ) ), array( 'done', 'water', 'mood' ), true ) ) {
+			return null;
+		}
+		if ( sanitize_text_field( wp_unslash( (string) $_GET['ring_on'] ) ) !== (string) $facts['today'] ) {
+			return null;
+		}
+		$was = (int) $_GET['ring_was'];
+		return $was >= 0 && $was <= 7 ? $was : null;
 	}
 
 	/**
@@ -392,14 +423,22 @@ class LLD_Members_Today_Screen {
 	 * @param array $facts     facts().
 	 */
 	private static function ring_html( $member_id, array $facts ) {
-		$goal  = LLD_Members_Goal_Journey::active_goal( $member_id, 'main' );
-		$plan  = $goal ? LLD_Members_Goal_Journey::plan( $member_id, (int) $goal['id'] ) : null;
-		$ring  = LLD_Members_Goal_Rules::weekly_ring( $facts['health'] ? LLD_Members_Goal_Journey::active_dates( $member_id, 14 ) : array(), (string) $facts['today'], $plan && $plan['valid_from'] ? (string) $plan['valid_from'] : null );
+		$ring  = self::ring( $member_id, $facts );
 		$pct   = (int) round( $ring['done'] / 7 * 100 );
 		$dash  = 2 * M_PI * 42;
-		$html  = '<section class="lld-card lld-ring-card" data-lld-section="ring" data-lld-ring-done="' . (int) $ring['done'] . '" data-lld-ring-total="7"><h2>This week</h2>';
-		$html .= '<div class="lld-ring" role="img" aria-label="' . esc_attr( $ring['done'] . ' of 7 days active this week' ) . '"><svg viewBox="0 0 100 100" width="96" height="96" aria-hidden="true"><circle class="lld-ring-track" cx="50" cy="50" r="42" fill="none" stroke-width="10"/><circle class="lld-ring-fill" cx="50" cy="50" r="42" fill="none" stroke-width="10" stroke-dasharray="' . esc_attr( LLD_Members_Goal_Rules::plain( $dash ) ) . '" stroke-dashoffset="' . esc_attr( LLD_Members_Goal_Rules::plain( $dash * ( 1 - $ring['done'] / 7 ) ) ) . '" transform="rotate(-90 50 50)"/></svg>';
+		$was   = self::ring_was( $facts );
+		// "Up" only for the one day just added; "already counted" only when today really is among the active days.
+		// Both need today among the active days, so a hand-made link can never say today counted when it did not.
+		$today_on = null !== $was && $facts['health'] && in_array( (string) $facts['today'], LLD_Members_Goal_Journey::active_dates( $member_id, 14 ), true );
+		$rose  = $today_on && $ring['done'] === $was + 1;
+		$was   = $rose || ( $today_on && $ring['done'] === $was ) ? $was : null;
+		$html  = '<section class="lld-card lld-ring-card' . ( $rose ? ' lld-ring-rose' : '' ) . '" data-lld-section="ring" data-lld-ring-done="' . (int) $ring['done'] . '" data-lld-ring-total="7"' . ( null !== $was ? ' data-lld-ring-was="' . (int) $was . '"' : '' ) . '><h2>This week</h2>';
+		$html .= '<div class="lld-ring" role="img" aria-label="' . esc_attr( $ring['done'] . ' of 7 days active this week' ) . '"><svg viewBox="0 0 100 100" width="96" height="96" aria-hidden="true"><circle class="lld-ring-track" cx="50" cy="50" r="42" fill="none" stroke-width="10"/><circle class="lld-ring-fill" cx="50" cy="50" r="42" fill="none" stroke-width="10" stroke-dasharray="' . esc_attr( LLD_Members_Goal_Rules::plain( $dash ) ) . '" stroke-dashoffset="' . esc_attr( LLD_Members_Goal_Rules::plain( $dash * ( 1 - $ring['done'] / 7 ) ) ) . '"' . ( $rose ? ' style="--lld-ring-from:' . esc_attr( LLD_Members_Goal_Rules::plain( $dash * ( 1 - $was / 7 ) ) ) . ';--lld-ring-to:' . esc_attr( LLD_Members_Goal_Rules::plain( $dash * ( 1 - $ring['done'] / 7 ) ) ) . '"' : '' ) . ' transform="rotate(-90 50 50)"/></svg>';
 		$html .= '<p class="lld-ring-count"><strong>' . (int) $ring['done'] . ' of 7</strong> days</p></div>';
+		// P3-36 D9: say what changed, so the ring visibly answers Done (a day already counted stays counted once).
+		if ( null !== $was ) {
+			$html .= '<p class="lld-ring-change" role="status" data-lld-ring-change="' . ( $rose ? 'up' : 'same' ) . '">' . esc_html( $rose ? 'Today counts. You are now at ' . (int) $ring['done'] . ' of 7 days.' : 'Today was already counted: ' . (int) $ring['done'] . ' of 7 days.' ) . '</p>';
+		}
 		$html .= '<p class="lld-hint">A missed day lowers this count. Your long-term progress stays as it is.</p></section>';
 		return $html;
 	}
@@ -420,9 +459,9 @@ class LLD_Members_Today_Screen {
 		$mood  = LLD_Members_Goal_Journey::daily( $member_id, 'mood' );
 		$html .= '<div class="lld-tiles">';
 		$html .= '<form method="post" class="lld-tile" data-lld-tile="water">' . wp_nonce_field( 'lld_quick', 'lld_quick_nonce', true, false ) . '<input type="hidden" name="lld_quick" value="water"><input type="hidden" name="lld_value" value="1">';
-		$html .= '<button type="submit" class="lld-tile-button"><span class="lld-tile-label">Water</span><span class="lld-tile-value">' . (int) round( $ml / LLD_Members_Goal_Journey::GLASS_ML ) . ' glasses</span><span class="lld-tile-action">+1 glass</span></button></form>';
-		$html .= '<a class="lld-tile lld-tile-link" data-lld-tile="meals" href="' . esc_url( home_url( '/members/diary/' ) ) . '"><span class="lld-tile-label">Meals</span><span class="lld-tile-action">Log a meal</span></a>';
-		$html .= '<form method="post" class="lld-tile" data-lld-tile="mood">' . wp_nonce_field( 'lld_quick', 'lld_quick_nonce', true, false ) . '<input type="hidden" name="lld_quick" value="mood"><span class="lld-tile-label">Mood' . ( isset( $mood[ $facts['today'] ] ) ? ' · ' . esc_html( LLD_Members_Goal_Rules::plain( (float) $mood[ $facts['today'] ] ) ) . ' of 5' : '' ) . '</span><span class="lld-mood-row">';
+		$html .= '<button type="submit" class="lld-tile-button">' . lld_members_topic_icon( 'droplet', 'blue' ) . '<span class="lld-tile-label">Water</span><span class="lld-tile-value">' . (int) round( $ml / LLD_Members_Goal_Journey::GLASS_ML ) . ' glasses</span><span class="lld-tile-action">+1 glass</span></button></form>';
+		$html .= '<a class="lld-tile lld-tile-link" data-lld-tile="meals" href="' . esc_url( self::link_or( 'food', $member_id, '/members/diary/' ) ) . '">' . lld_members_topic_icon( 'leaf', 'teal' ) . '<span class="lld-tile-label">Meals</span><span class="lld-tile-action">Log a meal</span></a>';
+		$html .= '<form method="post" class="lld-tile" data-lld-tile="mood">' . wp_nonce_field( 'lld_quick', 'lld_quick_nonce', true, false ) . '<input type="hidden" name="lld_quick" value="mood">' . lld_members_topic_icon( 'hearts', 'pink' ) . '<span class="lld-tile-label">Mood' . ( isset( $mood[ $facts['today'] ] ) ? ' · ' . esc_html( LLD_Members_Goal_Rules::plain( (float) $mood[ $facts['today'] ] ) ) . ' of 5' : '' ) . '</span><span class="lld-mood-row">';
 		foreach ( array( 1 => 'Low', 2 => 'Down', 3 => 'OK', 4 => 'Good', 5 => 'Great' ) as $n => $label ) {
 			$html .= '<button type="submit" name="lld_value" value="' . $n . '" class="lld-mood-button" aria-label="' . esc_attr( 'Mood ' . $n . ' of 5, ' . $label ) . '">' . $n . '</button>';
 		}
@@ -603,7 +642,7 @@ class LLD_Members_Today_Screen {
 		} else {
 			$html .= '<p>Log meals in the food diary to see today\'s totals.</p>';
 		}
-		$html .= '<p><a href="' . esc_url( home_url( '/members/diary/' ) ) . '">Food diary</a></p></section>';
+		$html .= '<p><a href="' . esc_url( self::link_or( 'food', $member_id, '/members/diary/' ) ) . '">Food diary</a></p></section>';
 		// Latest readings.
 		$html .= '<section class="lld-card" data-lld-section="readings"><h2>Latest readings</h2><ul class="lld-readings">';
 		$any   = false;
@@ -617,7 +656,7 @@ class LLD_Members_Today_Screen {
 			$v    = $daily[ $date ];
 			$html .= '<li data-lld-reading="' . esc_attr( $type ) . '"><span>' . esc_html( $label ) . '</span> <strong>' . esc_html( self::show_value( $type, $v, $facts['imperial'] ) ) . '</strong> <small>' . esc_html( LLD_Members_Goal_Rules::nice_date( $date ) ) . '</small></li>';
 		}
-		$html .= $any ? '</ul>' : '</ul><p>No readings yet. <a href="' . esc_url( home_url( '/members/check-in/' ) ) . '">Log one</a></p>';
+		$html .= $any ? '</ul>' : '</ul><p>No readings yet. <a href="' . esc_url( self::link_or( 'readings', $member_id, '/members/check-in/' ) ) . '">Log one</a></p>';
 		$html .= '</section></div>';
 		// The current track and week (AS-02), as the programme page says it.
 		$html .= '<section class="lld-card" data-lld-section="track"><h2>Your track</h2>';
@@ -946,6 +985,36 @@ class LLD_Members_Today_Screen {
 	}
 
 	// ---- Helpers -----------------------------------------------------------------------------------------------------
+
+	/**
+	 * P3-36 B3: the new Food page or Log a reading page, when that page is built and on for the member: its screen class
+	 * is loaded and its switch (food_tracker, health_logging) is enabled for them. '' otherwise.
+	 *
+	 * @param string $page      food or readings.
+	 * @param int    $member_id Member number.
+	 */
+	public static function new_page( $page, $member_id ) {
+		$pages = array(
+			'food'     => array( 'LLD_Members_Food_Screen', 'food_tracker', '/members/food/' ),
+			'readings' => array( 'LLD_Members_Readings_Screen', 'health_logging', '/members/readings/' ),
+		);
+		if ( ! isset( $pages[ $page ] ) || ! class_exists( $pages[ $page ][0] ) || ! class_exists( 'LLD_Members_Features' ) || ! LLD_Members_Features::enabled( $pages[ $page ][1], (int) $member_id ) ) {
+			return '';
+		}
+		return home_url( $pages[ $page ][2] );
+	}
+
+	/**
+	 * P3-36 B3: Today's link to that page, or the address it has always had while the page is not there.
+	 *
+	 * @param string $page      food or readings.
+	 * @param int    $member_id Member number.
+	 * @param string $fallback  Current address, for example /members/diary/.
+	 */
+	private static function link_or( $page, $member_id, $fallback ) {
+		$url = self::new_page( $page, $member_id );
+		return '' !== $url ? $url : home_url( $fallback );
+	}
 
 	/** A template's **bold** marks as <strong>, its [buttons] removed, everything else escaped. */
 	public static function rich( $text ) {

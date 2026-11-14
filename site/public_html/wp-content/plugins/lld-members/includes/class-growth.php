@@ -422,20 +422,31 @@ class LLD_Members_Growth {
 		LLD_Members_Personal::require_page();
 		// The More list (Screen Design section 6): every member screen that is not in the bottom bar, then Sign out.
 		$items = array(
-			array( 'Workouts', '/members/workout/', 'Your level, this week\'s sessions and moving up a level.' ),
-			array( 'Monthly challenge', '/members/challenge/', 'This month\'s 28-day challenge and today\'s action.' ),
-			array( 'Progress and badges', '/members/badges/', 'Your totals, check-in charts and badges.' ),
-			array( 'Suggestions', '/members/suggestions/', 'Articles and ideas chosen for your goals.' ),
-			array( 'Members\' group', '/members/group/', 'The private group and the live Q&A.' ),
-			array( 'Profile and settings', '/members/settings/', 'Name, email, password, reminders and consents.' ),
-			array( 'Health profile', '/members/health/', 'Height, weight, diet and conditions that keep content safe for you.' ),
-			array( 'My subscription', '/members/subscription/', 'Your plan, receipts and referral link.' ),
-			array( 'My data', '/members/data/', 'Download everything we hold about you.' ),
-			array( 'Help', '/members/help/', 'Questions and answers, and the contact form.' ),
+			array( 'Workouts', '/members/workout/', 'Your level, this week\'s sessions and moving up a level.', 'flame', 'coral' ),
+			array( 'Monthly challenge', '/members/challenge/', 'This month\'s 28-day challenge and today\'s action.', 'compass', 'amber' ),
+			array( 'Progress and badges', '/members/badges/', 'Your totals, check-in charts and badges.', 'hourglass', 'teal' ),
+			array( 'Suggestions', '/members/suggestions/', 'Articles and ideas chosen for your goals.', 'leaf', 'teal' ),
+			array( 'Members\' group', '/members/group/', 'The private group and the live Q&A.', 'hearts', 'pink' ),
+			array( 'Profile and settings', '/members/settings/', 'Name, email, password, reminders and consents.', 'compass', 'stone' ),
+			array( 'Health profile', '/members/health/', 'Height, weight, diet and conditions that keep content safe for you.', 'stethoscope', 'blue' ),
+			array( 'My subscription', '/members/subscription/', 'Your plan, receipts and referral link.', 'heart', 'rose' ),
+			array( 'My data', '/members/data/', 'Download everything we hold about you.', 'hourglass', 'stone' ),
+			array( 'Help', '/members/help/', 'Questions and answers, and the contact form.', 'compass', 'blue' ),
 		);
+		// P3-36 B3: the Food page and Log a reading, first, once each page is built and on for the member.
+		if ( class_exists( 'LLD_Members_Today_Screen' ) && method_exists( 'LLD_Members_Today_Screen', 'new_page' ) ) {
+			$new = array();
+			if ( '' !== LLD_Members_Today_Screen::new_page( 'food', $member_id ) ) {
+				$new[] = array( 'Food', '/members/food/', 'Log what you eat and drink, meal by meal.', 'leaf', 'teal' );
+			}
+			if ( '' !== LLD_Members_Today_Screen::new_page( 'readings', $member_id ) ) {
+				$new[] = array( 'Log a reading', '/members/readings/', 'Record your readings and view your history.', 'heart', 'rose' );
+			}
+			$items = array_merge( $new, $items );
+		}
 		$main = '<h1>More</h1><ul class="lld-more-list">';
 		foreach ( $items as $item ) {
-			$main .= '<li><a href="' . esc_url( home_url( $item[1] ) ) . '"' . lld_members_current( home_url( $item[1] ) ) . '><strong>' . esc_html( $item[0] ) . '</strong><span>' . esc_html( $item[2] ) . '</span></a></li>';
+			$main .= '<li><a href="' . esc_url( home_url( $item[1] ) ) . '"' . lld_members_current( home_url( $item[1] ) ) . '>' . ( isset( $item[3] ) && function_exists( 'lld_members_topic_icon' ) ? lld_members_topic_icon( $item[3], $item[4] ) : '' ) . '<strong>' . esc_html( $item[0] ) . '</strong><span>' . esc_html( $item[2] ) . '</span></a></li>';
 		}
 		$main .= '</ul>';
 		$main .= '<form method="post" class="lld-sign-out">' . wp_nonce_field( 'lld_sign_out', 'lld_sign_out_nonce', true, false );
