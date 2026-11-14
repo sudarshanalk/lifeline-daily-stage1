@@ -138,7 +138,7 @@ async function checkTapTargets(page, contextSelector = null) {
     // carrying an lld- class itself or on an ancestor (member chip, member bar, skip link, Sign out), is still checked.
     const isSiteTemplate = (el) => {
       if (el.closest('#lld-main')) return false;
-      for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+      for (let n = el; n && n.nodeType === 1 && n !== document.body; n = n.parentElement) {
         if (Array.from(n.classList || []).some((c) => c.startsWith('lld-'))) return false;
       }
       return true;
