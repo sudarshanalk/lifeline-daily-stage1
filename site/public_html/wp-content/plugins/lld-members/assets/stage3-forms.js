@@ -61,8 +61,13 @@
 		var out = wrap.querySelector("[data-lld-stepper-value]");
 		var min = parseInt(input.getAttribute("min") || "0", 10);
 		var max = parseInt(input.getAttribute("max") || "40", 10);
-		function paint() {
-			var n = parseInt(input.value || "0", 10);
+		function paint(writeEmpty) {
+			var raw = String(input.value || "").trim();
+			if ("" === raw && !writeEmpty) {
+				if (out) out.textContent = "0";
+				return;
+			}
+			var n = parseInt(raw || "0", 10);
 			if (isNaN(n)) n = min;
 			if (n < min) n = min;
 			if (n > max) n = max;
@@ -72,14 +77,17 @@
 		wrap.querySelectorAll("[data-lld-step]").forEach(function (btn) {
 			btn.addEventListener("click", function () {
 				var delta = parseInt(btn.getAttribute("data-lld-step") || "0", 10);
-				var n = parseInt(input.value || "0", 10);
+				var raw = String(input.value || "").trim();
+				var n = "" === raw ? 0 : parseInt(raw, 10);
 				if (isNaN(n)) n = 0;
 				input.value = String(n + delta);
-				paint();
+				paint(true);
 			});
 		});
-		input.addEventListener("input", paint);
-		paint();
+		input.addEventListener("input", function () {
+			paint(true);
+		});
+		paint(false);
 	});
 
 	document.querySelectorAll("[data-lld-taps]").forEach(function (wrap) {
@@ -88,7 +96,9 @@
 		function paint() {
 			var v = String(input.value || "");
 			wrap.querySelectorAll("[data-lld-tap]").forEach(function (btn) {
-				btn.classList.toggle("is-active", btn.getAttribute("data-lld-tap") === v);
+				var on = btn.getAttribute("data-lld-tap") === v;
+				btn.classList.toggle("is-active", on);
+				btn.setAttribute("aria-pressed", on ? "true" : "false");
 			});
 		}
 		wrap.querySelectorAll("[data-lld-tap]").forEach(function (btn) {
@@ -107,7 +117,9 @@
 		function paint() {
 			var v = String(input.value || "");
 			wrap.querySelectorAll("[data-lld-pill]").forEach(function (btn) {
-				btn.classList.toggle("is-active", btn.getAttribute("data-lld-pill") === v);
+				var on = btn.getAttribute("data-lld-pill") === v;
+				btn.classList.toggle("is-active", on);
+				btn.setAttribute("aria-pressed", on ? "true" : "false");
 			});
 		}
 		wrap.querySelectorAll("[data-lld-pill]").forEach(function (btn) {

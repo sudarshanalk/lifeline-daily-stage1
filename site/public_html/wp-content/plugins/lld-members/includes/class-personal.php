@@ -1373,9 +1373,9 @@ class LLD_Members_Personal {
 	private static function sex_pills( $selected ) {
 		$html = '<div class="lld-pill-row" data-lld-pills="lld_sex" role="group" aria-label="Sex">';
 		foreach ( self::sex_choices() as $value => $label ) {
-			$html .= '<button type="button" data-lld-pill="' . esc_attr( $value ) . '">' . esc_html( $label ) . '</button>';
+			$on    = (string) $selected === (string) $value;
+			$html .= '<button type="button" data-lld-pill="' . esc_attr( $value ) . '" class="' . ( $on ? 'is-active' : '' ) . '" aria-pressed="' . ( $on ? 'true' : 'false' ) . '">' . esc_html( $label ) . '</button>';
 		}
-		unset( $selected );
 		return $html . '</div>';
 	}
 

@@ -2725,20 +2725,22 @@ class LLD_Members_Premium {
 		$html .= '<form method="post" class="lld-form" data-lld-day-form>';
 		$html .= wp_nonce_field( 'lld_diary', 'lld_diary_nonce', true, false );
 		$html .= '<input type="hidden" name="lld_day_save" value="1">';
-		$html .= '<p><label for="lld_water">Glasses of water</label><input id="lld_water" name="lld_water" type="number" min="0" max="40" step="1" inputmode="numeric" value="' . esc_attr( $water ) . '"></p>';
+		$html .= '<p class="lld-visually-hidden"><label for="lld_water">Glasses of water</label><input id="lld_water" name="lld_water" type="number" min="0" max="40" step="1" inputmode="numeric" value="' . esc_attr( $water ) . '"></p>';
 		$html .= '<div class="lld-stepper" data-lld-stepper="lld_water"><button type="button" data-lld-step="-1" aria-label="One glass of water fewer">&minus;</button>';
 		$html .= '<output data-lld-stepper-value aria-live="polite">' . esc_html( '' === $water ? '0' : $water ) . '</output>';
 		$html .= '<button type="button" data-lld-step="1" aria-label="One more glass of water">+</button></div>';
-		$html .= '<p><label for="lld_hunger">Hunger from 1 to 5</label><input id="lld_hunger" name="lld_hunger" type="number" min="1" max="5" step="1" inputmode="numeric" value="' . esc_attr( $hunger ) . '"></p>';
+		$html .= '<p class="lld-visually-hidden"><label for="lld_hunger">Hunger from 1 to 5</label><input id="lld_hunger" name="lld_hunger" type="number" min="1" max="5" step="1" inputmode="numeric" value="' . esc_attr( $hunger ) . '"></p>';
 		$html .= '<div class="lld-tap-row" data-lld-taps="lld_hunger" role="group" aria-label="Hunger from 1 to 5">';
 		for ( $n = 1; $n <= 5; $n++ ) {
-			$html .= '<button type="button" data-lld-tap="' . $n . '" aria-label="' . esc_attr( 'Hunger ' . $n . ' of 5' ) . '">' . $n . '</button>';
+			$on    = (string) $n === (string) $hunger;
+			$html .= '<button type="button" data-lld-tap="' . $n . '" class="' . ( $on ? 'is-active' : '' ) . '" aria-pressed="' . ( $on ? 'true' : 'false' ) . '" aria-label="' . esc_attr( 'Hunger ' . $n . ' of 5' ) . '">' . $n . '</button>';
 		}
 		$html .= '</div>';
-		$html .= '<p><label for="lld_energy">Energy from 1 to 5</label><input id="lld_energy" name="lld_energy" type="number" min="1" max="5" step="1" inputmode="numeric" value="' . esc_attr( $energy ) . '"></p>';
+		$html .= '<p class="lld-visually-hidden"><label for="lld_energy">Energy from 1 to 5</label><input id="lld_energy" name="lld_energy" type="number" min="1" max="5" step="1" inputmode="numeric" value="' . esc_attr( $energy ) . '"></p>';
 		$html .= '<div class="lld-tap-row" data-lld-taps="lld_energy" role="group" aria-label="Energy from 1 to 5">';
 		for ( $n = 1; $n <= 5; $n++ ) {
-			$html .= '<button type="button" data-lld-tap="' . $n . '" aria-label="' . esc_attr( 'Energy ' . $n . ' of 5' ) . '">' . $n . '</button>';
+			$on    = (string) $n === (string) $energy;
+			$html .= '<button type="button" data-lld-tap="' . $n . '" class="' . ( $on ? 'is-active' : '' ) . '" aria-pressed="' . ( $on ? 'true' : 'false' ) . '" aria-label="' . esc_attr( 'Energy ' . $n . ' of 5' ) . '">' . $n . '</button>';
 		}
 		$html .= '</div>';
 		$html .= lld_button( array( 'label' => 'Save today' ) );
