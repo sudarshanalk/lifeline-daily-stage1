@@ -83,8 +83,8 @@ test('P3-36 B3: the five Today links use it, with their labels unchanged, and Mo
   const growth = src('class-growth.php');
   const more = growth.slice(growth.indexOf('public static function more() {'), growth.indexOf("$main = '<h1>More</h1>"));
   expect(more).toContain("if ( '' !== LLD_Members_Today_Screen::new_page( 'food', $member_id ) ) {");
-  expect(more).toContain("$new[] = array( 'Food & meals', '/members/food/', 'Log what you eat and drink, meal by meal.' );");
+  expect(more).toContain("$new[] = array( 'Food & meals', '/members/food/', 'Log what you eat and drink, meal by meal.', 'weight', 'amber' );");
   expect(more).toContain("if ( '' !== LLD_Members_Today_Screen::new_page( 'readings', $member_id ) ) {");
-  expect(more).toContain("$new[] = array( 'Log a reading', '/members/readings/', 'Record your readings and view your history.' );");
+  expect(more).toContain("$new[] = array( 'Log a reading', '/members/readings/', 'Record your readings and view your history.', 'heart', 'rose' );");
   expect(more).toContain('$items = array_merge( $new, $items );');
 });
