@@ -168,7 +168,7 @@ test('TC-FR3-45-AS-01', async ({ page }) => {
   await fresh(page); await reading(page, 'glucose', 5.6, { unit_shown: 'mmol/L' }); await units(page, true); await open(page, 'glucose');
   await expect(history(page)).toContainText('101'); await expect(history(page)).toContainText('mg/dL');
 });
-for (const [id, type, values] of [['TC-FR3-45-AS-03', 'glucose', { value_1: 3.0 }],
+for (const [id, type, values] of [['TC-FR3-45-AS-03', 'glucose', { value_1: 2.9 }],
   ['TC-FR3-46-AS-01', 'blood_pressure', { value_1: 185, value_2: 125 }],
   ['TC-FR3-46-AS-03', 'blood_pressure', { value_1: 185, value_2: 125 }]]) test(id, async ({ page }) => {
   for (const access_state of ['Free', 'Premium']) {

@@ -886,6 +886,9 @@ class LLD_Members_Stage3_API {
 	 * @param WP_REST_Request $request Request.
 	 */
 	private static function keep_query_type( $request ) {
+		if ( ! is_object( $request ) || ! method_exists( $request, 'get_query_params' ) || ! method_exists( $request, 'set_query_params' ) ) {
+			return;
+		}
 		$query = $request->get_query_params();
 		if ( is_array( $query ) && array_key_exists( 'type', $query ) ) {
 			$query['lld_reading_type'] = $query['type'];
