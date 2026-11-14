@@ -27,7 +27,7 @@ function lld_members_v2_form_screens() {
  * @return string[] lld_screen values.
  */
 function lld_members_v2_app_screens() {
-	return array( 'home', 'check-in', 'goal', 'goals', 'progress', 'track', 'tracks', 'screening', 'plan', 'review', 'suggestions', 'diary', 'food-scan', 'meals', 'workout', 'challenge', 'badges', 'group', 'health', 'foundations', 'library', 'read', 'record', 'more',
+	return array( 'home', 'check-in', 'goal', 'goals', 'progress', 'track', 'tracks', 'screening', 'plan', 'review', 'suggestions', 'diary', 'food', 'food-scan', 'readings', 'meals', 'workout', 'challenge', 'badges', 'group', 'health', 'foundations', 'library', 'read', 'record', 'more',
 		'settings', 'subscription', 'help', 'data', 'withdraw', 'delete', 'email', 'unsubscribe', 'programmes', 'sales', 'waitlist', 'guide-confirm', 'guide-unsub',
 		'admin3' );
 }
