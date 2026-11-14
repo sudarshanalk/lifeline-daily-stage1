@@ -1,0 +1,39 @@
+/* Account hub controls (P3-36 C2). Loaded only with the hub, not on the Stage 2 long form. */
+
+.lld-file {
+	position: relative;
+}
+
+.lld-file label {
+	display: inline-block;
+	padding: 0.55rem 1rem;
+	border: 1px solid currentColor;
+	border-radius: 999px;
+	cursor: pointer;
+}
+
+.lld-file input[type="file"] {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.lld-file:focus-within label {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+.lld-file-name:empty {
+	display: none;
+}
+
+.lld-file-name {
+	display: inline-block;
+	margin-left: 0.75rem;
+}
