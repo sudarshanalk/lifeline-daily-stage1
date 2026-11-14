@@ -292,7 +292,9 @@ test('TC-FR3-105-AS-01 Today shows the day\'s note with its "Try this today" lin
 test('TC-FR3-105-AS-04 the note wraps on a 360-pixel screen: no fixed widths, long words break (source)', () => {
   const css = readFileSync(resolve(plugin, 'assets/stage3.css'), 'utf8');
   expect(css).toMatch(/\.lld-hw-note,\s*\.lld-hw-note p \{\s*overflow-wrap: anywhere;/);
-  const hw = css.slice(css.indexOf('HEALTHY WEIGHT PROGRAMME'));
+  const from = css.indexOf('HEALTHY WEIGHT PROGRAMME');
+  const next = css.indexOf('/* =================', from); // the Healthy Weight block only, up to the next screen's block
+  const hw = css.slice(from, next > -1 ? next : undefined);
   expect(hw).not.toMatch(/(?:^|[^-])width:\s*\d{3,}px/m);
   expect(hw).not.toMatch(/white-space:\s*nowrap/);
 });

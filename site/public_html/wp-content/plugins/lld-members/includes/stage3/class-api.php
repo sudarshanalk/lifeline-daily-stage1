@@ -674,6 +674,7 @@ class LLD_Members_Stage3_API {
 	 * @return array{0:int,1:array<string,mixed>}|WP_REST_Response Member number and type, or the refusal.
 	 */
 	private static function gate( $request ) {
+		self::keep_query_type( $request );
 		$type  = (string) $request['type'];
 		$types = self::types();
 		if ( ! isset( $types[ $type ] ) ) {
@@ -1082,6 +1083,26 @@ class LLD_Members_Stage3_API {
 	}
 
 	/**
+	 * A list may be asked for one reading type (?type=weight, on the history and trend lists). WordPress hands a
+	 * query value back before the route's own {type}, so $request['type'] became "weight" and every such request
+	 * was answered "Not available." (found on the Log a reading page, P3-36 B2). The query value is moved to its
+	 * own name here, first thing in gate(), so $request['type'] is always the route's type; query_type() reads it.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
+	private static function keep_query_type( $request ) {
+		if ( ! is_object( $request ) || ! method_exists( $request, 'get_query_params' ) || ! method_exists( $request, 'set_query_params' ) ) {
+			return;
+		}
+		$query = $request->get_query_params();
+		if ( is_array( $query ) && array_key_exists( 'type', $query ) ) {
+			$query['lld_reading_type'] = $query['type'];
+			unset( $query['type'] );
+			$request->set_query_params( $query );
+		}
+	}
+
+	/**
 	 * The reading type asked for in the query string (?type=weight). Never get_param( 'type' ): with no query value it
 	 * falls back to the route's own {type} ("readings"), which matches no reading and empties every list.
 	 *
@@ -1089,7 +1110,8 @@ class LLD_Members_Stage3_API {
 	 */
 	private static function query_type( $request ) {
 		$query = $request->get_query_params();
-		return isset( $query['type'] ) && is_scalar( $query['type'] ) ? (string) $query['type'] : '';
+		$type  = isset( $query['lld_reading_type'] ) ? $query['lld_reading_type'] : ( isset( $query['type'] ) ? $query['type'] : '' );
+		return is_scalar( $type ) ? (string) $type : '';
 	}
 
 	/**

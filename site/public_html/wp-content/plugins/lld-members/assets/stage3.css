@@ -1671,3 +1671,615 @@ body.mode-night .lld-stage3-food {
     transition: none;
   }
 }
+
+/* ---------- B2: Log a reading screen (/members/readings/) ---------- */
+.lld-stage3-readings {
+  --lld-bg: var(--lld-s3-bg, #faf8f5);
+  --lld-card: var(--lld-s3-card, #ffffff);
+  --lld-tile: #f3f6f4;
+  --lld-ink: var(--lld-s3-ink, #111a14);
+  --lld-muted: var(--lld-s3-muted, #5c6b64);
+  --lld-border: #7d8a84;
+  --lld-line: var(--lld-s3-line, #e5ece8);
+  --lld-green: var(--lld-s3-green, #157a42);
+  --lld-green-hover: #0f5c31;
+  --lld-mint: var(--lld-s3-mint, #2cc8b3);
+  --lld-caution-bg: #fdf6e7;
+  --lld-caution-ink: #94600c;
+  --lld-urgent-bg: #fdf2f0;
+  --lld-urgent-border: #b5302f;
+  --lld-urgent-ink: #8c1d18;
+  color: var(--lld-ink);
+}
+
+body.mode-night .lld-stage3-readings {
+  --lld-bg: #0d1411;
+  --lld-card: #141c19;
+  --lld-tile: #1a2420;
+  --lld-ink: #e8ecea;
+  --lld-muted: #b2c0b9;
+  --lld-border: #6c7d75;
+  --lld-line: #2a3a34;
+  --lld-green: #79d1c3;
+  --lld-green-hover: #5bbdad;
+  --lld-mint: #79d1c3;
+  --lld-info-bg: #142620;
+  --lld-caution-bg: #2a2214;
+  --lld-caution-ink: #f7d89c;
+  --lld-urgent-bg: #2e1515;
+  --lld-urgent-border: #e06c68;
+  --lld-urgent-ink: #ffd4d1;
+}
+
+.lld-readings-shell {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.lld-readings-header {
+  margin-bottom: 18px;
+}
+
+.lld-readings-header .lld-eyebrow {
+  margin: 0 0 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--lld-green);
+}
+
+.lld-readings-header h1 {
+  margin: 0 0 6px;
+}
+
+.lld-readings-header .lld-lead {
+  margin: 0;
+  color: var(--lld-muted);
+}
+.lld-stage3-readings [hidden] {
+  display: none !important;
+}
+.lld-stage3-readings .lld-readings-empty-text {
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+
+.lld-stage3-readings .lld-card {
+  background: var(--lld-card);
+  border: 1px solid var(--lld-line);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+.lld-stage3-readings .lld-pill-btn,
+.lld-stage3-readings .lld-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 9999px;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.lld-stage3-readings .lld-btn-primary {
+  background: var(--lld-green);
+  color: #ffffff;
+  border: 1px solid var(--lld-green);
+}
+
+body.mode-night .lld-stage3-readings .lld-btn-primary {
+  color: #0d1411;
+}
+
+.lld-stage3-readings .lld-btn-primary:hover {
+  background: var(--lld-green-hover);
+}
+
+.lld-stage3-readings .lld-btn-secondary {
+  background: transparent;
+  color: var(--lld-ink);
+  border: 1px solid var(--lld-border);
+}
+
+.lld-stage3-readings .lld-btn-secondary:hover {
+  background: var(--lld-tile);
+}
+
+.lld-stage3-readings .lld-btn-danger {
+  background: var(--lld-urgent-border);
+  color: #ffffff;
+  border: 1px solid var(--lld-urgent-border);
+}
+
+body.mode-night .lld-stage3-readings .lld-btn-danger {
+  color: #0d1411;
+}
+
+.lld-stage3-readings .lld-btn-ghost {
+  background: transparent;
+  color: var(--lld-green);
+  border: 1px solid transparent;
+}
+
+.lld-stage3-readings .lld-btn-sm {
+  min-height: 44px;
+  padding: 0 14px;
+  font-size: 0.9375rem;
+}
+
+.lld-stage3-readings a.lld-pill-btn,
+.lld-stage3-readings a.lld-pill-btn:visited {
+  text-decoration: none;
+}
+
+.lld-stage3-readings a.lld-btn-primary,
+.lld-stage3-readings a.lld-btn-primary:visited {
+  color: #ffffff !important;
+}
+
+.lld-stage3-readings a.lld-btn-danger,
+.lld-stage3-readings a.lld-btn-danger:visited {
+  color: #ffffff !important;
+}
+
+.lld-stage3-readings a.lld-btn-secondary,
+.lld-stage3-readings a.lld-btn-secondary:visited {
+  color: var(--lld-ink) !important;
+}
+
+.lld-stage3-readings a.lld-btn-ghost,
+.lld-stage3-readings a.lld-btn-ghost:visited {
+  color: var(--lld-green) !important;
+  text-decoration: none;
+}
+
+body.mode-night .lld-stage3-readings a.lld-btn-primary,
+body.mode-night .lld-stage3-readings a.lld-btn-primary:visited,
+body.mode-night .lld-stage3-readings a.lld-btn-danger,
+body.mode-night .lld-stage3-readings a.lld-btn-danger:visited {
+  color: #0d1411 !important;
+}
+
+.lld-stage3-readings a:focus-visible,
+.lld-stage3-readings button:focus-visible,
+.lld-stage3-readings input:focus-visible,
+.lld-stage3-readings select:focus-visible,
+.lld-stage3-readings textarea:focus-visible,
+.lld-stage3-readings summary:focus-visible {
+  outline: 3px solid var(--lld-mint);
+  outline-offset: 2px;
+}
+
+.lld-stage3-readings .lld-reading-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.lld-stage3-readings .lld-pill-tab,
+.lld-stage3-readings a.lld-pill-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  border: 1px solid var(--lld-border);
+  background: var(--lld-card);
+  color: var(--lld-ink) !important;
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.lld-stage3-readings .lld-pill-tab[aria-selected="true"],
+.lld-stage3-readings a.lld-pill-tab[aria-selected="true"] {
+  background: var(--lld-green);
+  border-color: var(--lld-green);
+  color: #ffffff !important;
+}
+
+body.mode-night .lld-stage3-readings .lld-pill-tab[aria-selected="true"],
+body.mode-night .lld-stage3-readings a.lld-pill-tab[aria-selected="true"] {
+  color: #0d1411 !important;
+}
+/* On the v2 shell, lld-v2.css colours every link in the page green with a layered !important, which beats the
+   unlayered rules above: the chosen tab's label then has the colour of its own background. An !important inside
+   an earlier layer wins over that one. */
+@layer components {
+  body.lld-members-v2-app .lld-stage3-readings a.lld-pill-tab {
+    color: var(--lld-ink) !important;
+  }
+  body.lld-members-v2-app .lld-stage3-readings a.lld-pill-tab[aria-selected="true"] {
+    color: #ffffff !important;
+  }
+  body.lld-members-v2-app.mode-night .lld-stage3-readings a.lld-pill-tab[aria-selected="true"] {
+    color: #0d1411 !important;
+  }
+}
+
+.lld-stage3-readings .lld-field {
+  margin-bottom: 14px;
+}
+
+.lld-stage3-readings .lld-field > label,
+.lld-stage3-readings .lld-label,
+.lld-stage3-readings .lld-symptoms-group legend {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--lld-ink);
+}
+
+.lld-stage3-readings .lld-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--lld-border);
+  background: var(--lld-card);
+  color: var(--lld-ink);
+  font: inherit;
+}
+
+.lld-stage3-readings .lld-row-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.lld-stage3-readings .lld-check-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.lld-stage3-readings .lld-check-label input[type="checkbox"] {
+  min-width: 22px;
+  min-height: 22px;
+  accent-color: var(--lld-green);
+}
+
+.lld-stage3-readings .lld-symptoms-group {
+  border: 0;
+  padding: 0;
+  margin: 0 0 14px;
+}
+
+.lld-stage3-readings .lld-mood-row {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.lld-stage3-readings .lld-mood-button {
+  min-height: 48px;
+  padding: 6px 4px;
+  border-radius: 10px;
+  border: 1px solid var(--lld-border);
+  background: var(--lld-card);
+  color: var(--lld-ink);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.lld-stage3-readings .lld-mood-button span {
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.lld-stage3-readings .lld-mood-button[aria-pressed="true"] {
+  background: var(--lld-green);
+  border-color: var(--lld-green);
+  color: #ffffff;
+}
+
+body.mode-night .lld-stage3-readings .lld-mood-button[aria-pressed="true"] {
+  color: #0d1411;
+}
+
+.lld-stage3-readings .lld-water-quick,
+.lld-stage3-readings .lld-empty-actions,
+.lld-stage3-readings .lld-history-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lld-stage3-readings .lld-water-quick {
+  margin-bottom: 14px;
+}
+
+.lld-stage3-readings .lld-water-total {
+  margin: 0 0 10px;
+  font-weight: 700;
+}
+
+.lld-stage3-readings .lld-activity-summary {
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--lld-tile);
+  border: 1px solid var(--lld-line);
+}
+
+.lld-stage3-readings .lld-activity-week-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.lld-stage3-readings .lld-activity-summary-text {
+  margin: 0;
+}
+
+.lld-stage3-readings .lld-activity-chart-box,
+.lld-stage3-readings .lld-activity-table-box {
+  margin-top: 10px;
+  color: var(--lld-green);
+}
+
+.lld-stage3-readings .lld-readings-submit-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.lld-stage3-readings .lld-readings-save-btn {
+  flex: 1 1 220px;
+}
+
+.lld-stage3-readings .lld-empty-visual {
+  color: var(--lld-green);
+  margin-bottom: 8px;
+}
+
+.lld-stage3-readings .lld-readings-filter {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 14px;
+}
+
+.lld-stage3-readings .lld-readings-filter .lld-field {
+  margin-bottom: 0;
+}
+
+.lld-stage3-readings .lld-readings-filter-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.lld-stage3-readings .lld-safety,
+.lld-stage3-readings .lld-readings-alert.lld-safety {
+  background: var(--lld-urgent-bg);
+  border: 2px solid var(--lld-urgent-border);
+  border-radius: 14px;
+  padding: 18px 20px;
+  color: var(--lld-urgent-ink);
+  margin-bottom: 16px;
+}
+
+.lld-stage3-readings .lld-safety h2 {
+  margin: 0 0 8px;
+  font-size: 1.125rem;
+  color: var(--lld-urgent-ink);
+}
+
+.lld-stage3-readings .lld-safety a:not(.lld-pill-btn) {
+  color: var(--lld-urgent-ink);
+  font-weight: 700;
+}
+
+.lld-stage3-readings .lld-caution {
+  background: var(--lld-caution-bg);
+  border: 1px solid var(--lld-caution-ink);
+  border-radius: 14px;
+  padding: 16px 18px;
+  color: var(--lld-caution-ink);
+  margin-bottom: 16px;
+}
+
+.lld-stage3-readings .lld-caution a:not(.lld-pill-btn) {
+  color: var(--lld-caution-ink);
+  font-weight: 700;
+}
+
+.lld-stage3-readings .lld-readings-status {
+  margin: 0 0 14px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--lld-tile);
+  border: 1px solid var(--lld-green);
+  color: var(--lld-ink);
+  font-weight: 600;
+}
+
+.lld-stage3-readings .lld-history-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.lld-stage3-readings .lld-history-head h2 {
+  margin: 0;
+}
+
+.lld-stage3-readings .lld-readings-tier-note {
+  margin: 4px 0 0;
+}
+
+.lld-stage3-readings .lld-readings-chart-box {
+  color: var(--lld-green);
+  margin-bottom: 16px;
+}
+
+.lld-stage3-readings .lld-trend-figure {
+  margin: 0;
+}
+
+.lld-stage3-readings .lld-readings-chart-empty {
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--lld-tile);
+  border: 1px solid var(--lld-line);
+  color: var(--lld-ink);
+}
+
+.lld-stage3-readings .lld-table-wrap {
+  overflow-x: auto;
+}
+
+.lld-stage3-readings .lld-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--lld-ink);
+}
+
+.lld-stage3-readings .lld-table th,
+.lld-stage3-readings .lld-table td {
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--lld-line);
+  vertical-align: middle;
+}
+
+.lld-stage3-readings .lld-table th,
+.lld-stage3-readings .lld-history-actions .lld-pill-btn {
+  white-space: nowrap;
+}
+.lld-stage3-readings .lld-table td:first-child {
+  min-width: 6.5em;
+}
+.lld-stage3-readings .lld-readings-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.lld-stage3-readings .lld-history-item {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--lld-line);
+}
+
+.lld-stage3-readings .lld-history-item:last-child {
+  border-bottom: 0;
+}
+
+.lld-stage3-readings .lld-history-note {
+  margin: 4px 0 0;
+}
+
+.lld-stage3-readings .lld-history-edit-wrap {
+  flex: 1 0 100%;
+  margin-top: 8px;
+  padding: 14px;
+  border-radius: 12px;
+  background: var(--lld-tile);
+  border: 1px solid var(--lld-line);
+}
+
+.lld-stage3-readings .lld-readings-back {
+  margin-top: 8px;
+}
+
+.lld-stage3-readings .lld-readings-inline-link a,
+.lld-stage3-readings .lld-readings-back a,
+.lld-stage3-readings .lld-readings-tier-note a,
+.lld-stage3-readings .lld-safety a:not(.lld-pill-btn),
+.lld-stage3-readings .lld-caution a:not(.lld-pill-btn),
+.lld-stage3-readings .lld-consent-note a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: var(--lld-green);
+  font-weight: 600;
+}
+
+.lld-stage3-readings .lld-consent-note {
+  background: var(--lld-info-bg, #edf7f3);
+  border: 1px solid var(--lld-green);
+  border-radius: 14px;
+  padding: 16px 18px;
+  color: var(--lld-ink);
+  margin-bottom: 16px;
+}
+
+body.mode-night .lld-stage3-readings .lld-consent-note {
+  background: var(--lld-info-bg);
+  border-color: var(--lld-green);
+  color: var(--lld-ink);
+}
+
+.lld-stage3-readings .lld-safety a:not(.lld-pill-btn) {
+  color: var(--lld-urgent-ink);
+}
+
+.lld-stage3-readings .lld-caution a:not(.lld-pill-btn) {
+  color: var(--lld-caution-ink);
+}
+
+.lld-stage3-readings .lld-safety p:first-child {
+  font-weight: 700;
+}
+
+.lld-stage3-readings .lld-trend-figure,
+.lld-stage3-readings .lld-activity-figure {
+  margin: 0;
+}
+
+.lld-stage3-readings .lld-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 560px) {
+  .lld-stage3-readings .lld-row-2,
+  .lld-stage3-readings .lld-readings-filter {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .lld-stage3-readings .lld-mood-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
