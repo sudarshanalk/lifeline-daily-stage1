@@ -720,10 +720,10 @@ button.lld-menu-item {
   outline-offset: 2px;
 }
 
-/* ================= ADMIN IN MY ACCOUNT (P3-87b · FR3-87, NFR3-24; approved design 6 Nov 2026) ================= */
+/* ================= ADMIN IN MY ACCOUNT (P3-87b · FR3-87, NFR3-24; G-4 C3) ================= */
 .lld-main:has(.lld-adm) { max-width: 80rem; padding-left: 0; padding-right: 0; }
-.lld-adm { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 0; min-height: 70vh; background: var(--lld-bg, #f8faf9); }
-.lld-adm-side { background: #fff; border-right: 1px solid var(--lld-line, #e5ece8); padding: 18px 12px; display: flex; flex-direction: column; gap: 4px; }
+.lld-adm { display: grid; grid-template-columns: 240px minmax(0, 1fr); gap: 0; min-height: 75vh; background: var(--lld-bg, #f8faf9); }
+.lld-adm-side { background: var(--lld-card, #fff); border-right: 1px solid var(--lld-line, #e5ece8); padding: 20px 14px; display: flex; flex-direction: column; gap: 4px; }
 .lld-adm-side ul, .lld-adm-tabs ul { list-style: none; margin: 0; padding: 0; }
 .lld-adm-who { display: flex; gap: 10px; align-items: center; padding: 6px 10px 14px; border-bottom: 1px solid var(--lld-line, #e5ece8); margin-bottom: 8px; }
 .lld-adm-who strong { display: block; color: var(--lld-ink, #111a14); }
@@ -734,19 +734,22 @@ button.lld-menu-item {
 .lld-main .lld-adm-nav-link[aria-current="page"] { background: var(--lld-mint-soft, #f0f7f3); border-color: var(--lld-mint-line, #cfe8db); color: var(--lld-green, #157a42); }
 .lld-adm-nav-group { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--lld-muted, #5c6b64); margin: 14px 12px 4px; }
 .lld-main .lld-adm-wp-link { margin-top: auto; display: flex; align-items: center; min-height: 44px; padding: 8px 12px; border-radius: 12px; border: 1.5px dashed var(--lld-mint-line, #cfe8db); color: var(--lld-green, #157a42); font-weight: 700; text-decoration: none; }
-.lld-adm-body { padding: 26px 30px 56px; min-width: 0; }
-.lld-adm-tabs { display: none; }
-.lld-adm-crumb { font-size: 13px; color: var(--lld-muted, #5c6b64); margin: 0 0 4px; }
+.lld-adm-body { padding: 28px 36px 56px; min-width: 0; width: 100%; max-width: 75rem; box-sizing: border-box; }
+.lld-adm-tabs { display: none; box-sizing: border-box; max-width: 100%; }
+.lld-adm-crumb { font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--lld-muted, #5c6b64); margin: 0 0 6px; }
 .lld-adm-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 12px; margin-bottom: 18px; }
 .lld-adm-head h1 { margin: 0; font-size: 28px; }
 .lld-adm-head .lld-hint { margin: 6px 0 0; max-width: 42rem; }
 .lld-adm-head-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
 .lld-adm-section { margin: 28px 0 12px; font-size: 19px; }
 .lld-adm-grid { display: grid; gap: 16px; margin-bottom: 16px; }
+.lld-adm-grid > * { min-width: 0; max-width: 100%; box-sizing: border-box; }
 .lld-adm-grid > .lld-card { margin: 0; }
 .lld-adm-g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .lld-adm-g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .lld-adm-g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.lld-adm-owner-actions { grid-template-columns: minmax(0, 1fr); gap: 14px; }
+.lld-adm-member-top { align-items: start; }
 .lld-adm .lld-card { margin-bottom: 16px; }
 .lld-adm-stat strong { display: block; font-size: 30px; line-height: 1.15; color: var(--lld-ink, #111a14); margin-top: 6px; }
 .lld-adm-stat-label { display: block; color: var(--lld-muted, #5c6b64); font-weight: 600; font-size: 14px; }
@@ -773,9 +776,11 @@ button.lld-menu-item {
 .lld-adm-chips { list-style: none; display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; padding: 0; }
 .lld-main a.lld-adm-chip { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--lld-line, #e5ece8); background: #fff; font-weight: 600; color: var(--lld-text, #242f28); text-decoration: none; }
 .lld-main a.lld-adm-chip[aria-current="true"] { background: var(--lld-mint-soft, #f0f7f3); border-color: var(--lld-green, #157a42); color: var(--lld-green, #157a42); }
-.lld-adm-facts { display: grid; grid-template-columns: minmax(8rem, max-content) 1fr; gap: 8px 16px; margin: 12px 0 0; }
-.lld-adm-facts dt { color: var(--lld-muted, #5c6b64); font-weight: 600; }
-.lld-adm-facts dd { margin: 0; color: var(--lld-ink, #111a14); overflow-wrap: anywhere; }
+.lld-adm-facts { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; margin: 12px 0 0; }
+.lld-adm-facts dt { font-size: 12.5px; color: var(--lld-muted, #5c6b64); font-weight: 600; margin-top: 8px; }
+.lld-adm-facts dt:first-child { margin-top: 0; }
+.lld-adm-facts dd { margin: 0 0 6px; padding-bottom: 8px; border-bottom: 1px solid var(--lld-line, #e5ece8); color: var(--lld-ink, #111a14); overflow-wrap: anywhere; }
+.lld-adm-facts dd:last-child { margin-bottom: 0; padding-bottom: 0; border-bottom: 0; }
 .lld-adm-note { background: var(--lld-mint-soft, #f0f7f3); border: 1px solid var(--lld-mint-line, #cfe8db); border-radius: 12px; padding: 12px 14px; font-size: 14px; }
 .lld-adm-note.is-amber { background: var(--lld-caution-bg, #fdf6e7); border-color: var(--lld-caution-line, #f1d9a3); }
 .lld-adm-action { border: 1px solid var(--lld-line, #e5ece8); border-radius: 12px; margin: 10px 0; background: #fff; }
@@ -855,19 +860,17 @@ button.lld-menu-item {
   .lld-adm { grid-template-columns: 210px minmax(0, 1fr); }
   .lld-adm-g4, .lld-adm-g3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .lld-adm-g2 { grid-template-columns: minmax(0, 1fr); }
-  .lld-adm-body { padding: 22px 18px 48px; }
+  .lld-adm-body { padding: 22px 20px 48px; }
 }
 @media (max-width: 760px) {
-  .lld-adm { grid-template-columns: minmax(0, 1fr); }
+  .lld-adm { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .lld-adm-side { display: none; }
-  .lld-adm-tabs { display: block; background: #fff; border-bottom: 1px solid var(--lld-line, #e5ece8); padding: 10px 12px; overflow-x: auto; }
+  .lld-adm-tabs { display: block; background: var(--lld-card, #fff); border-bottom: 1px solid var(--lld-line, #e5ece8); padding: 10px 12px; overflow-x: auto; max-width: 100%; }
   .lld-adm-tabs ul { display: flex; gap: 8px; width: max-content; }
-  .lld-main .lld-adm-tabs a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--lld-line, #e5ece8); background: #fff; font-weight: 600; color: var(--lld-text, #242f28); text-decoration: none; white-space: nowrap; }
+  .lld-main .lld-adm-tabs a { display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 999px; border: 1.5px solid var(--lld-line, #e5ece8); background: var(--lld-card, #fff); font-weight: 600; color: var(--lld-text, #242f28); text-decoration: none; white-space: nowrap; }
   .lld-main .lld-adm-tabs a[aria-current="page"] { background: var(--lld-green, #157a42); border-color: var(--lld-green, #157a42); color: #fff; }
   .lld-adm-body { padding: 18px 14px 44px; }
   .lld-adm-head h1 { font-size: 23px; }
-  .lld-adm-facts { grid-template-columns: minmax(0, 1fr); gap: 2px; }
-  .lld-adm-facts dd { margin-bottom: 8px; }
   .lld-adm-inline-form { grid-template-columns: minmax(0, 1fr); }
   .lld-adm-ai-parts { grid-template-columns: minmax(0, 1fr); }
   .lld-adm-when { min-width: 0; width: 100%; }
@@ -875,6 +878,90 @@ button.lld-menu-item {
 }
 @media (max-width: 400px) {
   .lld-adm-g4, .lld-adm-g3 { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ================= G-4 OVERRIDES IN @layer components ================= */
+@layer components {
+  .lld-main:has(.lld-adm),
+  body.lld-members-v2-app .lld-main:has(.lld-adm) {
+    max-width: none !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+  }
+  .lld-adm,
+  body.lld-members-v2-app .lld-main .lld-adm {
+    display: grid !important;
+    grid-template-columns: 240px minmax(0, 1fr) !important;
+    gap: 0 !important;
+    min-height: 75vh !important;
+    background: var(--lld-bg, #f8faf9) !important;
+  }
+  .lld-adm-side,
+  body.lld-members-v2-app .lld-main .lld-adm-side {
+    background: var(--lld-card, #fff) !important;
+    border: 0 !important;
+    border-right: 1px solid var(--lld-line, #e5ece8) !important;
+    border-radius: 0 !important;
+    align-self: stretch !important;
+    padding: 20px 14px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+  .lld-adm-body,
+  body.lld-members-v2-app .lld-main .lld-adm-body {
+    padding: 28px 36px 56px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+    max-width: 75rem !important;
+    box-sizing: border-box !important;
+  }
+  .lld-adm-head h1,
+  body.lld-members-v2-app .lld-main .lld-adm-head h1 {
+    margin: 0 !important;
+    font-family: var(--lld-font-display) !important;
+    font-size: 28px !important;
+    font-weight: 800 !important;
+    line-height: 1.2 !important;
+    letter-spacing: -0.01em !important;
+  }
+  @media (max-width: 1040px) {
+    .lld-adm,
+    body.lld-members-v2-app .lld-main .lld-adm {
+      grid-template-columns: 210px minmax(0, 1fr) !important;
+    }
+    .lld-adm-body,
+    body.lld-members-v2-app .lld-main .lld-adm-body {
+      padding: 22px 20px 48px !important;
+    }
+  }
+  @media (max-width: 767px) {
+    body.lld-signed-in .lld-main:has(.lld-adm),
+    body.lld-members-v2-app.lld-signed-in .lld-main:has(.lld-adm) {
+      padding-bottom: 64px !important;
+    }
+  }
+  @media (max-width: 760px) {
+    .lld-adm,
+    body.lld-members-v2-app .lld-main .lld-adm {
+      grid-template-columns: minmax(0, 1fr) !important;
+      gap: 0 !important;
+    }
+    .lld-adm-side,
+    body.lld-members-v2-app .lld-main .lld-adm-side {
+      display: none !important;
+    }
+    .lld-adm-body,
+    body.lld-members-v2-app .lld-main .lld-adm-body {
+      padding: 18px 14px 44px !important;
+    }
+    .lld-adm-head h1,
+    body.lld-members-v2-app .lld-main .lld-adm-head h1 {
+      font-size: 23px !important;
+    }
+  }
 }
 
 /* ================= HEALTHY WEIGHT PROGRAMME (P3-35 · FR3-97 to FR3-110) ================= */

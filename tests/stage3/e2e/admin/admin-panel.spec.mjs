@@ -85,18 +85,26 @@ async function freshCode(page, ownerEmail, scope = page) {
 }
 
 /**
- * Open wp-login.php and fill it. WordPress's own login script focuses the username box 200 ms after the page is
- * parsed, which can land after Playwright's "load" and in the middle of the password fill: the password is then typed
- * into the username box, the required password box stays empty and the browser never sends the form (WebKit, and
- * Chromium too, about once in 100 sign-ins). So wait for that focus first, and check both boxes before submitting.
+ * Fill and send WordPress's own sign-in form at wp-login.php.
+ * The page's script (wp_attempt_focus) focuses and selects the username box 200 ms after it loads. Playwright's fill()
+ * focuses a box and then inserts the text at the focus, so when that timer fired between the two (seen in WebKit) the
+ * password was typed over the username, the password box stayed empty, and the browser's "required" check then
+ * stopped the form from being sent at all. So: wait for that focus first, check both boxes hold what was typed, and
+ * wait for the form's page to arrive before the caller asserts on it.
  */
-async function fillWpLogin(page, login, pass) {
+async function wpLogin(page, login, pass) {
   await page.goto('/wp-login.php');
   await expect(page.locator('#user_login')).toBeFocused();
   await page.locator('#user_login').fill(login);
   await page.locator('#user_pass').fill(pass);
   await expect(page.locator('#user_login')).toHaveValue(login);
   await expect(page.locator('#user_pass')).toHaveValue(pass);
+  await Promise.all([
+    page.waitForRequest((r) => r.method() === 'POST' && r.url().includes('/wp-login.php')),
+    page.waitForEvent('framenavigated', (frame) => frame === page.mainFrame()),
+    page.locator('#wp-submit').click(),
+  ]);
+  await page.waitForLoadState('domcontentloaded');
 }
 
 async function supportSignIn(page, context) {
@@ -105,8 +113,7 @@ async function supportSignIn(page, context) {
   await context.clearCookies();
   const base = test.info().project.use.baseURL || 'http://127.0.0.1:8090';
   await context.addCookies([{ name: 'wordpress_test_cookie', value: 'WP Cookie check', url: base }]);
-  await fillWpLogin(page, HELPER, password);
-  await page.locator('#wp-submit').click();
+  await wpLogin(page, HELPER, password);
   await expect(page.getByRole('heading', { name: 'Enter your code' })).toBeVisible();
   await page.locator('#lld_code').fill(await mailCode(HELPER));
   await page.getByRole('button', { name: 'Continue' }).click();
@@ -904,8 +911,7 @@ test.describe.serial('P3-87 admin module in My account', () => {
     await context.clearCookies();
     const base = test.info().project.use.baseURL || 'http://127.0.0.1:8090';
     await context.addCookies([{ name: 'wordpress_test_cookie', value: 'WP Cookie check', url: base }]);
-    await fillWpLogin(page, globalThis.editor.login, password);
-    await page.locator('#wp-submit').click();
+    await wpLogin(page, globalThis.editor.login, password);
     await page.waitForURL(/wp-admin/);
   }
 
@@ -1196,13 +1202,11 @@ test.describe.serial('P3-87 admin module in My account', () => {
     await context.clearCookies();
     await context.addCookies([{ name: 'wordpress_test_cookie', value: 'WP Cookie check', url: base }]);
     for (let i = 0; i < 5; i += 1) {
-      await fillWpLogin(page, HELPER, `wrong-${i}`);
-      await page.locator('#wp-submit').click();
+      await wpLogin(page, HELPER, `wrong-${i}`);
       // Wait for the refusal, so the next attempt never cuts this one off (WebKit) and every failure is counted.
       await expect(page.locator('#login_error')).toBeVisible();
     }
-    await fillWpLogin(page, HELPER, password);
-    await page.locator('#wp-submit').click();
+    await wpLogin(page, HELPER, password);
     await expect(page.locator('#login_error')).toContainText('Try again in 15 minutes');
     await expect.poll(async () => (await messagesTo(owner.admin_email)).filter((m) => (m.Subject || '').includes('locked')).length).toBeGreaterThan(before);
     await admin(request, { op: 'helper', email: HELPER, password });

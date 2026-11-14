@@ -281,6 +281,67 @@ body.mode-night .lld-v2-menu-signout { color: #f2a196; }
   flex: 0 0 auto;
 }
 
+/* D1 D5 — Antigravity */
+@layer components {
+  body.lld-members-v2-app .lld-main:not(:has(.lld-adm, .lld-stage3-calc, .lld-stage3-scan)) {
+    max-width: 70rem !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  body.lld-members-v2-app .lld-main.lld-wide:not(:has(.lld-adm, .lld-stage3-calc, .lld-stage3-scan)) > :is(.lld-stage3-today:not(.lld-stage3-checkin), .lld-stage3-progress, .lld-stage3-food) {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.lld-members-v2-app .lld-main:not(.lld-wide):not(:has(.lld-adm, .lld-stage3-calc, .lld-stage3-scan)) > :not(.lld-banner):not(.lld-empty-helpful):not(style):not(script),
+  body.lld-members-v2-app .lld-main.lld-wide > .lld-stage3-checkin {
+    max-width: 42.5rem !important;
+    margin-left: 0 !important;
+    margin-right: auto !important;
+  }
+
+  body.lld-members-v2-app .lld-main > :is(.lld-stage3-account-hub, .lld-stage3-goal, .lld-stage3-checkin, .lld-stage3-readings) {
+    max-width: 42.5rem !important;
+    margin: 0 auto 0 0 !important;
+    padding: 0 !important;
+  }
+
+  body.lld-members-v2-app .lld-main:not(:has(.lld-adm, .lld-stage3-calc, .lld-stage3-scan)) > .lld-kicker,
+  body.lld-members-v2-app .lld-main:not(:has(.lld-adm, .lld-stage3-calc, .lld-stage3-scan)) :is(.lld-page-head, .lld-stage3-account-hub, .lld-stage3-goal, .lld-stage3-checkin, .lld-stage3-today, .lld-stage3-progress, .lld-stage3-food, .lld-stage3-readings) > .lld-kicker {
+    display: block !important;
+    margin: 0 0 6px !important;
+    font-family: var(--lld-font-display) !important;
+    font-size: 0.75rem !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.08em !important;
+    color: var(--lld-green, #1d4e48) !important;
+  }
+
+  body.lld-members-v2-app .lld-main:not(:has(.lld-adm, .lld-stage3-calc, .lld-stage3-scan)) h1 {
+    font-family: "Instrument Serif", Georgia, "Times New Roman", serif !important;
+    font-weight: 400 !important;
+    font-size: clamp(2rem, 3.2vw, 2.5rem) !important;
+    line-height: 1.12 !important;
+    letter-spacing: -0.015em !important;
+    color: var(--lld-ink, #1f1e1c) !important;
+    margin: 0 0 10px !important;
+  }
+
+  body.lld-members-v2-app .lld-main:not(:has(.lld-adm, .lld-stage3-calc, .lld-stage3-scan)) > .lld-hint,
+  body.lld-members-v2-app .lld-main:not(:has(.lld-adm, .lld-stage3-calc, .lld-stage3-scan)) :is(.lld-page-head, .lld-stage3-account-hub, .lld-stage3-goal, .lld-stage3-checkin, .lld-stage3-today, .lld-stage3-progress, .lld-stage3-food, .lld-stage3-readings) > .lld-hint {
+    margin: 0 0 20px !important;
+    font-size: 0.96875rem !important;
+    line-height: 1.55 !important;
+    color: var(--lld-muted, #5a5751) !important;
+    max-width: 42.5rem !important;
+  }
+}
+
 /* ---- Phones: Account tabs and Admin sections on one row that scrolls sideways (P3-36 C5) ------------------------- */
 /* The Account tabs wrapped into two rows and the Admin sections showed 3 of 11 pills with nothing saying there were
    more. On phones both are one row that scrolls sideways inside itself (the page never scrolls sideways), with a fade
