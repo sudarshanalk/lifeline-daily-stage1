@@ -48,6 +48,14 @@ input[type="date"] {
   align-items: center;
 }
 
+/* Account hub photo picker: the label is the visible button (stage3-forms.css hides the file input). */
+.lld-file label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
 .lld-hint {
   line-height: 24px;
 }

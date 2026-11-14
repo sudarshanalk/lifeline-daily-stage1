@@ -140,13 +140,11 @@ async function checkTapTargets(page, contextSelector = null) {
         continue;
       }
 
-      // Check if radio/checkbox is within a label >= 44x44
-      if (el.tagName.toLowerCase() === 'input' && (el.type === 'radio' || el.type === 'checkbox')) {
-        const label = el.closest('label');
-        if (label) {
-          const lRect = label.getBoundingClientRect();
-          if (lRect.width >= 44 && lRect.height >= 44) continue;
-        }
+      // Radio, checkbox and file inputs: the label is the tap target (a file input may be visually
+      // hidden with its label styled as the button), so a label >= 44x44 passes for the input.
+      if (el.tagName.toLowerCase() === 'input' && ['radio', 'checkbox', 'file'].includes(el.type)) {
+        const labels = Array.from(el.labels || []);
+        if (labels.some((l) => { const r = l.getBoundingClientRect(); return r.width >= 44 && r.height >= 44; })) continue;
       }
 
       // Inline link exception (Owner Question 118 / WCAG 2.2 inline exception)
