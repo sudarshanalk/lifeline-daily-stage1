@@ -118,14 +118,16 @@ test.describe.serial('P3-36 D2 pill tabs and buttons', () => {
     await tab.focus();
     await page.keyboard.press('Shift+Tab');
     await page.keyboard.press('Tab');
-    const ring = await page.evaluate(() => {
+    const read = () => page.evaluate(() => {
       const el = document.activeElement;
       const s = getComputedStyle(el);
       return { id: el.id, width: parseFloat(s.outlineWidth), style: s.outlineStyle, offset: parseFloat(s.outlineOffset) };
     });
+    // The v2 shell animates the ring in, so read it once the transition has settled.
+    await expect.poll(async () => (await read()).width, { timeout: 3000 }).toBeGreaterThanOrEqual(3);
+    const ring = await read();
     expect(ring.id).toBe('tab-security');
     expect(ring.style).toBe('solid');
-    expect(ring.width).toBeGreaterThanOrEqual(3);
     expect(ring.offset).toBeLessThan(0); // inside the pill, so the scrolling row cannot clip it
   });
 
