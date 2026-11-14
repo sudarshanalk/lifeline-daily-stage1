@@ -50,5 +50,5 @@ test('TC-FR3-17-AS-04 (list-valued rule fields)', () => {
   expect(today).toContain("LLD_Members_Rule_Catalogue::fill( (string) $rules[ $name ]['template'], is_array( $values ) ? $values : array() )");
   const journey = readFileSync(resolve(plugin, 'includes/stage3/class-goal-journey.php'), 'utf8');
   expect(journey).toContain("$values = json_decode( (string) $ins['values'], true );");
-  expect(journey).toContain('return (string) LLD_Members_Rule_Catalogue::fill( $template, $values );');
+  expect(journey).toContain('$text = (string) LLD_Members_Rule_Catalogue::fill( $template, $values );'); // step_text(); its raw-gap guard is in stored-rows-safety.test.mjs
 });

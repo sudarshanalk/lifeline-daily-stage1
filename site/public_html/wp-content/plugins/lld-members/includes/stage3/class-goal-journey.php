@@ -581,15 +581,48 @@ class LLD_Members_Goal_Journey {
 	}
 
 	/**
-	 * The engine's offers waiting for the member's answer (FR3-14 AS-01): each with its approved text and offers.
+	 * The member's situations for a display-time safety check, when the caller has no facts() at hand.
 	 *
 	 * @param int $member_id Member number.
+	 * @return string[]
+	 */
+	public static function situations_now( $member_id ) {
+		return class_exists( 'LLD_Members_Stage3_Safety' ) ? LLD_Members_Stage3_Safety::situations( (int) $member_id ) : array( 'unknown' );
+	}
+
+	/**
+	 * Whether a stored engine row (insight, offer, Today step) may be shown to a member with these situations now.
+	 * The insights runner asks the matrix when it writes a row; every screen asks again before showing one, because
+	 * the member can declare an eating disorder, pregnancy or kidney disease afterwards (FR3-69, P3-03 D4). Closed
+	 * when the matrix or the rule is not there.
+	 *
+	 * @param string[] $situations Keys from LLD_Members_Stage3_Safety::SITUATIONS.
+	 * @param string   $rule_name  Rule name (R-INS-06 and so on).
+	 */
+	public static function rule_allowed( array $situations, $rule_name ) {
+		return '' !== (string) $rule_name && class_exists( 'LLD_Members_Stage3_Safety' ) && LLD_Members_Stage3_Safety::allows_rule( $situations, (string) $rule_name );
+	}
+
+	/**
+	 * The engine's offers waiting for the member's answer (FR3-14 AS-01): each with its approved text and offers.
+	 *
+	 * The safety matrix is asked again here, at display time (FR3-69, P3-03 D4): an offer stored before the member
+	 * declared a situation that silences its rule is left out, so its stored numbers are never shown.
+	 *
+	 * @param int           $member_id  Member number.
+	 * @param string[]|null $situations The member's situations (facts()['situations']), or null to look them up.
 	 * @return array<int,array<string,mixed>>
 	 */
-	public static function pending_adjustments( $member_id ) {
+	public static function pending_adjustments( $member_id, $situations = null ) {
 		$out = array();
 		foreach ( LLD_Members_Stage3_Data::rows( 'plan_adjustments', $member_id, array(), '', 20 ) as $a ) {
 			if ( null !== $a['accepted'] && '' !== (string) $a['accepted'] ) {
+				continue;
+			}
+			if ( null === $situations ) {
+				$situations = self::situations_now( $member_id );
+			}
+			if ( ! self::rule_allowed( $situations, class_exists( 'LLD_Members_Rule_Catalogue' ) ? LLD_Members_Rule_Catalogue::name_for_id( (int) $a['rule_id'] ) : '' ) ) {
 				continue;
 			}
 			$changes = json_decode( (string) $a['changes'], true );
@@ -953,11 +986,16 @@ class LLD_Members_Goal_Journey {
 	/**
 	 * The approved text of an engine-chosen step: the rule's template with the numbers the engine stored for today.
 	 *
-	 * @param int    $member_id Member number.
-	 * @param array  $step      today_steps row.
-	 * @param string $today     Local date.
+	 * Empty (the caller then shows the plan's scheduled item, the next candidate in the catalogue's priority order)
+	 * when the safety matrix no longer allows the rule for the member (FR3-69), or when the template has a gap with
+	 * no stored number: a member never reads a raw "{done}".
+	 *
+	 * @param int           $member_id  Member number.
+	 * @param array         $step       today_steps row.
+	 * @param string        $today      Local date.
+	 * @param string[]|null $situations The member's situations (facts()['situations']), or null to look them up.
 	 */
-	public static function step_text( $member_id, array $step, $today ) {
+	public static function step_text( $member_id, array $step, $today, $situations = null ) {
 		if ( ! class_exists( 'LLD_Members_Rule_Catalogue' ) ) {
 			return '';
 		}
@@ -966,7 +1004,7 @@ class LLD_Members_Goal_Journey {
 		}
 		$name = LLD_Members_Rule_Catalogue::name_for_id( (int) $step['rule_id'] );
 		$rule = LLD_Members_Rule_Catalogue::rule( $name );
-		if ( ! $rule ) {
+		if ( ! $rule || ! self::rule_allowed( null === $situations ? self::situations_now( $member_id ) : $situations, $name ) ) {
 			return '';
 		}
 		$template = ! empty( $rule['step_template'] ) ? $rule['step_template'] : $rule['template'];
@@ -981,7 +1019,8 @@ class LLD_Members_Goal_Journey {
 				break;
 			}
 		}
-		return (string) LLD_Members_Rule_Catalogue::fill( $template, $values );
+		$text = (string) LLD_Members_Rule_Catalogue::fill( $template, $values );
+		return preg_match( '/\\{[a-z_]+\\}/', $text ) ? '' : $text;
 	}
 
 	/**
