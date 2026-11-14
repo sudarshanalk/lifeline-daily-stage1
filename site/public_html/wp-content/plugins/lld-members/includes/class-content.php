@@ -1237,7 +1237,10 @@ class LLD_Members_Content {
 		foreach ( $filters as $type => $label ) {
 			$main .= '<button type="button" class="lld-chip-filter" data-lld-library-filter="' . esc_attr( $type ) . '" aria-pressed="false">' . esc_html( $label ) . '</button>';
 		}
-		$main .= '</div></div>';
+		$main .= '</div>';
+		// Filled by the page script when a search or filter matches nothing, and read out by screen readers.
+		$main .= '<p class="lld-library-status" role="status" aria-live="polite" data-lld-library-status data-lld-library-none="No matching items."></p>';
+		$main .= '</div>';
 
 		$type_labels = self::type_labels();
 		foreach ( $type_labels as $type => $label ) {
@@ -1249,7 +1252,7 @@ class LLD_Members_Content {
 			$main .= '<ul class="lld-library-cards">';
 			foreach ( $groups[ $type ] as $card ) {
 				$tracks = $card['tracks'] ? implode( ', ', $card['tracks'] ) : '';
-				$main  .= '<li class="lld-library-card" data-lld-library-card data-lld-type="' . esc_attr( $type ) . '" data-lld-title="' . esc_attr( strtolower( $card['title'] ) ) . '">';
+				$main  .= '<li class="lld-library-card" data-lld-library-card data-lld-type="' . esc_attr( $type ) . '" data-lld-title="' . esc_attr( self::library_key( $card['title'] ) ) . '">';
 				$main  .= '<a href="' . esc_url( home_url( '/members/library/' . (int) $card['id'] . '/' ) ) . '">';
 				$main  .= '<span class="lld-library-card-title">' . esc_html( $card['title'] ) . '</span>';
 				$main  .= '<span class="lld-library-card-meta">' . esc_html( $label );
@@ -1346,7 +1349,9 @@ class LLD_Members_Content {
 				'order'          => 'ASC',
 			)
 		);
-		$by_key = array();
+		$active = self::library_active_track_id( $member_id );
+		$names  = array();
+		$items  = array();
 		foreach ( $posts as $post ) {
 			$shown = self::shown( $post->ID );
 			if ( ! $shown ) {
@@ -1355,58 +1360,83 @@ class LLD_Members_Content {
 			if ( class_exists( 'LLD_Members_Safety' ) && ! LLD_Members_Safety::allows( $member_id, $shown ) ) {
 				continue;
 			}
-			$type  = (string) $post->post_type;
-			$title = (string) ( $shown['title'] ?? $post->post_title );
-			$key   = $type . "\0" . strtolower( $title );
-			$track = self::library_track_name( $shown );
+			// Only the approved title is ever shown (FR3-111): an item without one is left out, never named from its working copy.
+			$title = isset( $shown['title'] ) ? trim( (string) $shown['title'] ) : '';
+			if ( '' === $title ) {
+				continue;
+			}
+			$type     = (string) $post->post_type;
+			$fields   = isset( $shown['fields'] ) && is_array( $shown['fields'] ) ? $shown['fields'] : array();
+			$track_id = (int) ( $fields['track_id'] ?? 0 );
+			if ( $track_id > 0 && ! isset( $names[ $track_id ] ) ) {
+				$track              = self::shown( $track_id );
+				$names[ $track_id ] = $track && isset( $track['title'] ) ? trim( (string) $track['title'] ) : '';
+			}
+			$items[] = array(
+				'id'       => (int) $post->ID,
+				'type'     => $type,
+				'title'    => $title,
+				'length'   => self::library_length( $type, $shown ),
+				'track_id' => $track_id,
+				'track'    => $track_id > 0 ? $names[ $track_id ] : '',
+			);
+		}
+		return self::library_merge( $items, $active );
+	}
+
+	/**
+	 * One card per title within a type, naming every track the title is used on (FR3-111 AS-03). When several
+	 * items share a title the card opens the one on the member's active track, otherwise the first.
+	 *
+	 * @param array<int,array<string,mixed>> $items           id, type, title, length, track_id and track (approved name, or '').
+	 * @param int                            $active_track_id The member's active track, or 0.
+	 * @return array<int,array{id:int,type:string,title:string,length:string,tracks:string[]}>
+	 */
+	public static function library_merge( array $items, $active_track_id = 0 ) {
+		$by_key = array();
+		foreach ( $items as $item ) {
+			$key = (string) $item['type'] . "\0" . self::library_key( (string) $item['title'] );
 			if ( ! isset( $by_key[ $key ] ) ) {
 				$by_key[ $key ] = array(
-					'id'     => (int) $post->ID,
-					'type'   => $type,
-					'title'  => $title,
-					'length' => self::library_length( $type, $shown ),
+					'id'     => (int) $item['id'],
+					'type'   => (string) $item['type'],
+					'title'  => (string) $item['title'],
+					'length' => (string) $item['length'],
 					'tracks' => array(),
 				);
 			}
+			$track = (string) ( $item['track'] ?? '' );
 			if ( '' !== $track && ! in_array( $track, $by_key[ $key ]['tracks'], true ) ) {
 				$by_key[ $key ]['tracks'][] = $track;
 			}
-			// Prefer an item on the member's active track when several share a title.
-			if ( class_exists( 'LLD_Members_Programme' ) && $track && self::library_on_active_track( $member_id, $shown ) ) {
-				$by_key[ $key ]['id'] = (int) $post->ID;
+			if ( $active_track_id > 0 && (int) ( $item['track_id'] ?? 0 ) === (int) $active_track_id ) {
+				$by_key[ $key ]['id']     = (int) $item['id'];
+				$by_key[ $key ]['length'] = (string) $item['length'];
 			}
 		}
 		return array_values( $by_key );
 	}
 
 	/**
-	 * @param array<string,mixed> $shown Approved snapshot.
+	 * A title in lower case, for matching titles and for the search box.
+	 *
+	 * @param string $title Title.
 	 */
-	private static function library_track_name( array $shown ) {
-		$fields = isset( $shown['fields'] ) && is_array( $shown['fields'] ) ? $shown['fields'] : array();
-		$tid    = (int) ( $fields['track_id'] ?? 0 );
-		if ( $tid < 1 ) {
-			return '';
-		}
-		$track = self::shown( $tid );
-		return $track ? (string) $track['title'] : (string) get_the_title( $tid );
+	public static function library_key( $title ) {
+		return function_exists( 'mb_strtolower' ) ? mb_strtolower( (string) $title, 'UTF-8' ) : strtolower( (string) $title );
 	}
 
 	/**
-	 * @param int                 $member_id Member number.
-	 * @param array<string,mixed> $shown     Approved snapshot.
+	 * The member's active track, looked up once for the whole list.
+	 *
+	 * @param int $member_id Member number.
 	 */
-	private static function library_on_active_track( $member_id, array $shown ) {
+	private static function library_active_track_id( $member_id ) {
 		if ( ! class_exists( 'LLD_Members_Programme' ) ) {
-			return false;
+			return 0;
 		}
 		$row = LLD_Members_Programme::active( $member_id );
-		if ( ! $row ) {
-			return false;
-		}
-		$fields = isset( $shown['fields'] ) && is_array( $shown['fields'] ) ? $shown['fields'] : array();
-		$active = LLD_Members_Programme::track_id( (string) $row->track_key );
-		return $active > 0 && (int) ( $fields['track_id'] ?? 0 ) === $active;
+		return $row ? (int) LLD_Members_Programme::track_id( (string) $row->track_key ) : 0;
 	}
 
 	/**

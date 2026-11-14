@@ -88,14 +88,19 @@ class LLD_Members_Account_Hub {
 	 * @param object $row       Member row.
 	 */
 	public static function render( $member_id, $row ) {
-		$section = isset( $_GET['section'] ) ? sanitize_key( (string) wp_unslash( $_GET['section'] ) ) : 'profile';
+		// Withdrawing an app connection comes back to /members/settings/?lld_app=withdrawn: its list is on Sign-in & security.
+		$default = isset( $_GET['lld_app'] ) ? 'security' : 'profile';
+		$section = isset( $_GET['section'] ) ? sanitize_key( (string) wp_unslash( $_GET['section'] ) ) : $default;
 		if ( ! in_array( $section, self::SECTIONS, true ) ) {
-			$section = 'profile';
+			$section = $default;
 		}
 
 		$error  = '';
 		$notice = '';
-		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
+		if ( self::post_too_big() ) {
+			// A request bigger than post_max_size arrives with no fields at all: say so, as the long form does.
+			$error = 'Photos must be 10 MB or smaller.';
+		} elseif ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
 			$saved = self::handle_post( $member_id, $row );
 			if ( is_wp_error( $saved ) ) {
 				$error = $saved->get_error_message();
@@ -144,6 +149,14 @@ class LLD_Members_Account_Hub {
 	}
 
 	/**
+	 * True when the browser posted something but PHP dropped all of it (above post_max_size).
+	 */
+	private static function post_too_big() {
+		return 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && empty( $_POST ) && empty( $_FILES )
+			&& isset( $_SERVER['CONTENT_LENGTH'] ) && (int) $_SERVER['CONTENT_LENGTH'] > 0;
+	}
+
+	/**
 	 * The member row. TODO lead: public accessor (LLD_Members_Account::member_row() is private).
 	 *
 	 * @param int $member_id Member id.
@@ -155,20 +168,15 @@ class LLD_Members_Account_Hub {
 	}
 
 	/**
-	 * Latest consent line of each type, for the dates. TODO lead: public accessor
+	 * Every consent line of the member, oldest first. TODO lead: public accessor
 	 * (LLD_Members_Account::latest_consent() is private; has_consent() is public and gives the state).
 	 *
 	 * @param int $member_id Member id.
-	 * @return array<string,object> Latest line per consent type.
+	 * @return object[]
 	 */
-	private static function consent_dates( $member_id ) {
+	private static function consent_lines( $member_id ) {
 		global $wpdb;
-		$lines  = $wpdb->get_results( $wpdb->prepare( 'SELECT consent_type, change_kind, occurred_at FROM ' . LLD_Members_Schema::table( 'consent' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ) );
-		$latest = array();
-		foreach ( (array) $lines as $line ) {
-			$latest[ (string) $line->consent_type ] = $line;
-		}
-		return $latest;
+		return (array) $wpdb->get_results( $wpdb->prepare( 'SELECT consent_type, change_kind, document_version, occurred_at FROM ' . LLD_Members_Schema::table( 'consent' ) . ' WHERE member_id = %d ORDER BY id ASC', $member_id ) );
 	}
 
 	/**
@@ -265,7 +273,7 @@ class LLD_Members_Account_Hub {
 				$html .= self::section_privacy( $member_id );
 				break;
 			case 'membership':
-				$html .= self::section_membership( $member_id );
+				$html .= self::section_membership( $member_id, $row );
 				break;
 			case 'profile':
 			default:
@@ -320,16 +328,6 @@ class LLD_Members_Account_Hub {
 			)
 		);
 		$html .= '</div>';
-		// Kept for TC-FR3-06-AS-02, which reads this readonly field. It is not shown; the editable field below is the one members use.
-		$shown = lld_field(
-			array(
-				'id'    => 'lld_email_display',
-				'label' => 'Email',
-				'value' => (string) $row->email,
-			)
-		);
-		$shown = str_replace( '<div class="lld-field">', '<div class="lld-field" hidden>', $shown );
-		$html .= str_replace( '<input id="lld_email_display" name="lld_email_display"', '<input id="lld_email_display" readonly', $shown );
 		$html .= lld_field(
 			array(
 				'id'           => 'lld_email',
@@ -447,6 +445,10 @@ class LLD_Members_Account_Hub {
 		if ( class_exists( 'LLD_Members_Sign_In' ) && ( LLD_Members_Sign_In::on( 'sign_in_social' ) || LLD_Members_Sign_In::on( 'sign_in_code' ) ) ) {
 			$html .= LLD_Members_Sign_In::security_html( (int) $row->id, $row );
 		}
+		// The member's app connections, each with Withdraw, and the note after one is withdrawn (moved from the long page).
+		if ( class_exists( 'LLD_Members_Quality' ) ) {
+			$html .= LLD_Members_Quality::app_keys_html( (int) $row->id );
+		}
 		$html .= '</section>';
 		return $html;
 	}
@@ -481,16 +483,25 @@ class LLD_Members_Account_Hub {
 		$consents = array(
 			'terms'     => 'Terms of use',
 			'privacy'   => 'Privacy policy',
+			'sale'      => 'Terms of sale',
 			'health'    => 'Store my health information',
 			'marketing' => 'Marketing emails',
 		);
-		$dates = self::consent_dates( $member_id );
+		$lines = self::consent_lines( $member_id );
+		$dates = array();
+		foreach ( $lines as $line ) {
+			$dates[ (string) $line->consent_type ] = $line;
+		}
 
 		$html  = '<section class="lld-account-section lld-card" aria-labelledby="lld-section-privacy">';
 		$html .= '<h2 id="lld-section-privacy">Privacy &amp; consents</h2>';
 		$html .= '<p class="lld-muted">Every consent you have given is listed below with its date, and how to change it.</p>';
 		$html .= '<ul class="lld-consent-list">';
 		foreach ( $consents as $type => $label ) {
+			// Terms of sale are listed only once the member has bought something, as on the long page.
+			if ( 'sale' === $type && ! isset( $dates[ $type ] ) ) {
+				continue;
+			}
 			$is_given = LLD_Members_Account::has_consent( $member_id, $type );
 			$date_str = isset( $dates[ $type ] ) ? substr( (string) $dates[ $type ]->occurred_at, 0, 10 ) : '';
 
@@ -499,7 +510,7 @@ class LLD_Members_Account_Hub {
 			$html .= '<strong>' . esc_html( $label ) . '</strong>';
 			$html .= '<span class="lld-consent-date">Status: ' . ( $is_given && '' !== $date_str ? 'Accepted on ' . esc_html( $date_str ) : 'Withdrawn / Not given' ) . '</span>';
 			$html .= '</div>';
-			if ( 'terms' === $type || 'privacy' === $type ) {
+			if ( 'terms' === $type || 'privacy' === $type || 'sale' === $type ) {
 				$html .= '<p class="lld-hint">Needed for your account. <a href="' . esc_url( home_url( '/members/delete/' ) ) . '">Delete my account</a> to end it.</p>';
 			} elseif ( 'marketing' === $type ) {
 				$html .= '<form method="post" action="' . esc_url( home_url( '/members/settings/?section=privacy' ) ) . '" class="lld-form">';
@@ -520,6 +531,11 @@ class LLD_Members_Account_Hub {
 			$html .= '</li>';
 		}
 		$html .= '</ul>';
+		$html .= '<details class="lld-card lld-consent-log"><summary>Consent history</summary><ul class="lld-consent-history">';
+		foreach ( $lines as $line ) {
+			$html .= '<li>' . esc_html( $line->consent_type . ' ' . $line->change_kind . ' ' . $line->document_version . ' ' . $line->occurred_at ) . '</li>';
+		}
+		$html .= '</ul></details>';
 		$html .= '<p class="lld-hint lld-account-links"><a href="' . esc_url( home_url( '/members/data/' ) ) . '">Download my data</a> <span aria-hidden="true">·</span> <a href="' . esc_url( home_url( '/members/delete/' ) ) . '">Delete my account</a></p>';
 		$html .= '</section>';
 		return $html;
@@ -528,9 +544,10 @@ class LLD_Members_Account_Hub {
 	/**
 	 * Section 5: Membership. Pause is a placeholder until P3-63; nothing here is saved.
 	 *
-	 * @param int $member_id Member id.
+	 * @param int    $member_id Member id.
+	 * @param object $row       Member row.
 	 */
-	private static function section_membership( $member_id ) {
+	private static function section_membership( $member_id, $row ) {
 		$state   = ucfirst( LLD_Members_Access::access_state( $member_id ) );
 		$is_prem = class_exists( 'LLD_Members_Billing' ) && LLD_Members_Billing::has_premium( $member_id );
 
@@ -539,6 +556,9 @@ class LLD_Members_Account_Hub {
 		$html .= '<p class="lld-muted">Your current membership status and subscription management.</p>';
 		$html .= '<div class="lld-membership-status">';
 		$html .= '<p><strong>Current plan:</strong> ' . esc_html( $state ) . '</p>';
+		if ( ! empty( $row->joined_on ) ) {
+			$html .= '<p>Joined on ' . esc_html( (string) $row->joined_on ) . '</p>';
+		}
 		$html .= '</div>';
 
 		if ( $is_prem ) {

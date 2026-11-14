@@ -55,8 +55,10 @@ test.describe.serial('P3-30 account hub and desktop menu', () => {
   test('TC-FR3-06-AS-02 Change the display name in Profile and press Save: only Profile is saved and a confirmation is shown', async ({ page }) => {
     await hubMember(page, { two_step: false });
     await page.goto('/members/settings/?section=profile');
-    await expect(page.locator('#lld_email_display')).toHaveAttribute('readonly', '');
-    await expect(page.locator('#lld_email_display')).not.toBeDisabled();
+    // The email is the editable Profile field; leaving it alone must leave it unchanged by the save.
+    await expect(page.locator('#lld_email')).toBeEditable();
+    const email = await page.locator('#lld_email').inputValue();
+    expect(email).toContain('@');
     await page.locator('#lld_display').fill('Sam Updated');
     await page.getByRole('button', { name: 'Save profile' }).click();
 
@@ -64,6 +66,8 @@ test.describe.serial('P3-30 account hub and desktop menu', () => {
     await expect(page).toHaveURL(/\/members\/settings\/\?section=profile&saved=1$/);
     await expect(page.locator('.lld-notice-box')).toContainText('Profile saved.');
     await expect(page.locator('#lld_display')).toHaveValue('Sam Updated');
+    await expect(page.locator('#lld_email')).toHaveValue(email);
+    await expect(page.locator('#lld_email_display')).toHaveCount(0);
     // Only Profile was saved: two-step sign-in is still off.
     await page.goto('/members/settings/?section=security');
     await expect(page.locator('[data-lld-two-step]')).toHaveAttribute('data-lld-two-step', 'off');

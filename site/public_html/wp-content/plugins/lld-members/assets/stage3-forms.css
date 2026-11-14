@@ -85,9 +85,11 @@
 	cursor: pointer;
 }
 
+/* Ink on card: dark chip with white text in Day, light chip with dark text in Night (the v2 pages remap both). */
 .lld-chip-filter.is-active {
-	background: currentColor;
-	color: #fff;
+	background: var(--lld-ink, #1f2a37);
+	border-color: var(--lld-ink, #1f2a37);
+	color: var(--lld-card, #fff);
 }
 
 .lld-chip-filter:focus-visible {
@@ -106,7 +108,7 @@
 .lld-library-card a {
 	display: block;
 	padding: 0.85rem 1rem;
-	border: 1px solid rgba(0, 0, 0, 0.12);
+	border: 1px solid var(--lld-line, rgba(0, 0, 0, 0.12));
 	border-radius: 0.75rem;
 	text-decoration: none;
 }
@@ -122,6 +124,10 @@
 	margin-top: 0.25rem;
 	font-size: 0.95rem;
 	opacity: 0.8;
+}
+
+.lld-library-status:empty {
+	display: none;
 }
 
 .lld-library-group[hidden],

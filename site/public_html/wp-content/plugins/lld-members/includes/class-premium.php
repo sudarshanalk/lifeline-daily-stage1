@@ -2474,9 +2474,6 @@ class LLD_Members_Premium {
 	}
 
 	/**
-	 * @param string $key Measure key.
-	 */
-	/**
 	 * @param int $member_id Member number.
 	 */
 	private static function member_uses_imperial( $member_id ) {

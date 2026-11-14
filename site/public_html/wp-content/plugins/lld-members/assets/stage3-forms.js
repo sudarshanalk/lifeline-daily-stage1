@@ -11,6 +11,7 @@
 	var root = document.querySelector("[data-lld-library]");
 	if (!root) return;
 	var search = root.querySelector("[data-lld-library-search]");
+	var status = root.querySelector("[data-lld-library-status]");
 	var filter = "";
 
 	function paint() {
@@ -25,6 +26,11 @@
 			var any = group.querySelector("[data-lld-library-card]:not([hidden])");
 			group.hidden = !any;
 		});
+		if (status) {
+			var shown = root.querySelector("[data-lld-library-card]:not([hidden])");
+			var none = shown ? "" : status.getAttribute("data-lld-library-none") || "";
+			if (status.textContent !== none) status.textContent = none;
+		}
 	}
 
 	root.querySelectorAll("[data-lld-library-filter]").forEach(function (btn) {
