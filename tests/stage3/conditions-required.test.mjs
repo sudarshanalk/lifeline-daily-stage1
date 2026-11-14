@@ -52,7 +52,7 @@ class FakeDb {
     foreach (['sex', 'height_cm', 'weight_kg', 'waist_cm', 'activity_level', 'diet_type', 'ethnicity', 'conditions_answered', 'conditions'] as $k) { if (array_key_exists($k, $f)) { $row->$k = ('' === $f[$k] || null === $f[$k]) ? null : $f[$k]; } }
     $this->profile[$m] = $row;
   }
-  function get_row($p) { [$q, $m] = $p; if (strpos($q, 'health_profile') !== false) { return $this->profile[$m] ?? null; } return strpos($q, 'wp_lld_member ') !== false || strpos($q, 'wp_lld_member WHERE') !== false ? (object) ['units' => 'metric'] : null; }
+  function get_row($p) { [$q, $m] = $p; if (strpos($q, 'health_profile') !== false) { return $this->profile[$m] ?? null; } return strpos($q, 'wp_lld_member ') !== false || strpos($q, 'wp_lld_member WHERE') !== false ? (object) ['units' => $GLOBALS['units'] ?? 'metric'] : null; }
   function get_results() { return []; } function get_var() { return null; } function update() { return 1; }
 }
 $GLOBALS['wpdb'] = new FakeDb();
@@ -240,4 +240,110 @@ test('P3-36 A7 wording: the new sentences are marked as pending approval and the
   // The unknown row still refuses storing (never weakened).
   const rows = run("return LLD_Members_Stage3_Safety::rows()['unknown']['health_logging'];");
   expect(rows.refused).toContain('store');
+});
+
+// P3-36 D4: with the account hub on, the stored measurements are the values in the boxes (in Account's units),
+// BMI and waist-to-height are tiles, and a box still holding the stored value is not saved again.
+test('TC-FR3-06-AS-05', () => {
+  const r = run(`
+    $out = [];
+    $GLOBALS['wpdb']->store(7, ['height_cm' => 170, 'weight_kg' => 70, 'waist_cm' => 85, 'conditions_answered' => 'none']);
+    $out['metric'] = health_get();
+    health_post(['lld_height' => '170.0', 'lld_weight' => '70.0', 'lld_waist' => '85.0', 'lld_diet' => 'vegetarian']);
+    $out['unchanged'] = end(LLD_Members_Account::$saved);
+    health_post(['lld_height' => '170.0', 'lld_weight' => '71', 'lld_waist' => '85.0']);
+    $out['changed'] = end(LLD_Members_Account::$saved);
+    $GLOBALS['wpdb']->store(7, ['weight_kg' => 70]);
+    $GLOBALS['units'] = 'imperial';
+    $out['imperial'] = health_get();
+    health_post(['lld_imperial' => '1', 'lld_feet' => '5', 'lld_inches' => '6.9', 'lld_pounds' => '154.3', 'lld_waist_in' => '33.5']);
+    $out['imperial_unchanged'] = end(LLD_Members_Account::$saved);
+    $out['imperial_row'] = clone $GLOBALS['wpdb']->profile[7];
+    health_post(['lld_imperial' => '1', 'lld_feet' => '5', 'lld_inches' => '7', 'lld_pounds' => '154.3', 'lld_waist_in' => '33.5']);
+    $out['imperial_changed'] = end(LLD_Members_Account::$saved);
+    // 182.8 cm is 71.97 in: shown as 6 ft 0.0 in, never 5 ft 12.0 in.
+    $GLOBALS['wpdb']->store(7, ['height_cm' => 182.8]);
+    $out['edge'] = health_get();
+    // A Stage 2 member (hub off) keeps the Stage 2 form: "Stored ..." lines, empty boxes, its own units checkbox.
+    $GLOBALS['units'] = 'metric';
+    LLD_Members_Access::$me = 8;
+    $GLOBALS['wpdb']->store(8, ['height_cm' => 170, 'weight_kg' => 70]);
+    $out['stage2'] = health_get();
+    return $out;
+  `);
+  const box = (id, value) => `id="${id}" name="${id}" type="number" step="0.1" inputmode="decimal"${value === null ? '>' : ` value="${value}">`}`;
+  expect(r.metric).toContain(box('lld_height', '170.0'));
+  expect(r.metric).toContain(box('lld_weight', '70.0'));
+  expect(r.metric).toContain(box('lld_waist', '85.0'));
+  expect(r.metric).not.toContain('Stored height');
+  expect(r.metric).not.toContain('name="lld_imperial"');
+  // The tiles carry the two figures the page already worked out, and no judgement of them.
+  const tiles = r.metric.match(/<div class="lld-measure-tiles">.*?<\/div><\/div>/)[0];
+  expect(tiles).toBe('<div class="lld-measure-tiles"><div class="lld-measure-tile"><span>BMI</span><strong>24.2</strong></div><div class="lld-measure-tile"><span>Waist-to-height</span><strong>0.50</strong></div></div>');
+  expect(r.unchanged).toMatchObject({ diet_type: 'vegetarian' });
+  for (const key of ['height_cm', 'weight_kg', 'waist_cm']) expect(r.unchanged, key).not.toHaveProperty(key);
+  expect(r.changed).toMatchObject({ weight_kg: 71 });
+  expect(r.changed).not.toHaveProperty('height_cm');
+  expect(r.imperial).toContain('<input type="hidden" name="lld_imperial" value="1">');
+  expect(r.imperial).not.toContain('type="checkbox" name="lld_imperial"');
+  expect(r.imperial).toContain('<div data-lld-imperial-fields>');
+  expect(r.imperial).toContain('<div data-lld-metric-fields hidden>');
+  expect(r.imperial).toContain(box('lld_feet', '5'));
+  expect(r.imperial).toContain(box('lld_inches', '6.9'));
+  expect(r.imperial).toContain(box('lld_pounds', '154.3'));
+  expect(r.imperial).toContain(box('lld_waist_in', '33.5'));
+  // Saving the imperial boxes as shown does not shift the stored metric values.
+  for (const key of ['height_cm', 'weight_kg', 'waist_cm']) expect(r.imperial_unchanged, key).not.toHaveProperty(key);
+  expect(r.imperial_row).toMatchObject({ height_cm: 170, weight_kg: 70, waist_cm: 85 });
+  expect(r.imperial_changed).toMatchObject({ height_cm: 170.2 });
+  expect(r.imperial_changed).not.toHaveProperty('weight_kg');
+  expect(r.edge).toContain(box('lld_feet', '6'));
+  expect(r.edge).toContain(box('lld_inches', '0.0'));
+  expect(r.stage2).toContain('<p>Stored height: 170.0 cm</p><p>Stored weight: 70.0 kg</p><p>BMI: 24.2</p>');
+  expect(r.stage2).not.toContain('lld-measure-tile');
+  expect(r.stage2).toContain(box('lld_height', null));
+  expect(r.stage2).toContain('<input type="checkbox" name="lld_imperial" value="1" data-lld-imperial> Use imperial units');
+  expect(r.stage2).toContain('<div data-lld-metric-fields>');
+});
+
+// P3-36 D4 with A7: the stored values in the boxes neither bypass the Conditions rule nor trip it on their own.
+test('TC-FR3-69-AS-06 (stored values in the boxes)', () => {
+  const r = run(`
+    $out = [];
+    // A profile from before the rule: a height, and no Conditions answer.
+    $GLOBALS['wpdb']->store(7, ['height_cm' => 170]);
+    $out['same'] = health_post(['lld_height' => '170.0']);
+    $out['same_saved'] = end(LLD_Members_Account::$saved);
+    $before = count(LLD_Members_Account::$saved);
+    $out['new_value'] = health_post(['lld_height' => '170.0', 'lld_weight' => '70']);
+    $out['sex'] = health_post(['lld_height' => '170.0', 'lld_sex' => 'female']);
+    $out['blocked_saves'] = count(LLD_Members_Account::$saved) - $before;
+    $out['answered'] = health_post(['lld_height' => '170.0', 'lld_weight' => '70', 'lld_condition' => ['none']]);
+    $out['row'] = $GLOBALS['wpdb']->profile[7];
+    return $out;
+  `);
+  const required = 'Answer the Conditions question to save these details. None of these and Prefer not to answer both count.';
+  expect(r.same.html).toContain('<p>Saved</p>');
+  expect(r.same_saved).not.toHaveProperty('height_cm');
+  expect(r.new_value.html).toContain(required);
+  expect(r.new_value.html).toMatch(/id="lld_weight" name="lld_weight"[^>]*value="70"/);
+  expect(r.sex.html).toContain(required);
+  expect(r.blocked_saves).toBe(0);
+  expect(r.answered.html).toContain('<p>Saved</p>');
+  expect(r.row).toMatchObject({ height_cm: 170, weight_kg: 70, conditions_answered: 'none' });
+});
+
+// P3-36 D4: sex is the three stored choices as tap buttons that set #lld_sex. The select is sent visible and the
+// buttons hidden, so the form works with scripts off; stage3-forms.js swaps them.
+test('TC-FR2-25-AS-01 (sex pills)', () => {
+  const r = run(`
+    $GLOBALS['wpdb']->store(7, ['sex' => 'male', 'conditions_answered' => 'none']);
+    return ['html' => health_get()];
+  `);
+  expect(r.html).toContain('<p><label for="lld_sex">Sex</label><select id="lld_sex" name="lld_sex">');
+  expect(r.html).toContain('<option value="male" selected>Male</option>');
+  expect(r.html).toContain('<div class="lld-control" hidden><span class="lld-control-label" id="lld_sex_caption">Sex</span><div class="lld-pill-row" data-lld-pills="lld_sex" role="group" aria-labelledby="lld_sex_caption">');
+  const pills = [...r.html.matchAll(/<button type="button" data-lld-pill="([^"]+)"( class="is-active")? aria-pressed="(true|false)">([^<]+)<\/button>/g)].map((m) => [m[1], m[3], m[4]]);
+  expect(pills).toEqual([['female', 'false', 'Female'], ['male', 'true', 'Male'], ['prefer-not-to-say', 'false', 'Prefer not to say']]);
+  expect(r.html).not.toContain('lld-visually-hidden');
 });

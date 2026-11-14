@@ -147,6 +147,7 @@ class LLD_Members_Premium {
 			$main .= '<p class="lld-hint">' . esc_html( $note ) . '</p>';
 		}
 		$main .= '<p class="lld-hint">Each meal can be swapped for a safe alternative.</p></div>';
+		$main .= self::forms_assets();
 		$nonce = $consent ? wp_create_nonce( 'lld_swap' ) : '';
 		$first = new DateTimeImmutable( $plan['week']['starting'] );
 		foreach ( $plan['days'] as $day => $meals ) {
@@ -169,6 +170,12 @@ class LLD_Members_Premium {
 						$main .= '<option value="' . (int) $option['id'] . '">' . esc_html( $option['title'] ) . '</option>';
 					}
 					$main .= '</select></p>';
+					// The same alternatives as a tap list. Hidden until Swap opens it; with scripts off the select above is used.
+					$main .= '<ul class="lld-recipe-swap-list" data-lld-swap-panel hidden aria-label="' . esc_attr( 'Swap Day ' . (int) $day . ' ' . $slot ) . '">';
+					foreach ( $recipe['options'] as $option ) {
+						$main .= '<li><button type="button" data-lld-swap-pick="' . (int) $option['id'] . '">' . esc_html( $option['title'] ) . '</button></li>';
+					}
+					$main .= '</ul>';
 					$main .= lld_button( array( 'label' => 'Swap', 'variant' => 'secondary' ) );
 					$main .= '</form>';
 				} elseif ( $consent ) {
@@ -2763,15 +2770,48 @@ class LLD_Members_Premium {
 		if ( ! $writable ) {
 			return $html;
 		}
-		$html .= '<form method="post" class="lld-form">';
+		$html .= '<form method="post" class="lld-form" data-lld-day-form>';
 		$html .= wp_nonce_field( 'lld_diary', 'lld_diary_nonce', true, false );
 		$html .= '<input type="hidden" name="lld_day_save" value="1">';
+		// Each field is sent visible with its tap control hidden; stage3-forms.js swaps them, so the form still
+		// saves with scripts off and the posted names and limits are unchanged (P3-36 D3).
 		$html .= '<p><label for="lld_water">Glasses of water</label><input id="lld_water" name="lld_water" type="number" min="0" max="40" step="1" inputmode="numeric" value="' . esc_attr( $water ) . '"></p>';
-		$html .= '<p><label for="lld_hunger">Hunger from 1 to 5</label><input id="lld_hunger" name="lld_hunger" type="number" min="1" max="5" step="1" inputmode="numeric" value="' . esc_attr( $hunger ) . '"></p>';
-		$html .= '<p><label for="lld_energy">Energy from 1 to 5</label><input id="lld_energy" name="lld_energy" type="number" min="1" max="5" step="1" inputmode="numeric" value="' . esc_attr( $energy ) . '"></p>';
+		$html .= '<div class="lld-control" hidden><span class="lld-control-label" id="lld_water_caption">Glasses of water</span>';
+		$html .= '<div class="lld-stepper" data-lld-stepper="lld_water" role="group" aria-labelledby="lld_water_caption"><button type="button" data-lld-step="-1" aria-label="One glass of water fewer">&minus;</button>';
+		$html .= '<output data-lld-stepper-value aria-live="polite">' . esc_html( '' === $water ? '0' : $water ) . '</output>';
+		$html .= '<button type="button" data-lld-step="1" aria-label="One more glass of water">+</button></div></div>';
+		foreach ( array(
+			'hunger' => array( 'Hunger', $hunger ),
+			'energy' => array( 'Energy', $energy ),
+		) as $key => $tap ) {
+			$id    = 'lld_' . $key;
+			$html .= '<p><label for="' . $id . '">' . $tap[0] . ' from 1 to 5</label><input id="' . $id . '" name="' . $id . '" type="number" min="1" max="5" step="1" inputmode="numeric" value="' . esc_attr( $tap[1] ) . '"></p>';
+			$html .= '<div class="lld-control" hidden><span class="lld-control-label" id="' . $id . '_caption">' . $tap[0] . ' from 1 to 5</span>';
+			$html .= '<div class="lld-tap-row" data-lld-taps="' . $id . '" role="group" aria-labelledby="' . $id . '_caption">';
+			for ( $n = 1; $n <= 5; $n++ ) {
+				$on    = (string) $n === (string) $tap[1];
+				$html .= '<button type="button" data-lld-tap="' . $n . '"' . ( $on ? ' class="is-active"' : '' ) . ' aria-pressed="' . ( $on ? 'true' : 'false' ) . '" aria-label="' . esc_attr( $tap[0] . ' ' . $n . ' of 5' ) . '">' . $n . '</button>';
+			}
+			$html .= '</div></div>';
+		}
 		$html .= lld_button( array( 'label' => 'Save today' ) );
 		$html .= '</form>';
+		$html .= self::forms_assets();
 		return $html;
+	}
+
+	/**
+	 * Shared Stage 3 form stylesheet and script (P3-36 D3).
+	 */
+	private static function forms_assets() {
+		if ( ! function_exists( 'plugins_url' ) || ! defined( 'LLD_MEMBERS_FILE' ) ) {
+			return '';
+		}
+		$ver = defined( 'LLD_MEMBERS_VERSION' ) ? LLD_MEMBERS_VERSION : '1';
+		$css = plugins_url( 'assets/stage3-forms.css', LLD_MEMBERS_FILE );
+		$js  = plugins_url( 'assets/stage3-forms.js', LLD_MEMBERS_FILE );
+		return '<link rel="stylesheet" href="' . esc_url( $css ) . '?ver=' . esc_attr( $ver ) . '">'
+			. '<script src="' . esc_url( $js ) . '?ver=' . esc_attr( $ver ) . '"></script>';
 	}
 
 	/**
