@@ -127,6 +127,13 @@ test('TC-FR3-64-AS-04', () => {
   expect(body).toContain("$status  = LLD_Members_Access::premium_status( $member_id );");
   expect(body).toContain("$premium = $status['premium'];");
   expect(src('stage3/admin/class-admin-members.php')).toContain("add_filter( 'lld_members_access_state', array( __CLASS__, 'grant_state' ), 10, 2 );");
+  // Account → Membership: "Premium" with the grant line and its end date, and no pause box for a grant.
+  const hub = src('stage3/screens/class-account-hub.php');
+  const membership = hub.slice(hub.indexOf('private static function section_membership('), hub.indexOf('public static function empty_state('));
+  expect(membership).toContain("$grant   = $status && 'grant' === $status['source'];");
+  expect(membership).toContain("esc_html( $grant ? 'Premium' : $state )");
+  expect(membership).toContain("esc_html( LLD_Members_Access::grant_line( $status ) )");
+  expect(membership).toContain('if ( $is_prem && ! $grant ) {');
 });
 
 // ---- A6: terms before the member area ------------------------------------------------------------------------------

@@ -308,6 +308,16 @@ class LLD_Members_Account {
 			if ( ( 'none' === $answered && $conditions ) || ( in_array( 'none', $conditions, true ) && count( $conditions ) > 1 ) ) {
 				return new WP_REST_Response( array( 'message' => 'None cannot be combined with a condition.' ), 400 );
 			}
+			// P3-36 A7: "Prefer not to answer" is stored as on the health profile screen: still not_answered, so both
+			// matrices treat the conditions as unknown, with ["prefer-not"] kept so it counts as an answer (FR3-69 AS-06).
+			$prefer = in_array( 'prefer-not', $conditions, true ) || in_array( $answered, array( 'prefer-not', 'prefer_not' ), true );
+			if ( $prefer ) {
+				if ( array_diff( $conditions, array( 'prefer-not' ) ) ) {
+					return new WP_REST_Response( array( 'message' => 'Prefer not to answer cannot be combined with a condition.' ), 400 );
+				}
+				$params['conditions_answered'] = 'not_answered';
+				$params['conditions']          = wp_json_encode( array( 'prefer-not' ) );
+			}
 		}
 		$result = self::save_health( $member_id, $params );
 		if ( is_wp_error( $result ) ) {
