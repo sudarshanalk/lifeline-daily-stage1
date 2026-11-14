@@ -1539,6 +1539,9 @@ body.mode-night .lld-stage3-food {
 @media (prefers-reduced-motion: reduce) {
   .lld-stage3-food .lld-food-cal-fill {
     transition: none;
+  }
+}
+
 /* ---------- B2: Log a reading screen (/members/readings/) ---------- */
 .lld-stage3-readings {
   --lld-bg: var(--lld-s3-bg, #faf8f5);
