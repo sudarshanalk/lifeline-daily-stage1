@@ -919,7 +919,9 @@ test('TC-FR2-37-AS-07', async ({ page, request }) => {
   await expect(page.getByRole('heading', { name: 'Enter your code' })).toBeVisible();
   await page.locator('#lld_code').fill(await mailCode(ownerEmail));
   await page.getByRole('button', { name: 'Continue' }).click();
-  await page.waitForURL((url) => !url.pathname.includes('/members/sign-in'));
+  // The code page is /members/two-step/, so wait until the code is accepted and that page is left too: checking only
+  // for /members/sign-in passed at once, and the request below could go out before the owner was signed in (302).
+  await page.waitForURL((url) => !/\/members\/(sign-in|two-step)/.test(url.pathname));
   const admin = await page.request.get(href, { maxRedirects: 0 });
   expect(admin.status()).toBeGreaterThanOrEqual(400);
   expect(admin.headers()['content-type'] || '').not.toContain('image/');

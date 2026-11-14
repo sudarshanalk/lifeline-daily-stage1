@@ -60,6 +60,11 @@
       "file": "tests/stage2/e2e/accounts-privacy.spec.mjs",
       "decision": "Requirements FR3-60 (TC-FR3-60-AS-01) and the data model (Healthy Weight programme records, owner-approved 6 to 10 Nov 2026): the five P3-35 member tables are in 'Download my data'; built in S3-P35.",
       "change": "TC-FR2-04-AS-01 only: STAGE3_DOWNLOAD_TABLES gains profile_answers, goal_milestones, block_choices, notes_shown and check_in_barriers, and each one's row count is checked against the database like the others. Nothing is removed or loosened."
+    },
+    {
+      "file": "tests/stage2/e2e/premium.spec.mjs",
+      "decision": "Test timing only (lead, 14 Nov 2026): no requirement or expected value changes. Seen failing twice on WebKit in S3-P35's CI with a 302 for the owner's request.",
+      "change": "TC-FR2-37-AS-07 only: after the owner's two-step code, the test waits until the page has left /members/two-step/ as well as /members/sign-in before checking that the owner is refused the member's photo. Every assertion stays as it was; the owner's request now runs signed in, as the test intends."
     }
   ]
 }
