@@ -534,6 +534,11 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 		if ( null !== $refusal ) {
 			return $refusal;
 		}
+		// P3-36 (left over from A7; TC-FR3-69-AS-05): a goal is never stored for a member whose Conditions answer is
+		// missing. The refusal names the question and links to it, as the readings refusal does.
+		if ( 'goals' === $type ) {
+			return self::goal_refusal( $member_id );
+		}
 		if ( ! in_array( $type, array( 'targets', 'food-log', 'recipes', 'custom-foods', 'plans' ), true ) ) {
 			return null;
 		}
@@ -928,6 +933,31 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 		$refusal['question'] = 'conditions';
 		$refusal['link']     = self::conditions_link();
 		return $refusal;
+	}
+
+	/**
+	 * The goals interface refusal (TC-FR3-69-AS-05): writing a goal (anything but reading or deleting one) while the
+	 * Conditions answer is missing gets 403 with the message, the question and a link that returns to goal setting.
+	 * Reading goals stays open, and "Prefer not to answer" counts as an answer, as on the goal-setting screen.
+	 *
+	 * @param int $member_id Member number.
+	 * @return WP_REST_Response|null
+	 */
+	public static function goal_refusal( $member_id ) {
+		$request = class_exists( 'LLD_Members_Stage3_API' ) ? LLD_Members_Stage3_API::$request : null;
+		$method  = is_object( $request ) && method_exists( $request, 'get_method' ) ? strtoupper( (string) $request->get_method() ) : 'POST';
+		if ( in_array( $method, array( 'GET', 'HEAD', 'DELETE' ), true ) || 'missing' !== self::conditions_state( $member_id ) ) {
+			return null;
+		}
+		$refusal = self::conditions_refusal( $member_id, array( 'error' => 'Not available.', 'status' => 403 ) );
+		return new WP_REST_Response(
+			array(
+				'message'  => $refusal['error'],
+				'question' => $refusal['question'],
+				'link'     => self::conditions_link( 'goal' ),
+			),
+			403
+		);
 	}
 
 	// ---- Helpers -------------------------------------------------------------------------------------------------

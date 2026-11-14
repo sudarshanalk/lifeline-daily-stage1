@@ -1230,12 +1230,8 @@ class LLD_Members_Stage3_API {
 				return self::refuse( 403, $denied );
 			}
 		}
-		if ( 'recipes' === $def['table'] ) {
-			$denied = LLD_Members_Recipes::gate_premium( LLD_Members_Food_Log::premium( $member_id ) );
-			if ( null !== $denied ) {
-				return self::refuse( 403, $denied );
-			}
-		}
+		// Recipes: no Premium check here. A member can always delete their own recipe (FR3-68), as
+		// LLD_Members_Access_Tiers::api_refuse() already allows; adding and changing one stay Premium.
 		if ( array_key_exists( 'deleted_at', $row ) ) {
 			LLD_Members_Stage3_Data::soft_delete( $def['table'], $member_id, $id );
 		} else {
