@@ -107,7 +107,13 @@ class LLD_Members_Food_Screen {
 		if ( ! class_exists( 'LLD_Members_Access' ) || ! function_exists( 'lld_members_layout' ) ) {
 			return;
 		}
-		$member_id = (int) LLD_Members_Access::current_member_id();
+		if ( get_option( 'lld_members_closed' ) && ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+		$member_id = is_user_logged_in() ? (int) LLD_Members_Access::current_member_id() : 0;
+		if ( $member_id > 0 && '' !== LLD_Members_Access::preview_state() ) {
+			return; // the owner's Free/Premium preview keeps the Stage 2 screens, as Today does
+		}
 		if ( $member_id <= 0 ) {
 			wp_safe_redirect( home_url( '/members/sign-in/?redirect_to=' . rawurlencode( home_url( '/members/food/' ) ) ) );
 			exit;
@@ -115,7 +121,18 @@ class LLD_Members_Food_Screen {
 		if ( ! class_exists( 'LLD_Members_Features' ) || ! LLD_Members_Features::enabled( 'food_tracker', $member_id ) ) {
 			self::output(
 				'Food tracker',
-				'<div class="lld-stage3-food"><div class="lld-page-head"><p class="lld-kicker">Food tracker</p><h1>Food &amp; meals</h1><p class="lld-hint">Food tracking is not turned on for your account yet.</p></div><p><a class="lld-btn-ghost" href="' . esc_url( home_url( '/members/home/' ) ) . '">Back to Today</a></p></div>',
+				'<div class="lld-stage3-food"><div class="lld-page-head"><h1>Food</h1><p class="lld-hint">Food tracking is not turned on for your account yet.</p></div><p><a class="lld-btn-ghost" href="' . esc_url( home_url( '/members/home/' ) ) . '">Back to Today</a></p></div>',
+				false
+			);
+			exit;
+		}
+		// Health consent first (FR3-59): without it nothing is read or stored, so the page shows the interface's own
+		// refusal sentence and the way to the consent, and loads no diary and no script.
+		if ( ! LLD_Members_Access::has_health_consent( $member_id ) ) {
+			$needed = class_exists( 'LLD_Members_Stage3_Consent' ) ? LLD_Members_Stage3_Consent::MESSAGES['needed'] : 'Health consent is needed first.';
+			self::output(
+				'Food',
+				'<div class="lld-stage3-food" data-lld-food-consent="no"><div class="lld-page-head"><h1>Food</h1></div><div class="lld-notice-box" role="status"><p>' . esc_html( $needed ) . '</p><p>Adding food to your diary needs your health consent. You can give it in Privacy &amp; consents.</p><p><a class="lld-btn-ghost" href="' . esc_url( home_url( '/members/settings/?section=privacy' ) ) . '">Privacy &amp; consents</a></p></div></div>',
 				false
 			);
 			exit;
@@ -128,7 +145,7 @@ class LLD_Members_Food_Screen {
 		}
 
 		$html = self::build_html( $member_id, $date );
-		self::output( 'Food & meals', $html, true );
+		self::output( 'Food', $html, true );
 		exit;
 	}
 
@@ -186,6 +203,19 @@ class LLD_Members_Food_Screen {
 			$day['pregnant'] = $pregnant;
 		}
 
+		// Eating-disorder flag: the interface keeps each entry's amount (it is needed to store the entry), but the page
+		// asks no portion question and shows no amount, so the amounts are not put into the page at all (FR3-69 AS-01).
+		$page_day = $day;
+		if ( $ed_mode && is_array( $page_day ) && isset( $page_day['meals'] ) && is_array( $page_day['meals'] ) ) {
+			foreach ( $page_day['meals'] as $meal_key => $entries ) {
+				foreach ( is_array( $entries ) ? $entries : array() as $i => $entry ) {
+					if ( is_array( $entry ) ) {
+						unset( $page_day['meals'][ $meal_key ][ $i ]['grams'], $page_day['meals'][ $meal_key ][ $i ]['portion_label'] );
+					}
+				}
+			}
+		}
+
 		$config = array(
 			'api'         => esc_url_raw( rest_url( 'lld-members/v1/me' ) ),
 			'nonce'       => wp_create_nonce( 'wp_rest' ),
@@ -200,7 +230,7 @@ class LLD_Members_Food_Screen {
 			'scanUrl'     => esc_url_raw( home_url( '/members/food/scan/' ) ),
 			'upgradeUrl'  => esc_url_raw( home_url( '/pricing/' ) ),
 			'todayUrl'    => esc_url_raw( home_url( '/members/home/' ) ),
-			'initialDay'  => $day,
+			'initialDay'  => $page_day,
 		);
 
 		$locked = ! empty( $day['locked'] );
@@ -214,13 +244,12 @@ class LLD_Members_Food_Screen {
 			<div class="lld-page-head lld-food-head">
 				<div class="lld-food-head-top">
 					<div>
-						<p class="lld-kicker">Food tracker</p>
-						<h1><?php echo $ed_mode ? esc_html( LLD_Members_Stage3_Safety::MESSAGES['ed.food-tracker.diary-heading'] ) : esc_html__( 'Food & meals', 'lld-members' ); ?></h1>
+						<h1><?php echo $ed_mode ? esc_html( LLD_Members_Stage3_Safety::MESSAGES['ed.food-tracker.diary-heading'] ) : 'Food'; ?></h1>
 						<p class="lld-hint">
 							<?php
 							echo $ed_mode
 								? esc_html( LLD_Members_Stage3_Safety::MESSAGES['ed.food-tracker.calorie-total'] )
-								: esc_html__( 'Search UK CoFID, USDA and Open Food Facts foods, review your daily totals and track meals calmly.', 'lld-members' );
+								: 'Log what you eat and drink across four meals each day.';
 							?>
 						</p>
 					</div>
@@ -282,16 +311,9 @@ class LLD_Members_Food_Screen {
 						<h2>Daily nutrition target</h2>
 						<button type="button" class="lld-btn-ghost lld-btn-sm" data-lld-action="close-targets">Close</button>
 					</div>
-					<?php if ( $kidney_mode ) : ?>
-						<p class="lld-food-calm-note">
-							<?php
-							echo esc_html(
-								( class_exists( 'LLD_Members_Calorie_Target' ) && isset( LLD_Members_Calorie_Target::QUOTED['kidney'] ) )
-									? LLD_Members_Calorie_Target::QUOTED['kidney']
-									: 'Follow the protein target agreed with your kidney team or dietitian.'
-							);
-							?>
-						</p>
+					<?php // Kidney disease: the signed sentence from the calorie target sheet, or nothing. The page writes none of its own. ?>
+					<?php if ( $kidney_mode && class_exists( 'LLD_Members_Calorie_Target' ) && isset( LLD_Members_Calorie_Target::QUOTED['kidney'] ) ) : ?>
+						<p class="lld-food-calm-note"><?php echo esc_html( LLD_Members_Calorie_Target::QUOTED['kidney'] ); ?></p>
 					<?php endif; ?>
 					<?php if ( $features['own_targets'] ) : ?>
 						<p class="lld-field-help">Updates apply from the selected day onwards.</p>
@@ -299,7 +321,7 @@ class LLD_Members_Food_Screen {
 							<div class="lld-food-target-grid">
 								<label class="lld-food-field">
 									<span>Calories (kcal)</span>
-									<input type="number" name="kcal" min="1200" max="10000" step="10" required />
+									<input type="number" name="kcal" min="1" max="10000" step="1" required />
 								</label>
 								<?php if ( ! $kidney_mode ) : ?>
 									<label class="lld-food-field">
@@ -332,7 +354,6 @@ class LLD_Members_Food_Screen {
 			<?php endif; ?>
 
 			<section class="lld-card lld-food-locked" data-lld-food-locked<?php echo $locked ? '' : ' hidden'; ?>>
-				<h2>History locked on Free</h2>
 				<p data-lld-food-locked-msg><?php echo esc_html( ! empty( $day['message'] ) ? (string) $day['message'] : 'Free shows the last 14 days. Premium shows your full history.' ); ?></p>
 				<p><a class="lld-pill-btn" href="<?php echo esc_url( home_url( '/pricing/' ) ); ?>">See Premium</a></p>
 			</section>
@@ -354,9 +375,12 @@ class LLD_Members_Food_Screen {
 					$items     = isset( $day['meals'][ $meal_key ] ) && is_array( $day['meals'][ $meal_key ] ) ? $day['meals'][ $meal_key ] : array();
 					$earlier   = isset( $day['earlier'][ $meal_key ] ) && is_array( $day['earlier'][ $meal_key ] ) ? $day['earlier'][ $meal_key ] : array();
 					$meal_kcal = 0;
+					$meal_full = true; // a subtotal is shown only when every item came back with its calories
 					foreach ( $items as $it ) {
 						if ( isset( $it['kcal'] ) && is_numeric( $it['kcal'] ) ) {
 							$meal_kcal += (float) $it['kcal'];
+						} else {
+							$meal_full = false;
 						}
 					}
 					?>
@@ -365,7 +389,7 @@ class LLD_Members_Food_Screen {
 							<div class="lld-meal-title">
 								<h2><?php echo esc_html( $meal_label ); ?></h2>
 								<?php if ( ! $ed_mode ) : ?>
-									<span class="lld-meal-kcal" data-lld-meal-kcal="<?php echo esc_attr( $meal_key ); ?>"><?php echo esc_html( (string) round( $meal_kcal ) ); ?> kcal</span>
+									<span class="lld-meal-kcal" data-lld-meal-kcal="<?php echo esc_attr( $meal_key ); ?>"<?php echo $meal_full ? '' : ' hidden'; ?>><?php echo $meal_full ? esc_html( (string) round( $meal_kcal ) ) . ' kcal' : ''; ?></span>
 								<?php endif; ?>
 							</div>
 							<div class="lld-meal-actions">
@@ -570,7 +594,7 @@ class LLD_Members_Food_Screen {
 							</div>
 						</div>
 						<ul class="lld-search-list" data-lld-search-results>
-							<li class="lld-food-empty">Type at least two letters to search verified nutrition databases.</li>
+							<li class="lld-food-empty">Type at least two letters to search.</li>
 						</ul>
 					</div>
 
@@ -651,9 +675,12 @@ class LLD_Members_Food_Screen {
 	 */
 	private static function render_summary_inner( array $day, $kidney_mode ) {
 		$totals = isset( $day['totals'] ) && is_array( $day['totals'] ) ? $day['totals'] : null;
-		if ( null === $totals || ( array_key_exists( 'kcal', $totals ) && null === $totals['kcal'] ) ) {
+		if ( null === $totals ) {
 			return '';
 		}
+		// Only what the interface returned is printed: a total it left out (hidden by the safety matrix, or unknown
+		// because a logged food has no value for it) gets no tile and no zero.
+		$has_kcal = isset( $totals['kcal'] ) && is_numeric( $totals['kcal'] );
 		$target   = isset( $day['target'] ) && is_array( $day['target'] ) ? $day['target'] : null;
 		$left     = isset( $day['left'] ) && is_array( $day['left'] ) ? $day['left'] : null;
 		$over     = isset( $day['over'] ) && is_array( $day['over'] ) ? $day['over'] : null;
@@ -665,6 +692,7 @@ class LLD_Members_Food_Screen {
 		ob_start();
 		$pregnant = ! empty( $day['pregnant'] );
 		?>
+		<?php if ( $has_kcal ) : ?>
 		<div class="lld-food-cal-block">
 			<div class="lld-food-cal-numbers">
 				<div>
@@ -681,8 +709,6 @@ class LLD_Members_Food_Screen {
 						<span class="lld-food-over-note">Over by <?php echo esc_html( (string) round( (float) $over['kcal'] ) ); ?> kcal today.</span>
 					<?php elseif ( $left && null !== ( $left['kcal'] ?? null ) ) : ?>
 						<span class="lld-food-left-note"><?php echo esc_html( number_format_i18n( round( (float) $left['kcal'] ) ) ); ?> kcal left</span>
-					<?php elseif ( ! $pregnant ) : ?>
-						<span class="lld-field-help">No daily calorie target set yet</span>
 					<?php endif; ?>
 				</div>
 			</div>
@@ -692,6 +718,7 @@ class LLD_Members_Food_Screen {
 				</div>
 			<?php endif; ?>
 		</div>
+		<?php endif; ?>
 		<div class="lld-food-macros">
 			<?php
 			$macros = array(
@@ -701,15 +728,16 @@ class LLD_Members_Food_Screen {
 				'fibre_g'   => 'Fibre',
 			);
 			foreach ( $macros as $key => $label ) :
-				$val     = round( (float) ( $totals[ $key ] ?? 0 ), 1 );
+				if ( ! isset( $totals[ $key ] ) || ! is_numeric( $totals[ $key ] ) ) {
+					continue;
+				}
+				$val     = round( (float) $totals[ $key ], 1 );
 				$tgt_val = ( $target && isset( $target[ $key ] ) && null !== $target[ $key ] ) ? round( (float) $target[ $key ] ) : null;
 				?>
 				<div class="lld-macro-tile">
 					<span class="lld-macro-label"><?php echo esc_html( $label ); ?></span>
 					<strong class="lld-macro-val"><?php echo esc_html( (string) $val ); ?> g</strong>
-					<?php if ( 'protein_g' === $key && $kidney_mode ) : ?>
-						<span class="lld-macro-sub">Follow the protein target agreed with your kidney team or dietitian.</span>
-					<?php elseif ( null !== $tgt_val ) : ?>
+					<?php if ( null !== $tgt_val ) : ?>
 						<?php if ( $over && ! empty( $over[ $key ] ) ) : ?>
 							<span class="lld-macro-sub lld-macro-over">Target <?php echo esc_html( (string) $tgt_val ); ?> g · <?php echo esc_html( (string) round( (float) $over[ $key ] ) ); ?> g over</span>
 						<?php elseif ( $left && isset( $left[ $key ] ) && null !== $left[ $key ] ) : ?>
@@ -717,8 +745,6 @@ class LLD_Members_Food_Screen {
 						<?php else : ?>
 							<span class="lld-macro-sub">Target <?php echo esc_html( (string) $tgt_val ); ?> g</span>
 						<?php endif; ?>
-					<?php else : ?>
-						<span class="lld-macro-sub">Logged today</span>
 					<?php endif; ?>
 				</div>
 			<?php endforeach; ?>

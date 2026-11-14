@@ -30,7 +30,7 @@
 
 	function safeUrl(value) {
 		var s = String(value || '').trim();
-		if (s.indexOf('/') === 0 || s.indexOf('https://') === 0 || s.indexOf('http://') === 0) {
+		if ((s.indexOf('/') === 0 && s.indexOf('//') !== 0) || s.indexOf('https://') === 0 || s.indexOf('http://') === 0) {
 			return s;
 		}
 		return '#';
@@ -127,6 +127,11 @@
 		}
 		var first = focusable[0];
 		var last = focusable[focusable.length - 1];
+		if (!dialog.contains(document.activeElement)) {
+			ev.preventDefault();
+			first.focus();
+			return;
+		}
 		if (ev.shiftKey && document.activeElement === first) {
 			ev.preventDefault();
 			last.focus();
@@ -306,9 +311,6 @@
 		}
 
 		function syncSafety(day) {
-			if (day && !day.locked && (!day.totals || day.totals.kcal === null)) {
-				state.edMode = true;
-			}
 			indexDayCatalog(day);
 		}
 
@@ -316,7 +318,7 @@
 			if (!els.summary || !els.summaryBody) {
 				return;
 			}
-			if (state.edMode || !day || day.locked || !day.totals || day.totals.kcal === null) {
+			if (state.edMode || !day || day.locked || !day.totals) {
 				els.summary.hidden = true;
 				return;
 			}
@@ -325,6 +327,11 @@
 			var target = day.target || null;
 			var left = day.left || null;
 			var over = day.over || null;
+			// Only what the interface returned is printed: a total it left out gets no tile and no zero.
+			var has = function (obj, key) {
+				return !!obj && obj[key] !== null && obj[key] !== undefined && !isNaN(Number(obj[key]));
+			};
+			var hasKcal = has(totals, 'kcal');
 			var kcal = Math.round(Number(totals.kcal || 0));
 			var tgtKcal = target && target.kcal !== null && target.kcal !== undefined ? Math.round(Number(target.kcal)) : null;
 			var isOver = !!day.over_note || (tgtKcal !== null && kcal > tgtKcal);
@@ -337,8 +344,6 @@
 				rightNote = '<span class="lld-food-over-note">Over by ' + fmtNum(over.kcal) + ' kcal today.</span>';
 			} else if (left && left.kcal !== null && left.kcal !== undefined) {
 				rightNote = '<span class="lld-food-left-note">' + fmtNum(left.kcal) + ' kcal left</span>';
-			} else if (!cfg.pregnant) {
-				rightNote = '<span class="lld-field-help">No daily calorie target set yet</span>';
 			}
 
 			var barHtml = '';
@@ -365,12 +370,13 @@
 			];
 			var macroHtml = macros
 				.map(function (m) {
-					var val = totals[m.key] !== null && totals[m.key] !== undefined ? Number(totals[m.key]) : 0;
-					var tgtVal = target && target[m.key] !== null && target[m.key] !== undefined ? Math.round(Number(target[m.key])) : null;
-					var sub = '<span class="lld-macro-sub">Logged today</span>';
-					if (m.key === 'protein_g' && state.kidneyMode) {
-						sub = '<span class="lld-macro-sub">Follow the protein target agreed with your kidney team or dietitian.</span>';
-					} else if (tgtVal !== null) {
+					if (!has(totals, m.key)) {
+						return '';
+					}
+					var val = Number(totals[m.key]);
+					var tgtVal = has(target, m.key) ? Math.round(Number(target[m.key])) : null;
+					var sub = '';
+					if (tgtVal !== null) {
 						if (over && over[m.key] > 0) {
 							sub = '<span class="lld-macro-sub lld-macro-over">Target ' + tgtVal + ' g · ' + Math.round(Number(over[m.key])) + ' g over</span>';
 						} else if (left && left[m.key] !== null && left[m.key] !== undefined) {
@@ -394,19 +400,21 @@
 				.join('');
 
 			els.summaryBody.innerHTML =
-				'<div class="lld-food-cal-block">' +
-				'<div class="lld-food-cal-numbers">' +
-				'<div><span class="lld-stat-label">Calories today</span><strong class="lld-cal-total">' +
-				fmtNum(kcal) +
-				' kcal</strong>' +
-				(tgtKcal !== null ? ' <span class="lld-cal-target">of ' + fmtNum(tgtKcal) + ' kcal target</span>' : '') +
-				'</div>' +
-				'<div class="lld-food-cal-state">' +
-				rightNote +
-				'</div>' +
-				'</div>' +
-				barHtml +
-				'</div>' +
+				(hasKcal
+					? '<div class="lld-food-cal-block">' +
+					  '<div class="lld-food-cal-numbers">' +
+					  '<div><span class="lld-stat-label">Calories today</span><strong class="lld-cal-total">' +
+					  fmtNum(kcal) +
+					  ' kcal</strong>' +
+					  (tgtKcal !== null ? ' <span class="lld-cal-target">of ' + fmtNum(tgtKcal) + ' kcal target</span>' : '') +
+					  '</div>' +
+					  '<div class="lld-food-cal-state">' +
+					  rightNote +
+					  '</div>' +
+					  '</div>' +
+					  barHtml +
+					  '</div>'
+					: '') +
 				'<div class="lld-food-macros">' +
 				macroHtml +
 				'</div>';
@@ -536,12 +544,17 @@
 				var earlier = day && day.earlier && Array.isArray(day.earlier[mealKey]) ? day.earlier[mealKey] : [];
 				var earlierLabel = (day && day.earlier_label) || 'Earlier diary entry, nutrition unknown';
 
+				var full = true;
 				var subtotal = items.reduce(function (acc, it) {
-					return acc + (it.kcal !== null && it.kcal !== undefined ? Number(it.kcal) : 0);
+					if (it.kcal === null || it.kcal === undefined) {
+						full = false;
+						return acc;
+					}
+					return acc + Number(it.kcal);
 				}, 0);
 				if (kcalEl) {
-					kcalEl.hidden = state.edMode;
-					kcalEl.textContent = Math.round(subtotal) + ' kcal';
+					kcalEl.hidden = state.edMode || !full;
+					kcalEl.textContent = state.edMode || !full ? '' : Math.round(subtotal) + ' kcal';
 				}
 				if (list) {
 					if (!items.length && !earlier.length) {
@@ -635,7 +648,7 @@
 			if (els.weekRange) {
 				els.weekRange.textContent = 'Week starting ' + monday;
 			}
-			apiRequest(cfg, 'food-week?week_start=' + encodeURIComponent(monday)).then(function (res) {
+			return apiRequest(cfg, 'food-week?week_start=' + encodeURIComponent(monday)).then(function (res) {
 				if (!res.ok) {
 					var rawMsg = (res.data && (res.data.message || res.data.error)) || '';
 					var isUpgrade = !!(res.data && (res.data.upgrade || /part of Premium/i.test(rawMsg)));
@@ -652,24 +665,42 @@
 					return;
 				}
 				var w = res.data || {};
-				var avg = w.averages || {};
+				var avg = w.averages || null;
+				var given = function (obj, key) {
+					return !!obj && obj[key] !== null && obj[key] !== undefined && !isNaN(Number(obj[key]));
+				};
 				var html = '<div class="lld-week-stats">';
-				html += '<div class="lld-macro-tile"><span class="lld-macro-label">Days logged</span><strong class="lld-macro-val">' + esc(w.logged_days || 0) + ' of 7</strong></div>';
-				html += '<div class="lld-macro-tile"><span class="lld-macro-label">Days on target</span><strong class="lld-macro-val">' + esc(w.days_on_target || 0) + '</strong></div>';
-				html += '<div class="lld-macro-tile"><span class="lld-macro-label">Daily average</span><strong class="lld-macro-val">' + fmtNum(avg.kcal || 0) + ' kcal</strong><span class="lld-macro-sub">P ' + fmtNum(avg.protein_g || 0, 1) + 'g · C ' + fmtNum(avg.carb_g || 0, 1) + 'g · F ' + fmtNum(avg.fat_g || 0, 1) + 'g</span></div>';
-				if (w.variety_count !== undefined && w.variety_count !== null) {
-					html += '<div class="lld-macro-tile"><span class="lld-macro-label">Different foods</span><strong class="lld-macro-val">' + esc(w.variety_count) + '</strong></div>';
+				if (given(w, 'logged_days')) {
+					html += '<div class="lld-macro-tile"><span class="lld-macro-label">Days logged</span><strong class="lld-macro-val">' + esc(Number(w.logged_days)) + ' of 7</strong></div>';
+				}
+				// Averages and days on target are numbers about calories: shown only when the interface returned the averages.
+				if (given(avg, 'kcal')) {
+					if (given(w, 'days_on_target')) {
+						html += '<div class="lld-macro-tile"><span class="lld-macro-label">Days on target</span><strong class="lld-macro-val">' + esc(Number(w.days_on_target)) + '</strong></div>';
+					}
+					var avgParts = [];
+					[
+						['Protein', 'protein_g'],
+						['Carbs', 'carb_g'],
+						['Fat', 'fat_g'],
+						['Fibre', 'fibre_g']
+					].forEach(function (pair) {
+						if (given(avg, pair[1])) {
+							avgParts.push(pair[0] + ' ' + fmtNum(avg[pair[1]], 1) + ' g');
+						}
+					});
+					html += '<div class="lld-macro-tile"><span class="lld-macro-label">Average calories</span><strong class="lld-macro-val">' + fmtNum(avg.kcal) + ' kcal</strong>' + (avgParts.length ? '<span class="lld-macro-sub">' + esc(avgParts.join(' · ')) + '</span>' : '') + '</div>';
 				}
 				html += '</div>';
 				if (w.tip) {
-					html += '<p class="lld-food-tip">' + esc(w.tip) + '</p>';
+					html += '<p class="lld-food-tip">' + esc(typeof w.tip === 'string' ? w.tip : w.tip.text || '') + '</p>';
 				}
 				els.weekBody.innerHTML = html;
 			});
 		}
 
 		function loadFavourites() {
-			apiRequest(cfg, 'favourites').then(function (res) {
+			return apiRequest(cfg, 'favourites').then(function (res) {
 				if (!res.ok) {
 					return;
 				}
@@ -697,7 +728,7 @@
 				return;
 			}
 			if (!state.favourites.length) {
-				els.favouritesResults.innerHTML = '<li class="lld-food-empty">No favourite foods saved yet. Star any logged or searched food to keep it handy.</li>';
+				els.favouritesResults.innerHTML = '<li class="lld-food-empty">No favourite foods saved yet.</li>';
 				return;
 			}
 			els.favouritesResults.innerHTML = state.favourites
@@ -734,7 +765,7 @@
 		}
 
 		function loadRecipes() {
-			apiRequest(cfg, 'recipes').then(function (res) {
+			return apiRequest(cfg, 'recipes').then(function (res) {
 				if (!res.ok) {
 					if (els.recipesList) {
 						els.recipesList.innerHTML = '<p class="lld-food-empty">' + esc(errMsg(res, 'Could not load recipes.')) + '</p>';
@@ -808,15 +839,15 @@
 			}
 			els.modalRecipes.innerHTML = rows
 				.map(function (r) {
-					var meta = !state.edMode && r.kcal_per_serving ? Math.round(Number(r.kcal_per_serving)) + ' kcal per serving' : 'Saved recipe';
+					var meta = !state.edMode && r.kcal_per_serving ? Math.round(Number(r.kcal_per_serving)) + ' kcal per serving' : '';
 					var btnText = state.edMode ? 'Add to meal' : 'Add 1 serving';
 					return (
 						'<li class="lld-search-item">' +
 						'<div><strong>' +
 						esc(r.name) +
-						'</strong><span class="lld-food-item-meta">' +
-						esc(meta) +
-						'</span></div>' +
+						'</strong>' +
+						(meta ? '<span class="lld-food-item-meta">' + esc(meta) + '</span>' : '') +
+						'</div>' +
 						'<button type="button" class="lld-pill-btn lld-btn-sm" data-lld-log-recipe="' +
 						esc(r.id) +
 						'">' +
@@ -845,9 +876,9 @@
 
 		function loadPreferences() {
 			if (!els.prefsForm) {
-				return;
+				return Promise.resolve();
 			}
-			apiRequest(cfg, 'food-preferences').then(function (res) {
+			return apiRequest(cfg, 'food-preferences').then(function (res) {
 				if (!res.ok) {
 					return;
 				}
@@ -870,9 +901,9 @@
 
 		function loadSuggestions(date) {
 			if (!els.suggestionsList) {
-				return;
+				return Promise.resolve();
 			}
-			apiRequest(cfg, 'recipe-suggestions?date=' + encodeURIComponent(date)).then(function (res) {
+			return apiRequest(cfg, 'recipe-suggestions?date=' + encodeURIComponent(date)).then(function (res) {
 				if (!res.ok) {
 					var rawMsg = (res.data && (res.data.message || res.data.error)) || '';
 					var isUpgrade = !!(res.data && (res.data.upgrade || /part of Premium/i.test(rawMsg)));
@@ -890,15 +921,15 @@
 				}
 				var list = Array.isArray(res.data.recipes) ? res.data.recipes : [];
 				if (!list.length) {
-					els.suggestionsList.innerHTML = '<p class="lld-food-empty">No recipe suggestions match your calories left and preferences right now.</p>';
+					els.suggestionsList.innerHTML = '<p class="lld-food-empty">No recipe suggestions right now.</p>';
 					return;
 				}
 				els.suggestionsList.innerHTML =
 					'<ul class="lld-search-list">' +
 					list
 						.map(function (r) {
-							var meta = !state.edMode && r.kcal_per_serving ? Math.round(Number(r.kcal_per_serving)) + ' kcal / serving' : 'Approved library recipe';
-							return '<li class="lld-search-item"><div><strong>' + esc(r.name) + '</strong><span class="lld-food-item-meta">' + esc(meta) + '</span></div><span class="lld-source-badge">Approved recipe</span></li>';
+							var meta = !state.edMode && r.kcal_per_serving ? Math.round(Number(r.kcal_per_serving)) + ' kcal / serving' : '';
+							return '<li class="lld-search-item"><div><strong>' + esc(r.name) + '</strong>' + (meta ? '<span class="lld-food-item-meta">' + esc(meta) + '</span>' : '') + '</div></li>';
 						})
 						.join('') +
 					'</ul>';
@@ -1771,11 +1802,21 @@
 		syncSafety(state.day);
 		renderSummary(state.day);
 		renderMeals(state.day);
-		loadFavourites();
-		loadWeek(state.date);
-		loadRecipes();
-		loadPreferences();
-		loadSuggestions(state.date);
+		// The opening reads go one after another, so a search the member starts straight away waits behind one
+		// request at most, not five (FR3-26: results within a second).
+		[
+			loadFavourites,
+			function () {
+				return loadWeek(state.date);
+			},
+			loadRecipes,
+			loadPreferences,
+			function () {
+				return loadSuggestions(state.date);
+			}
+		].reduce(function (chain, step) {
+			return chain.then(step).catch(function () {});
+		}, Promise.resolve());
 	}
 
 	function boot() {
