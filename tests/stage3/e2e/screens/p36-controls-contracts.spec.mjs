@@ -36,7 +36,11 @@ test('TC-FR2-25-AS-01',async({page})=>{
   await submitAndWait(page,page.getByRole('button',{name:'Save',exact:true}));await page.reload();await expect(sex.getByRole('button',{name:'Prefer not to say',exact:true})).toHaveAttribute('aria-pressed','true');
 });
 test('TC-FR2-32-AS-01',async({page})=>{
-  const made=await fixture(page.request,'premium');await make(page,{health_consent:true,consents:['terms','health'],access_state:'Premium'});await startTrack(page,made.track);await page.goto('/members/meals/');
+  const made=await fixture(page.request,'premium');const m=await make(page,{health_consent:true,consents:['terms','health'],access_state:'Premium'});
+  // A vegetarian member, as in the Stage 2 test of this criterion: the fixture has a vegetarian and a vegan week-1 plan,
+  // and with no diet stated either one can be chosen.
+  await page.goto('/members/health/');const diet=await page.request.post('/wp-json/lld-members/v1/members/'+m.member_id+'/health',{headers:{'X-WP-Nonce':await restNonce(page)},data:{kind:'profile',diet_type:'vegetarian',confirmed:true}});expect(diet.ok(),await diet.text()).toBeTruthy();
+  await startTrack(page,made.track);await page.goto('/members/meals/');
   await expect(page.locator('[data-lld-day]')).toHaveCount(7);const meal=page.locator('[data-lld-meal="1-breakfast"]');await expect(meal).toContainText(made.lentil);
   await meal.getByRole('button',{name:'Swap',exact:true}).click();const option=meal.locator('[data-lld-swap-panel]').getByRole('button',{name:made.oat,exact:true});await expect(option).toBeVisible();
   await submitAndWait(page,option);await expect(page.locator('[data-lld-meal="1-breakfast"]')).toContainText(made.oat);await page.reload();await expect(page.locator('[data-lld-meal="1-breakfast"]')).toContainText(made.oat);

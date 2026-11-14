@@ -254,7 +254,8 @@ scenario('UC10-S4', 'TC-FR3-80-AS-01', async ({ page }) => {
   await expect(page.locator('[data-lld-meal="1-breakfast"]')).toContainText(made.lentil.split(' ').pop());
   await expect(page.locator('main .lld-lock')).toHaveCount(0);
   await page.goto('/members/workout/?level=beginner&place=home'); await expect(page).toHaveURL(/\/members\/workout\//);
-  await expect(page.locator('main')).toContainText(made.exercise); await expect(page.locator('main .lld-lock')).toHaveCount(0);
+  // The workout plan is open: its levels and this week's sessions, and no lock.
+  await expect(page.locator('main')).toContainText('Session A'); await expect(page.locator('main .lld-lock')).toHaveCount(0);
 });
 scenario('UC10-S5', 'TC-FR3-64-AS-04', async ({ page }) => {
   const member = await fresh(page, { access_state: 'Free' }); const until = await grant(page, member); await signIn(page, A, password);
