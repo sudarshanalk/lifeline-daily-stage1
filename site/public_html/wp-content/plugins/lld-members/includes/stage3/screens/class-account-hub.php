@@ -618,18 +618,25 @@ class LLD_Members_Account_Hub {
 	private static function section_membership( $member_id, $row ) {
 		$state   = ucfirst( LLD_Members_Access::access_state( $member_id ) );
 		$is_prem = class_exists( 'LLD_Members_Billing' ) && LLD_Members_Billing::has_premium( $member_id );
+		// P3-36 A1 (TC-FR3-64-AS-04): the same answer as the chip and My subscription. Free Premium given by the Owner
+		// says so with its end date, and has no subscription to pause.
+		$status  = method_exists( 'LLD_Members_Access', 'premium_status' ) ? LLD_Members_Access::premium_status( $member_id ) : null;
+		$grant   = $status && 'grant' === $status['source'];
 
 		$html  = '<section class="lld-account-section lld-card" aria-labelledby="lld-section-membership">';
 		$html .= '<h2 id="lld-section-membership">Membership</h2>';
 		$html .= '<p class="lld-muted">Your current membership status and subscription management.</p>';
 		$html .= '<div class="lld-membership-status">';
-		$html .= '<p><strong>Current plan:</strong> ' . esc_html( $state ) . '</p>';
+		$html .= '<p><strong>Current plan:</strong> ' . esc_html( $grant ? 'Premium' : $state ) . '</p>';
+		if ( $grant ) {
+			$html .= '<p data-lld-premium-source="grant">' . esc_html( LLD_Members_Access::grant_line( $status ) ) . '</p>';
+		}
 		if ( ! empty( $row->joined_on ) ) {
 			$html .= '<p>Joined on ' . esc_html( self::member_date( (string) $row->joined_on ) ) . '</p>';
 		}
 		$html .= '</div>';
 
-		if ( $is_prem ) {
+		if ( $is_prem && ! $grant ) {
 			$html .= '<div class="lld-pause-box lld-card lld-coming-soon">';
 			$html .= '<h3>Pause subscription</h3>';
 			$html .= '<p class="lld-badge-soon">Coming soon</p>';
