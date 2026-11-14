@@ -9,7 +9,7 @@
  * A post of the long form (lld_settings_nonce) still returns so Stage 2 can finish it (NFR3-06). It adds no rewrite rule.
  *
  * Health consent is withdrawn through the Stage 2 /members/withdraw/ screen, never here.
- * Choosing reminders (P3-85) on the Notifications tab is the next package.
+ * Reminders on the Notifications tab use LLD_Members_Reminders (P3-36 B4 / FR3-56).
  *
  * @package LLD_Members
  */
@@ -190,6 +190,13 @@ class LLD_Members_Account_Hub {
 		if ( isset( $_POST['lld_notifications_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_notifications_nonce'] ) ), 'lld_notifications_save' ) ) {
 			LLD_Members_Account::save_hub_notifications( $member_id );
 			return 'notifications';
+		}
+		if ( isset( $_POST['lld_reminders_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_reminders_nonce'] ) ), 'lld_reminders_save' ) ) {
+			if ( ! class_exists( 'LLD_Members_Reminders' ) ) {
+				return new WP_Error( 'lld_reminders', 'Reminders are not available.' );
+			}
+			$result = LLD_Members_Reminders::save_hub( $member_id );
+			return is_wp_error( $result ) ? $result : 'notifications';
 		}
 		if ( isset( $_POST['lld_privacy_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_privacy_nonce'] ) ), 'lld_privacy_save' ) ) {
 			LLD_Members_Account::save_hub_marketing( $member_id );
@@ -445,7 +452,7 @@ class LLD_Members_Account_Hub {
 	}
 
 	/**
-	 * Section 3: Notifications. Email choices save here. Choosing reminders is the next package (B4).
+	 * Section 3: Notifications. Email choices and reminder chooser (P3-36 B4 / FR3-56).
 	 *
 	 * @param int $member_id Member id.
 	 */
@@ -458,11 +465,9 @@ class LLD_Members_Account_Hub {
 		$html .= LLD_Members_Account::email_preference_fields( $member_id );
 		$html .= lld_button( array( 'label' => 'Save', 'type' => 'submit' ) );
 		$html .= '</form>';
-		$html .= '<p class="lld-badge-soon">Coming soon</p>';
-		$html .= '<fieldset disabled class="lld-form"><legend class="lld-sr">Reminder choices, coming soon</legend>';
-		$html .= '<label class="lld-check"><input type="checkbox" name="lld_notif_daily" value="1"> Daily morning coaching focus</label>';
-		$html .= '<label class="lld-check"><input type="checkbox" name="lld_notif_sunday" value="1"> Sunday weekly check-in review</label>';
-		$html .= '</fieldset>';
+		if ( class_exists( 'LLD_Members_Reminders' ) ) {
+			$html .= LLD_Members_Reminders::hub_html( $member_id );
+		}
 		$html .= '</section>';
 		return $html;
 	}
