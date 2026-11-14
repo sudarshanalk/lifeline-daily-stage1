@@ -1215,9 +1215,11 @@ class LLD_Members_Content {
 	 */
 	private static function catalog() {
 		$member_id = LLD_Members_Access::current_member_id();
-		$cards     = self::library_cards( $member_id );
-		$filters   = self::library_filters();
-		$groups    = array();
+		// Owner records stay out of the Library (FR2-08 AS-04); library_cards only lists these types.
+		$types  = array_values( array_diff( self::types(), self::not_in_library() ) );
+		$cards  = self::library_cards( $member_id, $types );
+		$filters = self::library_filters();
+		$groups  = array();
 		foreach ( $cards as $card ) {
 			$groups[ $card['type'] ][] = $card;
 		}
@@ -1329,13 +1331,14 @@ class LLD_Members_Content {
 	/**
 	 * Approved, safe library cards: one per title within a type, with track names merged.
 	 *
-	 * @param int $member_id Member number.
+	 * @param int      $member_id Member number.
+	 * @param string[] $types     Post types already filtered by not_in_library().
 	 * @return array<int,array{id:int,type:string,title:string,length:string,tracks:string[]}>
 	 */
-	private static function library_cards( $member_id ) {
+	private static function library_cards( $member_id, array $types ) {
 		$posts = get_posts(
 			array(
-				'post_type'      => array_values( array_diff( self::types(), self::not_in_library() ) ),
+				'post_type'      => $types,
 				'post_status'    => array( 'publish', 'draft', 'pending', 'private' ),
 				'post_parent'    => 0,
 				'posts_per_page' => -1,
