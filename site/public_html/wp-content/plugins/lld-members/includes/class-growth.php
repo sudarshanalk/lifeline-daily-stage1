@@ -412,11 +412,14 @@ class LLD_Members_Growth {
 	 * More: help, and the member's own testimonial with a way to withdraw permission (F4).
 	 */
 	public static function more() {
-		LLD_Members_Personal::require_page();
 		$member_id = LLD_Members_Access::current_member_id();
-		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_sign_out_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_sign_out_nonce'] ) ), 'lld_sign_out' ) ) {
+		// Sign out first (P3-36 C1): the account menu on My account → Admin posts here too, also for a signed-in helper
+		// without a member record, whom require_page() would otherwise send to sign-in still signed in. The nonce is
+		// tied to the signed-in account, so only that account can sign itself out.
+		if ( 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && is_user_logged_in() && isset( $_POST['lld_sign_out_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_sign_out_nonce'] ) ), 'lld_sign_out' ) ) {
 			self::sign_out( $member_id );
 		}
+		LLD_Members_Personal::require_page();
 		// The More list (Screen Design section 6): every member screen that is not in the bottom bar, then Sign out.
 		$items = array(
 			array( 'Workouts', '/members/workout/', 'Your level, this week\'s sessions and moving up a level.' ),

@@ -55,8 +55,10 @@ test.describe.serial('P3-30 account hub and desktop menu', () => {
   test('TC-FR3-06-AS-02 Change the display name in Profile and press Save: only Profile is saved and a confirmation is shown', async ({ page }) => {
     await hubMember(page, { two_step: false });
     await page.goto('/members/settings/?section=profile');
-    await expect(page.locator('#lld_email_display')).toHaveAttribute('readonly', '');
-    await expect(page.locator('#lld_email_display')).not.toBeDisabled();
+    // The email is the editable Profile field; leaving it alone must leave it unchanged by the save.
+    await expect(page.locator('#lld_email')).toBeEditable();
+    const email = await page.locator('#lld_email').inputValue();
+    expect(email).toContain('@');
     await page.locator('#lld_display').fill('Sam Updated');
     await page.getByRole('button', { name: 'Save profile' }).click();
 
@@ -64,6 +66,8 @@ test.describe.serial('P3-30 account hub and desktop menu', () => {
     await expect(page).toHaveURL(/\/members\/settings\/\?section=profile&saved=1$/);
     await expect(page.locator('.lld-notice-box')).toContainText('Profile saved.');
     await expect(page.locator('#lld_display')).toHaveValue('Sam Updated');
+    await expect(page.locator('#lld_email')).toHaveValue(email);
+    await expect(page.locator('#lld_email_display')).toHaveCount(0);
     // Only Profile was saved: two-step sign-in is still off.
     await page.goto('/members/settings/?section=security');
     await expect(page.locator('[data-lld-two-step]')).toHaveAttribute('data-lld-two-step', 'off');
@@ -85,7 +89,8 @@ test.describe.serial('P3-30 account hub and desktop menu', () => {
     const marketing = page.locator('.lld-consent-item[data-consent-type="marketing"]');
     await expect(marketing).toContainText('Marketing emails');
     await expect(marketing).toContainText(/Accepted on \d{4}-\d\d-\d\d/);
-    await expect(marketing.getByRole('link')).toHaveAttribute('href', /\/members\/settings\/\?all=1$/);
+    await expect(marketing.getByRole('checkbox', { name: 'Marketing emails' })).toBeVisible();
+    await expect(page.locator('a[href*="all=1"]')).toHaveCount(0);
 
     const health = page.locator('.lld-consent-item[data-consent-type="health"]');
     await expect(health).toContainText('Store my health information');
@@ -108,6 +113,18 @@ test.describe.serial('P3-30 account hub and desktop menu', () => {
       expect(box.height).toBeGreaterThanOrEqual(44);
       expect(box.width).toBeGreaterThanOrEqual(44);
     }
+  });
+
+  test('TC-FR3-06-AS-04 Open the old long settings address (?all=1) as a member: the matching section of Account opens instead', async ({ page }) => {
+    await hubMember(page);
+    await page.goto('/members/settings/?all=1');
+    await expect(page).toHaveURL(/\/members\/settings\/\?section=profile$/);
+    await expect(page.locator('.lld-stage3-account-hub')).toBeVisible();
+    await expect(page.locator('#tab-profile')).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByRole('heading', { name: 'Profile and settings', exact: true })).toHaveCount(0);
+    await page.goto('/members/settings/?all=1&section=security');
+    await expect(page).toHaveURL(/section=security$/);
+    await expect(page.locator('#tab-security')).toHaveAttribute('aria-current', 'page');
   });
 
   test('TC-FR3-07-AS-01 At 1280 pixels wide, click the name chip: a menu with the five links opens', async ({ page }) => {
