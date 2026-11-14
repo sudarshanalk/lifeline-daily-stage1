@@ -85,7 +85,8 @@ test.describe.serial('P3-30 account hub and desktop menu', () => {
     const marketing = page.locator('.lld-consent-item[data-consent-type="marketing"]');
     await expect(marketing).toContainText('Marketing emails');
     await expect(marketing).toContainText(/Accepted on \d{4}-\d\d-\d\d/);
-    await expect(marketing.getByRole('link')).toHaveAttribute('href', /\/members\/settings\/\?all=1$/);
+    await expect(marketing.getByRole('checkbox', { name: 'Marketing emails' })).toBeVisible();
+    await expect(page.locator('a[href*="all=1"]')).toHaveCount(0);
 
     const health = page.locator('.lld-consent-item[data-consent-type="health"]');
     await expect(health).toContainText('Store my health information');
@@ -108,6 +109,18 @@ test.describe.serial('P3-30 account hub and desktop menu', () => {
       expect(box.height).toBeGreaterThanOrEqual(44);
       expect(box.width).toBeGreaterThanOrEqual(44);
     }
+  });
+
+  test('TC-FR3-06-AS-04 Open the old long settings address (?all=1) as a member: the matching section of Account opens instead', async ({ page }) => {
+    await hubMember(page);
+    await page.goto('/members/settings/?all=1');
+    await expect(page).toHaveURL(/\/members\/settings\/\?section=profile$/);
+    await expect(page.locator('.lld-stage3-account-hub')).toBeVisible();
+    await expect(page.locator('#tab-profile')).toHaveAttribute('aria-current', 'page');
+    await expect(page.getByRole('heading', { name: 'Profile and settings', exact: true })).toHaveCount(0);
+    await page.goto('/members/settings/?all=1&section=security');
+    await expect(page).toHaveURL(/section=security$/);
+    await expect(page.locator('#tab-security')).toHaveAttribute('aria-current', 'page');
   });
 
   test('TC-FR3-07-AS-01 At 1280 pixels wide, click the name chip: a menu with the five links opens', async ({ page }) => {
