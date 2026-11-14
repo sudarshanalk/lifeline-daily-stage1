@@ -61,6 +61,9 @@ test('TC-FR3-69-AS-01 eating-disorder flag: the state comes from the safety matr
   // The script takes the flag from the page's settings and never decides it from the data.
   expect(js).toContain('edMode: !!cfg.edMode');
   expect(js).not.toMatch(/state\.edMode\s*=/);
+  // If the state changes while the page is open, the page is drawn again by the server: nothing is kept from before.
+  expect(js).toMatch(/!!res\.data\.note !== state\.edMode\) \{\s*window\.location\.assign\(/);
+  expect(js).not.toMatch(/localStorage|sessionStorage|indexedDB/);
 });
 
 test('TC-FR3-69-AS-03 kidney disease: no protein target field, and no kidney sentence written by the page', () => {

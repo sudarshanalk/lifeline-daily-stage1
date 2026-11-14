@@ -67,6 +67,27 @@ class LLD_Members_Food_Screen {
 		}
 		add_action( 'init', array( __CLASS__, 'rewrite' ) );
 		add_action( 'template_redirect', array( __CLASS__, 'render' ), 4 );
+		add_filter( 'lld_members_stage3_api_rows', array( __CLASS__, 'favourite_names' ), 20, 3 );
+	}
+
+	/**
+	 * A favourite is stored as a food's number. The list the page reads carries each food's name too, so a
+	 * favourite that was never logged still shows its name after a reload. Nothing is stored.
+	 *
+	 * @param mixed  $rows      Interface rows.
+	 * @param string $type      Interface type name.
+	 * @param int    $member_id Member number.
+	 * @return mixed
+	 */
+	public static function favourite_names( $rows, $type, $member_id ) {
+		if ( 'favourites' !== $type || ! is_array( $rows ) || ! $rows || ! class_exists( 'LLD_Members_Food_Log' ) ) {
+			return $rows;
+		}
+		if ( isset( $rows['id'] ) && ! isset( $rows[0] ) ) {
+			$named = LLD_Members_Food_Log::named( (int) $member_id, array( $rows ) );
+			return $named[0];
+		}
+		return LLD_Members_Food_Log::named( (int) $member_id, $rows );
 	}
 
 	/**
@@ -185,14 +206,16 @@ class LLD_Members_Food_Screen {
 		$pregnant     = in_array( 'pregnancy', $situations, true );
 		$premium      = class_exists( 'LLD_Members_Food_Log' ) ? LLD_Members_Food_Log::premium( $member_id ) : false;
 
+		// The interface refuses these to anyone whose access state is not Premium, whether or not the tiers switch
+		// applies, so the page offers them on the same rule: it never draws a form the interface will refuse.
 		$tier_on  = class_exists( 'LLD_Members_Access_Tiers' );
 		$features = array(
 			'barcode'        => $tier_on ? LLD_Members_Access_Tiers::allows( $member_id, 'barcode' ) : $premium,
-			'copy_meals'     => $tier_on ? LLD_Members_Access_Tiers::allows( $member_id, 'copy_meals' ) : $premium,
-			'own_targets'    => $tier_on ? LLD_Members_Access_Tiers::allows( $member_id, 'own_targets' ) : $premium,
-			'custom_foods'   => $tier_on ? LLD_Members_Access_Tiers::allows( $member_id, 'custom_foods' ) : $premium,
-			'recipes'        => $tier_on ? LLD_Members_Access_Tiers::allows( $member_id, 'recipes' ) : $premium,
-			'weekly_summary' => $tier_on ? LLD_Members_Access_Tiers::allows( $member_id, 'weekly_summary' ) : $premium,
+			'copy_meals'     => $premium && ( ! $tier_on || LLD_Members_Access_Tiers::allows( $member_id, 'copy_meals' ) ),
+			'own_targets'    => $premium && ( ! $tier_on || LLD_Members_Access_Tiers::allows( $member_id, 'own_targets' ) ),
+			'custom_foods'   => $premium && ( ! $tier_on || LLD_Members_Access_Tiers::allows( $member_id, 'custom_foods' ) ),
+			'recipes'        => $premium && ( ! $tier_on || LLD_Members_Access_Tiers::allows( $member_id, 'recipes' ) ),
+			'weekly_summary' => $premium && ( ! $tier_on || LLD_Members_Access_Tiers::allows( $member_id, 'weekly_summary' ) ),
 		);
 
 		$day = class_exists( 'LLD_Members_Food_Log' )
@@ -249,7 +272,7 @@ class LLD_Members_Food_Screen {
 							<?php
 							echo $ed_mode
 								? esc_html( LLD_Members_Stage3_Safety::MESSAGES['ed.food-tracker.calorie-total'] )
-								: 'Log what you eat and drink across four meals each day.';
+								: 'Log what you eat and drink, meal by meal.';
 							?>
 						</p>
 					</div>
@@ -583,7 +606,7 @@ class LLD_Members_Food_Screen {
 								<div class="lld-portion-controls">
 									<label class="lld-food-field">
 										<span>Amount (g)</span>
-										<input type="number" min="0.1" max="5000" step="0.5" value="100" data-lld-portion-grams />
+										<input type="number" min="0.1" max="5000" step="0.1" value="100" data-lld-portion-grams />
 									</label>
 									<div class="lld-portion-preview" data-lld-portion-preview></div>
 								</div>
@@ -627,7 +650,7 @@ class LLD_Members_Food_Screen {
 									<?php if ( ! $ed_mode ) : ?>
 										<label class="lld-food-field">
 											<span>Serving size (g)</span>
-											<input type="number" name="portion_g" min="0.1" max="5000" step="0.5" value="100" required />
+											<input type="number" name="portion_g" min="0.1" max="5000" step="0.1" value="100" required />
 										</label>
 										<label class="lld-food-field">
 											<span>Calories per serving (kcal)</span>
@@ -635,19 +658,19 @@ class LLD_Members_Food_Screen {
 										</label>
 										<label class="lld-food-field">
 											<span>Protein (g)</span>
-											<input type="number" name="protein_g" min="0" max="1000" step="0.5" />
+											<input type="number" name="protein_g" min="0" max="1000" step="0.1" />
 										</label>
 										<label class="lld-food-field">
 											<span>Carbs (g)</span>
-											<input type="number" name="carb_g" min="0" max="2000" step="0.5" />
+											<input type="number" name="carb_g" min="0" max="2000" step="0.1" />
 										</label>
 										<label class="lld-food-field">
 											<span>Fat (g)</span>
-											<input type="number" name="fat_g" min="0" max="1000" step="0.5" />
+											<input type="number" name="fat_g" min="0" max="1000" step="0.1" />
 										</label>
 										<label class="lld-food-field">
 											<span>Fibre (g)</span>
-											<input type="number" name="fibre_g" min="0" max="300" step="0.5" />
+											<input type="number" name="fibre_g" min="0" max="300" step="0.1" />
 										</label>
 									<?php endif; ?>
 								</div>

@@ -619,6 +619,12 @@
 					setStatus(errMsg(res, 'Could not load that day.'), true);
 					return;
 				}
+				// The safety state changed while the page was open (the diary note is the eating-disorder sentence, sent
+				// only for that state): nothing drawn for the old state may stay, so the server draws the page again.
+				if (!res.data.locked && !!res.data.note !== state.edMode) {
+					window.location.assign(window.location.pathname + '?date=' + encodeURIComponent(date));
+					return;
+				}
 				state.day = res.data;
 				syncSafety(res.data);
 				renderSummary(res.data);
@@ -671,12 +677,12 @@
 				};
 				var html = '<div class="lld-week-stats">';
 				if (given(w, 'logged_days')) {
-					html += '<div class="lld-macro-tile"><span class="lld-macro-label">Days logged</span><strong class="lld-macro-val">' + esc(Number(w.logged_days)) + ' of 7</strong></div>';
+					html += '<div class="lld-macro-tile"><span class="lld-macro-label">Days logged</span> <strong class="lld-macro-val">' + esc(Number(w.logged_days)) + ' of 7</strong></div>';
 				}
 				// Averages and days on target are numbers about calories: shown only when the interface returned the averages.
 				if (given(avg, 'kcal')) {
 					if (given(w, 'days_on_target')) {
-						html += '<div class="lld-macro-tile"><span class="lld-macro-label">Days on target</span><strong class="lld-macro-val">' + esc(Number(w.days_on_target)) + '</strong></div>';
+						html += '<div class="lld-macro-tile"><span class="lld-macro-label">Days on target</span> <strong class="lld-macro-val">' + esc(Number(w.days_on_target)) + '</strong></div>';
 					}
 					var avgParts = [];
 					[
@@ -689,7 +695,7 @@
 							avgParts.push(pair[0] + ' ' + fmtNum(avg[pair[1]], 1) + ' g');
 						}
 					});
-					html += '<div class="lld-macro-tile"><span class="lld-macro-label">Average calories</span><strong class="lld-macro-val">' + fmtNum(avg.kcal) + ' kcal</strong>' + (avgParts.length ? '<span class="lld-macro-sub">' + esc(avgParts.join(' · ')) + '</span>' : '') + '</div>';
+					html += '<div class="lld-macro-tile"><span class="lld-macro-label">Average calories</span> <strong class="lld-macro-val">' + fmtNum(avg.kcal) + ' kcal</strong>' + (avgParts.length ? ' <span class="lld-macro-sub">' + esc(avgParts.join(' · ')) + '</span>' : '') + '</div>';
 				}
 				html += '</div>';
 				if (w.tip) {
@@ -736,7 +742,7 @@
 					var kind = fav.food_kind || 'food';
 					var id = Number(fav.food_id || 0);
 					var cat = state.catalog[favKey(kind, id)];
-					var title = cat && cat.name ? cat.name : 'Saved ' + (kind === 'recipe' ? 'recipe' : kind === 'custom' ? 'custom food' : 'food') + ' #' + id;
+					var title = cat && cat.name ? cat.name : fav.name ? String(fav.name) : 'Saved ' + (kind === 'recipe' ? 'recipe' : kind === 'custom' ? 'custom food' : 'food');
 					var meta = '';
 					if (!state.edMode && cat && cat.grams) {
 						meta = kind === 'recipe' ? Number(Number(cat.grams).toFixed(1)) + (Number(cat.grams) === 1 ? ' serving' : ' servings') : Number(Number(cat.grams).toFixed(1)) + ' g';
@@ -1545,7 +1551,7 @@
 					'</label>' +
 					'<input id="' +
 					esc(inpId) +
-					'" type="number" step="0.5" min="0.1" max="5000" value="' +
+					'" type="number" step="0.1" min="0.1" max="5000" value="' +
 					esc(curG) +
 					'" required />' +
 					'<button type="submit" class="lld-pill-btn lld-btn-sm">Save</button>' +
