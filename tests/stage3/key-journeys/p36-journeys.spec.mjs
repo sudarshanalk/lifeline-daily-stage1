@@ -15,9 +15,10 @@ test.beforeAll(async ({ request }) => { switches = await switchesOn(request, LAU
 test.afterAll(async ({ request }) => { await switchesBack(request, switches); });
 
 function scenario(id, assertion, run) {
-  test.describe(id, () => test(assertion, async (args) => {
+  // Playwright hands a test its fixtures only when they are named in a destructured first argument.
+  test.describe(id, () => test(assertion, async ({ page }) => {
     test.info().annotations.push({ type: 'scenario', description: id });
-    await run(args);
+    await run({ page });
   }));
 }
 async function today(page) { await fresh(page); await activityGoal(page); await page.goto('/members/home/'); }
