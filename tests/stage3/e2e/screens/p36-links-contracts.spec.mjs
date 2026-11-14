@@ -20,6 +20,8 @@ import { fileURLToPath } from 'node:url';
 const screen = (file) => existsSync(fileURLToPath(new URL('../../../../site/public_html/wp-content/plugins/lld-members/includes/stage3/screens/' + file, import.meta.url)));
 const built = { food: screen('class-food-screen.php'), readings: screen('class-readings-screen.php') };
 const LINKS = [['Log one', '/members/readings/', '/members/check-in/', 'readings'], ['Log a meal', '/members/food/', '/members/diary/', 'food']];
+// "Log a meal" is the action line of Quick log's Meals tile (the link's full name is "Meals Log a meal").
+const linkFor = (page, name) => name === 'Log a meal' ? page.locator('main a[data-lld-tile="meals"]').filter({ hasText: name }) : page.locator('main').getByRole('link', { name, exact: true });
 const end = (path) => new RegExp(path.replace(/\//g, '\/') + '$');
 async function activityGoalMember(page) {
   const m=await make(page,{health_consent:true,consents:['terms','health']});await page.goto('/members/health/');
@@ -27,7 +29,7 @@ async function activityGoalMember(page) {
   await call(page,'goals','POST',{role:'main',goal_type:'activity',measure:'activity_minutes',unit:'minutes',start_value:0,target_value:150,status:'active'});await page.goto('/members/home/');
 }
 async function follow(page, name, path) {
-  const link=page.locator('main').getByRole('link',{name,exact:true});await expect(link).toHaveAttribute('href',end(path));
+  const link=linkFor(page,name);await expect(link).toHaveAttribute('href',end(path));
   const navigation=page.waitForNavigation();await link.click();const response=await navigation;expect(response.status()).toBe(200);await expect(page).toHaveURL(end(path));
 }
 // Active in every state: a page that is not merged yet keeps its old address, the link opens (never a 404), and More
@@ -35,7 +37,7 @@ async function follow(page, name, path) {
 test('TC-FR3-18-AS-01 Today links open a page: the old addresses until the Food and Log a reading pages are merged',async({page})=>{
   await activityGoalMember(page);
   for(const [name,next,old,key] of LINKS){
-    const href=await page.locator('main').getByRole('link',{name,exact:true}).getAttribute('href');
+    const href=await linkFor(page,name).getAttribute('href');
     // Not merged: the old address only. Merged: the new page, or the old one while the page is off for this member.
     await follow(page,name,built[key]&&end(next).test(href)?next:old);await page.goto('/members/home/');
   }
