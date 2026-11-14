@@ -179,19 +179,21 @@ test('TC-FR3-38-AS-03 the history and trend lists ask for one reading type and a
   expect(load).toContain('resTrend.data.points.slice().sort('); // the chart runs oldest to newest, however the rows are listed
   // A reply for a type or range the member has left is dropped before it reaches the list, the chart or Edit.
   expect(load.match(/if \(stale\(\)\) return;/g)).toHaveLength(2);
-  // ?type=weight is a query value: WordPress would hand it back for $request['type'] in place of the route's own
-  // {type}, and every list answered "Not available." The interface takes the route from the address.
+  // ?type=weight is a query value: WordPress hands it back for $request['type'] before the route's own {type}, and
+  // every list answered "Not available." gate() moves it to its own name first, and query_type() reads it there.
   const api = readFileSync(resolve(plugin, 'includes/stage3/class-api.php'), 'utf8');
-  expect(api.split("$request['type']").length - 1).toBe(2); // only in route_type(): its comment and its fallback
-  expect(api).toContain('$type  = self::route_type( $request );');
+  const gate = api.slice(api.indexOf('private static function gate('), api.indexOf('self::$request = $request;'));
+  expect(gate.indexOf('self::keep_query_type( $request );')).toBeGreaterThan(-1);
+  expect(gate.indexOf('self::keep_query_type( $request );')).toBeLessThan(gate.indexOf("$request['type']"));
   const out = execFileSync('php', ['-r', `define('ABSPATH', '/');
     class WP_REST_Request implements ArrayAccess { public $url = array(); public $query = array();
-      function get_url_params() { return $this->url; } function get_query_params() { return $this->query; }
+      function get_query_params() { return $this->query; } function set_query_params($q) { $this->query = $q; }
       function offsetGet($k): mixed { return $this->query[$k] ?? $this->url[$k] ?? null; } function offsetExists($k): bool { return true; } function offsetSet($k, $v): void {} function offsetUnset($k): void {} }
     require ${p('includes/stage3/class-api.php')};
-    $r = new WP_REST_Request(); $r->url = array('type' => 'readings'); $r->query = array('type' => 'weight');
-    $route = new ReflectionMethod('LLD_Members_Stage3_API', 'route_type'); $route->setAccessible(true);
+    $r = new WP_REST_Request(); $r->url = array('type' => 'readings'); $r->query = array('type' => 'weight', 'from' => '2026-11-06');
+    $keep = new ReflectionMethod('LLD_Members_Stage3_API', 'keep_query_type'); $keep->setAccessible(true);
     $query = new ReflectionMethod('LLD_Members_Stage3_API', 'query_type'); $query->setAccessible(true);
-    echo json_encode(array($route->invoke(null, $r), $query->invoke(null, $r), $r['type']));`], { encoding: 'utf8', timeout: 60000 });
-  expect(JSON.parse(out)).toEqual(['readings', 'weight', 'weight']);
+    $before = $r['type']; $keep->invoke(null, $r); $keep->invoke(null, $r);
+    echo json_encode(array($before, $r['type'], $query->invoke(null, $r), $r->query['from']));`], { encoding: 'utf8', timeout: 60000 });
+  expect(JSON.parse(out)).toEqual(['weight', 'readings', 'weight', '2026-11-06']);
 });

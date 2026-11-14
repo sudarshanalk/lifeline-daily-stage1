@@ -471,7 +471,8 @@ class LLD_Members_Stage3_API {
 	 * @return array{0:int,1:array<string,mixed>}|WP_REST_Response Member number and type, or the refusal.
 	 */
 	private static function gate( $request ) {
-		$type  = self::route_type( $request );
+		self::keep_query_type( $request );
+		$type  = (string) $request['type'];
 		$types = self::types();
 		if ( ! isset( $types[ $type ] ) ) {
 			return self::refuse( 404, 'Not available.' );
@@ -848,7 +849,7 @@ class LLD_Members_Stage3_API {
 				);
 			}
 		}
-		$rows = apply_filters( 'lld_members_stage3_api_rows', $rows, self::route_type( $request ), $member_id ); // the safety matrix strips what the member must not see (FR3-69)
+		$rows = apply_filters( 'lld_members_stage3_api_rows', $rows, (string) $request['type'], $member_id ); // the safety matrix strips what the member must not see (FR3-69)
 		if ( $computed ) {
 			return new WP_REST_Response( $rows, 200 );
 		}
@@ -877,15 +878,20 @@ class LLD_Members_Stage3_API {
 	}
 
 	/**
-	 * The interface type of the route (/me/{type}), from the address itself. Never $request['type']: a query value
-	 * (?type=weight, the reading type on the history and trend lists) comes before the route's own there, so the
-	 * request was answered "Not available." (found on the Log a reading page, P3-36 B2).
+	 * A list may be asked for one reading type (?type=weight, on the history and trend lists). WordPress hands a
+	 * query value back before the route's own {type}, so $request['type'] became "weight" and every such request
+	 * was answered "Not available." (found on the Log a reading page, P3-36 B2). The query value is moved to its
+	 * own name here, first thing in gate(), so $request['type'] is always the route's type; query_type() reads it.
 	 *
 	 * @param WP_REST_Request $request Request.
 	 */
-	private static function route_type( $request ) {
-		$url = $request->get_url_params();
-		return isset( $url['type'] ) && is_scalar( $url['type'] ) ? (string) $url['type'] : (string) $request['type'];
+	private static function keep_query_type( $request ) {
+		$query = $request->get_query_params();
+		if ( is_array( $query ) && array_key_exists( 'type', $query ) ) {
+			$query['lld_reading_type'] = $query['type'];
+			unset( $query['type'] );
+			$request->set_query_params( $query );
+		}
 	}
 
 	/**
@@ -896,7 +902,8 @@ class LLD_Members_Stage3_API {
 	 */
 	private static function query_type( $request ) {
 		$query = $request->get_query_params();
-		return isset( $query['type'] ) && is_scalar( $query['type'] ) ? (string) $query['type'] : '';
+		$type  = isset( $query['lld_reading_type'] ) ? $query['lld_reading_type'] : ( isset( $query['type'] ) ? $query['type'] : '' );
+		return is_scalar( $type ) ? (string) $type : '';
 	}
 
 	/**
@@ -915,7 +922,7 @@ class LLD_Members_Stage3_API {
 		if ( ! $row ) {
 			return self::refuse( 404, 'Not found.' );
 		}
-		$row = apply_filters( 'lld_members_stage3_api_rows', $row, self::route_type( $request ), $member_id );
+		$row = apply_filters( 'lld_members_stage3_api_rows', $row, (string) $request['type'], $member_id );
 		return new WP_REST_Response( self::present( $row ), 200 );
 	}
 
