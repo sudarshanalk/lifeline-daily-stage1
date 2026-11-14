@@ -126,7 +126,13 @@ test.describe.serial('members interface', () => {
     for (const file of temp ? [`${temp}/php-server.log`, `${temp}/wp/wp-content/debug.log`] : []) {
       if (!existsSync(file)) continue;
       const text = readFileSync(file, 'utf8');
-      for (const needle of needles) expect(text, `${file} mentions ${needle}`).not.toContain(needle);
+      // A value counts only as a whole value: not as digits inside a longer number, such as the wp-cron timestamp
+      // in a request line (doing_wp_cron=1794674797.31...), which once matched 97.3 by chance.
+      for (const needle of needles) {
+        const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const whole = new RegExp(`(?<![\\d.])${escaped}(?!\\d)`);
+        expect(text, `${file} mentions ${needle}`).not.toMatch(whole);
+      }
     }
   });
 });
