@@ -288,7 +288,7 @@ class LLD_Members_Personal {
 		// out for a member the matrix hides them from, as tiles and as Stage 2 lines alike.
 		$no_figures = self::body_figures_hidden( $member_id );
 		$main .= $hub_units ? self::measure_tiles( $profile, $no_figures ) : self::stored_lines( $profile, $no_figures );
-		$main .= self::calculator_lines( $member_id );
+		$main .= self::calculator_lines( $member_id, $no_figures );
 		$main .= '<form method="post" class="lld-form">';
 		$main .= wp_nonce_field( 'lld_health', 'lld_health_nonce', true, false );
 		if ( $warnings ) {
@@ -405,7 +405,7 @@ class LLD_Members_Personal {
 	 *
 	 * @param int $member_id Member number.
 	 */
-	private static function calculator_lines( $member_id ) {
+	private static function calculator_lines( $member_id, $no_figures = false ) {
 		global $wpdb;
 		$rows = $wpdb->get_results( $wpdb->prepare( 'SELECT calculator, headline, unit, band FROM ' . LLD_Members_Schema::table( 'calculator_result' ) . ' WHERE member_id = %d ORDER BY id DESC', $member_id ) );
 		if ( ! $rows ) {
@@ -416,10 +416,11 @@ class LLD_Members_Personal {
 			'diabetes' => 'Diabetes Risk Check',
 		);
 		$seen  = array();
-		$html  = '<h2>Calculator results</h2>';
+		$html  = '';
 		foreach ( $rows as $result ) {
 			$which = (string) $result->calculator;
-			if ( isset( $seen[ $which ] ) ) {
+			// A saved Healthy Weight Check result's headline is a BMI: left out with the figures (safety matrix).
+			if ( isset( $seen[ $which ] ) || ( $no_figures && 'healthy-weight' === $which ) ) {
 				continue;
 			}
 			$seen[ $which ] = true;
@@ -427,7 +428,7 @@ class LLD_Members_Personal {
 			$name           = isset( $names[ $which ] ) ? $names[ $which ] : ucfirst( $which );
 			$html          .= '<p data-lld-calculator="' . esc_attr( $which ) . '">' . esc_html( $name . ': ' . (string) $result->headline . $unit . ', ' . (string) $result->band ) . '</p>';
 		}
-		return $html;
+		return '' === $html ? '' : '<h2>Calculator results</h2>' . $html;
 	}
 
 	/**

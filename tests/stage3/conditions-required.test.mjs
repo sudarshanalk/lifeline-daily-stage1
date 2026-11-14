@@ -53,7 +53,7 @@ class FakeDb {
     $this->profile[$m] = $row;
   }
   function get_row($p) { [$q, $m] = $p; if (strpos($q, 'health_profile') !== false) { return $this->profile[$m] ?? null; } return strpos($q, 'wp_lld_member ') !== false || strpos($q, 'wp_lld_member WHERE') !== false ? (object) ['units' => $GLOBALS['units'] ?? 'metric'] : null; }
-  function get_results() { return []; } function get_var() { return null; } function update() { return 1; }
+  function get_results() { return $GLOBALS['calc'] ?? []; } function get_var() { return null; } function update() { return 1; }
 }
 $GLOBALS['wpdb'] = new FakeDb();
 require ${toPhpPath(inc('stage3/engine/class-rule-catalogue.php'))};
@@ -396,6 +396,8 @@ test('P3-36 safety matrix: BMI and waist-to-height are not shown on the Health p
     $profile = ['height_cm' => 170, 'weight_kg' => 70, 'waist_cm' => 85, 'conditions_answered' => 'some', 'conditions' => '["eating-disorder"]'];
     $GLOBALS['wpdb']->store(7, $profile);
     LLD_Members_Safety::$s = ['eating-disorder'];
+    // A Healthy Weight Check result saved earlier: its headline is a BMI. Another calculator's result stays.
+    $GLOBALS['calc'] = [(object) ['calculator' => 'healthy-weight', 'headline' => '24.2', 'unit' => 'kg/m²', 'band' => 'Healthy weight'], (object) ['calculator' => 'protein', 'headline' => '56', 'unit' => 'g a day', 'band' => 'result']];
     $out['ed_hub'] = health_get();
     $out['ed_hidden'] = LLD_Members_Personal::body_figures_hidden(7);
     // Hub off but the matrix live (health_logging on): the Stage 2 lines leave the figures out too.
@@ -410,6 +412,10 @@ test('P3-36 safety matrix: BMI and waist-to-height are not shown on the Health p
     $GLOBALS['wpdb']->store(7, ['conditions' => '["high-cholesterol"]']);
     LLD_Members_Safety::$s = ['cholesterol'];
     $out['other'] = health_get();
+    // Only the Healthy Weight Check result was saved: no "Calculator results" heading over nothing.
+    LLD_Members_Safety::$s = ['eating-disorder'];
+    $GLOBALS['calc'] = [$GLOBALS['calc'][0]];
+    $out['ed_only_hw'] = health_get();
     LLD_Members_Safety::$s = ['unknown'];
     return $out;
   `);
@@ -422,6 +428,11 @@ test('P3-36 safety matrix: BMI and waist-to-height are not shown on the Health p
   }
   expect(r.ed_matrix_off).toContain('<p>BMI: 24.2</p>');
   expect(r.ed_matrix_off).toContain('<p>Waist-to-height: 0.50</p>');
+  expect(r.ed_hub).toContain('<h2>Calculator results</h2><p data-lld-calculator="protein">');
+  expect(r.ed_hub).not.toContain('data-lld-calculator="healthy-weight"');
+  expect(r.ed_only_hw).not.toContain('Calculator results');
+  expect(r.ed_matrix_off).toContain('data-lld-calculator="healthy-weight"');
+  expect(r.other).toContain('data-lld-calculator="healthy-weight"');
   expect(r.other).toContain('<div class="lld-measure-tile"><span>BMI</span><strong>24.2</strong></div>');
   expect(r.other).toContain('<div class="lld-measure-tile"><span>Waist-to-height</span><strong>0.50</strong></div>');
   // The rule comes from the signed matrix row, not a copy.
