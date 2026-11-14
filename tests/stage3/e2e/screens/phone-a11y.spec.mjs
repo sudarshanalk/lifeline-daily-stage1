@@ -133,7 +133,19 @@ async function checkTapTargets(page, contextSelector = null) {
       'button, a[href], input:not([type="hidden"]), select, textarea, [role="button"], [role="link"], [role="tab"], summary'
     ));
 
+    // The site's v2 template (lld-tools v2-header.php / v2-footer.php, Tailwind classes only) wraps member pages; its
+    // controls are site template, checked under P3-91 like the theme on /health-tools/. Anything inside #lld-main, or
+    // carrying an lld- class itself or on an ancestor (member chip, member bar, skip link, Sign out), is still checked.
+    const isSiteTemplate = (el) => {
+      if (el.closest('#lld-main')) return false;
+      for (let n = el; n && n.nodeType === 1; n = n.parentElement) {
+        if (Array.from(n.classList || []).some((c) => c.startsWith('lld-'))) return false;
+      }
+      return true;
+    };
+
     for (const el of elements) {
+      if (!sel && isSiteTemplate(el)) continue;
       const rect = el.getBoundingClientRect();
       const style = window.getComputedStyle(el);
       if (rect.width === 0 || rect.height === 0 || style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || el.hasAttribute('hidden') || el.closest('[hidden]')) {
