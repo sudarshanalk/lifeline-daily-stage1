@@ -21,6 +21,7 @@ async function doneDay(page, day) {
   await page.goto('/members/track/?day=' + day); await submitAndWait(page, page.getByRole('button', { name:'Done', exact:true }).first());
 }
 test('TC-FR3-112-AS-01', async ({ page }) => {
+  test.slow(); // seven days, each a clock change, a page and a form post
   await prepareTrack(page); for (let d=1;d<=7;d++) await doneDay(page,d); await clock(page,'2026-10-08 12:00:00');
   await page.goto('/members/track/'); const week=page.locator('.lld-week').first(); await expect(week).toContainText('Completed');
   await expect(week.locator('.lld-week-num')).toHaveText('✓'); await expect(week).toContainText('7 of 7 days done');

@@ -7,11 +7,13 @@ import { asOwner, submitAndWait } from '../../stage2/e2e/helpers.mjs';
 import { fresh, api, DAY, A } from './p36-fixtures.mjs';
 export { password, emailFor, signIn, createMember, asOwner, submitAndWait };
 
-export async function mail(email, contains = '') {
+// The newest caught email to this address that holds `contains`. `after` (a time in ms, taken just before the step
+// that sends it) leaves out an older email of the same kind, so a journey never reads the previous one's link or code.
+export async function mail(email, contains = '', after = 0) {
   const host = process.env.MAILPIT_URL || 'http://127.0.0.1:8025'; let body;
   await expect.poll(async () => {
     const list = await fetch(`${host}/api/v1/messages?limit=1000`).then(r => r.json());
-    const messages = (list.messages || []).filter(m => JSON.stringify(m.To || []).includes(email))
+    const messages = (list.messages || []).filter(m => JSON.stringify(m.To || []).includes(email) && new Date(m.Created).getTime() >= after - 2000)
       .sort((a, b) => new Date(b.Created) - new Date(a.Created));
     for (const m of messages) {
       const candidate = await fetch(`${host}/api/v1/message/${m.ID || m.Id || m.id}`).then(r => r.json());
@@ -58,8 +60,9 @@ export async function weightGoal(page, options = {}) {
 }
 export async function resetPassword(page, email) {
   await logout(page); await page.goto('/members/reset/'); await page.locator('#lld_email').fill(email);
+  const sent = Date.now();
   await submitAndWait(page, page.getByRole('button', { name: 'Send link', exact: true }));
-  const body = await mail(email, 'password');
+  const body = await mail(email, 'password', sent);
   const link = String(body.Text || body.HTML).match(/https?:\/\/[^\s<]+\/members\/reset\/\?token=[^\s<]+/)?.[0];
   expect(link).toBeTruthy(); await page.goto(link.replace(/[).,>]+$/, ''));
   const next = `${password}-changed`; await page.locator('#lld_password').fill(next);

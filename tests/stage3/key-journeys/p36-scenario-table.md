@@ -1,6 +1,6 @@
 # P3-36: 56 journey scenarios
 
-Every row runs as its own test in p36-journeys.spec.mjs (112 discovered cases across Chromium/WebKit). Historical statuses below are source-report observations, not current test results. No scenarios are skipped or marked expected-fail; unmerged-feature failures stay active under the 12:20 lead decision. Primary assertion IDs identify the behavior exercised, not a claim that the journey smoke replaces every granular security or clinical acceptance criterion. Google/Stripe cases use existing CI stand-ins; real-provider acceptance remains external.
+Every row runs as its own test in `p36-journeys.spec.mjs` (56 tests, in Chromium and WebKit). The last column is what the journey tests report of 13 November 2026 found by hand, before the P3-36 fixes: it is history, not a test result. Each scenario is named after the main criterion it exercises; a journey is a smoke test of that step and does not replace the detailed tests of the criterion. Google sign-in and card payment use the CI stand-ins (the provider test route, and a signed Stripe notice); a real Google account and a real card are not tested here. The spec turns on the switches staging has on and CI leaves off (`terms_first`, `prices_launch`, `access_tiers`, `membership_card`, `pause`) and puts them back afterwards.
 
 | Scenario | Source step | Primary assertion | Historical result |
 |---|---|---|---|
@@ -61,4 +61,4 @@ Every row runs as its own test in p36-journeys.spec.mjs (112 discovered cases ac
 | UC12-S4 | Switch a calculator off | TC-FR3-89-AS-01 | Pass |
 | UC12-S5 | Switch it back on | TC-FR3-89-AS-03 | Pass |
 
-Dependencies: B1/B2/B3 screen journeys, A1 Premium status, A6 agreements and D3/D4 control compatibility remain active contracts until those implementations land. CI adds Stage 3 shards (2 Chromium, 3 WebKit) to accommodate this suite; Stage 2 jobs and assertions are unchanged.
+The features these journeys depend on (Food, Log a reading, Today's links, the Premium status, terms before the member area, the tap controls) are all merged. The suite runs inside the three existing Stage 3 browser jobs.

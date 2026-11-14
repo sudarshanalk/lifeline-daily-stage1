@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { createMember, signIn, password, fixture, startTrack } from '../../key-journeys/helpers.mjs';
 import { asOwner, restNonce, submitAndWait } from '../../../stage2/e2e/helpers.mjs';
+import { switchesOn, switchesBack } from '../../key-journeys/p36-switches.mjs';
 const A = 'p3-api-a@test.lifelinedaily.invalid';
 async function make(page, fields = {}) {
   const reset = await page.request.post('/wp-json/lld-members/v1/test/reset', { data: { email: A } }); expect(reset.ok()).toBeTruthy();
@@ -12,6 +13,11 @@ async function call(page, path, method = 'GET', data) {
   expect(response.ok(), await response.text()).toBeTruthy(); return response.json();
 }
 async function clock(page, utc) { const r = await page.request.post('/wp-json/lld-members/v1/test/clock', { data: { email: A, utc } }); expect(r.ok()).toBeTruthy(); }
+// FR3-113 is behind the terms_first switch (#262). Staging has it on; CI (tests/ci/stage2-wp.sh) leaves it off, so this
+// spec turns it on through the test route and puts it back as it found it.
+let switches;
+test.beforeAll(async ({ request }) => { switches = await switchesOn(request, ['terms_first']); });
+test.afterAll(async ({ request }) => { await switchesBack(request, switches); });
 test('TC-FR3-113-AS-01', async ({ page }) => {
   await make(page, { consents:[] }); await expect(page).toHaveURL(/\/members\/agreements\//);
 });

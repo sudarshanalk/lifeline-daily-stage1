@@ -12,9 +12,12 @@ async function call(page, path, method = 'GET', data) {
   expect(response.ok(), await response.text()).toBeTruthy(); return response.json();
 }
 async function clock(page, utc) { const r = await page.request.post('/wp-json/lld-members/v1/test/clock', { data: { email: A, utc } }); expect(r.ok()).toBeTruthy(); }
+// The "Saved" line of a saved form (it also holds an Undo button, so its text is not "Saved" alone).
+const saved = (page) => page.locator('main [role="status"]').filter({ hasText: 'Saved' });
 test('TC-NFR3-12-AS-02',async({page})=>{
-  await make(page,{health_consent:true,consents:['terms','health']});await page.setViewportSize({width:360,height:800});await page.goto('/members/diary/');
-  const more=page.getByRole('button',{name:'One more glass of water',exact:true});await expect(more).toBeVisible();await more.click();
+  // The simple diary can be written by a Premium member; for a Free member it is read-only and has no controls.
+  await make(page,{health_consent:true,consents:['terms','health'],access_state:'Premium'});await page.setViewportSize({width:360,height:800});await page.goto('/members/diary/');
+  const more=page.getByRole('button',{name:'Add a glass of water',exact:true});await expect(more).toBeVisible();await more.click();
   const hunger=page.getByRole('button',{name:'Hunger 3 of 5',exact:true});await hunger.click();await expect(hunger).toHaveAttribute('aria-pressed','true');
   const energy=page.getByRole('button',{name:'Energy 4 of 5',exact:true});await energy.click();await expect(energy).toHaveAttribute('aria-pressed','true');
   for(const button of [more,hunger,energy]){const b=await button.boundingBox();expect(b.width).toBeGreaterThanOrEqual(44);expect(b.height).toBeGreaterThanOrEqual(44);}
@@ -24,7 +27,7 @@ test('TC-NFR3-12-AS-02',async({page})=>{
 test('TC-FR2-25-AS-01',async({page})=>{
   const m=await make(page,{health_consent:true,consents:['terms','health']});await page.goto('/members/health/');
   await page.getByRole('checkbox',{name:'None of these',exact:true}).check();
-  await submitAndWait(page,page.getByRole('button',{name:'Save',exact:true}));await expect(page.getByText('Saved',{exact:true})).toBeVisible();
+  await submitAndWait(page,page.getByRole('button',{name:'Save',exact:true}));await expect(saved(page)).toBeVisible();
   await page.goto('/members/health/');await expect(page.locator('#lld_height')).toHaveValue('');await expect(page.locator('#lld_weight')).toHaveValue('');
   const response=await page.request.post('/wp-json/lld-members/v1/members/'+m.member_id+'/health',{headers:{'X-WP-Nonce':await restNonce(page)},data:{kind:'profile',confirmed:true,sex:'female',height_cm:175,weight_kg:90,activity_level:'some',conditions_answered:'none'}});expect(response.ok()).toBeTruthy();
   await page.reload();expect(Number(await page.locator('#lld_height').inputValue())).toBe(175);expect(Number(await page.locator('#lld_weight').inputValue())).toBe(90);

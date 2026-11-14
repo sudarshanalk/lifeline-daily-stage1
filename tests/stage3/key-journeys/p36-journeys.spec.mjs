@@ -1,9 +1,18 @@
-// The 56 source scenarios. Active contracts remain red until their named fixing packages land (lead, 14 Nov 12:20).
+// The 56 member journeys of the journey tests report (P3-36 T1), one test per scenario (p36-scenario-table.md).
+// They run the site as it launches: the switches staging has on and CI leaves off are turned on for this spec and
+// put back afterwards (p36-switches.mjs).
 import { test, expect } from '@playwright/test';
 import { fresh, api, rows, custom, logFood, reading, openFood, DAY, A } from './p36-fixtures.mjs';
 import { fixture, startTrack } from './helpers.mjs';
 import { register, confirm, mail, accept, logout, weightGoal, activityGoal, resetPassword,
   grant, downloadData, deleteAccount, pay, notice, password, signIn, createMember, asOwner, submitAndWait } from './p36-journey-support.mjs';
+
+import { switchesOn, switchesBack } from './p36-switches.mjs';
+
+const LAUNCH = ['terms_first', 'prices_launch', 'access_tiers', 'membership_card', 'pause'];
+let switches;
+test.beforeAll(async ({ request }) => { switches = await switchesOn(request, LAUNCH); });
+test.afterAll(async ({ request }) => { await switchesBack(request, switches); });
 
 function scenario(id, assertion, run) {
   test.describe(id, () => test(assertion, async (args) => {
@@ -45,6 +54,7 @@ scenario('UC2-S5', 'TC-FR2-03-AS-01', async ({ page }) => {
   await expect(page).toHaveURL(/\/members\/(?:goals?|health)\//);
 });
 scenario('UC2-S6', 'TC-FR3-113-AS-01', async ({ page }) => {
+  const reset = await page.request.post('/wp-json/lld-members/v1/test/reset', { data: { email: 'p36-unagreed@test.lifelinedaily.invalid' } }); expect(reset.ok()).toBeTruthy();
   await createMember(page.request, { email: 'p36-unagreed@test.lifelinedaily.invalid', password, first_name: 'Synthetic', consents: [] });
   await signIn(page, 'p36-unagreed@test.lifelinedaily.invalid', password);
   await expect(page).toHaveURL(/\/members\/agreements\//);
@@ -55,7 +65,8 @@ scenario('UC3-S1', 'TC-FR3-04-AS-04', async ({ page }) => {
 });
 scenario('UC3-S2', 'TC-FR3-07-AS-02', async ({ page }) => {
   await fresh(page); await page.goto('/members/more/');
-  await page.locator('main').getByRole('button', { name: 'Sign out', exact: true }).click();
+  // Wait for the sign-out post to finish: opening the next page at once can cancel it (WebKit).
+  await submitAndWait(page, page.locator('main').getByRole('button', { name: 'Sign out', exact: true }));
   await page.goto('/members/settings/'); await expect(page).toHaveURL(/\/members\/sign-in\//);
 });
 scenario('UC3-S3', 'TC-FR2-01-AS-03', async ({ page }) => {
@@ -69,8 +80,9 @@ scenario('UC3-S4', 'TC-FR3-04-AS-01', async ({ page }) => {
   await page.request.post('/wp-json/lld-members/v1/test/reset', { data: { email } });
   await createMember(page.request, { email, password, first_name: 'Synthetic', consents: ['terms'] });
   await logout(page); await page.goto('/members/sign-in/?code=1'); await page.locator('#lld_email').fill(email);
+  const sent = Date.now();
   await page.getByRole('button', { name: 'Email me a code', exact: true }).click();
-  const message = await mail(email, 'sign-in code'); const code = String(message.Text).match(/\b\d{6}\b/)?.[0];
+  const message = await mail(email, 'sign-in code', sent); const code = String(message.Text).match(/\b\d{6}\b/)?.[0];
   expect(code).toBeTruthy(); await page.locator('#lld_code').fill(code);
   await submitAndWait(page, page.getByRole('button', { name: 'Continue', exact: true }));
   await page.goto('/members/settings/'); await expect(page.locator('.lld-stage3-account-hub')).toBeVisible();
@@ -106,7 +118,8 @@ scenario('UC4-S1', 'TC-FR3-69-AS-06', async ({ page }) => {
   await page.locator('#lld_height').fill('175'); await page.locator('#lld_weight').fill('90');
   await page.locator('#lld_confirm').check(); await page.getByRole('checkbox', { name: 'None of these', exact: true }).check();
   await submitAndWait(page, page.getByRole('button', { name: 'Save', exact: true }));
-  await expect(page.getByText('Saved', { exact: true })).toBeVisible();
+  // The "Saved" line also holds an Undo button, so its text is not "Saved" alone.
+  await expect(page.locator('main [role="status"]').filter({ hasText: 'Saved' })).toBeVisible();
 });
 scenario('UC4-S2', 'TC-FR3-09-AS-08', async ({ page }) => {
   await fresh(page, { profile: false }); await page.goto('/members/goal/');
@@ -134,7 +147,9 @@ scenario('UC5-S2', 'TC-FR3-43-AS-01', async ({ page }) => {
 scenario('UC5-S3', 'TC-FR3-18-AS-01', async ({ page }) => {
   await today(page);
   for (const [name, path] of [['Log one', '/members/readings/'], ['Log a meal', '/members/food/']]) {
-    const link = page.locator('main').getByRole('link', { name, exact: true }); await expect(link).toHaveAttribute('href', new RegExp(`${path}$`));
+    // "Log a meal" is the action line of Quick log's Meals tile (the link's full name is "Meals Log a meal").
+    const link = name === 'Log a meal' ? page.locator('main a[data-lld-tile="meals"]').filter({ hasText: name }) : page.locator('main').getByRole('link', { name, exact: true });
+    await expect(link).toHaveAttribute('href', new RegExp(`${path}$`));
     await link.click(); await expect(page).toHaveURL(new RegExp(`${path}$`)); await page.goto('/members/home/');
   }
 });
@@ -163,7 +178,7 @@ scenario('UC6-S5', 'TC-FR3-18-AS-01', async ({ page }) => {
 });
 scenario('UC7-S1', 'TC-FR2-37-AS-01', async ({ page }) => {
   await fresh(page); await page.goto('/members/diary/');
-  for(let n=0;n<6;n++) await page.getByRole('button',{name:'One more glass of water',exact:true}).click();
+  for(let n=0;n<6;n++) await page.getByRole('button',{name:'Add a glass of water',exact:true}).click();
   await page.getByRole('button',{name:'Hunger 3 of 5',exact:true}).click();
   await page.getByRole('button',{name:'Energy 3 of 5',exact:true}).click();
   await submitAndWait(page,page.getByRole('button',{name:'Save today',exact:true}));
