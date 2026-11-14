@@ -63,7 +63,9 @@ class LLD_Members_Health_Log {
 			$a = LLD_Members_Stage3_Safety::applies( (int) $member_id, 'health_logging' );
 			// Unknown / no consent: the matrix refuses every store (I-12 allows glucose for everyone else).
 			if ( $a['active'] && in_array( 'store', $a['refused'], true ) ) {
-				return array( 'error' => 'Not available.', 'status' => 403 );
+				$refusal = array( 'error' => 'Not available.', 'status' => 403 );
+				// P3-36 A7 (FR3-69 AS-05): name the missing Conditions answer and link to it; still nothing is stored.
+				return method_exists( 'LLD_Members_Stage3_Safety', 'conditions_refusal' ) ? LLD_Members_Stage3_Safety::conditions_refusal( (int) $member_id, $refusal ) : $refusal;
 			}
 		}
 		$merged = array_merge( $existing, $entry );
