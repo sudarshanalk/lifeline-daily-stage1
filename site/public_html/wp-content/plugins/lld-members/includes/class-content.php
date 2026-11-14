@@ -1210,7 +1210,129 @@ class LLD_Members_Content {
 		return array( 'lld_matrix', 'lld_wording', 'lld_rule', 'lld_qa' );
 	}
 
+	/**
+	 * Member Library (P3-36 A8 / FR3-111): search, type chips, one card per title, approved items only.
+	 */
 	private static function catalog() {
+		$member_id = LLD_Members_Access::current_member_id();
+		$cards     = self::library_cards( $member_id );
+		$filters   = self::library_filters();
+		$groups    = array();
+		foreach ( $cards as $card ) {
+			$groups[ $card['type'] ][] = $card;
+		}
+
+		wp_enqueue_style( 'lld-members-forms', plugins_url( 'assets/stage3-forms.css', LLD_MEMBERS_FILE ), array(), LLD_MEMBERS_VERSION );
+		wp_enqueue_script( 'lld-members-forms', plugins_url( 'assets/stage3-forms.js', LLD_MEMBERS_FILE ), array(), LLD_MEMBERS_VERSION, true );
+
+		$main  = '<div class="lld-library-page" data-lld-library>';
+		$main .= '<h1>Library</h1>';
+		$main .= '<div class="lld-library-tools">';
+		$main .= '<p class="lld-field"><label for="lld_library_search">Search</label>';
+		$main .= '<input id="lld_library_search" type="search" data-lld-library-search autocomplete="off"></p>';
+		$main .= '<div class="lld-library-chips" role="group" aria-label="Filter by type">';
+		$main .= '<button type="button" class="lld-chip-filter is-active" data-lld-library-filter="" aria-pressed="true">All</button>';
+		foreach ( $filters as $type => $label ) {
+			$main .= '<button type="button" class="lld-chip-filter" data-lld-library-filter="' . esc_attr( $type ) . '" aria-pressed="false">' . esc_html( $label ) . '</button>';
+		}
+		$main .= '</div></div>';
+
+		$type_labels = self::type_labels();
+		foreach ( $type_labels as $type => $label ) {
+			if ( empty( $groups[ $type ] ) ) {
+				continue;
+			}
+			$main .= '<section class="lld-library-group" data-lld-library-group="' . esc_attr( $type ) . '">';
+			$main .= '<h2>' . esc_html( $label ) . '</h2>';
+			$main .= '<ul class="lld-library-cards">';
+			foreach ( $groups[ $type ] as $card ) {
+				$tracks = $card['tracks'] ? implode( ', ', $card['tracks'] ) : '';
+				$main  .= '<li class="lld-library-card" data-lld-library-card data-lld-type="' . esc_attr( $type ) . '" data-lld-title="' . esc_attr( strtolower( $card['title'] ) ) . '">';
+				$main  .= '<a href="' . esc_url( home_url( '/members/library/' . (int) $card['id'] . '/' ) ) . '">';
+				$main  .= '<span class="lld-library-card-title">' . esc_html( $card['title'] ) . '</span>';
+				$main  .= '<span class="lld-library-card-meta">' . esc_html( $label );
+				if ( '' !== $card['length'] ) {
+					$main .= ' · ' . esc_html( $card['length'] );
+				}
+				$main .= '</span>';
+				if ( '' !== $tracks ) {
+					$main .= '<span class="lld-library-card-tracks">' . esc_html( $tracks ) . '</span>';
+				}
+				$main .= '</a></li>';
+			}
+			$main .= '</ul></section>';
+		}
+		$main .= '</div>';
+
+		ob_start();
+		lld_members_layout(
+			array(
+				'title'     => 'Library',
+				'main'      => $main,
+				'signed_in' => true,
+			)
+		);
+		$page = (string) ob_get_clean();
+		ob_start();
+		wp_print_styles( array( 'lld-members-forms' ) );
+		$styles = (string) ob_get_clean();
+		ob_start();
+		wp_print_scripts( array( 'lld-members-forms' ) );
+		$scripts = (string) ob_get_clean();
+		$head    = strpos( $page, '</head>' );
+		if ( false !== $head ) {
+			$page = substr_replace( $page, $styles, $head, 0 );
+		}
+		$foot = strrpos( $page, '</body>' );
+		if ( false !== $foot ) {
+			$page = substr_replace( $page, $scripts, $foot, 0 );
+		}
+		echo $page; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts.
+	}
+
+	/**
+	 * Filter chip types shown on the Library (FR3-111). Labels match the existing content type names.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function library_filters() {
+		return array(
+			'lld_recipe'    => 'Recipes',
+			'lld_workout'   => 'Workout plans',
+			'lld_challenge' => 'Challenges',
+			'lld_lesson'    => 'Lessons',
+		);
+	}
+
+	/**
+	 * Plural labels for every content type that can appear in the Library.
+	 *
+	 * @return array<string,string>
+	 */
+	private static function type_labels() {
+		return array(
+			'lld_recipe'    => 'Recipes',
+			'lld_workout'   => 'Workout plans',
+			'lld_challenge' => 'Challenges',
+			'lld_lesson'    => 'Lessons',
+			'lld_activity'  => 'Activities',
+			'lld_meal'      => 'Meal plans',
+			'lld_badge'     => 'Badges',
+			'lld_note'      => 'Mindset notes',
+			'lld_question'  => 'Programme questions',
+			'lld_goal'      => 'Goals',
+			'lld_track'     => 'Tracks',
+			'lld_week'      => 'Weeks',
+		);
+	}
+
+	/**
+	 * Approved, safe library cards: one per title within a type, with track names merged.
+	 *
+	 * @param int $member_id Member number.
+	 * @return array<int,array{id:int,type:string,title:string,length:string,tracks:string[]}>
+	 */
+	private static function library_cards( $member_id ) {
 		$posts = get_posts(
 			array(
 				'post_type'      => array_values( array_diff( self::types(), self::not_in_library() ) ),
@@ -1221,8 +1343,7 @@ class LLD_Members_Content {
 				'order'          => 'ASC',
 			)
 		);
-		$member_id = LLD_Members_Access::current_member_id();
-		$main      = '<h1>Library</h1><ul class="lld-library">';
+		$by_key = array();
 		foreach ( $posts as $post ) {
 			$shown = self::shown( $post->ID );
 			if ( ! $shown ) {
@@ -1231,16 +1352,83 @@ class LLD_Members_Content {
 			if ( class_exists( 'LLD_Members_Safety' ) && ! LLD_Members_Safety::allows( $member_id, $shown ) ) {
 				continue;
 			}
-			$main .= '<li><a href="' . esc_url( home_url( '/members/library/' . $post->ID . '/' ) ) . '">' . esc_html( (string) $shown['title'] ) . '</a></li>';
+			$type  = (string) $post->post_type;
+			$title = (string) ( $shown['title'] ?? $post->post_title );
+			$key   = $type . "\0" . strtolower( $title );
+			$track = self::library_track_name( $shown );
+			if ( ! isset( $by_key[ $key ] ) ) {
+				$by_key[ $key ] = array(
+					'id'     => (int) $post->ID,
+					'type'   => $type,
+					'title'  => $title,
+					'length' => self::library_length( $type, $shown ),
+					'tracks' => array(),
+				);
+			}
+			if ( '' !== $track && ! in_array( $track, $by_key[ $key ]['tracks'], true ) ) {
+				$by_key[ $key ]['tracks'][] = $track;
+			}
+			// Prefer an item on the member's active track when several share a title.
+			if ( class_exists( 'LLD_Members_Programme' ) && $track && self::library_on_active_track( $member_id, $shown ) ) {
+				$by_key[ $key ]['id'] = (int) $post->ID;
+			}
 		}
-		$main .= '</ul>';
-		lld_members_layout(
-			array(
-				'title'     => 'Library',
-				'main'      => $main,
-				'signed_in' => true,
-			)
-		);
+		return array_values( $by_key );
+	}
+
+	/**
+	 * @param array<string,mixed> $shown Approved snapshot.
+	 */
+	private static function library_track_name( array $shown ) {
+		$fields = isset( $shown['fields'] ) && is_array( $shown['fields'] ) ? $shown['fields'] : array();
+		$tid    = (int) ( $fields['track_id'] ?? 0 );
+		if ( $tid < 1 ) {
+			return '';
+		}
+		$track = self::shown( $tid );
+		return $track ? (string) $track['title'] : (string) get_the_title( $tid );
+	}
+
+	/**
+	 * @param int                 $member_id Member number.
+	 * @param array<string,mixed> $shown     Approved snapshot.
+	 */
+	private static function library_on_active_track( $member_id, array $shown ) {
+		if ( ! class_exists( 'LLD_Members_Programme' ) ) {
+			return false;
+		}
+		$row = LLD_Members_Programme::active( $member_id );
+		if ( ! $row ) {
+			return false;
+		}
+		$fields = isset( $shown['fields'] ) && is_array( $shown['fields'] ) ? $shown['fields'] : array();
+		$active = LLD_Members_Programme::track_id( (string) $row->track_key );
+		return $active > 0 && (int) ( $fields['track_id'] ?? 0 ) === $active;
+	}
+
+	/**
+	 * Length or size line when the approved item already has one. Never invent a number.
+	 *
+	 * @param string              $type  Post type.
+	 * @param array<string,mixed> $shown Approved snapshot.
+	 */
+	private static function library_length( $type, array $shown ) {
+		$fields = isset( $shown['fields'] ) && is_array( $shown['fields'] ) ? $shown['fields'] : array();
+		if ( 'lld_recipe' === $type && '' !== trim( (string) ( $fields['servings'] ?? '' ) ) ) {
+			$n = (string) $fields['servings'];
+			return $n . ( '1' === $n ? ' serving' : ' servings' );
+		}
+		if ( 'lld_workout' === $type && '' !== trim( (string) ( $fields['level'] ?? '' ) ) ) {
+			return ucfirst( (string) $fields['level'] );
+		}
+		if ( 'lld_lesson' === $type ) {
+			$words = str_word_count( wp_strip_all_tags( (string) ( $shown['body'] ?? '' ) ) );
+			return $words > 0 ? $words . ' words' : '';
+		}
+		if ( 'lld_activity' === $type && '' !== trim( (string) ( $fields['difficulty'] ?? '' ) ) ) {
+			return ucfirst( (string) $fields['difficulty'] );
+		}
+		return '';
 	}
 
 	/**
