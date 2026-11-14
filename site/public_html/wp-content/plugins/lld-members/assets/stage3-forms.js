@@ -1,21 +1,8 @@
-/* Stage 3 form helpers (P3-36 C2 / A8 / D3 / D4). */
+/* Account hub, Library and tap-control helpers (P3-36 C2 / A8 / D3 / D4). */
 (function () {
-	var imperial = document.querySelector("[data-lld-imperial]");
-	var imperialFields = document.querySelector("[data-lld-imperial-fields]");
-	var metricFields = document.querySelector("[data-lld-metric-fields]");
-	if (imperial && imperialFields) {
-		var paintImperial = function () {
-			if (imperial.checked) {
-				imperialFields.removeAttribute("hidden");
-				if (metricFields) metricFields.setAttribute("hidden", "");
-			} else {
-				imperialFields.setAttribute("hidden", "");
-				if (metricFields) metricFields.removeAttribute("hidden");
-			}
-		};
-		imperial.addEventListener("change", paintImperial);
-		paintImperial();
-	}
+	// A page can carry this file twice (enqueued by the hub, and beside a form): bind once.
+	if (window.lldStage3Forms) return;
+	window.lldStage3Forms = true;
 
 	document.querySelectorAll(".lld-file input[type=file]").forEach(function (input) {
 		input.addEventListener("change", function () {
@@ -25,85 +12,83 @@
 		});
 	});
 
-	var library = document.querySelector("[data-lld-library]");
-	if (library) {
-		var search = library.querySelector("[data-lld-library-search]");
+	(function () {
+		var root = document.querySelector("[data-lld-library]");
+		if (!root) return;
+		var search = root.querySelector("[data-lld-library-search]");
+		var status = root.querySelector("[data-lld-library-status]");
 		var filter = "";
-		function paintLibrary() {
+
+		function paint() {
 			var q = (search && search.value ? search.value : "").trim().toLowerCase();
-			library.querySelectorAll("[data-lld-library-card]").forEach(function (card) {
+			root.querySelectorAll("[data-lld-library-card]").forEach(function (card) {
 				var typeOk = !filter || card.getAttribute("data-lld-type") === filter;
 				var title = card.getAttribute("data-lld-title") || "";
-				card.hidden = !(typeOk && (!q || title.indexOf(q) !== -1));
+				var textOk = !q || title.indexOf(q) !== -1;
+				card.hidden = !(typeOk && textOk);
 			});
-			library.querySelectorAll("[data-lld-library-group]").forEach(function (group) {
-				group.hidden = !group.querySelector("[data-lld-library-card]:not([hidden])");
+			root.querySelectorAll("[data-lld-library-group]").forEach(function (group) {
+				var any = group.querySelector("[data-lld-library-card]:not([hidden])");
+				group.hidden = !any;
 			});
+			if (status) {
+				var shown = root.querySelector("[data-lld-library-card]:not([hidden])");
+				var none = shown ? "" : status.getAttribute("data-lld-library-none") || "";
+				if (status.textContent !== none) status.textContent = none;
+			}
 		}
-		library.querySelectorAll("[data-lld-library-filter]").forEach(function (btn) {
+
+		root.querySelectorAll("[data-lld-library-filter]").forEach(function (btn) {
 			btn.addEventListener("click", function () {
 				filter = btn.getAttribute("data-lld-library-filter") || "";
-				library.querySelectorAll("[data-lld-library-filter]").forEach(function (other) {
+				root.querySelectorAll("[data-lld-library-filter]").forEach(function (other) {
 					var on = other === btn;
 					other.classList.toggle("is-active", on);
 					other.setAttribute("aria-pressed", on ? "true" : "false");
 				});
-				paintLibrary();
+				paint();
 			});
 		});
-		if (search) search.addEventListener("input", paintLibrary);
-		paintLibrary();
+		if (search) search.addEventListener("input", paint);
+		paint();
+	})();
+
+	// Tap controls (D3 / D4). The server sends each form field visible and its control hidden; here the control
+	// takes over and the field is kept in the form, out of sight, so the same names and values are posted.
+	function tuck(input) {
+		var holder = input.closest("p");
+		if (holder) {
+			holder.classList.add("lld-visually-hidden");
+			holder.setAttribute("aria-hidden", "true");
+		}
+		input.tabIndex = -1;
+	}
+
+	function field(wrap, attr) {
+		var input = document.getElementById(wrap.getAttribute(attr) || "");
+		if (!input) return null;
+		tuck(input);
+		(wrap.closest(".lld-control") || wrap).hidden = false;
+		return input;
 	}
 
 	document.querySelectorAll("[data-lld-stepper]").forEach(function (wrap) {
-		var input = document.getElementById(wrap.getAttribute("data-lld-stepper") || "");
+		var input = field(wrap, "data-lld-stepper");
 		if (!input) return;
 		var out = wrap.querySelector("[data-lld-stepper-value]");
 		var min = parseInt(input.getAttribute("min") || "0", 10);
 		var max = parseInt(input.getAttribute("max") || "40", 10);
-		function paint(writeEmpty) {
-			var raw = String(input.value || "").trim();
-			if ("" === raw && !writeEmpty) {
-				if (out) out.textContent = "0";
-				return;
-			}
-			var n = parseInt(raw || "0", 10);
-			if (isNaN(n)) n = min;
-			if (n < min) n = min;
-			if (n > max) n = max;
-			input.value = String(n);
-			if (out) out.textContent = String(n);
+		function paint() {
+			var n = parseInt(String(input.value || "").trim(), 10);
+			var text = isNaN(n) ? "0" : String(n);
+			if (out && out.textContent !== text) out.textContent = text;
 		}
 		wrap.querySelectorAll("[data-lld-step]").forEach(function (btn) {
 			btn.addEventListener("click", function () {
-				var delta = parseInt(btn.getAttribute("data-lld-step") || "0", 10);
-				var raw = String(input.value || "").trim();
-				var n = "" === raw ? 0 : parseInt(raw, 10);
+				var n = parseInt(String(input.value || "").trim(), 10);
 				if (isNaN(n)) n = 0;
-				input.value = String(n + delta);
-				paint(true);
-			});
-		});
-		input.addEventListener("input", function () {
-			paint(true);
-		});
-		paint(false);
-	});
-
-	document.querySelectorAll("[data-lld-taps]").forEach(function (wrap) {
-		var input = document.getElementById(wrap.getAttribute("data-lld-taps") || "");
-		if (!input) return;
-		function paint() {
-			var v = String(input.value || "");
-			wrap.querySelectorAll("[data-lld-tap]").forEach(function (btn) {
-				var on = btn.getAttribute("data-lld-tap") === v;
-				btn.classList.toggle("is-active", on);
-				btn.setAttribute("aria-pressed", on ? "true" : "false");
-			});
-		}
-		wrap.querySelectorAll("[data-lld-tap]").forEach(function (btn) {
-			btn.addEventListener("click", function () {
-				input.value = btn.getAttribute("data-lld-tap") || "";
+				n += parseInt(btn.getAttribute("data-lld-step") || "0", 10);
+				input.value = String(Math.min(max, Math.max(min, n)));
 				paint();
 			});
 		});
@@ -111,35 +96,64 @@
 		paint();
 	});
 
-	document.querySelectorAll("[data-lld-pills]").forEach(function (wrap) {
-		var input = document.getElementById(wrap.getAttribute("data-lld-pills") || "");
-		if (!input) return;
-		function paint() {
-			var v = String(input.value || "");
-			wrap.querySelectorAll("[data-lld-pill]").forEach(function (btn) {
-				var on = btn.getAttribute("data-lld-pill") === v;
-				btn.classList.toggle("is-active", on);
-				btn.setAttribute("aria-pressed", on ? "true" : "false");
+	// One choice from a row of buttons. Where the form saves a blank (sex), tapping the chosen one again clears it.
+	function choiceRow(rowAttr, btnAttr, canClear) {
+		document.querySelectorAll("[" + rowAttr + "]").forEach(function (wrap) {
+			var input = field(wrap, rowAttr);
+			if (!input) return;
+			function paint() {
+				var v = String(input.value || "");
+				wrap.querySelectorAll("[" + btnAttr + "]").forEach(function (btn) {
+					var on = btn.getAttribute(btnAttr) === v;
+					btn.classList.toggle("is-active", on);
+					btn.setAttribute("aria-pressed", on ? "true" : "false");
+				});
+			}
+			wrap.querySelectorAll("[" + btnAttr + "]").forEach(function (btn) {
+				btn.addEventListener("click", function () {
+					var v = btn.getAttribute(btnAttr) || "";
+					input.value = canClear && String(input.value || "") === v ? "" : v;
+					paint();
+				});
 			});
-		}
-		wrap.querySelectorAll("[data-lld-pill]").forEach(function (btn) {
-			btn.addEventListener("click", function () {
-				input.value = btn.getAttribute("data-lld-pill") || "";
-				input.dispatchEvent(new Event("change", { bubbles: true }));
-				paint();
-			});
+			input.addEventListener("input", paint);
+			input.addEventListener("change", paint);
+			paint();
 		});
-		input.addEventListener("change", paint);
-		paint();
-	});
+	}
+	choiceRow("data-lld-taps", "data-lld-tap", false);
+	choiceRow("data-lld-pills", "data-lld-pill", true);
 
-	document.querySelectorAll("[data-lld-swap]").forEach(function (form) {
+	// Meal swap: Swap opens the list of alternatives, and a tap on one saves it. If the field already holds a
+	// choice (it was changed directly), Swap saves that choice as before.
+	document.querySelectorAll("form[data-lld-swap]").forEach(function (form) {
 		var select = form.querySelector("select[name='lld_recipe']");
-		if (!select) return;
-		form.querySelectorAll("[data-lld-swap-pick]").forEach(function (btn) {
+		var list = form.querySelector("[data-lld-swap-panel]");
+		var swap = form.querySelector("button[type=submit]");
+		if (!select || !list || !swap) return;
+		tuck(select);
+		var chosen = false;
+		if (!list.id) list.id = "lld_swap_list_" + (form.getAttribute("data-lld-swap") || "");
+		swap.setAttribute("aria-controls", list.id);
+		swap.setAttribute("aria-expanded", "false");
+		select.addEventListener("change", function () {
+			chosen = true;
+		});
+		form.addEventListener("submit", function (event) {
+			if (chosen) return;
+			event.preventDefault();
+			list.hidden = !list.hidden;
+			swap.setAttribute("aria-expanded", list.hidden ? "false" : "true");
+			if (!list.hidden) {
+				var first = list.querySelector("[data-lld-swap-pick]");
+				if (first) first.focus();
+			}
+		});
+		list.querySelectorAll("[data-lld-swap-pick]").forEach(function (btn) {
 			btn.addEventListener("click", function () {
 				select.value = btn.getAttribute("data-lld-swap-pick") || "";
-				if (typeof form.requestSubmit === "function") form.requestSubmit();
+				chosen = true;
+				if (typeof form.requestSubmit === "function") form.requestSubmit(swap);
 				else form.submit();
 			});
 		});
