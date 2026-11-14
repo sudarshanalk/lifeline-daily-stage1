@@ -1,0 +1,182 @@
+{
+  "group": "End-to-end: members A and B, same body, different plans (rule draft section 12)",
+  "tool": "healthy-weight-programme",
+  "fixtures": [
+    {
+      "id": "FX-HWP-MEMBER-01",
+      "purpose": "MEMBER-1: member A, office worker: female, 45, 163 cm, 80 kg, waist 98, standard, goal 60, joining 6 Nov 2026",
+      "inputs": {
+        "source_id": "MEMBER-1",
+        "fn": "member",
+        "args": {
+          "body": {
+            "sex": "F",
+            "age": 45,
+            "height_cm": 163,
+            "weight_kg": 80,
+            "waist_cm": 98
+          },
+          "answers": {
+            "barrier": "evening_snacking",
+            "confidence": 8,
+            "time": "over_30",
+            "work": "days",
+            "sleep": "7_9",
+            "stress": 4,
+            "alcohol_freq": "1_2_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "active"
+          },
+          "goal_kg": 60,
+          "today": "2026-11-06",
+          "snack_time": "after 9 pm",
+          "wake_time": null
+        }
+      },
+      "expected": {
+        "pace.recommended": 0.75,
+        "target.tdee_shown": 2220,
+        "target.target": 1400,
+        "pace.weeks": 27,
+        "pace.date": "2027-05-14",
+        "milestones": [
+          [
+            76.0,
+            6,
+            "2026-12-18"
+          ],
+          [
+            72.0,
+            11,
+            "2027-01-22"
+          ],
+          [
+            66.2,
+            19,
+            "2027-03-19"
+          ],
+          [
+            60,
+            27,
+            "2027-05-14"
+          ]
+        ],
+        "safe03": false,
+        "drinks.weekly_kcal": 290,
+        "drinks.daily_kcal": 40,
+        "drinks.support_card": false,
+        "drinks.alcohol_step": "none",
+        "shortcut": true,
+        "week1_day3": "HW-W1-A6",
+        "week1_version": "stretch",
+        "sleep_weeks": [],
+        "stress_weeks": [],
+        "walk_minutes.1": 30,
+        "strength_from_week": 3,
+        "notes_week1": "default",
+        "reminders": [
+          "08:00",
+          "20:30"
+        ],
+        "block": "evening-night-eating"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-MEMBER-02",
+      "purpose": "MEMBER-2: member B, night-shift nurse (week 1 day 3 fixture corrected 9 Nov 2026, H1): female, 45, 163 cm, 80 kg, waist 98, standard, goal 60, joining 6 Nov 2026",
+      "inputs": {
+        "source_id": "MEMBER-2",
+        "fn": "member",
+        "args": {
+          "body": {
+            "sex": "F",
+            "age": 45,
+            "height_cm": 163,
+            "weight_kg": 80,
+            "waist_cm": 98
+          },
+          "answers": {
+            "barrier": "stress_eating",
+            "confidence": 4,
+            "time": "under_10",
+            "work": "nights",
+            "sleep": "under_6",
+            "stress": 8,
+            "alcohol_freq": "never",
+            "activity_level": "low"
+          },
+          "goal_kg": 60,
+          "today": "2026-11-06",
+          "snack_time": null,
+          "wake_time": "14:00"
+        }
+      },
+      "expected": {
+        "pace.recommended": 0.25,
+        "target.tdee_shown": 1720,
+        "target.target": 1440,
+        "pace.weeks": 80,
+        "pace.date": "2028-05-19",
+        "milestones": [
+          [
+            76.0,
+            16,
+            "2027-02-26"
+          ],
+          [
+            72.0,
+            32,
+            "2027-06-18"
+          ],
+          [
+            66.2,
+            56,
+            "2027-12-03"
+          ],
+          [
+            60,
+            80,
+            "2028-05-19"
+          ]
+        ],
+        "safe03": true,
+        "drinks.line": null,
+        "drinks.alcohol_step": "none",
+        "shortcut": false,
+        "week1_day3": "HW-W1-A6",
+        "week3_day1": "HW-W3-A6",
+        "week1_version": "easier",
+        "sleep_weeks": [
+          1,
+          3,
+          5,
+          7
+        ],
+        "stress_weeks": [
+          2,
+          4,
+          6,
+          8
+        ],
+        "walk_minutes.1": 10,
+        "walk_minutes.4": 10,
+        "notes_week1": {
+          "2": "HW-MN-W8-1",
+          "4": "HW-MN-W1-6"
+        },
+        "reminders": [
+          "14:30"
+        ],
+        "block": "stress-emotional-eating"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    }
+  ]
+}

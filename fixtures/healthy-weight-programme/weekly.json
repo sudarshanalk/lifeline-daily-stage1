@@ -1,0 +1,263 @@
+{
+  "group": "Weekly check-in R-HW-WEEK-01 and plateau R-HW-WEEK-02 (section 9.10)",
+  "tool": "healthy-weight-programme",
+  "fixtures": [
+    {
+      "id": "FX-HWP-HWW01-01",
+      "purpose": "HWW-01a: \"time\": next week every step easier",
+      "inputs": {
+        "source_id": "HWW-01a",
+        "fn": "week_plan",
+        "args": {
+          "week": 4,
+          "answers": {
+            "barrier": "not_sure",
+            "confidence": 6,
+            "time": "10_30",
+            "work": "days",
+            "sleep": "7_9",
+            "stress": 5,
+            "alcohol_freq": "1_2_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "some"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ],
+          "history": {
+            "version": "stretch",
+            "done_pct": 90,
+            "check_in": [
+              "time"
+            ]
+          }
+        }
+      },
+      "expected": {
+        "version": "easier",
+        "version_rule": "R-HW-WEEK-01",
+        "check_in.replies": [
+          "hw.T-HW-WEEK-01a"
+        ]
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWW01-02",
+      "purpose": "HWW-01b: \"illness\": R-ADJ-01 not offered next check-in, no \"Behind\" wording",
+      "inputs": {
+        "source_id": "HWW-01b",
+        "fn": "check_in",
+        "args": {
+          "choices": [
+            "illness"
+          ]
+        }
+      },
+      "expected": {
+        "no_adj_01": true,
+        "no_behind": true,
+        "easier": true
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWW02-01",
+      "purpose": "HWW-02a: 5 weigh-ins 79.0 to 79.4 over 21 days: fires",
+      "inputs": {
+        "source_id": "HWW-02a",
+        "fn": "plateau",
+        "args": {
+          "today": "2026-11-20",
+          "weights": {
+            "2026-11-19": 79.0,
+            "2026-11-15": 79.4,
+            "2026-11-11": 79.2,
+            "2026-11-07": 79.1,
+            "2026-11-03": 79.3
+          },
+          "goal_type": "lose_weight"
+        }
+      },
+      "expected": {
+        "fires": true,
+        "block": "breaking-a-plateau",
+        "note": "HW-MN-W7-4",
+        "calorie_change": null
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWW02-02",
+      "purpose": "HWW-02b: range 0.6 kg: does not",
+      "inputs": {
+        "source_id": "HWW-02b",
+        "fn": "plateau",
+        "args": {
+          "today": "2026-11-20",
+          "weights": {
+            "2026-11-19": 79.0,
+            "2026-11-15": 79.6,
+            "2026-11-11": 79.2,
+            "2026-11-07": 79.1,
+            "2026-11-03": 79.3
+          },
+          "goal_type": "lose_weight"
+        }
+      },
+      "expected": {
+        "fires": false
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWW02-03",
+      "purpose": "HWW-02c: 3 weigh-ins: does not",
+      "inputs": {
+        "source_id": "HWW-02c",
+        "fn": "plateau",
+        "args": {
+          "today": "2026-11-20",
+          "weights": {
+            "2026-11-19": 79.0,
+            "2026-11-15": 79.2,
+            "2026-11-11": 79.1
+          },
+          "goal_type": "lose_weight"
+        }
+      },
+      "expected": {
+        "fires": false
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWW02-04",
+      "purpose": "HWW-02d: FR3-108 AS-01: 80.1, 80.0, 80.2, 80.1 within 21 days: plateau message and block offer",
+      "inputs": {
+        "source_id": "HWW-02d",
+        "fn": "plateau",
+        "args": {
+          "today": "2026-11-20",
+          "weights": {
+            "2026-11-19": 80.1,
+            "2026-11-14": 80.0,
+            "2026-11-09": 80.2,
+            "2026-11-04": 80.1
+          },
+          "goal_type": "lose_weight"
+        }
+      },
+      "expected": {
+        "fires": true,
+        "template": "hw.T-HW-WEEK-02",
+        "block": "breaking-a-plateau"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWW02-05",
+      "purpose": "HWW-02e: eating-disorder flag: no plateau message",
+      "inputs": {
+        "source_id": "HWW-02e",
+        "fn": "plateau",
+        "args": {
+          "today": "2026-11-20",
+          "weights": {
+            "2026-11-19": 80.1,
+            "2026-11-14": 80.0,
+            "2026-11-09": 80.2,
+            "2026-11-04": 80.1
+          },
+          "goal_type": "lose_weight",
+          "situations": [
+            "eating_disorder"
+          ]
+        }
+      },
+      "expected": {
+        "fires": false,
+        "text": null
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWW02-06",
+      "purpose": "HWW-02f: while Festivals and fasting runs: no plateau check (T2 = A)",
+      "inputs": {
+        "source_id": "HWW-02f",
+        "fn": "plateau",
+        "args": {
+          "today": "2026-11-20",
+          "weights": {
+            "2026-11-19": 80.1,
+            "2026-11-14": 80.0,
+            "2026-11-09": 80.2,
+            "2026-11-04": 80.1
+          },
+          "goal_type": "lose_weight",
+          "festival_running": true
+        }
+      },
+      "expected": {
+        "fires": false,
+        "reason": "festival_block_running"
+      },
+      "oracle": "clinical",
+      "source_version": "4bbb8c24e787c13976e61f3fb60b4e3b7ce5262faf660e51972af9bf4c3e971f",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    }
+  ]
+}

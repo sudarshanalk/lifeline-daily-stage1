@@ -1,0 +1,680 @@
+{
+  "group": "Focus blocks R-HW-BLOCK-01 to -03 (v1.3) and quick questions R-HW-QOD-01",
+  "tool": "healthy-weight-programme",
+  "fixtures": [
+    {
+      "id": "FX-HWP-HWB01-01",
+      "purpose": "HWB-01a: barrier \"not sure\", stress 4, sleep 7 to 9, days, alcohol rarely: Getting stronger",
+      "inputs": {
+        "source_id": "HWB-01a",
+        "fn": "suggest_block",
+        "args": {
+          "programme_week": 9,
+          "today": "2027-01-08",
+          "barrier": "not_sure",
+          "stress": 4,
+          "sleep": "7_9",
+          "work": "days",
+          "alcohol_freq": "less_than_weekly",
+          "alcohol_amount": "1_2"
+        }
+      },
+      "expected": {
+        "block": "getting-stronger",
+        "step": 9,
+        "text": "Suggested for you, because it builds on everything you've done so far."
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWB01-02",
+      "purpose": "HWB-01b: barrier evening snacking, but plateau holds: Breaking a plateau",
+      "inputs": {
+        "source_id": "HWB-01b",
+        "fn": "suggest_block",
+        "args": {
+          "programme_week": 9,
+          "today": "2027-01-08",
+          "barrier": "evening_snacking",
+          "plateau": true
+        }
+      },
+      "expected": {
+        "block": "breaking-a-plateau",
+        "step": 1
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWB01-03",
+      "purpose": "HWB-01c: FR3-109 AS-02: sleep 6 to 7, barrier \"not sure\", stress under 7: Sleep and weight",
+      "inputs": {
+        "source_id": "HWB-01c",
+        "fn": "suggest_block",
+        "args": {
+          "programme_week": 9,
+          "today": "2027-01-08",
+          "barrier": "not_sure",
+          "stress": 5,
+          "sleep": "6_7"
+        }
+      },
+      "expected": {
+        "block": "sleep-and-weight",
+        "step": 5
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWB01-04",
+      "purpose": "HWB-01d: FR3-109 AS-02: stress 7, sleep 7 to 9: Stress and emotional eating",
+      "inputs": {
+        "source_id": "HWB-01d",
+        "fn": "suggest_block",
+        "args": {
+          "programme_week": 9,
+          "today": "2027-01-08",
+          "barrier": "not_sure",
+          "stress": 7,
+          "sleep": "7_9"
+        }
+      },
+      "expected": {
+        "block": "stress-emotional-eating",
+        "step": 4
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWB01-05",
+      "purpose": "HWB-01e: FR3-110 AS-04: 3 to 4 days, no plateau, no festival, \"not sure\", stress under 7, sleep 7+: Alcohol",
+      "inputs": {
+        "source_id": "HWB-01e",
+        "fn": "suggest_block",
+        "args": {
+          "programme_week": 9,
+          "today": "2027-01-08",
+          "barrier": "not_sure",
+          "stress": 5,
+          "sleep": "7_9",
+          "alcohol_freq": "3_4_days",
+          "alcohol_amount": "1_2"
+        }
+      },
+      "expected": {
+        "block": "alcohol",
+        "step": 6
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWB01-06",
+      "purpose": "HWB-01f: a festival in the member's calendar 5 weeks away comes before the barrier",
+      "inputs": {
+        "source_id": "HWB-01f",
+        "fn": "suggest_block",
+        "args": {
+          "programme_week": 10,
+          "today": "2027-01-29",
+          "barrier": "evening_snacking",
+          "festivals": [
+            {
+              "id": "test-festival",
+              "name": "Test festival",
+              "start": "2027-03-05"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "block": "festivals-and-fasting",
+        "step": 2,
+        "reason.text": "Test festival starts in 5 weeks"
+      },
+      "oracle": "clinical",
+      "source_version": "4bbb8c24e787c13976e61f3fb60b4e3b7ce5262faf660e51972af9bf4c3e971f",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWB01-07",
+      "purpose": "HWB-01g: a block already finished is skipped: the next match",
+      "inputs": {
+        "source_id": "HWB-01g",
+        "fn": "suggest_block",
+        "args": {
+          "programme_week": 13,
+          "today": "2027-02-05",
+          "barrier": "evening_snacking",
+          "stress": 7,
+          "finished": [
+            "evening-night-eating"
+          ]
+        }
+      },
+      "expected": {
+        "block": "stress-emotional-eating",
+        "step": 4
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWB01-08",
+      "purpose": "HWB-01h: goal reached during a block: Keep It Off offered (FR3-104 AS-05)",
+      "inputs": {
+        "source_id": "HWB-01h",
+        "fn": "suggest_block",
+        "args": {
+          "programme_week": 12,
+          "today": "2027-02-05",
+          "goal_reached": true
+        }
+      },
+      "expected": {
+        "block": null,
+        "keep_it_off": true
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWB01-09",
+      "purpose": "HWB-01i: weeks 1 to 8: no focus block yet",
+      "inputs": {
+        "source_id": "HWB-01i",
+        "fn": "suggest_block",
+        "args": {
+          "programme_week": 8,
+          "today": "2026-12-25",
+          "barrier": "evening_snacking"
+        }
+      },
+      "expected": {
+        "block": null
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWB03-01",
+      "purpose": "HWB-03a: a 30-day fast S = Mon 8 Feb, E = Tue 9 Mar 2027, accepted Fri 1 Jan 2027 with Evening and night eating due",
+      "inputs": {
+        "source_id": "HWB-03a",
+        "fn": "schedule",
+        "args": {
+          "start": "2027-02-08",
+          "end": "2027-03-09",
+          "accepted": "2027-01-01",
+          "fasts": true,
+          "current": {
+            "block": "evening-night-eating",
+            "next_week": 1
+          }
+        }
+      },
+      "expected": {
+        "T": "2027-01-25",
+        "segments": [
+          {
+            "kind": "current",
+            "block": "evening-night-eating",
+            "week": 1,
+            "from": "2027-01-02",
+            "to": "2027-01-08"
+          },
+          {
+            "kind": "current",
+            "block": "evening-night-eating",
+            "week": 2,
+            "from": "2027-01-09",
+            "to": "2027-01-15"
+          },
+          {
+            "kind": "current",
+            "block": "evening-night-eating",
+            "week": 3,
+            "from": "2027-01-16",
+            "to": "2027-01-22"
+          },
+          {
+            "kind": "filler",
+            "block": null,
+            "week": null,
+            "from": "2027-01-23",
+            "to": "2027-01-24"
+          },
+          {
+            "kind": "festival",
+            "block": "festivals-and-fasting",
+            "week": 1,
+            "from": "2027-01-25",
+            "to": "2027-01-31"
+          },
+          {
+            "kind": "festival",
+            "block": "festivals-and-fasting",
+            "week": 2,
+            "from": "2027-02-01",
+            "to": "2027-02-07"
+          },
+          {
+            "kind": "festival",
+            "block": "festivals-and-fasting",
+            "week": 3,
+            "from": "2027-02-08",
+            "to": "2027-02-14"
+          },
+          {
+            "kind": "repeat",
+            "block": "festivals-and-fasting",
+            "week": 3,
+            "from": "2027-02-15",
+            "to": "2027-02-21"
+          },
+          {
+            "kind": "repeat",
+            "block": "festivals-and-fasting",
+            "week": 3,
+            "from": "2027-02-22",
+            "to": "2027-02-28"
+          },
+          {
+            "kind": "repeat",
+            "block": "festivals-and-fasting",
+            "week": 3,
+            "from": "2027-03-01",
+            "to": "2027-03-07"
+          },
+          {
+            "kind": "repeat",
+            "block": "festivals-and-fasting",
+            "week": 3,
+            "from": "2027-03-08",
+            "to": "2027-03-09"
+          },
+          {
+            "kind": "festival",
+            "block": "festivals-and-fasting",
+            "week": 4,
+            "from": "2027-03-10",
+            "to": "2027-03-16"
+          }
+        ],
+        "resume": {
+          "block": "evening-night-eating",
+          "week": 4,
+          "from": "2027-03-17"
+        },
+        "week3_steps": [
+          "HW-FB08-W3-A1",
+          "HW-FB08-W3-A2",
+          "HW-FB08-W3-A3",
+          "HW-FB08-W3-A4",
+          "HW-FB08-W3-A5",
+          "HW-FB08-W3-A6",
+          "HW-FB08-W3-A7"
+        ]
+      },
+      "oracle": "clinical",
+      "source_version": "4bbb8c24e787c13976e61f3fb60b4e3b7ce5262faf660e51972af9bf4c3e971f",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWB03-02",
+      "purpose": "HWB-03b: as HWB-03a with type 2 diabetes: same dates; week 3 and the repeats use W3-A2-ALT, W3-A3-ALT, W3-A4-ALT",
+      "inputs": {
+        "source_id": "HWB-03b",
+        "fn": "schedule",
+        "args": {
+          "start": "2027-02-08",
+          "end": "2027-03-09",
+          "accepted": "2027-01-01",
+          "fasts": true,
+          "type2_diabetes": true,
+          "current": {
+            "block": "evening-night-eating",
+            "next_week": 1
+          }
+        }
+      },
+      "expected": {
+        "T": "2027-01-25",
+        "week4_from": "2027-03-10",
+        "week4_to": "2027-03-16",
+        "week3_steps": [
+          "HW-FB08-W3-A1",
+          "HW-FB08-W3-A2-ALT",
+          "HW-FB08-W3-A3-ALT",
+          "HW-FB08-W3-A4-ALT",
+          "HW-FB08-W3-A5",
+          "HW-FB08-W3-A6",
+          "HW-FB08-W3-A7"
+        ],
+        "repeat_alt_only": true,
+        "first_step": "HW-FB08-W1-A1",
+        "day_of.2027-01-26": "HW-FB08-W1-A2"
+      },
+      "oracle": "clinical",
+      "source_version": "4bbb8c24e787c13976e61f3fb60b4e3b7ce5262faf660e51972af9bf4c3e971f",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded",
+      "notes": "The line \"If you are planning to fast, follow the plan you agreed with your doctor or diabetes team.\" is shown with the -ALT items (approved content, R-HW-FOOD-03)."
+    },
+    {
+      "id": "FX-HWP-HWB03-03",
+      "purpose": "HWB-03c: one-day festival S = E = Fri 5 Mar 2027, accepted Fri 19 Feb (exactly 14 days before): weeks 1 and 2 shortened to 13 days",
+      "inputs": {
+        "source_id": "HWB-03c",
+        "fn": "schedule",
+        "args": {
+          "start": "2027-03-05",
+          "end": "2027-03-05",
+          "accepted": "2027-02-19",
+          "fasts": false,
+          "current": {
+            "block": "getting-stronger",
+            "next_week": 2
+          }
+        }
+      },
+      "expected": {
+        "T": "2027-02-19",
+        "shortened": true,
+        "shortened_steps.length": 13,
+        "shortened_missing": [
+          "HW-FB08-W2-A7"
+        ],
+        "notes.length": 13,
+        "task_days": {
+          "2027-02-20": "HW-FB08-W1-T",
+          "2027-02-27": "HW-FB08-W2-T"
+        },
+        "segments": [
+          {
+            "kind": "festival",
+            "block": "festivals-and-fasting",
+            "week": 1,
+            "from": "2027-02-20",
+            "to": "2027-02-26"
+          },
+          {
+            "kind": "festival",
+            "block": "festivals-and-fasting",
+            "week": 2,
+            "from": "2027-02-27",
+            "to": "2027-03-04"
+          },
+          {
+            "kind": "festival",
+            "block": "festivals-and-fasting",
+            "week": 3,
+            "from": "2027-03-05",
+            "to": "2027-03-11"
+          },
+          {
+            "kind": "festival",
+            "block": "festivals-and-fasting",
+            "week": 4,
+            "from": "2027-03-12",
+            "to": "2027-03-18"
+          }
+        ]
+      },
+      "oracle": "clinical",
+      "source_version": "4bbb8c24e787c13976e61f3fb60b4e3b7ce5262faf660e51972af9bf4c3e971f",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWB03-04",
+      "purpose": "HWB-03d: one-day festival S = Fri 5 Mar 2027, accepted Fri 29 Jan (35 days before): nothing shortened",
+      "inputs": {
+        "source_id": "HWB-03d",
+        "fn": "schedule",
+        "args": {
+          "start": "2027-03-05",
+          "end": "2027-03-05",
+          "accepted": "2027-01-29",
+          "fasts": false,
+          "current": {
+            "block": "getting-stronger",
+            "next_week": 1
+          }
+        }
+      },
+      "expected": {
+        "T": "2027-02-19",
+        "shortened": false,
+        "segments": [
+          {
+            "kind": "current",
+            "block": "getting-stronger",
+            "week": 1,
+            "from": "2027-01-30",
+            "to": "2027-02-05"
+          },
+          {
+            "kind": "current",
+            "block": "getting-stronger",
+            "week": 2,
+            "from": "2027-02-06",
+            "to": "2027-02-12"
+          },
+          {
+            "kind": "filler",
+            "block": null,
+            "week": null,
+            "from": "2027-02-13",
+            "to": "2027-02-18"
+          },
+          {
+            "kind": "festival",
+            "block": "festivals-and-fasting",
+            "week": 1,
+            "from": "2027-02-19",
+            "to": "2027-02-25"
+          },
+          {
+            "kind": "festival",
+            "block": "festivals-and-fasting",
+            "week": 2,
+            "from": "2027-02-26",
+            "to": "2027-03-04"
+          },
+          {
+            "kind": "festival",
+            "block": "festivals-and-fasting",
+            "week": 3,
+            "from": "2027-03-05",
+            "to": "2027-03-11"
+          },
+          {
+            "kind": "festival",
+            "block": "festivals-and-fasting",
+            "week": 4,
+            "from": "2027-03-12",
+            "to": "2027-03-18"
+          }
+        ]
+      },
+      "oracle": "clinical",
+      "source_version": "4bbb8c24e787c13976e61f3fb60b4e3b7ce5262faf660e51972af9bf4c3e971f",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWB03-05",
+      "purpose": "HWB-03e: as HWB-03a, but the calendar moves S to Tue 9 Feb on Sun 7 Feb",
+      "inputs": {
+        "source_id": "HWB-03e",
+        "fn": "schedule",
+        "args": {
+          "start": "2027-02-08",
+          "end": "2027-03-09",
+          "accepted": "2027-01-01",
+          "fasts": true,
+          "current": {
+            "block": "evening-night-eating",
+            "next_week": 1
+          },
+          "moves": [
+            {
+              "on": "2027-02-07",
+              "start": "2027-02-09"
+            }
+          ]
+        }
+      },
+      "expected": {
+        "day_kind.2027-02-08": "filler",
+        "week3_from": "2027-02-09",
+        "week4_from": "2027-03-11",
+        "week4_to": "2027-03-17",
+        "segments_from.2027-02-09": [
+          {
+            "kind": "festival",
+            "block": "festivals-and-fasting",
+            "week": 3,
+            "from": "2027-02-09",
+            "to": "2027-02-15"
+          },
+          {
+            "kind": "repeat",
+            "block": "festivals-and-fasting",
+            "week": 3,
+            "from": "2027-02-16",
+            "to": "2027-02-22"
+          },
+          {
+            "kind": "repeat",
+            "block": "festivals-and-fasting",
+            "week": 3,
+            "from": "2027-02-23",
+            "to": "2027-03-01"
+          },
+          {
+            "kind": "repeat",
+            "block": "festivals-and-fasting",
+            "week": 3,
+            "from": "2027-03-02",
+            "to": "2027-03-08"
+          },
+          {
+            "kind": "repeat",
+            "block": "festivals-and-fasting",
+            "week": 3,
+            "from": "2027-03-09",
+            "to": "2027-03-10"
+          },
+          {
+            "kind": "festival",
+            "block": "festivals-and-fasting",
+            "week": 4,
+            "from": "2027-03-11",
+            "to": "2027-03-17"
+          }
+        ]
+      },
+      "oracle": "clinical",
+      "source_version": "4bbb8c24e787c13976e61f3fb60b4e3b7ce5262faf660e51972af9bf4c3e971f",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWB03-06",
+      "purpose": "HWB-03f: a festival 10 days away at a check-in: not offered (outside 2 to 6 weeks)",
+      "inputs": {
+        "source_id": "HWB-03f",
+        "fn": "offer",
+        "args": {
+          "festival": {
+            "id": "test-festival",
+            "start": "2027-03-05"
+          },
+          "today": "2027-02-23",
+          "programme_week": 12,
+          "keeps": true
+        }
+      },
+      "expected": {
+        "offered": false,
+        "reason": "outside_window",
+        "days": 10
+      },
+      "oracle": "clinical",
+      "source_version": "4bbb8c24e787c13976e61f3fb60b4e3b7ce5262faf660e51972af9bf4c3e971f",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWB03-07",
+      "purpose": "HWB-03g: Ramadan offered only to a member who keeps that fast (FR3-104 AS-03)",
+      "inputs": {
+        "source_id": "HWB-03g",
+        "fn": "offer",
+        "args": {
+          "festival": {
+            "id": "ramadan-2027-test",
+            "start": "2027-02-08"
+          },
+          "today": "2027-01-01",
+          "programme_week": 9,
+          "keeps": false
+        }
+      },
+      "expected": {
+        "offered": false,
+        "reason": "not_in_member_calendar"
+      },
+      "oracle": "clinical",
+      "source_version": "4bbb8c24e787c13976e61f3fb60b4e3b7ce5262faf660e51972af9bf4c3e971f",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWQ01-01",
+      "purpose": "HWQ-01a: new member, nothing answered: day 1 shows food rules and allergies, then eating pattern",
+      "inputs": {
+        "source_id": "HWQ-01a",
+        "fn": "qod",
+        "args": {
+          "answered": [],
+          "known": []
+        }
+      },
+      "expected": {
+        "questions": [
+          "food_rules_allergies",
+          "eating_pattern"
+        ]
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    }
+  ]
+}

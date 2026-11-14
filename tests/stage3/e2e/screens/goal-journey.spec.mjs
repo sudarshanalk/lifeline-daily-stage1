@@ -73,15 +73,56 @@ async function saveGoal(page) {
   await page.waitForLoadState('load');
 }
 
-/** Set a weight-loss goal on the screen: current, target, a rate or a date. Lands on the plan page (or a refusal). */
-async function weightGoal(page, { current = 90, target = 84, rate = '0.5', date = '', waist = '' } = {}) {
+/** Press a button of a joining step and wait for the server's answer, as saveGoal() does. */
+async function step(page, button) {
+  const answered = page.waitForResponse((r) => r.request().method() === 'POST' && new URL(r.url()).pathname === '/members/goal/');
+  await button.click();
+  await answered;
+  await page.waitForLoadState('load');
+}
+
+/**
+ * The Healthy Weight joining steps after the goal is saved (P3-35; FR3-98, FR3-100; owner decisions of 6 Nov 2026):
+ * the eight quick questions, all skipped here (every one can be skipped, FR3-98 AS-03; with no approved question loaded
+ * the screen goes straight on to the pace), then the pace or a date instead (FR3-100). Lands on the plan, or stays on
+ * the pace step when pace is null or a refusal is expected.
+ */
+async function joining(page, pace = '0.5', date = '', refused = '') {
+  await expect(page).toHaveURL(/\/members\/goal\/\?done=\d+&hw=(questions|pace)$/);
+  if (/&hw=questions$/.test(page.url())) {
+    await step(page, page.locator('[data-lld-goal-step="questions"] form').getByRole('button', { name: 'Next' }));
+    await expect(page).toHaveURL(/\/members\/goal\/\?done=\d+&hw=pace$/);
+  }
+  const paceStep = page.locator('[data-lld-goal-step="pace"]');
+  await expect(paceStep).toBeVisible();
+  if (pace === null && !date) return;
+  if (date) { await paceStep.locator('input[name="lld_hw_pace"][value="date"]').check(); await page.locator('#lld_date').fill(date); } else { await paceStep.locator(`input[name="lld_hw_pace"][value="${pace}"]`).check(); }
+  await step(page, paceStep.getByRole('button', { name: 'Next' }));
+  if (refused) {
+    await expect(page.locator('[data-lld-refused]')).toHaveAttribute('data-lld-refused', refused);
+    return;
+  }
+  await expect(page).toHaveURL(/\/members\/goal\/\?done=\d+$/);
+}
+
+/**
+ * Set a weight-loss goal in the signed Healthy Weight order (FR3-97, FR3-98, FR3-100): where you are now with the goal
+ * (current, target, waist), then the quick questions, then the pace (kg a week) or a date instead, as the goal step
+ * offered them before. Lands on the plan page; with `refused` it expects that refusal instead (of the goal step, or of
+ * the date on the pace step); with pace null it stays on the pace step.
+ */
+async function weightGoal(page, { current = 90, target = 84, pace = '0.5', date = '', waist = '', refused = '' } = {}) {
   await page.goto('/members/goal/?type=lose_weight');
   await expect(page.locator('[data-lld-goal-step="details"]')).toBeVisible();
   await page.locator('#lld_current').fill(String(current));
   await page.locator('#lld_target').fill(String(target));
-  if (date) { await page.locator('input[name="lld_rate"][value="date"]').check(); await page.locator('#lld_date').fill(date); } else { await page.locator(`input[name="lld_rate"][value="${rate}"]`).check(); }
   if (waist) await page.locator('#lld_waist').fill(String(waist));
   await saveGoal(page);
+  if (refused && !date) {
+    await expect(page.locator('[data-lld-refused]')).toHaveAttribute('data-lld-refused', refused);
+    return;
+  }
+  await joining(page, pace, date, refused);
 }
 
 /** The weekly check-in with this week's numbers; lands back on the check-in with the result. */
@@ -108,6 +149,8 @@ test.describe.serial('P3-31 goal setting, starting measurements and the plan', (
     await expect(page.locator('[data-lld-goal-step="details"]')).toBeVisible();
     await page.locator('#lld_target').fill('84');
     await page.getByRole('button', { name: 'Save my goal' }).click();
+    // The signed order: the quick questions and the pace come before the plan (FR3-98, FR3-100), all inside the minute.
+    await joining(page);
     await expect(page).toHaveURL(/\/members\/goal\/\?done=\d+$/);
     await expect(page.locator('[data-lld-goal-step="plan"]')).toBeVisible();
     expect(Date.now() - started).toBeLessThan(60000);
@@ -168,18 +211,42 @@ test.describe.serial('P3-31 goal setting, starting measurements and the plan', (
   test('TC-FR3-09-AS-05 A weight goal below a healthy BMI, or faster than the safe rate, is refused with a gentle message and a safe suggestion', async ({ page }) => {
     const m = await fresh(page, A);
     await profile(page, m.member_id);
-    await weightGoal(page, { current: 70, target: 50 });
+    await weightGoal(page, { current: 70, target: 50, refused: 'bmi_floor' });
     const refused = page.locator('[data-lld-refused]');
     await expect(refused).toHaveAttribute('data-lld-refused', 'bmi_floor');
     await expect(refused).toContainText('A goal of 50 kg would put you below the healthy range for your height (BMI 16.3). The lowest weight in the healthy range for you is about 56.7 kg. Would you like to use that?');
     await expect(page.locator('#lld_target')).toHaveValue('56.7');
-    // The screen never offers a rate above the cap (1.0 is missing at 90 kg); a date too soon asks for one and is refused.
-    await expect(page.locator('input[name="lld_rate"][value="1"]')).toHaveCount(0);
-    await weightGoal(page, { current: 90, target: 84, date: dateOf(28) }); // 1.5 kg a week
+    expect((await rows(page, 'goals')).length).toBe(0); // the refused goal is not saved
+    // The pace and the date are chosen on their own step now (FR3-100). It never offers a pace above the cap (1.0 is
+    // missing at 90 kg); a date too soon is refused with the signed P3-56 wording and the safe date filled in, and the
+    // goal's pace and date are not changed.
+    await weightGoal(page, { current: 90, target: 84, pace: null });
+    const paceStep = page.locator('[data-lld-goal-step="pace"]');
+    await expect(paceStep.locator('input[name="lld_hw_pace"][value="1"]')).toHaveCount(0);
+    // rows() reads the members' interface from Today, so the pace step is opened again after it.
+    const paceUrl = page.url();
+    const before = (await rows(page, 'goals')).find((g) => g.role === 'main');
+    await page.goto(paceUrl);
+    await paceStep.locator('input[name="lld_hw_pace"][value="date"]').check();
+    await page.locator('#lld_date').fill(dateOf(28)); // 1.5 kg a week
+    await step(page, paceStep.getByRole('button', { name: 'Next' }));
+    await expect(page).toHaveURL(/\/members\/goal\/\?done=\d+&hw=pace$/);
     await expect(page.locator('[data-lld-refused]')).toHaveAttribute('data-lld-refused', 'rate_cap');
     await expect(page.locator('[data-lld-refused]')).toContainText(`That's faster than the safe rate of about 0.9 kg a week. At a safe rate you'd reach 84 kg by about ${nice(49)}.`);
     await expect(page.locator('#lld_date')).toHaveValue(dateOf(49));
-    expect((await rows(page, 'goals')).length).toBe(0);
+    let after = (await rows(page, 'goals')).find((g) => g.role === 'main');
+    expect(after.chosen_rate ?? null).toBeNull();
+    expect(after.target_date).toBe(before.target_date);
+    // A faster pace sent anyway is refused the same way.
+    await page.goto(paceUrl);
+    await page.locator('[data-lld-goal-step="pace"] input[name="lld_hw_pace"]').first().evaluate((el) => { el.value = '1'; el.checked = true; });
+    await step(page, page.locator('[data-lld-goal-step="pace"]').getByRole('button', { name: 'Next' }));
+    await expect(page).toHaveURL(/\/members\/goal\/\?done=\d+&hw=pace$/);
+    await expect(page.locator('[data-lld-refused]')).toHaveAttribute('data-lld-refused', 'rate_cap');
+    await expect(page.locator('[data-lld-goal-step="pace"] [role="alert"]')).toContainText(`That's faster than the safe rate of about 0.9 kg a week. At a safe rate you'd reach 84 kg by about ${nice(49)}.`);
+    after = (await rows(page, 'goals')).find((g) => g.role === 'main');
+    expect(after.chosen_rate ?? null).toBeNull();
+    expect(after.target_date).toBe(before.target_date);
   });
 
   test('TC-FR3-09-AS-06 A member can add one extra goal but not a third', async ({ page }) => {
@@ -341,7 +408,9 @@ test.describe.serial('P3-31 goal setting, starting measurements and the plan', (
     const plan = page.locator('[data-lld-goal-step="plan"]');
     await expect(plan).toHaveAttribute('data-lld-premium', 'no');
     await expect(plan.locator('[data-lld-section="track"] h2')).toHaveText('Healthy Weight');
-    await expect(plan.locator('[data-lld-kcal]')).toHaveCount(0);
+    // Healthy Weight's calorie target is free (rule question 12, signed 6 Nov 2026: safety, the numbers, pace and
+    // milestones are free; FR3-47 'Free to use'), so a Free member sees it; the rest of the plan stays Premium.
+    await expect(plan.locator('[data-lld-kcal]').first()).toBeVisible();
     await expect(plan.locator('[data-lld-section="targets"]')).toContainText('Premium');
     await page.goto('/members/home/');
     await expect(page.locator('[data-lld-goal-progress] [data-lld-progress]')).toHaveAttribute('data-lld-pct', '0');
@@ -426,7 +495,7 @@ test.describe.serial('P3-32 Today, goal progress, check-in and goal reached', ()
     // B: 0.75 kg a week promised (8 weeks), barely moving → behind.
     const b = await fresh(page, B);
     await profile(page, b.member_id);
-    await weightGoal(page, { rate: '0.75' });
+    await weightGoal(page, { pace: '0.75' });
     await weighIn(page, 3, 90);
     await weighIn(page, 7, 89.95);
     await clock(page, B, 14);
@@ -458,7 +527,7 @@ test.describe.serial('P3-32 Today, goal progress, check-in and goal reached', ()
   test('TC-FR3-14-AS-01 A Premium test member behind on a weight goal for 2 weeks is offered an adjusted plan with a later date or changed targets', async ({ page }) => {
     const m = await fresh(page, A, { access_state: 'Premium' });
     await profile(page, m.member_id);
-    await weightGoal(page, { rate: '0.75' }); // 8 weeks: day 56
+    await weightGoal(page, { pace: '0.75' }); // 8 weeks: day 56
     await weighIn(page, 3, 90);
     await clock(page, A, 7);
     await checkIn(page, { weight: 89.95 });

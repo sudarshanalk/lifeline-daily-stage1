@@ -1,0 +1,1235 @@
+{
+  "group": "Daily steps and alcohol steps R-HW-STEP-01 to -06, R-HW-ALC-01, -02 (section 9.5, 9.5a)",
+  "tool": "healthy-weight-programme",
+  "fixtures": [
+    {
+      "id": "FX-HWP-HWST01-01",
+      "purpose": "HWST-01a: barrier evening snacking: week 1 day 3 = HW-W1-A6 \"Notice your hunger\"",
+      "inputs": {
+        "source_id": "HWST-01a",
+        "fn": "week_plan",
+        "args": {
+          "week": 1,
+          "answers": {
+            "barrier": "evening_snacking",
+            "confidence": 6,
+            "time": "10_30",
+            "work": "days",
+            "sleep": "7_9",
+            "stress": 5,
+            "alcohol_freq": "1_2_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "some"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "days.2.id": "HW-W1-A6",
+        "days.2.rule": "R-HW-STEP-01",
+        "days.2.reason.text": "Chosen first because you said evening snacking gets in the way."
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWST01-02",
+      "purpose": "HWST-01b: barrier \"not sure\": default order",
+      "inputs": {
+        "source_id": "HWST-01b",
+        "fn": "week_plan",
+        "args": {
+          "week": 1,
+          "answers": {
+            "barrier": "not_sure",
+            "confidence": 6,
+            "time": "10_30",
+            "work": "days",
+            "sleep": "7_9",
+            "stress": 5,
+            "alcohol_freq": "1_2_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "some"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "ids": [
+          "HW-W1-A1",
+          "HW-W1-A2",
+          "HW-W1-A3",
+          "HW-W1-A4",
+          "HW-W1-A5",
+          "HW-W1-A6",
+          "HW-W1-A7"
+        ]
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWST02-01",
+      "purpose": "HWST-02a: sugary drinks never: HW-W3-A1 \"Swap one sugary drink\" replaced by an action-library step tagged snacking",
+      "inputs": {
+        "source_id": "HWST-02a",
+        "fn": "week_plan",
+        "args": {
+          "week": 3,
+          "answers": {
+            "barrier": "not_sure",
+            "confidence": 6,
+            "time": "10_30",
+            "work": "days",
+            "sleep": "7_9",
+            "stress": 5,
+            "alcohol_freq": "1_2_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "some",
+            "sugary_drinks": "never"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "days.0.id": "LIB-TEST-SNACK-1",
+        "days.0.rule": "R-HW-STEP-02",
+        "left_out": [
+          "HW-W3-A1"
+        ],
+        "notice": "hw.T-HW-STEP-02",
+        "not_in_plan": [
+          "HW-W3-A1"
+        ]
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWST02-02",
+      "purpose": "HWST-02b: sugary drinks daily: kept",
+      "inputs": {
+        "source_id": "HWST-02b",
+        "fn": "week_plan",
+        "args": {
+          "week": 3,
+          "answers": {
+            "barrier": "not_sure",
+            "confidence": 6,
+            "time": "10_30",
+            "work": "days",
+            "sleep": "7_9",
+            "stress": 5,
+            "alcohol_freq": "1_2_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "some",
+            "sugary_drinks": "daily"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "days.0.id": "HW-W3-A1",
+        "left_out": []
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWST03-01",
+      "purpose": "HWST-03a: time under 10: week 1 easier",
+      "inputs": {
+        "source_id": "HWST-03a",
+        "fn": "week_plan",
+        "args": {
+          "week": 1,
+          "answers": {
+            "barrier": "not_sure",
+            "confidence": 6,
+            "time": "under_10",
+            "work": "days",
+            "sleep": "7_9",
+            "stress": 5,
+            "alcohol_freq": "1_2_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "some"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "version": "easier"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWST03-02",
+      "purpose": "HWST-03b: week 2, 45 % done, was standard: easier",
+      "inputs": {
+        "source_id": "HWST-03b",
+        "fn": "week_plan",
+        "args": {
+          "week": 2,
+          "answers": {
+            "barrier": "not_sure",
+            "confidence": 6,
+            "time": "10_30",
+            "work": "days",
+            "sleep": "7_9",
+            "stress": 5,
+            "alcohol_freq": "1_2_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "some"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ],
+          "history": {
+            "version": "standard",
+            "done_pct": 45
+          }
+        }
+      },
+      "expected": {
+        "version": "easier"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWST03-03",
+      "purpose": "HWST-03c: week 2, 85 % done, was stretch: stays stretch",
+      "inputs": {
+        "source_id": "HWST-03c",
+        "fn": "week_plan",
+        "args": {
+          "week": 2,
+          "answers": {
+            "barrier": "not_sure",
+            "confidence": 6,
+            "time": "10_30",
+            "work": "days",
+            "sleep": "7_9",
+            "stress": 5,
+            "alcohol_freq": "1_2_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "some"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ],
+          "history": {
+            "version": "stretch",
+            "done_pct": 85
+          }
+        }
+      },
+      "expected": {
+        "version": "stretch"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWST04-01",
+      "purpose": "HWST-04a: sleep 6 to 7, stress 5: a sleep step in weeks 1 to 8",
+      "inputs": {
+        "source_id": "HWST-04a",
+        "fn": "weeks",
+        "args": {
+          "answers": {
+            "barrier": "not_sure",
+            "confidence": 6,
+            "time": "10_30",
+            "work": "days",
+            "sleep": "6_7",
+            "stress": 5,
+            "alcohol_freq": "1_2_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "some"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "sleep_weeks": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "stress_weeks": [],
+        "one_step_a_day": true
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWST04-02",
+      "purpose": "HWST-04b: sleep 7 to 9: none",
+      "inputs": {
+        "source_id": "HWST-04b",
+        "fn": "weeks",
+        "args": {
+          "answers": {
+            "barrier": "not_sure",
+            "confidence": 6,
+            "time": "10_30",
+            "work": "days",
+            "sleep": "7_9",
+            "stress": 5,
+            "alcohol_freq": "1_2_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "some"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "sleep_weeks": [],
+        "stress_weeks": []
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWST05-01",
+      "purpose": "HWST-05a: stress 7: a stress step weekly",
+      "inputs": {
+        "source_id": "HWST-05a",
+        "fn": "weeks",
+        "args": {
+          "answers": {
+            "barrier": "not_sure",
+            "confidence": 6,
+            "time": "10_30",
+            "work": "days",
+            "sleep": "7_9",
+            "stress": 7,
+            "alcohol_freq": "1_2_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "some"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "stress_weeks": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "sleep_weeks": []
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWST05-02",
+      "purpose": "HWST-05b: stress 8, sleep under 6: sleep weeks 1, 3, 5, 7; stress weeks 2, 4, 6, 8",
+      "inputs": {
+        "source_id": "HWST-05b",
+        "fn": "weeks",
+        "args": {
+          "answers": {
+            "barrier": "not_sure",
+            "confidence": 6,
+            "time": "10_30",
+            "work": "days",
+            "sleep": "under_6",
+            "stress": 8,
+            "alcohol_freq": "1_2_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "some"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "sleep_weeks": [
+          1,
+          3,
+          5,
+          7
+        ],
+        "stress_weeks": [
+          2,
+          4,
+          6,
+          8
+        ],
+        "one_step_a_day": true
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWST06-01",
+      "purpose": "HWST-06a: low, 10 to 30 min: week 1 walk 10 min, week 4 25 min",
+      "inputs": {
+        "source_id": "HWST-06a",
+        "fn": "weeks",
+        "args": {
+          "answers": {
+            "barrier": "not_sure",
+            "confidence": 6,
+            "time": "10_30",
+            "work": "days",
+            "sleep": "7_9",
+            "stress": 5,
+            "alcohol_freq": "1_2_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "low"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "walk_minutes.1": 10,
+        "walk_minutes.4": 25
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWST06-02",
+      "purpose": "HWST-06b: active: week 3 includes a strength step",
+      "inputs": {
+        "source_id": "HWST-06b",
+        "fn": "weeks",
+        "args": {
+          "answers": {
+            "barrier": "not_sure",
+            "confidence": 6,
+            "time": "10_30",
+            "work": "days",
+            "sleep": "7_9",
+            "stress": 5,
+            "alcohol_freq": "1_2_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "active"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "strength_per_week.3": 1,
+        "strength_per_week.2": 0
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWA01-01",
+      "purpose": "HWA-01a: 3 to 4 days, 1 to 2 a time: alcohol-free-day step on day 5 of weeks 1 to 8",
+      "inputs": {
+        "source_id": "HWA-01a",
+        "fn": "weeks",
+        "args": {
+          "answers": {
+            "barrier": "not_sure",
+            "confidence": 6,
+            "time": "10_30",
+            "work": "days",
+            "sleep": "7_9",
+            "stress": 5,
+            "alcohol_freq": "3_4_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "some"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "alcohol_weeks": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "alcohol_days": [
+          5
+        ],
+        "alcohol_ids": [
+          "HW-AL-01"
+        ],
+        "one_step_a_day": true
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWA01-02",
+      "purpose": "HWA-01b: most days, 5 or more: \"one drink fewer\" step, support card shown",
+      "inputs": {
+        "source_id": "HWA-01b",
+        "fn": "weeks",
+        "args": {
+          "answers": {
+            "barrier": "not_sure",
+            "confidence": 6,
+            "time": "10_30",
+            "work": "days",
+            "sleep": "7_9",
+            "stress": 5,
+            "alcohol_freq": "most_days",
+            "alcohol_amount": "5_plus",
+            "activity_level": "some"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "alcohol_weeks": [
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8
+        ],
+        "alcohol_ids": [
+          "HW-AL-03"
+        ],
+        "support_card": true
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWA01-03",
+      "purpose": "HWA-01c: 1 to 2 days, 1 to 2 a time: no step",
+      "inputs": {
+        "source_id": "HWA-01c",
+        "fn": "weeks",
+        "args": {
+          "answers": {
+            "barrier": "not_sure",
+            "confidence": 6,
+            "time": "10_30",
+            "work": "days",
+            "sleep": "7_9",
+            "stress": 5,
+            "alcohol_freq": "1_2_days",
+            "alcohol_amount": "1_2",
+            "activity_level": "some"
+          },
+          "activities": "@track",
+          "library": [
+            {
+              "id": "LIB-TEST-MEALS-1",
+              "tags": [
+                "meals"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-1",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SNACK-2",
+              "tags": [
+                "snacking"
+              ]
+            },
+            {
+              "id": "LIB-TEST-MIND-1",
+              "tags": [
+                "mindset"
+              ]
+            },
+            {
+              "id": "LIB-TEST-SWAP-1",
+              "tags": [
+                "drink-swap"
+              ]
+            }
+          ]
+        }
+      },
+      "expected": {
+        "alcohol_weeks": []
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWA02-01",
+      "purpose": "HWA-02a: drinks 1 to 2 days, 19:00: shortcut shown",
+      "inputs": {
+        "source_id": "HWA-02a",
+        "fn": "drink_shortcut",
+        "args": {
+          "alcohol_freq": "1_2_days",
+          "time": "19:00",
+          "work": "days"
+        }
+      },
+      "expected": {
+        "show": true,
+        "label": "Add a drink"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWA02-02",
+      "purpose": "HWA-02b: never: never shown",
+      "inputs": {
+        "source_id": "HWA-02b",
+        "fn": "drink_shortcut",
+        "args": {
+          "alcohol_freq": "never",
+          "time": "19:00"
+        }
+      },
+      "expected": {
+        "show": false
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWA02-03",
+      "purpose": "HWA-02c: a drink already logged today: hidden",
+      "inputs": {
+        "source_id": "HWA-02c",
+        "fn": "drink_shortcut",
+        "args": {
+          "alcohol_freq": "1_2_days",
+          "time": "19:00",
+          "drink_logged_today": true
+        }
+      },
+      "expected": {
+        "show": false
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWA02-04",
+      "purpose": "HWA-02d: night worker who wakes at 14:00: shown from 00:00 (10 hours after waking)",
+      "inputs": {
+        "source_id": "HWA-02d",
+        "fn": "drink_shortcut",
+        "args": {
+          "alcohol_freq": "1_2_days",
+          "work": "nights",
+          "wake_time": "14:00",
+          "time": "00:30"
+        }
+      },
+      "expected": {
+        "show": true,
+        "from": "00:00"
+      },
+      "oracle": "clinical",
+      "source_version": "bc58d14803be60049e57914587d76d3b2d58fbd4fc484fc54b552ec2c7968ceb",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded",
+      "notes": "D3-60, catalogue v1.3.1 (10 Nov 2026)."
+    },
+    {
+      "id": "FX-HWP-HWA02-05",
+      "purpose": "HWA-02e: the same member at 23:30, before 10 hours after waking: not shown, although it is after 18:00",
+      "inputs": {
+        "source_id": "HWA-02e",
+        "fn": "drink_shortcut",
+        "args": {
+          "alcohol_freq": "1_2_days",
+          "work": "nights",
+          "wake_time": "14:00",
+          "time": "23:30"
+        }
+      },
+      "expected": {
+        "show": false,
+        "from": "00:00"
+      },
+      "oracle": "clinical",
+      "source_version": "bc58d14803be60049e57914587d76d3b2d58fbd4fc484fc54b552ec2c7968ceb",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded",
+      "notes": "D3-60, catalogue v1.3.1 (10 Nov 2026)."
+    },
+    {
+      "id": "FX-HWP-HWA02-06",
+      "purpose": "HWA-02f: shift worker with no wake-up time: from 18:00",
+      "inputs": {
+        "source_id": "HWA-02f",
+        "fn": "drink_shortcut",
+        "args": {
+          "alcohol_freq": "1_2_days",
+          "work": "shifts",
+          "time": "19:00"
+        }
+      },
+      "expected": {
+        "show": true,
+        "from": "18:00"
+      },
+      "oracle": "clinical",
+      "source_version": "bc58d14803be60049e57914587d76d3b2d58fbd4fc484fc54b552ec2c7968ceb",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded",
+      "notes": "D3-60, catalogue v1.3.1 (10 Nov 2026)."
+    },
+    {
+      "id": "FX-HWP-HWA02-07",
+      "purpose": "HWA-02g: shift worker who wakes at 06:00: shown from 16:00",
+      "inputs": {
+        "source_id": "HWA-02g",
+        "fn": "drink_shortcut",
+        "args": {
+          "alcohol_freq": "3_4_days",
+          "alcohol_amount": "1_2",
+          "work": "shifts",
+          "wake_time": "06:00",
+          "time": "16:00"
+        }
+      },
+      "expected": {
+        "show": true,
+        "from": "16:00"
+      },
+      "oracle": "clinical",
+      "source_version": "bc58d14803be60049e57914587d76d3b2d58fbd4fc484fc54b552ec2c7968ceb",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded",
+      "notes": "D3-60, catalogue v1.3.1 (10 Nov 2026)."
+    }
+  ]
+}

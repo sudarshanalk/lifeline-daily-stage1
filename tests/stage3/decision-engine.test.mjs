@@ -30,7 +30,9 @@ const range = (from, to) => Array.from({ length: to - from + 1 }, (_, i) => from
 const runRules = (cases) => JSON.parse(php(`echo json_encode(array_map(function ($c) { return LLD_Members_Decision_Engine::rule($c[0], $c[1]); }, json_decode(${JSON.stringify(JSON.stringify(cases))}, true)));`));
 /** Run evaluate() for many states in one PHP call. */
 const evaluate = (states) => JSON.parse(php(`echo json_encode(array_map(function ($s) { return LLD_Members_Decision_Engine::evaluate($s); }, json_decode(${JSON.stringify(JSON.stringify(states))}, true)));`));
-const templates = () => JSON.parse(php('echo json_encode(LLD_Members_Rule_Catalogue::TEMPLATES);'));
+// Every signed string of the catalogue: the 23 rules' templates and, from version 1.2, the Healthy Weight programme's
+// T-HW templates (section 9), all hashed in the one approval record.
+const templates = () => JSON.parse(php('echo json_encode(array_merge(LLD_Members_Rule_Catalogue::TEMPLATES, LLD_Members_Rule_Catalogue::HW_TEMPLATES));'));
 
 // ---- State builders: one per rule, from the fixture's inputs (NFR3-17 AS-01 "made-up test data at the boundary") -----
 
@@ -259,7 +261,8 @@ test('TC-NFR3-17-AS-02', () => {
   expect(filled[2]).toMatch(/^Your weight has gone down by \*\*2\.1 %\*\* since \*\*2026-11-08\*\* without a weight goal\./);
   expect(filled[3]).toBeNull();
   // No template names a diagnosis or a medicine, and none praises kilograms lost (catalogue section 1; FR3-16 AS-04).
-  for (const [key, text] of Object.entries(T)) {
+  // (The T-HW programme templates have the same check, with their signed pace phrase, in tests/stage3/hw-engine/catalogue.test.mjs.)
+  for (const [key, text] of Object.entries(T).filter(([k]) => !k.startsWith('hw.'))) {
     expect(text, key).not.toMatch(/\b(you have|diagnos|hypertension|depression|beta-blocker|insulin|metformin|statin)\b/i);
     expect(text, key).not.toMatch(/\b(kg|kilograms?|pounds?|lb)\b[^.]*\blost\b|\blost\b[^.]*\b(kg|kilograms?|pounds?)\b/i);
   }
@@ -270,7 +273,7 @@ test('TC-NFR3-17-AS-03', () => {
   // frozen, the catalogue's strings are hashed against it (AS-02 above), the fixtures' expected values are protected by
   // oracle-guard and validated by validate-artefacts, and the engine holds no second copy of any wording.
   expect(approval.clinical_signoff.decision).toBe('approved');
-  expect(approval.decisions_ratified).toEqual(['D3-43', 'D3-44', 'D3-45', 'D3-46', 'D3-47', 'D3-48', 'D3-49']); // D3-49: version 1.1, R-ADJ-03 for every calorie plan (Owner Q68)
+  expect(approval.decisions_ratified).toEqual(['D3-43', 'D3-44', 'D3-45', 'D3-46', 'D3-47', 'D3-48', 'D3-49', 'D3-58', 'D3-59', 'D3-60']); // D3-49: version 1.1, R-ADJ-03 for every calorie plan (Owner Q68); D3-58: v1.2, the Healthy Weight rules; D3-59: v1.3, R-HW-BLOCK-03; D3-60: v1.3.1, R-HW-ALC-02 timing
   expect(approval.regulatory_statement).toMatch(/Frozen: any change needs a new decision/);
   expect(approval.version_hash).toMatch(/^[0-9a-f]{64}$/); // SHA-256 of the signed catalogue file (outside the repository)
   const validator = readFileSync(resolve(root, 'tests/ci/validate-artefacts.py'), 'utf8');

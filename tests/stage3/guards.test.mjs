@@ -95,6 +95,19 @@ test('TC-NFR3-05-AS-02', () => {
   }
 });
 
+test('TC-NFR3-05-AS-02 (P3-35): both Stage 2 files the P3-35 decision opens are listed for lead review, even when a merged branch brought the change', () => {
+  // Owner Question 160: additions to class-content.php and class-programme.php. changedFiles() leaves out what a merged
+  // branch brought in; the full diff (`all`) still names the decision's files for the lead-review label.
+  const content = `${PLUGIN}/includes/class-content.php`;
+  const programme = `${PLUGIN}/includes/class-programme.php`;
+  const r = stage3Scope({ title: 'S3-P35: Healthy Weight programme', files: [content], all: [content, programme] });
+  expect(r.ok).toBe(true);
+  expect(r.review).toEqual([content, programme]);
+  // Another package gets no review line for them (and is refused if it changes them itself).
+  expect(stage3Scope({ title: 'S3-P40: food search', files: [], all: [content, programme] }).review).toEqual([]);
+  expect(stage3Scope({ title: 'S3-P40: food search', files: [programme] }).ok).toBe(false);
+});
+
 test('P3-36 opens the build list Stage 2 files and new assets to package 36 only', () => {
   // Owner, 14 Nov 2026: the member area build list (P3-36_Combined_Plan.md). Package 36 is the lead's, so each named
   // Stage 2 file passes and is listed for the lead's review; other packages are still refused.
@@ -121,6 +134,31 @@ test('every Stage 3 test id in tests/stage3 is a check in docs/stage3/03', () =>
   const r = unknownTestIds();
   expect(r.problems).toEqual([]);
   expect(r.known).toBeGreaterThan(200);
+});
+
+test('the test id check reads three-digit requirement numbers (FR3-100 and above)', () => {
+  // The unknown id is built from parts so the --names scan of tests/stage3 does not see it in this file.
+  const unknown = ['TC', 'FR3', '111', 'AS', '01'].join('-');
+  const unknownNfr = ['TC', 'NFR3', '100', 'AS', '01'].join('-');
+  const root = mkdtempSync(join(tmpdir(), 'lld-s3-ids-'));
+  try {
+    mkdirSync(join(root, 'docs', 'stage3'), { recursive: true });
+    mkdirSync(join(root, 'tests', 'stage3'), { recursive: true });
+    writeFileSync(join(root, 'docs', 'stage3', '03_Test_Criteria_Stage3.md'), '| TC-FR3-100-AS-01 | known |\n| TC-FR3-09-AS-01 | known |\n');
+    writeFileSync(join(root, 'tests', 'stage3', 'known.test.mjs'), "test('TC-FR3-100-AS-01', () => {}); test('TC-FR3-09-AS-01', () => {});\n");
+    const ok = unknownTestIds({ root });
+    expect(ok.problems).toEqual([]);
+    expect(ok.known).toBe(2);
+    writeFileSync(join(root, 'tests', 'stage3', 'unknown.test.mjs'), `test('${unknown}', () => {}); test('${unknownNfr}', () => {});\n`);
+    const bad = unknownTestIds({ root });
+    expect(bad.ok).toBe(false);
+    expect(bad.problems).toEqual([
+      `tests/stage3/unknown.test.mjs: ${unknown} is not a check in docs/stage3/03`,
+      `tests/stage3/unknown.test.mjs: ${unknownNfr} is not a check in docs/stage3/03`,
+    ]);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test("NFR3-14 (guard): a Stage 3 calculator's first fixtures come from its signed sheet; later changes and the Stage 1 folders stay guarded", () => {

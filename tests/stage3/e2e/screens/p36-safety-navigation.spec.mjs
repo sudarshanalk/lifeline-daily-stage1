@@ -249,6 +249,15 @@ test('TC-FR3-09-AS-08', async ({ page }) => {
   await page.goto('/members/goal/?type=lose_weight');
   await page.locator('#lld_target').fill('84');
   await submitAndWait(page, page.getByRole('button', { name: 'Save my goal', exact: true }));
+  // The signed Healthy Weight order (P3-35; FR3-98, FR3-100): the quick questions (skipped) and the pace come before the plan.
+  await expect(page).toHaveURL(/\/members\/goal\/\?done=\d+&hw=(questions|pace)$/);
+  if (/&hw=questions$/.test(page.url())) {
+    await submitAndWait(page, page.locator('[data-lld-goal-step="questions"] form').getByRole('button', { name: 'Next' }));
+  }
+  const pace = page.locator('[data-lld-goal-step="pace"]');
+  await expect(pace).toBeVisible();
+  await pace.locator('input[name="lld_hw_pace"][value="0.5"]').check();
+  await submitAndWait(page, pace.getByRole('button', { name: 'Next' }));
   await expect(page.locator('[data-lld-goal-step="plan"]')).toBeVisible();
   await page.goto('/members/goal/');
   await expect(page.locator('main')).toContainText('84');

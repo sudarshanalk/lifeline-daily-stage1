@@ -118,7 +118,18 @@ class LLD_Members_Today_Screen {
 		if ( '' !== $notice ) {
 			$html .= '<div class="lld-notice-box lld-state-saved" role="status"><p>' . esc_html( $notice ) . '</p></div>';
 		}
-		$html .= self::next_step_html( $member_id, $facts );
+		// P3-35: the Healthy Weight day (the reason, the step's reason line, the note, food, quick questions, cards).
+		$hw = $facts['health'] && class_exists( 'LLD_Members_Hw_Screen_Parts' ) ? LLD_Members_Hw_Screen_Parts::today_view( $member_id, $today ) : null;
+		if ( $hw && ! empty( $hw['reason_line'] ) ) {
+			$line  = LLD_Members_Hw_Screen_Parts::text_of( $hw['reason_line'] );
+			$html .= '' !== $line ? '<p class="lld-hw-reason-line" data-lld-section="hw-reason">' . LLD_Members_Hw_Screen_Parts::rich( $line ) . '</p>' : '';
+		}
+		$html .= self::next_step_html( $member_id, $facts, $hw );
+		if ( $hw ) {
+			$html .= self::hw_today_html( $member_id, $facts, $hw );
+		} elseif ( $facts['health'] ) {
+			$html .= self::hw_pace_pending_html( $member_id );
+		}
 		$html .= '<div class="lld-dash-pair">' . self::ring_html( $member_id, $facts ) . self::tiles_html( $member_id, $facts ) . '</div>';
 		$html .= self::goal_card_html( $member_id, $facts, $main_goal );
 		$html .= self::insights_html( $member_id, $facts );
@@ -131,6 +142,125 @@ class LLD_Members_Today_Screen {
 		}
 		$html .= '<p><a href="' . esc_url( home_url( '/members/settings/' ) ) . '">Account</a></p></section></div>';
 		self::output( 'Today', $html );
+	}
+
+	/**
+	 * The Healthy Weight parts of Today (P3-35, from LLD_Members_HW_Programme::today): the one-minute note with the
+	 * urgent-help line when it carries support wording (FR3-105), food today with the evening "Add a drink" (R-HW-ALC-02)
+	 * and repeating a meal, at most two quick questions (FR3-99), the support cards, "Carry on to week 5" (Owner Question
+	 * 161) and the focus block offer after week 8 (FR3-104).
+	 *
+	 * @param int   $member_id Member number.
+	 * @param array $facts     facts().
+	 * @param array $hw        today view.
+	 */
+	private static function hw_today_html( $member_id, array $facts, array $hw ) {
+		$c    = 'LLD_Members_Hw_Screen_Parts';
+		if ( $c::stopped( $hw ) ) {
+			return $c::stop_html( $hw['stop'] ); // R-HW-SAFE-01 at any time: only the SCR-26 stop
+		}
+		$html = '';
+		// The note (FR3-105): readable on a 360-pixel screen with no sideways scroll (AS-04).
+		$note = isset( $hw['note'] ) && is_array( $hw['note'] ) ? $hw['note'] : null;
+		if ( $note && ! empty( $note['title'] ) && ! empty( $note['body'] ) ) {
+			$html .= '<section class="lld-card lld-hw-note" data-lld-section="hw-note" data-lld-note="' . esc_attr( isset( $note['key'] ) ? (string) $note['key'] : '' ) . '" data-lld-support="' . ( ! empty( $note['support'] ) ? 'yes' : 'no' ) . '">';
+			$html .= '<p class="lld-kicker">' . esc_html( $c::LABELS['note_kicker'] ) . '</p><h2>' . esc_html( (string) $note['title'] ) . '</h2>';
+			foreach ( preg_split( '/\n\s*\n/', trim( (string) $note['body'] ) ) as $para ) {
+				$html .= '<p>' . esc_html( trim( $para ) ) . '</p>';
+			}
+			if ( ! empty( $note['try_this'] ) ) {
+				$html .= '<p class="lld-hw-try" data-lld-try-this>' . esc_html( (string) $note['try_this'] ) . '</p>';
+			}
+			if ( ! empty( $note['support'] ) ) {
+				// The approved urgent-help line (NFR2-07), from the note or the content loader; never written here.
+				$line = isset( $note['support_line'] ) && is_string( $note['support_line'] ) ? $note['support_line'] : $c::block_text( 'urgent_help' );
+				if ( '' !== $line && false === strpos( (string) $note['body'], $line ) ) {
+					$link  = '<a href="' . esc_url( $c::HELPLINE ) . '" target="_blank" rel="noopener">findahelpline.com</a>';
+					$html .= '<p class="lld-hw-urgent" data-lld-urgent-help>' . preg_replace( '/findahelpline\.com/', $link, esc_html( $line ), 1 ) . '</p>';
+				}
+			}
+			$html .= '</section>';
+		}
+		// Food today: log a meal, repeat a meal in one tap, and the evening "Add a drink" (never with an eating-disorder flag).
+		$food   = '';
+		$repeat = isset( $hw['repeat_meal'] ) && is_array( $hw['repeat_meal'] ) ? $hw['repeat_meal'] : null;
+		if ( $repeat && ! empty( $repeat['label'] ) ) {
+			if ( ! empty( $repeat['href'] ) ) {
+				$food .= '<a class="lld-button lld-button-secondary" href="' . esc_url( (string) $repeat['href'] ) . '" data-lld-repeat-meal>' . esc_html( (string) $repeat['label'] ) . '</a> ';
+			} elseif ( $c::has( $c::PROGRAMME, 'repeat_meal' ) ) {
+				$food .= '<form method="post" class="lld-inline-form">' . wp_nonce_field( 'lld_hw_repeat', 'lld_hw_repeat_nonce', true, false ) . '<button class="lld-button lld-button-secondary" type="submit" data-lld-repeat-meal>' . esc_html( (string) $repeat['label'] ) . '</button></form> ';
+			}
+		}
+		$drink = isset( $hw['drink_shortcut'] ) ? $hw['drink_shortcut'] : null;
+		if ( is_array( $drink ) && ! empty( $drink['show'] ) && ! $c::ed( $facts ) ) {
+			$label = $c::tpl( 'hw.R-HW-ALC-02.button' );
+			if ( '' !== $label ) {
+				$food .= '<a class="lld-button lld-button-secondary" href="' . esc_url( ! empty( $drink['href'] ) ? (string) $drink['href'] : home_url( '/members/diary/' ) ) . '" data-lld-add-drink>' . esc_html( $label ) . '</a>';
+			}
+		}
+		if ( '' !== $food ) {
+			$html .= '<section class="lld-card" data-lld-section="hw-food"><h2>' . esc_html( $c::LABELS['food_today'] ) . '</h2><div class="lld-row lld-hw-actions"><a class="lld-button" href="' . esc_url( home_url( '/members/diary/' ) ) . '">' . esc_html( $c::LABELS['log_meal'] ) . '</a> ' . $food . '</div></section>';
+		}
+		// At most two quick questions a day (FR3-99 AS-02).
+		$html .= LLD_Members_Hw_Questions_Screen::qod_html( isset( $hw['qod'] ) && is_array( $hw['qod'] ) ? $hw['qod'] : array() );
+		// The free support cards.
+		$html .= $c::cards_html( isset( $hw['cards'] ) && is_array( $hw['cards'] ) ? $hw['cards'] : array() );
+		// Week 4 runs straight into week 5 (Owner Question 161).
+		if ( ! empty( $hw['carry_on'] ) && $c::has( $c::PROGRAMME, 'carry_on' ) ) {
+			$html .= '<section class="lld-card" data-lld-section="hw-carry-on"><form method="post">' . wp_nonce_field( 'lld_hw_carry', 'lld_hw_carry_nonce', true, false ) . '<button class="lld-button" type="submit">' . esc_html( $c::LABELS['carry_on'] ) . '</button></form></section>';
+		}
+		// After week 8: the focus block offer (FR3-104).
+		$blocks = LLD_Members_Hw_Blocks_Screen::data( $member_id, (string) $facts['today'] );
+		if ( $blocks && $blocks['due'] && ( $blocks['choices'] || $blocks['keep_it_off'] ) ) {
+			$html .= '<section class="lld-card" data-lld-section="hw-blocks"><h2>' . esc_html( $c::LABELS['blocks_title'] ) . '</h2>';
+			if ( '' !== $blocks['because'] ) {
+				$html .= '<p data-lld-because>' . esc_html( $blocks['because'] ) . '</p>';
+			}
+			$html .= '<p>' . lld_button( array( 'label' => $c::LABELS['next'], 'href' => home_url( '/members/goal/?hw=blocks' ) ) ) . '</p></section>';
+		}
+		return $html;
+	}
+
+	/**
+	 * A weight-loss goal saved at the goal step whose pace is still to choose (S6): Today asks the member to finish
+	 * choosing it.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function hw_pace_pending_html( $member_id ) {
+		if ( ! class_exists( 'LLD_Members_Hw_Screen_Parts' ) || ! LLD_Members_Goal_Setting::hw_flow() ) {
+			return '';
+		}
+		$goal = LLD_Members_Hw_Screen_Parts::call( LLD_Members_Hw_Screen_Parts::PROGRAMME, 'pending_pace', array( (int) $member_id ) );
+		return is_numeric( $goal ) && (int) $goal > 0 ? LLD_Members_Hw_Screen_Parts::pace_pending_html( (int) $goal ) : '';
+	}
+
+	/**
+	 * The Healthy Weight posts on Today: a quick question, repeating a meal, carrying on to week 5.
+	 *
+	 * @param int   $member_id Member number.
+	 * @param array $facts     facts().
+	 * @return string|WP_Error|null The saved key, an error, or null when none was posted.
+	 */
+	private static function hw_today_post( $member_id, array $facts ) {
+		if ( ! class_exists( 'LLD_Members_Hw_Screen_Parts' ) || ! $facts['health'] ) {
+			return null;
+		}
+		$c     = 'LLD_Members_Hw_Screen_Parts';
+		$today = (string) $facts['today'];
+		if ( isset( $_POST['lld_hw_qod_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_hw_qod_nonce'] ) ), 'lld_hw_qod' ) ) {
+			$got = LLD_Members_Hw_Questions_Screen::save_qod( $member_id );
+			return is_wp_error( $got ) ? $got : 'hw';
+		}
+		if ( isset( $_POST['lld_hw_repeat_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_hw_repeat_nonce'] ) ), 'lld_hw_repeat' ) ) {
+			$got = $c::call( $c::PROGRAMME, 'repeat_meal', array( (int) $member_id, $today ), false );
+			return is_wp_error( $got ) ? $got : 'hw';
+		}
+		if ( isset( $_POST['lld_hw_carry_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_hw_carry_nonce'] ) ), 'lld_hw_carry' ) ) {
+			$got = $c::call( $c::PROGRAMME, 'carry_on', array( (int) $member_id, $today ), false );
+			return is_wp_error( $got ) ? $got : 'hw';
+		}
+		return null;
 	}
 
 	/**
@@ -184,7 +314,7 @@ class LLD_Members_Today_Screen {
 			}
 			return new WP_Error( 'lld_reached', 'Choose what comes next.' );
 		}
-		return null;
+		return self::hw_today_post( $member_id, $facts );
 	}
 
 	/**
@@ -193,7 +323,7 @@ class LLD_Members_Today_Screen {
 	 * @param int   $member_id Member number.
 	 * @param array $facts     facts().
 	 */
-	private static function next_step_html( $member_id, array $facts ) {
+	private static function next_step_html( $member_id, array $facts, $hw = null ) {
 		$today = (string) $facts['today'];
 		$step  = $facts['health'] ? LLD_Members_Goal_Journey::today_step( $member_id, $today, true ) : null;
 		$text  = $step ? LLD_Members_Goal_Journey::step_text( $member_id, $step, $today, $facts['situations'] ) : '';
@@ -204,6 +334,18 @@ class LLD_Members_Today_Screen {
 		}
 		$status = $step ? (string) $step['status'] : 'shown';
 		$source = $step ? ( '' !== $rule ? 'engine' : ( 'read' === $type ? 'generic' : 'plan' ) ) : 'plan';
+		// P3-35: the Healthy Weight step of the day (the approved activity) with its reason line, unless a signed
+		// engine rule chose today's step.
+		$why = '';
+		if ( '' === $rule && is_array( $hw ) && isset( $hw['step'] ) && is_array( $hw['step'] ) && ! empty( $hw['step']['activity_key'] ) ) {
+			$meta = LLD_Members_Hw_Screen_Parts::activity( (string) $hw['step']['activity_key'] );
+			if ( $meta && ! empty( $meta['title'] ) ) {
+				$text   = (string) $meta['title'];
+				$type   = 'activity';
+				$source = 'hw';
+				$why    = isset( $hw['step']['reason'] ) ? LLD_Members_Hw_Screen_Parts::text_of( $hw['step']['reason'] ) : '';
+			}
+		}
 		if ( '' === $text ) {
 			// The plan's scheduled item: the track's activity of the day, else a log.
 			$plan_card = class_exists( 'LLD_Members_Programme' ) ? LLD_Members_Programme::today_card_html( $member_id ) : '';
@@ -223,6 +365,9 @@ class LLD_Members_Today_Screen {
 		$html .= '<p class="lld-kicker">' . ( 'done' === $status ? 'Done today' : ( 'skipped' === $status ? 'Skipped today' : 'Next step' ) ) . '</p>';
 		if ( 'shown' === $status ) {
 			$html .= '<h2 class="lld-next-step-text">' . self::rich( $text ) . '</h2>';
+			if ( '' !== $why ) {
+				$html .= '<p class="lld-hint" data-lld-step-reason>' . self::rich( $why ) . '</p>';
+			}
 			$html .= '<p class="lld-pill-actions"><a href="' . esc_url( $link[0] ) . '">' . esc_html( $link[1] ) . '</a></p>';
 			$html .= '<form method="post" class="lld-row">' . wp_nonce_field( 'lld_today', 'lld_today_nonce', true, false ) . '<input type="hidden" name="lld_action_type" value="' . esc_attr( $type ) . '">';
 			$html .= '<button class="lld-button" type="submit" name="lld_step" value="done">Done</button> <button class="lld-button lld-button-secondary" type="submit" name="lld_step" value="skipped">Skip</button></form>';
@@ -596,7 +741,8 @@ class LLD_Members_Today_Screen {
 				if ( is_wp_error( $got ) ) {
 					$error = $got->get_error_message();
 				} else {
-					wp_safe_redirect( home_url( '/members/check-in/?done=1' . ( '' !== $got ? '&level=' . rawurlencode( $got ) : '' ) ) );
+					$way = self::hw_way_posted();
+					wp_safe_redirect( home_url( '/members/check-in/?done=1' . ( '' !== $got ? '&level=' . rawurlencode( $got ) : '' ) . ( $way ? '&way=' . rawurlencode( implode( ',', $way ) ) : '' ) ) );
 					exit;
 				}
 			} elseif ( isset( $_POST['lld_adjust_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_adjust_nonce'] ) ), 'lld_adjust' ) ) {
@@ -628,6 +774,7 @@ class LLD_Members_Today_Screen {
 		if ( isset( $_GET['level'] ) && in_array( $_GET['level'], array( 'urgent', 'check', 'caution' ), true ) ) {
 			$html .= self::level_html( sanitize_key( (string) wp_unslash( $_GET['level'] ) ) );
 		}
+		$html .= self::hw_way_replies_html();
 		$html .= '<section class="lld-card" data-lld-section="goal-progress">' . self::progress_block( $member_id, $goal, $facts, 'Main goal' );
 		if ( ! $facts['premium'] ) {
 			// FR3-14 AS-03: a Free member sees the check-in result; adjustments are Premium.
@@ -679,12 +826,13 @@ class LLD_Members_Today_Screen {
 				$html .= '<div class="lld-field"><label for="lld_glucose">Fasting glucose, mmol/L</label><input id="lld_glucose" name="lld_glucose" type="number" inputmode="decimal" step="any"></div>';
 			}
 		}
+		$html .= self::hw_way_html( $goal );
 		$html .= '<p class="lld-hint">Leave a box empty to skip it this week.</p>';
 		$html .= '<button class="lld-button" type="submit">' . ( $due ? 'Finish check-in' : 'Save' ) . '</button></form></section>';
 
 		// The Stage 2 track check-in, untouched, for members on a track.
 		if ( class_exists( 'LLD_Members_Programme' ) && LLD_Members_Programme::active( $member_id ) ) {
-			$html .= '<section class="lld-card" data-lld-section="track-check-in"><h2>Track check-in</h2>' . LLD_Members_Programme::check_in_html( $member_id ) . '</section>';
+			$html .= '<section class="lld-card" data-lld-section="track-check-in"><h2>Track check-in</h2>' . self::track_ids( LLD_Members_Programme::check_in_html( $member_id ) ) . '</section>';
 		}
 		$html .= '<p><a href="' . esc_url( home_url( '/members/home/' ) ) . '">Back to Today</a></p></div>';
 		self::output( 'Weekly check-in', $html );
@@ -744,6 +892,11 @@ class LLD_Members_Today_Screen {
 			}
 		}
 		LLD_Members_Goal_Journey::record_check_in( $member_id, (string) $facts['today'] );
+		// P3-35 (R-HW-WEEK-01): "What got in the way?" changes next week's plan; skipping it still completes the check-in.
+		$way = self::hw_way_posted();
+		if ( $way && class_exists( 'LLD_Members_Hw_Screen_Parts' ) ) {
+			LLD_Members_Hw_Screen_Parts::call( LLD_Members_Hw_Screen_Parts::PROGRAMME, 'record_barrier', array( (int) $member_id, $way, (string) $facts['today'] ) );
+		}
 		if ( LLD_Members_Goal_Journey::check_reached( $member_id, $goal, $facts ) ) {
 			wp_safe_redirect( home_url( '/members/home/' ) ); // the Goal reached screen
 			exit;
@@ -752,6 +905,59 @@ class LLD_Members_Today_Screen {
 			LLD_Members_Insights_Runner::run_member( $member_id, (string) $facts['today'], array( 'at_check_in' => true ) );
 		}
 		return $level;
+	}
+
+	/**
+	 * "What got in the way?" (FR3-107, R-HW-WEEK-01): the seven signed choices, optional, for a Healthy Weight goal.
+	 *
+	 * @param array $goal Main goal.
+	 */
+	private static function hw_way_html( array $goal ) {
+		if ( ! class_exists( 'LLD_Members_Hw_Screen_Parts' ) || 'lose_weight' !== (string) $goal['goal_type'] || ! LLD_Members_Hw_Screen_Parts::has( LLD_Members_Hw_Screen_Parts::PROGRAMME, 'record_barrier' ) ) {
+			return '';
+		}
+		$c    = 'LLD_Members_Hw_Screen_Parts';
+		$html = '<fieldset class="lld-options lld-hw-way" data-lld-section="hw-way"><legend>' . esc_html( $c::LABELS['got_in_way'] ) . '</legend>';
+		foreach ( $c::GOT_IN_WAY as $value => $label ) {
+			$html .= '<div class="lld-option"><label><input type="checkbox" name="lld_hw_way[]" value="' . esc_attr( $value ) . '"> ' . esc_html( $label ) . '</label></div>';
+		}
+		return $html . '</fieldset>';
+	}
+
+	/** The "What got in the way?" choices posted, in the signed order. */
+	private static function hw_way_posted() {
+		if ( ! class_exists( 'LLD_Members_Hw_Screen_Parts' ) || ! isset( $_POST['lld_hw_way'] ) || ! is_array( $_POST['lld_hw_way'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification -- the check-in nonce is checked by the caller.
+			return array();
+		}
+		$got = array_map( 'sanitize_key', wp_unslash( $_POST['lld_hw_way'] ) ); // phpcs:ignore WordPress.Security.NonceVerification
+		return array_values( array_intersect( array_keys( LLD_Members_Hw_Screen_Parts::GOT_IN_WAY ), $got ) );
+	}
+
+	/** The signed replies to "What got in the way?" after the check-in (the first two, T-HW-WEEK-01a to -01g). */
+	private static function hw_way_replies_html() {
+		if ( empty( $_GET['way'] ) || ! class_exists( 'LLD_Members_Hw_Screen_Parts' ) || ! LLD_Members_Hw_Screen_Parts::has( 'LLD_Members_HW_Rules', 'check_in' ) ) {
+			return '';
+		}
+		$way = array_values( array_intersect( array_keys( LLD_Members_Hw_Screen_Parts::GOT_IN_WAY ), explode( ',', sanitize_text_field( wp_unslash( $_GET['way'] ) ) ) ) );
+		$out = LLD_Members_HW_Rules::check_in( array( 'choices' => $way ) );
+		$html = '';
+		foreach ( isset( $out['texts'] ) ? (array) $out['texts'] : array() as $t ) {
+			if ( is_string( $t ) && '' !== $t ) {
+				$html .= '<p>' . esc_html( $t ) . '</p>';
+			}
+		}
+		return '' === $html ? '' : '<section class="lld-card lld-hw-replies" data-lld-section="hw-way-replies">' . $html . '</section>';
+	}
+
+	/**
+	 * The Stage 2 track check-in shown on this page uses the same field ids as the weekly check-in above (lld_weight,
+	 * lld_waist …), so a label would point at the wrong box. Inside this page its ids, and the labels that name them,
+	 * get a "lld-track-" prefix; the field names, and so what the Stage 2 form posts, stay exactly as they are.
+	 *
+	 * @param string $html The Stage 2 track check-in.
+	 */
+	private static function track_ids( $html ) {
+		return (string) preg_replace( '/(?<![\w-])(id|for|aria-describedby)="lld_([a-z0-9_-]+)"/', '$1="lld-track-$2"', (string) $html );
 	}
 
 	/** What the check-in asks for, from the goal's measure. */
@@ -846,6 +1052,11 @@ class LLD_Members_Today_Screen {
 	 * @param string $main  Main HTML.
 	 */
 	private static function output( $title, $main ) {
+		if ( class_exists( 'LLD_Members_Hw_Screen_Parts' ) && preg_match( '/data-lld-(?:hw-dismiss|show-when)/', (string) $main ) ) {
+			// The Healthy Weight parts need the Stage 3 script (closing a support card, follow-up questions).
+			LLD_Members_Hw_Screen_Parts::output( $title, $main, true );
+			return;
+		}
 		wp_enqueue_style( self::HANDLE, plugins_url( 'assets/stage3.css', LLD_MEMBERS_FILE ), array(), LLD_MEMBERS_VERSION );
 		ob_start();
 		lld_members_layout( array( 'title' => $title, 'main' => $main, 'signed_in' => true, 'wide' => true ) );

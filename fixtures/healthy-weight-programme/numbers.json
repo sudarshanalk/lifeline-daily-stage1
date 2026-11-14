@@ -1,0 +1,213 @@
+{
+  "group": "The numbers: R-HW-NUM-03 to -05 (P3-55, P3-56, P3-35)",
+  "tool": "healthy-weight-programme",
+  "fixtures": [
+    {
+      "id": "FX-HWP-HWN03-01",
+      "purpose": "HWN-03a: P3-55 S5: female, 45, 160 cm, 80 kg, some, 0.5 -> 1,390 kcal",
+      "inputs": {
+        "source_id": "HWN-03a",
+        "fn": "target",
+        "args": {
+          "sex": "F",
+          "age": 45,
+          "height_cm": 160,
+          "weight_kg": 80,
+          "activity_level": "some",
+          "pace": 0.5
+        }
+      },
+      "expected": {
+        "target": 1390
+      },
+      "oracle": "clinical",
+      "source_version": "9fbce2424efe1ac190200e2adaed7c0701b4518fc53be4f6199a3b70b7d4670e",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWN03-02",
+      "purpose": "HWN-03b: P3-55 CAL-03 at \"active\" -> 1,640 kcal (FR3-102 AS-03)",
+      "inputs": {
+        "source_id": "HWN-03b",
+        "fn": "target",
+        "args": {
+          "sex": "F",
+          "age": 45,
+          "height_cm": 160,
+          "weight_kg": 80,
+          "activity_level": "active",
+          "pace": 0.5
+        }
+      },
+      "expected": {
+        "target": 1640
+      },
+      "oracle": "clinical",
+      "source_version": "9fbce2424efe1ac190200e2adaed7c0701b4518fc53be4f6199a3b70b7d4670e",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWN03-03",
+      "purpose": "HWN-03c: P3-55 CAL-03 at \"low\" -> the 1,200 kcal safe minimum (FR3-102 AS-03)",
+      "inputs": {
+        "source_id": "HWN-03c",
+        "fn": "target",
+        "args": {
+          "sex": "F",
+          "age": 45,
+          "height_cm": 160,
+          "weight_kg": 80,
+          "activity_level": "low",
+          "pace": 0.5
+        }
+      },
+      "expected": {
+        "target": 1200,
+        "notes": [
+          "floor"
+        ]
+      },
+      "oracle": "clinical",
+      "source_version": "9fbce2424efe1ac190200e2adaed7c0701b4518fc53be4f6199a3b70b7d4670e",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWN04-01",
+      "purpose": "HWN-04a: start 70, goal 66, 163 cm standard: 66.5, 66.2, 66 (10 % = 63 is past the goal)",
+      "inputs": {
+        "source_id": "HWN-04a",
+        "fn": "milestones",
+        "args": {
+          "start_kg": 70,
+          "goal_kg": 66,
+          "height_cm": 163,
+          "adjusted": false,
+          "pace": 0.5,
+          "today": "2026-11-06"
+        }
+      },
+      "expected": {
+        "milestones.length": 3,
+        "milestones.0.kg": 66.5,
+        "milestones.0.kind": "5pct",
+        "milestones.1.kg": 66.2,
+        "milestones.1.kind": "healthy",
+        "milestones.2.kg": 66,
+        "milestones.2.kind": "goal"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWN04-02",
+      "purpose": "HWN-04b: goal above the top of the healthy range: no healthy-range milestone (FR3-101 AS-02)",
+      "inputs": {
+        "source_id": "HWN-04b",
+        "fn": "milestones",
+        "args": {
+          "start_kg": 80,
+          "goal_kg": 70,
+          "height_cm": 163,
+          "adjusted": false,
+          "pace": 0.5,
+          "today": "2026-11-06"
+        }
+      },
+      "expected": {
+        "milestones.length": 3,
+        "milestones.0.kind": "5pct",
+        "milestones.1.kind": "10pct",
+        "milestones.2.kind": "goal"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWN05-01",
+      "purpose": "HWN-05a: 1 to 2 days, 3 to 4 a time: 680 kcal a week, about 100 a day",
+      "inputs": {
+        "source_id": "HWN-05a",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "1_2_days",
+          "alcohol_amount": "3_4",
+          "target": 1400
+        }
+      },
+      "expected": {
+        "weekly_kcal": 680,
+        "daily_kcal": 100,
+        "line.text": "Your 1,400 kcal a day includes drinks. Your usual week of drinks is about 680 kcal, roughly 100 a day."
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWN05-02",
+      "purpose": "HWN-05b: most days, 1 to 2 a time: 1,170 a week, about 170 a day",
+      "inputs": {
+        "source_id": "HWN-05b",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "most_days",
+          "alcohol_amount": "1_2"
+        }
+      },
+      "expected": {
+        "weekly_kcal": 1170,
+        "daily_kcal": 170
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWN05-03",
+      "purpose": "HWN-05c: never: no line",
+      "inputs": {
+        "source_id": "HWN-05c",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "never"
+        }
+      },
+      "expected": {
+        "line": null
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWN05-04",
+      "purpose": "HWN-05d: eating-disorder flag: no line",
+      "inputs": {
+        "source_id": "HWN-05d",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "1_2_days",
+          "alcohol_amount": "3_4",
+          "eating_disorder": "yes"
+        }
+      },
+      "expected": {
+        "line": null
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    }
+  ]
+}

@@ -745,6 +745,8 @@ const DOWNLOAD_TABLES = [
 const STAGE3_DOWNLOAD_TABLES = [
   'goals', 'goal_baselines', 'plans', 'plan_adjustments', 'today_steps', 'insights', 'custom_foods', 'food_log',
   'food_favourites', 'nutrition_targets', 'recipes', 'food_preferences', 'readings', 'reminders', 'shares',
+  // P3-35 (FR3-60): the Healthy Weight programme's member tables.
+  'profile_answers', 'goal_milestones', 'block_choices', 'notes_shown', 'check_in_barriers',
 ];
 // Never in the download: A4 security records, unsubscribe codes, the test clock, operations records.
 const NEVER_DOWNLOADED = ['security_code', 'sign_in_lock', 'session', 'app_key', 'unsubscribe_code', 'test_clock', 'erasure', 'admin_log', 'fb_removal', 'contact', 'contact_consent', 'error_log', 'stripe_notice'];

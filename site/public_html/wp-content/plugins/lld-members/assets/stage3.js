@@ -936,3 +936,68 @@
     initAdminToggles();
   }
 })();
+
+/**
+ * Healthy Weight programme (P3-35): follow-up questions shown only after the answers that ask for them
+ * (data-lld-show-when="name:value1,value2", or "name:!value" for any answer but that one; the drinks-a-time tap,
+ * the wake-up time, the mixed-background follow-up), and "Not now" on a support card (closes it on this page).
+ */
+(function () {
+  'use strict';
+
+  function chosen(form, name) {
+    var out = [];
+    Array.prototype.forEach.call(form.elements, function (el) {
+      if (el.name !== name && el.name !== name + '[]') return;
+      if ((el.type === 'radio' || el.type === 'checkbox') && !el.checked) return;
+      if (el.disabled || el.value === '') return;
+      out.push(el.value);
+    });
+    return out;
+  }
+
+  function apply(form) {
+    form.querySelectorAll('[data-lld-show-when]').forEach(function (box) {
+      var rule = box.getAttribute('data-lld-show-when') || '';
+      var cut = rule.lastIndexOf(':');
+      if (cut < 1) return;
+      var name = rule.slice(0, cut);
+      var spec = rule.slice(cut + 1);
+      var not = spec.charAt(0) === '!';
+      var values = (not ? spec.slice(1) : spec).split(',');
+      var have = chosen(form, name);
+      var show = not
+        ? have.length > 0 && have.every(function (v) { return values.indexOf(v) === -1; })
+        : have.some(function (v) { return values.indexOf(v) !== -1; });
+      box.hidden = !show;
+      box.querySelectorAll('input, select, textarea').forEach(function (el) { el.disabled = !show; });
+    });
+  }
+
+  function init() {
+    if (typeof document.querySelectorAll !== 'function') return; // test stubs without a full DOM
+    document.querySelectorAll('form').forEach(function (form) {
+      if (!form.querySelector('[data-lld-show-when]')) return;
+      apply(form);
+      form.addEventListener('change', function () { apply(form); });
+    });
+    document.querySelectorAll('[data-lld-hw-dismiss]').forEach(function (button) {
+      button.addEventListener('click', function () {
+        var card = button.closest('[data-lld-section]');
+        if (!card) return;
+        var next = card.nextElementSibling;
+        card.hidden = true;
+        if (next) {
+          if (!next.hasAttribute('tabindex')) next.setAttribute('tabindex', '-1');
+          next.focus();
+        }
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+})();

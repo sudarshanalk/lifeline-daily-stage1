@@ -18,7 +18,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class LLD_Members_Stage3_Schema {
 
-	const VERSION = 6;
+	const VERSION = 7;
 
 	/**
 	 * Every Stage 3 table suffix, in creation order. Stage 2's all_suffixes() is left as it is; the
@@ -50,6 +50,13 @@ class LLD_Members_Stage3_Schema {
 			'member_notes',
 			'premium_grants',
 			'admin_devices',
+			// Version 7 (P3-35, Healthy Weight programme; data model v0.2).
+			'profile_answers',
+			'goal_milestones',
+			'block_choices',
+			'festival_calendar',
+			'notes_shown',
+			'check_in_barriers',
 		);
 	}
 
@@ -60,7 +67,9 @@ class LLD_Members_Stage3_Schema {
 	 * @return string[]
 	 */
 	public static function health_suffixes() {
-		return array( 'goals', 'goal_baselines', 'plans', 'plan_adjustments', 'insights', 'food_log', 'nutrition_targets', 'food_preferences', 'readings' );
+		// P3-35: the Healthy Weight answers, milestones, block choices and check-in barriers are health data (data model:
+		// "deleted with the account or when health consent is withdrawn"). The notes shown are personal, kept 13 months.
+		return array( 'goals', 'goal_baselines', 'plans', 'plan_adjustments', 'insights', 'food_log', 'nutrition_targets', 'food_preferences', 'readings', 'profile_answers', 'goal_milestones', 'block_choices', 'check_in_barriers' );
 	}
 
 	/**
@@ -78,6 +87,8 @@ class LLD_Members_Stage3_Schema {
 		$links['foods']          = array( 'member_id' ); // only member-added packaged foods carry a member number
 		// Admin devices belong to admins, not members (P3-87, NFR3-20), so the member checker has nothing to find there.
 		unset( $links['admin_devices'] );
+		// The festival calendar is owner-approved content with no member in it (P3-35).
+		unset( $links['festival_calendar'] );
 		return $links;
 	}
 
@@ -459,6 +470,98 @@ class LLD_Members_Stage3_Schema {
 			PRIMARY KEY (id),
 			UNIQUE KEY one_device (admin_user_id, device_hash)
 			',
+			// Getting-to-know-you answer (P3-35; FR3-98, FR3-99, FR3-101, FR3-109, FR3-110): the answer sealed; one per question.
+			'profile_answers' => '
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			member_id BIGINT UNSIGNED NOT NULL,
+			question_key VARCHAR(48) NOT NULL,
+			answer_ct TEXT NULL,
+			skipped TINYINT(1) NOT NULL DEFAULT 0,
+			asked_in VARCHAR(16) NULL,
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL,
+			PRIMARY KEY (id),
+			UNIQUE KEY one_answer (member_id, question_key),
+			KEY member_updated (member_id, updated_at)
+			',
+			// Weight milestone (P3-35; FR3-101): the weight sealed, in kg. member_id scopes the row like every Stage 3 table.
+			'goal_milestones' => '
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			member_id BIGINT UNSIGNED NOT NULL,
+			goal_id BIGINT UNSIGNED NOT NULL,
+			kind VARCHAR(16) NOT NULL,
+			target_value_ct TEXT NULL,
+			reached_at DATETIME NULL,
+			celebrated TINYINT(1) NOT NULL DEFAULT 0,
+			recheck_done TINYINT(1) NOT NULL DEFAULT 0,
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL,
+			PRIMARY KEY (id),
+			KEY goal_id (goal_id),
+			KEY member_updated (member_id, updated_at)
+			',
+			// Focus block choice (P3-35; FR3-104, R-HW-BLOCK-01 to -03). The *_block_id columns link the focus block's track
+			// post; the *_block_key columns keep the block's slug, so a choice stays readable before its track is loaded.
+			'block_choices' => '
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			member_id BIGINT UNSIGNED NOT NULL,
+			suggested_block_id BIGINT UNSIGNED NULL,
+			suggested_block_key VARCHAR(48) NULL,
+			rule_id BIGINT UNSIGNED NULL,
+			chosen_block_id BIGINT UNSIGNED NULL,
+			chosen_block_key VARCHAR(48) NULL,
+			started_at DATETIME NULL,
+			finished_at DATETIME NULL,
+			festival_entry_id BIGINT UNSIGNED NULL,
+			paused_at DATETIME NULL,
+			resumed_at DATETIME NULL,
+			declined_festival TINYINT(1) NOT NULL DEFAULT 0,
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL,
+			PRIMARY KEY (id),
+			KEY member_updated (member_id, updated_at)
+			',
+			// Festival calendar entry (P3-35; FR3-99, FR3-104): owner-approved content, no member data. festival_key is the
+			// approved entry key the content loader (P3) writes by, so a member's fasts name an entry that never renumbers.
+			'festival_calendar' => '
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			festival_key VARCHAR(64) NULL,
+			name VARCHAR(190) NOT NULL,
+			kind VARCHAR(24) NOT NULL,
+			starts_on DATE NOT NULL,
+			ends_on DATE NOT NULL,
+			expected TINYINT(1) NOT NULL DEFAULT 0,
+			approved_on DATE NULL,
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL,
+			PRIMARY KEY (id),
+			UNIQUE KEY festival_key (festival_key),
+			KEY starts_on (starts_on)
+			',
+			// Mindset note shown (P3-35; FR3-105, FR3-106): one a day, no note twice within 30 days; kept 13 months.
+			'notes_shown' => '
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			member_id BIGINT UNSIGNED NOT NULL,
+			note_key VARCHAR(48) NOT NULL,
+			shown_on DATE NOT NULL,
+			reason VARCHAR(8) NULL DEFAULT "default",
+			rule_id BIGINT UNSIGNED NULL,
+			created_at DATETIME NOT NULL,
+			PRIMARY KEY (id),
+			UNIQUE KEY one_note (member_id, shown_on)
+			',
+			// Check-in barrier answer (P3-35; FR3-107): both answers sealed; the free text is never read by staff.
+			'check_in_barriers' => '
+			id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+			member_id BIGINT UNSIGNED NOT NULL,
+			check_in_date DATE NOT NULL,
+			barrier_choices_ct TEXT NULL,
+			barrier_text_ct TEXT NULL,
+			created_at DATETIME NOT NULL,
+			updated_at DATETIME NOT NULL,
+			PRIMARY KEY (id),
+			UNIQUE KEY one_check_in (member_id, check_in_date)
+			',
 		);
 	}
 
@@ -506,6 +609,14 @@ class LLD_Members_Stage3_Schema {
 		self::ensure_key( 'admin_log', 'admin_user', 'KEY admin_user (admin_user_id, created_at)' );
 		self::ensure_column( 'member', 'blocked_at', 'DATETIME NULL' );
 		self::ensure_column( 'member', 'blocked_reason', 'TEXT NULL' );
+		// Version 7 (P3-35, FR3-100, FR3-102, FR3-36, FR3-99): the goal's pace, the plan's eating method and the member's
+		// food rules (one store, reused by the getting-to-know-you questions). The food rules and the fasts kept can show
+		// a member's religion (special category), so they are sealed like every other health value: food_rules_ct.
+		self::ensure_column( 'goals', 'recommended_rate', 'DECIMAL(4,2) NULL' );
+		self::ensure_column( 'goals', 'chosen_rate', 'DECIMAL(4,2) NULL' );
+		self::ensure_column( 'goals', 'pace_rule_id', 'BIGINT UNSIGNED NULL' );
+		self::ensure_column( 'plans', 'eating_method', 'VARCHAR(16) NULL' );
+		self::ensure_column( 'food_preferences', 'food_rules_ct', 'TEXT NULL' );
 	}
 
 	/**

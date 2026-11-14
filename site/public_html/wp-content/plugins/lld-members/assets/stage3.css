@@ -964,6 +964,136 @@ button.lld-menu-item {
   }
 }
 
+/* ================= HEALTHY WEIGHT PROGRAMME (P3-35 · FR3-97 to FR3-110) ================= */
+/* BMI and waist bands share one neutral style: never red or green, whatever the band. */
+.lld-hw-band {
+  display: inline-block;
+  margin: 0 0 6px;
+  padding: 4px 12px;
+  border: 1px solid var(--lld-s3-border);
+  border-radius: 999px;
+  background: var(--lld-s3-card);
+  color: var(--lld-s3-ink);
+  font-weight: 700;
+}
+.lld-hw-result + .lld-hw-result {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--lld-s3-line);
+}
+.lld-hw-result h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+.lld-hw-question {
+  margin-bottom: 8px;
+}
+.lld-hw-question[hidden],
+.lld-hw [hidden],
+[data-lld-section][hidden],
+[data-lld-show-when][hidden] {
+  display: none;
+}
+.lld-hw-scale-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.lld-hw-scale-step {
+  position: relative;
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 44px;
+}
+.lld-hw-scale-step input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+.lld-hw-scale-step span {
+  display: flex;
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--lld-s3-border);
+  border-radius: 8px;
+  background: var(--lld-s3-card);
+  font-weight: 600;
+  cursor: pointer;
+}
+.lld-hw-scale-step input:checked + span {
+  border-color: var(--lld-s3-green);
+  background: var(--lld-s3-mint-soft);
+  color: var(--lld-s3-green-hover);
+}
+.lld-hw-scale-step input:focus-visible + span {
+  outline: 3px solid var(--lld-s3-green);
+  outline-offset: 2px;
+}
+.lld-hw-scale-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.lld-hw-drinks {
+  display: flex;
+  gap: 16px;
+  margin: 4px 0 8px;
+  color: var(--lld-s3-muted);
+}
+.lld-hw-support {
+  border-left: 4px solid #7a4b00;
+}
+.lld-hw-actions {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.lld-hw-note,
+.lld-hw-note p {
+  overflow-wrap: anywhere;
+}
+.lld-hw-try {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--lld-s3-mint-soft);
+}
+.lld-hw-urgent {
+  font-size: 0.95rem;
+}
+.lld-hw-reason-line {
+  margin: 0 0 12px;
+  font-weight: 600;
+}
+.lld-hw-milestones {
+  margin: 0;
+  padding-left: 20px;
+}
+.lld-hw-milestones li {
+  padding: 4px 0;
+}
+.lld-hw-why {
+  margin: 0;
+  padding-left: 20px;
+}
+.lld-hw-why li {
+  padding: 4px 0;
+}
+.lld-hw-celebrate {
+  border-left: 4px solid var(--lld-s3-mint);
+}
+.lld-hw-answers {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--lld-s3-line);
+}
+@media (max-width: 480px) {
+  .lld-hw-actions > * {
+    width: 100%;
+    text-align: center;
+  }
+}
+
 /* ================= FOOD TRACKER SCREEN (P3-36 B1 · FR3-26 to FR3-36) ================= */
 .lld-stage3-food {
   max-width: 1120px;

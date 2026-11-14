@@ -69,6 +69,9 @@ export const LEAD_STAGE2 = [`${PLUGIN}/includes/class-billing.php`, `${PLUGIN}/i
 export const DECISION_STAGE2 = {
   '03': [`${PLUGIN}/includes/class-personal.php`],
   90: [`${PLUGIN}/includes/class-premium.php`],
+  // P3-35: Owner Question 160 (10 Nov 2026), additions only: the two new content types (mindset note, question) in
+  // class-content.php and one hook for the day's step in class-programme.php; nothing existing changes.
+  35: [`${PLUGIN}/includes/class-content.php`, `${PLUGIN}/includes/class-programme.php`],
   36: ['class-account.php', 'class-content.php', 'class-programme.php', 'class-premium.php', 'class-personal.php', 'class-auth.php', 'class-growth.php'].map((f) => `${PLUGIN}/includes/${f}`),
 };
 // New plugin files one package may add outside includes/stage3/ (P3-36: each tool's own stylesheet or script, so no two
@@ -96,8 +99,12 @@ function toolsFor(ids) {
   return [...tools];
 }
 
-/** NFR3-05: file scope for one Stage 3 pull request. `review` lists declared Stage 2 files touched. */
-export function stage3Scope({ title, files, decisions = loadDecisions() }) {
+/**
+ * NFR3-05: file scope for one Stage 3 pull request. `review` lists declared Stage 2 files touched. `all` is every file
+ * the branch changes, including those a merged branch brought in (which `files` leaves out): a Stage 2 file an owner
+ * decision opens to the package is listed for the lead's review wherever its change came from.
+ */
+export function stage3Scope({ title, files, all = [], decisions = loadDecisions() }) {
   const c = classify(title);
   if (!c) return { ok: false, problems: [`title "${title}" is not S3-Pnn: <name> (Build Method Stage 3 §2)`], review: [] };
   const problems = [];
@@ -119,6 +126,9 @@ export function stage3Scope({ title, files, decisions = loadDecisions() }) {
       continue;
     }
     if (!matches(f, allowed)) problems.push(`${f} is outside the files of ${c.id}'s tools (${toolsFor(c.ids).join(', ')}; Build Method Stage 3 §4)`);
+  }
+  for (const id of c.ids) {
+    for (const f of DECISION_STAGE2[id] || []) if (all.includes(f) && !review.includes(f)) review.push(f);
   }
   return { ok: problems.length === 0, problems, review, package: c.id };
 }
@@ -198,10 +208,10 @@ function walk(dir, out = []) {
 /** Stage 3 test ids used under tests/stage3 that are not checks in docs/stage3/03 (Build Method §3 rule 3). */
 export function unknownTestIds({ root = ROOT } = {}) {
   const doc = readFileSync(resolve(root, 'docs', 'stage3', '03_Test_Criteria_Stage3.md'), 'utf8');
-  const known = new Set(doc.match(/TC-(?:FR3|NFR3)-\d{2,3}-AS-\d{2}/g) || []); // FR3-100 and above are valid (P3-35, P3-36)
+  const known = new Set(doc.match(/TC-(?:FR3|NFR3)-\d{2,3}-AS-\d{2}\b/g) || []);
   const problems = [];
   for (const file of walk(resolve(root, 'tests', 'stage3'))) {
-    const ids = readFileSync(file, 'utf8').match(/TC-(?:FR3|NFR3)-\d{2,3}-AS-\d{2}/g) || [];
+    const ids = readFileSync(file, 'utf8').match(/TC-(?:FR3|NFR3)-\d{2,3}-AS-\d{2}\b/g) || [];
     for (const id of new Set(ids)) if (!known.has(id)) problems.push(`${relative(root, file).replace(/\\/g, '/')}: ${id} is not a check in docs/stage3/03`);
   }
   return { ok: problems.length === 0, problems, known: known.size };
@@ -218,7 +228,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const files = changedFiles(base, head);
     r = stage3Guards({ files, diffs: (f) => diffLines(base, head, f), texts: (f) => headText(head, f) });
   } else {
-    r = stage3Scope({ title: arg('--title', process.env.PR_TITLE || ''), files: changedFiles(base, head) });
+    const all = git(['diff', '--name-only', `${base}...${head}`]).split(/\r?\n/).filter(Boolean);
+    r = stage3Scope({ title: arg('--title', process.env.PR_TITLE || ''), files: changedFiles(base, head), all });
     for (const f of r.review) console.log('stage3-scope: lead-review ' + f);
   }
   for (const p of r.problems) console.log('stage3-scope: ' + p);

@@ -1262,6 +1262,12 @@ class LLD_Members_Programme {
 	private static function day_items( $member_id, $row, $day ) {
 		$track = self::track_id( (string) $row->track_key );
 		$items = self::activities( $track, $day, $member_id );
+		// Stage 3 (P3-35, owner decision Q160: additions only): a programme may choose the day's step. With no filter
+		// attached the items are exactly as before.
+		if ( function_exists( 'has_filter' ) && has_filter( 'lld_members_day_items' ) ) {
+			$chosen = apply_filters( 'lld_members_day_items', $items, (int) $member_id, self::date_for_day( (int) $member_id, (int) $row->id, (int) $day ) );
+			$items  = is_array( $chosen ) ? array_values( $chosen ) : $items;
+		}
 		if ( $items || ! self::activities( $track, $day, $member_id, false ) ) {
 			return array( 'items' => $items, 'replaced' => false );
 		}

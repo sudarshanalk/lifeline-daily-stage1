@@ -709,8 +709,21 @@ class LLD_Members_Food_Log {
 		if ( 'search' === $which ) {
 			return array( 'foods' => self::search_member( $member_id, $query['q'] ?? '' ) );
 		}
+		if ( 'drinks' === $which ) {
+			return array( 'drinks' => self::drinks_for( $member_id ) );
+		}
+		if ( 'repeat' === $which ) {
+			// The member's own local date by default (the meal repeated is "today's" for them).
+			$date = preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) ( $query['date'] ?? '' ) ) ? (string) $query['date'] : self::local_today( $member_id );
+			$meal = self::premium( $member_id ) ? self::repeat_meal( self::rows_for( 'food_log', $member_id ), $date ) : null;
+			if ( $meal && self::hidden( $member_id )['all'] ) {
+				$meal['kcal']             = null; // FR3-69: no calorie number for a member the matrix covers
+				$meal['nutrition_hidden'] = true;
+			}
+			return array( 'meal' => $meal );
+		}
 		if ( 'recent' === $which ) {
-			$rows = self::named( $member_id, self::limit_history( self::rows_for( 'food_log', $member_id ), self::premium( $member_id ), gmdate( 'Y-m-d' ) ) );
+			$rows = self::named( $member_id, self::limit_history( self::rows_for( 'food_log', $member_id ), self::premium( $member_id ), self::local_today( $member_id ) ) );
 			return array( 'foods' => self::recent( $rows ) );
 		}
 		return array( 'error' => 'Not available.' );
@@ -830,6 +843,327 @@ class LLD_Members_Food_Log {
 			}
 		}
 		return array_merge( $foods, self::custom_hits( $member_id, $query ) );
+	}
+
+	// ---- Healthy Weight: drinks and the repeat meal (P3-35; FR3-110 AS-02, AS-03; FR3-102 AS-06) --------------------
+
+	/**
+	 * The food tracker's drinks in standard sizes, with mixers as separate items (R-HW-ALC-02). Sizes from the signed
+	 * rule and the P3-35 method sheet (section 5.1); the calories come from the food database's own entry for the drink,
+	 * found by its search words, so no figure is written here. A pint is the 568 ml pint the method sheet cites.
+	 */
+	const DRINKS = array(
+		'wine_125'     => array( 'label' => 'Glass of wine, 125 ml', 'ml' => 125, 'kind' => 'drink', 'search' => 'wine' ),
+		'wine_175'     => array( 'label' => 'Glass of wine, 175 ml', 'ml' => 175, 'kind' => 'drink', 'search' => 'wine' ),
+		'beer_bottle'  => array( 'label' => 'Bottle of beer, 330 ml', 'ml' => 330, 'kind' => 'drink', 'search' => 'beer' ),
+		'beer_pint'    => array( 'label' => 'Pint of beer, 568 ml', 'ml' => 568, 'kind' => 'drink', 'search' => 'beer' ),
+		'cider_bottle' => array( 'label' => 'Bottle of cider, 330 ml', 'ml' => 330, 'kind' => 'drink', 'search' => 'cider' ),
+		'cider_pint'   => array( 'label' => 'Pint of cider, 568 ml', 'ml' => 568, 'kind' => 'drink', 'search' => 'cider' ),
+		'spirit'       => array( 'label' => 'Single spirit, 25 ml', 'ml' => 25, 'kind' => 'drink', 'search' => 'spirits' ),
+		'tonic'        => array( 'label' => 'Tonic water, 150 ml', 'ml' => 150, 'kind' => 'mixer', 'search' => 'tonic water' ),
+		'cola'         => array( 'label' => 'Cola, 150 ml', 'ml' => 150, 'kind' => 'mixer', 'search' => 'cola' ),
+		'lemonade'     => array( 'label' => 'Lemonade, 150 ml', 'ml' => 150, 'kind' => 'mixer', 'search' => 'lemonade' ),
+		'soda_water'   => array( 'label' => 'Soda water, 150 ml', 'ml' => 150, 'kind' => 'mixer', 'search' => 'soda water' ),
+	);
+
+	/** Food-log source of a drink logged from the drinks list (hides the evening shortcut for the day). */
+	const DRINK_SOURCE = 'drink';
+
+	/**
+	 * The drinks list from the foods found for each search word (pure): {key, label, ml, kind, food_id, kcal}. A size
+	 * whose drink is not in the food database is left out, never given a made-up figure.
+	 *
+	 * @param array<string,array<string,mixed>> $foods search word => food row with kcal_100g … fibre_100g and id.
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function drinks_menu( array $foods ) {
+		$out = array();
+		foreach ( self::DRINKS as $key => $d ) {
+			$food = isset( $foods[ $d['search'] ] ) ? $foods[ $d['search'] ] : null;
+			if ( ! is_array( $food ) || ! isset( $food['kcal_100g'] ) || ! is_numeric( $food['kcal_100g'] ) ) {
+				continue;
+			}
+			$n     = self::from_per_100( $food, $d['ml'] ); // 1 ml of a drink taken as 1 g, as the food database lists drinks
+			$out[] = array(
+				'key'     => $key,
+				'label'   => $d['label'],
+				'ml'      => $d['ml'],
+				'kind'    => $d['kind'],
+				'food_id' => (int) ( $food['id'] ?? 0 ),
+				'kcal'    => $n['kcal'],
+			);
+		}
+		return $out;
+	}
+
+	/**
+	 * A food-log entry for one drink of a standard size (pure). It counts against the day's target like any food
+	 * (FR3-110 AS-02).
+	 *
+	 * @param array<string,mixed> $food Food row (per 100 g, with id).
+	 * @param string              $size A DRINKS key.
+	 * @param string              $date Local date.
+	 * @return array<string,mixed>|null
+	 */
+	public static function drink_entry( array $food, $size, $date ) {
+		if ( ! isset( self::DRINKS[ $size ] ) || ! preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $date ) ) {
+			return null;
+		}
+		$d = self::DRINKS[ $size ];
+		$n = self::from_per_100( $food, $d['ml'] );
+		return array(
+			'entry_date'    => (string) $date,
+			'meal'          => 'snacks',
+			'food_id'       => (int) ( $food['id'] ?? 0 ),
+			'food_kind'     => 'food',
+			'grams'         => (float) $d['ml'],
+			'portion_label' => $d['label'],
+			'kcal'          => $n['kcal'],
+			'protein_g'     => $n['protein_g'],
+			'carb_g'        => $n['carb_g'],
+			'fat_g'         => $n['fat_g'],
+			'fibre_g'       => $n['fibre_g'],
+			'source'        => self::DRINK_SOURCE,
+		);
+	}
+
+	/**
+	 * Whether an alcoholic drink was logged on a day (R-HW-ALC-02 hides the shortcut then): one from the drinks list,
+	 * or any food whose database entry has alcohol, however it was logged.
+	 *
+	 * @param array<int,array<string,mixed>> $entries   Log rows.
+	 * @param string                          $date      Local date.
+	 * @param int[]                           $alcoholic Food ids with alcohol (alcoholic_food_ids()).
+	 */
+	public static function drink_logged( array $entries, $date, array $alcoholic = array() ) {
+		foreach ( $entries as $e ) {
+			if ( ! is_array( $e ) || ! empty( $e['deleted_at'] ) || (string) ( $e['entry_date'] ?? '' ) !== (string) $date ) {
+				continue;
+			}
+			if ( self::DRINK_SOURCE === (string) ( $e['source'] ?? '' ) ) {
+				return true;
+			}
+			if ( 'food' === (string) ( $e['food_kind'] ?? 'food' ) && in_array( (int) ( $e['food_id'] ?? 0 ), array_map( 'intval', $alcoholic ), true ) ) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * The food ids logged on a day whose food database entry has alcohol (alcohol_100g above 0).
+	 *
+	 * @param array<int,array<string,mixed>> $entries Log rows.
+	 * @param string                          $date    Local date.
+	 * @return int[]
+	 */
+	public static function alcoholic_food_ids( array $entries, $date ) {
+		global $wpdb;
+		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) || ! class_exists( 'LLD_Members_Stage3_Schema' ) ) {
+			return array();
+		}
+		$ids = array();
+		foreach ( $entries as $e ) {
+			if ( is_array( $e ) && empty( $e['deleted_at'] ) && (string) ( $e['entry_date'] ?? '' ) === (string) $date && 'food' === (string) ( $e['food_kind'] ?? 'food' ) && (int) ( $e['food_id'] ?? 0 ) > 0 ) {
+				$ids[ (int) $e['food_id'] ] = true;
+			}
+		}
+		if ( ! $ids ) {
+			return array();
+		}
+		$table = LLD_Members_Stage3_Schema::table( 'foods' );
+		$list  = implode( ',', array_map( 'intval', array_keys( $ids ) ) ); // whole numbers only
+		$hits  = $wpdb->get_col( "SELECT id FROM {$table} WHERE id IN ({$list}) AND alcohol_100g > 0" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- internal table name and cast ids.
+		return array_values( array_intersect( array_keys( $ids ), array_map( 'intval', is_array( $hits ) ? $hits : array() ) ) );
+	}
+
+	/**
+	 * The meal the member often repeats, for one tap on Today (FR3-102): the meal logged most often with the same foods
+	 * in the last 14 days (at least twice), otherwise yesterday's last meal. Logging it again copies it (copy_into).
+	 *
+	 * @param array<int,array<string,mixed>> $entries Log rows.
+	 * @param string                          $today   Local date.
+	 * @return array{meal:string,from_date:string,items:int,kcal:float|null,times:int}|null
+	 */
+	public static function repeat_meal( array $entries, $today ) {
+		$from      = gmdate( 'Y-m-d', strtotime( $today . ' -14 days' ) );
+		$yesterday = gmdate( 'Y-m-d', strtotime( $today . ' -1 day' ) );
+		$meals     = array();
+		foreach ( $entries as $e ) {
+			if ( ! is_array( $e ) || ! empty( $e['deleted_at'] ) || self::DRINK_SOURCE === (string) ( $e['source'] ?? '' ) ) {
+				continue;
+			}
+			$date = (string) ( $e['entry_date'] ?? '' );
+			if ( $date < $from || $date >= $today ) {
+				continue;
+			}
+			$k = $date . '|' . (string) ( $e['meal'] ?? '' );
+			if ( ! isset( $meals[ $k ] ) ) {
+				$meals[ $k ] = array( 'date' => $date, 'meal' => (string) ( $e['meal'] ?? '' ), 'foods' => array(), 'kcal' => 0.0, 'known' => true, 'last' => '' );
+			}
+			$meals[ $k ]['foods'][] = ( $e['food_kind'] ?? 'food' ) . ':' . (int) ( $e['food_id'] ?? 0 );
+			if ( is_numeric( $e['kcal'] ?? null ) ) {
+				$meals[ $k ]['kcal'] += (float) $e['kcal'];
+			} else {
+				$meals[ $k ]['known'] = false;
+			}
+			$meals[ $k ]['last'] = max( $meals[ $k ]['last'], (string) ( $e['created_at'] ?? '' ) );
+		}
+		if ( ! $meals ) {
+			return null;
+		}
+		$groups = array();
+		foreach ( $meals as $m ) {
+			$foods = $m['foods'];
+			sort( $foods );
+			$g = $m['meal'] . '|' . implode( ',', $foods );
+			if ( ! isset( $groups[ $g ] ) || $m['date'] > $groups[ $g ]['m']['date'] ) {
+				$groups[ $g ] = array( 'm' => $m, 'times' => isset( $groups[ $g ] ) ? $groups[ $g ]['times'] + 1 : 1 );
+			} else {
+				$groups[ $g ]['times']++;
+			}
+		}
+		$best = null;
+		foreach ( $groups as $g ) {
+			if ( $g['times'] >= 2 && ( null === $best || $g['times'] > $best['times'] || ( $g['times'] === $best['times'] && $g['m']['date'] > $best['m']['date'] ) ) ) {
+				$best = $g;
+			}
+		}
+		if ( null === $best ) {
+			foreach ( $meals as $m ) {
+				if ( $m['date'] === $yesterday && ( null === $best || strcmp( $m['last'], $best['m']['last'] ) > 0 ) ) {
+					$best = array( 'm' => $m, 'times' => 1 );
+				}
+			}
+		}
+		if ( null === $best ) {
+			return null;
+		}
+		return array(
+			'meal'      => $best['m']['meal'],
+			'from_date' => $best['m']['date'],
+			'items'     => count( $best['m']['foods'] ),
+			'kcal'      => $best['m']['known'] ? round( $best['m']['kcal'], 1 ) : null,
+			'times'     => $best['times'],
+		);
+	}
+
+	/**
+	 * The drinks list for a member, from the shared food database. A member the safety matrix keeps calorie numbers
+	 * from gets the sizes with no calories (FR3-69).
+	 *
+	 * @param int        $member_id Member number.
+	 * @param array|null $found     Search word => food row (per 100 g, with id), when already looked up.
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function drinks_for( $member_id, $found = null ) {
+		$foods = is_array( $found ) ? $found : array(); // $found: search word => food row, already looked up
+		foreach ( is_array( $found ) ? array() : array_unique( array_column( self::DRINKS, 'search' ) ) as $word ) {
+			foreach ( self::search_member( $member_id, $word ) as $hit ) {
+				if ( 'food' !== ( $hit['food_kind'] ?? '' ) || empty( $hit['id'] ) ) {
+					continue;
+				}
+				$basis = self::basis( $member_id, 'food', (int) $hit['id'] );
+				if ( $basis && isset( $basis['per_100g'] ) ) {
+					$foods[ $word ] = $basis['per_100g'];
+					break;
+				}
+			}
+		}
+		$menu = self::drinks_menu( $foods );
+		if ( self::hidden( $member_id )['all'] ) {
+			foreach ( $menu as $i => $d ) {
+				$menu[ $i ]['kcal']             = null; // FR3-69: the sizes stay, the calories never leave the server
+				$menu[ $i ]['nutrition_hidden'] = true;
+			}
+		}
+		return $menu;
+	}
+
+	/**
+	 * Whether a food database entry is the drink of a DRINKS size: found by that size's search word (its name or search
+	 * names), and with alcohol for a drink, none for a mixer (a drink with no alcohol figure recorded still counts).
+	 *
+	 * @param int    $food_id Food id.
+	 * @param string $size    A DRINKS key.
+	 */
+	public static function drink_food( $food_id, $size ) {
+		global $wpdb;
+		if ( ! isset( self::DRINKS[ $size ] ) || $food_id < 1 || ! isset( $wpdb ) || ! is_object( $wpdb ) || ! class_exists( 'LLD_Members_Stage3_Schema' ) ) {
+			return false;
+		}
+		$table = LLD_Members_Stage3_Schema::table( 'foods' );
+		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT id, name, search_names, alcohol_100g FROM {$table} WHERE id = %d", $food_id ), ARRAY_A ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
+		if ( ! is_array( $row ) ) {
+			return false;
+		}
+		$d    = self::DRINKS[ $size ];
+		$text = strtolower( (string) ( $row['name'] ?? '' ) . ' ' . (string) ( $row['search_names'] ?? '' ) );
+		if ( false === strpos( $text, strtolower( $d['search'] ) ) ) {
+			return false;
+		}
+		$alcohol = isset( $row['alcohol_100g'] ) && is_numeric( $row['alcohol_100g'] ) ? (float) $row['alcohol_100g'] : null;
+		return 'drink' === $d['kind'] ? ( null === $alcohol || $alcohol > 0 ) : ( null === $alcohol || $alcohol <= 0 );
+	}
+
+	/**
+	 * What the safety matrix hides of food nutrition for the member (FR3-69): {all, protein}.
+	 *
+	 * @param int $member_id Member number.
+	 * @return array{all:bool,protein:bool}
+	 */
+	private static function hidden( $member_id ) {
+		if ( ! class_exists( 'LLD_Members_Stage3_Safety' ) || ! method_exists( 'LLD_Members_Stage3_Safety', 'nutrition_hidden' ) || ! method_exists( 'LLD_Members_Stage3_Safety', 'applies' ) ) {
+			return array( 'all' => false, 'protein' => false );
+		}
+		// A "yes" to the Healthy Weight Check's eating question is in the situations (the safety situations filter).
+		return LLD_Members_Stage3_Safety::nutrition_hidden( LLD_Members_Stage3_Safety::applies( (int) $member_id, 'food_tracker' ) );
+	}
+
+	/**
+	 * The member's local date.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function local_today( $member_id ) {
+		return class_exists( 'LLD_Members_Programme' ) && method_exists( 'LLD_Members_Programme', 'local_today' ) ? (string) LLD_Members_Programme::local_today( (int) $member_id ) : gmdate( 'Y-m-d' );
+	}
+
+	/**
+	 * Log one drink from the drinks list.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $size      A DRINKS key.
+	 * @param int    $food_id   Food id from drinks_for().
+	 * @param string $date      Local date.
+	 * @return array<string,mixed>
+	 */
+	public static function log_drink( $member_id, $size, $food_id, $date ) {
+		// Only a drink of the drinks list, in the size chosen: the food must be that size's drink.
+		if ( ! self::drink_food( (int) $food_id, (string) $size ) ) {
+			return array( 'error' => 'Choose a drink.', 'status' => 422 );
+		}
+		$basis = self::basis( $member_id, 'food', (int) $food_id );
+		if ( ! $basis || ! isset( $basis['per_100g'] ) ) {
+			return array( 'error' => 'Choose a drink.', 'status' => 422 );
+		}
+		$entry = self::drink_entry( $basis['per_100g'], (string) $size, (string) $date );
+		if ( ! $entry ) {
+			return array( 'error' => 'Choose a drink.', 'status' => 422 );
+		}
+		$id = LLD_Members_Stage3_Data::insert( 'food_log', $member_id, $entry, array() );
+		if ( $id < 1 ) {
+			return array( 'error' => 'Try again.', 'status' => 500 );
+		}
+		$h = self::hidden( $member_id );
+		if ( $h['all'] || $h['protein'] ) {
+			// The entry is stored with its numbers (they count against the day like any food); the answer carries none.
+			foreach ( $h['all'] ? array( 'kcal', 'protein_g', 'carb_g', 'fat_g', 'fibre_g' ) : array( 'protein_g' ) as $k ) {
+				$entry[ $k ] = null;
+			}
+			$entry['nutrition_hidden'] = $h['all'];
+		}
+		return array( 'id' => $id, 'entry' => $entry );
 	}
 
 	/**

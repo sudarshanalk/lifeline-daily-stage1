@@ -37,6 +37,12 @@ class LLD_Members_Stage3_Export {
 			'readings',
 			'reminders',
 			'shares',
+			// P3-35 Healthy Weight programme (FR3-98 AS-05, FR3-107 AS-03, FR3-109 AS-09).
+			'profile_answers',
+			'goal_milestones',
+			'block_choices',
+			'notes_shown',
+			'check_in_barriers',
 		);
 	}
 
@@ -76,6 +82,10 @@ class LLD_Members_Stage3_Export {
 			'custom_foods'       => array(),
 			'recipes'            => array(),
 			'calculator_result'  => array( 'inputs', 'result' ),
+			'profile_answers'    => array( 'answer' ),
+			'food_preferences'   => array( 'food_rules' ),
+			'goal_milestones'    => array( 'target_value' ),
+			'check_in_barriers'  => array( 'barrier_choices', 'barrier_text' ),
 		);
 		// Prefer Stage3_Data open when the table uses _ct columns.
 		foreach ( self::download_suffixes() as $suffix ) {

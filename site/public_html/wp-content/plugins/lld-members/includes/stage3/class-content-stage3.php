@@ -65,6 +65,8 @@ class LLD_Members_Stage3_Content {
 		'lld_matrix',
 		'lld_wording',
 		'lld_qa',
+		'lld_note',
+		'lld_question',
 	);
 
 	/**

@@ -225,7 +225,7 @@ class LLD_Members_Stage3_API {
 				'health'  => false,
 				'sealed'  => array(),
 				'fields'  => array(
-					'reminder_type' => 'choice:log|workout|weigh_in|check_in',
+					'reminder_type' => 'choice:log|workout|weigh_in|check_in|hw_step|hw_snack',
 					'channel'       => 'choice:email|browser|push',
 					'time_local'    => 'time',
 					'days'          => 'text[32]',
@@ -319,7 +319,7 @@ class LLD_Members_Stage3_API {
 				'table'   => 'food_preferences',
 				'feature' => 'food_tracker',
 				'health'  => true,
-				'sealed'  => array(),
+				'sealed'  => array( 'food_rules' ), // P3-35: written by the Healthy Weight answers, opened on read
 				'fields'  => array(
 					'allergies' => 'json',
 					'dislikes'  => 'json',
@@ -344,6 +344,126 @@ class LLD_Members_Stage3_API {
 				'write'    => false,
 				'sealed'   => array(),
 				'fields'   => array(),
+			),
+			// Healthy Weight programme (P3-35). Its records are read here; they are written only through the
+			// /me/healthy-weight/<action> routes, which check every answer against the signed rules.
+			'hw-answers'             => array(
+				'table'   => 'profile_answers',
+				'feature' => 'goals',
+				'health'  => true,
+				'write'   => false,
+				'sealed'  => array( 'answer' ),
+				'fields'  => array(),
+			),
+			'hw-milestones'          => array(
+				'table'   => 'goal_milestones',
+				'feature' => 'goals',
+				'health'  => true,
+				'write'   => false,
+				'sealed'  => array( 'target_value' ),
+				'fields'  => array(),
+			),
+			'hw-block-choices'       => array(
+				'table'   => 'block_choices',
+				'feature' => 'goals',
+				'health'  => true,
+				'write'   => false,
+				'sealed'  => array(),
+				'fields'  => array(),
+			),
+			'hw-notes-shown'         => array(
+				'table'   => 'notes_shown',
+				'feature' => 'goals',
+				'health'  => true,
+				'write'   => false,
+				'sealed'  => array(),
+				'fields'  => array(),
+			),
+			'check-in-barriers'      => array(
+				'table'   => 'check_in_barriers',
+				'feature' => 'goals',
+				'health'  => true,
+				'write'   => false,
+				'sealed'  => array( 'barrier_choices', 'barrier_text' ),
+				'fields'  => array(),
+			),
+			'festival-calendar'      => array(
+				'table'    => 'festival_calendar',
+				'feature'  => 'goals',
+				'health'   => false,
+				'computed' => 'hw-festivals',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
+			'hw-plan'                => array(
+				'table'    => 'plans',
+				'feature'  => 'goals',
+				'health'   => true,
+				'computed' => 'hw-plan',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
+			'hw-today'               => array(
+				'table'    => 'plans',
+				'feature'  => 'goals',
+				'health'   => true,
+				'computed' => 'hw-today',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
+			'hw-blocks'              => array(
+				'table'    => 'block_choices',
+				'feature'  => 'goals',
+				'health'   => true,
+				'computed' => 'hw-blocks',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
+			'hw-questions'           => array(
+				'table'    => 'profile_answers',
+				'feature'  => 'goals',
+				'health'   => true,
+				'computed' => 'hw-questions',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
+			// The drinks list and the repeat meal (P3-35; FR3-110 AS-02, AS-03; FR3-102 AS-06). A drink is logged with
+			// POST /me/food-drink; the repeat meal through food-copy.
+			'food-drinks'            => array(
+				'table'    => 'food_log',
+				'feature'  => 'food_tracker',
+				'health'   => true,
+				'computed' => 'drinks',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
+			'food-repeat'            => array(
+				'table'    => 'food_log',
+				'feature'  => 'food_tracker',
+				'health'   => true,
+				'computed' => 'repeat',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
+			'food-drink'             => array(
+				'table'    => 'food_log',
+				'feature'  => 'food_tracker',
+				'health'   => true,
+				'computed' => 'drink',
+				'sealed'   => array(),
+				'fields'   => array(
+					'size'       => 'choice:wine_125|wine_175|beer_bottle|beer_pint|cider_bottle|cider_pint|spirit|tonic|cola|lemonade|soda_water', // LLD_Members_Food_Log::DRINKS
+					'food_id'    => 'int',
+					'entry_date' => 'date',
+				),
+				'required' => array( 'size', 'food_id', 'entry_date' ),
 			),
 		);
 	}
@@ -396,6 +516,16 @@ class LLD_Members_Stage3_API {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'calculate' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+		// The Healthy Weight programme's writes (P3-35): join, an answer, the check-in barrier, a block choice, carry on.
+		register_rest_route(
+			'lld-members/v1',
+			'/me/healthy-weight/(?P<action>join|answers|barrier|block|carry-on)',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'healthy_weight' ),
 				'permission_callback' => '__return_true',
 			)
 		);
@@ -462,6 +592,79 @@ class LLD_Members_Stage3_API {
 			return self::refuse( 401, 'Sign in.' );
 		}
 		return new WP_REST_Response( LLD_Members_Access_Tiers::summary( $member_id ), 200 );
+	}
+
+	/**
+	 * The Healthy Weight programme's writes (P3-35). Behind the goals switch, signed in, with health consent (nothing is
+	 * stored without it, FR3-98 AS-04). Body by action:
+	 *   join      {goal_id, answers{key: value|null}, chosen_rate?, reminders_on?} → plan_view()
+	 *   answers   {answers{key: value|null}, asked_in?} → {saved: keys}
+	 *   barrier   {check_in_date, choices[], text?} → {saved, replies[]}
+	 *   block     {block, festival_entry_id?} ("decline_festival" for "Not for this festival") → blocks()
+	 *   carry-on  {} → blocks()
+	 * No answer, value or text is ever logged or echoed into an error.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
+	public static function healthy_weight( $request ) {
+		$member_id = LLD_Members_Access::current_member_id();
+		if ( ! LLD_Members_Features::enabled( 'goals', $member_id ) || ! class_exists( 'LLD_Members_HW_Programme' ) ) {
+			return self::refuse( 404, 'Not available.' );
+		}
+		if ( $member_id < 1 ) {
+			return self::refuse( 401, 'Sign in.' );
+		}
+		if ( ! LLD_Members_Access::has_health_consent( $member_id ) ) {
+			return self::refuse( 403, 'Health consent is needed first.' );
+		}
+		// The shared gate's safety and access rules, as every other type (type healthy-weight): safety before access.
+		self::$request = $request;
+		$refusal       = apply_filters( 'lld_members_stage3_api_refuse', null, 'healthy-weight', $member_id );
+		if ( $refusal instanceof WP_REST_Response ) {
+			return $refusal;
+		}
+		$body = $request->get_json_params();
+		$body = is_array( $body ) ? $body : array();
+		switch ( (string) $request['action'] ) {
+			case 'join':
+				$answers = isset( $body['answers'] ) && is_array( $body['answers'] ) ? $body['answers'] : array();
+				foreach ( array( 'chosen_rate', 'reminders_on' ) as $k ) {
+					if ( array_key_exists( $k, $body ) ) {
+						$answers[ $k ] = $body[ $k ];
+					}
+				}
+				$out = LLD_Members_HW_Programme::join( $member_id, isset( $body['goal_id'] ) ? (int) $body['goal_id'] : 0, $answers );
+				break;
+			case 'answers':
+				$saved = array();
+				$out   = null;
+				foreach ( isset( $body['answers'] ) && is_array( $body['answers'] ) ? $body['answers'] : array() as $key => $value ) {
+					$r = LLD_Members_HW_Answers::set( $member_id, (string) $key, $value, isset( $body['asked_in'] ) ? (string) $body['asked_in'] : null );
+					if ( is_wp_error( $r ) ) {
+						$out = $r;
+						break;
+					}
+					$saved[] = (string) $key;
+				}
+				$out = $out ? $out : array( 'saved' => $saved );
+				break;
+			case 'barrier':
+				$out = LLD_Members_HW_Programme::record_barrier( $member_id, isset( $body['check_in_date'] ) ? (string) $body['check_in_date'] : '', isset( $body['choices'] ) && is_array( $body['choices'] ) ? $body['choices'] : array(), isset( $body['text'] ) ? (string) $body['text'] : '' );
+				break;
+			case 'block':
+				$out = LLD_Members_HW_Programme::choose_block( $member_id, isset( $body['block'] ) ? (string) $body['block'] : '', isset( $body['festival_entry_id'] ) ? $body['festival_entry_id'] : null );
+				break;
+			default:
+				$out = LLD_Members_HW_Programme::carry_on( $member_id );
+		}
+		if ( is_wp_error( $out ) ) {
+			$code   = $out->get_error_code();
+			$status = in_array( $code, array( 'lld_hw_consent', 'lld_premium', 'lld_hw_not_offered' ), true ) ? 403 : 422;
+			$data   = $out->get_error_data();
+			$extra  = is_array( $data ) ? array_intersect_key( $data, array_flip( array( 'stop', 'screen', 'refusal', 'safe_pace', 'key' ) ) ) : array();
+			return new WP_REST_Response( array_merge( array( 'message' => $out->get_error_message(), 'code' => $code ), $extra ), $status );
+		}
+		return new WP_REST_Response( null === $out ? array( 'joined' => false ) : $out, 'join' === (string) $request['action'] ? 201 : 200 );
 	}
 
 	/**
@@ -816,6 +1019,8 @@ class LLD_Members_Stage3_API {
 				$rows = LLD_Members_Health_Log::view( $def['computed'], $member_id, $query );
 			} elseif ( in_array( $def['computed'], array( 'week', 'suggest' ), true ) ) {
 				$rows = LLD_Members_Recipes::view( $def['computed'], $member_id, $query );
+			} elseif ( 0 === strpos( (string) $def['computed'], 'hw-' ) ) {
+				$rows = LLD_Members_HW_Programme::view( $def['computed'], $member_id, $query );
 			} else {
 				$rows = LLD_Members_Food_Log::view( $def['computed'], $member_id, $query );
 			}
@@ -1005,6 +1210,16 @@ class LLD_Members_Stage3_API {
 		}
 		if ( 'shares' === $def['table'] ) {
 			$clean['token'] = bin2hex( random_bytes( 16 ) );
+		}
+		if ( ! empty( $def['computed'] ) && 'drink' === $def['computed'] ) {
+			$result = LLD_Members_Food_Log::log_drink( $member_id, (string) $clean['size'], (int) $clean['food_id'], (string) $clean['entry_date'] );
+			if ( isset( $result['error'] ) ) {
+				return self::refuse( isset( $result['status'] ) ? (int) $result['status'] : 422, $result['error'] );
+			}
+			if ( class_exists( 'LLD_Members_Stage3_Safety' ) ) {
+				$result = LLD_Members_Stage3_Safety::api_rows( $result, 'food-drink', $member_id ); // FR3-69: no numbers back
+			}
+			return new WP_REST_Response( $result, 201 );
 		}
 		if ( ! empty( $def['computed'] ) && 'copy' === $def['computed'] ) {
 			$result = LLD_Members_Food_Log::copy_into( $member_id, $clean );
