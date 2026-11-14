@@ -213,7 +213,7 @@ test('TC-FR3-69-AS-05 (goals interface)', () => {
     $out['prefer'] = LLD_Members_Stage3_Safety::api_refuse(null, 'goals', 7);
     return $out;
   `);
-  expect(r.missing).toEqual([403, { message: 'Answer the Conditions question in your health profile first.', question: 'conditions', link: goalLink }]);
+  expect(r.missing).toEqual([403, { message: 'Answer the "Conditions" question in your health profile first.', question: 'conditions', link: goalLink }]);
   expect(r.patch).toBe(true);
   expect(r.get).toBeNull();
   expect(r.delete).toBeNull();
