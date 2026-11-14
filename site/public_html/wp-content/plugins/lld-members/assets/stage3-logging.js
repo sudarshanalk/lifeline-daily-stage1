@@ -1987,6 +1987,7 @@
 			from: '',
 			to: '',
 			editingId: null,
+			loadSeq: 0,
 			busy: false
 		};
 
@@ -2542,6 +2543,10 @@
 		}
 
 		async function loadHistory(type) {
+			// Each load takes a ticket; a reply that arrives after the member chose another type or range is dropped,
+			// so one type's rows never show (or get edited) under another type's heading and units.
+			const ticket = ++state.loadSeq;
+			const stale = function () { return ticket !== state.loadSeq || type !== state.type; };
 			if (!cfg.canStore || !cfg.hasConsent) {
 				state.rows = [];
 				renderHistory();
@@ -2557,6 +2562,7 @@
 			if (state.to) query += '&to=' + encodeURIComponent(state.to);
 
 			const resList = await rdRequest(cfg, 'readings?' + query);
+			if (stale()) return;
 			if (resList.ok && Array.isArray(resList.data.rows)) {
 				state.rows = resList.data.rows.slice().sort(function (a, b) {
 					const cmp = String(b.taken_at || '').localeCompare(String(a.taken_at || ''));
@@ -2572,6 +2578,7 @@
 				renderChart([], null);
 			} else {
 				const resTrend = await rdRequest(cfg, 'readings-trend?' + query);
+				if (stale()) return;
 				if (resTrend.ok && Array.isArray(resTrend.data.points)) {
 					state.trendPoints = resTrend.data.points;
 					renderChart(state.trendPoints, null);

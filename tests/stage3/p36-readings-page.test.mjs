@@ -72,7 +72,9 @@ test('TC-FR3-59-AS-01 without health consent the page shows the consent notice a
   expect(html).toContain('CONSENT-NOTICE');
   expect(html).not.toContain('lld-readings-conditions-notice');
   expect(config(html)).toMatchObject({ hasConsent: false, canStore: false });
-  expect(js).toMatch(/async function loadHistory\(type\) \{\s*if \(!cfg\.canStore \|\| !cfg\.hasConsent\) \{/);
+  const load = js.slice(js.indexOf('async function loadHistory(type)'), js.indexOf('function switchType'));
+  expect(load.indexOf('if (!cfg.canStore || !cfg.hasConsent) {')).toBeGreaterThan(-1);
+  expect(load.indexOf('if (!cfg.canStore || !cfg.hasConsent) {')).toBeLessThan(load.indexOf('rdRequest('));
   // Sign-in, the switch and the agreements come before the page; it is never cached (lld_members_layout sends no-store).
   const gate = source.slice(source.indexOf('public static function maybe_render'), source.indexOf('private static function not_found'));
   expect(gate.indexOf('/members/sign-in/')).toBeGreaterThan(-1);
@@ -167,4 +169,28 @@ test('TC-FR3-08-AS-01 the empty state has a picture, the approved line and one a
   expect(text(empty)).toContain('No readings yet. Choose a type above to add your first.');
   expect(empty.match(/<button /g)).toHaveLength(1);
   expect([...html.matchAll(/data-lld-type-panel="([a-z_]+)"/g)].map((m) => m[1])).toEqual(['blood_pressure', 'weight', 'waist', 'activity', 'sleep', 'water', 'mood', 'glucose']);
+});
+
+test('TC-FR3-38-AS-03 the history and trend lists ask for one reading type and a date range, and the interface reads its own route from the address', () => {
+  const load = js.slice(js.indexOf('async function loadHistory(type)'), js.indexOf('function switchType'));
+  expect(load).toContain("'type=' + encodeURIComponent(type)");
+  expect(load).toContain("'&from=' + encodeURIComponent(state.from)");
+  expect(load).toContain("'&to=' + encodeURIComponent(state.to)");
+  // A reply for a type or range the member has left is dropped before it reaches the list, the chart or Edit.
+  expect(load.match(/if \(stale\(\)\) return;/g)).toHaveLength(2);
+  // ?type=weight is a query value: WordPress would hand it back for $request['type'] in place of the route's own
+  // {type}, and every list answered "Not available." The interface takes the route from the address.
+  const api = readFileSync(resolve(plugin, 'includes/stage3/class-api.php'), 'utf8');
+  expect(api.split("$request['type']").length - 1).toBe(2); // only in route_type(): its comment and its fallback
+  expect(api).toContain('$type  = self::route_type( $request );');
+  const out = execFileSync('php', ['-r', `define('ABSPATH', '/');
+    class WP_REST_Request implements ArrayAccess { public $url = array(); public $query = array();
+      function get_url_params() { return $this->url; } function get_query_params() { return $this->query; }
+      function offsetGet($k): mixed { return $this->query[$k] ?? $this->url[$k] ?? null; } function offsetExists($k): bool { return true; } function offsetSet($k, $v): void {} function offsetUnset($k): void {} }
+    require ${p('includes/stage3/class-api.php')};
+    $r = new WP_REST_Request(); $r->url = array('type' => 'readings'); $r->query = array('type' => 'weight');
+    $route = new ReflectionMethod('LLD_Members_Stage3_API', 'route_type'); $route->setAccessible(true);
+    $query = new ReflectionMethod('LLD_Members_Stage3_API', 'query_type'); $query->setAccessible(true);
+    echo json_encode(array($route->invoke(null, $r), $query->invoke(null, $r), $r['type']));`], { encoding: 'utf8', timeout: 60000 });
+  expect(JSON.parse(out)).toEqual(['readings', 'weight', 'weight']);
 });

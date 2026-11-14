@@ -2046,6 +2046,9 @@ body.mode-night .lld-stage3-readings .lld-mood-button[aria-pressed="true"] {
 .lld-stage3-readings .lld-history-actions .lld-pill-btn {
   white-space: nowrap;
 }
+.lld-stage3-readings .lld-table td:first-child {
+  min-width: 6.5em;
+}
 .lld-stage3-readings .lld-readings-list {
   list-style: none;
   margin: 0;

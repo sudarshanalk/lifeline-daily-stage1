@@ -42,7 +42,8 @@ async function save(page) {
   const response = await acted(page, 'readings', () => page.getByRole('button', { name: 'Save reading', exact: true }).click());
   return { response, body: await response.json() };
 }
-const history = (page) => page.getByRole('table').first();
+// The history table by its own name (its caption), never by position: the chart's data table is a table too.
+const history = (page) => page.getByRole('table', { name: /^Recent .+ readings$/ });
 const chartName = (type) => type === 'activity' ? 'Weekly activity' : `${type === 'glucose' ? 'Blood sugar' : TYPES[type].label} trend`;
 const chart = (page, type) => page.getByRole('img', { name: chartName(type), exact: true });
 const chartData = (page, type) => page.getByRole('table', { name: `${chartName(type)} data`, exact: true });
@@ -113,8 +114,8 @@ for (const id of ['TC-FR3-38-AS-03', 'TC-FR3-39-AS-03']) test(id, async ({ page 
   await reading(page, type, type === 'weight' ? 80 : 128, { taken_at: '2026-11-01 09:00:00', ...(type === 'blood_pressure' ? { value_2: 82 } : {}) });
   await reading(page, type, type === 'weight' ? 81 : 130, type === 'blood_pressure' ? { value_2: 83 } : {});
   await open(page, type);
-  await page.getByLabel(/From|Start date/, { exact: true }).fill('2026-11-06');
-  await page.getByLabel(/To|End date/, { exact: true }).fill(DAY);
+  await page.getByLabel(/^(?:From|Start date)$/).fill('2026-11-06');
+  await page.getByLabel(/^(?:To|End date)$/).fill(DAY);
   await page.getByRole('button', { name: /Apply|Show history|Filter/, exact: true }).click();
   await expect(history(page)).toContainText(type === 'weight' ? '81' : '130');
   await expect(history(page)).not.toContainText(type === 'weight' ? '80' : '128');
