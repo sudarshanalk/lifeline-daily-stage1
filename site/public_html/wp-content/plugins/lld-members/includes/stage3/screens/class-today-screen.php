@@ -347,7 +347,7 @@ class LLD_Members_Today_Screen {
 		if ( $extra ) {
 			$html .= self::progress_block( $member_id, $extra, $facts, 'Extra goal' );
 		}
-		$html .= '<p><a href="' . esc_url( home_url( '/members/progress/' ) ) . '">Progress</a> · <a href="' . esc_url( home_url( '/members/check-in/' ) ) . '">Weekly check-in</a>' . ( $extra ? '' : ' · <a href="' . esc_url( home_url( '/members/goal/?role=extra' ) ) . '">Add an extra goal</a>' ) . '</p>';
+		$html .= '<p class="lld-link-row"><a href="' . esc_url( home_url( '/members/progress/' ) ) . '">Progress</a> · <a href="' . esc_url( home_url( '/members/check-in/' ) ) . '">Weekly check-in</a>' . ( $extra ? '' : ' · <a href="' . esc_url( home_url( '/members/goal/?role=extra' ) ) . '">Add an extra goal</a>' ) . '</p>';
 		return $html . '</section>';
 	}
 

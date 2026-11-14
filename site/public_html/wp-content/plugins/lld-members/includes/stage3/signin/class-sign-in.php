@@ -364,7 +364,7 @@ class LLD_Members_Sign_In {
 			}
 			$main .= self::code_form( 'Sign in' );
 			$main .= self::resend_form();
-			$main .= '<p><a href="' . esc_url( home_url( '/members/sign-in/?change=1' ) ) . '">Use a different email</a> · <a href="' . esc_url( home_url( '/members/sign-in/' ) ) . '">Sign in with your password</a></p>';
+			$main .= '<p class="lld-link-row"><a href="' . esc_url( home_url( '/members/sign-in/?change=1' ) ) . '">Use a different email</a> · <a href="' . esc_url( home_url( '/members/sign-in/' ) ) . '">Sign in with your password</a></p>';
 			lld_members_layout( array( 'title' => 'Enter your code', 'main' => $main, 'signed_in' => false ) );
 			exit;
 		}
