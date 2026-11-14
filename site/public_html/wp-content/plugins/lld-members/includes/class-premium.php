@@ -2751,6 +2751,9 @@ class LLD_Members_Premium {
 	 * Shared Stage 3 form stylesheet and script (P3-36 D3).
 	 */
 	private static function forms_assets() {
+		if ( ! function_exists( 'plugins_url' ) || ! defined( 'LLD_MEMBERS_FILE' ) ) {
+			return '';
+		}
 		$ver = defined( 'LLD_MEMBERS_VERSION' ) ? LLD_MEMBERS_VERSION : '1';
 		$css = plugins_url( 'assets/stage3-forms.css', LLD_MEMBERS_FILE );
 		$js  = plugins_url( 'assets/stage3-forms.js', LLD_MEMBERS_FILE );

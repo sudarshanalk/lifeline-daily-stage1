@@ -323,10 +323,22 @@ class LLD_Members_Personal {
 		$main .= '<label class="lld-check"><input type="checkbox" name="lld_confirm" id="lld_confirm" value="1"' . ( $keep && ! empty( $_POST['lld_confirm'] ) ? ' checked' : '' ) . '> I\'ve checked this value</label>';
 		$main .= lld_button( array( 'label' => 'Save' ) );
 		$main .= '</form>';
-		$ver   = defined( 'LLD_MEMBERS_VERSION' ) ? LLD_MEMBERS_VERSION : '1';
-		$main .= '<link rel="stylesheet" href="' . esc_url( plugins_url( 'assets/stage3-forms.css', LLD_MEMBERS_FILE ) ) . '?ver=' . esc_attr( $ver ) . '">';
-		$main .= '<script src="' . esc_url( plugins_url( 'assets/stage3-forms.js', LLD_MEMBERS_FILE ) ) . '?ver=' . esc_attr( $ver ) . '"></script>';
+		$main .= self::forms_assets();
 		self::layout( 'Health profile', $main );
+	}
+
+	/**
+	 * Stage 3 form stylesheet and script when WordPress URL helpers are available (P3-36 D4).
+	 */
+	private static function forms_assets() {
+		if ( ! function_exists( 'plugins_url' ) || ! defined( 'LLD_MEMBERS_FILE' ) ) {
+			return '';
+		}
+		$ver = defined( 'LLD_MEMBERS_VERSION' ) ? LLD_MEMBERS_VERSION : '1';
+		$css = plugins_url( 'assets/stage3-forms.css', LLD_MEMBERS_FILE );
+		$js  = plugins_url( 'assets/stage3-forms.js', LLD_MEMBERS_FILE );
+		return '<link rel="stylesheet" href="' . esc_url( $css ) . '?ver=' . esc_attr( $ver ) . '">'
+			. '<script src="' . esc_url( $js ) . '?ver=' . esc_attr( $ver ) . '"></script>';
 	}
 
 	/**
