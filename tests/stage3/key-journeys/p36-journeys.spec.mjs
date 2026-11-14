@@ -83,9 +83,11 @@ scenario('UC3-S4', 'TC-FR3-04-AS-01', async ({ page }) => {
   await logout(page); await page.goto('/members/sign-in/?code=1'); await page.locator('#lld_email').fill(email);
   const sent = Date.now();
   await page.getByRole('button', { name: 'Email me a code', exact: true }).click();
+  // The code step must be on screen before the code is typed, or it is typed into the page that is being left.
+  await expect(page.getByRole('heading', { name: 'Enter your code', exact: true })).toBeVisible();
   const message = await mail(email, 'sign-in code', sent); const code = String(message.Text).match(/\b\d{6}\b/)?.[0];
-  expect(code).toBeTruthy(); await page.locator('#lld_code').fill(code);
-  await submitAndWait(page, page.getByRole('button', { name: 'Continue', exact: true }));
+  expect(code).toBeTruthy(); await page.locator('#lld_code').fill(code); await expect(page.locator('#lld_code')).toHaveValue(code);
+  await page.locator('#lld_code').press('Enter'); await expect(page).toHaveURL(/\/members\/home\//);
   await page.goto('/members/settings/'); await expect(page.locator('.lld-stage3-account-hub')).toBeVisible();
 });
 scenario('UC3-S5', 'TC-NFR3-03-AS-01', async ({ page }) => {
@@ -129,10 +131,13 @@ scenario('UC4-S2', 'TC-FR3-09-AS-08', async ({ page }) => {
 scenario('UC4-S3', 'TC-FR3-10-AS-01', async ({ page }) => { await weightGoal(page); await expect(page.locator('main')).toContainText('84'); });
 scenario('UC4-S4', 'TC-FR3-11-AS-01', async ({ page }) => {
   await weightGoal(page); await page.goto('/members/goal/');
-  await expect(page.locator('main')).toContainText('84'); await expect(page.getByRole('link', { name: /Today/ })).toBeVisible();
+  await expect(page.locator('main')).toContainText('84'); await expect(page.locator('main').getByRole('link', { name: 'Go to Today', exact: true })).toBeVisible();
 });
 scenario('UC4-S5', 'TC-FR3-13-AS-03', async ({ page }) => {
-  await weightGoal(page); await page.goto('/members/progress/'); await expect(page.locator('[data-lld-goal-progress]')).toBeVisible();
+  // The Progress page shows the streak and the trend of the goal's measure; the goal's own progress bar is on Today.
+  await weightGoal(page); await page.goto('/members/progress/'); await expect(page.locator('[data-lld-section="streak"]')).toBeVisible();
+  await expect(page.locator('[data-lld-trend="weight"]')).toBeVisible();
+  await page.goto('/members/home/'); await expect(page.locator('[data-lld-goal-progress]')).toBeVisible();
 });
 scenario('UC5-S1', 'TC-FR3-12-AS-02', async ({ page }) => {
   await track(page); await page.goto('/members/home/');
@@ -202,7 +207,10 @@ scenario('UC7-S4', 'TC-FR3-27-AS-01', async ({ page }) => {
 });
 scenario('UC7-S5', 'TC-FR3-63-AS-04', async ({ page }) => {
   await fresh(page, { access_state: 'Free' }); await page.goto('/members/food/scan/');
-  await expect(page.locator('main')).toContainText('Part of Premium'); await expect(page.getByRole('link', { name: /Premium|Upgrade/i }).first()).toHaveAttribute('href', /\/pricing\//);
+  await expect(page.locator('main')).toContainText('Part of Premium');
+  // The upgrade button leads to the checkout, and the page it leads to opens (never an error).
+  const upgrade = page.locator('main').getByRole('link', { name: 'Upgrade', exact: true }).first(); await expect(upgrade).toHaveAttribute('href', /\/members\/checkout\/$/);
+  const opened = await page.goto(await upgrade.getAttribute('href')); expect(opened.status()).toBe(200); await expect(page).toHaveURL(/\/members\/checkout\//);
 });
 scenario('UC8-S1', 'TC-NFR3-03-AS-01', async ({ page }) => {
   await track(page); await page.goto('/members/track/'); await expect(page.locator('main')).toContainText('0 of 28 done');
@@ -216,7 +224,11 @@ scenario('UC8-S3', 'TC-FR3-112-AS-03', async ({ page }) => {
   await page.goto('/members/track/'); await expect(page.locator('main')).toContainText('0 of 28 done'); await expect(page.locator('main')).not.toContainText('Completed');
 });
 scenario('UC9-S1', 'TC-FR3-14-AS-03', async ({ page }) => {
-  await weightGoal(page, { access_state: 'Free' }); await page.goto('/members/check-in/'); await page.locator('#lld_weight').fill('88.6');
+  await weightGoal(page, { access_state: 'Free' });
+  // The check-in is a week after the goal was set. On the same frozen minute as the starting weight, the two readings
+  // carry one time and the day's weight could be either.
+  const later = await page.request.post('/wp-json/lld-members/v1/test/clock', { data: { email: A, utc: '2026-11-14 12:00:00' } }); expect(later.ok()).toBeTruthy();
+  await page.goto('/members/check-in/'); await page.locator('#lld_weight').fill('88.6');
   await submitAndWait(page, page.locator('[data-lld-section="measurements"] button[type="submit"]'));
   await expect(page.locator('main')).toContainText(/Check-in saved/i); await expect(page.locator('main')).toContainText('1.4');
 });
@@ -237,7 +249,9 @@ scenario('UC10-S3', 'TC-FR3-62-AS-03', async ({ page }) => {
 scenario('UC10-S4', 'TC-FR3-80-AS-01', async ({ page }) => {
   const made = await fixture(page.request, 'premium'); const member = await fresh(page, { access_state: 'Free' }); await activityGoal(page); await startTrack(page, made.track);
   await grant(page, member); await signIn(page, A, password);
-  await page.goto('/members/meals/'); await expect(page).toHaveURL(/\/members\/meals\//); await expect(page.locator('main')).toContainText(made.lentil);
+  await page.goto('/members/meals/'); await expect(page).toHaveURL(/\/members\/meals\//);
+  // Which of the fixture's week-1 plans is shown follows the member's diet; every recipe of the fixture carries its stamp.
+  await expect(page.locator('[data-lld-meal="1-breakfast"]')).toContainText(made.lentil.split(' ').pop());
   await expect(page.locator('main .lld-lock')).toHaveCount(0);
   await page.goto('/members/workout/?level=beginner&place=home'); await expect(page).toHaveURL(/\/members\/workout\//);
   await expect(page.locator('main')).toContainText(made.exercise); await expect(page.locator('main .lld-lock')).toHaveCount(0);
@@ -254,8 +268,11 @@ scenario('UC10-S5', 'TC-FR3-64-AS-04', async ({ page }) => {
 scenario('UC10-S6', 'TC-FR3-65-AS-06', async ({ page }) => {
   await fresh(page, { access_state: 'Free' }); const paid = await pay(page);
   await notice(page.request, { id: `evt_renew_${paid.subscription}`, type: 'invoice.paid', data: { object: { id: `in_${paid.subscription}`, subscription: paid.subscription, amount_paid: paid.amount, payment_intent: `pi_renew_${paid.subscription}` } } });
-  await page.goto('/members/subscription/?confirm=1'); await expect(page.getByRole('button', { name: 'Pause for 1 month', exact: true })).toBeVisible();
-  await submitAndWait(page, page.getByRole('button', { name: 'Pause for 1 month', exact: true }));
+  await page.goto('/members/subscription/?confirm=1');
+  // In the cancel box the pause offer comes before the final cancel button (the plan's own actions repeat the pause button).
+  const box = page.locator('[data-lld-cancel-note]'); const pause = box.getByRole('button', { name: 'Pause for 1 month', exact: true }); await expect(pause).toBeVisible();
+  const names = (await box.getByRole('button').allTextContents()).map(n => n.trim()); expect(names).toContain('Confirm cancellation'); expect(names.indexOf('Pause for 1 month')).toBeLessThan(names.indexOf('Confirm cancellation'));
+  await submitAndWait(page, pause);
   await expect(page.locator('main')).toContainText(/pause/i);
   await page.goto('/members/subscription/?confirm=1'); await submitAndWait(page, page.getByRole('button', { name: 'Confirm cancellation', exact: true }));
   await expect(page.locator('main')).toContainText(/cancel/i);
@@ -298,7 +315,7 @@ scenario('UC11-S6', 'TC-FR3-61-AS-01', async ({ page }) => {
 });
 scenario('UC12-S1', 'TC-FR3-75-AS-01', async ({ page }) => {
   const member = await fresh(page); await asOwner(page); await page.goto(`/members/admin/members/?q=${encodeURIComponent(A)}`);
-  await expect(page.getByRole('link', { name: `#${member.member_id}`, exact: true })).toBeVisible();
+  await expect(page.locator('.lld-adm-members .lld-adm-num')).toHaveText([`#${member.member_id}`]);
 });
 scenario('UC12-S2', 'TC-FR3-80-AS-01', async ({ page }) => {
   const member = await fresh(page, { access_state: 'Free' }); await grant(page, member);

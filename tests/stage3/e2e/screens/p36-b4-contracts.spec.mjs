@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { createMember, signIn, password, fixture, startTrack } from '../../key-journeys/helpers.mjs';
 import { asOwner, restNonce, submitAndWait } from '../../../stage2/e2e/helpers.mjs';
+import { switchesOn, switchesBack } from '../../key-journeys/p36-switches.mjs';
 const A = 'p3-api-a@test.lifelinedaily.invalid';
 async function make(page, fields = {}) {
   const reset = await page.request.post('/wp-json/lld-members/v1/test/reset', { data: { email: A } }); expect(reset.ok()).toBeTruthy();
@@ -16,6 +17,11 @@ async function addReminder(page, type='log') {
   const form=page.locator('.lld-reminders-add'); await form.locator('#lld_reminder_type').selectOption(type); await form.locator('input[type="time"]').fill('08:00');
   await submitAndWait(page,form.getByRole('button',{name:'Save',exact:true}));
 }
+// The Free limit of one reminder (AS-03) is part of Free and Premium access, behind the access_tiers switch. Staging has
+// it on; CI (tests/ci/stage2-wp.sh) leaves it off, so this spec turns it on and puts it back as it found it.
+let switches;
+test.beforeAll(async ({ request }) => { switches = await switchesOn(request, ['access_tiers']); });
+test.afterAll(async ({ request }) => { await switchesBack(request, switches); });
 test('TC-FR3-56-AS-01', async ({ page }) => {
   await make(page); await page.goto('/members/settings/?section=notifications'); await addReminder(page);
   const body=await call(page,'reminders'); const records=body.rows||body; expect(records).toHaveLength(1); expect(records[0].time_local.slice(0,5)).toBe('08:00'); expect(records[0].channel).toBe('email');
