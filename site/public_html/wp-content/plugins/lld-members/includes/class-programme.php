@@ -2259,6 +2259,22 @@ class LLD_Members_Programme {
 	 * @param int    $limit     Last day open to this member.
 	 * @param array  $periods   Active periods.
 	 */
+	/**
+	 * P3-36 D6: the topic icon and tone for a track's weeks, as the header shows the track's topic.
+	 *
+	 * @param string $key Track key.
+	 * @return array{0:string,1:string}
+	 */
+	private static function week_icon( $key ) {
+		$icons = array(
+			'healthy-weight' => array( 'weight', 'amber' ),
+			'blood-sugar'    => array( 'droplet', 'rose' ),
+			'fitness'        => array( 'flame', 'coral' ),
+			'sleep-stress'   => array( 'moon', 'violet' ),
+		);
+		return isset( $icons[ $key ] ) ? $icons[ $key ] : array( 'compass', 'stone' );
+	}
+
 	private static function weeks_html( $member_id, $row, $track, $reached, $limit, $periods ) {
 		$results = self::results( $member_id, (int) $row->id );
 		$html    = '<ol class="lld-weeks">';
@@ -2297,7 +2313,7 @@ class LLD_Members_Programme {
 			}
 			$html .= '<li class="lld-week ' . $class[ $state ] . '"><div class="lld-week-head"><div>';
 			$html .= '<span class="lld-week-num" aria-hidden="true">' . ( 'done' === $state ? '&#10003;' : $week ) . '</span>';
-			$html .= '<div><h3>' . esc_html( 'Week ' . $week . ( $theme ? ': ' . (string) $theme['title'] : '' ) ) . '</h3>';
+			$html .= '<div><h3>' . ( function_exists( 'lld_members_topic_icon' ) ? lld_members_topic_icon( ...self::week_icon( (string) $row->track_key ) ) : '' ) . esc_html( 'Week ' . $week . ( $theme ? ': ' . (string) $theme['title'] : '' ) ) . '</h3>';
 			$html .= '<p class="lld-hint">' . esc_html( $note ) . '</p></div></div>';
 			$html .= '<span class="lld-week-state">' . esc_html( $label[ $state ] ) . '<span class="lld-sr"> (' . esc_html( $state ) . ')</span></span></div>';
 			if ( 'open' === $state ) {

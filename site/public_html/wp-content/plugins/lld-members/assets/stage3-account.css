@@ -250,3 +250,139 @@ body.mode-night .lld-v2-menu-signout { color: #f2a196; }
     outline-offset: -3px;
   }
 }
+
+/* D6 ------------------------------------------------------------------------------------------------------------- */
+/* P3-36 D6 (UI audit 3.3): the header's topic icons (lld_members_topic_icon()) on the More cards, Today's Quick log
+   tiles and the track weeks. lld-v2.css sizes .lld-topic-icon everywhere but colours its tones only inside the
+   header menu, so the same tone colours are set here for member pages, Day and Night. Decoration only (aria-hidden). */
+@layer components {
+  body.lld-members-v2-app .lld-member-icon { width: 2.25rem !important; height: 2.25rem !important; flex: none !important; margin: 0 !important; }
+  body.lld-members-v2-app .lld-member-icon svg { width: 20px !important; height: 20px !important; }
+  body.lld-members-v2-app .lld-member-icon.tone-amber { color: #a35a12 !important; background: #fdf0e1 !important; }
+  body.lld-members-v2-app .lld-member-icon.tone-rose { color: #a3253f !important; background: #fce8ec !important; }
+  body.lld-members-v2-app .lld-member-icon.tone-coral { color: #a9431b !important; background: #fdebe3 !important; }
+  body.lld-members-v2-app .lld-member-icon.tone-violet { color: #4e3f9a !important; background: #eeeaf8 !important; }
+  body.lld-members-v2-app .lld-member-icon.tone-teal { color: #1e6b57 !important; background: #e3f3ee !important; }
+  body.lld-members-v2-app .lld-member-icon.tone-stone { color: #5e5640 !important; background: #f1eee6 !important; }
+  body.lld-members-v2-app .lld-member-icon.tone-pink { color: #962d5c !important; background: #fbe9f1 !important; }
+  body.lld-members-v2-app .lld-member-icon.tone-blue { color: #24508a !important; background: #e6eef8 !important; }
+  body.mode-night.lld-members-v2-app .lld-member-icon.tone-amber { color: #f0c674 !important; background: #2e2410 !important; }
+  body.mode-night.lld-members-v2-app .lld-member-icon.tone-rose { color: #f2a1b4 !important; background: #3a1a22 !important; }
+  body.mode-night.lld-members-v2-app .lld-member-icon.tone-coral { color: #f2a88a !important; background: #3a1f14 !important; }
+  body.mode-night.lld-members-v2-app .lld-member-icon.tone-violet { color: #c3b8f5 !important; background: #241f3d !important; }
+  body.mode-night.lld-members-v2-app .lld-member-icon.tone-teal { color: #79d1c3 !important; background: #14302a !important; }
+  body.mode-night.lld-members-v2-app .lld-member-icon.tone-stone { color: #d6d1c7 !important; background: #262420 !important; }
+  body.mode-night.lld-members-v2-app .lld-member-icon.tone-pink { color: #f2a1c8 !important; background: #3a1a2a !important; }
+  body.mode-night.lld-members-v2-app .lld-member-icon.tone-blue { color: #9dc0f2 !important; background: #16243a !important; }
+
+  /* More: the icon to the left of the card's name and line. */
+  body.lld-members-v2-app .lld-more-list a { display: grid !important; grid-template-columns: auto 1fr !important; column-gap: 12px !important; align-items: center !important; }
+  body.lld-members-v2-app .lld-more-list a > .lld-member-icon { grid-row: 1 / span 2 !important; }
+  body.lld-members-v2-app .lld-more-list a > :is(strong, span:not(.lld-member-icon)) { grid-column: 2 !important; }
+
+  /* Quick log tiles: the icon above the tile's label. */
+  body.lld-members-v2-app .lld-tile .lld-member-icon { margin-bottom: 6px !important; }
+
+  /* Track weeks: the icon before the week's title. */
+  body.lld-members-v2-app .lld-week h3 { display: flex !important; align-items: center !important; gap: 10px !important; }
+}
+
+/* D7 ------------------------------------------------------------------------------------------------------------- */
+/* P3-36 D7 (UI audit 4.5): each weekly bar carries its count ("5 of 7", as in the table) above the bar area, and a
+   faint dashed 7-day guide runs across the top of the bar area, so the line never crosses a label and a 7-of-7 bar
+   just meets it. Bars stay proportional: the bar's height is a share of the bar area only. No judgement colours. */
+body.lld-members-v2-app .lld-week-chart .lld-bars {
+  height: 168px;
+  min-height: 168px;
+  align-items: stretch;
+}
+
+body.lld-members-v2-app .lld-week-chart .lld-bar {
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 1fr;
+  height: 100%;
+  row-gap: 4px;
+}
+
+body.lld-members-v2-app .lld-week-chart .lld-bar-value {
+  grid-row: 1;
+  font-style: normal;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--lld-text, #3a3834);
+  white-space: nowrap;
+}
+
+body.lld-members-v2-app .lld-week-chart .lld-bar::before {
+  content: "";
+  grid-row: 2;
+  grid-column: 1;
+  align-self: start;
+  border-top: 1.5px dashed var(--lld-border, #8f8576);
+  opacity: 0.55;
+}
+
+body.lld-members-v2-app .lld-week-chart .lld-bar > span {
+  grid-row: 2;
+  grid-column: 1;
+  align-self: end;
+  min-height: 2px;
+}
+
+body.lld-members-v2-app .lld-week-chart .lld-bar > b {
+  grid-row: 3;
+  text-align: center;
+}
+
+body.lld-members-v2-app .lld-week-chart .lld-bar-guide-key {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--lld-muted, #5a5751);
+}
+
+body.lld-members-v2-app .lld-week-chart .lld-bar-guide-swatch {
+  display: inline-block;
+  width: 24px;
+  border-top: 1.5px dashed var(--lld-border, #8f8576);
+  opacity: 0.55;
+}
+
+/* D9 ------------------------------------------------------------------------------------------------------------- */
+/* P3-36 D9 (journey tests, problem 6): after Done or a quick log that adds a day, the ring's filled part grows from the
+   count before to the new count and the card is briefly highlighted; the status line under it says the new count, or
+   that today was already counted. No motion with prefers-reduced-motion: reduce (the final state shows at once). */
+@keyframes lld-ring-grow {
+  from { stroke-dashoffset: var(--lld-ring-from); }
+  to { stroke-dashoffset: var(--lld-ring-to); }
+}
+
+@keyframes lld-ring-glow {
+  0% { box-shadow: 0 0 0 0 rgba(121, 209, 195, 0.65); }
+  100% { box-shadow: 0 0 0 14px rgba(121, 209, 195, 0); }
+}
+
+body.lld-members-v2-app .lld-ring-rose .lld-ring-fill {
+  animation: lld-ring-grow 900ms ease-out both;
+}
+
+body.lld-members-v2-app .lld-ring-card.lld-ring-rose {
+  animation: lld-ring-glow 1200ms ease-out 1;
+}
+
+body.lld-members-v2-app .lld-ring-change {
+  margin: 8px 0 0;
+  font-weight: 600;
+  color: var(--lld-green, #1d4e48);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.lld-members-v2-app .lld-ring-rose .lld-ring-fill,
+  body.lld-members-v2-app .lld-ring-card.lld-ring-rose {
+    animation: none;
+  }
+}
