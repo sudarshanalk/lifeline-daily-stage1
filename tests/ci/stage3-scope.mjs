@@ -63,10 +63,22 @@ export const LEAD_STAGE2 = [`${PLUGIN}/includes/class-billing.php`, `${PLUGIN}/i
 // approved wording file (screening-sleep-and-stress.md), as the Stage 3 engine does.
 // P3-90: owner, 5 Nov 2026 ("Yes, open it"): the meal-plan code in class-premium.php reads recipe ingredients saved as
 // rows, found broken in the owner's test checkout (warnings and "Array" on /members/meals/).
-// P3-35: Owner Question 160 (10 Nov 2026), additions only: the two new content types (mindset note, question) in
-// class-content.php and one hook for the day's step in class-programme.php; nothing existing changes.
-export const DECISION_STAGE2 = { '03': [`${PLUGIN}/includes/class-personal.php`], 90: [`${PLUGIN}/includes/class-premium.php`],
-  35: [`${PLUGIN}/includes/class-content.php`, `${PLUGIN}/includes/class-programme.php`] };
+// P3-36 (member area build list): the owner approved the four-tool combined plan on 14 Nov 2026 (P3-36_Combined_Plan.md):
+// the Stage 2 settings, library, programme, diary and meal-plan, health profile, sign-in and More files the plan names.
+// Package 36 is the lead's, so every S3-P36 pull request is listed for the lead's review before it merges.
+export const DECISION_STAGE2 = {
+  '03': [`${PLUGIN}/includes/class-personal.php`],
+  90: [`${PLUGIN}/includes/class-premium.php`],
+  // P3-35: Owner Question 160 (10 Nov 2026), additions only: the two new content types (mindset note, question) in
+  // class-content.php and one hook for the day's step in class-programme.php; nothing existing changes.
+  35: [`${PLUGIN}/includes/class-content.php`, `${PLUGIN}/includes/class-programme.php`],
+  36: ['class-account.php', 'class-content.php', 'class-programme.php', 'class-premium.php', 'class-personal.php', 'class-auth.php', 'class-growth.php'].map((f) => `${PLUGIN}/includes/${f}`),
+};
+// New plugin files one package may add outside includes/stage3/ (P3-36: each tool's own stylesheet or script, so no two
+// tools edit stage3.css or stage3.js at once). Exact paths, as for every other plugin file outside includes/stage3/.
+export const PACKAGE_FILES = {
+  36: ['stage3-account.css', 'stage3-forms.css', 'stage3-forms.js', 'stage3-logging.js'].map((f) => `${PLUGIN}/assets/${f}`),
+};
 const STAGE2_TESTS = ['tests/stage2/**'];
 // The Stage 1 and 2 calculators and their approvals. Stage 3 sign-offs live in approvals/stage3/ (Build Method §7.4).
 const PROTECTED = ['site/public_html/tools/**', 'approvals/*', 'manifests/**', 'copy/**'];
@@ -97,7 +109,8 @@ export function stage3Scope({ title, files, all = [], decisions = loadDecisions(
   if (!c) return { ok: false, problems: [`title "${title}" is not S3-Pnn: <name> (Build Method Stage 3 §2)`], review: [] };
   const problems = [];
   const review = [];
-  const allowed = toolsFor(c.ids).flatMap((t) => TOOL_FILES[t]);
+  const lead = toolsFor(c.ids).every((t) => t === 'claude');
+  const allowed = toolsFor(c.ids).flatMap((t) => TOOL_FILES[t]).concat(lead ? c.ids.flatMap((id) => PACKAGE_FILES[id] || []) : []);
   for (const f of files) {
     if (matches(f, PROTECTED)) { problems.push(`${f} is a Stage 1 calculator, approval, manifest or copy file: owner decision needed`); continue; }
     if (DECLARED_STAGE2.includes(f)) { review.push(f); continue; }

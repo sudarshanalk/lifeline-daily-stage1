@@ -1,6 +1,6 @@
 // Stage 3 guards (P3-10): NFR3-02, NFR3-04, NFR3-05 on the scope module itself, with injected diffs so no git is needed.
 import { expect, test } from 'vitest';
-import { stage3Scope, stage3Guards, classify, unknownTestIds, DECLARED_STAGE2 } from '../ci/stage3-scope.mjs';
+import { stage3Scope, stage3Guards, classify, unknownTestIds, DECLARED_STAGE2, PACKAGE_FILES } from '../ci/stage3-scope.mjs';
 import { oracleGuard } from '../ci/oracle-guard.mjs';
 import { execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -106,6 +106,28 @@ test('TC-NFR3-05-AS-02 (P3-35): both Stage 2 files the P3-35 decision opens are 
   // Another package gets no review line for them (and is refused if it changes them itself).
   expect(stage3Scope({ title: 'S3-P40: food search', files: [], all: [content, programme] }).review).toEqual([]);
   expect(stage3Scope({ title: 'S3-P40: food search', files: [programme] }).ok).toBe(false);
+});
+
+test('P3-36 opens the build list Stage 2 files and new assets to package 36 only', () => {
+  // Owner, 14 Nov 2026: the member area build list (P3-36_Combined_Plan.md). Package 36 is the lead's, so each named
+  // Stage 2 file passes and is listed for the lead's review; other packages are still refused.
+  const named = ['class-account.php', 'class-content.php', 'class-programme.php', 'class-premium.php', 'class-personal.php', 'class-auth.php', 'class-growth.php'].map((f) => `${PLUGIN}/includes/${f}`);
+  const r = stage3Scope({ title: 'S3-P36: C2 one settings area', files: [...named, `${PLUGIN}/includes/stage3/screens/class-account-hub.php`], decisions: [] });
+  expect(r.ok, r.problems.join(' | ')).toBe(true);
+  expect(r.review).toEqual(named);
+  for (const f of named) expect(stage3Scope({ title: 'S3-P40: food search', files: [f], decisions: [] }).ok, f).toBe(false);
+  // Each tool's own stylesheet or script may be added by package 36, and by no other package.
+  for (const f of PACKAGE_FILES[36]) {
+    expect(stage3Scope({ title: 'S3-P36: B1 food page', files: [f], decisions: [] }).ok, f).toBe(true);
+    expect(stage3Scope({ title: 'S3-P40: food search', files: [f], decisions: [] }).ok, f).toBe(false);
+  }
+  // An undeclared Stage 2 file is still refused, and the frozen calculators stay closed.
+  expect(stage3Scope({ title: 'S3-P36: A8 library', files: [`${PLUGIN}/includes/class-photos.php`], decisions: [] }).ok).toBe(false);
+  expect(stage3Scope({ title: 'S3-P36: A8 library', files: ['site/public_html/tools/protein-requirement-tool.html'], decisions: [] }).ok).toBe(false);
+  expect(stage3Scope({ title: 'S3-P36: A8 library', files: [`${PLUGIN}/assets/stage3-other.js`], decisions: [] }).ok).toBe(false);
+  // A title joined with a builder's package keeps that builder's limits: no Stage 2 files and no new assets.
+  expect(stage3Scope({ title: 'S3-P36-P40: joined', files: [named[0]], decisions: [] }).ok).toBe(false);
+  expect(stage3Scope({ title: 'S3-P36-P40: joined', files: [PACKAGE_FILES[36][0]], decisions: [] }).ok).toBe(false);
 });
 
 test('every Stage 3 test id in tests/stage3 is a check in docs/stage3/03', () => {

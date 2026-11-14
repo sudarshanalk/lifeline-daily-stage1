@@ -1,6 +1,6 @@
 # Stage 3 test criteria (extract)
 
-Extracted on 10 November 2026 from `01 Requirements/Lifeline_Daily_Requirements_All_Stages.md` v0.4 by the lead. Every `TC-FR3-nn-AS-nn` and `TC-NFR3-nn-AS-nn` used under `tests/stage3/` must appear here (`stage3-guards`). Do not edit by hand: re-extract from the requirements when they change.
+Extracted on 14 November 2026 from `01 Requirements/Lifeline_Daily_Requirements_All_Stages.md` v0.4 by the lead. Every `TC-FR3-nn-AS-nn` and `TC-NFR3-nn-AS-nn` used under `tests/stage3/` must appear here (`stage3-guards`). Do not edit by hand: re-extract from the requirements when they change.
 
 #### FR3-01 Sign in with Google
 
@@ -66,6 +66,8 @@ The single long Settings form is replaced by an account hub with separate sectio
 | TC-FR3-06-AS-01 | Open Account: the five sections are listed and each opens its own page. |
 | TC-FR3-06-AS-02 | Change the display name in Profile and press Save: only Profile is saved and a confirmation is shown. |
 | TC-FR3-06-AS-03 | Privacy and consents lists every consent the member has given, with the date, and each can be withdrawn. |
+| TC-FR3-06-AS-04 | Open the old long settings address (?all=1) as a member: the matching section of Account opens instead. |
+| TC-FR3-06-AS-05 | Switch to imperial units in Profile: the health profile, the check-in and the logging pages show feet, inches and pounds, and none of them has its own units switch. |
 
 #### FR3-07 Account menu on desktop
 
@@ -78,6 +80,9 @@ On a desktop screen, clicking the member's name opens a small menu with Profile,
 | TC-FR3-07-AS-01 | At 1280 pixels wide, click the name chip: a menu with the five links opens. |
 | TC-FR3-07-AS-02 | Each link goes to the right page, and Sign out signs the member out. |
 | TC-FR3-07-AS-03 | The menu can be opened and used with the keyboard alone. |
+| TC-FR3-07-AS-04 | On every member page and every My account → Admin page, the name chip opens the same menu, and Sign out there signs the member out. |
+| TC-FR3-07-AS-05 | At 360 pixels wide, the menu in the header holds Sign out. |
+| TC-FR3-07-AS-06 | Sign-in and security offers signing out of this device only, next to signing out everywhere; the first ends only the current browser's session. |
 
 #### FR3-08 Helpful empty screens
 
@@ -105,6 +110,7 @@ Every new member who gives health consent sets one main goal when joining, and m
 | TC-FR3-09-AS-05 | A weight goal below a healthy BMI, or faster than the safe rate, is refused with a gentle message and a safe suggestion. |
 | TC-FR3-09-AS-06 | A member can add one extra goal but not a third. |
 | TC-FR3-09-AS-07 | A member who answers a pregnancy, eating-disorder or medicine safety question sees the safety wording before setting a goal. |
+| TC-FR3-09-AS-08 | A member who has not answered the health questions is taken to them while setting the goal, and the goal is saved once they are answered. |
 
 #### FR3-10 Starting measurements
 
@@ -761,6 +767,7 @@ When a member deletes their account, all their food and health logs, goals, cust
 |---|---|
 | TC-FR3-61-AS-01 | Delete a test account with logs: no food or health entries remain for that member in the database. |
 | TC-FR3-61-AS-02 | Shared progress links made by that member stop working. |
+| TC-FR3-61-AS-03 | After an account is deleted, no table holds the member's email, including the sign-in lock records. |
 
 #### FR3-62 Plans and prices at launch
 
@@ -805,6 +812,7 @@ My subscription shows a membership card: the plan and price, the renewal date, t
 | TC-FR3-64-AS-01 | A yearly Premium test member's card shows the yearly plan, price, renewal date and saving. |
 | TC-FR3-64-AS-02 | The card shows the member's own counts of completed workouts and logged days, matching the progress page. |
 | TC-FR3-64-AS-03 | A Free test member sees an upgrade card instead. |
+| TC-FR3-64-AS-04 | A member given free Premium by the Owner sees Premium on the name chip, in Account → Membership and on My subscription, with its end date, and no offer to buy Premium. |
 
 #### FR3-65 Pause subscription
 
@@ -872,6 +880,8 @@ The Stage 2 safety matrix is extended to every Stage 3 feature. For a member wit
 | TC-FR3-69-AS-02 | For the same member, requests for calorie data through the programming interface are refused. |
 | TC-FR3-69-AS-03 | For a test member with kidney disease, no protein target appears anywhere. |
 | TC-FR3-69-AS-04 | Add the eating-disorder flag to a member who already has a weight-loss plan: the plan's calorie targets disappear at once and a safe plan is offered. |
+| TC-FR3-69-AS-05 | A member whose conditions answer is missing who tries to log a reading or set a goal is told which question is missing, with a link to it, and nothing is stored. |
+| TC-FR3-69-AS-06 | Health details in the health profile cannot be saved until the conditions question is answered; 'None of these' and 'Prefer not to answer' both count as answers. |
 
 #### FR3-70 Weekly owner report
 
@@ -1414,6 +1424,45 @@ The alcohol answers from joining (FR3-98) change the plan from day 1, through ru
 | TC-FR3-110-AS-09 | A member who drinks most days, 5 or more a time, gets 'Have one drink fewer on one day this week' and never an alcohol-free-day step, with the support card shown first. |
 | TC-FR3-110-AS-10 | A member with an eating-disorder flag sees no drink calorie figure. |
 | TC-FR3-110-AS-11 | The alcohol answers are in 'Download my data' and in no email, analytics event or admin page. |
+
+#### FR3-111 A Library members can search
+
+Stage 3 · Member area · Must · Status: To be built
+
+The member Library shows each approved item once, as a card with its type and, where the item has one, its length. A search box and filters by type (recipes, workout plans, challenges, lessons) let a member find an item quickly. (Member area build list A8, 14 Nov 2026.)
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-111-AS-01 | Type part of a known approved title in the search box: that item is listed and items that don't match are hidden. |
+| TC-FR3-111-AS-02 | Choose one type filter: only items of that type are listed; clearing it lists every type again. |
+| TC-FR3-111-AS-03 | An approved item used on two tracks appears once, naming both tracks. |
+| TC-FR3-111-AS-04 | An unapproved or withdrawn item never appears, whatever the search or filter. |
+| TC-FR3-111-AS-05 | At 360 pixels wide the search and filters work, and both can be used with the keyboard alone. |
+
+#### FR3-112 Honest track progress
+
+Stage 3 · Member area · Must · Status: To be built
+
+A track week shows a tick and 'Completed' only when all seven of its days were done. Every past week shows how many days were done, so an ended track never looks finished when it wasn't. (Member area build list A2, 14 Nov 2026.)
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-112-AS-01 | A week with all seven days done shows a tick and 'Completed'. |
+| TC-FR3-112-AS-02 | A past week with fewer than seven days done shows no tick and 'N of 7 days done'. |
+| TC-FR3-112-AS-03 | A track that ended with no days done shows no tick and no 'Completed' on any week, and the total reads '0 of 28 done'. |
+
+#### FR3-113 Terms before the member area
+
+Stage 3 · Member area · Must · Status: To be built
+
+A member who has not accepted the current terms is taken to Agreements before any member page. Calculators, articles and Help stay open to them. (Member area build list A6, 14 Nov 2026.)
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-113-AS-01 | A confirmed member who has not accepted the terms signs in: Agreements opens before Today. |
+| TC-FR3-113-AS-02 | The same member opens /members/tracks/ directly: Agreements opens instead, and no track can be started. |
+| TC-FR3-113-AS-03 | The same member can still open the calculators, articles and Help. |
+| TC-FR3-113-AS-04 | After accepting, the member is taken to the page they were going to. |
 
 #### NFR3-01 Stage 2 keeps working
 
