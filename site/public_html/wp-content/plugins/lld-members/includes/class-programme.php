@@ -2265,8 +2265,17 @@ class LLD_Members_Programme {
 		for ( $week = 1; $week <= 4; $week++ ) {
 			$theme = self::week_item( 'lld_week', $track, $week, $member_id );
 			$first = ( $week - 1 ) * 7 + 1;
-			if ( $week * 7 <= $reached ) {
+			$done  = 0;
+			for ( $day = $first; $day < $first + 7; $day++ ) {
+				if ( ! empty( $results[ $day ] ) && in_array( 'done', $results[ $day ], true ) ) {
+					++$done;
+				}
+			}
+			// P3-36 A2 / FR3-112: a tick and "Completed" only when all seven days were done, not merely past by date.
+			if ( $week * 7 <= $reached && 7 === $done ) {
 				$state = 'done';
+			} elseif ( $week * 7 <= $reached ) {
+				$state = 'past';
 			} elseif ( $first > $limit ) {
 				$state = 'locked';
 			} elseif ( $first <= $reached ) {
@@ -2274,16 +2283,10 @@ class LLD_Members_Programme {
 			} else {
 				$state = 'not open yet';
 			}
-			$class = array( 'done' => 'is-done', 'locked' => 'is-locked', 'open' => 'is-open', 'not open yet' => 'is-ahead' );
-			$label = array( 'done' => 'Completed', 'locked' => 'Locked', 'open' => 'In progress', 'not open yet' => 'Not open yet' );
+			$class = array( 'done' => 'is-done', 'past' => 'is-past', 'locked' => 'is-locked', 'open' => 'is-open', 'not open yet' => 'is-ahead' );
+			$label = array( 'done' => 'Completed', 'past' => '', 'locked' => 'Locked', 'open' => 'In progress', 'not open yet' => 'Not open yet' );
 			$note  = '';
-			if ( 'done' === $state ) {
-				$done = 0;
-				for ( $day = $first; $day < $first + 7; $day++ ) {
-					if ( ! empty( $results[ $day ] ) && in_array( 'done', $results[ $day ], true ) ) {
-						$done++;
-					}
-				}
+			if ( 'done' === $state || 'past' === $state ) {
 				$note = $done . ' of 7 days done';
 			} elseif ( 'open' === $state ) {
 				$note = 'Day ' . min( $reached, $week * 7 ) . ' of ' . self::DAYS;

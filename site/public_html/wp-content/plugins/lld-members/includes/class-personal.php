@@ -282,16 +282,26 @@ class LLD_Members_Personal {
 			$main .= '<input type="hidden" name="lld_hide_ok" value="1">';
 		}
 		$main .= self::choice_field( 'lld_sex', 'Sex', self::sex_choices(), $posted ? self::posted_text( 'lld_sex' ) : ( $profile ? (string) $profile->sex : '' ) );
-		$main .= '<label class="lld-check"><input type="checkbox" name="lld_imperial" value="1" data-lld-imperial' . ( $imperial ? ' checked' : '' ) . '> Use imperial units</label>';
+		// With the account hub on, units are set once on Profile (FR3-06 AS-05). This page follows that setting and has no switch of its own.
+		$hub_units = class_exists( 'LLD_Members_Features' ) && LLD_Members_Features::enabled( 'account_hub', $member_id );
+		if ( $hub_units ) {
+			if ( $imperial ) {
+				$main .= '<input type="hidden" name="lld_imperial" value="1">';
+			}
+		} else {
+			$main .= '<label class="lld-check"><input type="checkbox" name="lld_imperial" value="1" data-lld-imperial' . ( $imperial ? ' checked' : '' ) . '> Use imperial units</label>';
+		}
 		$main .= '<div data-lld-imperial-fields' . ( $imperial ? '' : ' hidden' ) . '>';
 		$main .= self::number_field( 'lld_feet', 'Height, feet', 'lld_feet', $keep );
 		$main .= self::number_field( 'lld_inches', 'Height, inches', 'lld_inches', $keep );
 		$main .= self::number_field( 'lld_pounds', 'Weight, pounds', 'lld_pounds', $keep );
 		$main .= self::number_field( 'lld_waist_in', 'Waist, inches', 'lld_waist_in', $keep );
 		$main .= '</div>';
+		$main .= '<div data-lld-metric-fields' . ( $hub_units && $imperial ? ' hidden' : '' ) . '>';
 		$main .= self::number_field( 'lld_height', 'Height in centimetres', 'lld_height', $keep );
 		$main .= self::number_field( 'lld_weight', 'Weight in kilograms', 'lld_weight', $keep );
 		$main .= self::number_field( 'lld_waist', 'Waist in centimetres', 'lld_waist', $keep );
+		$main .= '</div>';
 		$main .= self::choice_field( 'lld_activity', 'Activity level', self::activity_choices(), $posted ? self::posted_text( 'lld_activity' ) : ( $profile ? (string) $profile->activity_level : '' ) );
 		$main .= self::choice_field( 'lld_diet', 'Diet type', self::diet_choices(), $posted ? self::posted_text( 'lld_diet' ) : ( $profile ? (string) $profile->diet_type : '' ) );
 		$main .= self::choice_field( 'lld_ethnicity', 'Ethnicity', self::ethnicity_choices(), $posted ? self::posted_text( 'lld_ethnicity' ) : ( $profile ? (string) $profile->ethnicity : '' ) );

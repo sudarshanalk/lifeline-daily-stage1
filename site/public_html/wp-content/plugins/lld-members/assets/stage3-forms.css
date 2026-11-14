@@ -1,0 +1,139 @@
+/* Account hub and Library controls (P3-36 C2 / A8). */
+
+/* Account hub photo picker (C2). Loaded with the hub, not on the Stage 2 long form. */
+
+.lld-file {
+	position: relative;
+}
+
+.lld-file label {
+	display: inline-block;
+	padding: 0.55rem 1rem;
+	border: 1px solid currentColor;
+	border-radius: 999px;
+	cursor: pointer;
+}
+
+.lld-file input[type="file"] {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.lld-file:focus-within label {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+.lld-file-name:empty {
+	display: none;
+}
+
+.lld-file-name {
+	display: inline-block;
+	margin-left: 0.75rem;
+}
+
+/* Reminder chooser on Notifications (P3-36 B4). */
+
+.lld-reminders-hub {
+	margin-top: 1.5rem;
+}
+
+.lld-reminder-rows {
+	list-style: none;
+	margin: 0 0 1rem;
+	padding: 0;
+	display: grid;
+	gap: 1rem;
+}
+
+.lld-reminder-days {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 0.75rem;
+	border: 0;
+	margin: 0.5rem 0 0;
+	padding: 0;
+}
+
+/* Library search and type chips (A8). */
+
+.lld-library-tools {
+	margin: 1rem 0 1.5rem;
+}
+
+.lld-library-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-top: 0.75rem;
+}
+
+.lld-chip-filter {
+	appearance: none;
+	border: 1px solid currentColor;
+	background: transparent;
+	border-radius: 999px;
+	padding: 0.4rem 0.9rem;
+	min-height: 44px;
+	font: inherit;
+	color: inherit;
+	cursor: pointer;
+}
+
+/* Ink on card: dark chip with white text in Day, light chip with dark text in Night (the v2 pages remap both). */
+.lld-chip-filter.is-active {
+	background: var(--lld-ink, #1f2a37);
+	border-color: var(--lld-ink, #1f2a37);
+	color: var(--lld-card, #fff);
+}
+
+.lld-chip-filter:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+.lld-library-cards {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 0.75rem;
+}
+
+.lld-library-card a {
+	display: block;
+	padding: 0.85rem 1rem;
+	border: 1px solid var(--lld-line, rgba(0, 0, 0, 0.12));
+	border-radius: 0.75rem;
+	text-decoration: none;
+}
+
+.lld-library-card-title {
+	display: block;
+	font-weight: 600;
+}
+
+.lld-library-card-meta,
+.lld-library-card-tracks {
+	display: block;
+	margin-top: 0.25rem;
+	font-size: 0.95rem;
+	color: var(--lld-muted, #5c6b64);
+}
+
+.lld-library-status:empty {
+	display: none;
+}
+
+.lld-library-group[hidden],
+.lld-library-card[hidden] {
+	display: none !important;
+}
