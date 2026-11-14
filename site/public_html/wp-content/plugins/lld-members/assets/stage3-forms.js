@@ -41,7 +41,12 @@
 				});
 				if (status) {
 					var shown = root.querySelector("[data-lld-library-card]:not([hidden])");
-					var none = shown ? "" : status.getAttribute("data-lld-library-none") || "";
+					var filtering = !!(q || filter);
+					var none = shown
+						? ""
+						: filtering
+							? status.getAttribute("data-lld-library-none") || ""
+							: status.getAttribute("data-lld-library-empty") || status.getAttribute("data-lld-library-none") || "";
 					if (status.textContent !== none) status.textContent = none;
 				}
 			}

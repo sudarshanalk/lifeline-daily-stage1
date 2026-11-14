@@ -40,9 +40,9 @@ class LLD_Members_Reminders {
 	 * @var array<string,string>
 	 */
 	const HUB_TYPES = array(
-		'log'      => 'Log',
-		'workout'  => 'Work out',
-		'weigh_in' => 'Weigh in',
+		'log'      => 'Log meals',
+		'workout'  => 'Workout',
+		'weigh_in' => 'Weigh-in',
 	);
 
 	/**
@@ -51,7 +51,7 @@ class LLD_Members_Reminders {
 	 * @var array<string,string>
 	 */
 	const HUB_OTHER_TYPES = array(
-		'check_in' => 'Check in',
+		'check_in' => 'Check-in',
 	);
 
 	/** Day codes for the hub checkboxes. */
@@ -563,10 +563,10 @@ class LLD_Members_Reminders {
 	public static function save_hub( $member_id ) {
 		$member_id = (int) $member_id;
 		if ( $member_id < 1 || ! class_exists( 'LLD_Members_Stage3_Data' ) ) {
-			return new WP_Error( 'lld_reminders', 'Reminders are not available.' );
+			return new WP_Error( 'lld_reminders', 'Reminders aren\'t available right now.' );
 		}
 		if ( class_exists( 'LLD_Members_Features' ) && ! LLD_Members_Features::enabled( 'reminders', $member_id ) ) {
-			return new WP_Error( 'lld_reminders', 'Reminders are not available.' );
+			return new WP_Error( 'lld_reminders', 'Reminders aren\'t available right now.' );
 		}
 		$action = isset( $_POST['lld_reminders_action'] ) ? sanitize_key( (string) wp_unslash( $_POST['lld_reminders_action'] ) ) : '';
 		if ( 'add' === $action ) {
@@ -575,7 +575,7 @@ class LLD_Members_Reminders {
 		if ( 'update' === $action ) {
 			return self::save_hub_update( $member_id );
 		}
-		return new WP_Error( 'lld_reminders', 'Choose a reminder action.' );
+		return new WP_Error( 'lld_reminders', 'Choose a reminder type.' );
 	}
 
 	/**
@@ -636,7 +636,7 @@ class LLD_Members_Reminders {
 			return new WP_Error( 'lld_reminders', (string) $filled['error'] );
 		}
 		$id = LLD_Members_Stage3_Data::insert( 'reminders', $member_id, $filled, array() );
-		return $id > 0 ? true : new WP_Error( 'lld_reminders', 'Could not save that reminder.' );
+		return $id > 0 ? true : new WP_Error( 'lld_reminders', 'Couldn\'t save that reminder. Please try again.' );
 	}
 
 	/**
