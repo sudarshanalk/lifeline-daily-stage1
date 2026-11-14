@@ -1476,6 +1476,140 @@ class LLD_Members_Account {
 	}
 
 	/**
+	 * Profile tab of the account hub (P3-36 C2). Names, email, age, time zone, units and photo only.
+	 * The password, two-step sign-in, email preferences and consents stay on their own tabs.
+	 * The long settings form still uses save_profile() and is unchanged.
+	 *
+	 * @param object $row Member row.
+	 * @return true|WP_Error
+	 */
+	public static function save_hub_profile( $row ) {
+		$age = isset( $_POST['lld_age'] ) ? (int) $_POST['lld_age'] : (int) $row->age;
+		if ( $age < 18 ) {
+			return new WP_Error( 'lld_age', 'Age cannot be under 18.' );
+		}
+		$problem = self::upload_problem( 'lld_photo' );
+		if ( $problem ) {
+			return $problem;
+		}
+		if ( isset( $_POST['lld_timezone'] ) && ! in_array( sanitize_text_field( wp_unslash( $_POST['lld_timezone'] ) ), timezone_identifiers_list(), true ) ) {
+			return new WP_Error( 'lld_timezone', 'Choose a time zone from the list, for example Europe/London or America/New_York.' );
+		}
+		$member_id = (int) $row->id;
+		$email     = isset( $_POST['lld_email'] ) ? sanitize_email( wp_unslash( $_POST['lld_email'] ) ) : $row->email;
+		if ( $email !== $row->email ) {
+			if ( ! is_email( $email ) || email_exists( $email ) ) {
+				return new WP_Error( 'lld_email', 'That email is already registered.' );
+			}
+			self::issue_link( get_user_by( 'id', $row->user_id ), $member_id, 'email_change', 24, $email );
+		}
+		$photo = $row->photo_path;
+		if ( ! empty( $_POST['lld_remove_photo'] ) ) {
+			LLD_Members_Photos::delete_member( $member_id, 'profile' );
+			$photo = null;
+		}
+		if ( isset( $_FILES['lld_photo'] ) && ! empty( $_FILES['lld_photo']['tmp_name'] ) ) {
+			$stored = LLD_Members_Photos::store( $member_id, 'profile', $_FILES['lld_photo']['tmp_name'], (string) $_FILES['lld_photo']['name'] );
+			if ( is_wp_error( $stored ) ) {
+				return $stored;
+			}
+			$photo = $stored;
+		}
+		global $wpdb;
+		$updated = $wpdb->update(
+			LLD_Members_Schema::table( 'member' ),
+			array(
+				'first_name'     => isset( $_POST['lld_first'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_first'] ) ) : $row->first_name,
+				'last_name'      => isset( $_POST['lld_last'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_last'] ) ) : $row->last_name,
+				'display_name'   => isset( $_POST['lld_display'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_display'] ) ) : $row->display_name,
+				'age'            => $age,
+				'age_entered_on' => ( $age !== (int) $row->age ) ? LLD_Members_Clock::now( $member_id )->format( 'Y-m-d' ) : $row->age_entered_on,
+				'timezone'       => isset( $_POST['lld_timezone'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_timezone'] ) ) : $row->timezone,
+				'units'          => empty( $_POST['lld_units'] ) ? 'metric' : 'imperial',
+				'photo_path'     => $photo,
+			),
+			array( 'id' => $member_id ),
+			array( '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s' ),
+			array( '%d' )
+		);
+		if ( false === $updated ) {
+			return new WP_Error( 'lld_profile_save', 'Try again' );
+		}
+		LLD_Members_Programme::zone_saved( $member_id, (string) $row->timezone );
+		return true;
+	}
+
+	/**
+	 * Sign-in tab: password and two-step sign-in only.
+	 *
+	 * @param object $row Member row.
+	 * @return true|WP_Error
+	 */
+	public static function save_hub_security( $row ) {
+		$pass = isset( $_POST['lld_password'] ) ? (string) wp_unslash( $_POST['lld_password'] ) : '';
+		if ( '' !== $pass ) {
+			if ( strlen( $pass ) < 10 ) {
+				return new WP_Error( 'lld_password', 'Use at least 10 characters.' );
+			}
+			wp_set_password( $pass, (int) $row->user_id );
+			wp_set_auth_cookie( (int) $row->user_id, false );
+		}
+		$forced  = 'owner_admin' === $row->role;
+		global $wpdb;
+		$updated = $wpdb->update(
+			LLD_Members_Schema::table( 'member' ),
+			array( 'two_step' => ( $forced || ! empty( $_POST['lld_two_step'] ) ) ? 1 : 0 ),
+			array( 'id' => (int) $row->id ),
+			array( '%d' ),
+			array( '%d' )
+		);
+		if ( false === $updated ) {
+			return new WP_Error( 'lld_profile_save', 'Try again' );
+		}
+		return true;
+	}
+
+	/**
+	 * Notifications tab: the existing email choices. Reminder rows are a later package.
+	 *
+	 * @param int $member_id Member number.
+	 * @return true
+	 */
+	public static function save_hub_notifications( $member_id ) {
+		self::save_preferences( $member_id );
+		return true;
+	}
+
+	/**
+	 * Privacy tab: marketing emails only. Health consent still goes through the withdraw screen.
+	 *
+	 * @param int $member_id Member number.
+	 * @return true
+	 */
+	public static function save_hub_marketing( $member_id ) {
+		$marketing = ! empty( $_POST['lld_consent_marketing'] );
+		if ( $marketing !== self::has_consent( $member_id, 'marketing' ) ) {
+			self::add_consent( $member_id, 'marketing', $marketing ? 'given' : 'withdrawn', '' );
+		}
+		return true;
+	}
+
+	/**
+	 * @param int $member_id Member number.
+	 */
+	public static function email_preference_fields( $member_id ) {
+		return self::preference_fields( $member_id );
+	}
+
+	/**
+	 * @param int $member_id Member number.
+	 * @return string|null Address waiting for confirmation.
+	 */
+	public static function pending_email_for( $member_id ) {
+		return self::pending_email( $member_id );
+	}
+
+	/**
 	 * @param string $title    Title.
 	 * @param string $main     Main HTML.
 	 * @param bool   $signed_in Signed in.

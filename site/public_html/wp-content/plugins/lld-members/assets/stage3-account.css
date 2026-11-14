@@ -1,0 +1,334 @@
+/*
+ * Lifeline Daily: the account menu on every member and Admin page (P3-36 C1, FR3-07).
+ * The chip's menu (built by stage3.js), the chip in the v2 header in place of "My account", and Sign out in the phone
+ * menus. Printed by lld_members_layout() for a signed-in member or an Admin page; the rest of Stage 3 keeps stage3.css.
+ */
+
+/* ---- The chip's menu ------------------------------------------------------------------------------------------- */
+.lld-chip-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+.lld-desktop-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  width: 220px;
+  background: var(--lld-card, #fff);
+  border: 1.5px solid var(--lld-line, #e0d8cb);
+  border-radius: 14px;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  padding: 6px 0;
+  z-index: 1000;
+  text-align: left;
+}
+
+.lld-desktop-menu[hidden] {
+  display: none !important;
+}
+
+.lld-desktop-menu .lld-menu-item {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--lld-ink, #1f1e1c);
+  text-decoration: none;
+}
+
+.lld-desktop-menu .lld-menu-item:hover,
+.lld-desktop-menu .lld-menu-item:focus-visible {
+  background-color: var(--lld-mint-soft, #f1f7f5);
+  color: var(--lld-green, #1d4e48);
+}
+
+.lld-desktop-menu .lld-menu-item:focus-visible {
+  outline: 3px solid var(--lld-green, #1d4e48);
+  outline-offset: -3px;
+}
+
+.lld-desktop-menu button.lld-menu-item {
+  width: 100%;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lld-desktop-menu .lld-menu-divider {
+  margin: 6px 0;
+  border: none;
+  border-top: 1px solid var(--lld-line, #e0d8cb);
+}
+
+.lld-desktop-menu .lld-menu-signout,
+.lld-desktop-menu .lld-menu-signout:hover,
+.lld-desktop-menu .lld-menu-signout:focus-visible {
+  color: var(--lld-danger, #b3261e);
+}
+
+/* ---- The chip in the v2 header (same look as it had in the member bar) ------------------------------------------- */
+body.lld-members-v2 .lld-v2-account .lld-chip {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: .5rem !important;
+  box-sizing: border-box !important;
+  min-height: 2.75rem !important;
+  min-width: 2.75rem !important;
+  padding: .25rem .5rem .25rem .25rem !important;
+  border: 1.5px solid #e0d8cb !important;
+  border-radius: 9999px !important;
+  background: #faf8f5 !important;
+  color: #1f1e1c !important;
+  font-size: .875rem !important;
+  font-weight: 700 !important;
+  line-height: 1.4 !important;
+  text-decoration: none !important;
+}
+
+body.lld-members-v2 .lld-v2-account .lld-chip:hover { border-color: #1d4e48 !important; }
+
+body.lld-members-v2 .lld-v2-account .lld-chip:focus-visible {
+  outline: 3px solid #1d4e48 !important;
+  outline-offset: 2px !important;
+}
+
+body.lld-members-v2 .lld-v2-account .lld-chip-initial {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 2rem !important;
+  height: 2rem !important;
+  border-radius: 9999px !important;
+  background: #1d4e48 !important;
+  color: #fff !important;
+  font-size: .8125rem !important;
+  font-weight: 800 !important;
+}
+
+body.lld-members-v2 .lld-v2-account :is(.lld-chip-name, .lld-chip-badge) {
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+  clip: auto !important;
+}
+
+body.lld-members-v2 .lld-v2-account .lld-chip-badge {
+  padding: .1875rem .625rem !important;
+  border-radius: 9999px !important;
+  background: #1d4e48 !important;
+  color: #fff !important;
+  font-size: .6875rem !important;
+  font-weight: 800 !important;
+  letter-spacing: .06em !important;
+  line-height: 1.4 !important;
+}
+
+body.lld-members-v2 .lld-v2-account .lld-chip-badge.is-free { background: #efeae2 !important; color: #3a3834 !important; }
+
+body.mode-night.lld-members-v2 .lld-v2-account .lld-chip { background: #16201e !important; border-color: #354f49 !important; color: #f4f1ea !important; }
+body.mode-night.lld-members-v2 .lld-v2-account .lld-chip:hover { border-color: #79d1c3 !important; }
+body.mode-night.lld-members-v2 .lld-v2-account :is(.lld-chip-initial, .lld-chip-badge:not(.is-free)) { background: #79d1c3 !important; color: #101413 !important; }
+body.mode-night.lld-members-v2 .lld-v2-account .lld-chip-badge.is-free { background: #1e2a28 !important; color: #d6d1c7 !important; }
+body.mode-night.lld-members-v2 .lld-desktop-menu { background: #16201e; border-color: #354f49; }
+body.mode-night.lld-members-v2 .lld-desktop-menu .lld-menu-item { color: #f4f1ea; }
+body.mode-night.lld-members-v2 .lld-desktop-menu .lld-menu-item:is(:hover, :focus-visible) { background-color: #192e2b; color: #79d1c3; }
+body.mode-night.lld-members-v2 .lld-desktop-menu .lld-menu-signout { color: #f2a196; }
+
+/* ---- Phones ----------------------------------------------------------------------------------------------------- */
+@media (max-width: 767px) {
+  /* the chip is the initial alone; its name and badge stay for screen readers */
+  body.lld-members-v2 .lld-v2-account :is(.lld-chip-name, .lld-chip-badge) {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+  }
+  body.lld-members-v2 .lld-v2-account .lld-chip { justify-content: center !important; gap: 0 !important; padding: .25rem !important; }
+  /* the chip is in the header, so the member bar under it would be an empty band (its links are in the bottom bar) */
+  body.lld-has-account-menu .lld-member-bar { display: none !important; }
+}
+
+/* Sign out in the phone menus: the v2 header's menu and the plugin header's ☰ panel */
+.lld-v2-menu-signout {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  min-height: 44px;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  color: var(--lld-danger, #b3261e);
+  cursor: pointer;
+}
+
+body.mode-night .lld-v2-menu-signout { color: #f2a196; }
+
+.lld-burger-signout { border-top: 1px solid var(--lld-line, #e0d8cb); margin-top: 6px; padding-top: 6px; }
+
+.lld-burger-signout-button {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  color: var(--lld-danger, #b3261e);
+  cursor: pointer;
+}
+
+.lld-burger-signout-button:hover { background: #fdeeee; }
+
+:is(.lld-v2-menu-signout, .lld-burger-signout-button):focus-visible {
+  outline: 3px solid var(--lld-green, #1d4e48);
+  outline-offset: 2px;
+}
+
+/* ---- My account → Admin → Payments fields (P3-36 A3) ------------------------------------------------------------ */
+/* The Stage 2 Payments form (LLD_Members_Billing::admin_page) shown inside Admin: each box gets the shared field look
+   (border, fill, 44 px), its label above it, and "US$" before the prices. */
+.lld-pay-form .lld-pay-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin: 0 0 16px;
+}
+
+.lld-pay-form .lld-pay-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 14rem;
+  min-width: 0;
+  max-width: 24rem;
+  margin: 0;
+}
+
+.lld-pay-form .lld-pay-label {
+  font-weight: 600;
+  color: var(--lld-ink, #111a14);
+}
+
+.lld-pay-form .lld-pay-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--lld-border, #7d8a84);
+  border-radius: var(--lld-radius-sm, 10px);
+  background: var(--lld-card, #fff);
+  color: var(--lld-ink, #111a14);
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.lld-pay-form .lld-pay-input:focus-visible {
+  outline: 3px solid var(--lld-green, #1d4e48);
+  outline-offset: 2px;
+}
+
+.lld-pay-form .lld-pay-affix {
+  display: flex;
+  align-items: stretch;
+}
+
+.lld-pay-form .lld-pay-prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1.5px solid var(--lld-border, #7d8a84);
+  border-right: 0;
+  border-radius: var(--lld-radius-sm, 10px) 0 0 var(--lld-radius-sm, 10px);
+  background: var(--lld-bg, #f6f3ee);
+  color: var(--lld-muted, #5c6b64);
+  font-weight: 600;
+}
+
+.lld-pay-form .lld-pay-affix .lld-pay-input {
+  border-radius: 0 var(--lld-radius-sm, 10px) var(--lld-radius-sm, 10px) 0;
+}
+
+/* The confirm box: the shared tick-box row (lld-check), with a real 20 px box. */
+.lld-pay-form .lld-pay-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 0;
+  font-weight: 500;
+}
+
+.lld-pay-form .lld-pay-check input {
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--lld-green, #1d4e48);
+  flex: 0 0 auto;
+}
+
+/* ---- Phones: Account tabs and Admin sections on one row that scrolls sideways (P3-36 C5) ------------------------- */
+/* The Account tabs wrapped into two rows and the Admin sections showed 3 of 11 pills with nothing saying there were
+   more. On phones both are one row that scrolls sideways inside itself (the page never scrolls sideways), with a fade
+   at the right edge to show there is more. Layout from the member UI foundations sheet (pill row, 44 px targets). */
+@media (max-width: 760px) {
+  .lld-account-nav .lld-account-tabs,
+  .lld-adm-body .lld-adm-tabs {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 32px), transparent);
+  }
+
+  .lld-account-nav .lld-account-tabs::-webkit-scrollbar,
+  .lld-adm-body .lld-adm-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .lld-account-nav .lld-account-tabs {
+    flex-wrap: nowrap;
+    max-width: 100%;
+    padding-right: 32px;
+  }
+
+  .lld-account-nav .lld-account-tabs > li {
+    flex: 0 0 auto;
+  }
+
+  .lld-account-nav .lld-account-tab {
+    white-space: nowrap;
+  }
+
+  .lld-adm-body .lld-adm-tabs ul {
+    padding-right: 32px;
+  }
+
+  /* A scrolling row clips anything outside it, so the focus ring sits inside each tab, with room above and below. */
+  .lld-account-nav .lld-account-tabs,
+  .lld-adm-body .lld-adm-tabs ul {
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  .lld-account-nav .lld-account-tab:focus-visible,
+  .lld-adm-body .lld-adm-tabs a:focus-visible {
+    outline: 3px solid var(--lld-green, #1d4e48);
+    outline-offset: -3px;
+  }
+}

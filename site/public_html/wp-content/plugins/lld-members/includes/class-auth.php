@@ -507,7 +507,7 @@ class LLD_Members_Auth {
 	 */
 	private static function is_locked( $email ) {
 		global $wpdb;
-		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT fail_count, lock_until FROM ' . LLD_Members_Schema::table( 'sign_in_lock' ) . ' WHERE email = %s', $email ) );
+		$row = $wpdb->get_row( $wpdb->prepare( 'SELECT fail_count, lock_until FROM ' . LLD_Members_Schema::table( 'sign_in_lock' ) . ' WHERE email = %s', self::lock_key( $email ) ) );
 		if ( ! $row || (int) $row->fail_count < self::FAIL_LIMIT || ! is_string( $row->lock_until ) || '' === $row->lock_until ) {
 			return false;
 		}
@@ -523,14 +523,15 @@ class LLD_Members_Auth {
 		}
 		global $wpdb;
 		$table = LLD_Members_Schema::table( 'sign_in_lock' );
-		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT fail_count FROM {$table} WHERE email = %s", $email ) );
+		$key   = self::lock_key( $email );
+		$row   = $wpdb->get_row( $wpdb->prepare( "SELECT fail_count FROM {$table} WHERE email = %s", $key ) );
 		$count = $row ? (int) $row->fail_count + 1 : 1;
 		$when  = self::moment( $email );
 		$lock  = $count >= self::FAIL_LIMIT ? $when->modify( '+' . self::LOCK_MINUTES . ' minutes' )->format( 'Y-m-d H:i:s' ) : $when->modify( '+24 hours' )->format( 'Y-m-d H:i:s' );
 		$wpdb->replace(
 			$table,
 			array(
-				'email'      => $email,
+				'email'      => $key,
 				'fail_count' => $count,
 				'lock_until' => $lock,
 			),
@@ -543,7 +544,44 @@ class LLD_Members_Auth {
 	 */
 	private static function clear_failures( $email ) {
 		global $wpdb;
-		$wpdb->delete( LLD_Members_Schema::table( 'sign_in_lock' ), array( 'email' => $email ), array( '%s' ) );
+		foreach ( self::lock_keys( $email ) as $key ) {
+			$wpdb->delete( LLD_Members_Schema::table( 'sign_in_lock' ), array( 'email' => $key ), array( '%s' ) );
+		}
+	}
+
+	/** Prefix of a sign-in lock row kept for an email that has no account: the keyed hash, never the address. */
+	const LOCK_HASH = 'h:';
+
+	/**
+	 * P3-36 F1 (TC-FR3-61-AS-03): the key a sign-in lock row is kept under. An email with an account (a member or a
+	 * WordPress user) is kept as the email, as in Stage 2, so its row is erased with the account. Failed sign-ins for an
+	 * email with no account, including a deleted member's, are still counted and locked, but under a keyed hash
+	 * (LLD_Members_Erasure::email_hash), so the table never holds the address of someone without an account.
+	 *
+	 * @param string $email Email.
+	 */
+	public static function lock_key( $email ) {
+		$email = (string) $email;
+		if ( '' === $email ) {
+			return '';
+		}
+		global $wpdb;
+		$member = (int) $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE email = %s', $email ) );
+		if ( $member > 0 || ( function_exists( 'get_user_by' ) && get_user_by( 'email', $email ) ) ) {
+			return $email;
+		}
+		return self::LOCK_HASH . LLD_Members_Erasure::email_hash( $email );
+	}
+
+	/**
+	 * Both keys an email's lock row can be under, for clearing and erasing it.
+	 *
+	 * @param string $email Email.
+	 * @return string[]
+	 */
+	public static function lock_keys( $email ) {
+		$email = (string) $email;
+		return '' === $email ? array() : array( $email, self::LOCK_HASH . LLD_Members_Erasure::email_hash( $email ) );
 	}
 
 	/**

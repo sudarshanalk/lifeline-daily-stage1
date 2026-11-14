@@ -258,7 +258,8 @@ class LLD_Members_Admin_Front {
 		wp_enqueue_script( self::HANDLE, plugins_url( 'assets/stage3.js', LLD_MEMBERS_FILE ), array(), LLD_MEMBERS_VERSION, true );
 		$member = class_exists( 'LLD_Members_Access' ) && LLD_Members_Access::current_member_id() > 0;
 		ob_start();
-		lld_members_layout( array( 'title' => $title, 'main' => $main, 'signed_in' => $member, 'wide' => true ) );
+		// 'account': the chip's menu with Sign out on every Admin page, also for a helper without a member record (P3-36 C1).
+		lld_members_layout( array( 'title' => $title, 'main' => $main, 'signed_in' => $member, 'wide' => true, 'account' => true ) );
 		$page = (string) ob_get_clean();
 		ob_start();
 		wp_print_styles( array( self::HANDLE ) );
@@ -309,7 +310,7 @@ class LLD_Members_Admin_Front {
 		$html  = '<div class="lld-adm" data-lld-admin>';
 		$html .= '<aside class="lld-adm-side" aria-label="Admin"><div class="lld-adm-who"><span class="lld-adm-avatar" aria-hidden="true">' . esc_html( strtoupper( substr( $name, 0, 1 ) ) ) . '</span><span><strong>' . esc_html( $name ) . '</strong><span class="lld-adm-role">' . ( $owner ? 'Owner' : 'Support helper' ) . '</span></span></div>';
 		$html .= '<nav aria-label="Admin pages">' . $nav . '</nav>' . $wp . '</aside>';
-		$html .= '<div class="lld-adm-body"><nav class="lld-adm-tabs" aria-label="Admin pages (phone)"><ul>' . $tabs . ( $owner ? '<li><a href="' . esc_url( admin_url( 'admin.php?page=lld-approvals' ) ) . '">WordPress</a></li>' : '' ) . '</ul></nav>';
+		$html .= '<div class="lld-adm-body"><nav class="lld-adm-tabs" aria-label="Admin sections"><ul>' . $tabs . ( $owner ? '<li><a href="' . esc_url( admin_url( 'admin.php?page=lld-approvals' ) ) . '">WordPress</a></li>' : '' ) . '</ul></nav>';
 		$html .= self::notice() . $main . '</div></div>';
 		return $html;
 	}

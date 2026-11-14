@@ -1538,17 +1538,19 @@ class LLD_Members_Billing {
 		if ( self::live_keys_refused() ) {
 			echo '<div class="notice notice-error"><p>A live Stripe key is set outside production. Checkout is switched off until it is replaced with a test key.</p></div>';
 		}
-		echo '<form method="post">';
+		// P3-36 A3: field classes (stage3-account.css) so each box shows its border and fill, with its label above and
+		// "US$" before the prices. Names, values, rules and wording are unchanged.
+		echo '<form method="post" class="lld-pay-form">';
 		wp_nonce_field( 'lld_pay', 'lld_pay_nonce' );
-		echo '<p><label>Terms of sale address <input name="lld_sale_path" value="' . esc_attr( self::sale_terms_setting()['path'] ) . '"></label>';
-		echo ' <label>Terms of sale version <input name="lld_sale_version" value="' . esc_attr( self::sale_terms_setting()['version'] ) . '"></label></p>';
-		echo '<p><label>Monthly price US$ <input name="lld_monthly" value="' . esc_attr( number_format( $prices['monthly'] / 100, 2, '.', '' ) ) . '"></label></p>';
-		echo '<p><label>Yearly price US$ <input name="lld_yearly" value="' . esc_attr( number_format( $prices['yearly'] / 100, 2, '.', '' ) ) . '"></label></p>';
-		echo '<p><label>New code <input name="lld_new_code"></label> <label>Percent off the first payment <input name="lld_percent" value="50"></label></p>';
-		echo '<p><label>Applies to <select name="lld_code_plans"><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="both">Monthly and yearly</option></select></label>';
-		echo ' <label>Valid from <input type="date" name="lld_valid_from" value="' . esc_attr( gmdate( 'Y-m-d' ) ) . '"></label>';
-		echo ' <label>Valid to <input type="date" name="lld_valid_to" value="' . esc_attr( gmdate( 'Y-m-d', time() + 30 * DAY_IN_SECONDS ) ) . '"></label></p>';
-		echo '<p><label><input type="checkbox" name="lld_confirm_free" value="1"> I confirm a price of 0 or a 100 % code</label></p>';
+		echo '<p class="lld-pay-row"><label class="lld-pay-field"><span class="lld-pay-label">Terms of sale address</span> <input type="text" class="lld-pay-input" name="lld_sale_path" value="' . esc_attr( self::sale_terms_setting()['path'] ) . '"></label>';
+		echo ' <label class="lld-pay-field"><span class="lld-pay-label">Terms of sale version</span> <input type="text" class="lld-pay-input" name="lld_sale_version" value="' . esc_attr( self::sale_terms_setting()['version'] ) . '"></label></p>';
+		echo '<p class="lld-pay-row"><label class="lld-pay-field"><span class="lld-pay-label">Monthly price</span> <span class="lld-pay-affix"><span class="lld-pay-prefix">US$</span> <input type="text" class="lld-pay-input" inputmode="decimal" name="lld_monthly" value="' . esc_attr( number_format( $prices['monthly'] / 100, 2, '.', '' ) ) . '"></span></label></p>';
+		echo '<p class="lld-pay-row"><label class="lld-pay-field"><span class="lld-pay-label">Yearly price</span> <span class="lld-pay-affix"><span class="lld-pay-prefix">US$</span> <input type="text" class="lld-pay-input" inputmode="decimal" name="lld_yearly" value="' . esc_attr( number_format( $prices['yearly'] / 100, 2, '.', '' ) ) . '"></span></label></p>';
+		echo '<p class="lld-pay-row"><label class="lld-pay-field"><span class="lld-pay-label">New code</span> <input type="text" class="lld-pay-input" name="lld_new_code"></label> <label class="lld-pay-field"><span class="lld-pay-label">Percent off the first payment</span> <input type="text" class="lld-pay-input" inputmode="numeric" name="lld_percent" value="50"></label></p>';
+		echo '<p class="lld-pay-row"><label class="lld-pay-field"><span class="lld-pay-label">Applies to</span> <select class="lld-pay-input" name="lld_code_plans"><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="both">Monthly and yearly</option></select></label>';
+		echo ' <label class="lld-pay-field"><span class="lld-pay-label">Valid from</span> <input type="date" class="lld-pay-input" name="lld_valid_from" value="' . esc_attr( gmdate( 'Y-m-d' ) ) . '"></label>';
+		echo ' <label class="lld-pay-field"><span class="lld-pay-label">Valid to</span> <input type="date" class="lld-pay-input" name="lld_valid_to" value="' . esc_attr( gmdate( 'Y-m-d', time() + 30 * DAY_IN_SECONDS ) ) . '"></label></p>';
+		echo '<p><label class="lld-check lld-pay-check"><input type="checkbox" name="lld_confirm_free" value="1"> <span>I confirm a price of 0 or a 100 % code</span></label></p>';
 		echo '<p><button class="button button-primary">Save prices</button></p></form>';
 		echo '<h2>Discount codes</h2><table class="widefat" data-lld-codes><thead><tr><th>Code</th><th>Percent off</th><th>Plans</th><th>Valid from</th><th>Valid to</th><th>Times used</th></tr></thead><tbody>';
 		foreach ( self::codes() as $row ) {
