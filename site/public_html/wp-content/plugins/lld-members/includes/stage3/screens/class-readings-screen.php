@@ -224,7 +224,7 @@ class LLD_Members_Readings_Screen {
 		$html .= '<header class="lld-readings-header">';
 		$html .= '<p class="lld-eyebrow">Member area</p>';
 		$html .= '<h1>Log a reading</h1>';
-		$html .= '<p class="lld-lead">Record your readings and view your recent history.</p>';
+		$html .= '<p class="lld-lead">Record your readings and view your history.</p>';
 		$html .= '</header>';
 
 		if ( ! $consent ) {
@@ -274,8 +274,8 @@ class LLD_Members_Readings_Screen {
 		$bp_hidden = 'blood_pressure' !== $initial_type ? ' hidden' : '';
 		$html     .= '<div id="lld-rpanel-blood_pressure" role="tabpanel" aria-labelledby="lld-rtab-blood_pressure" data-lld-type-panel="blood_pressure"' . $bp_hidden . '>';
 		$html     .= '<div class="lld-row-2">';
-		$html     .= '<div class="lld-field"><label for="lld-bp-sys">Systolic (mmHg)</label><input id="lld-bp-sys" type="number" inputmode="numeric" step="1" class="lld-input" placeholder="120" data-lld-bp-sys></div>';
-		$html     .= '<div class="lld-field"><label for="lld-bp-dia">Diastolic (mmHg)</label><input id="lld-bp-dia" type="number" inputmode="numeric" step="1" class="lld-input" placeholder="80" data-lld-bp-dia></div>';
+		$html     .= '<div class="lld-field"><label for="lld-bp-sys">Top number (systolic, mmHg)</label><label for="lld-bp-sys" class="lld-sr-only">Systolic (mmHg)</label><input id="lld-bp-sys" type="number" inputmode="numeric" step="1" class="lld-input" placeholder="120" data-lld-bp-sys></div>';
+		$html     .= '<div class="lld-field"><label for="lld-bp-dia">Bottom number (diastolic, mmHg)</label><label for="lld-bp-dia" class="lld-sr-only">Diastolic (mmHg)</label><input id="lld-bp-dia" type="number" inputmode="numeric" step="1" class="lld-input" placeholder="80" data-lld-bp-dia></div>';
 		$html     .= '</div>';
 		$html     .= '<div class="lld-field"><label for="lld-bp-pulse">Pulse (bpm, optional)</label><input id="lld-bp-pulse" type="number" inputmode="numeric" step="1" class="lld-input" placeholder="72" data-lld-bp-pulse></div>';
 		$html     .= '<div class="lld-field"><label class="lld-check-label" for="lld-bp-dizzy"><input id="lld-bp-dizzy" type="checkbox" data-lld-bp-dizzy> <span>I feel dizzy or faint</span></label></div>';
@@ -312,11 +312,11 @@ class LLD_Members_Readings_Screen {
 		$html      .= '</div>';
 		$html      .= '<div class="lld-row-2">';
 		$html      .= '<div class="lld-field"><label for="lld-act-min">Minutes</label><input id="lld-act-min" type="number" inputmode="numeric" step="1" class="lld-input" placeholder="30" data-lld-act-min></div>';
-		$html      .= '<div class="lld-field"><label for="lld-act-effort">Effort (optional)</label><select id="lld-act-effort" class="lld-input" data-lld-act-effort><option value="">Not rated</option><option value="1">1 &mdash; Easy</option><option value="2">2 &mdash; Moderate</option><option value="3">3 &mdash; Hard</option></select></div>';
+		$html      .= '<div class="lld-field"><label for="lld-act-effort">Effort</label><select id="lld-act-effort" class="lld-input" data-lld-act-effort><option value="">Not rated</option><option value="1">Easy: you can sing</option><option value="2">Moderate: you can talk but not sing</option><option value="3">Hard: only a few words at a time</option></select></div>';
 		$html      .= '</div>';
 		$html      .= '<div class="lld-row-2">';
 		$html      .= '<div class="lld-field"><label for="lld-act-steps">Or steps</label><input id="lld-act-steps" type="number" inputmode="numeric" step="1" class="lld-input" placeholder="6000" data-lld-act-steps></div>';
-		$html      .= '<div class="lld-field"><label for="lld-act-detail">Activity type (optional)</label><input id="lld-act-detail" type="text" maxlength="200" class="lld-input" placeholder="Brisk walk" data-lld-act-detail></div>';
+		$html      .= '<div class="lld-field"><label for="lld-act-detail">Activity type</label><input id="lld-act-detail" type="text" maxlength="200" class="lld-input" placeholder="Brisk walk" data-lld-act-detail></div>';
 		$html      .= '</div></div>';
 
 		// 5. Sleep
@@ -328,7 +328,7 @@ class LLD_Members_Readings_Screen {
 		$html        .= '</div>';
 		$html        .= '<div class="lld-row-2">';
 		$html        .= '<div class="lld-field"><label for="lld-sleep-hours">Hours slept (optional)</label><input id="lld-sleep-hours" type="number" inputmode="decimal" step="0.1" class="lld-input" placeholder="8" data-lld-sleep-hours data-lld-auto="1" aria-describedby="lld-sleep-hint"></div>';
-		$html        .= '<div class="lld-field"><label for="lld-sleep-rested">How rested (1 to 5, optional)</label><select id="lld-sleep-rested" class="lld-input" data-lld-sleep-rested><option value="">Not rated</option><option value="1">1 &mdash; Very tired</option><option value="2">2 &mdash; Tired</option><option value="3">3 &mdash; OK</option><option value="4">4 &mdash; Rested</option><option value="5">5 &mdash; Very rested</option></select></div>';
+		$html        .= '<div class="lld-field"><label for="lld-sleep-rested">How rested (1 to 5)</label><select id="lld-sleep-rested" class="lld-input" data-lld-sleep-rested><option value="">Not rated</option><option value="1">1 &mdash; Very tired</option><option value="2">2 &mdash; Tired</option><option value="3">3 &mdash; OK</option><option value="4">4 &mdash; Rested</option><option value="5">5 &mdash; Very rested</option></select></div>';
 		$html        .= '</div>';
 		$html        .= '<p class="lld-hint" id="lld-sleep-hint">Calculated from bedtime and wake time, or enter hours slept directly.</p>';
 		$html        .= '</div>';
@@ -356,7 +356,7 @@ class LLD_Members_Readings_Screen {
 			5 => 'Great',
 		);
 		$html       .= '<div id="lld-rpanel-mood" role="tabpanel" aria-labelledby="lld-rtab-mood" data-lld-type-panel="mood"' . $mood_hidden . '>';
-		$html       .= '<div class="lld-field"><span id="lld-mood-label" class="lld-label">Mood (1 to 5)</span>';
+		$html       .= '<div class="lld-field"><span id="lld-mood-label" class="lld-label">Mood</span>';
 		$html       .= '<div class="lld-mood-row" role="group" aria-labelledby="lld-mood-label">';
 		foreach ( $mood_labels as $score => $word ) {
 			$html .= '<button type="button" class="lld-mood-button" aria-pressed="false" data-lld-mood-btn="' . esc_attr( (string) $score ) . '">' . esc_html( (string) $score ) . ' <span>' . esc_html( $word ) . '</span></button>';
@@ -373,7 +373,7 @@ class LLD_Members_Readings_Screen {
 		$html      .= '<div class="lld-field"><label for="lld-glu-unit">Unit</label><select id="lld-glu-unit" class="lld-input" data-lld-glu-unit><option value="mmol/L"' . ( ! $imperial ? ' selected' : '' ) . '>mmol/L</option><option value="mg/dL"' . ( $imperial ? ' selected' : '' ) . '>mg/dL</option></select></div>';
 		$html      .= '</div>';
 		$html      .= '<div class="lld-field"><label for="lld-glu-timing">Timing</label><select id="lld-glu-timing" class="lld-input" data-lld-glu-timing><option value="before_meal">Before a meal</option><option value="after_meal">After a meal</option></select></div>';
-		$html      .= '<fieldset class="lld-field lld-symptoms-group"><legend>Symptoms</legend>';
+		$html      .= '<fieldset class="lld-field lld-symptoms-group"><legend>Do you have any of these right now?</legend>';
 		$symptoms   = array(
 			'vomiting'       => 'Vomiting',
 			'drowsiness'     => 'Drowsiness',
@@ -398,7 +398,7 @@ class LLD_Members_Readings_Screen {
 		$html .= '<svg class="lld-empty-icon" viewBox="0 0 64 64" width="56" height="56" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="32" cy="32" r="24"/><path d="M22 36l6-8 6 5 8-11"/><circle cx="42" cy="22" r="2.5" fill="currentColor"/></svg>';
 		$html .= '</div>';
 		$html .= '<h2>No readings logged yet</h2>';
-		$html .= '<p data-lld-empty-text>No readings logged yet. Choose a measurement above to record your first entry.</p>';
+		$html .= '<p data-lld-empty-text>No readings yet. Choose a type above to add your first.</p>';
 		$html .= '<div class="lld-empty-actions"><button type="button" class="lld-pill-btn lld-btn-secondary" data-lld-focus-form>Record first reading</button>';
 		$html .= '<a class="lld-btn-ghost" href="' . esc_url( home_url( '/health-tools/blood-pressure-check/' ) ) . '" data-lld-empty-bp-link' . ( 'blood_pressure' !== $initial_type ? ' hidden' : '' ) . '>How to measure blood pressure</a>';
 		$html .= '</div></section>';

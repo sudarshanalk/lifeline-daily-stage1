@@ -2081,6 +2081,7 @@ body.mode-night .lld-stage3-readings .lld-consent-note {
   margin: 0;
 }
 
+.lld-stage3-readings .lld-field > .lld-sr-only,
 .lld-stage3-readings .lld-sr-only {
   position: absolute;
   width: 1px;

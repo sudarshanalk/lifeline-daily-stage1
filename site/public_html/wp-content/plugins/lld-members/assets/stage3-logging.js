@@ -1934,7 +1934,11 @@
 		};
 
 		const MOOD_WORDS = { 1: 'Low', 2: 'Down', 3: 'OK', 4: 'Good', 5: 'Great' };
-		const EFFORT_WORDS = { 1: 'Easy', 2: 'Moderate', 3: 'Hard' };
+		const EFFORT_WORDS = {
+			1: 'Easy: you can sing',
+			2: 'Moderate: you can talk but not sing',
+			3: 'Hard: only a few words at a time'
+		};
 
 		const state = {
 			type: cfg.initialType || 'blood_pressure',
@@ -2400,7 +2404,7 @@
 			const allowed = Boolean(cfg.canStore && cfg.hasConsent);
 			if (els.empty) els.empty.hidden = !allowed || !isEmpty || hasFilter;
 			if (els.emptyText) {
-				els.emptyText.textContent = 'No ' + (TYPE_LABELS[state.type] || 'readings').toLowerCase() + ' entries logged yet. Choose a measurement above to record your first entry.';
+				els.emptyText.textContent = 'No readings yet. Choose a type above to add your first.';
 			}
 			if (els.tableBox) els.tableBox.innerHTML = '';
 			if (els.historySection) {
