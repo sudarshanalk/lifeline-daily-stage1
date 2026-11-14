@@ -37,4 +37,21 @@ describe('staging mail catcher', () => {
     expect(call('lld_mail_allowed', [], allow)).toBe(false);
     expect(call('lld_mail_allowed', [''], allow)).toBe(false);
   });
+
+  test("'*' delivers to every real address, while test addresses stay caught (owner, 14 Nov 2026)", () => {
+    for (const list of ['*', ' * ', 'owner@example.com, *']) {
+      expect(call('lld_mail_allowed', ['member@gmail.com'], list)).toBe(true);
+      expect(call('lld_mail_allowed', ['Member <Member@Yahoo.com>'], list)).toBe(true);
+    }
+    // test addresses never leave staging: the personas, CI members and documentation domains
+    for (const a of ['persona-fresh-join@test.lifelinedaily.invalid', 'row10-a@example.test', 'x@example.com', 'x@mail.example.org', 'x@example.net', 'x@host.localhost', 'x@site.example']) {
+      expect(call('lld_mail_allowed', [a], '*')).toBe(false);
+    }
+    // one test address among real ones holds the whole message back; a non-address is never delivered
+    expect(call('lld_mail_allowed', ['member@gmail.com', 'p390-a@test.lifelinedaily.invalid'], '*')).toBe(false);
+    expect(call('lld_mail_allowed', ['not-an-address'], '*')).toBe(false);
+    expect(call('lld_mail_allowed', [], '*')).toBe(false);
+    // the plain list still works without '*': a real address not on it stays caught
+    expect(call('lld_mail_allowed', ['member@gmail.com'], 'owner@example.com')).toBe(false);
+  });
 });
