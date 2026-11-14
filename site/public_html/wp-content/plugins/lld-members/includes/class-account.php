@@ -707,7 +707,10 @@ class LLD_Members_Account {
 			if ( ! $line && 'sale' === $type ) {
 				continue;
 			}
-			$state = $line && 'given' === $line->change_kind ? 'Accepted' . ( '' !== (string) $line->document_version ? ' (' . $line->document_version . ')' : '' ) . ' on ' . substr( (string) $line->occurred_at, 0, 10 ) : 'Not accepted';
+			$state = $line && 'given' === $line->change_kind
+				? 'Accepted on ' . gmdate( 'j F Y', strtotime( substr( (string) $line->occurred_at, 0, 10 ) . ' 00:00:00 UTC' ) )
+					. ( '' !== (string) $line->document_version ? ' (version ' . $line->document_version . ')' : '' )
+				: 'Not accepted yet';
 			$html .= '<p>' . esc_html( $label . ': ' . $state ) . '</p>';
 		}
 		$html  .= '<p class="lld-hint">These are needed for your account. To end them, delete your account.</p>';

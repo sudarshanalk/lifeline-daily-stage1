@@ -207,7 +207,7 @@ test('TC-FR3-69-AS-05', async ({ page }) => {
   });
   expect(response.status()).toBe(403);
   const refusal = await response.json();
-  expect(refusal.message).toBe('Answer the Conditions question in your health profile first.');
+  expect(refusal.message).toBe('Answer the "Conditions" question in your health profile first.');
   expect(refusal.question).toBe('conditions');
   expect(refusal.link).toMatch(/\/members\/health\/#lld-conditions$/);
   // Setting a goal: a member sets one on the goal screen (#252 refuses there; the form itself is never shown without
@@ -216,7 +216,7 @@ test('TC-FR3-69-AS-05', async ({ page }) => {
     form: { lld_action: 'save', type: 'lose_weight', lld_target: '84' } });
   expect([200, 403]).toContain(goalRefusal.status());
   const refusedGoal = await goalRefusal.text();
-  expect(refusedGoal).toContain('Answer the Conditions question in your health profile first.');
+  expect(refusedGoal).toContain('Answer the "Conditions" question in your health profile first.');
   expect(refusedGoal).toMatch(/href="[^"]*\/members\/health\/\?return=goal#lld-conditions"/);
   // Opening goal setting lands on the missing question itself.
   await page.goto('/members/goal/?type=lose_weight');

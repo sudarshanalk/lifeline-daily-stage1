@@ -208,7 +208,7 @@ class LLD_Members_Today_Screen {
 		}
 		$links = array(
 			'log_reading' => array( home_url( '/members/check-in/' ), 'Log a reading' ),
-			'log_food'    => array( home_url( '/members/diary/' ), 'Log something' ),
+			'log_food'    => array( home_url( '/members/diary/' ), 'Open the diary' ),
 			'check_in'    => array( home_url( '/members/check-in/' ), 'Start check-in' ),
 			'read'        => array( home_url( '/members/library/' ), 'Open the library' ),
 			'activity'    => array( home_url( '/members/track/' ), 'Open the activity' ),

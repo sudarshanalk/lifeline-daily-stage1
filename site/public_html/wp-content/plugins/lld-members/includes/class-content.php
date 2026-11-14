@@ -1239,7 +1239,7 @@ class LLD_Members_Content {
 		}
 		$main .= '</div>';
 		// Filled by the page script when a search or filter matches nothing, and read out by screen readers.
-		$main .= '<p class="lld-library-status" role="status" aria-live="polite" data-lld-library-status data-lld-library-none="No matching items."></p>';
+		$main .= '<p class="lld-library-status" role="status" aria-live="polite" data-lld-library-status data-lld-library-none="Nothing matches that. Try another word or type." data-lld-library-empty="Nothing here yet."></p>';
 		$main .= '</div>';
 
 		$type_labels = self::type_labels();
@@ -1456,7 +1456,11 @@ class LLD_Members_Content {
 		}
 		if ( 'lld_lesson' === $type ) {
 			$words = str_word_count( wp_strip_all_tags( (string) ( $shown['body'] ?? '' ) ) );
-			return $words > 0 ? $words . ' words' : '';
+			if ( $words < 1 ) {
+				return '';
+			}
+			$mins = max( 1, (int) ceil( $words / 200 ) );
+			return 'About ' . $mins . ' minute' . ( 1 === $mins ? '' : 's' ) . ' to read';
 		}
 		if ( 'lld_activity' === $type && '' !== trim( (string) ( $fields['difficulty'] ?? '' ) ) ) {
 			return ucfirst( (string) $fields['difficulty'] );
