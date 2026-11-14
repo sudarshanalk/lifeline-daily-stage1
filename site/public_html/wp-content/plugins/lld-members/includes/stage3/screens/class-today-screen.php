@@ -474,7 +474,13 @@ class LLD_Members_Today_Screen {
 				$html .= '<p class="lld-pill" data-lld-track-position>' . esc_html( LLD_Members_Programme::track_title( (string) $active->track_key ) . ' · ' . LLD_Members_Programme::position_label( $member_id ) ) . '</p>';
 				$html .= '<p><a href="' . esc_url( home_url( '/members/track/' ) ) . '">Open this week</a></p>';
 			} else {
-				$html .= '<p>No track yet. <a href="' . esc_url( home_url( '/members/tracks/' ) ) . '">Start a track</a></p>';
+				// A finished track is not "no track": say so, in the programme page's own words (S3-P33, found by the P3-91 journey audit).
+				$last = LLD_Members_Programme::current( $member_id );
+				if ( $last && 'finished' === (string) $last->status ) {
+					$html .= '<p data-lld-track-finished="' . esc_attr( (string) $last->track_key ) . '">' . esc_html( 'You finished ' . LLD_Members_Programme::track_title( (string) $last->track_key ) . '.' ) . ' <a href="' . esc_url( home_url( '/members/tracks/' ) ) . '">Choose your next track</a></p>';
+				} else {
+					$html .= '<p>No track yet. <a href="' . esc_url( home_url( '/members/tracks/' ) ) . '">Start a track</a></p>';
+				}
 			}
 		}
 		$html .= '</section>';
