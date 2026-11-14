@@ -679,7 +679,11 @@ class LLD_Members_Sign_In {
 		}
 		$html .= '<h3>Ways to sign in</h3><ul class="lld-sign-in-methods">';
 		$html .= '<li><strong>Password</strong>: ' . ( $has_password ? 'set' : 'not set' );
-		$html .= ' <a class="lld-account-link" href="' . esc_url( home_url( '/members/reset/' ) ) . '">' . ( $has_password ? 'Change' : 'Set a password' ) . '</a></li>';
+		$html .= ' <a class="lld-account-link" href="' . esc_url( home_url( '/members/reset/' ) ) . '">' . ( $has_password ? 'Change' : 'Set a password' ) . '</a>';
+		if ( $methods <= 1 && $has_password ) {
+			$html .= '<p class="lld-hint" id="lld-last-method">Your password is your only way to sign in, so it can\'t be removed.</p>';
+		}
+		$html .= '</li>';
 		if ( self::on( 'sign_in_social' ) ) {
 			foreach ( LLD_Members_Identity_Provider::PROVIDERS as $provider ) {
 				$label  = LLD_Members_Identity_Provider::label( $provider );
@@ -695,6 +699,9 @@ class LLD_Members_Sign_In {
 					$html .= ' <form method="post" class="lld-inline-form">' . wp_nonce_field( 'lld_s3_unlink', 'lld_s3_unlink_nonce', true, false );
 					$html .= '<input type="hidden" name="lld_provider" value="' . esc_attr( $provider ) . '">';
 					$html .= '<button type="submit" class="lld-text-button"' . ( $methods <= 1 ? ' aria-describedby="lld-last-method"' : '' ) . '>Unlink</button></form>';
+					if ( $methods <= 1 && ! $has_password ) {
+						$html .= '<p class="lld-hint" id="lld-last-method">' . esc_html( $label ) . ' is your only way to sign in, so you can\'t unlink it. Set a password first.</p>';
+					}
 				} elseif ( LLD_Members_Identity_Provider::configured( $provider ) ) {
 					$link  = add_query_arg( array( 'link' => '1', '_wpnonce' => wp_create_nonce( 'wp_rest' ) ), rest_url( 'lld-members/v1/sign-in/' . $provider . '/start' ) );
 					$html .= 'not linked <a class="lld-account-link" href="' . esc_url( $link ) . '">Link ' . esc_html( $label ) . '</a>';
@@ -705,9 +712,6 @@ class LLD_Members_Sign_In {
 			}
 		}
 		$html .= '</ul>';
-		if ( $methods <= 1 ) {
-			$html .= '<p class="lld-hint" id="lld-last-method">This is your only way to sign in, so it can\'t be removed.</p>';
-		}
 		$html .= '<h3>Sessions</h3>';
 		// P3-36 C1 (TC-FR3-07-AS-06): this browser only, through the Stage 2 sign-out (the More screen) and its nonce;
 		// the member's other devices stay signed in.

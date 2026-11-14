@@ -95,14 +95,14 @@ test.describe.serial('P3-30 account hub and desktop menu', () => {
     }
     const marketing = page.locator('.lld-consent-item[data-consent-type="marketing"]');
     await expect(marketing).toContainText('Marketing emails');
-    await expect(marketing).toContainText(/Accepted on \d{4}-\d\d-\d\d/);
+    await expect(marketing).toContainText(/Accepted on \d{1,2} [A-Za-z]+ \d{4}/);
     await expect(marketing.getByRole('checkbox', { name: 'Marketing emails' })).toBeVisible();
     await expect(page.locator('a[href*="all=1"]')).toHaveCount(0);
 
     const health = page.locator('.lld-consent-item[data-consent-type="health"]');
     await expect(health).toContainText('Store my health information');
-    await expect(health).toContainText(/Accepted on \d{4}-\d\d-\d\d/);
-    await expect(page.locator('.lld-consent-item[data-consent-type="terms"]')).toContainText(/Accepted on \d{4}-\d\d-\d\d/);
+    await expect(health).toContainText(/Accepted on \d{1,2} [A-Za-z]+ \d{4}/);
+    await expect(page.locator('.lld-consent-item[data-consent-type="terms"]')).toContainText(/Accepted on \d{1,2} [A-Za-z]+ \d{4}/);
 
     // Withdrawal goes through the Stage 2 screen, which shows what will be deleted before anything changes.
     const withdraw = health.getByRole('link', { name: 'Withdraw consent' });
