@@ -251,6 +251,102 @@ body.mode-night .lld-v2-menu-signout { color: #f2a196; }
   }
 }
 
+/* D2 pills ------------------------------------------------------------------------------------------------------- */
+/* P3-36 D2 (UI audit 3.2): tabs and stand-alone actions on member pages are pill tabs and secondary pill buttons, as on
+   the member UI foundations sheet; underlined links stay for links inside running text.
+   lld-v2.css keeps its member rules in @layer utilities with !important (for example `.lld-main a:not(.lld-button)
+   { color: green !important }`, which made a filled tab's text invisible). For !important declarations an earlier
+   layer wins, so these rules sit in @layer components (declared before utilities by lld-v2.css) with !important. */
+@layer components {
+  /* The Account tabs: a row of pills, the selected one filled. */
+  body.lld-members-v2-app .lld-account-nav .lld-account-tabs {
+    gap: 8px !important;
+    border-bottom: 0 !important;
+  }
+
+  body.lld-members-v2-app .lld-account-nav .lld-account-tab,
+  body.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle]):not(.lld-button) {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    min-height: 44px !important;
+    padding: 8px 18px !important;
+    border: 1.5px solid #7d8a84 !important;
+    border-radius: 9999px !important;
+    background: #fff !important;
+    color: #1f1e1c !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    line-height: 1.3 !important;
+    text-decoration: none !important;
+    white-space: normal !important;
+    text-align: center !important;
+    max-width: 100% !important;
+    cursor: pointer !important;
+    box-sizing: border-box !important;
+  }
+
+  body.lld-members-v2-app .lld-account-nav .lld-account-tab {
+    white-space: nowrap !important;
+  }
+
+  body.lld-members-v2-app .lld-account-nav .lld-account-tab:hover,
+  body.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle]):not(.lld-button):hover {
+    border-color: #1d4e48 !important;
+    color: #1d4e48 !important;
+  }
+
+  body.lld-members-v2-app .lld-account-nav .lld-account-tab:is(.is-active, [aria-current="page"]) {
+    background: #1d4e48 !important;
+    border-color: #1d4e48 !important;
+    color: #fff !important;
+  }
+
+  body.lld-members-v2-app .lld-account-nav .lld-account-tab:focus-visible,
+  body.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle]):not(.lld-button):focus-visible {
+    outline: 3px solid #1d4e48 !important;
+    outline-offset: 2px !important;
+  }
+
+  body.mode-night.lld-members-v2-app .lld-account-nav .lld-account-tab:focus-visible,
+  body.mode-night.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle]):not(.lld-button):focus-visible,
+  body.lld-members-v2-app .lld-main .lld-next-step .lld-pill-actions > a:focus-visible {
+    outline-color: #79d1c3 !important;
+  }
+
+  /* Two actions side by side (Choose a track, Monthly challenge): a row, never run together. */
+  body.lld-members-v2-app .lld-main .lld-pill-actions {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* Night */
+  body.mode-night.lld-members-v2-app .lld-account-nav .lld-account-tab,
+  body.mode-night.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle]):not(.lld-button) {
+    background: #16201e !important;
+    border-color: #6f8a84 !important;
+    color: #f4f1ea !important;
+  }
+
+  body.mode-night.lld-members-v2-app .lld-account-nav .lld-account-tab:hover,
+  body.mode-night.lld-members-v2-app .lld-main :is(a.lld-account-link, .lld-recipe-actions > a, .lld-pill-actions > a, [data-lld-table-toggle]):not(.lld-button):hover {
+    border-color: #79d1c3 !important;
+    color: #79d1c3 !important;
+  }
+
+  body.mode-night.lld-members-v2-app .lld-account-nav .lld-account-tab:is(.is-active, [aria-current="page"]) {
+    background: #79d1c3 !important;
+    border-color: #79d1c3 !important;
+    color: #101413 !important;
+  }
+
+  /* On phones the tab row keeps scrolling sideways (C5); the pills keep their size. */
+  @media (max-width: 760px) {
+    body.lld-members-v2-app .lld-account-nav .lld-account-tab { flex: 0 0 auto !important; }
+    body.lld-members-v2-app .lld-account-nav .lld-account-tab:focus-visible { outline-offset: -3px !important; }
+
 /* D6 ------------------------------------------------------------------------------------------------------------- */
 /* P3-36 D6 (UI audit 3.3): the header's topic icons (lld_members_topic_icon()) on the More cards, Today's Quick log
    tiles and the track weeks. lld-v2.css sizes .lld-topic-icon everywhere but colours its tones only inside the

@@ -2216,7 +2216,7 @@ class LLD_Members_Programme {
 			}
 		} elseif ( 'finished' === $status ) {
 			$main .= '<p>' . esc_html( 'Finished on ' . self::nice_date( (string) $row->finished_on ) . '.' ) . '</p>';
-			$main .= '<p>Try the next track or this month\'s challenge.</p><p><a href="' . esc_url( home_url( '/members/tracks/' ) ) . '">Choose a track</a> <a href="' . esc_url( home_url( '/members/challenge/' ) ) . '">Monthly challenge</a></p>';
+			$main .= '<p>Try the next track or this month\'s challenge.</p><p class="lld-pill-actions"><a href="' . esc_url( home_url( '/members/tracks/' ) ) . '">Choose a track</a> <a href="' . esc_url( home_url( '/members/challenge/' ) ) . '">Monthly challenge</a></p>';
 		} elseif ( 'stopped' === $status && 'not_suitable' === (string) $row->stopped_why ) {
 			$main .= LLD_Members_Safety::not_suitable( $member_id, $title . ' is not suitable for you.', home_url( '/members/tracks/' ), 'Choose another track' );
 			LLD_Members_Personal::render( 'Your track', $main );
