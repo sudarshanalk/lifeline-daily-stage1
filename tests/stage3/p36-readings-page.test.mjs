@@ -55,7 +55,7 @@ const notice = (html) => html.match(/<div class="lld-caution lld-readings-condit
 test('TC-FR3-69-AS-05 Conditions answer missing: the page shows the sentence and link the interface returns, and offers no store', () => {
   const wording = constant('LLD_Members_Stage3_Safety::CONDITIONS_WORDING');
   const html = page({ row: null });
-  expect(text(notice(html)).trim()).toBe(`${wording['conditions.missing']} Health profile`);
+  expect(text(notice(html)).replace(/&quot;/g, '"').trim()).toBe(`${wording['conditions.missing']} Health profile`);
   expect(notice(html)).toContain('href="https://example.test/members/health/#lld-conditions"');
   expect(config(html).canStore).toBe(false);
   // "Prefer not to answer" is still unknown to the matrix: the interface's own refusal, not a sentence telling the
