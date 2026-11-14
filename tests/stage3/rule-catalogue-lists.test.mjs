@@ -45,7 +45,9 @@ test('TC-FR3-17-AS-04 (list-valued rule fields)', () => {
   expect(result.unknown).toBeNull();
   expect(stderr).not.toMatch(/Array to string conversion|Warning|Notice|Deprecated/);
   expect(JSON.stringify(result)).not.toContain('Array');
-  // The two goal-journey callers that pass a stored row are the ones this covers.
+  // The callers that pass a stored row: the goal journey (plan adjustment, Today step) and the Today insight cards.
+  const today = readFileSync(resolve(plugin, 'includes/stage3/screens/class-today-screen.php'), 'utf8');
+  expect(today).toContain("LLD_Members_Rule_Catalogue::fill( (string) $rules[ $name ]['template'], is_array( $values ) ? $values : array() )");
   const journey = readFileSync(resolve(plugin, 'includes/stage3/class-goal-journey.php'), 'utf8');
   expect(journey).toContain("$values = json_decode( (string) $ins['values'], true );");
   expect(journey).toContain('return (string) LLD_Members_Rule_Catalogue::fill( $template, $values );');
