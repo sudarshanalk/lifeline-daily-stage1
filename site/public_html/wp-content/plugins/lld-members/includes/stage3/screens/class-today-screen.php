@@ -195,9 +195,12 @@ class LLD_Members_Today_Screen {
 	private static function next_step_html( $member_id, array $facts ) {
 		$today = (string) $facts['today'];
 		$step  = $facts['health'] ? LLD_Members_Goal_Journey::today_step( $member_id, $today, true ) : null;
-		$text  = $step ? LLD_Members_Goal_Journey::step_text( $member_id, $step, $today ) : '';
+		$text  = $step ? LLD_Members_Goal_Journey::step_text( $member_id, $step, $today, $facts['situations'] ) : '';
 		$type  = $step ? (string) $step['action_type'] : 'activity';
 		$rule  = $step && ! empty( $step['rule_id'] ) && class_exists( 'LLD_Members_Rule_Catalogue' ) ? LLD_Members_Rule_Catalogue::name_for_id( (int) $step['rule_id'] ) : '';
+		if ( '' === $text ) {
+			$rule = ''; // the engine's step is not shown (safety matrix, or no stored numbers): the card is the plan's item
+		}
 		$status = $step ? (string) $step['status'] : 'shown';
 		$source = $step ? ( '' !== $rule ? 'engine' : ( 'read' === $type ? 'generic' : 'plan' ) ) : 'plan';
 		if ( '' === $text ) {
@@ -208,7 +211,7 @@ class LLD_Members_Today_Screen {
 		}
 		$links = array(
 			'log_reading' => array( self::link_or( 'readings', $member_id, '/members/check-in/' ), 'Log a reading' ),
-			'log_food'    => array( home_url( '/members/diary/' ), 'Log something' ),
+			'log_food'    => array( home_url( '/members/diary/' ), 'Open the diary' ),
 			'check_in'    => array( home_url( '/members/check-in/' ), 'Start check-in' ),
 			'read'        => array( home_url( '/members/library/' ), 'Open the library' ),
 			'activity'    => array( home_url( '/members/track/' ), 'Open the activity' ),
@@ -355,7 +358,7 @@ class LLD_Members_Today_Screen {
 			return '';
 		}
 		$html    = '';
-		$pending = LLD_Members_Goal_Journey::pending_adjustments( $member_id );
+		$pending = LLD_Members_Goal_Journey::pending_adjustments( $member_id, $facts['situations'] );
 		if ( $pending ) {
 			$html .= '<section class="lld-card" data-lld-section="adjustment"><h2>Your plan</h2><p>' . self::rich( $pending[0]['text'] ) . '</p><p>' . lld_button( array( 'label' => 'See the options', 'href' => home_url( '/members/check-in/' ) ) ) . '</p></section>';
 		}
@@ -370,6 +373,11 @@ class LLD_Members_Today_Screen {
 				continue;
 			}
 			if ( LLD_Members_Goal_Rules::days_between( substr( (string) $ins['shown_at'], 0, 10 ), (string) $facts['today'] ) > 7 ) {
+				continue;
+			}
+			// The safety matrix again at display time (FR3-69, P3-03 D4): the row was checked when it was written, and
+			// the member may have declared an eating disorder, pregnancy or kidney disease since.
+			if ( ! LLD_Members_Goal_Journey::rule_allowed( $facts['situations'], $name ) ) {
 				continue;
 			}
 			$values  = json_decode( (string) $ins['values'], true );
@@ -592,7 +600,7 @@ class LLD_Members_Today_Screen {
 		$html .= '</section>';
 
 		// The engine's offers (FR3-14 AS-01): accepted only by the member; adjustments are Premium (AS-03).
-		foreach ( LLD_Members_Goal_Journey::pending_adjustments( $member_id ) as $adj ) {
+		foreach ( LLD_Members_Goal_Journey::pending_adjustments( $member_id, $facts['situations'] ) as $adj ) {
 			$html .= '<section class="lld-card lld-adjustment" data-lld-section="adjustment" data-lld-rule="' . esc_attr( $adj['rule'] ) . '"><h2>Adjust the plan?</h2><p>' . self::rich( $adj['text'] ) . '</p>';
 			$html .= '<form method="post" class="lld-row">' . wp_nonce_field( 'lld_adjust', 'lld_adjust_nonce', true, false ) . '<input type="hidden" name="lld_adjust" value="' . (int) $adj['id'] . '">';
 			$labels = array( 'later_date' => 'Move my date', 'easier_activity_25pct_one_week' => 'Easier activity this week', 'different_meal_plan' => 'A different meal plan' );

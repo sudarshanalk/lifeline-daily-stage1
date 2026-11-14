@@ -182,14 +182,15 @@ test('TC-FR3-69-AS-06', async ({ page }) => {
       await expect(page.locator('main').getByRole('alert')).toContainText('Answer the Conditions question to save these details.');
       // Reload clears unsaved post values: a rejected submission must not persist the measurements.
       await page.goto('/members/health/');
-      await expect(page.locator('main')).not.toContainText(/Stored height: 175/);
+      // With the account hub on, the stored height is shown in its box (P3-36 D4, #256), not as a "Stored height" line.
+      await expect(page.locator('#lld_height')).not.toHaveValue(/^175(\.0+)?$/);
       await healthFields(page);
       await page.getByRole('checkbox', { name: answer, exact: true }).check();
       await submitAndWait(page, page.getByRole('button', { name: 'Save', exact: true }));
       await expect(saved(page)).toBeVisible();
       await page.goto('/members/health/');
       await expect(page.getByRole('checkbox', { name: answer, exact: true })).toBeChecked();
-      await expect(page.locator('main')).toContainText('Stored height: 175');
+      await expect(page.locator('#lld_height')).toHaveValue(/^175(\.0+)?$/);
     });
   }
 });
@@ -207,7 +208,7 @@ test('TC-FR3-69-AS-05', async ({ page }) => {
   });
   expect(response.status()).toBe(403);
   const refusal = await response.json();
-  expect(refusal.message).toBe('Answer the Conditions question in your health profile first.');
+  expect(refusal.message).toBe('Answer the "Conditions" question in your health profile first.');
   expect(refusal.question).toBe('conditions');
   expect(refusal.link).toMatch(/\/members\/health\/#lld-conditions$/);
   // Setting a goal: a member sets one on the goal screen (#252 refuses there; the form itself is never shown without
@@ -216,7 +217,7 @@ test('TC-FR3-69-AS-05', async ({ page }) => {
     form: { lld_action: 'save', type: 'lose_weight', lld_target: '84' } });
   expect([200, 403]).toContain(goalRefusal.status());
   const refusedGoal = await goalRefusal.text();
-  expect(refusedGoal).toContain('Answer the Conditions question in your health profile first.');
+  expect(refusedGoal).toContain('Answer the &quot;Conditions&quot; question in your health profile first.');
   expect(refusedGoal).toMatch(/href="[^"]*\/members\/health\/\?return=goal#lld-conditions"/);
   // Opening goal setting lands on the missing question itself.
   await page.goto('/members/goal/?type=lose_weight');

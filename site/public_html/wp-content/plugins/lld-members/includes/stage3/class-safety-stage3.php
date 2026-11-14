@@ -164,7 +164,7 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 				'health_logging'  => array( 'notes' => array( 'bp_pregnancy_thresholds', 'no_weight_trend_judgement', 'gestational_diabetes_note' ) ),
 				'insights'        => array( 'refused' => array( 'tag:weight', 'tag:calorie', 'rule:R-SAFE-01', 'rule:R-INS-01', 'rule:R-INS-02', 'rule:R-INS-08', 'rule:R-ADJ-01', 'rule:R-ADJ-02', 'rule:R-STEP-02' ), 'notes' => array( 'rule:R-SAFE-01p' ) ),
 				'calculators_new' => array( 'refused' => array( 'calorie-target', 'goal-timeline', 'heart-risk', 'metabolic', 'fitness-age', 'hr-zones' ), 'notes' => array( 'bp-check:pregnancy_mode', 'talk_test' ) ),
-				'reminders'       => array( 'hidden' => array( 'share:weight_tick' ), 'notes' => array( 'saved:from_before_pregnancy_label' ) ),
+				'reminders'       => array( 'hidden' => array( 'share:weight_tick', 'reminder:weigh_in' ), 'notes' => array( 'saved:from_before_pregnancy_label' ) ),
 			),
 			'kidney'              => array(
 				'food_tracker'    => array( 'hidden' => array( 'protein_target' ), 'notes' => array( 'stage1_kidney_message' ) ),
@@ -534,6 +534,11 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 		if ( null !== $refusal ) {
 			return $refusal;
 		}
+		// P3-36 (left over from A7; TC-FR3-69-AS-05): a goal is never stored for a member whose Conditions answer is
+		// missing. The refusal names the question and links to it, as the readings refusal does.
+		if ( 'goals' === $type ) {
+			return self::goal_refusal( $member_id );
+		}
 		if ( ! in_array( $type, array( 'targets', 'food-log', 'recipes', 'custom-foods', 'plans' ), true ) ) {
 			return null;
 		}
@@ -546,6 +551,40 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 			return new WP_REST_Response( array( 'message' => 'Not available.' ), 403 );
 		}
 		return null;
+	}
+
+	/**
+	 * Stored insight rows through the interface (FR3-69): the matrix is asked again for each row's rule, because the
+	 * row was checked when it was written and the member may have declared a situation since. A list loses the rows
+	 * the member may not see now, and the rows that only hold a Today step's numbers (they are not insights); a
+	 * single row keeps its id and loses its sealed values.
+	 *
+	 * @param array $rows      Opened insights rows, or one row.
+	 * @param int   $member_id Member number.
+	 * @return array
+	 */
+	private static function insights_shown( array $rows, $member_id ) {
+		if ( ! class_exists( 'LLD_Members_Rule_Catalogue' ) ) {
+			return $rows;
+		}
+		$situations = self::situations( $member_id );
+		$single     = isset( $rows['id'] ) && ! isset( $rows[0] );
+		$out        = array();
+		foreach ( $single ? array( $rows ) : $rows as $row ) {
+			$name = is_array( $row ) && isset( $row['rule_id'] ) ? LLD_Members_Rule_Catalogue::name_for_id( (int) $row['rule_id'] ) : '';
+			$rule = '' !== $name ? LLD_Members_Rule_Catalogue::rule( $name ) : null;
+			$show = $rule && self::allows_rule( $situations, $name );
+			if ( $single ) {
+				if ( ! $show ) {
+					unset( $row['values'] );
+				}
+				return $row;
+			}
+			if ( $show && LLD_Members_Rule_Catalogue::CLASS_STEP !== $rule['class'] ) {
+				$out[] = $row;
+			}
+		}
+		return $out;
 	}
 
 	/**
@@ -575,6 +614,9 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 		}
 		if ( 'food-search' === $type && isset( $rows['foods'] ) && is_array( $rows['foods'] ) ) {
 			return self::search_shown( $rows, self::applies( $member_id, 'food_tracker' ) );
+		}
+		if ( 'insights' === $type ) {
+			return self::insights_shown( $rows, $member_id );
 		}
 		if ( ! in_array( $type, array( 'food-log', 'food-recent', 'recipes', 'custom-foods', 'targets', 'plans' ), true ) ) {
 			return $rows;
@@ -821,7 +863,7 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 	 * unchanged); listed under "Wording for approval" in the pull request. The only new member-facing sentences.
 	 */
 	const CONDITIONS_WORDING = array(
-		'conditions.missing'  => 'Answer the Conditions question in your health profile first.',
+		'conditions.missing'  => 'Answer the "Conditions" question in your health profile first.',
 		'conditions.required' => 'Answer the Conditions question to save these details. None of these and Prefer not to answer both count.',
 	);
 
@@ -891,6 +933,31 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 		$refusal['question'] = 'conditions';
 		$refusal['link']     = self::conditions_link();
 		return $refusal;
+	}
+
+	/**
+	 * The goals interface refusal (TC-FR3-69-AS-05): writing a goal (anything but reading or deleting one) while the
+	 * Conditions answer is missing gets 403 with the message, the question and a link that returns to goal setting.
+	 * Reading goals stays open, and "Prefer not to answer" counts as an answer, as on the goal-setting screen.
+	 *
+	 * @param int $member_id Member number.
+	 * @return WP_REST_Response|null
+	 */
+	public static function goal_refusal( $member_id ) {
+		$request = class_exists( 'LLD_Members_Stage3_API' ) ? LLD_Members_Stage3_API::$request : null;
+		$method  = is_object( $request ) && method_exists( $request, 'get_method' ) ? strtoupper( (string) $request->get_method() ) : 'POST';
+		if ( in_array( $method, array( 'GET', 'HEAD', 'DELETE' ), true ) || 'missing' !== self::conditions_state( $member_id ) ) {
+			return null;
+		}
+		$refusal = self::conditions_refusal( $member_id, array( 'error' => 'Not available.', 'status' => 403 ) );
+		return new WP_REST_Response(
+			array(
+				'message'  => $refusal['error'],
+				'question' => $refusal['question'],
+				'link'     => self::conditions_link( 'goal' ),
+			),
+			403
+		);
 	}
 
 	// ---- Helpers -------------------------------------------------------------------------------------------------
