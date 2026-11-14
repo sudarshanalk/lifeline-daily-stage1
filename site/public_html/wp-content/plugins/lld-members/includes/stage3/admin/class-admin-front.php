@@ -397,7 +397,7 @@ class LLD_Members_Admin_Front {
 		foreach ( array_slice( $rows, 0, 10 ) as $h ) {
 			$when = class_exists( 'LLD_Members_Admin_Log' ) ? LLD_Members_Admin_Log::when_site( (string) $h['when'] ) : (string) $h['when'];
 			$to   = self::state_word( $h['to'] );
-			$verb = 'on' === $to ? 'turned it on' : ( 'off' === $to ? 'turned it off' : 'set it to ' . $to );
+			$verb = 'on' === $to ? 'turned it on' : ( 'off' === $to ? 'turned it off' : ( 'test accounts only' === $to ? 'limited it to test accounts' : 'set it to ' . $to ) );
 			$line = $when . ' · ' . $h['who'] . ' ' . $verb . '.';
 			if ( '' !== $h['note'] ) {
 				$line .= ' “' . $h['note'] . '”';
@@ -490,13 +490,8 @@ class LLD_Members_Admin_Front {
 		}
 		$html = '<ul class="lld-adm-list lld-adm-log">';
 		foreach ( $rows as $row ) {
-			list( $when, $sentence, $extra ) = LLD_Members_Admin_Log::sentence( $row );
-			$second = '' !== $extra ? $extra : '';
-			$html  .= '<li><span class="lld-adm-when">' . esc_html( $when ) . '</span><span><strong>' . esc_html( $sentence ) . '</strong>';
-			if ( '' !== $second ) {
-				$html .= '<span>' . esc_html( $second ) . '</span>';
-			}
-			$html .= '</span></li>';
+			list( $when, $sentence, $second ) = LLD_Members_Admin_Log::sentence( $row );
+			$html .= '<li data-lld-log-id="' . (int) $row->id . '"><span class="lld-adm-when">' . esc_html( $when ) . '</span><span><strong>' . esc_html( $sentence ) . '</strong><span>' . esc_html( $second ) . '</span></span></li>';
 		}
 		return $html . '</ul>';
 	}

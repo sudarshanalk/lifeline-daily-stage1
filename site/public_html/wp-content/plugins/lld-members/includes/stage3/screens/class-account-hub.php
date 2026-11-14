@@ -244,7 +244,7 @@ class LLD_Members_Account_Hub {
 			return $when . ': you withdrew Store my health information.';
 		}
 		$tail = '' !== $ver ? ' (version ' . $ver . ')' : '';
-		return $when . ': you accepted the ' . $label . $tail . '.';
+		return $when . ': you accepted ' . ( 'health' === $type ? '' : 'the ' ) . $label . $tail . '.';
 	}
 
 	/**

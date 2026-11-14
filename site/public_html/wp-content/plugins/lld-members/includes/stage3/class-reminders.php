@@ -95,7 +95,9 @@ class LLD_Members_Reminders {
 	 * @return string|null Refusal, or null.
 	 */
 	public static function gate_type( $type, array $flags = array() ) {
-		if ( in_array( (string) $type, self::ED_HIDDEN, true ) && self::weigh_in_hidden( $flags ) ) {
+		// P3-36 (FR3-69): the same test as the Account tab, so a member the matrix hides weigh-ins from for any reason
+		// (an eating-disorder flag, or hide_weight alone) cannot create one through the interface either.
+		if ( self::weigh_in_hidden( $flags ) && in_array( (string) $type, self::ED_HIDDEN, true ) ) {
 			return self::MESSAGES['hidden.weigh_in'];
 		}
 		return null;
