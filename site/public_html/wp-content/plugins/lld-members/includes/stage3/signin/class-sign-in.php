@@ -1182,7 +1182,7 @@ class LLD_Members_Sign_In {
 	private static function destination( $raw ) {
 		$raw = esc_url_raw( (string) $raw );
 		if ( '' === $raw ) {
-			return home_url( '/members/home/' );
+			return current_user_can( 'lld_admin_panel' ) ? home_url( '/members/admin/' ) : home_url( '/members/home/' );
 		}
 		return wp_validate_redirect( $raw, home_url( '/members/home/' ) );
 	}
