@@ -251,7 +251,9 @@ test.describe.serial('Stage 3 Phone layout and accessibility (P3-83)', () => {
     const sections = ['profile', 'security', 'notifications', 'privacy', 'membership'];
     for (const sec of sections) {
       await page.goto(`/members/settings/?section=${sec}`);
-      const { issues, exempt } = await checkTapTargets(page);
+      // The site's v2 page template (page-v2.php header and footer) wraps this page since it reached
+      // the Stage 3 CI job; its controls are site template, checked under P3-91, like the theme on /health-tools/.
+      const { issues, exempt } = await checkTapTargets(page, '.lld-stage3-account-hub');
       expect(issues, `settings section=${sec} tap target issues`).toEqual([]);
     }
   });
