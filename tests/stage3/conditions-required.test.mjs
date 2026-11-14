@@ -179,7 +179,7 @@ test('TC-FR3-69-AS-05', () => {
   expect(r.prefer).toEqual({ error: 'Not available.', status: 403, question: 'conditions', link });
   expect(r.answered.error).toBeUndefined();
   expect(r.goal_page.status).toBe(403);
-  expect(r.goal_page.main).toContain('Answer the "Conditions" question in your health profile first.');
+  expect(r.goal_page.main).toContain('Answer the &quot;Conditions&quot; question in your health profile first.');
   expect(r.goal_page.main).toContain(`href="${goalLink}"`);
   expect(r.created).toEqual([]);
   // The interface passes the question and the link on, and refuses before any insert (nothing stored).
