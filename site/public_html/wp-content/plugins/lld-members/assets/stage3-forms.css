@@ -37,3 +37,26 @@
 	display: inline-block;
 	margin-left: 0.75rem;
 }
+
+/* Reminder chooser on Notifications (P3-36 B4). */
+
+.lld-reminders-hub {
+	margin-top: 1.5rem;
+}
+
+.lld-reminder-rows {
+	list-style: none;
+	margin: 0 0 1rem;
+	padding: 0;
+	display: grid;
+	gap: 1rem;
+}
+
+.lld-reminder-days {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 0.75rem;
+	border: 0;
+	margin: 0.5rem 0 0;
+	padding: 0;
+}

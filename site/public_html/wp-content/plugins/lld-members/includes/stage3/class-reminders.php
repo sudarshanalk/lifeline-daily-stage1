@@ -34,6 +34,30 @@ class LLD_Members_Reminders {
 	/** Types the eating-disorder flag hides (Part B reminders column). */
 	const ED_HIDDEN = array( 'weigh_in' );
 
+	/**
+	 * Hub chooser types (FR3-56). Healthy Weight step/snack stay on their own path.
+	 *
+	 * @var array<string,string>
+	 */
+	const HUB_TYPES = array(
+		'log'      => 'Log',
+		'workout'  => 'Work out',
+		'weigh_in' => 'Weigh in',
+	);
+
+	/**
+	 * Channels the Notifications tab offers.
+	 *
+	 * @var array<string,string>
+	 */
+	const HUB_CHANNELS = array(
+		'email'   => 'Email',
+		'browser' => 'Browser',
+	);
+
+	/** Day codes for the hub checkboxes. */
+	const HUB_DAYS = array( 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun' );
+
 	public static function boot() {
 		add_action( self::TICK_HOOK, array( __CLASS__, 'tick' ) );
 	}
@@ -340,5 +364,231 @@ class LLD_Members_Reminders {
 			),
 			array()
 		);
+	}
+
+	/**
+	 * Safety flags for the hub and API (weigh-in hidden for eating-disorder).
+	 *
+	 * @param int $member_id Member number.
+	 * @return array<string,bool>
+	 */
+	public static function hub_flags( $member_id ) {
+		$flags = array(
+			'eating_disorder' => false,
+			'hide_weight'     => false,
+		);
+		if ( class_exists( 'LLD_Members_Stage3_Safety' ) ) {
+			$applies                  = LLD_Members_Stage3_Safety::applies( $member_id, 'reminders' );
+			$flags['eating_disorder'] = in_array( 'eating_disorder', isset( $applies['situations'] ) ? $applies['situations'] : array(), true );
+			$flags['hide_weight']     = in_array( 'reminder:weigh_in', isset( $applies['hidden'] ) ? $applies['hidden'] : array(), true )
+				|| in_array( 'share:weight_tick', isset( $applies['hidden'] ) ? $applies['hidden'] : array(), true );
+		}
+		return $flags;
+	}
+
+	/**
+	 * Notifications-tab markup: list, turn off, and add (P3-36 B4).
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function hub_html( $member_id ) {
+		$member_id = (int) $member_id;
+		if ( $member_id < 1 || ! class_exists( 'LLD_Members_Stage3_Data' ) ) {
+			return '';
+		}
+		if ( class_exists( 'LLD_Members_Features' ) && ! LLD_Members_Features::enabled( 'reminders', $member_id ) ) {
+			return '';
+		}
+		$rows   = LLD_Members_Stage3_Data::rows( 'reminders', $member_id, array(), '', 50 );
+		$flags  = self::hub_flags( $member_id );
+		$action = esc_url( home_url( '/members/settings/?section=notifications' ) );
+		$html  = '<div class="lld-reminders-hub" data-lld-reminders>';
+		$html .= '<h3>Reminders</h3>';
+
+		if ( $rows ) {
+			$html .= '<form method="post" action="' . $action . '" class="lld-form lld-reminders-list">';
+			$html .= wp_nonce_field( 'lld_reminders_save', 'lld_reminders_nonce', true, false );
+			$html .= '<input type="hidden" name="lld_reminders_action" value="update">';
+			$html .= '<ul class="lld-reminder-rows">';
+			foreach ( $rows as $row ) {
+				$id    = (int) $row['id'];
+				$type  = (string) $row['reminder_type'];
+				$label = isset( self::HUB_TYPES[ $type ] ) ? self::HUB_TYPES[ $type ] : ucfirst( str_replace( '_', ' ', $type ) );
+				$time  = substr( (string) $row['time_local'], 0, 5 );
+				$days  = array_filter( explode( ',', (string) $row['days'] ) );
+				$on    = ! empty( $row['active'] );
+				$html .= '<li class="lld-reminder-row">';
+				$html .= '<p class="lld-reminder-title">' . esc_html( $label );
+				if ( isset( self::HUB_CHANNELS[ (string) $row['channel'] ] ) ) {
+					$html .= ' · ' . esc_html( self::HUB_CHANNELS[ (string) $row['channel'] ] );
+				}
+				$html .= '</p>';
+				$html .= '<label class="lld-check"><input type="checkbox" name="lld_reminder_active[' . $id . ']" value="1"' . checked( $on, true, false ) . '> On</label>';
+				$html .= '<p class="lld-field"><label for="lld_reminder_time_' . $id . '">Time</label>';
+				$html .= '<input id="lld_reminder_time_' . $id . '" type="time" name="lld_reminder_time[' . $id . ']" value="' . esc_attr( $time ) . '" required></p>';
+				$html .= '<fieldset class="lld-reminder-days"><legend class="lld-sr">Days</legend>';
+				foreach ( self::HUB_DAYS as $day ) {
+					$html .= '<label class="lld-check"><input type="checkbox" name="lld_reminder_days[' . $id . '][]" value="' . esc_attr( $day ) . '"' . checked( in_array( $day, $days, true ), true, false ) . '> ' . esc_html( $day ) . '</label>';
+				}
+				$html .= '</fieldset></li>';
+			}
+			$html .= '</ul>';
+			$html .= lld_button( array( 'label' => 'Save', 'type' => 'submit' ) );
+			$html .= '</form>';
+		}
+
+		$premium = class_exists( 'LLD_Members_Access_Tiers' ) ? LLD_Members_Access_Tiers::allows( $member_id, 'more_reminders' ) : true;
+		$limit   = self::gate_create( $member_id, $rows, $premium );
+
+		$html .= '<form method="post" action="' . $action . '" class="lld-form lld-reminders-add">';
+		$html .= wp_nonce_field( 'lld_reminders_save', 'lld_reminders_nonce', true, false );
+		$html .= '<input type="hidden" name="lld_reminders_action" value="add">';
+		if ( null !== $limit ) {
+			$html .= '<p class="lld-muted">' . esc_html( $limit ) . '</p>';
+		}
+		$html .= '<p class="lld-field"><label for="lld_reminder_type">Type</label><select id="lld_reminder_type" name="lld_reminder_type" required>';
+		foreach ( self::HUB_TYPES as $value => $label ) {
+			if ( 'weigh_in' === $value && ( ! empty( $flags['eating_disorder'] ) || ! empty( $flags['hide_weight'] ) ) ) {
+				continue;
+			}
+			$html .= '<option value="' . esc_attr( $value ) . '">' . esc_html( $label ) . '</option>';
+		}
+		$html .= '</select></p>';
+		$html .= '<p class="lld-field"><label for="lld_reminder_channel">Channel</label><select id="lld_reminder_channel" name="lld_reminder_channel" required>';
+		foreach ( self::HUB_CHANNELS as $value => $label ) {
+			$html .= '<option value="' . esc_attr( $value ) . '">' . esc_html( $label ) . '</option>';
+		}
+		$html .= '</select></p>';
+		$html .= '<p class="lld-field"><label for="lld_reminder_time_new">Time</label>';
+		$html .= '<input id="lld_reminder_time_new" type="time" name="lld_reminder_time_new" value="08:00" required></p>';
+		$html .= '<fieldset class="lld-reminder-days"><legend>Days</legend>';
+		foreach ( self::HUB_DAYS as $day ) {
+			$html .= '<label class="lld-check"><input type="checkbox" name="lld_reminder_days_new[]" value="' . esc_attr( $day ) . '" checked> ' . esc_html( $day ) . '</label>';
+		}
+		$html .= '</fieldset>';
+		$html .= lld_button( array( 'label' => 'Save', 'type' => 'submit' ) );
+		$html .= '</form></div>';
+		return $html;
+	}
+
+	/**
+	 * Save hub reminder posts (add or update). Never deletes rows (FR3-68).
+	 *
+	 * @param int $member_id Member number.
+	 * @return true|WP_Error
+	 */
+	public static function save_hub( $member_id ) {
+		$member_id = (int) $member_id;
+		if ( $member_id < 1 || ! class_exists( 'LLD_Members_Stage3_Data' ) ) {
+			return new WP_Error( 'lld_reminders', 'Reminders are not available.' );
+		}
+		if ( class_exists( 'LLD_Members_Features' ) && ! LLD_Members_Features::enabled( 'reminders', $member_id ) ) {
+			return new WP_Error( 'lld_reminders', 'Reminders are not available.' );
+		}
+		$action = isset( $_POST['lld_reminders_action'] ) ? sanitize_key( (string) wp_unslash( $_POST['lld_reminders_action'] ) ) : '';
+		if ( 'add' === $action ) {
+			return self::save_hub_add( $member_id );
+		}
+		if ( 'update' === $action ) {
+			return self::save_hub_update( $member_id );
+		}
+		return new WP_Error( 'lld_reminders', 'Choose a reminder action.' );
+	}
+
+	/**
+	 * @param int $member_id Member number.
+	 * @return true|WP_Error
+	 */
+	private static function save_hub_add( $member_id ) {
+		$flags  = self::hub_flags( $member_id );
+		$params = array(
+			'reminder_type' => isset( $_POST['lld_reminder_type'] ) ? sanitize_key( (string) wp_unslash( $_POST['lld_reminder_type'] ) ) : '',
+			'channel'       => isset( $_POST['lld_reminder_channel'] ) ? sanitize_key( (string) wp_unslash( $_POST['lld_reminder_channel'] ) ) : 'email',
+			'time_local'    => isset( $_POST['lld_reminder_time_new'] ) ? sanitize_text_field( (string) wp_unslash( $_POST['lld_reminder_time_new'] ) ) : '',
+			'days'          => isset( $_POST['lld_reminder_days_new'] ) ? wp_unslash( $_POST['lld_reminder_days_new'] ) : array(), // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- cleaned in for_save.
+			'active'        => 1,
+		);
+		if ( ! isset( self::HUB_TYPES[ $params['reminder_type'] ] ) ) {
+			return new WP_Error( 'lld_reminders', 'Choose a reminder type.' );
+		}
+		if ( ! isset( self::HUB_CHANNELS[ $params['channel'] ] ) ) {
+			return new WP_Error( 'lld_reminders', 'Choose a channel.' );
+		}
+		$params['time_local'] = self::clean_time( $params['time_local'] );
+		if ( '' === $params['time_local'] ) {
+			return new WP_Error( 'lld_reminders', 'Choose a time.' );
+		}
+		$filled = self::for_save( $params, $flags );
+		if ( isset( $filled['error'] ) ) {
+			return new WP_Error( 'lld_reminders', (string) $filled['error'] );
+		}
+		$existing = LLD_Members_Stage3_Data::rows( 'reminders', $member_id, array(), '', 50 );
+		$premium  = class_exists( 'LLD_Members_Access_Tiers' ) ? LLD_Members_Access_Tiers::allows( $member_id, 'more_reminders' ) : true;
+		$denied   = self::gate_create( $member_id, $existing, $premium );
+		if ( null !== $denied ) {
+			return new WP_Error( 'lld_reminders', $denied );
+		}
+		$id = LLD_Members_Stage3_Data::insert( 'reminders', $member_id, $filled, array() );
+		return $id > 0 ? true : new WP_Error( 'lld_reminders', 'Could not save that reminder.' );
+	}
+
+	/**
+	 * @param int $member_id Member number.
+	 * @return true|WP_Error
+	 */
+	private static function save_hub_update( $member_id ) {
+		$rows = LLD_Members_Stage3_Data::rows( 'reminders', $member_id, array(), '', 50 );
+		if ( ! $rows ) {
+			return true;
+		}
+		$times = isset( $_POST['lld_reminder_time'] ) && is_array( $_POST['lld_reminder_time'] ) ? wp_unslash( $_POST['lld_reminder_time'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$days  = isset( $_POST['lld_reminder_days'] ) && is_array( $_POST['lld_reminder_days'] ) ? wp_unslash( $_POST['lld_reminder_days'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		$ons   = isset( $_POST['lld_reminder_active'] ) && is_array( $_POST['lld_reminder_active'] ) ? wp_unslash( $_POST['lld_reminder_active'] ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+		foreach ( $rows as $row ) {
+			$id = (int) $row['id'];
+			if ( $id < 1 ) {
+				continue;
+			}
+			$time = self::clean_time( isset( $times[ $id ] ) ? (string) $times[ $id ] : (string) $row['time_local'] );
+			if ( '' === $time ) {
+				return new WP_Error( 'lld_reminders', 'Choose a time.' );
+			}
+			$day_raw = isset( $days[ $id ] ) ? $days[ $id ] : array();
+			$clean   = self::clean_days( $day_raw );
+			if ( '' === $clean ) {
+				return new WP_Error( 'lld_reminders', 'Choose at least one day.' );
+			}
+			$active = ! empty( $ons[ $id ] ) ? 1 : 0;
+			LLD_Members_Stage3_Data::update(
+				'reminders',
+				$member_id,
+				$id,
+				array(
+					'time_local' => $time,
+					'days'       => $clean,
+					'active'     => $active,
+				),
+				array()
+			);
+		}
+		return true;
+	}
+
+	/**
+	 * Normalise HH:MM or HH:MM:SS to HH:MM:SS for TIME columns.
+	 *
+	 * @param string $raw Posted time.
+	 */
+	private static function clean_time( $raw ) {
+		$raw = trim( (string) $raw );
+		if ( preg_match( '/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $raw, $m ) ) {
+			$h = (int) $m[1];
+			$i = (int) $m[2];
+			$s = isset( $m[3] ) ? (int) $m[3] : 0;
+			if ( $h >= 0 && $h <= 23 && $i >= 0 && $i <= 59 && $s >= 0 && $s <= 59 ) {
+				return sprintf( '%02d:%02d:%02d', $h, $i, $s );
+			}
+		}
+		return '';
 	}
 }
