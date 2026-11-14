@@ -708,7 +708,13 @@ class LLD_Members_Sign_In {
 		if ( $methods <= 1 ) {
 			$html .= '<p class="lld-hint" id="lld-last-method">This is your only way to sign in, so it can\'t be removed.</p>';
 		}
-		$html .= '<h3>Sessions</h3><p class="lld-muted">Sign out of this website and the app on every device.</p>';
+		$html .= '<h3>Sessions</h3>';
+		// P3-36 C1 (TC-FR3-07-AS-06): this browser only, through the Stage 2 sign-out (the More screen) and its nonce;
+		// the member's other devices stay signed in.
+		$html .= '<form method="post" action="' . esc_url( home_url( '/members/more/' ) ) . '" class="lld-inline-form lld-sign-out-device">';
+		$html .= '<input type="hidden" name="lld_sign_out_nonce" value="' . esc_attr( wp_create_nonce( 'lld_sign_out' ) ) . '">';
+		$html .= '<button type="submit" class="lld-button lld-button-secondary">Sign out of this device</button></form>';
+		$html .= '<p class="lld-muted">Sign out of this website and the app on every device.</p>';
 		$html .= '<form method="post" class="lld-inline-form">' . wp_nonce_field( 'lld_s3_signout_all', 'lld_s3_signout_all_nonce', true, false );
 		$html .= '<button type="submit" class="lld-button lld-button-secondary">Sign out everywhere</button></form>';
 		return $html;

@@ -258,7 +258,8 @@ class LLD_Members_Admin_Front {
 		wp_enqueue_script( self::HANDLE, plugins_url( 'assets/stage3.js', LLD_MEMBERS_FILE ), array(), LLD_MEMBERS_VERSION, true );
 		$member = class_exists( 'LLD_Members_Access' ) && LLD_Members_Access::current_member_id() > 0;
 		ob_start();
-		lld_members_layout( array( 'title' => $title, 'main' => $main, 'signed_in' => $member, 'wide' => true ) );
+		// 'account': the chip's menu with Sign out on every Admin page, also for a helper without a member record (P3-36 C1).
+		lld_members_layout( array( 'title' => $title, 'main' => $main, 'signed_in' => $member, 'wide' => true, 'account' => true ) );
 		$page = (string) ob_get_clean();
 		ob_start();
 		wp_print_styles( array( self::HANDLE ) );

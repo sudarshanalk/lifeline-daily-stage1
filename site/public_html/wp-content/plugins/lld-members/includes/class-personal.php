@@ -228,9 +228,17 @@ class LLD_Members_Personal {
 		$error    = '';
 		$saved    = false;
 		$warnings = array();
+		// With the account hub on (P3-36 D4): units come from Account, the stored measurements are the values in the
+		// boxes, and BMI and waist-to-height are tiles. With it off, the Stage 2 form and its "Stored ..." lines stay.
+		$hub_units = class_exists( 'LLD_Members_Features' ) && LLD_Members_Features::enabled( 'account_hub', $member_id );
 		$posted   = 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' ) && isset( $_POST['lld_health_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_health_nonce'] ) ), 'lld_health' );
 		if ( $posted ) {
 			$fields = self::profile_from_post();
+			if ( $hub_units ) {
+				// A box still holding the stored value is not a change: it is not saved again, so a units round trip
+				// cannot shift it and the Conditions rule (A7) asks only when something is really entered.
+				$fields = self::without_unchanged( $fields, $profile );
+			}
 			if ( ! empty( $fields['reject'] ) ) {
 				$error = (string) $fields['reject'];
 			} elseif ( self::conditions_needed( $member_id, $profile, $fields ) ) {
@@ -244,7 +252,8 @@ class LLD_Members_Personal {
 						$error = $result->get_error_message();
 					} else {
 						$saved = true;
-						if ( ! empty( $_POST['lld_imperial'] ) ) {
+						// With the account hub on, units live on Account only (P3-36 D4 / FR3-06 AS-05). Hub-off keeps the Stage 2 checkbox write.
+						if ( ! $hub_units && ! empty( $_POST['lld_imperial'] ) ) {
 							global $wpdb;
 							$wpdb->update(
 								LLD_Members_Schema::table( 'member' ),
@@ -266,24 +275,29 @@ class LLD_Members_Personal {
 			}
 		}
 		$keep     = $posted && ! $saved;
+		$shown    = $hub_units ? $profile : null;
 		$imperial = $posted ? ! empty( $_POST['lld_imperial'] ) : ( $row && 'imperial' === $row->units );
-		$main     = '<h1>Health profile</h1>' . self::fail( $error ) . ( $saved ? lld_state_saved() : '' );
+		if ( $hub_units ) {
+			$imperial = $row && 'imperial' === $row->units;
+		}
+		$main = '<h1>Health profile</h1>' . self::fail( $error ) . ( $saved ? lld_state_saved() : '' );
 		if ( ! $saved && self::returning_to_goal( $member_id ) && class_exists( 'LLD_Members_Goal_Journey' ) && 'missing' === LLD_Members_Stage3_Safety::conditions_state_of( $profile ) ) {
 			$main .= lld_info( LLD_Members_Goal_Journey::note_texts()['general_wellbeing_path'] );
 		}
-		$main    .= self::stored_lines( $profile );
-		$main    .= self::calculator_lines( $member_id );
-		$main    .= '<form method="post" class="lld-form">';
-		$main    .= wp_nonce_field( 'lld_health', 'lld_health_nonce', true, false );
+		$main .= $hub_units ? self::measure_tiles( $profile ) : self::stored_lines( $profile );
+		$main .= self::calculator_lines( $member_id );
+		$main .= '<form method="post" class="lld-form">';
+		$main .= wp_nonce_field( 'lld_health', 'lld_health_nonce', true, false );
 		if ( $warnings ) {
 			foreach ( $warnings as $warning ) {
 				$main .= lld_caution( $warning );
 			}
 			$main .= '<input type="hidden" name="lld_hide_ok" value="1">';
 		}
-		$main .= self::choice_field( 'lld_sex', 'Sex', self::sex_choices(), $posted ? self::posted_text( 'lld_sex' ) : ( $profile ? (string) $profile->sex : '' ) );
+		$sex   = $posted ? self::posted_text( 'lld_sex' ) : ( $profile ? (string) $profile->sex : '' );
+		$main .= self::choice_field( 'lld_sex', 'Sex', self::sex_choices(), $sex );
+		$main .= self::sex_pills( $sex );
 		// With the account hub on, units are set once on Profile (FR3-06 AS-05). This page follows that setting and has no switch of its own.
-		$hub_units = class_exists( 'LLD_Members_Features' ) && LLD_Members_Features::enabled( 'account_hub', $member_id );
 		if ( $hub_units ) {
 			if ( $imperial ) {
 				$main .= '<input type="hidden" name="lld_imperial" value="1">';
@@ -292,15 +306,15 @@ class LLD_Members_Personal {
 			$main .= '<label class="lld-check"><input type="checkbox" name="lld_imperial" value="1" data-lld-imperial' . ( $imperial ? ' checked' : '' ) . '> Use imperial units</label>';
 		}
 		$main .= '<div data-lld-imperial-fields' . ( $imperial ? '' : ' hidden' ) . '>';
-		$main .= self::number_field( 'lld_feet', 'Height, feet', 'lld_feet', $keep );
-		$main .= self::number_field( 'lld_inches', 'Height, inches', 'lld_inches', $keep );
-		$main .= self::number_field( 'lld_pounds', 'Weight, pounds', 'lld_pounds', $keep );
-		$main .= self::number_field( 'lld_waist_in', 'Waist, inches', 'lld_waist_in', $keep );
+		$main .= self::number_field( 'lld_feet', 'Height, feet', 'lld_feet', $keep, self::imperial_parts( $shown, 'feet' ) );
+		$main .= self::number_field( 'lld_inches', 'Height, inches', 'lld_inches', $keep, self::imperial_parts( $shown, 'inches' ) );
+		$main .= self::number_field( 'lld_pounds', 'Weight, pounds', 'lld_pounds', $keep, self::imperial_parts( $shown, 'pounds' ) );
+		$main .= self::number_field( 'lld_waist_in', 'Waist, inches', 'lld_waist_in', $keep, self::imperial_parts( $shown, 'waist_in' ) );
 		$main .= '</div>';
 		$main .= '<div data-lld-metric-fields' . ( $hub_units && $imperial ? ' hidden' : '' ) . '>';
-		$main .= self::number_field( 'lld_height', 'Height in centimetres', 'lld_height', $keep );
-		$main .= self::number_field( 'lld_weight', 'Weight in kilograms', 'lld_weight', $keep );
-		$main .= self::number_field( 'lld_waist', 'Waist in centimetres', 'lld_waist', $keep );
+		$main .= self::number_field( 'lld_height', 'Height in centimetres', 'lld_height', $keep, self::metric_part( $shown, 'height_cm' ) );
+		$main .= self::number_field( 'lld_weight', 'Weight in kilograms', 'lld_weight', $keep, self::metric_part( $shown, 'weight_kg' ) );
+		$main .= self::number_field( 'lld_waist', 'Waist in centimetres', 'lld_waist', $keep, self::metric_part( $shown, 'waist_cm' ) );
 		$main .= '</div>';
 		$main .= self::choice_field( 'lld_activity', 'Activity level', self::activity_choices(), $posted ? self::posted_text( 'lld_activity' ) : ( $profile ? (string) $profile->activity_level : '' ) );
 		$main .= self::choice_field( 'lld_diet', 'Diet type', self::diet_choices(), $posted ? self::posted_text( 'lld_diet' ) : ( $profile ? (string) $profile->diet_type : '' ) );
@@ -316,7 +330,22 @@ class LLD_Members_Personal {
 		$main .= '<label class="lld-check"><input type="checkbox" name="lld_confirm" id="lld_confirm" value="1"' . ( $keep && ! empty( $_POST['lld_confirm'] ) ? ' checked' : '' ) . '> I\'ve checked this value</label>';
 		$main .= lld_button( array( 'label' => 'Save' ) );
 		$main .= '</form>';
+		$main .= self::forms_assets();
 		self::layout( 'Health profile', $main );
+	}
+
+	/**
+	 * Stage 3 form stylesheet and script when WordPress URL helpers are available (P3-36 D4).
+	 */
+	private static function forms_assets() {
+		if ( ! function_exists( 'plugins_url' ) || ! defined( 'LLD_MEMBERS_FILE' ) ) {
+			return '';
+		}
+		$ver = defined( 'LLD_MEMBERS_VERSION' ) ? LLD_MEMBERS_VERSION : '1';
+		$css = plugins_url( 'assets/stage3-forms.css', LLD_MEMBERS_FILE );
+		$js  = plugins_url( 'assets/stage3-forms.js', LLD_MEMBERS_FILE );
+		return '<link rel="stylesheet" href="' . esc_url( $css ) . '?ver=' . esc_attr( $ver ) . '">'
+			. '<script src="' . esc_url( $js ) . '?ver=' . esc_attr( $ver ) . '"></script>';
 	}
 
 	/**
@@ -1327,14 +1356,141 @@ class LLD_Members_Personal {
 	}
 
 	/**
-	 * @param string $id    Input id.
-	 * @param string $label Label.
-	 * @param string $name  Field name.
+	 * @param string     $id      Input id.
+	 * @param string     $label   Label.
+	 * @param string     $name    Field name.
+	 * @param bool       $keep    Prefer the posted value after a failed save.
+	 * @param string|null $stored Stored value when not keeping a post.
 	 */
-	private static function number_field( $id, $label, $name, $keep = false ) {
+	private static function number_field( $id, $label, $name, $keep = false, $stored = null ) {
 		$value = $keep ? self::posted_number( $name ) : null;
-		$attr  = null === $value ? '' : ' value="' . esc_attr( (string) $value ) . '"';
+		if ( null === $value && null !== $stored && '' !== (string) $stored ) {
+			$value = $stored;
+		}
+		$attr = null === $value || '' === (string) $value ? '' : ' value="' . esc_attr( (string) $value ) . '"';
 		return '<p><label for="' . esc_attr( $id ) . '">' . esc_html( $label ) . '</label><input id="' . esc_attr( $id ) . '" name="' . esc_attr( $name ) . '" type="number" step="0.1" inputmode="decimal"' . $attr . '></p>';
+	}
+
+	/**
+	 * Sex pills that drive the existing #lld_sex select (P3-36 D4).
+	 *
+	 * @param string $selected Current value.
+	 */
+	private static function sex_pills( $selected ) {
+		$html = '<div class="lld-control" hidden><span class="lld-control-label" id="lld_sex_caption">Sex</span>';
+		$html .= '<div class="lld-pill-row" data-lld-pills="lld_sex" role="group" aria-labelledby="lld_sex_caption">';
+		foreach ( self::sex_choices() as $value => $label ) {
+			$on    = (string) $selected === (string) $value;
+			$html .= '<button type="button" data-lld-pill="' . esc_attr( $value ) . '"' . ( $on ? ' class="is-active"' : '' ) . ' aria-pressed="' . ( $on ? 'true' : 'false' ) . '">' . esc_html( $label ) . '</button>';
+		}
+		return $html . '</div></div>';
+	}
+
+	/**
+	 * BMI and waist-to-height tiles when height is present (FR2-25 AS-04 / FR2-09 AS-03).
+	 *
+	 * @param object|null $profile Profile row.
+	 */
+	private static function measure_tiles( $profile ) {
+		if ( ! $profile || null === $profile->height_cm || '' === (string) $profile->height_cm ) {
+			return '';
+		}
+		$html = '<div class="lld-measure-tiles">';
+		if ( null !== $profile->weight_kg && '' !== (string) $profile->weight_kg ) {
+			$metres = (float) $profile->height_cm / 100;
+			if ( $metres > 0 ) {
+				$html .= '<div class="lld-measure-tile"><span>BMI</span><strong>' . esc_html( self::one_decimal( (float) $profile->weight_kg / ( $metres * $metres ) ) ) . '</strong></div>';
+			}
+		}
+		if ( null !== $profile->waist_cm && '' !== (string) $profile->waist_cm && (float) $profile->height_cm > 0 ) {
+			$html .= '<div class="lld-measure-tile"><span>Waist-to-height</span><strong>' . esc_html( number_format( (float) $profile->waist_cm / (float) $profile->height_cm, 2, '.', '' ) ) . '</strong></div>';
+		}
+		return $html . '</div>';
+	}
+
+	/**
+	 * A stored metric measurement as the form shows it, or null when there is none.
+	 *
+	 * @param object|null $profile Profile row.
+	 * @param string      $column  height_cm|weight_kg|waist_cm.
+	 * @return string|null
+	 */
+	private static function metric_part( $profile, $column ) {
+		if ( ! $profile || ! isset( $profile->$column ) || '' === (string) $profile->$column ) {
+			return null;
+		}
+		return self::one_decimal( $profile->$column );
+	}
+
+	/**
+	 * Drops the measurements whose posted box still holds the value the form showed (P3-36 D4).
+	 *
+	 * @param array<string,mixed> $fields  Fields read from the post.
+	 * @param object|null         $profile Stored profile.
+	 * @return array<string,mixed>
+	 */
+	private static function without_unchanged( array $fields, $profile ) {
+		if ( ! $profile ) {
+			return $fields;
+		}
+		$same = static function ( $name, $shown ) {
+			$posted = self::posted_number( $name );
+			return null !== $posted && null !== $shown && self::one_decimal( $posted ) === self::one_decimal( $shown );
+		};
+		if ( ! empty( $_POST['lld_imperial'] ) ) {
+			$checks = array(
+				'height_cm' => $same( 'lld_feet', self::imperial_parts( $profile, 'feet' ) ) && $same( 'lld_inches', self::imperial_parts( $profile, 'inches' ) ),
+				'weight_kg' => $same( 'lld_pounds', self::imperial_parts( $profile, 'pounds' ) ),
+				'waist_cm'  => $same( 'lld_waist_in', self::imperial_parts( $profile, 'waist_in' ) ),
+			);
+		} else {
+			$checks = array(
+				'height_cm' => $same( 'lld_height', self::metric_part( $profile, 'height_cm' ) ),
+				'weight_kg' => $same( 'lld_weight', self::metric_part( $profile, 'weight_kg' ) ),
+				'waist_cm'  => $same( 'lld_waist', self::metric_part( $profile, 'waist_cm' ) ),
+			);
+		}
+		foreach ( $checks as $column => $unchanged ) {
+			if ( $unchanged ) {
+				unset( $fields[ $column ] );
+			}
+		}
+		return $fields;
+	}
+
+	/**
+	 * Imperial display parts from a stored metric profile.
+	 *
+	 * @param object|null $profile Profile row.
+	 * @param string      $part    feet|inches|pounds|waist_in.
+	 * @return string|null
+	 */
+	private static function imperial_parts( $profile, $part ) {
+		if ( ! $profile ) {
+			return null;
+		}
+		if ( 'feet' === $part || 'inches' === $part ) {
+			if ( null === $profile->height_cm || '' === (string) $profile->height_cm ) {
+				return null;
+			}
+			$total = round( (float) $profile->height_cm / 2.54, 1 );
+			$feet  = (int) floor( $total / 12 );
+			$inch  = $total - ( $feet * 12 );
+			return 'feet' === $part ? (string) $feet : self::one_decimal( $inch );
+		}
+		if ( 'pounds' === $part ) {
+			if ( null === $profile->weight_kg || '' === (string) $profile->weight_kg ) {
+				return null;
+			}
+			return self::one_decimal( (float) $profile->weight_kg / 0.45359237 );
+		}
+		if ( 'waist_in' === $part ) {
+			if ( null === $profile->waist_cm || '' === (string) $profile->waist_cm ) {
+				return null;
+			}
+			return self::one_decimal( (float) $profile->waist_cm / 2.54 );
+		}
+		return null;
 	}
 
 	/**

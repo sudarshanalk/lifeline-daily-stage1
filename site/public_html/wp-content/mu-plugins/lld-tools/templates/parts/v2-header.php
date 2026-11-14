@@ -86,10 +86,14 @@ $tools_on = $lld_header['page'] === 'tools';
           <?php if (function_exists('current_user_can') && current_user_can('lld_admin_panel')): // P3-87b: the Owner and Support helpers reach Admin from every page ?>
           <a href="<?php echo $hu('/members/admin/'); ?>" class="text-sm font-semibold text-[#1D4E48] dark:text-[#4FA89B] hover:underline px-3 py-1.5 hidden sm:inline-block">Admin</a>
           <?php endif; ?>
+          <?php $lld_account = function_exists('apply_filters') ? (string)apply_filters('lld_v2_header_account', '') : ''; // P3-36: member pages put the member chip (with its menu) here ?>
+          <?php if ($lld_account !== ''): echo $lld_account; // phpcs:ignore -- built and escaped by lld-members ?>
+          <?php else: ?>
           <a href="<?php echo $hu('/members/'); ?>" class="bg-[#1D4E48] hover:bg-[#143833] text-white text-sm font-medium px-3.5 sm:px-5 py-2.5 rounded-full shadow-sm transition-all inline-flex items-center gap-2 whitespace-nowrap">
             <span>My account</span>
             <svg class="hidden sm:block w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
           </a>
+          <?php endif; ?>
         <?php else: ?>
           <a href="<?php echo $hu('/members/sign-in/'); ?>" class="text-sm font-medium text-[#4A4742] text-day-muted hover:text-[#1F1E1C] px-3 py-1.5 hidden sm:inline-block">Sign In</a>
           <a href="<?php echo $hu('/members/join/'); ?>" class="bg-[#1D4E48] hover:bg-[#143833] text-white text-sm font-medium px-3.5 sm:px-5 py-2.5 rounded-full shadow-sm transition-all inline-flex items-center gap-2 whitespace-nowrap">
@@ -132,6 +136,7 @@ $tools_on = $lld_header['page'] === 'tools';
         <a href="<?php echo $on_home ? '#reads' : $hu('/articles/'); ?>" class="px-4 py-3 rounded-xl bg-white bg-day-card border border-[#E0D8CB] border-day-soft text-[#1F1E1C] text-day-dark">Guides</a>
         <?php if (!$signed_in): ?><a href="<?php echo $hu('/members/sign-in/'); ?>" class="col-span-2 px-4 py-3 rounded-xl bg-white bg-day-card border border-[#E0D8CB] border-day-soft text-[#1D4E48] dark:text-[#4FA89B]">Sign In</a><?php endif; ?>
         <?php if ($signed_in && function_exists('current_user_can') && current_user_can('lld_admin_panel')): ?><a href="<?php echo $hu('/members/admin/'); ?>" class="col-span-2 px-4 py-3 rounded-xl bg-white bg-day-card border border-[#E0D8CB] border-day-soft text-[#1D4E48] dark:text-[#4FA89B]">Admin</a><?php endif; ?>
+        <?php if ($signed_in && function_exists('apply_filters')) echo (string)apply_filters('lld_v2_header_menu_end', ''); // P3-36: Sign out on member pages; phpcs:ignore -- built and escaped by lld-members ?>
       </div>
     </div>
   </header>
