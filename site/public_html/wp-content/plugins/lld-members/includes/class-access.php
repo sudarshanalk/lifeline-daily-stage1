@@ -139,8 +139,8 @@ class LLD_Members_Access {
 	 *
 	 * source: 'free'; 'paid' (a Premium subscription, or cancelled within its paid period); 'paused' (paid, with a
 	 * Stage 3 pause running: still a Premium member); 'grant' (free Premium given by the Owner, with no paid
-	 * subscription behind it); 'preview' (the owner's own preview). until: the grant's last day (Y-m-d), '' for no
-	 * end date or another source.
+	 * subscription behind it); 'preview' (the owner's own preview). until: the grant's end date as the Owner set it
+	 * (Y-m-d; Premium runs until that date), '' for no end date or another source.
 	 *
 	 * @param int $member_id Member number.
 	 * @return array{premium:bool,source:string,until:string}
@@ -165,8 +165,10 @@ class LLD_Members_Access {
 		}
 		$open = class_exists( 'LLD_Members_Billing' ) ? LLD_Members_Billing::has_premium( $member_id ) : 'premium' === strtolower( self::access_state( $member_id ) );
 		if ( ! $open ) {
+			// A running pause keeps a paid member Premium, as long as the paid Premium itself has not ended or been
+			// refunded (the same test as the membership card's).
 			$pause = class_exists( 'LLD_Members_Pause' ) ? LLD_Members_Pause::open( $member_id ) : null;
-			if ( $pause && 'active' === (string) $pause->status ) {
+			if ( $pause && 'active' === (string) $pause->status && self::stored_paid( $member_id ) ) {
 				return array(
 					'premium' => true,
 					'source'  => 'paused',
@@ -177,11 +179,7 @@ class LLD_Members_Access {
 		}
 		$grant = class_exists( 'LLD_Members_Admin_Members' ) ? LLD_Members_Admin_Members::active_grant( $member_id ) : null;
 		if ( $grant ) {
-			global $wpdb;
-			$sub    = $wpdb->get_row( $wpdb->prepare( 'SELECT access_state, period_ends_on FROM ' . LLD_Members_Schema::table( 'subscription' ) . ' WHERE member_id = %d', $member_id ) );
-			$stored = $sub ? strtolower( (string) $sub->access_state ) : 'free';
-			$paid   = 'premium' === $stored || ( 'cancelled' === $stored && $sub->period_ends_on && (string) $sub->period_ends_on >= gmdate( 'Y-m-d' ) );
-			if ( ! $paid ) {
+			if ( ! self::stored_paid( $member_id ) ) {
 				$until = substr( (string) $grant->ends_at, 0, 10 );
 				return array(
 					'premium' => true,
@@ -195,6 +193,19 @@ class LLD_Members_Access {
 			'source'  => 'paid',
 			'until'   => '',
 		);
+	}
+
+	/**
+	 * The stored subscription is paid Premium: Premium, or cancelled within its paid period. Read from the stored row
+	 * itself, not through the access-state filter, so the Owner's grant does not count here.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function stored_paid( $member_id ) {
+		global $wpdb;
+		$sub    = $wpdb->get_row( $wpdb->prepare( 'SELECT access_state, period_ends_on FROM ' . LLD_Members_Schema::table( 'subscription' ) . ' WHERE member_id = %d', (int) $member_id ) );
+		$stored = $sub ? strtolower( (string) $sub->access_state ) : 'free';
+		return 'premium' === $stored || ( 'cancelled' === $stored && $sub->period_ends_on && (string) $sub->period_ends_on >= gmdate( 'Y-m-d' ) );
 	}
 
 	/**

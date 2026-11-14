@@ -1117,7 +1117,10 @@ class LLD_Members_Billing {
 		// P3-36 A1 (TC-FR3-64-AS-04): free Premium given by the Owner reads as Premium, with its end date and no offer to buy.
 		$status = LLD_Members_Access::premium_status( $member_id );
 		if ( 'grant' === $status['source'] ) {
-			$main .= '<p data-lld-premium-source="grant">' . esc_html( LLD_Members_Access::grant_line( $status ) ) . '</p>';
+			// The Stage 3 membership card already says it, with the end date; say it once.
+			if ( ! ( class_exists( 'LLD_Members_Features' ) && LLD_Members_Features::enabled( 'membership_card', $member_id ) ) ) {
+				$main .= '<p data-lld-premium-source="grant">' . esc_html( LLD_Members_Access::grant_line( $status ) ) . '</p>';
+			}
 		} elseif ( ! $sub || 'free' === strtolower( (string) $sub->access_state ) ) {
 			$main .= '<p>Your membership is Free.</p>';
 			$main .= '<p><a href="' . esc_url( home_url( '/pricing/' ) ) . '">See pricing</a></p>';

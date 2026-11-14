@@ -83,6 +83,11 @@ test('TC-FR3-64-AS-04', () => {
     // Paused: still Premium (the chip has always said so), not open.
     $GLOBALS['open'] = false; $GLOBALS['pause'] = (object) ['status' => 'active', 'ends_at' => '2027-01-01'];
     $out['paused'] = LLD_Members_Access::premium_status(5);
+    // Paused, but the paid Premium has since ended or been refunded: Free, as the membership card says.
+    $GLOBALS['sub'] = sub('premium ended');
+    $out['paused_ended'] = LLD_Members_Access::premium_status(5);
+    $GLOBALS['sub'] = sub('refunded');
+    $out['paused_refunded'] = LLD_Members_Access::premium_status(5)['premium'];
     // Free: no grant, nothing open.
     $GLOBALS['pause'] = null; $GLOBALS['sub'] = sub('free');
     $out['free'] = LLD_Members_Access::premium_status(5);
@@ -99,6 +104,8 @@ test('TC-FR3-64-AS-04', () => {
   expect(r.paid_and_grant).toEqual({ premium: true, source: 'paid', until: '' });
   expect(r.paid).toEqual({ premium: true, source: 'paid', until: '' });
   expect(r.paused).toEqual({ premium: true, source: 'paused', until: '' });
+  expect(r.paused_ended).toEqual({ premium: false, source: 'free', until: '' });
+  expect(r.paused_refunded).toBe(false);
   expect(r.free).toEqual({ premium: false, source: 'free', until: '' });
   expect(r.free_card).toContain('Go Premium');
 
@@ -109,6 +116,8 @@ test('TC-FR3-64-AS-04', () => {
   expect(page).toContain("$status = LLD_Members_Access::premium_status( $member_id );");
   expect(page.indexOf("if ( 'grant' === $status['source'] ) {")).toBeLessThan(page.indexOf("$main .= '<p>Your membership is Free.</p>';"));
   expect(page).toContain("LLD_Members_Access::grant_line( $status )");
+  // Said once: the Stage 3 card carries the line when it is on, the Stage 2 paragraph only when it is off.
+  expect(page).toContain("if ( ! ( class_exists( 'LLD_Members_Features' ) && LLD_Members_Features::enabled( 'membership_card', $member_id ) ) ) {");
   expect(page).toContain("if ( 'grant' !== $status['source'] && self::paid_state( $member_id )");
   expect(page).toContain("if ( 'grant' !== $status['source'] && $switching && $sub");
   // The chip reads the same helper; Account → Membership reads has_premium() and the filtered access state, which a
