@@ -10,8 +10,10 @@ import { expect, test } from 'vitest';
 const here = dirname(fileURLToPath(import.meta.url));
 const plugin = resolve(here, '../../site/public_html/wp-content/plugins/lld-members');
 const php = readFileSync(resolve(plugin, 'includes/stage3/screens/class-food-screen.php'), 'utf8');
-const js = readFileSync(resolve(plugin, 'assets/stage3-logging.js'), 'utf8');
-const css = readFileSync(resolve(plugin, 'assets/stage3.css'), 'utf8');
+// The Food page's part of each shared file: the Log a reading page (B2) follows it in both.
+const untilReadings = (text, marker) => (text.includes(marker) ? text.slice(0, text.indexOf(marker)) : text);
+const js = untilReadings(readFileSync(resolve(plugin, 'assets/stage3-logging.js'), 'utf8'), 'function rdEsc(');
+const css = untilReadings(readFileSync(resolve(plugin, 'assets/stage3.css'), 'utf8'), '/* ---------- B2: Log a reading screen');
 const safety = readFileSync(resolve(plugin, 'includes/stage3/class-safety-stage3.php'), 'utf8');
 
 const render = php.slice(php.indexOf('public static function render()'), php.indexOf('private static function upgrade_box'));
