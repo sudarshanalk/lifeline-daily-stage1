@@ -198,3 +198,83 @@ body.mode-night .lld-v2-menu-signout { color: #f2a196; }
   outline: 3px solid var(--lld-green, #1d4e48);
   outline-offset: 2px;
 }
+
+/* ---- My account → Admin → Payments fields (P3-36 A3) ------------------------------------------------------------ */
+/* The Stage 2 Payments form (LLD_Members_Billing::admin_page) shown inside Admin: each box gets the shared field look
+   (border, fill, 44 px), its label above it, and "US$" before the prices. */
+.lld-pay-form .lld-pay-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin: 0 0 16px;
+}
+
+.lld-pay-form .lld-pay-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 14rem;
+  min-width: 0;
+  max-width: 24rem;
+}
+
+.lld-pay-form .lld-pay-label {
+  font-weight: 600;
+  color: var(--lld-ink, #111a14);
+}
+
+.lld-pay-form .lld-pay-input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--lld-border, #7d8a84);
+  border-radius: var(--lld-radius-sm, 10px);
+  background: var(--lld-card, #fff);
+  color: var(--lld-ink, #111a14);
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.lld-pay-form .lld-pay-input:focus-visible {
+  outline: 3px solid var(--lld-green, #1d4e48);
+  outline-offset: 2px;
+}
+
+.lld-pay-form .lld-pay-affix {
+  display: flex;
+  align-items: stretch;
+}
+
+.lld-pay-form .lld-pay-prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1.5px solid var(--lld-border, #7d8a84);
+  border-right: 0;
+  border-radius: var(--lld-radius-sm, 10px) 0 0 var(--lld-radius-sm, 10px);
+  background: var(--lld-bg, #f6f3ee);
+  color: var(--lld-muted, #5c6b64);
+  font-weight: 600;
+}
+
+.lld-pay-form .lld-pay-affix .lld-pay-input {
+  border-radius: 0 var(--lld-radius-sm, 10px) var(--lld-radius-sm, 10px) 0;
+}
+
+/* The confirm box: the shared tick-box row (lld-check), with a real 20 px box. */
+.lld-pay-form .lld-pay-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 44px;
+  padding: 10px 0;
+  font-weight: 500;
+}
+
+.lld-pay-form .lld-pay-check input {
+  width: 20px;
+  height: 20px;
+  margin: 2px 0 0;
+  accent-color: var(--lld-green, #1d4e48);
+  flex: 0 0 auto;
+}
