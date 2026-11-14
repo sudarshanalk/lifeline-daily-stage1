@@ -258,7 +258,7 @@ class LLD_Members_Today_Screen {
 	 * @param array $facts facts().
 	 */
 	private static function ring_was( array $facts ) {
-		if ( ! isset( $_GET['saved'], $_GET['ring_was'], $_GET['ring_on'] ) || ! in_array( sanitize_key( (string) wp_unslash( $_GET['saved'] ) ), array( 'done', 'water', 'mood' ), true ) ) {
+		if ( ! isset( $_GET['saved'], $_GET['ring_was'], $_GET['ring_on'] ) || ! is_scalar( $_GET['saved'] ) || ! is_scalar( $_GET['ring_was'] ) || ! is_scalar( $_GET['ring_on'] ) || ! in_array( sanitize_key( (string) wp_unslash( $_GET['saved'] ) ), array( 'done', 'water', 'mood' ), true ) ) {
 			return null;
 		}
 		if ( sanitize_text_field( wp_unslash( (string) $_GET['ring_on'] ) ) !== (string) $facts['today'] ) {
@@ -280,9 +280,10 @@ class LLD_Members_Today_Screen {
 		$dash  = 2 * M_PI * 42;
 		$was   = self::ring_was( $facts );
 		// "Up" only for the one day just added; "already counted" only when today really is among the active days.
-		$rose  = null !== $was && $ring['done'] === $was + 1;
-		$today_on = $facts['health'] && in_array( (string) $facts['today'], LLD_Members_Goal_Journey::active_dates( $member_id, 14 ), true );
-		$was   = $rose || ( null !== $was && $ring['done'] === $was && $today_on ) ? $was : null;
+		// Both need today among the active days, so a hand-made link can never say today counted when it did not.
+		$today_on = null !== $was && $facts['health'] && in_array( (string) $facts['today'], LLD_Members_Goal_Journey::active_dates( $member_id, 14 ), true );
+		$rose  = $today_on && $ring['done'] === $was + 1;
+		$was   = $rose || ( $today_on && $ring['done'] === $was ) ? $was : null;
 		$html  = '<section class="lld-card lld-ring-card' . ( $rose ? ' lld-ring-rose' : '' ) . '" data-lld-section="ring" data-lld-ring-done="' . (int) $ring['done'] . '" data-lld-ring-total="7"' . ( null !== $was ? ' data-lld-ring-was="' . (int) $was . '"' : '' ) . '><h2>This week</h2>';
 		$html .= '<div class="lld-ring" role="img" aria-label="' . esc_attr( $ring['done'] . ' of 7 days active this week' ) . '"><svg viewBox="0 0 100 100" width="96" height="96" aria-hidden="true"><circle class="lld-ring-track" cx="50" cy="50" r="42" fill="none" stroke-width="10"/><circle class="lld-ring-fill" cx="50" cy="50" r="42" fill="none" stroke-width="10" stroke-dasharray="' . esc_attr( LLD_Members_Goal_Rules::plain( $dash ) ) . '" stroke-dashoffset="' . esc_attr( LLD_Members_Goal_Rules::plain( $dash * ( 1 - $ring['done'] / 7 ) ) ) . '"' . ( $rose ? ' style="--lld-ring-from:' . esc_attr( LLD_Members_Goal_Rules::plain( $dash * ( 1 - $was / 7 ) ) ) . ';--lld-ring-to:' . esc_attr( LLD_Members_Goal_Rules::plain( $dash * ( 1 - $ring['done'] / 7 ) ) ) . '"' : '' ) . ' transform="rotate(-90 50 50)"/></svg>';
 		$html .= '<p class="lld-ring-count"><strong>' . (int) $ring['done'] . ' of 7</strong> days</p></div>';

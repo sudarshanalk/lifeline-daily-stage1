@@ -437,7 +437,7 @@ class LLD_Members_Growth {
 		if ( class_exists( 'LLD_Members_Today_Screen' ) && method_exists( 'LLD_Members_Today_Screen', 'new_page' ) ) {
 			$new = array();
 			if ( '' !== LLD_Members_Today_Screen::new_page( 'food', $member_id ) ) {
-				$new[] = array( 'Food & meals', '/members/food/', 'Log what you eat and drink, meal by meal.', 'weight', 'amber' );
+				$new[] = array( 'Food', '/members/food/', 'Log what you eat and drink, meal by meal.', 'leaf', 'teal' );
 			}
 			if ( '' !== LLD_Members_Today_Screen::new_page( 'readings', $member_id ) ) {
 				$new[] = array( 'Log a reading', '/members/readings/', 'Record your readings and view your history.', 'heart', 'rose' );

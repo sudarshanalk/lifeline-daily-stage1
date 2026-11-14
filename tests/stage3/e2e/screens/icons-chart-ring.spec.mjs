@@ -108,6 +108,17 @@ test.describe.serial('P3-36 D6 D7 D9 icons, chart numbers and week ring', () => 
     await expect(ring).toHaveAttribute('data-lld-ring-done', String(before + 1));
     await expect(ring.locator('[data-lld-ring-change="same"]')).toHaveText(`Today was already counted: ${before + 1} of 7 days.`);
     await expect(ring).not.toHaveClass(/lld-ring-rose/);
+    // A hand-made link with a count that was never true changes nothing: the ring shows the server's count, no message.
+    const on = new URL(page.url()).searchParams.get('ring_on');
+    for (const was of [before + 3, before - 1, 9]) {
+      await page.goto(`/members/home/?saved=done&ring_was=${was}&ring_on=${on}`);
+      await expect(ring).toHaveAttribute('data-lld-ring-done', String(before + 1));
+      await expect(ring.locator('[data-lld-ring-change]')).toHaveCount(0);
+      await expect(ring).not.toHaveClass(/lld-ring-rose/);
+    }
+    // Another day's link says nothing either.
+    await page.goto(`/members/home/?saved=done&ring_was=${before}&ring_on=2000-01-01`);
+    await expect(ring.locator('[data-lld-ring-change]')).toHaveCount(0);
   });
 
   test('TC-NFR3-12-AS-01 D9 no ring animation with reduced motion', async ({ page }) => {
