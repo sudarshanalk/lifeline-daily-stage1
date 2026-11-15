@@ -917,7 +917,7 @@
       "priority": "MUST",
       "type": "behaviour",
       "automation": "hybrid",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-01",
         "FR1-08",
@@ -1377,7 +1377,7 @@
       "priority": "MUST",
       "type": "process",
       "automation": "hybrid",
-      "status": "verified",
+      "status": "accepted",
       "depends_on": [
         "FR1-01"
       ],
@@ -2490,8 +2490,8 @@
       "id": "DEC-11",
       "question": "Analytics",
       "selected": "Plausible cookieless",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-28",
       "ratify_at": "HG-03",
       "decided_on": "2026-10-20"
     },
@@ -2580,8 +2580,8 @@
       "id": "DEC-21",
       "question": "Lawful basis emails",
       "selected": "Consent incl. Art 9(2)(a); no persistence",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-28",
       "ratify_at": "HG-03",
       "decided_on": "2026-10-20"
     },
@@ -2679,8 +2679,8 @@
       "id": "DEC-32",
       "question": "Existing CookieYes banner",
       "selected": "Keep; Plausible cookieless",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-28",
       "ratify_at": "HG-03",
       "decided_on": "2026-10-22"
     },
@@ -2715,8 +2715,8 @@
       "id": "DEC-36",
       "question": "Legal copy ownership",
       "selected": "Agent drafts; HG-02 clinical; HG-03 legal",
-      "status": "default",
-      "ratified_on": null,
+      "status": "ratified",
+      "ratified_on": "2026-10-28",
       "ratify_at": "HG-03",
       "decided_on": "2026-10-22"
     },
