@@ -28,6 +28,7 @@ function lld_page_v2_legal_pages(): array {
     'terms-conditions' => 'Terms and conditions',
     'contact-us' => 'Contact us',
     'editorial-standards' => 'Editorial standards',   // published 8 Nov 2026 (owner); C1 found it still in the old theme
+    'terms-of-sale' => 'Terms of sale',               // published on staging 15 Nov 2026 (owner: placeholders in brackets, for testing)
   ];
 }
 

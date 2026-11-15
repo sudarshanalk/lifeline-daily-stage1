@@ -122,9 +122,10 @@ $tools_on = $lld_header['page'] === 'tools';
       </div>
       <div class="lld-topics-foot max-w-6xl mx-auto px-4 sm:px-8 pb-5">
         <div class="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-[#EAE4D8] border-day-soft">
-          <form role="search" method="get" action="<?php echo $hu('/'); ?>" class="flex-1 min-w-[14rem] max-w-md">
+          <form id="lld-menu-search-form" role="search" method="get" action="<?php echo $hu('/'); ?>" class="relative flex-1 min-w-[14rem] max-w-md">
             <label for="lld-menu-search" class="sr-only">Search Lifeline Daily</label>
-            <input id="lld-menu-search" type="search" name="s" placeholder="Search Lifeline Daily..." class="lld-search-input w-full px-4 py-2.5 text-sm rounded-full bg-white bg-day-card border-[1.5px] border-[#CFC5B5] text-[#1F1E1C] text-day-dark">
+            <input id="lld-menu-search" type="search" name="s" placeholder="Search Lifeline Daily..." class="lld-search-input w-full px-4 py-2.5 pr-24 text-sm rounded-full bg-white bg-day-card border-[1.5px] border-[#CFC5B5] text-[#1F1E1C] text-day-dark">
+            <button type="submit" form="lld-menu-search-form" class="absolute right-1.5 top-1/2 -translate-y-1/2 z-10 min-h-[36px] bg-[#1D4E48] text-white text-xs font-semibold px-4 py-1.5 rounded-full hover:bg-[#143833] transition-colors">Search</button>
           </form>
           <a href="<?php echo $hu('/articles/'); ?>" class="lld-topics-all inline-flex items-center gap-1.5 min-h-[44px] text-sm font-bold text-[#1D4E48] hover:underline">All topics <span aria-hidden="true">&rarr;</span></a>
         </div>
