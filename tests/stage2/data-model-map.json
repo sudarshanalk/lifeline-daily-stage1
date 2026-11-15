@@ -46,7 +46,9 @@
         "email_confirmed_at": "email confirmed on",
         "joined_on": "joined on",
         "last_signed_in_at": "last signed in on",
-        "two_step": "two-step sign-in"
+        "two_step": "two-step sign-in",
+        "blocked_at": "blocked on",
+        "blocked_reason": "block reason"
       }
     },
     "consent": {
@@ -519,7 +521,13 @@
         "member_email": "email",
         "detail": "rewards withdrawn, price changes",
         "money_related": "money actions",
-        "created_at": "#nonpersonal"
+        "created_at": "#nonpersonal",
+        "admin_user_id": "who did it",
+        "target": "the other item affected",
+        "before_state": "the state before",
+        "after_state": "the state after",
+        "reason": "the reason",
+        "ip_hash": "scrambled copy of the admin's IP address"
       }
     },
     "support": {

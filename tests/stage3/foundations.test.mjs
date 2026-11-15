@@ -137,10 +137,12 @@ test('TC-NFR3-09-AS-01 (source): every Stage 3 data type is served by the interf
     expect(types, table).toMatch(new RegExp(`'table'\\s+=> '${table}'`));
   }
   // Every table the schema creates is either served, or named here as not a member record (identities and email
-  // codes are sign-in records, pauses are payment records: P3-20 to P3-22 and P3-63 add their own routes).
+  // codes are sign-in records, pauses are payment records: P3-20 to P3-22 and P3-63 add their own routes). The admin
+  // panel's records (P3-87) are not the member's: notes are never shown to the member (FR3-78), grants are the
+  // Owner's (FR3-80) and devices belong to admins (NFR3-20).
   const schema = stage3('class-schema-stage3.php');
   const created = [...schema.slice(schema.indexOf('function definitions')).matchAll(/^\s*'(\w+)' => '$/gm)].map((m) => m[1]);
-  const notServed = ['identities', 'email_codes', 'goal_baselines', 'plan_adjustments', 'foods', 'pauses'];
+  const notServed = ['identities', 'email_codes', 'goal_baselines', 'plan_adjustments', 'foods', 'pauses', 'member_notes', 'premium_grants', 'admin_devices'];
   for (const t of created) if (!notServed.includes(t)) expect(types, t).toMatch(new RegExp(`'table'\\s+=> '${t}'`));
   // Every reading type in the data model has its ranges.
   for (const t of ['blood_pressure', 'weight', 'waist', 'activity', 'sleep', 'water', 'mood', 'glucose']) expect(api).toMatch(new RegExp(`'${t}'\\s+=> array\\( 'value_1'`));

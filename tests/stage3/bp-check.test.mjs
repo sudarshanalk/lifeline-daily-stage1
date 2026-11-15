@@ -58,7 +58,7 @@ test('TC-FR3-50-AS-01', () => {
     }
   });
   expect(problems).toEqual([]);
-  expect(fixtures).toHaveLength(34);
+  expect(fixtures).toHaveLength(40); // the 34 signed cases and BP-35 to BP-40 (version 1.1, D3-50)
   expect(oracle.oracle_id).toBe('ORC-09');
   expect(oracle.results.map((o) => o.fixture_id).sort()).toEqual(fixtures.map((f) => f.id).sort());
   const script = readFileSync(resolve(root, 'oracles/orc-09-bp-check/bp_ref.py'));
@@ -211,12 +211,13 @@ test('TC-FR3-50-AS-03', () => {
 });
 
 test('TC-FR3-38-AS-04', () => {
-  // A reading that isn't possible (400/20; the bottom number not 10 below the top; out of range; a pulse outside
-  // 30-220) is refused with the message to check the numbers, and no category. A missing number is a form error.
+  // A reading that isn't possible (400/20; the bottom number not 10 below the top; out of range) is refused with the
+  // message to check the numbers, and no category. A missing number is a form error. Since version 1.1 (D3-50) a
+  // pulse outside 30-220 no longer refuses the reading: TC-FR3-38-AS-04 (pulse left out) below.
   const out = compute([
     { mode: 'single', systolic: 400, diastolic: 20 }, { mode: 'single', systolic: 130, diastolic: 125 },
     { mode: 'single', systolic: 59, diastolic: 40 }, { mode: 'single', systolic: 140, diastolic: 161 },
-    { mode: 'single', systolic: 120, diastolic: 80, pulse: 230 }, { mode: 'single', systolic: 120, diastolic: 80, pulse: 29 },
+    { mode: 'single', systolic: 400, diastolic: 20, pulse: 230 }, { mode: 'single', systolic: 130, diastolic: 125, pulse: 29 },
     { mode: 'single', systolic: 400, diastolic: 20, pregnant: 'yes' },
     { mode: 'single', diastolic: 80 }, { mode: 'single', systolic: 120, diastolic: 'x' }, { mode: 'weekly', systolic: 120, diastolic: 80 },
     { mode: 'single', systolic: 120, diastolic: 80, pregnant: 'maybe' }, { mode: 'single', systolic: 120, diastolic: 80, age: 17 },
@@ -225,6 +226,27 @@ test('TC-FR3-38-AS-04', () => {
   expect(out.slice(7).map((r) => r.error)).toEqual(['systolic', 'diastolic', 'mode', 'pregnant', 'age']);
   const text = JSON.parse(php(`echo json_encode(LLD_Members_BP_Check::wording(['refused.impossible']));`));
   expect(text['refused.impossible']).toBe("Please check the numbers: that reading isn't possible. The top number is usually 30 to 60 higher than the bottom one.");
+});
+
+test('TC-FR3-38-AS-04 (pulse left out, D3-50)', () => {
+  // Version 1.1: a pulse outside 30-220 never refuses the reading. The two numbers are checked as usual (the urgent
+  // alert first), the pulse is left out (no note, not kept), and the pulse line comes after the result with the number typed.
+  const out = compute([
+    { mode: 'single', systolic: 120, diastolic: 80, pulse: 230 }, { mode: 'single', systolic: 120, diastolic: 80, pulse: 29 },
+    { mode: 'single', systolic: 190, diastolic: 125, pulse: 225 }, { mode: 'single', systolic: 128, diastolic: 82, pulse: 220 },
+  ]);
+  for (const r of out.slice(0, 3)) {
+    expect(r).toMatchObject({ refused: false, pulse: null, pulse_left_out: true, pulse_direction: null });
+    expect(r.messages.at(-1)).toBe('pulse.left-out');
+    expect(r.messages).not.toContain('pulse.note');
+  }
+  expect(out[0]).toMatchObject({ category: 'normal', pulse_typed: '230' });
+  expect(out[1].pulse_typed).toBe('29');
+  expect(out[2]).toMatchObject({ urgent: true, warning_level: 'urgent' });
+  expect(out[2].messages[0]).toBe('urgent.alert');
+  expect(out[3]).toMatchObject({ pulse: 220, pulse_left_out: false, pulse_direction: 'high' }); // 220 is still possible
+  const text = JSON.parse(php(`echo json_encode(LLD_Members_BP_Check::wording(['pulse.left-out'], ['pulse_typed' => '230']));`));
+  expect(text['pulse.left-out']).toBe("We left out the pulse: 230 isn't possible for a resting pulse. Please check it and add it again.");
 });
 
 test('TC-FR3-46-AS-01', () => {

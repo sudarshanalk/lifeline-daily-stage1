@@ -141,6 +141,9 @@ class LLD_Members_Stage3_CLI {
 	 * [--approved-by=<who>]
 	 * : Required for everyone: who approved it and when.
 	 *
+	 * [--note=<why>]
+	 * : Why the switch changed; kept in the feature's history and the admin activity log (FR3-74).
+	 *
 	 * ## EXAMPLES
 	 *
 	 *     wp lld-members feature list
@@ -154,6 +157,9 @@ class LLD_Members_Stage3_CLI {
 		$feature = isset( $args[0] ) ? (string) $args[0] : 'list';
 		if ( 'all-on' === $feature || 'all-off' === $feature ) {
 			update_option( LLD_Members_Features::ALL_ON, 'all-on' === $feature ? 1 : 0, true );
+			if ( class_exists( 'LLD_Members_Admin_Log' ) ) {
+				LLD_Members_Admin_Log::add( 'all-on' === $feature ? 'feature_all_on' : 'feature_all_off', array( 'target' => 'all features', 'reason' => isset( $assoc['note'] ) ? (string) $assoc['note'] : '' ) );
+			}
 			WP_CLI::success( 'all-on' === $feature ? 'Every feature is now on for everyone, including features added later.' : 'Each feature follows its own switch again.' );
 			return;
 		}
@@ -175,7 +181,7 @@ class LLD_Members_Stage3_CLI {
 			WP_CLI::line( $feature . ': ' . LLD_Members_Features::state( $feature ) );
 			return;
 		}
-		$result = LLD_Members_Features::set( $feature, (string) $args[1], isset( $assoc['approved-by'] ) ? (string) $assoc['approved-by'] : '' );
+		$result = LLD_Members_Features::set( $feature, (string) $args[1], isset( $assoc['approved-by'] ) ? (string) $assoc['approved-by'] : '', isset( $assoc['note'] ) ? (string) $assoc['note'] : '' );
 		if ( is_wp_error( $result ) ) {
 			WP_CLI::error( $result->get_error_message() );
 		}
@@ -199,7 +205,12 @@ class LLD_Members_Stage3_CLI {
 			}
 			return;
 		}
+		$before = LLD_Members_Features::test_account_emails();
 		update_option( LLD_Members_Features::TEST_ACCOUNTS, array_values( array_map( 'strtolower', array_map( 'trim', $args ) ) ), true );
+		if ( class_exists( 'LLD_Members_Admin_Log' ) ) {
+			// Counts only: the log never copies member emails (FR3-86).
+			LLD_Members_Admin_Log::add( 'test_accounts_set', array( 'target' => 'test-account list', 'before' => count( $before ) . ' emails', 'after' => count( $args ) . ' emails' ) );
+		}
 		WP_CLI::success( count( $args ) . ' test account(s) set.' );
 	}
 

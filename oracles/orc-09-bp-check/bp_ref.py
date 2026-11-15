@@ -5,8 +5,8 @@ from the engine or the safety matrix code. Exact fractions, so rounding ties are
   Rounding : every reading and pulse to whole numbers, half-up, before any level or category
   Answers  : pregnant yes / not sure (or true / "true" / 1) is pregnant; dizzy and medicine are yes only for yes /
              true / "true" / 1 / "on", so "no" and "false" never count as yes
-  Refused  : systolic outside 60-260, diastolic outside 30-160, diastolic not at least 10 below systolic, pulse
-             outside 30-220 (sheet 4.4)
+  Refused  : systolic outside 60-260, diastolic outside 30-160, diastolic not at least 10 below systolic (sheet 4.4);
+             a pulse outside 30-220 is left out and the pulse line added, never refused (v1.1, D3-50)
   Urgent   : not pregnant, systolic >= 180 or diastolic >= 120 on any single reading (4.1), shown first
   Pregnancy: yes or not sure; >= 160 or >= 110 urgent; >= 140 or >= 90 same day; else the neutral line; no category
              (4.2, D3-19)
@@ -47,6 +47,10 @@ def is_pregnant(v) -> bool:
     if isinstance(v, bool): return v
     t = str(v if v is not None else "no").strip().lower().replace(" ", "").replace("-", "").replace("_", "")
     return t in ("yes", "notsure", "true", "1")
+
+
+def pulse_impossible(pulse) -> bool:
+    return pulse is not None and not (30 <= pulse <= 220)
 
 
 def impossible(s, d, pulse=None) -> bool:
@@ -92,6 +96,10 @@ def single(i: dict) -> dict:
     pregnant = is_pregnant(i.get("pregnant", "no"))
     dizzy = truthy(i.get("dizzy"))
     age80 = i.get("age") is not None and int(i["age"]) >= 80
+    left_out = False
+    if pulse_impossible(pulse) and not impossible(s, d):
+        # D3-50 (sheet v1.1, 4.4): the pulse is left out, the two numbers checked as usual, the pulse line shown
+        pulse, left_out = None, True
     if impossible(s, d, pulse):
         return result(refused=True, level="refused", keys=["refused.impossible"])
     keys, level, urgent, category = [], "none", False, None
@@ -118,12 +126,16 @@ def single(i: dict) -> dict:
     if pulse is not None and (pulse < 40 or pulse > 120):
         keys.append("pulse.note")
         if level in ("none", "pregnancy_neutral"): level = "pulse_high" if pulse > 120 else "pulse_low"
+    if left_out:
+        keys.append("pulse.left-out")
     if age80 and not pregnant:
         keys.append("age80.note")
         if level == "none": level = "age80_note"
     if truthy(i.get("medicine")):
         keys.append("medicine.note")
-    return result(category=category, level=level, urgent=urgent, keys=keys)
+    out = result(category=category, level=level, urgent=urgent, keys=keys)
+    out["pulse_left_out"] = left_out
+    return out
 
 
 def seven_day(i: dict) -> dict:
@@ -208,7 +220,7 @@ def main(root: Path) -> int:
     out = {
         "oracle_id": "ORC-09",
         "implementation": "Python exact-fraction reference for the Blood Pressure Reading Check (FR3-50, FR3-38, FR3-46): ISH 2020 office categories, the home-average categories and the 7-day average of daily means, the urgent, pregnancy, low and pulse levels and refused readings, from the signed sheet of 3 November 2026",
-        "versions": {"python": platform.python_version(), "sheet": "P3-58 v1.0 signed 2026-11-03"},
+        "versions": {"python": platform.python_version(), "sheet": "P3-58 v1.1 signed 2026-11-04 (D3-50)"},
         "source_hash": hashlib.sha256(me.read_bytes()).hexdigest(),
         "run_at": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "results": results,

@@ -64,6 +64,7 @@ class LLD_Members_Heart_Risk {
 		'band.very-high'          => 'Very high. Please make an appointment with your doctor to discuss this. Treatment can lower it a lot.',
 		'comparison'              => 'For comparison, {n} in 100 people like you would be expected to have a heart attack or stroke in the next 10 years',
 		'whatif'                  => 'The change that would lower your risk most: {factor}. {Stopping smoking | Bringing your blood pressure under {band top} | Bringing your cholesterol under {band top} mmol/L | Bringing your BMI under {band top}} would take it to about {new_risk} %.',
+		'whatif.under1'           => 'The change that would lower your risk most: {factor}. {Stopping smoking | Bringing your blood pressure under {band top} | Bringing your cholesterol under {band top} mmol/L | Bringing your BMI under {band top}} would take it to less than 1 %.', // CW-24 (Owner_Questions 105)
 		'whatif.diabetes'         => 'Keeping blood sugar well controlled also lowers risk.',
 		'whatif.none'             => 'Your changeable risk factors are already in the lowest bands. Keeping them there is the goal.',
 		'whatif.noFall'           => 'No single change would lower this estimate on the WHO chart right now. Not smoking, staying active and keeping your blood pressure and cholesterol in check still protect your heart over the years.', // CW-20 (Owner_Questions 95)
@@ -402,7 +403,8 @@ class LLD_Members_Heart_Risk {
 		$keys[] = 0 === $out['risk'] ? 'comparison.under1' : 'comparison';
 		$keys[] = 'model.' . $model;
 		if ( $whatif ) {
-			$keys[] = 'whatif';
+			// A move to a 0 % cell reads "would take it to less than 1 %" (CW-24, Owner_Questions 105).
+			$keys[] = 0 === $whatif[0]['risk'] ? 'whatif.under1' : 'whatif';
 		} elseif ( $lowest ) {
 			$keys[] = 'whatif.none';
 		} elseif ( null === $hidden || $hidden['fall'] <= 0 ) {

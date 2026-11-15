@@ -444,7 +444,7 @@ test('TC-FR2-34-AS-04', async ({ page, request }) => {
   for (const session of [1, 2]) {
     await page.goto(`/members/workout/?level=beginner&place=home&session=${session}`);
     await page.getByRole('button', { name: "I'm ready" }).click();
-    await page.getByRole('button', { name: 'Done' }).click();
+    await submitAndWait(page, page.getByRole('button', { name: 'Done' }));
   }
   await expect(page.getByText("progress isn't saved")).toBeVisible();
   const scan = await request.post('/wp-json/lld-members/v1/test/scan', { data: { member_id: created.member_id, scope: 'health' } });
@@ -458,7 +458,9 @@ test('TC-FR2-34-AS-04', async ({ page, request }) => {
   await signIn(page, member.email, password);
   const rows = async () => (await request.post('/wp-json/lld-members/v1/test/premium', { data: { email: member.email } })).json();
   await page.goto('/members/workout/?level=beginner&place=home');
-  await page.getByRole('button', { name: 'Choose this plan' }).click();
+  // wait for the page the plan's form leads to before reading the stored plan: in WebKit the read could run before the
+  // post was answered (seen in CI); the checks are unchanged
+  await submitAndWait(page, page.getByRole('button', { name: 'Choose this plan' }));
   expect((await rows()).plan).toMatchObject({ level: 'beginner', version_key: 'home', current_week: '1' });
   await page.goto('/members/workout/');
   await expect(page.getByRole('heading', { name: 'Week 1' })).toBeVisible();
@@ -466,12 +468,12 @@ test('TC-FR2-34-AS-04', async ({ page, request }) => {
   for (const session of [1, 2]) {
     await page.goto(`/members/workout/?session=${session}`);
     await page.getByRole('button', { name: "I'm ready" }).click();
-    await page.getByRole('button', { name: 'Done' }).click();
+    await submitAndWait(page, page.getByRole('button', { name: 'Done' }));
     await expect(page.getByText('Session saved.')).toBeVisible();
   }
   await page.goto('/members/workout/?session=1');
   await page.getByRole('button', { name: "I'm ready" }).click();
-  await page.getByRole('button', { name: 'Done' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Done' }));
   await expect(page.getByText('This session is already saved for week 1.')).toBeVisible();
   expect((await rows()).results.map((r) => r.programme_day)).toEqual(['1', '1']);
 
@@ -483,7 +485,7 @@ test('TC-FR2-34-AS-04', async ({ page, request }) => {
   await page.goto('/members/workout/?session=1');
   await expect(page.locator('#lld-timer')).toHaveText('20');
   await page.getByRole('button', { name: "I'm ready" }).click();
-  await page.getByRole('button', { name: 'Done' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Done' }));
   await expect(page.getByText('Session saved.')).toBeVisible();
   const saved = await rows();
   expect(saved.results).toHaveLength(3);
@@ -493,7 +495,7 @@ test('TC-FR2-34-AS-04', async ({ page, request }) => {
 
   // "Move up a level" moves up: intermediate from week 1, recorded as a change
   await page.goto('/members/workout/');
-  await page.getByRole('button', { name: 'Move up a level' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Move up a level' }));
   await expect(page.locator('#lld_level')).toHaveValue('intermediate');
   await expect(page.getByRole('heading', { name: 'Week 1' })).toBeVisible();
   const moved = await rows();

@@ -196,6 +196,25 @@ test('TC-FR3-38 history: Free 14 days, Premium all', () => {
   expect(out.limited).toBe(1);
 });
 
+test('TC-FR3-38-AS-04 (logging, D3-50): an impossible pulse is left out and the reading saved without it', () => {
+  const out = run(`
+    $left = LLD_Members_Health_Log::for_member(7, [
+      'reading_type'=>'blood_pressure','taken_at'=>'2026-11-03 08:00:00','value_1'=>190,'value_2'=>125,'value_3'=>225
+    ]);
+    $kept = LLD_Members_Health_Log::for_member(7, [
+      'reading_type'=>'blood_pressure','taken_at'=>'2026-11-03 08:00:00','value_1'=>128,'value_2'=>82,'value_3'=>125
+    ]);
+    return compact('left','kept');
+  `);
+  expect(out.left.error).toBeUndefined();
+  expect(out.left.row.value_3).toBeNull();
+  expect(out.left.row.urgent_shown).toBe(1); // the urgent alert still shows first
+  expect(out.left.warning).toMatchObject({ level: 'urgent', key: 'bp-check.urgent.alert', pulse_left_out: true });
+  expect(out.left.warning.pulse_message).toBe("We left out the pulse: 225 isn't possible for a resting pulse. Please check it and add it again.");
+  expect(out.kept.row.value_3).toBe(125);
+  expect(out.kept.warning.pulse_left_out).toBeUndefined();
+});
+
 test('for_member refuses impossible BP and sets urgent_shown', () => {
   const out = run(`
     $bad = LLD_Members_Health_Log::for_member(7, [

@@ -2216,7 +2216,7 @@ class LLD_Members_Programme {
 			}
 		} elseif ( 'finished' === $status ) {
 			$main .= '<p>' . esc_html( 'Finished on ' . self::nice_date( (string) $row->finished_on ) . '.' ) . '</p>';
-			$main .= '<p>Try the next track or this month\'s challenge.</p><p><a href="' . esc_url( home_url( '/members/tracks/' ) ) . '">Choose a track</a> <a href="' . esc_url( home_url( '/members/challenge/' ) ) . '">Monthly challenge</a></p>';
+			$main .= '<p>Try the next track or this month\'s challenge.</p><p class="lld-pill-actions"><a href="' . esc_url( home_url( '/members/tracks/' ) ) . '">Choose a track</a> <a href="' . esc_url( home_url( '/members/challenge/' ) ) . '">Monthly challenge</a></p>';
 		} elseif ( 'stopped' === $status && 'not_suitable' === (string) $row->stopped_why ) {
 			$main .= LLD_Members_Safety::not_suitable( $member_id, $title . ' is not suitable for you.', home_url( '/members/tracks/' ), 'Choose another track' );
 			LLD_Members_Personal::render( 'Your track', $main );
@@ -2248,6 +2248,22 @@ class LLD_Members_Programme {
 	}
 
 	/**
+	 * P3-36 D6: the topic icon and tone for a track's weeks, as the header shows the track's topic.
+	 *
+	 * @param string $key Track key.
+	 * @return array{0:string,1:string}
+	 */
+	private static function week_icon( $key ) {
+		$icons = array(
+			'healthy-weight' => array( 'weight', 'amber' ),
+			'blood-sugar'    => array( 'droplet', 'rose' ),
+			'fitness'        => array( 'flame', 'coral' ),
+			'sleep-stress'   => array( 'moon', 'violet' ),
+		);
+		return isset( $icons[ $key ] ) ? $icons[ $key ] : array( 'compass', 'stone' );
+	}
+
+	/**
 	 * The four-week timeline (SCR-10, package 6 of the prototype): each week done, open, not open yet or locked, with
 	 * its theme; the open week lists its seven days as done, skipped, today or upcoming; a locked week says when it
 	 * opens, or that it is part of Premium.
@@ -2265,8 +2281,17 @@ class LLD_Members_Programme {
 		for ( $week = 1; $week <= 4; $week++ ) {
 			$theme = self::week_item( 'lld_week', $track, $week, $member_id );
 			$first = ( $week - 1 ) * 7 + 1;
-			if ( $week * 7 <= $reached ) {
+			$done  = 0;
+			for ( $day = $first; $day < $first + 7; $day++ ) {
+				if ( ! empty( $results[ $day ] ) && in_array( 'done', $results[ $day ], true ) ) {
+					++$done;
+				}
+			}
+			// P3-36 A2 / FR3-112: a tick and "Completed" only when all seven days were done, not merely past by date.
+			if ( $week * 7 <= $reached && 7 === $done ) {
 				$state = 'done';
+			} elseif ( $week * 7 <= $reached ) {
+				$state = 'past';
 			} elseif ( $first > $limit ) {
 				$state = 'locked';
 			} elseif ( $first <= $reached ) {
@@ -2274,16 +2299,10 @@ class LLD_Members_Programme {
 			} else {
 				$state = 'not open yet';
 			}
-			$class = array( 'done' => 'is-done', 'locked' => 'is-locked', 'open' => 'is-open', 'not open yet' => 'is-ahead' );
-			$label = array( 'done' => 'Completed', 'locked' => 'Locked', 'open' => 'In progress', 'not open yet' => 'Not open yet' );
+			$class = array( 'done' => 'is-done', 'past' => 'is-past', 'locked' => 'is-locked', 'open' => 'is-open', 'not open yet' => 'is-ahead' );
+			$label = array( 'done' => 'Completed', 'past' => '', 'locked' => 'Locked', 'open' => 'In progress', 'not open yet' => 'Not open yet' );
 			$note  = '';
-			if ( 'done' === $state ) {
-				$done = 0;
-				for ( $day = $first; $day < $first + 7; $day++ ) {
-					if ( ! empty( $results[ $day ] ) && in_array( 'done', $results[ $day ], true ) ) {
-						$done++;
-					}
-				}
+			if ( 'done' === $state || 'past' === $state ) {
 				$note = $done . ' of 7 days done';
 			} elseif ( 'open' === $state ) {
 				$note = 'Day ' . min( $reached, $week * 7 ) . ' of ' . self::DAYS;
@@ -2294,7 +2313,7 @@ class LLD_Members_Programme {
 			}
 			$html .= '<li class="lld-week ' . $class[ $state ] . '"><div class="lld-week-head"><div>';
 			$html .= '<span class="lld-week-num" aria-hidden="true">' . ( 'done' === $state ? '&#10003;' : $week ) . '</span>';
-			$html .= '<div><h3>' . esc_html( 'Week ' . $week . ( $theme ? ': ' . (string) $theme['title'] : '' ) ) . '</h3>';
+			$html .= '<div><h3>' . ( function_exists( 'lld_members_topic_icon' ) ? lld_members_topic_icon( ...self::week_icon( (string) $row->track_key ) ) : '' ) . esc_html( 'Week ' . $week . ( $theme ? ': ' . (string) $theme['title'] : '' ) ) . '</h3>';
 			$html .= '<p class="lld-hint">' . esc_html( $note ) . '</p></div></div>';
 			$html .= '<span class="lld-week-state">' . esc_html( $label[ $state ] ) . '<span class="lld-sr"> (' . esc_html( $state ) . ')</span></span></div>';
 			if ( 'open' === $state ) {

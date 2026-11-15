@@ -10,9 +10,34 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Screens shown in the v2 look as a whole, whichever class draws them (owner's UI pack, group 2: join, sign-in,
+ * agreements and checkout; Owner_Questions 158). Look only: the markup, wording and rules are the built ones (153).
+ *
+ * @return string[] lld_screen values.
+ */
+function lld_members_v2_form_screens() {
+	return array( 'join', 'confirm', 'sign-in', 'two-step', 'reset', 'agreements', 'checkout' );
+}
+
+/**
+ * Member screens shown in the v2 look (owner's UI pack, group 3: coaching, food and logging, design files 17 to 42;
+ * group 4: account settings, help, data and deletion, and the public track, waitlist and starter-guide pages, design
+ * files 43 to 58; group 5: My account → Admin, design files 59 to 70; Owner_Questions 158). Look only: the markup, wording and rules are the built ones (153).
+ *
+ * @return string[] lld_screen values.
+ */
+function lld_members_v2_app_screens() {
+	return array( 'home', 'check-in', 'goal', 'goals', 'progress', 'track', 'tracks', 'screening', 'plan', 'review', 'suggestions', 'diary', 'food', 'food-scan', 'readings', 'meals', 'workout', 'challenge', 'badges', 'group', 'health', 'foundations', 'library', 'read', 'record', 'more',
+		'settings', 'subscription', 'help', 'data', 'withdraw', 'delete', 'email', 'unsubscribe', 'programmes', 'sales', 'waitlist', 'guide-confirm', 'guide-unsub',
+		'admin3' );
+}
+
+/**
  * Page shell: header, main, member menu and footer.
  *
- * @param array $args title, main, signed_in, status, wide (the 64rem column for the dashboard, track, meals, diary and pricing).
+ * @param array $args title, main, signed_in, status, wide (the 64rem column for the dashboard, track, meals, diary and pricing),
+ *                    v2 (Stage 3, owner's UI pack: the site's v2 header and footer from lld-tools around the same screen,
+ *                    when lld-tools is there; the screen's own markup, wording and scripts are unchanged).
  */
 function lld_members_layout( $args ) {
 	$status = isset( $args['status'] ) ? (int) $args['status'] : 200;
@@ -24,6 +49,15 @@ function lld_members_layout( $args ) {
 	$in    = ! empty( $args['signed_in'] );
 	$css   = plugins_url( 'assets/lld-members.css', LLD_MEMBERS_FILE );
 	$js    = plugins_url( 'assets/lld-members.js', LLD_MEMBERS_FILE );
+	$screen = (string) get_query_var( 'lld_screen' );
+	$form   = in_array( $screen, lld_members_v2_form_screens(), true );
+	$app    = in_array( $screen, lld_members_v2_app_screens(), true );
+	$v2     = ( ! empty( $args['v2'] ) || $form || $app ) && function_exists( 'lld_v2_members_shell_on' ) && lld_v2_members_shell_on();
+	// P3-36 C1 (FR3-07): the account menu (the chip's menu with Sign out) on every signed-in member page and, with
+	// 'account' => true, on every My account → Admin page, also for a helper without a member record.
+	$account = function_exists( 'is_user_logged_in' ) && is_user_logged_in() && ( $in || ! empty( $args['account'] ) );
+	$chip    = $account ? lld_members_chip( ! empty( $args['account'] ) ) : '';
+	$account = $account && '' !== $chip;
 	echo '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">';
 	echo '<meta name="viewport" content="width=device-width, initial-scale=1">';
 	echo '<meta name="robots" content="noindex">';
@@ -36,26 +70,60 @@ function lld_members_layout( $args ) {
 	}
 	echo '<link rel="stylesheet" href="' . esc_url( $css ) . '?ver=' . esc_attr( LLD_MEMBERS_VERSION ) . '">';
 	echo lld_members_font_faces();
-	echo '</head><body class="lld-members-body ' . ( $in ? 'lld-signed-in' : 'lld-signed-out' ) . '">';
+	echo $v2 ? lld_v2_members_shell( 'head' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
+	echo $account ? lld_members_account_assets( 'style' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- printed by WordPress.
+	echo '</head><body class="lld-members-body ' . ( $in ? 'lld-signed-in' : 'lld-signed-out' ) . ( $v2 ? ' lld-v2 lld-members-v2' . ( $form ? ' lld-members-v2-form' : '' ) . ( $app ? ' lld-members-v2-app' : '' ) : '' ) . ( $account ? ' lld-has-account-menu' : '' ) . '">';
+	echo $v2 ? lld_v2_members_shell( 'body' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed script.
 	echo '<a class="lld-skip" href="#lld-main">Skip to content</a>';
 	echo class_exists( 'LLD_Members_Quality' ) ? LLD_Members_Quality::preview_banner() : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
-	echo lld_members_header( $in );
+	// The sign-out form behind the chip's menu and the phone menu's Sign out, carrying the menu's links (stage3.js).
+	echo $account ? lld_members_sign_out_form( ! empty( $args['account'] ) && LLD_Members_Access::current_member_id() < 1 ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
+	if ( $v2 ) {
+		// The v2 header (lld-tools) shows the chip in place of its "My account" button, and Sign out in its phone menu.
+		$header_account = function () use ( $chip ) {
+			return lld_members_v2_header_chip( $chip );
+		};
+		$header_menu_end = function () {
+			return lld_members_v2_header_sign_out();
+		};
+		if ( $account && function_exists( 'add_filter' ) ) {
+			add_filter( 'lld_v2_header_account', $header_account );
+			add_filter( 'lld_v2_header_menu_end', $header_menu_end );
+		}
+		// The member page decides its own header: the public pages' account menu (below) stays out of it.
+		$GLOBALS['lld_members_layout_header'] = true;
+		echo lld_v2_members_shell( 'header' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
+		unset( $GLOBALS['lld_members_layout_header'] );
+		if ( $account && function_exists( 'remove_filter' ) ) {
+			remove_filter( 'lld_v2_header_account', $header_account );
+			remove_filter( 'lld_v2_header_menu_end', $header_menu_end );
+		}
+	} else {
+		echo lld_members_header( $in, $account ? $chip : '' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
+	}
+	// Group 3: the v2 header has no member menu, so a member bar under it carries the same five member links as the
+	// old header (the phone keeps its bottom bar). The chip sits in the header itself (P3-36 C1), so there is one.
+	if ( $v2 && $app && $in ) {
+		echo '<div class="lld-member-bar"><div class="lld-member-bar-inner"><nav class="lld-member-bar-nav" aria-label="Member pages">' . lld_members_menu_links( 'lld-member-nav-list' ) . '</nav>' . ( $account ? '' : lld_members_chip() ) . '</div></div>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
+	}
 	echo '<main id="lld-main" class="lld-main' . ( ! empty( $args['wide'] ) ? ' lld-wide' : '' ) . '" tabindex="-1">';
 	echo '<div class="lld-banner" id="lld-offline" hidden>You\'re offline</div>';
 	echo $main;
 	echo '</main>';
-	echo lld_members_footer();
+	echo $v2 ? lld_v2_members_shell( 'footer' ) : lld_members_footer(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
 	if ( $in ) {
 		echo lld_members_menu();
 	}
 	echo '<div class="lld-toasts" aria-live="polite"></div>';
 	echo '<script src="' . esc_url( $js ) . '?ver=' . esc_attr( LLD_MEMBERS_VERSION ) . '"></script>';
+	echo $v2 ? lld_v2_members_shell( 'scripts' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
 	// Stage 3 (P3-70): Google Analytics replaces Plausible, so the Plausible script stays off while GA4 is set.
 	if ( class_exists( 'LLD_Members_Growth' ) && apply_filters( 'lld_members_plausible_on', true ) ) {
 		echo LLD_Members_Growth::script();
 	}
 	// Stage 3 (P3-70, P3-71): the cookie banner and, after consent, the GA4 tag on public screens.
 	do_action( 'lld_members_layout_foot' );
+	echo $account ? lld_members_account_assets( 'script' ) : ''; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- printed by WordPress.
 	echo '</body></html>';
 }
 
@@ -64,9 +132,11 @@ function lld_members_layout( $args ) {
  * links, then Sign in and Join free for a visitor or the member chip for a member. On a desktop a member also gets
  * the five member items in a second row (Screen Design section 6); phones keep the bottom bar.
  *
- * @param bool $signed_in Whether a member is signed in.
+ * @param bool        $signed_in Whether a member is signed in.
+ * @param string|null $chip      The chip to show (P3-36 C1: the layout passes it, also for an admin helper without a
+ *                               member record); null builds the member's chip when signed in, as before.
  */
-function lld_members_header( $signed_in ) {
+function lld_members_header( $signed_in, $chip = null ) {
 	$public = array(
 		'Health Tools' => home_url( '/health-tools/' ),
 		'Articles'     => home_url( '/articles/' ),
@@ -81,7 +151,11 @@ function lld_members_header( $signed_in ) {
 	foreach ( $public as $label => $url ) {
 		$links .= '<li><a href="' . esc_url( $url ) . '"' . lld_members_current( $url ) . '>' . esc_html( $label ) . '</a></li>';
 	}
-	if ( ! $signed_in ) {
+	// Stage 3 (P3-87b): the Owner and Support helpers reach My account → Admin from every member page.
+	$admin = function_exists( 'is_user_logged_in' ) && is_user_logged_in() && current_user_can( 'lld_admin_panel' );
+	if ( $admin ) {
+		$links .= '<li class="lld-nav-cta lld-nav-admin"><a href="' . esc_url( home_url( '/members/admin/' ) ) . '"' . lld_members_current( home_url( '/members/admin/' ) ) . '>Admin</a></li>';
+	} elseif ( ! $signed_in ) {
 		$links .= '<li class="lld-nav-signin"><a href="' . esc_url( $visitor['Sign in'] ) . '">Sign in</a></li>';
 		$links .= '<li class="lld-nav-cta"><a href="' . esc_url( $visitor['Join free'] ) . '">Join free</a></li>';
 	}
@@ -89,10 +163,13 @@ function lld_members_header( $signed_in ) {
 	$html .= '<a class="lld-logo" href="' . esc_url( home_url( '/' ) ) . '">';
 	$html .= '<span><span class="lld-logo-name">Lifeline Daily</span><span class="lld-logo-tagline" aria-hidden="true">Start Small, Change Big, Live Healthier</span></span></a>';
 	$html .= '<nav aria-label="Site"><ul class="lld-public-nav">' . $links . '</ul>';
-	if ( $signed_in ) {
-		$html .= lld_members_chip();
+	if ( null === $chip ) {
+		$chip = $signed_in ? lld_members_chip() : '';
 	}
-	$html .= '<details class="lld-burger"><summary aria-label="Menu">' . lld_members_icon( 'menu' ) . '</summary><ul class="lld-burger-panel">' . $links . '</ul></details>';
+	$html .= $chip;
+	// P3-36 C1 (TC-FR3-07-AS-05): on a phone the menu holds Sign out, posting the layout's sign-out form.
+	$out   = '' !== $chip ? '<li class="lld-burger-signout">' . lld_members_sign_out_button( 'lld-burger-signout-button' ) . '</li>' : '';
+	$html .= '<details class="lld-burger"><summary aria-label="Menu">' . lld_members_icon( 'menu' ) . '</summary><ul class="lld-burger-panel">' . $links . $out . '</ul></details>';
 	$html .= '</nav></div>';
 	if ( $signed_in ) {
 		$html .= '<div class="lld-member-nav">' . lld_members_menu_links( 'lld-member-nav-list' ) . '</div>';
@@ -154,23 +231,21 @@ function lld_members_icon( $name ) {
 /**
  * The member chip: initial, first name and the PREMIUM or FREE badge. The badge follows the confirmed access state
  * (and the owner's preview), never a payment that Stripe has not confirmed (Screen Design principle 10).
+ *
+ * @param bool $helper P3-36 C1: on My account → Admin, a signed-in helper without a member record gets a chip with the
+ *                     account's name and no badge, leading to Admin, so the account menu (and Sign out) is there too.
  */
-function lld_members_chip() {
+function lld_members_chip( $helper = false ) {
 	$member_id = LLD_Members_Access::current_member_id();
 	if ( $member_id < 1 ) {
-		return '';
+		return $helper ? lld_members_helper_chip() : '';
 	}
 	global $wpdb;
 	$row   = $wpdb->get_row( $wpdb->prepare( 'SELECT first_name, display_name FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
 	$name  = $row && '' !== trim( (string) $row->first_name ) ? trim( (string) $row->first_name ) : ( $row && '' !== trim( (string) $row->display_name ) ? trim( (string) $row->display_name ) : 'Member' );
-	$state = strtolower( LLD_Members_Access::access_state( $member_id ) );
-	if ( 'free' === $state ) {
-		$premium = false;
-	} elseif ( 0 === strpos( $state, 'premium' ) && false === strpos( $state, 'ended' ) ) {
-		$premium = true;
-	} else {
-		$premium = class_exists( 'LLD_Members_Billing' ) && LLD_Members_Billing::has_premium( $member_id );
-	}
+	// P3-36 A1: the same answer as Account → Membership and My subscription.
+	$status  = LLD_Members_Access::premium_status( $member_id );
+	$premium = $status['premium'];
 	$initial = function_exists( 'mb_substr' ) ? mb_substr( $name, 0, 1 ) : substr( $name, 0, 1 );
 	$html    = '<a class="lld-chip" href="' . esc_url( home_url( '/members/settings/' ) ) . '">';
 	$html   .= '<span class="lld-chip-initial" aria-hidden="true">' . esc_html( strtoupper( $initial ) ) . '</span>';
@@ -178,6 +253,172 @@ function lld_members_chip() {
 	$html   .= '<span class="lld-chip-badge' . ( $premium ? '' : ' is-free' ) . '">' . ( $premium ? 'PREMIUM' : 'FREE' ) . '</span>';
 	$html   .= '<span class="lld-sr">, profile and settings</span></a>';
 	return $html;
+}
+
+/**
+ * The chip for a signed-in admin helper who has no member record (My account → Admin only).
+ */
+function lld_members_helper_chip() {
+	if ( ! function_exists( 'wp_get_current_user' ) || ! is_user_logged_in() ) {
+		return '';
+	}
+	$user    = wp_get_current_user();
+	$name    = trim( (string) $user->display_name );
+	$name    = '' !== $name ? $name : trim( (string) $user->user_login );
+	$name    = '' !== $name ? preg_split( '/\s+/', $name )[0] : 'Admin';
+	$initial = function_exists( 'mb_substr' ) ? mb_substr( $name, 0, 1 ) : substr( $name, 0, 1 );
+	$html    = '<a class="lld-chip lld-chip-helper" href="' . esc_url( home_url( '/members/admin/' ) ) . '">';
+	$html   .= '<span class="lld-chip-initial" aria-hidden="true">' . esc_html( function_exists( 'mb_strtoupper' ) ? mb_strtoupper( $initial ) : strtoupper( $initial ) ) . '</span>';
+	$html   .= '<span class="lld-chip-name">' . esc_html( $name ) . '</span>';
+	$html   .= '<span class="lld-sr">, Admin</span></a>';
+	return $html;
+}
+
+/**
+ * The menu behind the chip (P3-36 C1, FR3-07): the links stage3.js builds into the menu, in order.
+ *
+ * @param bool $helper A helper without a member record: Help only (the member pages ask them to sign in).
+ * @return array<string,string> Key => address.
+ */
+function lld_members_account_links( $helper = false ) {
+	if ( $helper ) {
+		return array( 'help' => home_url( '/members/help/' ) );
+	}
+	return array(
+		'profile'      => home_url( '/members/settings/?section=profile' ),
+		'subscription' => home_url( '/members/settings/?section=membership' ),
+		'data'         => home_url( '/members/settings/?section=privacy' ),
+		'help'         => home_url( '/members/help/' ),
+	);
+}
+
+/**
+ * The hidden sign-out form behind the account menu: a POST to the Stage 2 sign-out (the More screen) with its nonce,
+ * which ends this browser's WordPress session only and goes to /members/sign-in/?signed_out=1. It carries the menu's links, so
+ * stage3.js builds the chip's menu on every page that prints it. Never a logout link.
+ *
+ * @param bool $helper A helper without a member record.
+ */
+function lld_members_sign_out_form( $helper = false ) {
+	$html  = '<form method="post" action="' . esc_url( home_url( '/members/more/' ) ) . '" id="lld-sign-out" class="lld-sign-out" hidden';
+	$html .= ' data-lld-menu="' . esc_attr( (string) wp_json_encode( lld_members_account_links( $helper ) ) ) . '" data-lld-sign-out="lld-sign-out">';
+	$html .= '<input type="hidden" name="lld_sign_out_nonce" value="' . esc_attr( wp_create_nonce( 'lld_sign_out' ) ) . '">';
+	$html .= '</form>';
+	return $html;
+}
+
+/**
+ * A visible Sign out button that posts the layout's sign-out form (the phone menus).
+ *
+ * @param string $class CSS classes.
+ */
+function lld_members_sign_out_button( $class ) {
+	return '<button type="submit" form="lld-sign-out" class="' . esc_attr( $class ) . '">Sign out</button>';
+}
+
+/**
+ * The account menu's stylesheet (head) or the Stage 3 script that builds the menu (foot), printed through WordPress so
+ * a screen that also prints the same handle does not load it twice.
+ *
+ * @param string $part 'style' or 'script'.
+ */
+function lld_members_account_assets( $part ) {
+	if ( ! function_exists( 'wp_print_styles' ) || ! function_exists( 'plugins_url' ) ) {
+		return '';
+	}
+	ob_start();
+	if ( 'style' === $part ) {
+		wp_register_style( 'lld-members-stage3-account', plugins_url( 'assets/stage3-account.css', LLD_MEMBERS_FILE ), array(), LLD_MEMBERS_VERSION );
+		wp_print_styles( array( 'lld-members-stage3-account' ) );
+	} else {
+		wp_register_script( 'lld-members-stage3', plugins_url( 'assets/stage3.js', LLD_MEMBERS_FILE ), array(), LLD_MEMBERS_VERSION, true );
+		wp_print_scripts( array( 'lld-members-stage3' ) );
+	}
+	return (string) ob_get_clean();
+}
+
+/**
+ * The chip in the v2 header, in place of its "My account" button (P3-36 C1).
+ *
+ * @param string $chip The chip (lld_members_chip()).
+ */
+function lld_members_v2_header_chip( $chip ) {
+	return '<div class="lld-chip-wrap lld-v2-account">' . $chip . '</div>';
+}
+
+/**
+ * Sign out in the v2 header's phone menu, posting the sign-out form (P3-36 C1, TC-FR3-07-AS-05).
+ */
+function lld_members_v2_header_sign_out() {
+	return lld_members_sign_out_button( 'lld-v2-menu-signout col-span-2 px-4 py-3 rounded-xl bg-white bg-day-card border border-[#E0D8CB] border-day-soft' );
+}
+
+/**
+ * The public v2 pages (homepage, categories, articles, Health Tools; lld-tools' v2 header) show a signed-in member the
+ * same account menu as the member pages (P3-36 C1 follow-up, FR3-07), instead of a plain "My account" link: the chip,
+ * the hidden sign-out form that carries the menu's links and nonce, Sign out in the phone menu, and the menu's
+ * stylesheet and script (stage3.js builds the menu, as on the member pages). A member page's layout prints its own
+ * header (lld_members_layout()), so these leave it alone. A visitor, or a signed-in account without a member record
+ * (which keeps "My account" and Admin), sees the header as before.
+ *
+ * Caching: the v2 header already chooses signed-in or signed-out on the server (is_user_logged_in()), and LiteSpeed
+ * serves signed-in visitors no shared copy. The menu adds the member's name and a nonce, so the page that shows it is
+ * also marked never to be cached (LiteSpeed and DONOTCACHEPAGE); a visitor's page is not changed and stays cacheable.
+ *
+ * @param string $html What an earlier filter put in the header ('' when nothing did).
+ */
+function lld_members_public_header_account( $html ) {
+	if ( '' !== (string) $html || ! empty( $GLOBALS['lld_members_layout_header'] ) || ! function_exists( 'is_user_logged_in' ) || ! is_user_logged_in() ) {
+		return $html;
+	}
+	$chip = lld_members_chip();
+	if ( '' === $chip ) {
+		return $html;
+	}
+	$GLOBALS['lld_members_public_account'] = true;
+	if ( function_exists( 'do_action' ) ) {
+		do_action( 'litespeed_control_set_nocache', 'lld account menu' );
+	}
+	if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+		define( 'DONOTCACHEPAGE', true );
+	}
+	if ( function_exists( 'wp_enqueue_script' ) && function_exists( 'plugins_url' ) ) {
+		// Printed in the page foot by wp_footer(); the same handle as the member pages, so it never loads twice.
+		wp_enqueue_script( 'lld-members-stage3', plugins_url( 'assets/stage3.js', LLD_MEMBERS_FILE ), array(), LLD_MEMBERS_VERSION, true );
+	}
+	return lld_members_account_assets( 'style' ) . lld_members_v2_header_chip( $chip ) . lld_members_sign_out_form();
+}
+
+/**
+ * Sign out in the public v2 header's phone menu, once the account menu is in that header.
+ *
+ * @param string $html What an earlier filter put at the end of the phone menu.
+ */
+function lld_members_public_header_menu_end( $html ) {
+	if ( '' !== (string) $html || empty( $GLOBALS['lld_members_public_account'] ) || ! empty( $GLOBALS['lld_members_layout_header'] ) ) {
+		return $html;
+	}
+	return lld_members_v2_header_sign_out();
+}
+
+/**
+ * The body class the account menu's v2 header styles key on (stage3-account.css), on public pages for a signed-in
+ * member. The stylesheet itself is printed only where the menu is, so the class does nothing elsewhere.
+ *
+ * @param array $classes Body classes.
+ */
+function lld_members_public_body_class( $classes ) {
+	if ( function_exists( 'is_user_logged_in' ) && is_user_logged_in() && class_exists( 'LLD_Members_Access' ) && LLD_Members_Access::current_member_id() > 0 ) {
+		$classes[] = 'lld-v2-account-menu';
+	}
+	return $classes;
+}
+
+if ( function_exists( 'add_filter' ) ) {
+	// After any other filter (priority 20), and only when the header is still empty.
+	add_filter( 'lld_v2_header_account', 'lld_members_public_header_account', 20 );
+	add_filter( 'lld_v2_header_menu_end', 'lld_members_public_header_menu_end', 20 );
+	add_filter( 'body_class', 'lld_members_public_body_class' );
 }
 
 /**
@@ -210,7 +451,7 @@ function lld_members_footer() {
 	$html  = '<footer class="lld-footer"><div class="lld-footer-inner"><p>&copy; ' . esc_html( gmdate( 'Y' ) ) . ' Lifeline Daily. Health information, not medical advice.</p>';
 	$html .= '<ul><li><a href="' . esc_url( home_url( '/medical-disclaimer/' ) ) . '">Medical disclaimer</a></li>';
 	$html .= '<li><a href="' . esc_url( home_url( '/privacy/' ) ) . '">Privacy policy</a></li>';
-	$html .= '<li><a href="' . esc_url( home_url( '/terms/' ) ) . '">Terms of membership</a></li>';
+	$html .= '<li><a href="' . esc_url( home_url( '/terms-conditions/' ) ) . '">Terms of membership</a></li>';
 	// Stage 3 (P3-71): "Cookie settings" while Google Analytics is set; empty otherwise, so Stage 2 is unchanged.
 	$html .= (string) apply_filters( 'lld_members_footer_links', '' );
 	$html .= '</ul></div></footer>';
@@ -516,3 +757,29 @@ function lld_state_not_allowed( $level = 'h1' ) {
 	return '<' . $tag . '>This page isn\'t available</' . $tag . '>';
 }
 
+/**
+ * P3-36 D6: a decorative topic icon from the header's set (lld-tools v2 header: Tabler Icons outline, MIT licence,
+ * tabler.io), drawn inline in a soft coloured circle with the header's tone classes. Always aria-hidden, so it never
+ * changes the name of the link or heading it sits in. Unknown names fall back to the compass, as in the header.
+ *
+ * @param string $icon weight, droplet, flame, moon, heart, leaf, hourglass, hearts, stethoscope or compass.
+ * @param string $tone amber, rose, coral, violet, teal, stone, pink or blue.
+ */
+function lld_members_topic_icon( $icon, $tone = 'stone' ) {
+	$paths = array(
+		'weight' => '<path d="M3 3m0 4a4 4 0 0 1 4 -4h10a4 4 0 0 1 4 4v10a4 4 0 0 1 -4 4h-10a4 4 0 0 1 -4 -4z"/><path d="M12 7c1.956 0 3.724 .802 5 2.095l-2.956 2.904a3 3 0 0 0 -2.038 -.799a3 3 0 0 0 -2.038 .798l-2.956 -2.903a6.979 6.979 0 0 1 5 -2.095z"/>',
+		'droplet' => '<path d="M7.502 19.423c2.602 2.105 6.395 2.105 8.996 0c2.602 -2.105 3.262 -5.708 1.566 -8.546l-4.89 -7.26c-.42 -.625 -1.287 -.803 -1.936 -.397a1.376 1.376 0 0 0 -.41 .397l-4.893 7.26c-1.695 2.838 -1.035 6.441 1.567 8.546z"/>',
+		'flame' => '<path d="M12 10.941c2.333 -3.308 .167 -7.823 -1 -8.941c0 3.395 -2.235 5.299 -3.667 6.706c-1.43 1.408 -2.333 3.621 -2.333 5.588c0 3.704 3.134 6.706 7 6.706s7 -3.002 7 -6.706c0 -1.712 -1.232 -4.403 -2.333 -5.588c-2.084 3.353 -3.257 3.353 -4.667 2.235"/>',
+		'moon' => '<path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z"/>',
+		'heart' => '<path d="M19.5 13.572l-7.5 7.428l-2.896 -2.868m-6.117 -8.104a5 5 0 0 1 9.013 -3.022a5 5 0 1 1 7.5 6.572"/><path d="M3 13h2l2 3l2 -6l1 3h3"/>',
+		'leaf' => '<path d="M5 21c.5 -4.5 2.5 -8 7 -10"/><path d="M9 18c6.218 0 10.5 -3.288 11 -12v-2h-4.014c-9 0 -11.986 4 -12 9c0 1 0 3 2 5h3z"/>',
+		'hourglass' => '<path d="M6.5 7h11"/><path d="M6.5 17h11"/><path d="M6 20v-2a6 6 0 1 1 12 0v2a1 1 0 0 1 -1 1h-10a1 1 0 0 1 -1 -1z"/><path d="M6 4v2a6 6 0 1 0 12 0v-2a1 1 0 0 0 -1 -1h-10a1 1 0 0 0 -1 1z"/>',
+		'hearts' => '<path d="M14.017 18l-2.017 2l-7.5 -7.428a5 5 0 1 1 7.5 -6.566a5 5 0 0 1 8.153 5.784"/><path d="M15.99 20l4.197 -4.223a2.81 2.81 0 0 0 0 -3.948a2.747 2.747 0 0 0 -3.91 -.007l-.28 .282l-.279 -.283a2.747 2.747 0 0 0 -3.91 -.007a2.81 2.81 0 0 0 -.007 3.948l4.182 4.238z"/>',
+		'stethoscope' => '<path d="M6 4h-1a2 2 0 0 0 -2 2v3.5h0a5.5 5.5 0 0 0 11 0v-3.5a2 2 0 0 0 -2 -2h-1"/><path d="M8 15a6 6 0 1 0 12 0v-3"/><path d="M11 3v2"/><path d="M6 3v2"/><path d="M20 10m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0"/>',
+		'compass' => '<path d="M8 16l2 -6l6 -2l-2 6l-6 2"/><path d="M12 12m-9 0a9 9 0 1 0 18 0a9 9 0 1 0 -18 0"/><path d="M12 3l0 2"/><path d="M12 19l0 2"/><path d="M3 12l2 0"/><path d="M19 12l2 0"/>',
+	);
+	$tones = array( 'amber', 'rose', 'coral', 'violet', 'teal', 'stone', 'pink', 'blue' );
+	$path  = isset( $paths[ $icon ] ) ? $paths[ $icon ] : $paths['compass'];
+	$tone  = in_array( $tone, $tones, true ) ? $tone : 'stone';
+	return '<span class="lld-topic-icon lld-member-icon tone-' . $tone . '" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" focusable="false">' . $path . '</svg></span>';
+}

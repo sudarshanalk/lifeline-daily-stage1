@@ -285,6 +285,17 @@ class LLD_Members_Stage3_API {
 				),
 				'required' => array( 'from_date', 'to_date' ),
 			),
+			// Barcode lookup (P3-44, FR3-37): GET /me/food-barcode?code=… finds the product. Premium (access tiers) and
+			// behind the barcode switch; it reads no health data, and logging the product goes through food-log.
+			'food-barcode'       => array(
+				'table'    => 'foods',
+				'feature'  => 'barcode',
+				'health'   => false,
+				'computed' => 'barcode',
+				'write'    => false,
+				'sealed'   => array(),
+				'fields'   => array(),
+			),
 			// Weekly summary and suggestions (P3-43).
 			'food-week'          => array(
 				'table'    => 'food_log',
@@ -460,6 +471,7 @@ class LLD_Members_Stage3_API {
 	 * @return array{0:int,1:array<string,mixed>}|WP_REST_Response Member number and type, or the refusal.
 	 */
 	private static function gate( $request ) {
+		self::keep_query_type( $request );
 		$type  = (string) $request['type'];
 		$types = self::types();
 		if ( ! isset( $types[ $type ] ) ) {
@@ -473,6 +485,12 @@ class LLD_Members_Stage3_API {
 		}
 		if ( $member_id < 1 ) {
 			return self::refuse( 401, 'Sign in.' );
+		}
+		// Terms first (P3-36 A6, FR3-113): the same rule as the screens. Deleting your own item stays open, so a member
+		// can always remove their data (FR3-68); export and erasure are their own pages, which the gate leaves open.
+		$terms = self::terms_refusal( $member_id, self::method( $request ) );
+		if ( null !== $terms ) {
+			return $terms;
 		}
 		if ( ! empty( $def['health'] ) && ! LLD_Members_Access::has_health_consent( $member_id ) ) {
 			return self::refuse( 403, 'Health consent is needed first.' );
@@ -497,11 +515,15 @@ class LLD_Members_Stage3_API {
 		$tool      = (string) $request['tool'];
 		$member_id = LLD_Members_Access::current_member_id();
 		$engines   = self::calculator_engines();
-		if ( ! isset( $engines[ $tool ] ) || ! class_exists( $engines[ $tool ] ) || ! LLD_Members_Features::enabled( 'calculators_new', $member_id ) ) {
+		if ( ! isset( $engines[ $tool ] ) || ! class_exists( $engines[ $tool ] ) || ! LLD_Members_Features::enabled( 'calculators_new', $member_id ) || ! LLD_Members_Features::tool_enabled( $tool, $member_id ) ) {
 			return self::refuse( 404, 'Not available.' );
 		}
 		if ( $member_id < 1 ) {
 			return self::refuse( 401, 'Sign in.' );
+		}
+		$terms = self::terms_refusal( $member_id, 'POST' );
+		if ( null !== $terms ) {
+			return $terms;
 		}
 		$params = $request->get_json_params();
 		$params = is_array( $params ) ? $params : array();
@@ -580,6 +602,82 @@ class LLD_Members_Stage3_API {
 			$result['saved'] = $id > 0 ? $id : null;
 		}
 		return new WP_REST_Response( $result, 200 );
+	}
+
+	/**
+	 * The calculator pages (P3-57 to P3-5A screens, includes/stage3/screens/class-calculator-pages.php) run an engine
+	 * the same way the calculate route does: for a signed-in member through calculate_engine() (profile pre-fills,
+	 * the blood-pressure 7-day readings); for a visitor, the engine alone, with no profile and no readings.
+	 *
+	 * @param string $tool      Engine slug from calculator_engines().
+	 * @param array  $params    The answers on the page.
+	 * @param int    $member_id Member number, or 0 for a visitor.
+	 * @return array The engine's result plus `wording`, or array( 'error' => field ).
+	 */
+	public static function run_page_calculator( $tool, array $params, $member_id ) {
+		$engines = self::calculator_engines();
+		if ( ! isset( $engines[ $tool ] ) || ! class_exists( $engines[ $tool ] ) ) {
+			return array( 'error' => 'tool' );
+		}
+		$class = $engines[ $tool ];
+		if ( $member_id < 1 ) {
+			if ( 'LLD_Members_BP_Check' === $class && LLD_Members_BP_Check::home_mode( isset( $params['mode'] ) ? $params['mode'] : null ) ) {
+				return array( 'error' => 'mode' ); // the 7-day average needs the member's own logged readings
+			}
+			$result = $class::compute( $params );
+			if ( isset( $result['error'] ) ) {
+				return $result;
+			}
+			$result['wording'] = $class::wording( isset( $result['messages'] ) ? $result['messages'] : array(), $result );
+			return $result;
+		}
+		$response = self::calculate_engine( $class, $params, (int) $member_id );
+		$data     = $response->get_data();
+		if ( 200 !== $response->get_status() ) {
+			$message = isset( $data['message'] ) ? (string) $data['message'] : '';
+			return array( 'error' => preg_match( '/^Check (\w+)\.$/', $message, $m ) ? $m[1] : 'input' );
+		}
+		return $data;
+	}
+
+	/**
+	 * Save a calculator page's result for the signed-in member through the same path as
+	 * POST /me/calculator-results (gate, safety refusals, P3-5B for_save, sealing): the page never writes the table
+	 * itself.
+	 *
+	 * @param array $payload calculator, headline, unit, band, calculator_version, result, inputs.
+	 * @return true|string True, or the refusal message.
+	 */
+	public static function save_page_result( array $payload ) {
+		$request = new WP_REST_Request( 'POST', '/lld-members/v1/me/calculator-results' );
+		$request->set_url_params( array( 'type' => 'calculator-results' ) );
+		$request->set_header( 'content-type', 'application/json' );
+		$request->set_body( (string) wp_json_encode( $payload ) );
+		$response = self::create( $request );
+		if ( $response instanceof WP_REST_Response && in_array( $response->get_status(), array( 200, 201 ), true ) ) {
+			return true;
+		}
+		$data = $response instanceof WP_REST_Response ? $response->get_data() : array();
+		return isset( $data['message'] ) ? (string) $data['message'] : 'That result could not be saved.';
+	}
+
+	/**
+	 * The signed-in member's saved results for one calculator, as GET /me/calculator-results?calculator= returns them
+	 * (P3-5B present_list: Free the latest only, Premium the history and the change).
+	 *
+	 * @param string $calculator Saved-results calculator name (heart_risk, bp_check …).
+	 * @return array|null The list view, or null when the member may not read them.
+	 */
+	public static function page_saved_results( $calculator ) {
+		$request = new WP_REST_Request( 'GET', '/lld-members/v1/me/calculator-results' );
+		$request->set_url_params( array( 'type' => 'calculator-results' ) );
+		$request->set_query_params( array( 'calculator' => (string) $calculator ) );
+		$response = self::list_rows( $request );
+		if ( ! $response instanceof WP_REST_Response || 200 !== $response->get_status() ) {
+			return null;
+		}
+		$data = $response->get_data();
+		return is_array( $data ) ? $data : null;
 	}
 
 	/**
@@ -720,8 +818,11 @@ class LLD_Members_Stage3_API {
 				'from'       => (string) $request->get_param( 'from' ),
 				'to'         => (string) $request->get_param( 'to' ),
 				'unit'       => (string) $request->get_param( 'unit' ),
+				'code'       => (string) $request->get_param( 'code' ),
 			);
-			if ( in_array( $def['computed'], array( 'trend', 'activity-week' ), true ) ) {
+			if ( 'barcode' === $def['computed'] ) {
+				$rows = LLD_Members_Barcode::view( $member_id, $query );
+			} elseif ( in_array( $def['computed'], array( 'trend', 'activity-week' ), true ) ) {
 				$rows = LLD_Members_Health_Log::view( $def['computed'], $member_id, $query );
 			} elseif ( in_array( $def['computed'], array( 'week', 'suggest' ), true ) ) {
 				$rows = LLD_Members_Recipes::view( $def['computed'], $member_id, $query );
@@ -745,20 +846,23 @@ class LLD_Members_Stage3_API {
 			$limit = (int) $request->get_param( 'limit' );
 			$rows  = LLD_Members_Stage3_Data::rows( $def['table'], $member_id, $def['sealed'], null === $since ? '' : $since, $limit > 0 ? $limit : 500 );
 			if ( 'food_log' === $def['table'] ) {
-				$rows = LLD_Members_Food_Log::limit_history( $rows, LLD_Members_Food_Log::premium( $member_id ), gmdate( 'Y-m-d' ) );
+				$rows = LLD_Members_Food_Log::limit_history( $rows, LLD_Members_Food_Log::premium( $member_id ), class_exists( 'LLD_Members_Health_Log' ) ? LLD_Members_Health_Log::local_date( lld_members_now_mysql( $member_id ), LLD_Members_Health_Log::zone_for( $member_id ) ) : gmdate( 'Y-m-d' ) ); // the member's own today: entry dates are their local days
 			}
 			if ( 'readings' === $def['table'] ) {
 				$premium = LLD_Members_Food_Log::premium( $member_id );
-				$rows    = LLD_Members_Health_Log::limit_history( $rows, $premium, substr( lld_members_now_mysql( $member_id ), 0, 10 ) ); // the member's own today, as the readings were saved by it
+				$zone    = LLD_Members_Health_Log::zone_for( $member_id ); // readings are stored in UTC; days are the member's own
+				$rows    = LLD_Members_Health_Log::limit_history( $rows, $premium, LLD_Members_Health_Log::local_date( lld_members_now_mysql( $member_id ), $zone ), $zone );
 				$rows    = LLD_Members_Health_Log::filter(
 					$rows,
 					self::query_type( $request ),
 					(string) $request->get_param( 'from' ),
-					(string) $request->get_param( 'to' )
+					(string) $request->get_param( 'to' ),
+					$zone
 				);
 			}
 		}
 		$rows = apply_filters( 'lld_members_stage3_api_rows', $rows, (string) $request['type'], $member_id ); // the safety matrix strips what the member must not see (FR3-69)
+		$rows = self::amounts_shown( $rows, (string) $request['type'], $member_id );
 		if ( $computed ) {
 			return new WP_REST_Response( $rows, 200 );
 		}
@@ -772,6 +876,41 @@ class LLD_Members_Stage3_API {
 	}
 
 	/**
+	 * A custom food's barcode is stored as digits only, so a scan finds it however it was typed (P3-44).
+	 *
+	 * @param array<string,mixed> $def   Type definition.
+	 * @param array<string,mixed> $clean Validated fields.
+	 * @return array<string,mixed>
+	 */
+	private static function barcode_digits( array $def, array $clean ) {
+		if ( 'custom_foods' === $def['table'] && array_key_exists( 'barcode', $clean ) && null !== $clean['barcode'] ) {
+			$digits           = preg_replace( '/\D/', '', (string) $clean['barcode'] );
+			$clean['barcode'] = is_string( $digits ) && '' !== $digits ? $digits : null;
+		}
+		return $clean;
+	}
+
+	/**
+	 * A list may be asked for one reading type (?type=weight, on the history and trend lists). WordPress hands a
+	 * query value back before the route's own {type}, so $request['type'] became "weight" and every such request
+	 * was answered "Not available." (found on the Log a reading page, P3-36 B2). The query value is moved to its
+	 * own name here, first thing in gate(), so $request['type'] is always the route's type; query_type() reads it.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
+	private static function keep_query_type( $request ) {
+		if ( ! is_object( $request ) || ! method_exists( $request, 'get_query_params' ) || ! method_exists( $request, 'set_query_params' ) ) {
+			return;
+		}
+		$query = $request->get_query_params();
+		if ( is_array( $query ) && array_key_exists( 'type', $query ) ) {
+			$query['lld_reading_type'] = $query['type'];
+			unset( $query['type'] );
+			$request->set_query_params( $query );
+		}
+	}
+
+	/**
 	 * The reading type asked for in the query string (?type=weight). Never get_param( 'type' ): with no query value it
 	 * falls back to the route's own {type} ("readings"), which matches no reading and empties every list.
 	 *
@@ -779,7 +918,8 @@ class LLD_Members_Stage3_API {
 	 */
 	private static function query_type( $request ) {
 		$query = $request->get_query_params();
-		return isset( $query['type'] ) && is_scalar( $query['type'] ) ? (string) $query['type'] : '';
+		$type  = isset( $query['lld_reading_type'] ) ? $query['lld_reading_type'] : ( isset( $query['type'] ) ? $query['type'] : '' );
+		return is_scalar( $type ) ? (string) $type : '';
 	}
 
 	/**
@@ -799,6 +939,7 @@ class LLD_Members_Stage3_API {
 			return self::refuse( 404, 'Not found.' );
 		}
 		$row = apply_filters( 'lld_members_stage3_api_rows', $row, (string) $request['type'], $member_id );
+		$row = self::amounts_shown( $row, (string) $request['type'], $member_id );
 		return new WP_REST_Response( self::present( $row ), 200 );
 	}
 
@@ -866,6 +1007,7 @@ class LLD_Members_Stage3_API {
 		if ( $clean instanceof WP_REST_Response ) {
 			return $clean;
 		}
+		$clean = self::barcode_digits( $def, $clean );
 		if ( 'calculator_result' === $def['table'] ) {
 			// Keep sealed fields validate may have dropped when the body used engine_version.
 			foreach ( array( 'inputs', 'result', 'saved_at', 'calculator_version' ) as $keep ) {
@@ -950,7 +1092,7 @@ class LLD_Members_Stage3_API {
 			}
 			$filled = LLD_Members_Health_Log::for_member( $member_id, array_merge( $clean, $extras ) );
 			if ( isset( $filled['error'] ) ) {
-				return self::refuse( isset( $filled['status'] ) ? (int) $filled['status'] : 400, $filled['error'] );
+				return self::refuse( isset( $filled['status'] ) ? (int) $filled['status'] : 400, $filled['error'], array_intersect_key( $filled, array( 'question' => 1, 'link' => 1 ) ) );
 			}
 			$clean   = $filled['row'];
 			$warning = $filled['warning'];
@@ -968,6 +1110,8 @@ class LLD_Members_Stage3_API {
 			}
 			return new WP_REST_Response( $out, 201 );
 		}
+		// A saved food entry never comes back with its amount to a member with an eating-disorder flag (FR3-69), as on a read.
+		$row = self::amounts_shown( $row, (string) $request['type'], $member_id );
 		return new WP_REST_Response( self::present( $row ), 201 );
 	}
 
@@ -1015,6 +1159,7 @@ class LLD_Members_Stage3_API {
 		if ( $clean instanceof WP_REST_Response ) {
 			return $clean;
 		}
+		$clean = self::barcode_digits( $def, $clean );
 		if ( ! $clean ) {
 			return self::refuse( 400, 'Nothing to change.' );
 		}
@@ -1063,7 +1208,7 @@ class LLD_Members_Stage3_API {
 			}
 			$filled = LLD_Members_Health_Log::for_member( $member_id, array_merge( $clean, $extras ), $row );
 			if ( isset( $filled['error'] ) ) {
-				return self::refuse( isset( $filled['status'] ) ? (int) $filled['status'] : 400, $filled['error'] );
+				return self::refuse( isset( $filled['status'] ) ? (int) $filled['status'] : 400, $filled['error'], array_intersect_key( $filled, array( 'question' => 1, 'link' => 1 ) ) );
 			}
 			$clean   = $filled['row'];
 			$warning = $filled['warning'];
@@ -1078,6 +1223,8 @@ class LLD_Members_Stage3_API {
 			}
 			return new WP_REST_Response( $out, 200 );
 		}
+		// A saved food entry never comes back with its amount to a member with an eating-disorder flag (FR3-69), as on a read.
+		$updated = self::amounts_shown( $updated, (string) $request['type'], $member_id );
 		return new WP_REST_Response( self::present( $updated ), 200 );
 	}
 
@@ -1098,18 +1245,8 @@ class LLD_Members_Stage3_API {
 		if ( ! $row ) {
 			return self::refuse( 404, 'Not found.' );
 		}
-		if ( 'custom_foods' === $def['table'] ) {
-			$denied = LLD_Members_Food_Log::gate_custom( LLD_Members_Food_Log::premium( $member_id ) );
-			if ( null !== $denied ) {
-				return self::refuse( 403, $denied );
-			}
-		}
-		if ( 'recipes' === $def['table'] ) {
-			$denied = LLD_Members_Recipes::gate_premium( LLD_Members_Food_Log::premium( $member_id ) );
-			if ( null !== $denied ) {
-				return self::refuse( 403, $denied );
-			}
-		}
+		// Custom foods and recipes: no Premium check here. A member can always delete their own item (FR3-68), as
+		// LLD_Members_Access_Tiers::api_refuse() already allows; adding and changing one stay Premium.
 		if ( array_key_exists( 'deleted_at', $row ) ) {
 			LLD_Members_Stage3_Data::soft_delete( $def['table'], $member_id, $id );
 		} else {
@@ -1140,6 +1277,9 @@ class LLD_Members_Stage3_API {
 				continue;
 			}
 			$checked = self::check( $rule, $value );
+			if ( null === $checked && 'value_3' === $name && isset( $params['reading_type'] ) && 'blood_pressure' === $params['reading_type'] && is_numeric( $value ) ) {
+				$checked = (float) $value; // D3-50: any impossible pulse (a negative one too) is left out at save, never refused
+			}
 			if ( null === $checked ) {
 				return self::refuse( 400, 'Check the value of ' . $name . '.' );
 			}
@@ -1159,6 +1299,9 @@ class LLD_Members_Stage3_API {
 			$ranges = self::reading_ranges();
 			if ( '' !== $type && isset( $ranges[ $type ] ) ) {
 				foreach ( $ranges[ $type ] as $field => $range ) {
+					if ( 'blood_pressure' === $type && 'value_3' === $field ) {
+						continue; // D3-50: an impossible pulse is left out by warning_level() at save, never refused
+					}
 					if ( isset( $probe[ $field ] ) && is_numeric( $probe[ $field ] ) && ( $probe[ $field ] < $range[0] || $probe[ $field ] > $range[1] ) ) {
 						return self::refuse( 400, 'Check the numbers.' );
 					}
@@ -1347,10 +1490,109 @@ class LLD_Members_Stage3_API {
 	}
 
 	/**
+	 * True when the safety matrix hides calories and nutrients from this member (the eating-disorder flag): the same
+	 * check as the Food page (LLD_Members_Food_Screen::build_html(), its $ed_mode).
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function nutrition_all_hidden( $member_id ) {
+		if ( ! class_exists( 'LLD_Members_Stage3_Safety' ) || ! method_exists( 'LLD_Members_Stage3_Safety', 'nutrition_hidden' ) ) {
+			return false;
+		}
+		$hidden = LLD_Members_Stage3_Safety::nutrition_hidden( LLD_Members_Stage3_Safety::applies( $member_id, 'food_tracker' ) );
+		return ! empty( $hidden['all'] );
+	}
+
+	/**
+	 * Eating-disorder flag (FR3-69 AS-01): the Food page asks no portion question and shows no amount and no "Days on
+	 * target", so the interface leaves them out too: each entry's grams and portion label on a day, in the Recent list
+	 * and in the food-log rows, and the week's days on target. The stored entry keeps its amount; the page logs with a
+	 * fixed amount in this mode and never reads one back. A recipe's ingredients keep theirs: changing a recipe sends
+	 * them back as they are.
+	 *
+	 * @param mixed  $rows      Rows or a computed document, after the safety matrix filter.
+	 * @param string $type      Interface type name.
+	 * @param int    $member_id Member number.
+	 * @return mixed
+	 */
+	private static function amounts_shown( $rows, $type, $member_id ) {
+		if ( ! is_array( $rows ) || ! $rows || ! in_array( $type, array( 'food-day', 'food-recent', 'food-log', 'food-week' ), true ) || ! self::nutrition_all_hidden( $member_id ) ) {
+			return $rows;
+		}
+		$drop = static function ( $entry ) {
+			if ( is_array( $entry ) ) {
+				unset( $entry['grams'], $entry['portion_label'] );
+			}
+			return $entry;
+		};
+		if ( 'food-week' === $type ) {
+			if ( array_key_exists( 'days_on_target', $rows ) ) {
+				$rows['days_on_target'] = null;
+			}
+			return $rows;
+		}
+		if ( 'food-day' === $type ) {
+			foreach ( isset( $rows['meals'] ) && is_array( $rows['meals'] ) ? $rows['meals'] : array() as $meal => $entries ) {
+				$rows['meals'][ $meal ] = is_array( $entries ) ? array_map( $drop, $entries ) : $entries;
+			}
+			return $rows;
+		}
+		if ( 'food-recent' === $type ) {
+			if ( isset( $rows['foods'] ) && is_array( $rows['foods'] ) ) {
+				$rows['foods'] = array_map( $drop, $rows['foods'] );
+			}
+			return $rows;
+		}
+		// food-log: one row (read) or a list of rows.
+		if ( isset( $rows['id'] ) && ! isset( $rows[0] ) ) {
+			return $drop( $rows );
+		}
+		return array_map( $drop, $rows );
+	}
+
+	/**
+	 * The method the route runs, upper case; POST when it cannot be read (treated as a change).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
+	private static function method( $request ) {
+		return is_object( $request ) && method_exists( $request, 'get_method' ) ? strtoupper( (string) $request->get_method() ) : 'POST';
+	}
+
+	/**
+	 * Terms before the member area, for the members' interface (P3-36 A6; FR3-113). A member the terms gate would send
+	 * to Agreements (LLD_Members_Terms_Gate::member_needing_terms(): signed in, email confirmed, terms_first on, not
+	 * the owner or a helper, terms not accepted) is refused with 403 and the code lld_terms_required, and the link to
+	 * Agreements. DELETE stays open: a member can always delete their own item. /me/features and /me/access do not
+	 * pass through here: they only say what is open to the member.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $method    Route method.
+	 * @return WP_REST_Response|null
+	 */
+	private static function terms_refusal( $member_id, $method ) {
+		if ( 'DELETE' === $method || ! class_exists( 'LLD_Members_Terms_Gate' ) || ! method_exists( 'LLD_Members_Terms_Gate', 'member_needing_terms' ) ) {
+			return null;
+		}
+		if ( (int) LLD_Members_Terms_Gate::member_needing_terms() !== (int) $member_id || $member_id < 1 ) {
+			return null;
+		}
+		return self::refuse(
+			403,
+			'Accept the terms first.',
+			array(
+				'code' => 'lld_terms_required',
+				'link' => function_exists( 'home_url' ) ? home_url( '/members/agreements/' ) : '/members/agreements/',
+			)
+		);
+	}
+
+	/**
 	 * @param int    $status  HTTP status.
 	 * @param string $message Plain wording; never a health value.
 	 */
-	private static function refuse( $status, $message ) {
-		return new WP_REST_Response( array( 'message' => $message ), $status );
+	private static function refuse( $status, $message, array $extra = array() ) {
+		// $extra: the Conditions question and its link on a logging refusal (P3-36 A7), never health data.
+		return new WP_REST_Response( array_merge( array( 'message' => $message ), $extra ), $status );
 	}
 }

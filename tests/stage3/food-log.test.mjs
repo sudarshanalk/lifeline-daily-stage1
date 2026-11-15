@@ -194,7 +194,7 @@ test('TC-FR3-29-AS-03', () => {
   expect(out.totals).toBe(243);
   expect(out.over).toBe(43);
   expect(out.left).toBe(0);
-  expect(out.note).toBe('Over by 43 kcal today.');
+  expect(out.note).toBe('43 kcal over today');
   expect(out.note).not.toMatch(alarming);
 });
 

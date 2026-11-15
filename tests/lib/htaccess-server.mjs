@@ -35,8 +35,10 @@ export function parseHtaccess(text) {
     if (/^<\/(Files|FilesMatch)>$/i.test(line)) { scope.pop(); continue; }
     if (/^<IfModule\b/i.test(line) || /^<\/IfModule>$/i.test(line)) continue; // every module is "present"
     if (/^<IfModule\s+!/i.test(line)) continue;
-    if ((m = /^Header\s+(always\s+)?(set|unset|append)\s+([\w-]+)(?:\s+"([^"]*)"|\s+(\S+))?/i.exec(line))) {
-      rules.push({ match: matcher(), kind: 'header', always: !!m[1], op: m[2].toLowerCase(), name: m[3], value: m[4] ?? m[5] ?? '' });
+    // SetEnvIf Request_URI "<regex>" NAME (C1, 9 Nov 2026: wp-admin gets its own CSP), and Header ... env=[!]NAME
+    if ((m = /^SetEnvIf\s+Request_URI\s+"([^"]+)"\s+([\w-]+)$/i.exec(line))) { rules.push({ match: matcher(), kind: 'setenv', re: new RegExp(m[1]), name: m[2] }); continue; }
+    if ((m = /^Header\s+(always\s+)?(set|unset|append)\s+([\w-]+)(?:\s+"([^"]*)"|\s+(?!env=)(\S+))?(?:\s+env=(!?)([\w-]+))?$/i.exec(line))) {
+      rules.push({ match: matcher(), kind: 'header', always: !!m[1], op: m[2].toLowerCase(), name: m[3], value: m[4] ?? m[5] ?? '', env: m[7] ? { name: m[7], not: m[6] === '!' } : null });
       continue;
     }
     if ((m = /^Require\s+all\s+(denied|granted)$/i.exec(line))) { rules.push({ match: matcher(), kind: 'require', allow: m[1].toLowerCase() === 'granted' }); continue; }
@@ -62,9 +64,11 @@ function rulesFor(docroot, urlPath) {
   return list;
 }
 
-function applyHeaders(rules, fileName, res, { always }) {
+function applyHeaders(rules, fileName, res, { always, path = '' }) {
+  const env = new Set(rules.filter((r) => r.kind === 'setenv' && r.re.test(path)).map((r) => r.name));
   for (const r of rules) {
     if (r.kind !== 'header' || !r.match(fileName)) continue;
+    if (r.env && env.has(r.env.name) === r.env.not) continue;   // Header ... env=NAME / env=!NAME
     if (always && !r.always) continue;      // on error responses only `Header always` applies (Apache semantics)
     if (r.op === 'set') res.setHeader(r.name, r.value);
     else if (r.op === 'unset') res.removeHeader(r.name);
@@ -112,14 +116,14 @@ export async function startHtaccessServer({ port = 0, overlay = resolve(ROOT, 's
     const fileName = basename(urlPath);
     const rules = rulesFor(docroot, urlPath);
     const finish = (status, body, type) => {
-      applyHeaders(rules, fileName, res, { always: status >= 400 });
+      applyHeaders(rules, fileName, res, { always: status >= 400, path: urlPath });
       res.statusCode = status; if (type) res.setHeader('Content-Type', type); res.end(body);
     };
     if (harnessDir && urlPath.startsWith('/__harness/')) {
       const hp = join(harnessDir, urlPath.slice('/__harness/'.length));
       if (!existsSync(hp) || statSync(hp).isDirectory()) return finish(404, 'no harness file', 'text/plain');
       // harness pages stand in for WordPress pages: they get the managed root block's headers, like every page on the host
-      applyHeaders(rules, basename(hp), res, { always: false });
+      applyHeaders(rules, basename(hp), res, { always: false, path: urlPath });
       res.setHeader('Content-Type', extname(hp) === '.js' ? 'application/javascript' : 'text/html; charset=utf-8');
       return res.end(substitute(readFileSync(hp, 'utf8')));
     }
@@ -140,7 +144,7 @@ export async function startHtaccessServer({ port = 0, overlay = resolve(ROOT, 's
       const chunks = []; for await (const c of req) chunks.push(c);
       const r = await fetch(phpOrigin + urlPath + url.search, { method: req.method, headers: { ...req.headers, host: '127.0.0.1' }, body: ['GET', 'HEAD'].includes(req.method) ? undefined : Buffer.concat(chunks), redirect: 'manual' });
       for (const [k, v] of r.headers) if (!['content-length', 'transfer-encoding', 'connection'].includes(k)) res.setHeader(k, v);
-      applyHeaders(rules, fileName, res, { always: r.status >= 400 });
+      applyHeaders(rules, fileName, res, { always: r.status >= 400, path: urlPath });
       res.statusCode = r.status; return res.end(Buffer.from(await r.arrayBuffer()));
     }
     // static file with Apache-style ETag (MTime Size) and conditional GET
