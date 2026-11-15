@@ -486,6 +486,12 @@ class LLD_Members_Stage3_API {
 		if ( $member_id < 1 ) {
 			return self::refuse( 401, 'Sign in.' );
 		}
+		// Terms first (P3-36 A6, FR3-113): the same rule as the screens. Deleting your own item stays open, so a member
+		// can always remove their data (FR3-68); export and erasure are their own pages, which the gate leaves open.
+		$terms = self::terms_refusal( $member_id, self::method( $request ) );
+		if ( null !== $terms ) {
+			return $terms;
+		}
 		if ( ! empty( $def['health'] ) && ! LLD_Members_Access::has_health_consent( $member_id ) ) {
 			return self::refuse( 403, 'Health consent is needed first.' );
 		}
@@ -514,6 +520,10 @@ class LLD_Members_Stage3_API {
 		}
 		if ( $member_id < 1 ) {
 			return self::refuse( 401, 'Sign in.' );
+		}
+		$terms = self::terms_refusal( $member_id, 'POST' );
+		if ( null !== $terms ) {
+			return $terms;
 		}
 		$params = $request->get_json_params();
 		$params = is_array( $params ) ? $params : array();
@@ -836,20 +846,23 @@ class LLD_Members_Stage3_API {
 			$limit = (int) $request->get_param( 'limit' );
 			$rows  = LLD_Members_Stage3_Data::rows( $def['table'], $member_id, $def['sealed'], null === $since ? '' : $since, $limit > 0 ? $limit : 500 );
 			if ( 'food_log' === $def['table'] ) {
-				$rows = LLD_Members_Food_Log::limit_history( $rows, LLD_Members_Food_Log::premium( $member_id ), gmdate( 'Y-m-d' ) );
+				$rows = LLD_Members_Food_Log::limit_history( $rows, LLD_Members_Food_Log::premium( $member_id ), class_exists( 'LLD_Members_Health_Log' ) ? LLD_Members_Health_Log::local_date( lld_members_now_mysql( $member_id ), LLD_Members_Health_Log::zone_for( $member_id ) ) : gmdate( 'Y-m-d' ) ); // the member's own today: entry dates are their local days
 			}
 			if ( 'readings' === $def['table'] ) {
 				$premium = LLD_Members_Food_Log::premium( $member_id );
-				$rows    = LLD_Members_Health_Log::limit_history( $rows, $premium, substr( lld_members_now_mysql( $member_id ), 0, 10 ) ); // the member's own today, as the readings were saved by it
+				$zone    = LLD_Members_Health_Log::zone_for( $member_id ); // readings are stored in UTC; days are the member's own
+				$rows    = LLD_Members_Health_Log::limit_history( $rows, $premium, LLD_Members_Health_Log::local_date( lld_members_now_mysql( $member_id ), $zone ), $zone );
 				$rows    = LLD_Members_Health_Log::filter(
 					$rows,
 					self::query_type( $request ),
 					(string) $request->get_param( 'from' ),
-					(string) $request->get_param( 'to' )
+					(string) $request->get_param( 'to' ),
+					$zone
 				);
 			}
 		}
 		$rows = apply_filters( 'lld_members_stage3_api_rows', $rows, (string) $request['type'], $member_id ); // the safety matrix strips what the member must not see (FR3-69)
+		$rows = self::amounts_shown( $rows, (string) $request['type'], $member_id );
 		if ( $computed ) {
 			return new WP_REST_Response( $rows, 200 );
 		}
@@ -926,6 +939,7 @@ class LLD_Members_Stage3_API {
 			return self::refuse( 404, 'Not found.' );
 		}
 		$row = apply_filters( 'lld_members_stage3_api_rows', $row, (string) $request['type'], $member_id );
+		$row = self::amounts_shown( $row, (string) $request['type'], $member_id );
 		return new WP_REST_Response( self::present( $row ), 200 );
 	}
 
@@ -1096,6 +1110,8 @@ class LLD_Members_Stage3_API {
 			}
 			return new WP_REST_Response( $out, 201 );
 		}
+		// A saved food entry never comes back with its amount to a member with an eating-disorder flag (FR3-69), as on a read.
+		$row = self::amounts_shown( $row, (string) $request['type'], $member_id );
 		return new WP_REST_Response( self::present( $row ), 201 );
 	}
 
@@ -1207,6 +1223,8 @@ class LLD_Members_Stage3_API {
 			}
 			return new WP_REST_Response( $out, 200 );
 		}
+		// A saved food entry never comes back with its amount to a member with an eating-disorder flag (FR3-69), as on a read.
+		$updated = self::amounts_shown( $updated, (string) $request['type'], $member_id );
 		return new WP_REST_Response( self::present( $updated ), 200 );
 	}
 
@@ -1227,13 +1245,7 @@ class LLD_Members_Stage3_API {
 		if ( ! $row ) {
 			return self::refuse( 404, 'Not found.' );
 		}
-		if ( 'custom_foods' === $def['table'] ) {
-			$denied = LLD_Members_Food_Log::gate_custom( LLD_Members_Food_Log::premium( $member_id ) );
-			if ( null !== $denied ) {
-				return self::refuse( 403, $denied );
-			}
-		}
-		// Recipes: no Premium check here. A member can always delete their own recipe (FR3-68), as
+		// Custom foods and recipes: no Premium check here. A member can always delete their own item (FR3-68), as
 		// LLD_Members_Access_Tiers::api_refuse() already allows; adding and changing one stay Premium.
 		if ( array_key_exists( 'deleted_at', $row ) ) {
 			LLD_Members_Stage3_Data::soft_delete( $def['table'], $member_id, $id );
@@ -1475,6 +1487,104 @@ class LLD_Members_Stage3_API {
 			}
 		}
 		return $row;
+	}
+
+	/**
+	 * True when the safety matrix hides calories and nutrients from this member (the eating-disorder flag): the same
+	 * check as the Food page (LLD_Members_Food_Screen::build_html(), its $ed_mode).
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function nutrition_all_hidden( $member_id ) {
+		if ( ! class_exists( 'LLD_Members_Stage3_Safety' ) || ! method_exists( 'LLD_Members_Stage3_Safety', 'nutrition_hidden' ) ) {
+			return false;
+		}
+		$hidden = LLD_Members_Stage3_Safety::nutrition_hidden( LLD_Members_Stage3_Safety::applies( $member_id, 'food_tracker' ) );
+		return ! empty( $hidden['all'] );
+	}
+
+	/**
+	 * Eating-disorder flag (FR3-69 AS-01): the Food page asks no portion question and shows no amount and no "Days on
+	 * target", so the interface leaves them out too: each entry's grams and portion label on a day, in the Recent list
+	 * and in the food-log rows, and the week's days on target. The stored entry keeps its amount; the page logs with a
+	 * fixed amount in this mode and never reads one back. A recipe's ingredients keep theirs: changing a recipe sends
+	 * them back as they are.
+	 *
+	 * @param mixed  $rows      Rows or a computed document, after the safety matrix filter.
+	 * @param string $type      Interface type name.
+	 * @param int    $member_id Member number.
+	 * @return mixed
+	 */
+	private static function amounts_shown( $rows, $type, $member_id ) {
+		if ( ! is_array( $rows ) || ! $rows || ! in_array( $type, array( 'food-day', 'food-recent', 'food-log', 'food-week' ), true ) || ! self::nutrition_all_hidden( $member_id ) ) {
+			return $rows;
+		}
+		$drop = static function ( $entry ) {
+			if ( is_array( $entry ) ) {
+				unset( $entry['grams'], $entry['portion_label'] );
+			}
+			return $entry;
+		};
+		if ( 'food-week' === $type ) {
+			if ( array_key_exists( 'days_on_target', $rows ) ) {
+				$rows['days_on_target'] = null;
+			}
+			return $rows;
+		}
+		if ( 'food-day' === $type ) {
+			foreach ( isset( $rows['meals'] ) && is_array( $rows['meals'] ) ? $rows['meals'] : array() as $meal => $entries ) {
+				$rows['meals'][ $meal ] = is_array( $entries ) ? array_map( $drop, $entries ) : $entries;
+			}
+			return $rows;
+		}
+		if ( 'food-recent' === $type ) {
+			if ( isset( $rows['foods'] ) && is_array( $rows['foods'] ) ) {
+				$rows['foods'] = array_map( $drop, $rows['foods'] );
+			}
+			return $rows;
+		}
+		// food-log: one row (read) or a list of rows.
+		if ( isset( $rows['id'] ) && ! isset( $rows[0] ) ) {
+			return $drop( $rows );
+		}
+		return array_map( $drop, $rows );
+	}
+
+	/**
+	 * The method the route runs, upper case; POST when it cannot be read (treated as a change).
+	 *
+	 * @param WP_REST_Request $request Request.
+	 */
+	private static function method( $request ) {
+		return is_object( $request ) && method_exists( $request, 'get_method' ) ? strtoupper( (string) $request->get_method() ) : 'POST';
+	}
+
+	/**
+	 * Terms before the member area, for the members' interface (P3-36 A6; FR3-113). A member the terms gate would send
+	 * to Agreements (LLD_Members_Terms_Gate::member_needing_terms(): signed in, email confirmed, terms_first on, not
+	 * the owner or a helper, terms not accepted) is refused with 403 and the code lld_terms_required, and the link to
+	 * Agreements. DELETE stays open: a member can always delete their own item. /me/features and /me/access do not
+	 * pass through here: they only say what is open to the member.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $method    Route method.
+	 * @return WP_REST_Response|null
+	 */
+	private static function terms_refusal( $member_id, $method ) {
+		if ( 'DELETE' === $method || ! class_exists( 'LLD_Members_Terms_Gate' ) || ! method_exists( 'LLD_Members_Terms_Gate', 'member_needing_terms' ) ) {
+			return null;
+		}
+		if ( (int) LLD_Members_Terms_Gate::member_needing_terms() !== (int) $member_id || $member_id < 1 ) {
+			return null;
+		}
+		return self::refuse(
+			403,
+			'Accept the terms first.',
+			array(
+				'code' => 'lld_terms_required',
+				'link' => function_exists( 'home_url' ) ? home_url( '/members/agreements/' ) : '/members/agreements/',
+			)
+		);
 	}
 
 	/**

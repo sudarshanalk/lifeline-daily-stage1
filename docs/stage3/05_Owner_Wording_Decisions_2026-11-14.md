@@ -23,3 +23,8 @@ No banner after a single mood reading. R-SAFE-04 shows through the insight card,
 ## E8
 
 Today's diary link label is "Open the diary". The signed T-STEP-05 catalogue string still ends with `[Log something]`; changing that hash needs a lead update to `approvals/stage3/decision-rules.json`, so the catalogue string is left for the lead.
+
+## Records made on 15 November 2026
+
+- **E7 title A (R-108):** recipe R-108 is now "Black-eyed bean stew, red-red style, with baked plantain or brown rice". It is a new version of the recipe with its own approval record, decision `d-meals-r108-v2` (file `meals/meals.json#R-108`, fingerprint `ac395a183f4d1bbb`), loaded on staging as approved in the owner's name by `wp lld content load` (Data Model B16). The other 72 pilot recipes keep the set approval `d-meals-pilot-recipes` unchanged. The 36 meal plans that link to R-108 were re-approved as loaded (a linked item changed).
+- **E8 A in the rule catalogue:** T-STEP-05's link label is "Open the diary" (D3-61, catalogue v1.3.2, a wording change only). `approvals/stage3/decision-rules.json` carries the new copy hash and D3-61; the rule and the step text are unchanged.

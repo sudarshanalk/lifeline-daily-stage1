@@ -81,16 +81,19 @@ function lld_members_layout( $args ) {
 	if ( $v2 ) {
 		// The v2 header (lld-tools) shows the chip in place of its "My account" button, and Sign out in its phone menu.
 		$header_account = function () use ( $chip ) {
-			return '<div class="lld-chip-wrap lld-v2-account">' . $chip . '</div>';
+			return lld_members_v2_header_chip( $chip );
 		};
 		$header_menu_end = function () {
-			return lld_members_sign_out_button( 'lld-v2-menu-signout col-span-2 px-4 py-3 rounded-xl bg-white bg-day-card border border-[#E0D8CB] border-day-soft' );
+			return lld_members_v2_header_sign_out();
 		};
 		if ( $account && function_exists( 'add_filter' ) ) {
 			add_filter( 'lld_v2_header_account', $header_account );
 			add_filter( 'lld_v2_header_menu_end', $header_menu_end );
 		}
+		// The member page decides its own header: the public pages' account menu (below) stays out of it.
+		$GLOBALS['lld_members_layout_header'] = true;
 		echo lld_v2_members_shell( 'header' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- escaped inside.
+		unset( $GLOBALS['lld_members_layout_header'] );
 		if ( $account && function_exists( 'remove_filter' ) ) {
 			remove_filter( 'lld_v2_header_account', $header_account );
 			remove_filter( 'lld_v2_header_menu_end', $header_menu_end );
@@ -332,6 +335,90 @@ function lld_members_account_assets( $part ) {
 		wp_print_scripts( array( 'lld-members-stage3' ) );
 	}
 	return (string) ob_get_clean();
+}
+
+/**
+ * The chip in the v2 header, in place of its "My account" button (P3-36 C1).
+ *
+ * @param string $chip The chip (lld_members_chip()).
+ */
+function lld_members_v2_header_chip( $chip ) {
+	return '<div class="lld-chip-wrap lld-v2-account">' . $chip . '</div>';
+}
+
+/**
+ * Sign out in the v2 header's phone menu, posting the sign-out form (P3-36 C1, TC-FR3-07-AS-05).
+ */
+function lld_members_v2_header_sign_out() {
+	return lld_members_sign_out_button( 'lld-v2-menu-signout col-span-2 px-4 py-3 rounded-xl bg-white bg-day-card border border-[#E0D8CB] border-day-soft' );
+}
+
+/**
+ * The public v2 pages (homepage, categories, articles, Health Tools; lld-tools' v2 header) show a signed-in member the
+ * same account menu as the member pages (P3-36 C1 follow-up, FR3-07), instead of a plain "My account" link: the chip,
+ * the hidden sign-out form that carries the menu's links and nonce, Sign out in the phone menu, and the menu's
+ * stylesheet and script (stage3.js builds the menu, as on the member pages). A member page's layout prints its own
+ * header (lld_members_layout()), so these leave it alone. A visitor, or a signed-in account without a member record
+ * (which keeps "My account" and Admin), sees the header as before.
+ *
+ * Caching: the v2 header already chooses signed-in or signed-out on the server (is_user_logged_in()), and LiteSpeed
+ * serves signed-in visitors no shared copy. The menu adds the member's name and a nonce, so the page that shows it is
+ * also marked never to be cached (LiteSpeed and DONOTCACHEPAGE); a visitor's page is not changed and stays cacheable.
+ *
+ * @param string $html What an earlier filter put in the header ('' when nothing did).
+ */
+function lld_members_public_header_account( $html ) {
+	if ( '' !== (string) $html || ! empty( $GLOBALS['lld_members_layout_header'] ) || ! function_exists( 'is_user_logged_in' ) || ! is_user_logged_in() ) {
+		return $html;
+	}
+	$chip = lld_members_chip();
+	if ( '' === $chip ) {
+		return $html;
+	}
+	$GLOBALS['lld_members_public_account'] = true;
+	if ( function_exists( 'do_action' ) ) {
+		do_action( 'litespeed_control_set_nocache', 'lld account menu' );
+	}
+	if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+		define( 'DONOTCACHEPAGE', true );
+	}
+	if ( function_exists( 'wp_enqueue_script' ) && function_exists( 'plugins_url' ) ) {
+		// Printed in the page foot by wp_footer(); the same handle as the member pages, so it never loads twice.
+		wp_enqueue_script( 'lld-members-stage3', plugins_url( 'assets/stage3.js', LLD_MEMBERS_FILE ), array(), LLD_MEMBERS_VERSION, true );
+	}
+	return lld_members_account_assets( 'style' ) . lld_members_v2_header_chip( $chip ) . lld_members_sign_out_form();
+}
+
+/**
+ * Sign out in the public v2 header's phone menu, once the account menu is in that header.
+ *
+ * @param string $html What an earlier filter put at the end of the phone menu.
+ */
+function lld_members_public_header_menu_end( $html ) {
+	if ( '' !== (string) $html || empty( $GLOBALS['lld_members_public_account'] ) || ! empty( $GLOBALS['lld_members_layout_header'] ) ) {
+		return $html;
+	}
+	return lld_members_v2_header_sign_out();
+}
+
+/**
+ * The body class the account menu's v2 header styles key on (stage3-account.css), on public pages for a signed-in
+ * member. The stylesheet itself is printed only where the menu is, so the class does nothing elsewhere.
+ *
+ * @param array $classes Body classes.
+ */
+function lld_members_public_body_class( $classes ) {
+	if ( function_exists( 'is_user_logged_in' ) && is_user_logged_in() && class_exists( 'LLD_Members_Access' ) && LLD_Members_Access::current_member_id() > 0 ) {
+		$classes[] = 'lld-v2-account-menu';
+	}
+	return $classes;
+}
+
+if ( function_exists( 'add_filter' ) ) {
+	// After any other filter (priority 20), and only when the header is still empty.
+	add_filter( 'lld_v2_header_account', 'lld_members_public_header_account', 20 );
+	add_filter( 'lld_v2_header_menu_end', 'lld_members_public_header_menu_end', 20 );
+	add_filter( 'body_class', 'lld_members_public_body_class' );
 }
 
 /**
