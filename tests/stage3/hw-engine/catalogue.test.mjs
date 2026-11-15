@@ -89,7 +89,7 @@ test('TC-NFR3-17-AS-03 (catalogue version 1.3.1)', () => {
   for (const n of ['R-HW-NUM-04', 'R-HW-PACE-01', 'R-HW-MOT-01', 'R-HW-FOOD-01']) expect(RULES[n].tier).toBe('free');
   // The approval record: v1.3, D3-58 and D3-59, the SHA-256 of the signed v1.3 catalogue file (outside the repository).
   expect(approval.approval_id).toBe('APR-DECISION-RULES-V1-3-1-2026-11-10');
-  expect(approval.decisions_ratified.slice(-3)).toEqual(['D3-58', 'D3-59', 'D3-60']);
+  expect(approval.decisions_ratified.slice(-4)).toEqual(['D3-58', 'D3-59', 'D3-60', 'D3-61']); // D3-61 (staging #288): T-STEP-05's label, a wording change only
   expect(approval.clinical_signoff).toMatchObject({ decision: 'approved', date: '2026-11-10' });
   expect(approval.clinical_signoff.name).toMatch(/sudarshanalk/);
   expect(approval.version_hash).toMatch(/^[0-9a-f]{64}$/);
