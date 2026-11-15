@@ -132,4 +132,95 @@ class LLD_Members_Access {
 		// Stage 3 (P3-87, FR3-80): the Owner's free Premium grant gives Premium wherever the access state is read.
 		return (string) apply_filters( 'lld_members_access_state', $state, (int) $member_id );
 	}
+
+	/**
+	 * P3-36 A1 (TC-FR3-64-AS-04): is this member Premium, and why. The one answer the chip, Account → Membership and
+	 * My subscription all use, so they never disagree.
+	 *
+	 * For display only, never an access check: 'premium' is true for a paused member, whose Premium features are
+	 * closed. To decide access, use LLD_Members_Billing::has_premium() (or LLD_Members_Access_Tiers::allows()).
+	 *
+	 * source: 'free'; 'paid' (a Premium subscription, or cancelled within its paid period); 'paused' (paid, with a
+	 * Stage 3 pause running: still a Premium member); 'grant' (free Premium given by the Owner, with no paid
+	 * subscription behind it); 'preview' (the owner's own preview). until: the grant's end date as the Owner set it
+	 * (Y-m-d; Premium runs until that date), '' for no end date or another source.
+	 *
+	 * @param int $member_id Member number.
+	 * @return array{premium:bool,source:string,until:string}
+	 */
+	public static function premium_status( $member_id ) {
+		$member_id = (int) $member_id;
+		$free      = array(
+			'premium' => false,
+			'source'  => 'free',
+			'until'   => '',
+		);
+		if ( $member_id < 1 ) {
+			return $free;
+		}
+		$preview = self::preview_state();
+		if ( '' !== $preview && $member_id === self::own_member_id() && 'visitor' !== $preview ) {
+			return 'premium' === $preview ? array(
+				'premium' => true,
+				'source'  => 'preview',
+				'until'   => '',
+			) : $free;
+		}
+		$open = class_exists( 'LLD_Members_Billing' ) ? LLD_Members_Billing::has_premium( $member_id ) : 'premium' === strtolower( self::access_state( $member_id ) );
+		if ( ! $open ) {
+			// A running pause keeps a paid member Premium, as long as the paid Premium itself has not ended or been
+			// refunded (the same test as the membership card's).
+			$pause = class_exists( 'LLD_Members_Pause' ) ? LLD_Members_Pause::open( $member_id ) : null;
+			if ( $pause && 'active' === (string) $pause->status && self::stored_paid( $member_id ) ) {
+				return array(
+					'premium' => true,
+					'source'  => 'paused',
+					'until'   => '',
+				);
+			}
+			return $free;
+		}
+		$grant = class_exists( 'LLD_Members_Admin_Members' ) ? LLD_Members_Admin_Members::active_grant( $member_id ) : null;
+		if ( $grant ) {
+			if ( ! self::stored_paid( $member_id ) ) {
+				$until = substr( (string) $grant->ends_at, 0, 10 );
+				return array(
+					'premium' => true,
+					'source'  => 'grant',
+					'until'   => ( defined( 'LLD_Members_Admin_Members::NO_END' ) && $until >= LLD_Members_Admin_Members::NO_END ) ? '' : $until,
+				);
+			}
+		}
+		return array(
+			'premium' => true,
+			'source'  => 'paid',
+			'until'   => '',
+		);
+	}
+
+	/**
+	 * The stored subscription is paid Premium: Premium, or cancelled within its paid period. Read from the stored row
+	 * itself, not through the access-state filter, so the Owner's grant does not count here.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function stored_paid( $member_id ) {
+		global $wpdb;
+		$sub    = $wpdb->get_row( $wpdb->prepare( 'SELECT access_state, period_ends_on FROM ' . LLD_Members_Schema::table( 'subscription' ) . ' WHERE member_id = %d', (int) $member_id ) );
+		$stored = $sub ? strtolower( (string) $sub->access_state ) : 'free';
+		return 'premium' === $stored || ( 'cancelled' === $stored && $sub->period_ends_on && (string) $sub->period_ends_on >= gmdate( 'Y-m-d' ) );
+	}
+
+	/**
+	 * P3-36 A1: the line members read for granted Premium: "Premium, given free until 14 December 2026."
+	 *
+	 * @param array{premium:bool,source:string,until:string} $status From premium_status().
+	 */
+	public static function grant_line( array $status ) {
+		if ( '' === $status['until'] ) {
+			return 'Your membership is Premium, given free with no end date.';
+		}
+		$ts = strtotime( $status['until'] . ' 00:00:00 UTC' );
+		return 'Your membership is Premium, given free until ' . ( false === $ts ? $status['until'] : gmdate( 'j F Y', $ts ) ) . '.';
+	}
 }

@@ -197,6 +197,11 @@ class LLD_Members_Membership {
 	public static function card( $member_id, $sub ) {
 		$prices = LLD_Members_Billing::shown_prices();
 		$pause  = class_exists( 'LLD_Members_Pause' ) ? LLD_Members_Pause::open( $member_id ) : null;
+		// P3-36 A1 (TC-FR3-64-AS-04): Premium given free by the Owner shows as Premium with its end date, never "Go Premium".
+		$status = class_exists( 'LLD_Members_Access' ) ? LLD_Members_Access::premium_status( $member_id ) : null;
+		if ( $status && 'grant' === $status['source'] ) {
+			return self::grant_card( $member_id, $status );
+		}
 		$paid   = $sub && in_array( strtolower( (string) $sub->access_state ), array( 'premium', 'cancelled' ), true ) && ( LLD_Members_Billing::has_premium( $member_id ) || ( $pause && 'active' === (string) $pause->status ) );
 		if ( ! $paid ) {
 			return self::upgrade_card( $prices );
@@ -235,6 +240,27 @@ class LLD_Members_Membership {
 				'variant' => 'secondary',
 			)
 		) . '</p></section>';
+		return $html;
+	}
+
+	/**
+	 * P3-36 A1 (TC-FR3-64-AS-04): the card for free Premium given by the Owner: Premium, its end date, what it
+	 * includes and what the member has done, with no price and no offer to buy.
+	 *
+	 * @param int                                            $member_id Member number.
+	 * @param array{premium:bool,source:string,until:string} $status    From LLD_Members_Access::premium_status().
+	 */
+	public static function grant_card( $member_id, array $status ) {
+		$counts = self::counts( $member_id );
+		$html   = '<section class="lld-card lld-membership-card" data-lld-membership="grant"><h2>Your membership</h2>';
+		$html  .= '<p class="lld-plan-name" data-lld-card-plan>Premium</p>';
+		$html  .= '<p data-lld-card-renews="' . esc_attr( $status['until'] ) . '">' . esc_html( LLD_Members_Access::grant_line( $status ) ) . '</p>';
+		$html  .= '<h3>What Premium includes</h3><ul>';
+		foreach ( self::INCLUDES as $line ) {
+			$html .= '<li>' . esc_html( $line ) . '</li>';
+		}
+		$html .= '</ul><h3>What you have done</h3>';
+		$html .= '<p data-lld-card-counts data-workouts="' . $counts['workouts'] . '" data-days="' . $counts['days_logged'] . '">' . esc_html( 'Workouts completed: ' . $counts['workouts'] . '. Days logged: ' . $counts['days_logged'] . '.' ) . '</p></section>';
 		return $html;
 	}
 

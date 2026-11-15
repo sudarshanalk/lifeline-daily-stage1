@@ -258,7 +258,8 @@ class LLD_Members_Admin_Front {
 		wp_enqueue_script( self::HANDLE, plugins_url( 'assets/stage3.js', LLD_MEMBERS_FILE ), array(), LLD_MEMBERS_VERSION, true );
 		$member = class_exists( 'LLD_Members_Access' ) && LLD_Members_Access::current_member_id() > 0;
 		ob_start();
-		lld_members_layout( array( 'title' => $title, 'main' => $main, 'signed_in' => $member, 'wide' => true ) );
+		// 'account': the chip's menu with Sign out on every Admin page, also for a helper without a member record (P3-36 C1).
+		lld_members_layout( array( 'title' => $title, 'main' => $main, 'signed_in' => $member, 'wide' => true, 'account' => true ) );
 		$page = (string) ob_get_clean();
 		ob_start();
 		wp_print_styles( array( self::HANDLE ) );
@@ -309,7 +310,7 @@ class LLD_Members_Admin_Front {
 		$html  = '<div class="lld-adm" data-lld-admin>';
 		$html .= '<aside class="lld-adm-side" aria-label="Admin"><div class="lld-adm-who"><span class="lld-adm-avatar" aria-hidden="true">' . esc_html( strtoupper( substr( $name, 0, 1 ) ) ) . '</span><span><strong>' . esc_html( $name ) . '</strong><span class="lld-adm-role">' . ( $owner ? 'Owner' : 'Support helper' ) . '</span></span></div>';
 		$html .= '<nav aria-label="Admin pages">' . $nav . '</nav>' . $wp . '</aside>';
-		$html .= '<div class="lld-adm-body"><nav class="lld-adm-tabs" aria-label="Admin pages (phone)"><ul>' . $tabs . ( $owner ? '<li><a href="' . esc_url( admin_url( 'admin.php?page=lld-approvals' ) ) . '">WordPress</a></li>' : '' ) . '</ul></nav>';
+		$html .= '<div class="lld-adm-body"><nav class="lld-adm-tabs" aria-label="Admin sections"><ul>' . $tabs . ( $owner ? '<li><a href="' . esc_url( admin_url( 'admin.php?page=lld-approvals' ) ) . '">WordPress</a></li>' : '' ) . '</ul></nav>';
 		$html .= self::notice() . $main . '</div></div>';
 		return $html;
 	}
@@ -376,7 +377,7 @@ class LLD_Members_Admin_Front {
 		}
 		$html .= '<label class="lld-adm-switch" for="' . esc_attr( $id ) . '"><input type="checkbox" role="switch" id="' . esc_attr( $id ) . '" name="on" value="1"' . ( $on ? ' checked' : '' ) . ( $can ? ' data-lld-adm-autosubmit' : ' disabled' ) . ' aria-label="' . esc_attr( $name ) . '"><span class="lld-adm-track" aria-hidden="true"></span><span class="lld-adm-state">' . ( $on ? 'On' : 'Off' ) . '</span></label>';
 		if ( $can ) {
-			$html .= '<details class="lld-adm-reason"><summary>Add a reason</summary><label for="' . esc_attr( $id ) . '-why">Reason (optional)</label><input type="text" id="' . esc_attr( $id ) . '-why" name="reason" maxlength="300" placeholder="For example: checking a wording issue"><p class="lld-hint">Type the reason first, then flip the switch. Kept in the history. No names, emails or health details.</p></details>';
+			$html .= '<details class="lld-adm-reason"><summary>Add a reason (optional)</summary><label for="' . esc_attr( $id ) . '-why">Reason (optional)</label><input type="text" id="' . esc_attr( $id ) . '-why" name="reason" maxlength="300" placeholder="For example: checking a wording issue"><p class="lld-hint">Type the reason first, then flip the switch. Kept in the history. No names, emails or health details.</p></details>';
 			$html .= '<noscript><button type="submit" class="lld-button lld-button-secondary">Save</button></noscript></form>';
 		}
 		return $html;
@@ -389,13 +390,19 @@ class LLD_Members_Admin_Front {
 	 */
 	private static function history( $key ) {
 		$rows = LLD_Members_Features::history( $key );
-		$html = '<details class="lld-adm-history"><summary>History (' . count( $rows ) . ')</summary>';
 		if ( ! $rows ) {
-			return $html . '<p class="lld-hint">Never changed.</p></details>';
+			return '';
 		}
-		$html .= '<ul>';
+		$html = '<details class="lld-adm-history"><summary>History (' . count( $rows ) . ')</summary><ul>';
 		foreach ( array_slice( $rows, 0, 10 ) as $h ) {
-			$html .= '<li>' . esc_html( $h['when'] . ' UTC · ' . $h['who'] . ' · ' . self::state_word( $h['from'] ) . ' → ' . self::state_word( $h['to'] ) . ( '' !== $h['note'] ? ' · “' . $h['note'] . '”' : '' ) ) . '</li>';
+			$when = class_exists( 'LLD_Members_Admin_Log' ) ? LLD_Members_Admin_Log::when_site( (string) $h['when'] ) : (string) $h['when'];
+			$to   = self::state_word( $h['to'] );
+			$verb = 'on' === $to ? 'turned it on' : ( 'off' === $to ? 'turned it off' : ( 'test accounts only' === $to ? 'limited it to test accounts' : 'set it to ' . $to ) );
+			$line = $when . ' · ' . $h['who'] . ' ' . $verb . '.';
+			if ( '' !== $h['note'] ) {
+				$line .= ' “' . $h['note'] . '”';
+			}
+			$html .= '<li>' . esc_html( $line ) . '</li>';
 		}
 		return $html . '</ul></details>';
 	}
@@ -483,16 +490,8 @@ class LLD_Members_Admin_Front {
 		}
 		$html = '<ul class="lld-adm-list lld-adm-log">';
 		foreach ( $rows as $row ) {
-			$c     = array_map(
-				static function ( $v ) {
-					return ltrim( (string) $v, "'" );
-				},
-				LLD_Members_Admin_Log::csv_row( $row )
-			);
-			$item  = '' !== $c[4] ? ' · Member #' . $c[4] : '';
-			$item .= '' !== $c[5] ? ' · ' . ( preg_match( '/^[a-z]+(_[a-z]+)+$/', $c[5] ) || isset( self::FEATURE_GROUPS['Food and health'][ $c[5] ] ) ? LLD_Members_Admin_Pages::plain_name( $c[5] ) : $c[5] ) : '';
-			$state = '' !== $c[6] || '' !== $c[7] ? ' · ' . $c[6] . ' → ' . $c[7] : '';
-			$html .= '<li><span class="lld-adm-when">' . esc_html( $c[1] . ' UTC' ) . '</span><span><strong>' . esc_html( $c[3] . $item ) . '</strong><span>' . esc_html( $c[2] . $state . ( '' !== $c[8] ? ' · “' . $c[8] . '”' : '' ) ) . '</span></span></li>';
+			list( $when, $sentence, $second ) = LLD_Members_Admin_Log::sentence( $row );
+			$html .= '<li data-lld-log-id="' . (int) $row->id . '"><span class="lld-adm-when">' . esc_html( $when ) . '</span><span><strong>' . esc_html( $sentence ) . '</strong><span>' . esc_html( $second ) . '</span></span></li>';
 		}
 		return $html . '</ul>';
 	}
@@ -574,7 +573,7 @@ class LLD_Members_Admin_Front {
 			'Email'           => $a['email'] . ( $a['confirmed'] ? '' : ' (not confirmed yet)' ),
 			'Sign-in methods' => implode( ', ', $a['methods'] ),
 			'Joined'          => $a['joined'],
-			'Last sign-in'    => '' !== $a['last_sign'] ? $a['last_sign'] . ' UTC' : 'Never',
+			'Last sign-in'    => '' !== $a['last_sign'] ? LLD_Members_Admin_Log::when_site( $a['last_sign'] ) : 'Never',
 			'Plan'            => $a['plan'] . ( $ptm ? ' (free, no end date)' : '' ),
 			'Status'          => $a['status'] . ( $a['blocked'] && $owner ? ' (reason: ' . $a['blocked_why'] . ')' : '' ),
 			'Renewal date'    => '' !== $a['renewal'] ? $a['renewal'] : '—',
@@ -582,7 +581,7 @@ class LLD_Members_Admin_Front {
 			'Test account'    => $a['test'] ? 'Yes' : 'No',
 			'AI allowance'    => 'Not in use yet (Stage 5)',
 		);
-		$html .= '<div class="lld-adm-grid lld-adm-g2"><section class="lld-card"><h2>Account</h2><dl class="lld-facts lld-adm-facts">';
+		$html .= '<div class="lld-adm-grid lld-adm-g2 lld-adm-member-top"><section class="lld-card"><h2>Account</h2><dl class="lld-facts lld-adm-facts">';
 		foreach ( $facts as $label => $value ) {
 			$html .= '<dt>' . esc_html( $label ) . '</dt><dd>' . esc_html( (string) $value ) . '</dd>';
 		}
@@ -608,7 +607,7 @@ class LLD_Members_Admin_Front {
 		if ( $a['notes'] ) {
 			$html .= '<ul class="lld-adm-list">';
 			foreach ( $a['notes'] as $n ) {
-				$html .= '<li class="lld-note"><span><strong>' . nl2br( esc_html( (string) $n->note ) ) . '</strong><span>' . esc_html( LLD_Members_Admin_Log::who( (string) $n->admin_user_id ) . ', ' . $n->created_at . ' UTC' ) . '</span></span></li>';
+				$html .= '<li class="lld-note"><span><strong>' . nl2br( esc_html( (string) $n->note ) ) . '</strong><span>' . esc_html( LLD_Members_Admin_Log::who( (string) $n->admin_user_id ) . ', ' . LLD_Members_Admin_Log::when_site( (string) $n->created_at ) ) . '</span></span></li>';
 			}
 			$html .= '</ul>';
 		}
@@ -674,7 +673,7 @@ class LLD_Members_Admin_Front {
 	 */
 	private static function owner_actions( array $a, array $hide, $ptm ) {
 		$back  = self::url( 'members', array( 'member' => (int) $a['id'] ) );
-		$html  = '<h2 class="lld-adm-section">Owner actions</h2><div class="lld-adm-grid lld-adm-g3">';
+		$html  = '<h2 class="lld-adm-section">Owner actions</h2><div class="lld-adm-grid lld-adm-owner-actions">';
 
 		// Premium test member (FR3-91) and reset (FR3-92).
 		$html .= '<section class="lld-card" data-lld-adm="premium-test"><h3>Premium test member</h3><p class="lld-hint">See the site exactly as a paying member does, without paying. Left out of counts and revenue.</p>';

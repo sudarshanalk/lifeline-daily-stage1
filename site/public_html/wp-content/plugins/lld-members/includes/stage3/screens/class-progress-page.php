@@ -77,9 +77,11 @@ class LLD_Members_Progress_Page {
 		$summary = 'Active days a week, the last 4 weeks';
 		$html   .= '<section class="lld-card" data-lld-section="weekly-bars"><h2>Weekly activity</h2><figure class="lld-chart lld-week-chart"><figcaption>' . esc_html( $summary ) . '</figcaption><div class="lld-bars" aria-hidden="true">';
 		foreach ( $bars as $b ) {
-			$html .= '<div class="lld-bar"><span style="height:' . (int) round( $b['days'] / 7 * 100 ) . '%"></span><b>' . esc_html( $b['label'] ) . '</b></div>';
+			// P3-36 D7: the count above each bar, as the table words it; the bar itself stays proportional (7 = full height).
+			$html .= '<div class="lld-bar" data-lld-bar-days="' . (int) $b['days'] . '"><i class="lld-bar-value">' . esc_html( (int) $b['days'] . ' of 7' ) . '</i><span style="height:' . (int) round( $b['days'] / 7 * 100 ) . '%"></span><b>' . esc_html( $b['label'] ) . '</b></div>';
 		}
-		$html .= '</div><button type="button" class="lld-text-button" data-lld-table-toggle aria-expanded="false">Show as table</button>';
+		// The faint guide line at 7 days is drawn by stage3-account.css across the top of every bar; this is its key.
+		$html .= '</div><p class="lld-bar-guide-key" aria-hidden="true"><i class="lld-bar-guide-swatch"></i>7-day guide</p><button type="button" class="lld-text-button" data-lld-table-toggle aria-expanded="false">Show as table</button>';
 		$html .= '<table class="lld-chart-table" hidden data-lld-table="weekly-bars"><caption>' . esc_html( $summary ) . '</caption><thead><tr><th scope="col">Week</th><th scope="col">Active days</th></tr></thead><tbody>';
 		foreach ( $bars as $b ) {
 			$html .= '<tr><td>' . esc_html( $b['label'] ) . '</td><td data-lld-days-value>' . (int) $b['days'] . ' of 7</td></tr>';

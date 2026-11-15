@@ -32,6 +32,7 @@ require_once __DIR__ . '/class-saved-results.php';
 require_once __DIR__ . '/class-reminders.php';
 require_once __DIR__ . '/class-shares.php';
 require_once __DIR__ . '/class-installable.php';
+require_once __DIR__ . '/class-members-root.php';
 require_once __DIR__ . '/class-consent-stage3.php';
 require_once __DIR__ . '/class-export-stage3.php';
 require_once __DIR__ . '/class-content-stage3.php';
@@ -42,6 +43,7 @@ require_once __DIR__ . '/engine/class-insights-runner.php';
 require_once __DIR__ . '/class-stripe-api.php';
 require_once __DIR__ . '/class-access-tiers.php';
 require_once __DIR__ . '/class-membership.php';
+require_once __DIR__ . '/class-terms-gate.php';
 require_once __DIR__ . '/class-pause.php';
 require_once __DIR__ . '/class-analytics.php';
 require_once __DIR__ . '/class-weekly-report-stage3.php';
@@ -72,6 +74,7 @@ function lld_members_stage3_boot() {
 	LLD_Members_Stripe_API::boot();
 	LLD_Members_Access_Tiers::boot();
 	LLD_Members_Membership::boot();
+	LLD_Members_Terms_Gate::boot();
 	LLD_Members_Pause::boot();
 	LLD_Members_Analytics::boot();
 	LLD_Members_Stage3_Report::boot();
@@ -81,6 +84,7 @@ function lld_members_stage3_boot() {
 	LLD_Members_Reminders::boot();
 	LLD_Members_Shares::boot();
 	LLD_Members_Installable::boot();
+	LLD_Members_Members_Root::boot(); // Bare /members/ goes to Today (staging review m3).
 	LLD_Members_Stage3_Consent::boot();
 	LLD_Members_Stage3_Export::boot();
 	// The admin panel (P3-87): always on, since it is how a feature is turned off in an emergency (FR3-74).

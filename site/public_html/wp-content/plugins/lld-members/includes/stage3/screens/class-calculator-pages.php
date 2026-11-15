@@ -601,7 +601,8 @@ class LLD_Members_Calculator_Pages {
 		wp_enqueue_style( self::HANDLE, plugins_url( 'assets/stage3.css', LLD_MEMBERS_FILE ), array(), LLD_MEMBERS_VERSION );
 		wp_enqueue_script( self::HANDLE, plugins_url( 'assets/stage3.js', LLD_MEMBERS_FILE ), array(), LLD_MEMBERS_VERSION, true );
 		ob_start();
-		lld_members_layout( array( 'title' => $title, 'main' => $main, 'signed_in' => $signed_in, 'description' => $title ) );
+		// Staging review M2 (P3-36): same v2 header/footer as the rest of the site (Your Health, Calculators, Day/Night).
+		lld_members_layout( array( 'title' => $title, 'main' => $main, 'signed_in' => $signed_in, 'description' => $title, 'v2' => true ) );
 		$page = (string) ob_get_clean();
 		ob_start();
 		wp_print_styles( array( self::HANDLE ) );

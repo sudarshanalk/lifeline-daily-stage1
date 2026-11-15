@@ -84,16 +84,36 @@ async function freshCode(page, ownerEmail, scope = page) {
   return codeFor(ownerEmail, after);
 }
 
+/**
+ * Fill and send WordPress's own sign-in form at wp-login.php.
+ * The page's script (wp_attempt_focus) focuses and selects the username box 200 ms after it loads. Playwright's fill()
+ * focuses a box and then inserts the text at the focus, so when that timer fired between the two (seen in WebKit) the
+ * password was typed over the username, the password box stayed empty, and the browser's "required" check then
+ * stopped the form from being sent at all. So: wait for that focus first, check both boxes hold what was typed, and
+ * wait for the form's page to arrive before the caller asserts on it.
+ */
+async function wpLogin(page, login, pass) {
+  await page.goto('/wp-login.php');
+  await expect(page.locator('#user_login')).toBeFocused();
+  await page.locator('#user_login').fill(login);
+  await page.locator('#user_pass').fill(pass);
+  await expect(page.locator('#user_login')).toHaveValue(login);
+  await expect(page.locator('#user_pass')).toHaveValue(pass);
+  await Promise.all([
+    page.waitForRequest((r) => r.method() === 'POST' && r.url().includes('/wp-login.php')),
+    page.waitForEvent('framenavigated', (frame) => frame === page.mainFrame()),
+    page.locator('#wp-submit').click(),
+  ]);
+  await page.waitForLoadState('domcontentloaded');
+}
+
 async function supportSignIn(page, context) {
   await admin(page.request, { op: 'clear_spam' });
   await page.request.post('/wp-json/lld-members/v1/test/logout');
   await context.clearCookies();
   const base = test.info().project.use.baseURL || 'http://127.0.0.1:8090';
   await context.addCookies([{ name: 'wordpress_test_cookie', value: 'WP Cookie check', url: base }]);
-  await page.goto('/wp-login.php');
-  await page.locator('#user_login').fill(HELPER);
-  await page.locator('#user_pass').fill(password);
-  await page.locator('#wp-submit').click();
+  await wpLogin(page, HELPER, password);
   await expect(page.getByRole('heading', { name: 'Enter your code' })).toBeVisible();
   await page.locator('#lld_code').fill(await mailCode(HELPER));
   await page.getByRole('button', { name: 'Continue' }).click();
@@ -328,8 +348,16 @@ test.describe.serial('P3-87 admin module in My account', () => {
     await open(page, at('activity'));
     const href = await page.getByRole('link', { name: 'Download as CSV' }).getAttribute('href');
     const csv = await (await page.request.get(href)).text();
-    const what = (await page.locator('.lld-adm-log > li strong').first().innerText()).split(' · ')[0];
-    expect(csv.trim().split('\n')[1]).toContain(what);
+    // E6 A (owner, 14 Nov 2026): a row is now one plain sentence, so the newest row is matched to the CSV's first
+    // line by its entry number and by who did it, where the old layout matched the label.
+    const first = page.locator('.lld-adm-log > li').first();
+    const id = await first.getAttribute('data-lld-log-id');
+    const who = (await first.locator('> span:nth-child(2) > span').innerText()).split(' · ')[0];
+    expect(id).toMatch(/^\d+$/);
+    expect(who.length).toBeGreaterThan(0);
+    const line = csv.trim().split('\n')[1];
+    expect(line.split(',')[0].replace(/"/g, '')).toBe(id);
+    expect(line).toContain(who);
   });
 
   // ----- Members (FR3-75 to FR3-85) -----
@@ -405,7 +433,8 @@ test.describe.serial('P3-87 admin module in My account', () => {
     await page.locator('#lld-note').fill(`Called about sign-in ${stamp}`);
     await page.getByRole('button', { name: 'Add note' }).click();
     await expect(page.locator('.lld-note').first()).toContainText(`Called about sign-in ${stamp}`);
-    await expect(page.locator('.lld-note').first()).toContainText('UTC');
+    // E5 A (owner, 14 Nov 2026): Admin times read "11 Nov, 15:51" in the site's time zone.
+    await expect(page.locator('.lld-note').first()).toContainText(/\d{1,2} [A-Z][a-z]{2}, \d\d:\d\d/);
     await page.request.post('/wp-json/lld-members/v1/test/logout');
     await context.clearCookies();
     const { signIn } = await import('../../../stage2/e2e/helpers.mjs');
@@ -882,10 +911,7 @@ test.describe.serial('P3-87 admin module in My account', () => {
     await context.clearCookies();
     const base = test.info().project.use.baseURL || 'http://127.0.0.1:8090';
     await context.addCookies([{ name: 'wordpress_test_cookie', value: 'WP Cookie check', url: base }]);
-    await page.goto('/wp-login.php');
-    await page.locator('#user_login').fill(globalThis.editor.login);
-    await page.locator('#user_pass').fill(password);
-    await page.locator('#wp-submit').click();
+    await wpLogin(page, globalThis.editor.login, password);
     await page.waitForURL(/wp-admin/);
   }
 
@@ -1176,17 +1202,11 @@ test.describe.serial('P3-87 admin module in My account', () => {
     await context.clearCookies();
     await context.addCookies([{ name: 'wordpress_test_cookie', value: 'WP Cookie check', url: base }]);
     for (let i = 0; i < 5; i += 1) {
-      await page.goto('/wp-login.php');
-      await page.locator('#user_login').fill(HELPER);
-      await page.locator('#user_pass').fill(`wrong-${i}`);
-      await page.locator('#wp-submit').click();
+      await wpLogin(page, HELPER, `wrong-${i}`);
       // Wait for the refusal, so the next attempt never cuts this one off (WebKit) and every failure is counted.
       await expect(page.locator('#login_error')).toBeVisible();
     }
-    await page.goto('/wp-login.php');
-    await page.locator('#user_login').fill(HELPER);
-    await page.locator('#user_pass').fill(password);
-    await page.locator('#wp-submit').click();
+    await wpLogin(page, HELPER, password);
     await expect(page.locator('#login_error')).toContainText('Try again in 15 minutes');
     await expect.poll(async () => (await messagesTo(owner.admin_email)).filter((m) => (m.Subject || '').includes('locked')).length).toBeGreaterThan(before);
     await admin(request, { op: 'helper', email: HELPER, password });

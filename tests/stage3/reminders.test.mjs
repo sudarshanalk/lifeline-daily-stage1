@@ -205,3 +205,23 @@ test('Free/Premium running reminders (FR3-68) still only runs the first for Free
   expect(out.free).toEqual([1]);
   expect(out.prem).toEqual([1, 2, 3]);
 });
+
+// P3-36 (FR3-69): the interface refuses a weigh-in reminder whenever the matrix hides weigh-ins from the member, as the
+// Account tab does: for an eating-disorder flag, and for hide_weight alone. Other reminder types stay open to them.
+test('TC-FR3-69-AS-02 (weigh-in reminder refused through the interface)', () => {
+  const r = run(`
+    $save = function ($type, $flags) { return LLD_Members_Reminders::for_save(['reminder_type' => $type, 'days' => 'mon', 'time_local' => '08:00'], $flags); };
+    return [
+      'ed' => $save('weigh_in', ['eating_disorder' => true, 'hide_weight' => false]),
+      'hide_only' => $save('weigh_in', ['eating_disorder' => false, 'hide_weight' => true]),
+      'none' => $save('weigh_in', ['eating_disorder' => false, 'hide_weight' => false]),
+      'other' => $save('log', ['eating_disorder' => false, 'hide_weight' => true]),
+      'gate' => LLD_Members_Reminders::gate_type('weigh_in', ['hide_weight' => true]),
+    ];
+  `);
+  expect(r.ed).toEqual({ error: 'Not available.', status: 403 });
+  expect(r.hide_only).toEqual({ error: 'Not available.', status: 403 });
+  expect(r.none.error).toBeUndefined();
+  expect(r.other.error).toBeUndefined();
+  expect(r.gate).toBe('Not available.');
+});

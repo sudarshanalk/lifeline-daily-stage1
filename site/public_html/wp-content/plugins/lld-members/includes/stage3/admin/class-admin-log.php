@@ -158,7 +158,7 @@ class LLD_Members_Admin_Log {
 	 */
 	public static function who( $actor ) {
 		if ( '' === (string) $actor ) {
-			return 'Stage 2 record';
+			return 'Not recorded (these older entries don\'t say who)';
 		}
 		if ( 'cli' === $actor ) {
 			return 'Command line';
@@ -168,6 +168,235 @@ class LLD_Members_Admin_Log {
 		}
 		$user = get_userdata( (int) $actor );
 		return $user ? (string) $user->display_name : 'Removed admin #' . (int) $actor;
+	}
+
+
+	/**
+	 * Admin time in the WordPress site zone (E5 A): "11 Nov, 15:51" or "11 Nov 2025, 15:51".
+	 *
+	 * @param string $utc Y-m-d H:i:s UTC.
+	 */
+	public static function when_site( $utc ) {
+		$ts = strtotime( (string) $utc . ' UTC' );
+		if ( false === $ts ) {
+			return (string) $utc;
+		}
+		$year     = (int) wp_date( 'Y', $ts );
+		$now_year = (int) wp_date( 'Y' );
+		$fmt      = $year === $now_year ? 'j M, H:i' : 'j M Y, H:i';
+		return wp_date( $fmt, $ts );
+	}
+
+	/**
+	 * Member-facing words for a stored feature/state code (E6 A).
+	 *
+	 * @param string $state Stored before/after state.
+	 */
+	private static function state_phrase( $state ) {
+		$map = array(
+			'everyone'      => 'on for everyone',
+			'on'            => 'on for everyone',
+			'off'           => 'off',
+			'test_accounts' => 'limited to test accounts',
+		);
+		$state = (string) $state;
+		return isset( $map[ $state ] ) ? $map[ $state ] : $state;
+	}
+
+	/**
+	 * A typed reason only (E6 A). Placeholders like "no reason given" are hidden.
+	 *
+	 * @param string $reason Stored reason.
+	 */
+	private static function typed_reason( $reason ) {
+		$reason = trim( (string) $reason );
+		if ( '' === $reason || preg_match( '/^no (reason|note) given$/i', $reason ) ) {
+			return '';
+		}
+		return 'Reason: "' . $reason . '"';
+	}
+
+	/**
+	 * One activity-log row as the page shows it (E6 A): the time, one plain sentence, and a second line with who did
+	 * it and the typed reason. Entries written by Stage 2 don't record who.
+	 *
+	 * @param object $row Log row.
+	 * @return array{0:string,1:string,2:string}
+	 */
+	public static function sentence( $row ) {
+		list( $when, $line, $why ) = self::sentence_parts( $row );
+		$who = self::who( (string) $row->admin_user_id );
+		return array( $when, $line, $who . ( '' !== $why ? ' · ' . $why : '' ) );
+	}
+
+	/**
+	 * The parts of sentence(): array( when, sentence, typed reason ). The stored detail of a Stage 2 entry follows its
+	 * sentence as it is.
+	 *
+	 * @param object $row Log row.
+	 * @return array{0:string,1:string,2:string}
+	 */
+	private static function sentence_parts( $row ) {
+		$when   = self::when_site( (string) $row->created_at );
+		$who    = self::who( (string) $row->admin_user_id );
+		$action = (string) $row->action;
+		$member = null !== $row->member_number ? (int) $row->member_number : 0;
+		$target = null !== $row->target ? (string) $row->target : '';
+		$before = null !== $row->before_state ? (string) $row->before_state : '';
+		$after  = null !== $row->after_state ? (string) $row->after_state : '';
+		$reason = null !== $row->reason ? trim( (string) $row->reason ) : '';
+		$detail = null === $row->admin_user_id ? (string) $row->detail : '';
+		$m      = $member > 0 ? 'member #' . $member : '';
+		$why    = self::typed_reason( $reason );
+
+		// A stored feature key gets its plain name; a target stored as a name already (a calculator) is shown as it is.
+		$plain_target = $target;
+		if ( '' !== $target && class_exists( 'LLD_Members_Admin_Pages' ) && preg_match( '/^[a-z0-9]+(_[a-z0-9]+)*$/', $target ) ) {
+			$plain_target = LLD_Members_Admin_Pages::plain_name( $target );
+		}
+		$stored = '' !== trim( $detail ) ? ' ' . trim( $detail ) : '';
+
+		switch ( $action ) {
+			case 'preview':
+				$as = 'a visitor';
+				if ( false !== stripos( $detail, 'premium' ) ) {
+					$as = 'a Premium member';
+				} elseif ( false !== stripos( $detail, 'free' ) ) {
+					$as = 'a free member';
+				}
+				return array( $when, 'You previewed the site as ' . $as . '.', '' );
+			case 'refund':
+				return array( $when, 'Refunded a payment for ' . ( $m ? $m : 'a member' ) . '.' . $stored, '' );
+			case 'price_change':
+				return array( $when, 'Changed the Premium prices.' . $stored, '' );
+			case 'code_created':
+				return array( $when, 'Created a discount code.' . $stored, '' );
+			case 'reward_withdrawn':
+				return array( $when, 'A referral reward for ' . ( $m ? $m : 'a member' ) . ' was taken back.' . $stored, '' );
+			case 'admin_signed_out':
+				if ( 'idle' === $after ) {
+					$line = $who . ' was signed out after 30 minutes without activity.';
+				} elseif ( 'max' === $after ) {
+					$line = $who . ' was signed out after 12 hours, the longest a session can last.';
+				} elseif ( 'no_code' === $after ) {
+					$line = $who . ' was signed out because the emailed code wasn\'t entered.';
+				} else {
+					$line = $who . ' was signed out by the time limit.';
+				}
+				return array( $when, $line, '' );
+			case 'admin_sign_in':
+				return array( $when, $who . ' signed in.', '' );
+			case 'admin_sign_in_failed':
+				return array( $when, 'A sign-in to ' . $who . '\'s account failed.', '' );
+			case 'admin_sign_in_locked':
+				return array( $when, $who . '\'s sign-in was locked for 15 minutes after failed attempts.', '' );
+			case 'admin_new_device':
+				return array( $when, $who . ' signed in from a new browser.', '' );
+			case 'admin_code_sent':
+				return array( $when, $who . ' asked for a fresh sign-in code.', '' );
+			case 'feature_on':
+				$line = $who . ' turned ' . $plain_target . ' on for everyone';
+				if ( '' !== $before ) {
+					$line .= ' (it was ' . self::state_phrase( $before ) . ')';
+				}
+				$line .= '.';
+				return array( $when, $line, $why );
+			case 'feature_off':
+				$line = $who . ' turned ' . $plain_target . ' off';
+				if ( '' !== $before ) {
+					$line .= ' (it was ' . self::state_phrase( $before ) . ')';
+				}
+				$line .= '.';
+				return array( $when, $line, $why );
+			case 'feature_test_accounts':
+				$line = $who . ' limited ' . $plain_target . ' to test accounts';
+				if ( '' !== $before ) {
+					$line .= ' (it was ' . self::state_phrase( $before ) . ')';
+				}
+				$line .= '.';
+				return array( $when, $line, $why );
+			case 'feature_all_on':
+				return array( $when, $who . ' turned every feature on.', $why );
+			case 'feature_all_off':
+				// Not in the E6 A table: fall back to the existing LABELS wording, not a new sentence.
+				return array( $when, self::label( 'feature_all_off' ) . '.', $why );
+			case 'test_accounts_set':
+				$line = $who . ' changed the test-account list';
+				if ( '' !== $before || '' !== $after ) {
+					$line .= ' from ' . $before . ' to ' . preg_replace( '/ emails?$/', '', $after );
+				}
+				$line .= '.';
+				return array( $when, $line, $why );
+			case 'member_view':
+				return array( $when, $who . ' opened ' . ( $m ? $m . "'s account" : 'a member account' ) . '.', '' );
+			case 'member_search':
+				return array( $when, $who . ' searched the member list.', '' );
+			case 'member_note':
+				return array( $when, $who . ' added a note to ' . ( $m ? $m : 'a member' ) . '.', '' );
+			case 'member_resend':
+				return array( $when, $who . ' resent an account email to ' . ( $m ? $m : 'a member' ) . '.', '' );
+			case 'member_pause':
+				$months = '';
+				if ( preg_match( '/(\d+)\s*month/', $after . ' ' . $detail, $mm ) ) {
+					$months = ' for ' . $mm[1] . ' month' . ( '1' === $mm[1] ? '' : 's' );
+				}
+				$line = $who . ' paused ' . ( $m ? $m . "'s" : 'a' ) . ' membership' . $months . '.';
+				return array( $when, $line, $why );
+			case 'member_resume':
+				return array( $when, $who . ' ended ' . ( $m ? $m . "'s" : 'a' ) . ' pause.', $why );
+			case 'premium_grant':
+				$until = '';
+				if ( preg_match( '/(\d{4}-\d{2}-\d{2})/', $after . ' ' . $detail, $dm ) ) {
+					$ts = strtotime( $dm[1] . ' 00:00:00 UTC' );
+					$until = false === $ts ? '' : ' until ' . gmdate( 'j F Y', $ts );
+				}
+				return array( $when, $who . ' gave ' . ( $m ? $m : 'a member' ) . ' free Premium' . $until . '.', $why );
+			case 'premium_grant_remove':
+				$was = '';
+				if ( preg_match( '/(\d{4}-\d{2}-\d{2})/', $before . ' ' . $detail, $dm ) ) {
+					$ts = strtotime( $dm[1] . ' 00:00:00 UTC' );
+					$was = false === $ts ? '' : ' (it was due to end on ' . gmdate( 'j F Y', $ts ) . ')';
+				}
+				return array( $when, $who . ' removed ' . ( $m ? $m . "'s" : 'a member\'s' ) . ' free Premium' . $was . '.', $why );
+			case 'membership_end':
+				$how = false !== stripos( $after . ' ' . $detail, 'period' ) ? ' at the end of the period' : ' now';
+				return array( $when, $who . ' ended ' . ( $m ? $m . "'s" : 'a member\'s' ) . ' Premium' . $how . '.', $why );
+			case 'test_account_mark':
+				return array( $when, $who . ' marked ' . ( $m ? $m : 'a member' ) . ' as a test account.', $why );
+			case 'test_account_unmark':
+				return array( $when, $who . ' unmarked ' . ( $m ? $m : 'a member' ) . ' as a test account.', $why );
+			case 'premium_test_on':
+				return array( $when, $who . ' made ' . ( $m ? $m : 'a member' ) . ' a Premium test member.', $why );
+			case 'premium_test_off':
+				return array( $when, $who . ' returned ' . ( $m ? $m : 'a member' ) . ' to Free.', $why );
+			case 'member_reset':
+				return array( $when, $who . ' reset test ' . ( $m ? $m : 'member' ) . ' to a clean start.', $why );
+			case 'member_block':
+				return array( $when, $who . ' blocked ' . ( $m ? $m : 'a member' ) . ' and paused their billing.', $why );
+			case 'member_unblock':
+				return array( $when, $who . ' unblocked ' . ( $m ? $m : 'a member' ) . ' and restarted their billing.', $why );
+			case 'member_delete':
+				return array( $when, $who . ' deleted ' . ( $m ? $m . "'s" : 'a member\'s' ) . ' account.', $why );
+			case 'member_download_sent':
+				return array( $when, $who . ' sent ' . ( $m ? $m : 'a member' ) . ' their data download link.', '' );
+			case 'helper_add':
+				$h = '' !== $target ? $target : 'a helper';
+				return array( $when, $who . ' made ' . $h . ' a Support helper.', $why );
+			case 'helper_remove':
+				$h = '' !== $target ? $target : 'a helper';
+				return array( $when, $who . ' removed ' . $h . ' as a Support helper.', $why );
+			default:
+				$label = self::label( $action );
+				$line  = $label;
+				if ( $m ) {
+					$line .= ' · ' . $m;
+				}
+				if ( '' !== $plain_target && $plain_target !== $m ) {
+					$line .= ' · ' . $plain_target;
+				}
+				$line .= '.' . $stored;
+				return array( $when, $line, $why );
+		}
 	}
 
 	/**

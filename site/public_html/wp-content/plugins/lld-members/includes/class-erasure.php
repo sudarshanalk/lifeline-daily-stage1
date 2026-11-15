@@ -72,7 +72,10 @@ class LLD_Members_Erasure {
 		$wpdb->query( $wpdb->prepare( "UPDATE {$log} SET member_name = NULL, member_email = NULL WHERE member_number = %d AND money_related = 1", $member_id ) );
 
 		if ( $member ) {
-			$wpdb->delete( LLD_Members_Schema::table( 'sign_in_lock' ), array( 'email' => $member->email ), array( '%s' ) );
+			// The lock row under the email, and any kept under its hash (P3-36 F1).
+			foreach ( LLD_Members_Auth::lock_keys( (string) $member->email ) as $lock_key ) {
+				$wpdb->delete( LLD_Members_Schema::table( 'sign_in_lock' ), array( 'email' => $lock_key ), array( '%s' ) );
+			}
 			$contact = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Schema::table( 'contact' ) . ' WHERE email = %s', $member->email ) );
 			if ( $contact ) {
 				self::delete_where( 'contact_consent', 'contact_id', (int) $contact );

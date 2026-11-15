@@ -7,12 +7,12 @@
 
   function initDesktopUserMenu() {
     const chip = document.querySelector('.lld-chip');
-    if (!chip) return;
+    if (!chip || chip.getAttribute('data-lld-menu-ready') === 'yes') return;
 
-    // The links come from PHP (a data attribute on the hub), and data-lld-sign-out names the hub's sign-out form:
-    // a POST to the Stage 2 sign-out carrying its nonce. Without them no menu is built and the chip stays a plain
-    // link to settings.
-    const hub = document.querySelector('[data-lld-menu][data-lld-sign-out]');
+    // The links come from PHP (data-lld-menu), and data-lld-sign-out names the sign-out form: a POST to the Stage 2
+    // sign-out carrying its nonce. The member layout prints both on every signed-in member page and every Admin page
+    // (P3-36 C1); the account hub prints its own too. Without them no menu is built and the chip stays a plain link.
+    const hub = document.querySelector('.lld-stage3-account-hub[data-lld-menu][data-lld-sign-out]') || document.querySelector('[data-lld-menu][data-lld-sign-out]');
     if (!hub) return;
     let links;
     try {
@@ -21,7 +21,8 @@
       return;
     }
     const signOut = document.getElementById(hub.getAttribute('data-lld-sign-out') || '');
-    if (!signOut || signOut.tagName !== 'FORM' || !links.profile || !links.subscription || !links.data || !links.help) return;
+    if (!signOut || signOut.tagName !== 'FORM' || !links || typeof links !== 'object') return;
+    chip.setAttribute('data-lld-menu-ready', 'yes');
 
     let menu = document.getElementById('lld-desktop-user-menu');
     if (!menu) {
@@ -32,14 +33,16 @@
       menu.setAttribute('role', 'menu');
       menu.setAttribute('aria-label', 'User account menu');
 
+      // A helper without a member record gets Help alone; a member gets all four.
       const items = [
         [links.profile, 'Profile', ''],
         [links.subscription, 'My subscription', ''],
         [links.data, 'My data', ''],
-        [links.help, 'Help', ''],
-        null,
-        [signOut, 'Sign out', ' lld-menu-signout']
-      ];
+        [links.help, 'Help', '']
+      ].filter(function (item) {
+        return typeof item[0] === 'string' && item[0] !== '';
+      });
+      items.push(null, [signOut, 'Sign out', ' lld-menu-signout']);
       items.forEach(function (item) {
         if (!item) {
           const hr = document.createElement('hr');
@@ -49,7 +52,7 @@
         }
         let a;
         if (item[0] === signOut) {
-          // Sign out posts the hub's sign-out form (with its nonce); it is never a link.
+          // Sign out posts the sign-out form (with its nonce); it is never a link.
           a = document.createElement('button');
           a.type = 'button';
           a.addEventListener('click', function () {
@@ -80,6 +83,7 @@
 
     chip.setAttribute('aria-haspopup', 'true');
     chip.setAttribute('aria-expanded', 'false');
+    chip.setAttribute('aria-controls', menu.id);
 
     function toggleMenu(open) {
       const willOpen = typeof open === 'boolean' ? open : menu.hidden;
@@ -105,6 +109,10 @@
         if (e.key === 'Enter' || e.key === ' ' || e.key === 'ArrowDown') {
           e.preventDefault();
           toggleMenu(true);
+        } else if (e.key === 'Escape' && !menu.hidden) {
+          e.preventDefault();
+          toggleMenu(false);
+          chip.focus();
         }
       }
     });
@@ -927,4 +935,44 @@
   } else {
     initAdminToggles();
   }
+})();
+
+/**
+ * Phones (P3-36 C5 follow-up to #266): the Account tabs and the Admin sections are one row that scrolls sideways, so
+ * the current tab could start off screen to the right. On load each row scrolls sideways (only its own scrollLeft, so
+ * the page never moves up or down) to bring the current tab to the middle. A row that fits, or has no current tab, is
+ * left as it is; once the visitor has scrolled a row, the later pass at window load leaves it alone.
+ */
+(function () {
+  'use strict';
+  if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') return;
+
+  var ROWS = '.lld-account-nav .lld-account-tabs, .lld-adm-tabs';
+  var CURRENT = '[aria-current="page"], .is-active';
+
+  function centreCurrentTab(row) {
+    var current = row.querySelector(CURRENT);
+    if (!current || typeof current.getBoundingClientRect !== 'function') return;
+    var room = row.scrollWidth - row.clientWidth;
+    if (!(room > 0)) return;
+    var set = row.getAttribute('data-lld-tab-scrolled');
+    if (set !== null && String(row.scrollLeft) !== set) return; // the visitor has moved the row since
+    var rowBox = row.getBoundingClientRect();
+    var tabBox = current.getBoundingClientRect();
+    var target = row.scrollLeft + (tabBox.left - rowBox.left) - (row.clientWidth - tabBox.width) / 2;
+    row.scrollLeft = Math.max(0, Math.min(room, Math.round(target)));
+    row.setAttribute('data-lld-tab-scrolled', String(row.scrollLeft));
+  }
+
+  function run() {
+    Array.prototype.forEach.call(document.querySelectorAll(ROWS), centreCurrentTab);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run);
+  } else {
+    run();
+  }
+  // Web fonts can change the tabs' widths after the first pass.
+  if (document.readyState !== 'complete' && typeof window !== 'undefined') window.addEventListener('load', run);
 })();

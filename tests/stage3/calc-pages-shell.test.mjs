@@ -52,6 +52,10 @@ test('Calculator pages: six addresses, no Google Analytics, nothing stored unles
   // The page saves only through the members' API save path (gate, safety refusals, sealing).
   expect(shell).toMatch(/LLD_Members_Stage3_API::save_page_result\( \$payload \)/);
   expect(shell).not.toMatch(/\$wpdb|Stage3_Data::insert/);
+  // P3-36 staging review M2: the six pages use the site's v2 header and footer (Your Health, Calculators, Day/Night).
+  expect(shell).toMatch(/'v2'\s*=>\s*true/);
+  const pageV2 = readFileSync(resolve(import.meta.dirname, '../../site/public_html/wp-content/mu-plugins/lld-tools/page-v2.php'), 'utf8');
+  expect(pageV2).toMatch(/calc3[\s\S]*\?\s*'tools'\s*:\s*'page'/);
 });
 
 test('TC-FR3-55-AS-02 (pages, list): the list view compares real sealed rows and returns them unchanged', () => {

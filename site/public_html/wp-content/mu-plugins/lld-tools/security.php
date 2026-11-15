@@ -16,6 +16,10 @@ function lld_security_can_list_users(): bool {
   return function_exists('current_user_can') && current_user_can('list_users');
 }
 
+// No X-Powered-By on any response, sitemaps and early exits included (they never reach send_headers): PHP adds the
+// header when the request starts, so it comes off as soon as the mu-plugins load (ZAP re-scan, 9 Nov 2026).
+if (function_exists('header_remove') && !headers_sent()) header_remove('X-Powered-By');
+
 if (function_exists('add_action')) {
   add_action('send_headers', function () {
     if (headers_sent()) return;

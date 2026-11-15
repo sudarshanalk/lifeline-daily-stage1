@@ -71,6 +71,7 @@ class LLD_Members_Features {
 			'reminders'        => 'P3-85 reminders, shareable summary, add to home screen',
 			'consent_new'      => 'P3-86 health consent for new data, download and deletion',
 			'content_new'      => 'P3-73 to P3-77: new tracks, challenges and wording',
+			'terms_first'      => 'P3-36 A6: Agreements before any member page for a member who has not accepted the terms',
 		);
 	}
 

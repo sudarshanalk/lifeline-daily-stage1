@@ -308,6 +308,16 @@ class LLD_Members_Account {
 			if ( ( 'none' === $answered && $conditions ) || ( in_array( 'none', $conditions, true ) && count( $conditions ) > 1 ) ) {
 				return new WP_REST_Response( array( 'message' => 'None cannot be combined with a condition.' ), 400 );
 			}
+			// P3-36 A7: "Prefer not to answer" is stored as on the health profile screen: still not_answered, so both
+			// matrices treat the conditions as unknown, with ["prefer-not"] kept so it counts as an answer (FR3-69 AS-06).
+			$prefer = in_array( 'prefer-not', $conditions, true ) || in_array( $answered, array( 'prefer-not', 'prefer_not' ), true );
+			if ( $prefer ) {
+				if ( array_diff( $conditions, array( 'prefer-not' ) ) ) {
+					return new WP_REST_Response( array( 'message' => 'Prefer not to answer cannot be combined with a condition.' ), 400 );
+				}
+				$params['conditions_answered'] = 'not_answered';
+				$params['conditions']          = wp_json_encode( array( 'prefer-not' ) );
+			}
 		}
 		$result = self::save_health( $member_id, $params );
 		if ( is_wp_error( $result ) ) {
@@ -568,12 +578,17 @@ class LLD_Members_Account {
 		$main .= '<form method="post" class="lld-form">';
 		$main .= wp_nonce_field( 'lld_agree', 'lld_agree_nonce', true, false );
 		// Nothing here is pre-ticked (Screen Design principle 8); the health box is the explicit consent of GDPR Article 9.
+		// P3-36 A6: a member who already gave health or marketing consent (sent here later by the terms gate) sees that box
+		// ticked as it stands, so accepting the terms does not record the consent as withdrawn. A new member has neither,
+		// so nothing is ticked for them, as before.
+		$has_health    = self::has_consent( $member_id, 'health' ) ? ' checked' : '';
+		$has_marketing = self::has_consent( $member_id, 'marketing' ) ? ' checked' : '';
 		$main .= '<div class="lld-card"><label class="lld-check"><input type="checkbox" name="lld_terms" value="1"> <span>I accept the <a href="' . esc_url( home_url( '/terms/' ) ) . '">terms</a> and <a href="' . esc_url( home_url( '/privacy/' ) ) . '">privacy policy</a></span></label></div>';
 		$main .= '<fieldset class="lld-card"><legend>Health information</legend>';
 		$main .= '<p>This allows goals, tracks, a health profile, a food diary and check-ins. Without it you can still use the calculators, read articles and manage a membership.</p>';
-		$main .= '<label class="lld-check"><input type="checkbox" name="lld_health" value="1"> <span>Allow Lifeline Daily to store my health information</span></label></fieldset>';
+		$main .= '<label class="lld-check"><input type="checkbox" name="lld_health" value="1"' . $has_health . '> <span>Allow Lifeline Daily to store my health information</span></label></fieldset>';
 		$main .= '<fieldset class="lld-card"><legend>Marketing emails</legend>';
-		$main .= '<label class="lld-check"><input type="checkbox" name="lld_marketing" value="1"> <span>Send me marketing emails</span></label></fieldset>';
+		$main .= '<label class="lld-check"><input type="checkbox" name="lld_marketing" value="1"' . $has_marketing . '> <span>Send me marketing emails</span></label></fieldset>';
 		$main .= lld_button( array( 'label' => 'Continue' ) );
 		$main .= '</form>';
 		self::layout( 'Agreements', $main, true );
@@ -707,7 +722,10 @@ class LLD_Members_Account {
 			if ( ! $line && 'sale' === $type ) {
 				continue;
 			}
-			$state = $line && 'given' === $line->change_kind ? 'Accepted' . ( '' !== (string) $line->document_version ? ' (' . $line->document_version . ')' : '' ) . ' on ' . substr( (string) $line->occurred_at, 0, 10 ) : 'Not accepted';
+			$state = $line && 'given' === $line->change_kind
+				? 'Accepted on ' . gmdate( 'j F Y', strtotime( substr( (string) $line->occurred_at, 0, 10 ) . ' 00:00:00 UTC' ) )
+					. ( '' !== (string) $line->document_version ? ' (version ' . $line->document_version . ')' : '' )
+				: 'Not accepted yet';
 			$html .= '<p>' . esc_html( $label . ': ' . $state ) . '</p>';
 		}
 		$html  .= '<p class="lld-hint">These are needed for your account. To end them, delete your account.</p>';
@@ -1473,6 +1491,140 @@ class LLD_Members_Account {
 			$html .= '<p><a href="' . esc_url( home_url( '/tools/' ) ) . '">Free calculators</a> <a href="' . esc_url( home_url( '/articles/' ) ) . '">Articles</a></p>';
 		}
 		return $html . '</div>';
+	}
+
+	/**
+	 * Profile tab of the account hub (P3-36 C2). Names, email, age, time zone, units and photo only.
+	 * The password, two-step sign-in, email preferences and consents stay on their own tabs.
+	 * The long settings form still uses save_profile() and is unchanged.
+	 *
+	 * @param object $row Member row.
+	 * @return true|WP_Error
+	 */
+	public static function save_hub_profile( $row ) {
+		$age = isset( $_POST['lld_age'] ) ? (int) $_POST['lld_age'] : (int) $row->age;
+		if ( $age < 18 ) {
+			return new WP_Error( 'lld_age', 'Age cannot be under 18.' );
+		}
+		$problem = self::upload_problem( 'lld_photo' );
+		if ( $problem ) {
+			return $problem;
+		}
+		if ( isset( $_POST['lld_timezone'] ) && ! in_array( sanitize_text_field( wp_unslash( $_POST['lld_timezone'] ) ), timezone_identifiers_list(), true ) ) {
+			return new WP_Error( 'lld_timezone', 'Choose a time zone from the list, for example Europe/London or America/New_York.' );
+		}
+		$member_id = (int) $row->id;
+		$email     = isset( $_POST['lld_email'] ) ? sanitize_email( wp_unslash( $_POST['lld_email'] ) ) : $row->email;
+		if ( $email !== $row->email ) {
+			if ( ! is_email( $email ) || email_exists( $email ) ) {
+				return new WP_Error( 'lld_email', 'That email is already registered.' );
+			}
+			self::issue_link( get_user_by( 'id', $row->user_id ), $member_id, 'email_change', 24, $email );
+		}
+		$photo = $row->photo_path;
+		if ( ! empty( $_POST['lld_remove_photo'] ) ) {
+			LLD_Members_Photos::delete_member( $member_id, 'profile' );
+			$photo = null;
+		}
+		if ( isset( $_FILES['lld_photo'] ) && ! empty( $_FILES['lld_photo']['tmp_name'] ) ) {
+			$stored = LLD_Members_Photos::store( $member_id, 'profile', $_FILES['lld_photo']['tmp_name'], (string) $_FILES['lld_photo']['name'] );
+			if ( is_wp_error( $stored ) ) {
+				return $stored;
+			}
+			$photo = $stored;
+		}
+		global $wpdb;
+		$updated = $wpdb->update(
+			LLD_Members_Schema::table( 'member' ),
+			array(
+				'first_name'     => isset( $_POST['lld_first'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_first'] ) ) : $row->first_name,
+				'last_name'      => isset( $_POST['lld_last'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_last'] ) ) : $row->last_name,
+				'display_name'   => isset( $_POST['lld_display'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_display'] ) ) : $row->display_name,
+				'age'            => $age,
+				'age_entered_on' => ( $age !== (int) $row->age ) ? LLD_Members_Clock::now( $member_id )->format( 'Y-m-d' ) : $row->age_entered_on,
+				'timezone'       => isset( $_POST['lld_timezone'] ) ? sanitize_text_field( wp_unslash( $_POST['lld_timezone'] ) ) : $row->timezone,
+				'units'          => empty( $_POST['lld_units'] ) ? 'metric' : 'imperial',
+				'photo_path'     => $photo,
+			),
+			array( 'id' => $member_id ),
+			array( '%s', '%s', '%s', '%d', '%s', '%s', '%s', '%s' ),
+			array( '%d' )
+		);
+		if ( false === $updated ) {
+			return new WP_Error( 'lld_profile_save', 'Try again' );
+		}
+		LLD_Members_Programme::zone_saved( $member_id, (string) $row->timezone );
+		return true;
+	}
+
+	/**
+	 * Sign-in tab: password and two-step sign-in only.
+	 *
+	 * @param object $row Member row.
+	 * @return true|WP_Error
+	 */
+	public static function save_hub_security( $row ) {
+		$pass = isset( $_POST['lld_password'] ) ? (string) wp_unslash( $_POST['lld_password'] ) : '';
+		if ( '' !== $pass ) {
+			if ( strlen( $pass ) < 10 ) {
+				return new WP_Error( 'lld_password', 'Use at least 10 characters.' );
+			}
+			wp_set_password( $pass, (int) $row->user_id );
+			wp_set_auth_cookie( (int) $row->user_id, false );
+		}
+		$forced  = 'owner_admin' === $row->role;
+		global $wpdb;
+		$updated = $wpdb->update(
+			LLD_Members_Schema::table( 'member' ),
+			array( 'two_step' => ( $forced || ! empty( $_POST['lld_two_step'] ) ) ? 1 : 0 ),
+			array( 'id' => (int) $row->id ),
+			array( '%d' ),
+			array( '%d' )
+		);
+		if ( false === $updated ) {
+			return new WP_Error( 'lld_profile_save', 'Try again' );
+		}
+		return true;
+	}
+
+	/**
+	 * Notifications tab: the existing email choices. Reminder rows are a later package.
+	 *
+	 * @param int $member_id Member number.
+	 * @return true
+	 */
+	public static function save_hub_notifications( $member_id ) {
+		self::save_preferences( $member_id );
+		return true;
+	}
+
+	/**
+	 * Privacy tab: marketing emails only. Health consent still goes through the withdraw screen.
+	 *
+	 * @param int $member_id Member number.
+	 * @return true
+	 */
+	public static function save_hub_marketing( $member_id ) {
+		$marketing = ! empty( $_POST['lld_consent_marketing'] );
+		if ( $marketing !== self::has_consent( $member_id, 'marketing' ) ) {
+			self::add_consent( $member_id, 'marketing', $marketing ? 'given' : 'withdrawn', '' );
+		}
+		return true;
+	}
+
+	/**
+	 * @param int $member_id Member number.
+	 */
+	public static function email_preference_fields( $member_id ) {
+		return self::preference_fields( $member_id );
+	}
+
+	/**
+	 * @param int $member_id Member number.
+	 * @return string|null Address waiting for confirmation.
+	 */
+	public static function pending_email_for( $member_id ) {
+		return self::pending_email( $member_id );
 	}
 
 	/**
