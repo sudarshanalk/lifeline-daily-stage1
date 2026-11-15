@@ -217,3 +217,17 @@ test('TC-FR3-113-AS-02 (members\' interface): a member who has not accepted the 
   const features = api.slice(api.indexOf('public static function features()'), api.indexOf('private static function gate('));
   expect(features).not.toContain('terms_refusal');
 });
+
+test('TC-FR3-69-AS-02 (amounts, writes): creating or changing a food entry answers with what a read would show', () => {
+  // POST and PATCH answer with the eating-disorder amounts rule, as GET does, so a saved
+  // entry never comes back with its grams or portion to a member with an eating-disorder flag.
+  const api = readFileSync(resolve(plugin, 'includes/stage3/class-api.php'), 'utf8');
+  for (const [name, v, code] of [['create', 'row', 201], ['patch', 'updated', 200]]) {
+    const start = api.indexOf(`public static function ${name}( $request )`);
+    const b = api.slice(start, api.indexOf('public static function', start + 30));
+    const tail = b.slice(b.lastIndexOf(`$${v} = self::amounts_shown(`));
+    expect(tail.replace(/\s+/g, ' '), name).toContain(
+      `$${v} = self::amounts_shown( $${v}, (string) $request['type'], $member_id ); `
+      + `return new WP_REST_Response( self::present( $${v} ), ${code} );`);
+  }
+});

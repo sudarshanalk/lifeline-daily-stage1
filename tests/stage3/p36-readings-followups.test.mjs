@@ -154,3 +154,20 @@ test("TC-FR3-38-AS-03 (interface): the members' interface lists readings and foo
   expect(food).toMatch(/LLD_Members_Health_Log::local_date\( lld_members_now_mysql\( \$member_id \), LLD_Members_Health_Log::zone_for\( \$member_id \) \)/);
   expect(food).not.toMatch(/limit_history\([^;]*\), gmdate\( 'Y-m-d' \) \);/);
 });
+
+test("TC-FR3-38-AS-03 (sleep): a night logged on the member's clock keeps its hours when the wake time is sent in UTC", () => {
+  // Bedtime 23:00, wake 07:00 in Auckland: the page sends 8 hours and the bedtime as minutes (value_2), never a local
+  // bedtime beside a UTC wake time, which the server would pair into 19 hours.
+  const src = logging.slice(logging.indexOf('function buildPayload(isEdit, existingRow) {'), logging.indexOf('function buildLocalPayload('));
+  const buildPayload = new Function('buildLocalPayload', 'rdLocalToUtc', 'cfg', `${src}; return buildPayload;`)(
+    () => ({ payload: { reading_type: 'sleep', taken_at: '2026-11-09 07:00:00', bedtime: '23:00', value_1: 8, source: 'manual' } }),
+    (local) => (local === '2026-11-09 07:00:00' ? '2026-11-08 18:00:00' : 'unexpected'),
+    { timezone: 'Pacific/Auckland' },
+  );
+  const sent = buildPayload(false, null).payload;
+  expect(sent).toEqual({ reading_type: 'sleep', taken_at: '2026-11-08 18:00:00', value_1: 8, value_2: 1380, source: 'manual' });
+  const stored = JSON.parse(php(`require ${p('includes/stage3/class-health-log.php')};
+    echo json_encode(LLD_Members_Health_Log::normalise(json_decode('${JSON.stringify(sent)}', true)));`));
+  expect(stored.value_1).toBe(8);
+  expect(stored.value_2).toBe(1380);
+});

@@ -2779,6 +2779,13 @@
 		function buildPayload(isEdit, existingRow) {
 			const built = buildLocalPayload(isEdit, existingRow);
 			if (built.payload && built.payload.taken_at) {
+				// Sleep: the hours were worked out on the member's clock; send them with the bedtime as minutes
+				// (value_2, as stored), so the server never pairs a local bedtime with the UTC wake time.
+				if (built.payload.reading_type === 'sleep' && typeof built.payload.bedtime === 'string') {
+					const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(built.payload.bedtime.trim());
+					if (m) built.payload.value_2 = Number(m[1]) * 60 + Number(m[2]);
+					delete built.payload.bedtime;
+				}
 				built.payload.taken_at = rdLocalToUtc(built.payload.taken_at, cfg.timezone);
 			}
 			return built;

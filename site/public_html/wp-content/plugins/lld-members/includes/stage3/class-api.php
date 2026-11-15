@@ -1110,6 +1110,8 @@ class LLD_Members_Stage3_API {
 			}
 			return new WP_REST_Response( $out, 201 );
 		}
+		// A saved food entry never comes back with its amount to a member with an eating-disorder flag (FR3-69), as on a read.
+		$row = self::amounts_shown( $row, (string) $request['type'], $member_id );
 		return new WP_REST_Response( self::present( $row ), 201 );
 	}
 
@@ -1221,6 +1223,8 @@ class LLD_Members_Stage3_API {
 			}
 			return new WP_REST_Response( $out, 200 );
 		}
+		// A saved food entry never comes back with its amount to a member with an eating-disorder flag (FR3-69), as on a read.
+		$updated = self::amounts_shown( $updated, (string) $request['type'], $member_id );
 		return new WP_REST_Response( self::present( $updated ), 200 );
 	}
 
