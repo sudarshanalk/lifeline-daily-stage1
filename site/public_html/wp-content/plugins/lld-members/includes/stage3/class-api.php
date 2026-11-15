@@ -846,16 +846,18 @@ class LLD_Members_Stage3_API {
 			$limit = (int) $request->get_param( 'limit' );
 			$rows  = LLD_Members_Stage3_Data::rows( $def['table'], $member_id, $def['sealed'], null === $since ? '' : $since, $limit > 0 ? $limit : 500 );
 			if ( 'food_log' === $def['table'] ) {
-				$rows = LLD_Members_Food_Log::limit_history( $rows, LLD_Members_Food_Log::premium( $member_id ), gmdate( 'Y-m-d' ) );
+				$rows = LLD_Members_Food_Log::limit_history( $rows, LLD_Members_Food_Log::premium( $member_id ), class_exists( 'LLD_Members_Health_Log' ) ? LLD_Members_Health_Log::local_date( lld_members_now_mysql( $member_id ), LLD_Members_Health_Log::zone_for( $member_id ) ) : gmdate( 'Y-m-d' ) ); // the member's own today: entry dates are their local days
 			}
 			if ( 'readings' === $def['table'] ) {
 				$premium = LLD_Members_Food_Log::premium( $member_id );
-				$rows    = LLD_Members_Health_Log::limit_history( $rows, $premium, substr( lld_members_now_mysql( $member_id ), 0, 10 ) ); // the member's own today, as the readings were saved by it
+				$zone    = LLD_Members_Health_Log::zone_for( $member_id ); // readings are stored in UTC; days are the member's own
+				$rows    = LLD_Members_Health_Log::limit_history( $rows, $premium, LLD_Members_Health_Log::local_date( lld_members_now_mysql( $member_id ), $zone ), $zone );
 				$rows    = LLD_Members_Health_Log::filter(
 					$rows,
 					self::query_type( $request ),
 					(string) $request->get_param( 'from' ),
-					(string) $request->get_param( 'to' )
+					(string) $request->get_param( 'to' ),
+					$zone
 				);
 			}
 		}

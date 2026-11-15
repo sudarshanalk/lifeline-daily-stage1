@@ -141,3 +141,16 @@ test('TC-FR3-38-AS-02 deleting a reading asks first, and keeping it sends nothin
   expect(await run(false)).toEqual([]);
   expect(await run(true)).toEqual([['readings/42', 'DELETE']]);
 });
+
+test("TC-FR3-38-AS-03 (interface): the members' interface lists readings and food entries on the member's own day", () => {
+  // The plain GET /me/readings list cuts a Free member's 14 days and applies from/to on the member's calendar, the
+  // same zone the page uses; the food list's Free cut-off uses the member's own today, not the UTC date.
+  const api = readFileSync(resolve(plugin, 'includes/stage3/class-api.php'), 'utf8');
+  const route = api.slice(api.indexOf("if ( 'readings' === $def['table'] ) {"), api.indexOf("apply_filters( 'lld_members_stage3_api_rows'"));
+  expect(route).toMatch(/\$zone\s+= LLD_Members_Health_Log::zone_for\( \$member_id \)/);
+  expect(route).toMatch(/limit_history\( \$rows, \$premium, LLD_Members_Health_Log::local_date\( lld_members_now_mysql\( \$member_id \), \$zone \), \$zone \)/);
+  expect(route).toMatch(/\(string\) \$request->get_param\( 'to' \),\s*\$zone\s*\)/);
+  const food = api.slice(api.indexOf("if ( 'food_log' === $def['table'] ) {"), api.indexOf("if ( 'readings' === $def['table'] ) {"));
+  expect(food).toMatch(/LLD_Members_Health_Log::local_date\( lld_members_now_mysql\( \$member_id \), LLD_Members_Health_Log::zone_for\( \$member_id \) \)/);
+  expect(food).not.toMatch(/limit_history\([^;]*\), gmdate\( 'Y-m-d' \) \);/);
+});
