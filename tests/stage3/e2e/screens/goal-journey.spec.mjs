@@ -684,7 +684,14 @@ test.describe.serial('P3-33 progress page and dashboard', () => {
   test('TC-FR3-18-AS-02 After the track finishes, the dashboard says it was finished, matching the programme page', async ({ page }) => {
     const a = await fresh(page, A, { access_state: 'Premium' }); // Free stops at the end of week 1; Premium runs all 28 days
     await profile(page, a.member_id);
-    await weightGoal(page);
+    // A blood pressure goal, not a weight goal: joining the Healthy Weight programme now starts its own track (P3-35),
+    // which would leave no other track to start here.
+    await page.goto('/members/goal/?type=lower_blood_pressure');
+    await page.waitForLoadState('load');
+    await page.locator('#lld_current').fill('142');
+    await page.locator('#lld_current_2').fill('88');
+    await saveGoal(page);
+    await expect(page.locator('[data-lld-goal-step="plan"]')).toBeVisible();
     const made = await fixture(page.request, 'weeks');
     await startTrack(page, made.track);
     await clock(page, A, 35); // past day 28, so the track is settled as finished
