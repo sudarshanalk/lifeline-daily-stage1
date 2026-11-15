@@ -1988,6 +1988,22 @@
 	/** The member's local "Y-m-d H:i:s" to UTC for storage. */
 	function rdLocalToUtc(local, zone) { return rdShiftZone(local, zone, false); }
 
+	/** False for a local time the member's clocks skip when they go forward (it never happens on their clock). */
+	function rdLocalExists(local, zone) {
+		const m = RD_AT.exec(String(local || '').trim());
+		if (!m || !zone || zone === 'UTC') return true;
+		const back = rdUtcToLocal(rdLocalToUtc(local, zone), zone);
+		return back.slice(0, 16) === m[1] + '-' + m[2] + '-' + m[3] + ' ' + m[4] + ':' + m[5];
+	}
+
+	/** The refusal for a typed time the clocks skipped, or '' when the time is fine. */
+	function rdSkippedTimeError(typed, cfg) {
+		if (!String(typed || '').trim()) return '';
+		return rdLocalExists(rdFormatTakenAt(typed, cfg.today), cfg.timezone)
+			? ''
+			: 'That time was skipped when the clocks went forward. Please choose another time.';
+	}
+
 	function rdDisplayDateTime(takenAt, zone) {
 		const raw = RD_AT.test(String(takenAt || '')) ? rdUtcToLocal(takenAt, zone) : String(takenAt || '');
 		const d = raw.slice(0, 10);
@@ -3009,6 +3025,8 @@
 		els.waterQuickBtns.forEach(function (btn) {
 			btn.addEventListener('click', function () {
 				const amount = Number(btn.getAttribute('data-lld-water-quick') || 250);
+				const skipped = rdSkippedTimeError(els.takenAt ? els.takenAt.value : '', cfg);
+				if (skipped) { clearFeedback(); renderServerError(400, { error: skipped }); return; }
 				submitPayload({
 					reading_type: 'water',
 					value_1: amount,
@@ -3034,6 +3052,8 @@
 		if (els.form) {
 			els.form.addEventListener('submit', function (ev) {
 				ev.preventDefault();
+				const skipped = rdSkippedTimeError(els.takenAt ? els.takenAt.value : '', cfg);
+				if (skipped) { clearFeedback(); renderServerError(400, { error: skipped }); return; }
 				const existingRow = state.editingId ? state.rows.find(function (r) { return Number(r.id) === state.editingId; }) : null;
 				const built = buildPayload(Boolean(state.editingId), existingRow);
 				if (built.error) {
