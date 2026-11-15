@@ -175,6 +175,11 @@ class LLD_Members_Insights_Runner {
 				}
 			}
 		}
+		// The Healthy Weight programme's nightly part (P3-35): the day's note, milestones, plateau, with the R-SAFE-04
+		// low-mood pause. Only what ran comes back, never a value.
+		if ( ! $dry && class_exists( 'LLD_Members_HW_Programme' ) ) {
+			$summary['healthy_weight'] = LLD_Members_HW_Programme::nightly( $member_id, $result['date'], $summary );
+		}
 		return $summary;
 	}
 

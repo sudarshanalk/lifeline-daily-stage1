@@ -1,0 +1,1108 @@
+{
+  "group": "Food rules R-HW-FOOD-01 to -03 and the approved food-rule tags (FR3-36, FR3-99)",
+  "tool": "healthy-weight-programme",
+  "fixtures": [
+    {
+      "id": "FX-HWP-HWF01-01",
+      "purpose": "HWF-01a: halal + peanut allergy: no item tagged pork, alcohol or peanut",
+      "inputs": {
+        "source_id": "HWF-01a",
+        "fn": "food_filter",
+        "args": {
+          "items": [
+            {
+              "id": "R-109",
+              "approved": true,
+              "diets": [
+                "everything"
+              ],
+              "food_rules": [
+                "contains-poultry",
+                "needs-halal-meat",
+                "needs-kosher-meat",
+                "contains-onion-or-garlic",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "R-164",
+              "approved": true,
+              "diets": [
+                "everything"
+              ],
+              "food_rules": [
+                "contains-shellfish",
+                "contains-onion-or-garlic",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [
+                "shellfish",
+                "gluten"
+              ],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "R-110",
+              "approved": true,
+              "diets": [
+                "everything"
+              ],
+              "food_rules": [
+                "contains-poultry",
+                "contains-dairy",
+                "contains-meat-and-dairy",
+                "needs-halal-meat",
+                "needs-kosher-meat",
+                "contains-onion-or-garlic",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [
+                "milk"
+              ],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "TEST-PORK-01",
+              "approved": true,
+              "diets": [
+                "everything"
+              ],
+              "food_rules": [
+                "contains-pork"
+              ],
+              "allergens": [],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "TEST-ALCOHOL-01",
+              "approved": true,
+              "diets": [
+                "everything"
+              ],
+              "food_rules": [
+                "contains-alcohol"
+              ],
+              "allergens": [],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "TEST-PEANUT-01",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [
+                "peanuts"
+              ],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "R-104",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-onion-or-garlic",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "R-105",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-onion-or-garlic",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "R-140",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-onion-or-garlic",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "R-142",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-onion-or-garlic",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "dinner"
+            }
+          ],
+          "member": {
+            "food_rules": [
+              "halal"
+            ],
+            "allergies": [
+              "peanuts"
+            ]
+          },
+          "meal_type": "dinner"
+        }
+      },
+      "expected": {
+        "empty": false,
+        "excludes": [
+          "TEST-PORK-01",
+          "TEST-ALCOHOL-01",
+          "TEST-PEANUT-01"
+        ],
+        "includes": [
+          "R-109",
+          "R-164",
+          "R-110"
+        ],
+        "item_lines.R-109": [
+          "Use halal meat and chicken in these recipes."
+        ]
+      },
+      "oracle": "clinical",
+      "source_version": "9dfaae898ee7a7650de108753d0965b90cb06362ea71a0cf3f7e836e1cc36b1e",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWF01-02",
+      "purpose": "HWF-01b: vegan + kosher, only 3 breakfasts left: empty-state message, no other breakfast",
+      "inputs": {
+        "source_id": "HWF-01b",
+        "fn": "food_filter",
+        "args": {
+          "items": [
+            {
+              "id": "R-122",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian"
+              ],
+              "food_rules": [
+                "contains-dairy",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "breakfast"
+            },
+            {
+              "id": "TEST-VGN-BF-01",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "breakfast"
+            },
+            {
+              "id": "TEST-VGN-BF-02",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "breakfast"
+            },
+            {
+              "id": "TEST-VGN-BF-03",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "breakfast"
+            },
+            {
+              "id": "R-115",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian"
+              ],
+              "food_rules": [
+                "contains-egg",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "breakfast"
+            }
+          ],
+          "member": {
+            "food_rules": [
+              "vegan",
+              "kosher"
+            ],
+            "allergies": []
+          },
+          "meal_type": "breakfast"
+        }
+      },
+      "expected": {
+        "empty": true,
+        "item_ids": []
+      },
+      "oracle": "clinical",
+      "source_version": "9dfaae898ee7a7650de108753d0965b90cb06362ea71a0cf3f7e836e1cc36b1e",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWF02-01",
+      "purpose": "HWF-02a: cooking time under 15: the first three suggestions are tagged quick",
+      "inputs": {
+        "source_id": "HWF-02a",
+        "fn": "food_filter",
+        "args": {
+          "items": [
+            {
+              "id": "Q-1",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "dinner",
+              "quick": false
+            },
+            {
+              "id": "Q-2",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "dinner",
+              "quick": false
+            },
+            {
+              "id": "Q-3",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "dinner",
+              "quick": true
+            },
+            {
+              "id": "Q-4",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "dinner",
+              "quick": false
+            },
+            {
+              "id": "Q-5",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "dinner",
+              "quick": true
+            },
+            {
+              "id": "Q-6",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "dinner",
+              "quick": true
+            },
+            {
+              "id": "Q-7",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "dinner",
+              "quick": false
+            }
+          ],
+          "member": {
+            "food_rules": [],
+            "allergies": [],
+            "cooking_time": "under_15"
+          },
+          "meal_type": "dinner"
+        }
+      },
+      "expected": {
+        "item_ids.0": "Q-3",
+        "item_ids.1": "Q-5",
+        "item_ids.2": "Q-6",
+        "item_ids.length": 7,
+        "items.0.reason": "Quick to make"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWF03-01",
+      "purpose": "HWF-03a: Ramadan selected, a date inside the test fast: fasting meal plan, target unchanged",
+      "inputs": {
+        "source_id": "HWF-03a",
+        "fn": "meal_timing",
+        "args": {
+          "date": "2027-02-20",
+          "fasts": [
+            {
+              "id": "ramadan-2027-test",
+              "start": "2027-02-08",
+              "end": "2027-03-09"
+            }
+          ],
+          "conditions": []
+        }
+      },
+      "expected": {
+        "plan": "fasting",
+        "target_changes": false
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWF03-02",
+      "purpose": "HWF-03b: the same with type 2 diabetes: usual plan and the approved line (FR3-99 AS-07)",
+      "inputs": {
+        "source_id": "HWF-03b",
+        "fn": "meal_timing",
+        "args": {
+          "date": "2027-02-20",
+          "fasts": [
+            {
+              "id": "ramadan-2027-test",
+              "start": "2027-02-08",
+              "end": "2027-03-09"
+            }
+          ],
+          "conditions": [
+            "type2_diabetes"
+          ]
+        }
+      },
+      "expected": {
+        "plan": "usual",
+        "line": "If you are planning to fast, follow the plan you agreed with your doctor or diabetes team."
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWF03-03",
+      "purpose": "HWF-03c: the day after the fast ends: usual plan again",
+      "inputs": {
+        "source_id": "HWF-03c",
+        "fn": "meal_timing",
+        "args": {
+          "date": "2027-03-10",
+          "fasts": [
+            {
+              "id": "ramadan-2027-test",
+              "start": "2027-02-08",
+              "end": "2027-03-09"
+            }
+          ],
+          "conditions": []
+        }
+      },
+      "expected": {
+        "plan": "usual"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-TAG-01",
+      "purpose": "TAG-01: kosher: no meat and dairy together, shellfish, non-kosher fish or pork; fish with dairy kept (FT-Q1 = A); the kosher meat line",
+      "inputs": {
+        "source_id": "TAG-01",
+        "fn": "food_filter",
+        "args": {
+          "items": [
+            {
+              "id": "R-110",
+              "approved": true,
+              "diets": [
+                "everything"
+              ],
+              "food_rules": [
+                "contains-poultry",
+                "contains-dairy",
+                "contains-meat-and-dairy",
+                "needs-halal-meat",
+                "needs-kosher-meat",
+                "contains-onion-or-garlic",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [
+                "milk"
+              ],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "R-164",
+              "approved": true,
+              "diets": [
+                "everything"
+              ],
+              "food_rules": [
+                "contains-shellfish",
+                "contains-onion-or-garlic",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [
+                "shellfish"
+              ],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "R-151",
+              "approved": true,
+              "diets": [
+                "everything"
+              ],
+              "food_rules": [
+                "contains-fish",
+                "contains-non-kosher-fish",
+                "contains-onion-or-garlic",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [
+                "fish"
+              ],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "TEST-PORK-01",
+              "approved": true,
+              "diets": [
+                "everything"
+              ],
+              "food_rules": [
+                "contains-pork"
+              ],
+              "allergens": [],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "R-109",
+              "approved": true,
+              "diets": [
+                "everything"
+              ],
+              "food_rules": [
+                "contains-poultry",
+                "needs-halal-meat",
+                "needs-kosher-meat",
+                "contains-onion-or-garlic",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "R-132",
+              "approved": true,
+              "diets": [
+                "everything"
+              ],
+              "food_rules": [
+                "contains-fish",
+                "contains-dairy",
+                "contains-onion-or-garlic",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [
+                "fish",
+                "milk"
+              ],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "R-104",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-onion-or-garlic",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "R-140",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-onion-or-garlic",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "dinner"
+            },
+            {
+              "id": "R-166",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "dinner"
+            }
+          ],
+          "member": {
+            "food_rules": [
+              "kosher"
+            ],
+            "allergies": []
+          },
+          "meal_type": "dinner"
+        }
+      },
+      "expected": {
+        "empty": false,
+        "excludes": [
+          "R-110",
+          "R-164",
+          "R-151",
+          "TEST-PORK-01"
+        ],
+        "includes": [
+          "R-109",
+          "R-132",
+          "R-104",
+          "R-140",
+          "R-166"
+        ],
+        "item_lines.R-109": [
+          "Use kosher meat and chicken in these recipes."
+        ]
+      },
+      "oracle": "clinical",
+      "source_version": "9dfaae898ee7a7650de108753d0965b90cb06362ea71a0cf3f7e836e1cc36b1e",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-TAG-02",
+      "purpose": "TAG-02: \"no grains or pulses\" on a fasting day: only the recipes without grains or pulses",
+      "inputs": {
+        "source_id": "TAG-02",
+        "fn": "food_filter",
+        "args": {
+          "items": [
+            {
+              "id": "R-165",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian"
+              ],
+              "food_rules": [
+                "contains-egg",
+                "contains-dairy",
+                "contains-onion-or-garlic"
+              ],
+              "allergens": [],
+              "meal_type": "snack"
+            },
+            {
+              "id": "R-171",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "snack"
+            },
+            {
+              "id": "R-172",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-dairy"
+              ],
+              "allergens": [],
+              "meal_type": "snack"
+            },
+            {
+              "id": "R-173",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-dairy"
+              ],
+              "allergens": [],
+              "meal_type": "snack"
+            },
+            {
+              "id": "R-175",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "snack"
+            },
+            {
+              "id": "R-176",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "snack"
+            },
+            {
+              "id": "R-166",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "snack"
+            },
+            {
+              "id": "R-168",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "snack"
+            },
+            {
+              "id": "R-174",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "snack"
+            }
+          ],
+          "member": {
+            "food_rules": [
+              "no_grains_pulses_fasting"
+            ],
+            "allergies": [],
+            "fasting_day": true
+          },
+          "meal_type": "snack"
+        }
+      },
+      "expected": {
+        "empty": false,
+        "item_ids": [
+          "R-165",
+          "R-171",
+          "R-172",
+          "R-173",
+          "R-175",
+          "R-176"
+        ]
+      },
+      "oracle": "clinical",
+      "source_version": "9dfaae898ee7a7650de108753d0965b90cb06362ea71a0cf3f7e836e1cc36b1e",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-TAG-03",
+      "purpose": "TAG-03: the same member on a normal day: grains and pulses allowed",
+      "inputs": {
+        "source_id": "TAG-03",
+        "fn": "food_filter",
+        "args": {
+          "items": [
+            {
+              "id": "R-165",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian"
+              ],
+              "food_rules": [
+                "contains-egg",
+                "contains-dairy",
+                "contains-onion-or-garlic"
+              ],
+              "allergens": [],
+              "meal_type": "snack"
+            },
+            {
+              "id": "R-171",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "snack"
+            },
+            {
+              "id": "R-172",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-dairy"
+              ],
+              "allergens": [],
+              "meal_type": "snack"
+            },
+            {
+              "id": "R-173",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-dairy"
+              ],
+              "allergens": [],
+              "meal_type": "snack"
+            },
+            {
+              "id": "R-175",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "snack"
+            },
+            {
+              "id": "R-176",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "snack"
+            },
+            {
+              "id": "R-166",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "snack"
+            },
+            {
+              "id": "R-168",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "snack"
+            },
+            {
+              "id": "R-174",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [],
+              "meal_type": "snack"
+            }
+          ],
+          "member": {
+            "food_rules": [
+              "no_grains_pulses_fasting"
+            ],
+            "allergies": [],
+            "fasting_day": false
+          },
+          "meal_type": "snack"
+        }
+      },
+      "expected": {
+        "item_ids.length": 9
+      },
+      "oracle": "clinical",
+      "source_version": "9dfaae898ee7a7650de108753d0965b90cb06362ea71a0cf3f7e836e1cc36b1e",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-TAG-04",
+      "purpose": "TAG-04: nut allergy: never a recipe that contains nuts",
+      "inputs": {
+        "source_id": "TAG-04",
+        "fn": "food_filter",
+        "args": {
+          "items": [
+            {
+              "id": "R-124",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian"
+              ],
+              "food_rules": [
+                "contains-dairy",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [
+                "milk",
+                "nuts",
+                "gluten"
+              ],
+              "meal_type": "breakfast"
+            },
+            {
+              "id": "R-126",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian"
+              ],
+              "food_rules": [
+                "contains-dairy",
+                "contains-grains-or-pulses"
+              ],
+              "allergens": [
+                "milk",
+                "gluten"
+              ],
+              "meal_type": "breakfast"
+            },
+            {
+              "id": "TEST-BF-1",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "breakfast"
+            },
+            {
+              "id": "TEST-BF-2",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "breakfast"
+            },
+            {
+              "id": "TEST-BF-3",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "breakfast"
+            },
+            {
+              "id": "TEST-BF-4",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [
+                "nuts"
+              ],
+              "meal_type": "breakfast"
+            },
+            {
+              "id": "TEST-BF-5",
+              "approved": true,
+              "diets": [
+                "everything",
+                "vegetarian",
+                "vegan"
+              ],
+              "food_rules": [],
+              "allergens": [],
+              "meal_type": "breakfast"
+            }
+          ],
+          "member": {
+            "food_rules": [],
+            "allergies": [
+              "nuts"
+            ]
+          },
+          "meal_type": "breakfast"
+        }
+      },
+      "expected": {
+        "excludes": [
+          "R-124",
+          "TEST-BF-4"
+        ],
+        "item_ids.length": 5
+      },
+      "oracle": "clinical",
+      "source_version": "9dfaae898ee7a7650de108753d0965b90cb06362ea71a0cf3f7e836e1cc36b1e",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    }
+  ]
+}

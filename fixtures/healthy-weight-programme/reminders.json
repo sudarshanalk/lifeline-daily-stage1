@@ -1,0 +1,92 @@
+{
+  "group": "Reminders R-HW-REM-01 and motivation R-HW-MOT-01",
+  "tool": "healthy-weight-programme",
+  "fixtures": [
+    {
+      "id": "FX-HWP-HWR01-01",
+      "purpose": "HWR-01a: days, snacks \"after 9 pm\": reminder 20:30",
+      "inputs": {
+        "source_id": "HWR-01a",
+        "fn": "reminder_times",
+        "args": {
+          "work": "days",
+          "snack_time": "after 9 pm"
+        }
+      },
+      "expected": {
+        "reminders.0.time": "08:00",
+        "reminders.1.kind": "snack",
+        "reminders.1.time": "20:30"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWR01-02",
+      "purpose": "HWR-01b: nights, wakes 14:00: step reminder 14:30",
+      "inputs": {
+        "source_id": "HWR-01b",
+        "fn": "reminder_times",
+        "args": {
+          "work": "nights",
+          "wake_time": "14:00"
+        }
+      },
+      "expected": {
+        "reminders.0.kind": "step",
+        "reminders.0.time": "14:30",
+        "reminders.length": 1
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWR01-03",
+      "purpose": "HWR-01c: shifts, wake-up time not given: no fixed times, asked once",
+      "inputs": {
+        "source_id": "HWR-01c",
+        "fn": "reminder_times",
+        "args": {
+          "work": "shifts"
+        }
+      },
+      "expected": {
+        "reminders.length": 0,
+        "ask_wake_up": true
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWM01-01",
+      "purpose": "HWM-01a: event \"wedding\" on 1 May 2027, member A: \"By your wedding, you're on course for about 61.1 kg.\"",
+      "inputs": {
+        "source_id": "HWM-01a",
+        "fn": "motivation",
+        "args": {
+          "event": "your wedding",
+          "event_date": "2027-05-01",
+          "today": "2026-11-06",
+          "start_kg": 80,
+          "goal_kg": 60,
+          "pace": 0.75
+        }
+      },
+      "expected": {
+        "kg": 61.1,
+        "text": "By your wedding, you're on course for about 61.1 kg."
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded",
+      "notes": "176 days = 25.1 weeks; the templates pack corrects the rule draft's 25.3."
+    }
+  ]
+}

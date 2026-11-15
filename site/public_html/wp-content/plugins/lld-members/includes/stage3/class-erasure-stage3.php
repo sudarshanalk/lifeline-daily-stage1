@@ -22,6 +22,7 @@ class LLD_Members_Stage3_Erasure {
 		add_filter( 'lld_members_member_links', array( __CLASS__, 'member_links' ) );
 		add_filter( 'lld_members_health_tables', array( __CLASS__, 'health_tables' ) );
 		add_action( 'lld_members_daily', array( 'LLD_Members_Stage3_Data', 'sweep_deleted' ) );
+		add_action( 'lld_members_daily', array( __CLASS__, 'sweep_notes_shown' ) );
 	}
 
 	/**
@@ -38,7 +39,8 @@ class LLD_Members_Stage3_Erasure {
 		}
 		$member = $wpdb->get_row( $wpdb->prepare( 'SELECT email FROM ' . LLD_Members_Schema::table( 'member' ) . ' WHERE id = %d', $member_id ) );
 		foreach ( LLD_Members_Stage3_Schema::suffixes() as $suffix ) {
-			if ( 'pauses' === $suffix || 'email_codes' === $suffix || 'goal_baselines' === $suffix || 'admin_devices' === $suffix ) {
+			// The festival calendar is content with no member column (P3-35).
+			if ( 'pauses' === $suffix || 'email_codes' === $suffix || 'goal_baselines' === $suffix || 'admin_devices' === $suffix || 'festival_calendar' === $suffix ) {
 				continue;
 			}
 			LLD_Members_Stage3_Data::purge( $suffix, $member_id );
@@ -52,7 +54,8 @@ class LLD_Members_Stage3_Erasure {
 	}
 
 	/**
-	 * Health-consent withdrawal: readings, food log, goals' values, plans, insights and targets go.
+	 * Health-consent withdrawal: readings, food log, goals' values, plans, insights, targets and the Healthy Weight
+	 * answers, milestones, block choices and check-in barriers go (P3-35).
 	 *
 	 * @param int $member_id Member number.
 	 */
@@ -64,6 +67,39 @@ class LLD_Members_Stage3_Erasure {
 			LLD_Members_Stage3_Data::purge( $suffix, (int) $member_id );
 		}
 		self::delete_orphan_baselines();
+		self::forget_note_reasons( (int) $member_id );
+	}
+
+	/**
+	 * The notes shown stay (personal data, kept 13 months), but which rule chose a note can tell a health answer
+	 * (low mood, sleep, stress, weight), so on health-consent withdrawal it goes: rule_id and reason become empty.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	public static function forget_note_reasons( $member_id ) {
+		global $wpdb;
+		if ( (int) $member_id < 1 ) {
+			return 0;
+		}
+		$n = $wpdb->update(
+			LLD_Members_Stage3_Schema::table( 'notes_shown' ),
+			array(
+				'rule_id' => null,
+				'reason'  => null,
+			),
+			array( 'member_id' => (int) $member_id )
+		);
+		return false === $n ? 0 : (int) $n;
+	}
+
+	/**
+	 * Mindset notes shown are kept for 13 months (data model: Mindset note shown, P3-35).
+	 */
+	public static function sweep_notes_shown() {
+		global $wpdb;
+		$table  = LLD_Members_Stage3_Schema::table( 'notes_shown' );
+		$cutoff = gmdate( 'Y-m-d', strtotime( '-13 months', time() ) );
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$table} WHERE shown_on < %s", $cutoff ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- internal table name.
 	}
 
 	/**

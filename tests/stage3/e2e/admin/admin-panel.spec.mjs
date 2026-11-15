@@ -604,7 +604,14 @@ test.describe.serial('P3-87 admin module in My account', () => {
     await open(page, at('features'));
     await page.locator('#lld-adm-t-barcode').uncheck();
     await expect(saved(page)).toContainText('Barcode scanning is off.');
-    await saved(page).getByRole('button', { name: 'Undo' }).click();
+    // The switch reloads the page; Undo pressed before that page has loaded can be dropped by WebKit. Wait for the
+    // load, then for Undo's own post to reach the server.
+    await page.waitForLoadState('load');
+    await Promise.all([
+      page.waitForResponse((r) => r.request().method() === 'POST'),
+      saved(page).getByRole('button', { name: 'Undo' }).click(),
+    ]);
+    await page.waitForLoadState('load');
     await expect(saved(page)).toContainText('Barcode scanning is on again.');
     const state = await admin(request, { op: 'feature', feature: 'barcode' });
     expect(state.state).toBe('everyone');
