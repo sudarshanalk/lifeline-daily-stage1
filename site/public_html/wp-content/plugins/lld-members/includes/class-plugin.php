@@ -92,7 +92,7 @@ class LLD_Members_Plugin {
 	 * Version of the rule set: bumped when rules change, and different with Yoast's sitemaps on or off.
 	 */
 	public static function rewrite_version() {
-		return '13-' . ( self::yoast_sitemaps() ? 'yoast' : 'own' );
+		return '12-' . ( self::yoast_sitemaps() ? 'yoast' : 'own' );
 	}
 
 	/**
@@ -237,7 +237,6 @@ class LLD_Members_Plugin {
 		add_rewrite_rule( '^members/sign-in/?$', 'index.php?lld_screen=sign-in', 'top' );
 		add_rewrite_rule( '^members/two-step/?$', 'index.php?lld_screen=two-step', 'top' );
 		add_rewrite_rule( '^members/settings/?$', 'index.php?lld_screen=settings', 'top' );
-		add_rewrite_rule( '^members/?$', 'index.php?lld_screen=home', 'top' );
 		add_rewrite_rule( '^members/home/?$', 'index.php?lld_screen=home', 'top' );
 		add_rewrite_rule( '^members/checkout/?$', 'index.php?lld_screen=checkout', 'top' );
 		add_rewrite_rule( '^members/subscription/?$', 'index.php?lld_screen=subscription', 'top' );
