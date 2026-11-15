@@ -3,7 +3,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
-import { asOwner, createMember, signIn } from './helpers.mjs';
+import { asOwner, createMember, signIn, submitAndWait } from './helpers.mjs';
 import { fillProteinForm, submitProtein } from '../../e2e/helpers/protein-form.mjs';
 import { fillDiabetesForm, submitDiabetes } from '../../e2e/helpers/diabetes-form.mjs';
 
@@ -161,9 +161,12 @@ async function refCode(page, email) {
 }
 
 async function confirmRefund(page, orderId) {
-  await page.locator('form', { hasText: `Order ${orderId}` }).getByRole('button', { name: 'Refund' }).click();
+  // Both buttons post a form: wait for the page each post returns before the next step (in WebKit a click during the
+  // first page's load could be lost, and the next page.goto could cancel the refund's post); the checks are unchanged.
+  await expect(page.locator('form', { hasText: `Order ${orderId}` }).getByRole('button', { name: 'Refund' })).toBeVisible();
+  await submitAndWait(page, page.locator('form', { hasText: `Order ${orderId}` }).getByRole('button', { name: 'Refund' }));
   await expect(page.locator(`[data-lld-refund-confirm="${orderId}"]`)).toBeVisible();
-  await page.getByRole('button', { name: 'Confirm refund' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Confirm refund' }));
   await expect(page.locator('.notice', { hasText: 'Refunded' })).toBeVisible();
 }
 
@@ -1025,6 +1028,7 @@ test('TC-FR2-15-AS-05', async ({ page, request }) => {
       await asOwner(page);
       await page.goto('/wp-admin/admin.php?page=lld-payments');
       if (page.url().includes('pmpro-wizard')) await page.goto('/wp-admin/admin.php?page=lld-payments');
+      await page.waitForLoadState('load');
       await confirmRefund(page, orderId);
     } else {
       await pay(page, email, { plan: 'monthly', country: 'US' });

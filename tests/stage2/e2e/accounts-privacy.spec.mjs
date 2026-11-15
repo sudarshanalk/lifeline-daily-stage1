@@ -299,7 +299,9 @@ test('TC-FR2-02-AS-01', async ({ page }) => {
   const next = 'sam-new@test.lifelinedaily.invalid';
   await reset(page.request, next);
   await page.locator('#lld_email').fill(next);
-  await page.getByRole('button', { name: 'Save' }).click();
+  // wait for the page Save's post returns before checking it and reloading: in WebKit the next page.goto could cancel
+  // the post still on its way, so the new values were never saved; the checks are unchanged
+  await submitAndWait(page, page.getByRole('button', { name: 'Save' }));
   await expect(page.getByText('Saved')).toBeVisible();
   // A fresh load of the page shows every new value.
   await page.goto('/members/settings/');
