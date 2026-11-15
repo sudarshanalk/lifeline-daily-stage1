@@ -607,6 +607,23 @@ test.describe.serial('P3-33 progress page and dashboard', () => {
     await expect(page.locator('main')).toContainText(position);
   });
 
+  test('TC-FR3-18-AS-02 After the track finishes, the dashboard says it was finished, matching the programme page', async ({ page }) => {
+    const a = await fresh(page, A, { access_state: 'Premium' }); // Free stops at the end of week 1; Premium runs all 28 days
+    await profile(page, a.member_id);
+    await weightGoal(page);
+    const made = await fixture(page.request, 'weeks');
+    await startTrack(page, made.track);
+    await clock(page, A, 35); // past day 28, so the track is settled as finished
+    await page.goto('/members/home/');
+    const card = page.locator('[data-lld-section="track"]');
+    await expect(card.locator('[data-lld-track-finished]')).toHaveAttribute('data-lld-track-finished', made.track);
+    await expect(card).toContainText('You finished');
+    await expect(card).not.toContainText('No track yet');
+    await expect(card.getByRole('link', { name: 'Choose your next track' })).toHaveAttribute('href', /\/members\/tracks\/$/);
+    await page.goto('/members/track/');
+    await expect(page.locator('main')).toContainText('Finished on');
+  });
+
   test('TC-FR3-18-AS-03 A Free test member sees the last 14 days only, with an invitation to upgrade for full history and insights', async ({ page }) => {
     const b = await fresh(page, B);
     await profile(page, b.member_id);
