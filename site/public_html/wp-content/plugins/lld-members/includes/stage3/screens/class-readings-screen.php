@@ -147,14 +147,17 @@ class LLD_Members_Readings_Screen {
 			$dow        = $today_ts ? (int) gmdate( 'N', $today_ts ) : 1;
 			$week_start = $today_ts ? gmdate( 'Y-m-d', strtotime( $today . ' -' . ( $dow - 1 ) . ' days UTC' ) ) : $today;
 		}
+		// Readings are stored in UTC (the engine and the interface read them so); the page shows, defaults and groups
+		// them on the member's own clock, the zone Today uses. The script turns the typed local time back into UTC.
+		$zone = class_exists( 'LLD_Members_Health_Log' ) ? LLD_Members_Health_Log::zone_for( $member_id ) : $utc_zone;
 		if ( function_exists( 'lld_members_now_mysql' ) ) {
-			$now_utc = str_replace( ' ', 'T', substr( (string) lld_members_now_mysql( $member_id ), 0, 16 ) );
+			$now_at    = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', substr( (string) lld_members_now_mysql( $member_id ), 0, 19 ), $utc_zone );
+			$now_local = $now_at ? $now_at->setTimezone( $zone )->format( 'Y-m-d\TH:i' ) : $today . 'T09:00';
 		} elseif ( class_exists( 'LLD_Members_Clock' ) ) {
-			$now_utc = LLD_Members_Clock::now( (int) $member_id )->setTimezone( $utc_zone )->format( 'Y-m-d\TH:i' );
+			$now_local = LLD_Members_Clock::now( (int) $member_id )->setTimezone( $zone )->format( 'Y-m-d\TH:i' );
 		} else {
-			$now_utc = $today . 'T09:00';
+			$now_local = $today . 'T09:00';
 		}
-		$utc_today = substr( $now_utc, 0, 10 );
 
 		$raw_type = isset( $_GET['type'] ) ? sanitize_key( wp_unslash( $_GET['type'] ) ) : '';
 		if ( 'bp' === $raw_type ) {
@@ -197,9 +200,9 @@ class LLD_Members_Readings_Screen {
 			'apiBase'         => esc_url_raw( rest_url( 'lld-members/v1/me/' ) ),
 			'nonce'           => wp_create_nonce( 'wp_rest' ),
 			'today'           => $today,
-			'utcToday'        => $utc_today,
+			'timezone'        => $zone->getName(),
 			'weekStart'       => $week_start,
-			'nowLocal'        => $now_utc,
+			'nowLocal'        => $now_local,
 			'initialType'     => $initial_type,
 			'canStore'        => $can_store,
 			'hasConsent'      => $consent,
@@ -276,7 +279,7 @@ class LLD_Members_Readings_Screen {
 
 		$html .= '<div class="lld-field">';
 		$html .= '<label for="lld-r-taken-at">Date and time</label>';
-		$html .= '<input id="lld-r-taken-at" name="taken_at" type="datetime-local" class="lld-input" value="' . esc_attr( $now_utc ) . '" data-lld-taken-at>';
+		$html .= '<input id="lld-r-taken-at" name="taken_at" type="datetime-local" class="lld-input" value="' . esc_attr( $now_local ) . '" data-lld-taken-at>';
 		$html .= '</div>';
 
 		// 1. Blood pressure

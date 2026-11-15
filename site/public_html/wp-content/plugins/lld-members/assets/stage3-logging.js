@@ -1950,8 +1950,46 @@
 		return (fallbackDay || new Date().toISOString().slice(0, 10)) + ' 09:00:00';
 	}
 
-	function rdDisplayDateTime(takenAt) {
-		const raw = String(takenAt || '');
+	// Readings are stored in UTC; the page shows and takes them on the member's own clock (cfg.timezone, the zone
+	// Today uses). rdZoneWall gives the wall-clock time in that zone as a UTC-based millisecond count.
+	const RD_AT = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/;
+
+	function rdZoneWall(ms, zone) {
+		const parts = {};
+		new Intl.DateTimeFormat('en-GB', {
+			timeZone: zone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
+			hour: '2-digit', minute: '2-digit', second: '2-digit'
+		}).formatToParts(new Date(ms)).forEach(function (p) { parts[p.type] = Number(p.value); });
+		return Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour % 24, parts.minute, parts.second);
+	}
+
+	function rdIso(ms) {
+		return new Date(ms).toISOString().slice(0, 19).replace('T', ' ');
+	}
+
+	function rdShiftZone(value, zone, toLocal) {
+		const m = RD_AT.exec(String(value || '').trim());
+		if (!m) return String(value || '');
+		const ms = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5]), Number(m[6] || 0));
+		if (!zone || zone === 'UTC') return rdIso(ms);
+		try {
+			if (toLocal) return rdIso(rdZoneWall(ms, zone));
+			// Local to UTC: subtract the zone's offset at that moment, checked once more for a change of clocks.
+			const first = ms - (rdZoneWall(ms, zone) - ms);
+			return rdIso(ms - (rdZoneWall(first, zone) - first));
+		} catch (e) {
+			return rdIso(ms); // unknown zone in this browser: UTC, as stored
+		}
+	}
+
+	/** Stored UTC "Y-m-d H:i:s" to the member's local "Y-m-d H:i:s". */
+	function rdUtcToLocal(utc, zone) { return rdShiftZone(utc, zone, true); }
+
+	/** The member's local "Y-m-d H:i:s" to UTC for storage. */
+	function rdLocalToUtc(local, zone) { return rdShiftZone(local, zone, false); }
+
+	function rdDisplayDateTime(takenAt, zone) {
+		const raw = RD_AT.test(String(takenAt || '')) ? rdUtcToLocal(takenAt, zone) : String(takenAt || '');
 		const d = raw.slice(0, 10);
 		const t = raw.slice(11, 16);
 		if (!d) return raw;
@@ -2304,10 +2342,10 @@
 
 		function renderWaterTotal(rows) {
 			if (!els.waterTotal) return;
-			const today = cfg.utcToday || cfg.today || '';
+			const today = cfg.today || '';
 			let ml = 0;
 			rows.forEach(function (r) {
-				if (r.reading_type === 'water' && String(r.taken_at || '').slice(0, 10) === today && r.value_1 != null) {
+				if (r.reading_type === 'water' && rdUtcToLocal(r.taken_at, cfg.timezone).slice(0, 10) === today && r.value_1 != null) {
 					ml += Number(r.value_1) || 0;
 				}
 			});
@@ -2423,7 +2461,7 @@
 			if (els.saveBtn) els.saveBtn.textContent = 'Save changes';
 			if (els.cancelEditBtn) els.cancelEditBtn.hidden = false;
 
-			const dt = String(row.taken_at || '');
+			const dt = rdUtcToLocal(row.taken_at, cfg.timezone);
 			if (els.takenAt && dt.length >= 16) {
 				els.takenAt.value = dt.slice(0, 16).replace(' ', 'T');
 			}
@@ -2550,7 +2588,7 @@
 				rows.forEach(function (r) {
 					const note = extractRowNote(r);
 					tbl += '<tr data-lld-row-id="' + r.id + '">' +
-						'<td>' + rdEsc(rdDisplayDateTime(r.taken_at)) + '</td>' +
+						'<td>' + rdEsc(rdDisplayDateTime(r.taken_at, cfg.timezone)) + '</td>' +
 						'<td><strong>' + rdEsc(formatRowSummary(r)) + '</strong></td>' +
 						'<td>' + rdEsc(note || '\u2014') + '</td>' +
 						'<td class="lld-table-actions"><div class="lld-history-actions">' +
@@ -2662,10 +2700,20 @@
 			if (state.from) query += '&from=' + encodeURIComponent(state.from);
 			if (state.to) query += '&to=' + encodeURIComponent(state.to);
 
-			const resList = await rdRequest(cfg, 'readings?' + query);
+			// The plain list filters on the stored (UTC) date, so it is asked for a day either side and kept here to the
+			// member's own dates; the trend view filters on the member's dates itself.
+			let listQuery = 'type=' + encodeURIComponent(type);
+			if (state.from) listQuery += '&from=' + encodeURIComponent(rdShiftDate(state.from, -1) || state.from);
+			if (state.to) listQuery += '&to=' + encodeURIComponent(rdShiftDate(state.to, 1) || state.to);
+			const inRange = function (r) {
+				const day = rdUtcToLocal(r.taken_at, cfg.timezone).slice(0, 10);
+				return (!state.from || day >= state.from) && (!state.to || day <= state.to);
+			};
+
+			const resList = await rdRequest(cfg, 'readings?' + listQuery);
 			if (stale()) return;
 			if (resList.ok && Array.isArray(resList.data.rows)) {
-				state.rows = resList.data.rows.slice().sort(function (a, b) {
+				state.rows = resList.data.rows.filter(inRange).sort(function (a, b) {
 					const cmp = String(b.taken_at || '').localeCompare(String(a.taken_at || ''));
 					return cmp !== 0 ? cmp : (Number(b.id || 0) - Number(a.id || 0));
 				});
@@ -2727,10 +2775,19 @@
 			return Math.round((diff / 60) * 10) / 10;
 		}
 
+		// The form is on the member's clock; the reading is sent in UTC, as it is stored.
 		function buildPayload(isEdit, existingRow) {
+			const built = buildLocalPayload(isEdit, existingRow);
+			if (built.payload && built.payload.taken_at) {
+				built.payload.taken_at = rdLocalToUtc(built.payload.taken_at, cfg.timezone);
+			}
+			return built;
+		}
+
+		function buildLocalPayload(isEdit, existingRow) {
 			const typedAt = els.takenAt ? String(els.takenAt.value || '').trim() : '';
 			const takenAt = isEdit && existingRow && existingRow.taken_at && !typedAt
-				? String(existingRow.taken_at)
+				? rdUtcToLocal(existingRow.taken_at, cfg.timezone)
 				: rdFormatTakenAt(typedAt, cfg.today);
 			const base = { reading_type: state.type, taken_at: takenAt, source: 'manual' };
 
@@ -2949,7 +3006,7 @@
 					reading_type: 'water',
 					value_1: amount,
 					unit_shown: 'ml',
-					taken_at: rdFormatTakenAt(els.takenAt ? els.takenAt.value : '', cfg.today),
+					taken_at: rdLocalToUtc(rdFormatTakenAt(els.takenAt ? els.takenAt.value : '', cfg.today), cfg.timezone),
 					source: 'quick_tile'
 				}, 'Added ' + amount + ' ml.', null);
 			});
@@ -3055,6 +3112,8 @@
 			const delBtn = ev.target.closest('[data-lld-delete-row]');
 			if (delBtn) {
 				const id = Number(delBtn.getAttribute('data-lld-delete-row'));
+				// Nothing is deleted on the first tap: the member confirms first, and cancelling keeps the reading.
+				if (!window.confirm('Delete this reading?')) return;
 				clearFeedback();
 				const res = await rdRequest(cfg, 'readings/' + id, { method: 'DELETE' });
 				if (!res.ok) {

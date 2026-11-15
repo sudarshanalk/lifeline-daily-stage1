@@ -23,6 +23,55 @@ class LLD_Members_Health_Log {
 	const CM_PER_IN    = 2.54;
 	const MG_PER_MMOL  = 18.016;
 
+	/** Effort value_3 for vigorous ("Hard") activity: its minutes count double toward the 150 (FR3-41), as the engine counts them. */
+	const VIGOROUS_EFFORT = 3;
+
+	/**
+	 * The member's time zone, the one Today and the engine use (LLD_Members_Programme::timezone()). UTC when unknown.
+	 *
+	 * @param int $member_id Member number.
+	 * @return DateTimeZone
+	 */
+	public static function zone_for( $member_id ) {
+		$name = class_exists( 'LLD_Members_Programme' ) ? (string) LLD_Members_Programme::timezone( (int) $member_id ) : 'UTC';
+		try {
+			return new DateTimeZone( '' !== $name ? $name : 'UTC' );
+		} catch ( Exception $e ) {
+			unset( $e );
+			return new DateTimeZone( 'UTC' );
+		}
+	}
+
+	/**
+	 * The member's local calendar date of a stored taken_at. Readings are stored in UTC (the engine and the interface
+	 * read them so); with no zone, or UTC, the stored date is used as it is.
+	 *
+	 * @param string            $taken_at Stored Y-m-d H:i:s (UTC).
+	 * @param DateTimeZone|null $zone     Member zone.
+	 * @return string Y-m-d
+	 */
+	public static function local_date( $taken_at, $zone = null ) {
+		$taken_at = (string) $taken_at;
+		if ( ! $zone instanceof DateTimeZone || 'UTC' === $zone->getName() || ! preg_match( '/^(\d{4}-\d{2}-\d{2})[ T](\d{2}:\d{2})(:\d{2})?/', $taken_at, $m ) ) {
+			return substr( $taken_at, 0, 10 );
+		}
+		$at = DateTimeImmutable::createFromFormat( 'Y-m-d H:i:s', $m[1] . ' ' . $m[2] . ( isset( $m[3] ) && '' !== $m[3] ? $m[3] : ':00' ), new DateTimeZone( 'UTC' ) );
+		return $at ? $at->setTimezone( $zone )->format( 'Y-m-d' ) : substr( $taken_at, 0, 10 );
+	}
+
+	/**
+	 * Minutes one activity reading adds toward the weekly 150: vigorous effort counts double (FR3-41), the same rule
+	 * as LLD_Members_Insights_Runner::daily_value().
+	 *
+	 * @param array<string,mixed> $row Activity reading.
+	 * @return float
+	 */
+	public static function counted_minutes( array $row ) {
+		$mins = isset( $row['value_1'] ) && is_numeric( $row['value_1'] ) ? (float) $row['value_1'] : 0.0;
+		$eff  = isset( $row['value_3'] ) && is_numeric( $row['value_3'] ) ? (float) $row['value_3'] : null;
+		return null !== $eff && $eff >= self::VIGOROUS_EFFORT ? $mins * 2 : $mins;
+	}
+
 	/**
 	 * Fill value_1 for sleep from bedtime+wake before the API required-field check.
 	 *
@@ -226,12 +275,13 @@ class LLD_Members_Health_Log {
 	 * @param string $taken_at Datetime.
 	 * @param string $today    Y-m-d.
 	 * @param bool   $premium  Premium access.
+	 * @param DateTimeZone|null $zone Member zone for the local date of taken_at.
 	 */
-	public static function history_open( $taken_at, $today, $premium ) {
+	public static function history_open( $taken_at, $today, $premium, $zone = null ) {
 		if ( $premium ) {
 			return true;
 		}
-		$date = substr( (string) $taken_at, 0, 10 );
+		$date = self::local_date( $taken_at, $zone );
 		try {
 			$zone    = new DateTimeZone( 'UTC' );
 			$today_d = new DateTimeImmutable( $today . ' 00:00:00', $zone );
@@ -247,15 +297,16 @@ class LLD_Members_Health_Log {
 	 * @param array<int,array<string,mixed>> $rows    Reading rows.
 	 * @param bool                            $premium Premium access.
 	 * @param string                          $today   Y-m-d.
+	 * @param DateTimeZone|null               $zone    Member zone.
 	 * @return array<int,array<string,mixed>>
 	 */
-	public static function limit_history( array $rows, $premium, $today ) {
+	public static function limit_history( array $rows, $premium, $today, $zone = null ) {
 		if ( $premium ) {
 			return $rows;
 		}
 		$out = array();
 		foreach ( $rows as $row ) {
-			if ( self::history_open( $row['taken_at'] ?? '', $today, false ) ) {
+			if ( self::history_open( $row['taken_at'] ?? '', $today, false, $zone ) ) {
 				$out[] = $row;
 			}
 		}
@@ -269,9 +320,10 @@ class LLD_Members_Health_Log {
 	 * @param string                          $type reading_type or ''.
 	 * @param string                          $from Y-m-d or ''.
 	 * @param string                          $to   Y-m-d or ''.
+	 * @param DateTimeZone|null               $zone Member zone: from and to are the member's local dates.
 	 * @return array<int,array<string,mixed>>
 	 */
-	public static function filter( array $rows, $type, $from, $to ) {
+	public static function filter( array $rows, $type, $from, $to, $zone = null ) {
 		$out = array();
 		foreach ( $rows as $row ) {
 			if ( ! is_array( $row ) || ! empty( $row['deleted_at'] ) ) {
@@ -280,7 +332,7 @@ class LLD_Members_Health_Log {
 			if ( '' !== $type && ( $row['reading_type'] ?? '' ) !== $type ) {
 				continue;
 			}
-			$date = substr( (string) ( $row['taken_at'] ?? '' ), 0, 10 );
+			$date = self::local_date( $row['taken_at'] ?? '', $zone );
 			if ( '' !== $from && $date < $from ) {
 				continue;
 			}
@@ -297,9 +349,10 @@ class LLD_Members_Health_Log {
 	 *
 	 * @param array<int,array<string,mixed>> $rows Filtered readings, oldest first preferred.
 	 * @param string                          $type Reading type.
+	 * @param DateTimeZone|null               $zone Member zone for each point's local date.
 	 * @return array<int,array<string,mixed>>
 	 */
-	public static function trend( array $rows, $type ) {
+	public static function trend( array $rows, $type, $zone = null ) {
 		$points = array();
 		foreach ( $rows as $row ) {
 			if ( ( $row['reading_type'] ?? '' ) !== $type ) {
@@ -307,7 +360,7 @@ class LLD_Members_Health_Log {
 			}
 			$point = array(
 				'id'       => (int) ( $row['id'] ?? 0 ),
-				'date'     => substr( (string) ( $row['taken_at'] ?? '' ), 0, 10 ),
+				'date'     => self::local_date( $row['taken_at'] ?? '', $zone ),
 				'taken_at' => (string) ( $row['taken_at'] ?? '' ),
 				'value_1'  => isset( $row['value_1'] ) && is_numeric( $row['value_1'] ) ? (float) $row['value_1'] : null,
 			);
@@ -321,13 +374,15 @@ class LLD_Members_Health_Log {
 	}
 
 	/**
-	 * Activity minutes in a week (Monday start) against the 150-minute guide.
+	 * Activity minutes in a week (Monday start) against the 150-minute guide. Vigorous minutes count double
+	 * (counted_minutes(), FR3-41) in the total and in each day, so the days add up to the total.
 	 *
 	 * @param array<int,array<string,mixed>> $rows       Activity readings.
-	 * @param string                          $week_start Monday Y-m-d.
+	 * @param string                          $week_start Monday Y-m-d in the member's calendar.
+	 * @param DateTimeZone|null               $zone       Member zone for each reading's local date.
 	 * @return array<string,mixed>
 	 */
-	public static function activity_week( array $rows, $week_start ) {
+	public static function activity_week( array $rows, $week_start, $zone = null ) {
 		try {
 			$start = new DateTimeImmutable( $week_start . ' 00:00:00', new DateTimeZone( 'UTC' ) );
 		} catch ( Exception $e ) {
@@ -347,11 +402,11 @@ class LLD_Members_Health_Log {
 			if ( 'activity' !== ( $row['reading_type'] ?? '' ) || ! empty( $row['deleted_at'] ) ) {
 				continue;
 			}
-			$date = substr( (string) ( $row['taken_at'] ?? '' ), 0, 10 );
+			$date = self::local_date( $row['taken_at'] ?? '', $zone );
 			if ( $date < $week_start || $date > $end || ! isset( $days[ $date ] ) ) {
 				continue;
 			}
-			$mins = isset( $row['value_1'] ) && is_numeric( $row['value_1'] ) ? (float) $row['value_1'] : 0.0;
+			$mins = self::counted_minutes( $row );
 			$days[ $date ] += $mins;
 			$total         += $mins;
 		}
@@ -369,15 +424,16 @@ class LLD_Members_Health_Log {
 	 *
 	 * @param array<int,array<string,mixed>> $rows Readings.
 	 * @param string                          $date Y-m-d.
+	 * @param DateTimeZone|null               $zone Member zone for each reading's local date.
 	 * @return float
 	 */
-	public static function water_day_ml( array $rows, $date ) {
+	public static function water_day_ml( array $rows, $date, $zone = null ) {
 		$total = 0.0;
 		foreach ( $rows as $row ) {
 			if ( 'water' !== ( $row['reading_type'] ?? '' ) || ! empty( $row['deleted_at'] ) ) {
 				continue;
 			}
-			if ( substr( (string) ( $row['taken_at'] ?? '' ), 0, 10 ) !== $date ) {
+			if ( self::local_date( $row['taken_at'] ?? '', $zone ) !== $date ) {
 				continue;
 			}
 			if ( isset( $row['value_1'] ) && is_numeric( $row['value_1'] ) ) {
@@ -413,23 +469,24 @@ class LLD_Members_Health_Log {
 	 */
 	public static function view( $which, $member_id, array $query ) {
 		$premium = class_exists( 'LLD_Members_Food_Log' ) ? LLD_Members_Food_Log::premium( $member_id ) : false;
-		$today   = substr( lld_members_now_mysql( (int) $member_id ), 0, 10 ); // the member's clock, as their readings are saved by it
-		$rows    = self::limit_history( self::rows_for( $member_id ), $premium, $today );
+		$zone    = self::zone_for( (int) $member_id );
+		$today   = self::local_date( lld_members_now_mysql( (int) $member_id ), $zone ); // the member's own calendar day (the clock is UTC)
+		$rows    = self::limit_history( self::rows_for( $member_id ), $premium, $today, $zone );
 		$type    = isset( $query['type'] ) ? (string) $query['type'] : '';
 		$from    = isset( $query['from'] ) ? (string) $query['from'] : '';
 		$to      = isset( $query['to'] ) ? (string) $query['to'] : '';
-		$filtered = self::filter( $rows, $type, $from, $to );
+		$filtered = self::filter( $rows, $type, $from, $to, $zone );
 		if ( 'trend' === $which ) {
 			if ( '' === $type ) {
 				return array( 'error' => 'Add a reading type.' );
 			}
 			return array(
 				'type'   => $type,
-				'points' => self::trend( $filtered, $type ),
+				'points' => self::trend( $filtered, $type, $zone ),
 			);
 		}
 		if ( 'activity-week' === $which ) {
-			return self::activity_week( $rows, $query['week_start'] ?? '' );
+			return self::activity_week( $rows, $query['week_start'] ?? '', $zone );
 		}
 		$presented = array();
 		foreach ( $filtered as $row ) {
@@ -492,8 +549,9 @@ class LLD_Members_Health_Log {
 		}
 		if ( 'water' === $type ) {
 			$values['ml']           = $norm['value_1'];
-			$date                   = substr( (string) ( $norm['taken_at'] ?? '' ), 0, 10 );
-			$values['day_total_ml'] = self::water_day_ml( self::rows_for( $member_id ), $date ) + (float) $norm['value_1'];
+			$zone                   = self::zone_for( (int) $member_id );
+			$date                   = self::local_date( $norm['taken_at'] ?? '', $zone );
+			$values['day_total_ml'] = self::water_day_ml( self::rows_for( $member_id ), $date, $zone ) + (float) $norm['value_1'];
 		}
 		if ( 'sleep' === $type ) {
 			$values['hours'] = $norm['value_1'];
@@ -558,7 +616,8 @@ class LLD_Members_Health_Log {
 	 * @return float|null
 	 */
 	private static function avg_sleep_7( $member_id, array $norm ) {
-		$date = substr( (string) ( $norm['taken_at'] ?? '' ), 0, 10 );
+		$zone = self::zone_for( (int) $member_id );
+		$date = self::local_date( $norm['taken_at'] ?? '', $zone );
 		if ( '' === $date ) {
 			return null;
 		}
@@ -581,7 +640,7 @@ class LLD_Members_Health_Log {
 			if ( 'sleep' !== ( $row['reading_type'] ?? '' ) || ! empty( $row['deleted_at'] ) ) {
 				continue;
 			}
-			$d = substr( (string) ( $row['taken_at'] ?? '' ), 0, 10 );
+			$d = self::local_date( $row['taken_at'] ?? '', $zone );
 			if ( $d < $start || $d > $date || isset( $seen[ $d ] ) || ! is_numeric( $row['value_1'] ?? null ) ) {
 				continue;
 			}
