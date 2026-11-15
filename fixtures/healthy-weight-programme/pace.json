@@ -1,0 +1,231 @@
+{
+  "group": "Recommended pace R-HW-PACE-01 (rule catalogue v1.2 section 9.4)",
+  "tool": "healthy-weight-programme",
+  "fixtures": [
+    {
+      "id": "FX-HWP-HWP01-01",
+      "purpose": "HWP-01a: confidence 6, 10 to 30 min, days, stress 5, sleep 6 to 7: 0.5",
+      "inputs": {
+        "source_id": "HWP-01a",
+        "fn": "pace",
+        "args": {
+          "confidence": 6,
+          "time": "10_30",
+          "work": "days",
+          "stress": 5,
+          "sleep": "6_7",
+          "age": 45,
+          "weight_kg": 80
+        }
+      },
+      "expected": {
+        "recommended": 0.5,
+        "step": "steady"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWP01-02",
+      "purpose": "HWP-01b: confidence 9, over 30 min, days, stress 4, sleep 7 to 9: 0.75",
+      "inputs": {
+        "source_id": "HWP-01b",
+        "fn": "pace",
+        "args": {
+          "confidence": 9,
+          "time": "over_30",
+          "work": "days",
+          "stress": 4,
+          "sleep": "7_9",
+          "age": 45,
+          "weight_kg": 80
+        }
+      },
+      "expected": {
+        "recommended": 0.75,
+        "step": "faster",
+        "heading": "You could go a little faster: 0.75 kg a week"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWP01-03",
+      "purpose": "HWP-01c: as b but stress 8: 0.25 (gentle wins)",
+      "inputs": {
+        "source_id": "HWP-01c",
+        "fn": "pace",
+        "args": {
+          "confidence": 9,
+          "time": "over_30",
+          "work": "days",
+          "stress": 8,
+          "sleep": "7_9",
+          "age": 45,
+          "weight_kg": 80
+        }
+      },
+      "expected": {
+        "recommended": 0.25,
+        "step": "gentle",
+        "because": "Because you're under a lot of stress right now. A pace you can keep beats a fast start. You can change it."
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWP01-04",
+      "purpose": "HWP-01d: as b but sleep 6 to 7: 0.5",
+      "inputs": {
+        "source_id": "HWP-01d",
+        "fn": "pace",
+        "args": {
+          "confidence": 9,
+          "time": "over_30",
+          "work": "days",
+          "stress": 4,
+          "sleep": "6_7",
+          "age": 45,
+          "weight_kg": 80
+        }
+      },
+      "expected": {
+        "recommended": 0.5
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWP01-05",
+      "purpose": "HWP-01e: as b but age 66: 0.5",
+      "inputs": {
+        "source_id": "HWP-01e",
+        "fn": "pace",
+        "args": {
+          "confidence": 9,
+          "time": "over_30",
+          "work": "days",
+          "stress": 4,
+          "sleep": "7_9",
+          "age": 66,
+          "weight_kg": 80
+        }
+      },
+      "expected": {
+        "recommended": 0.5,
+        "reasons.0.key": "hw.T-HW-PACE-01.reason.older"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWP01-06",
+      "purpose": "HWP-01f: as b, weight 70 kg (cap 0.70): 0.5 (0.75 above the cap)",
+      "inputs": {
+        "source_id": "HWP-01f",
+        "fn": "pace",
+        "args": {
+          "confidence": 9,
+          "time": "over_30",
+          "work": "days",
+          "stress": 4,
+          "sleep": "7_9",
+          "age": 45,
+          "weight_kg": 70
+        }
+      },
+      "expected": {
+        "recommended": 0.5,
+        "cap": 0.7
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWP01-07",
+      "purpose": "HWP-01g: all skipped: 0.5",
+      "inputs": {
+        "source_id": "HWP-01g",
+        "fn": "pace",
+        "args": {}
+      },
+      "expected": {
+        "recommended": 0.5,
+        "step": "steady"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWP02-01",
+      "purpose": "HWP-02a: FR3-100 AS-01: 20 kg to lose, 10 minutes a day, confidence 3: 0.25 and its date (80 weeks)",
+      "inputs": {
+        "source_id": "HWP-02a",
+        "fn": "pace",
+        "args": {
+          "confidence": 3,
+          "time": "under_10",
+          "age": 45,
+          "weight_kg": 80,
+          "start_kg": 80,
+          "goal_kg": 60,
+          "today": "2026-11-06"
+        }
+      },
+      "expected": {
+        "recommended": 0.25,
+        "weeks": 80,
+        "date": "2028-05-19"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded",
+      "notes": "FR3-100 AS-01 says \"0.25 or 0.5\"; the signed method gives 0.25 for confidence 3."
+    },
+    {
+      "id": "FX-HWP-HWP02-02",
+      "purpose": "HWP-02b: FR3-100 AS-04: 20 kg at 0.75 from 6 Nov 2026: 27 weeks, 14 May 2027",
+      "inputs": {
+        "source_id": "HWP-02b",
+        "fn": "pace",
+        "args": {
+          "confidence": 9,
+          "time": "over_30",
+          "work": "days",
+          "stress": 4,
+          "sleep": "7_9",
+          "age": 45,
+          "weight_kg": 80,
+          "start_kg": 80,
+          "goal_kg": 60,
+          "today": "2026-11-06",
+          "chosen": 0.75
+        }
+      },
+      "expected": {
+        "chosen": 0.75,
+        "weeks": 27,
+        "date": "2027-05-14"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    }
+  ]
+}

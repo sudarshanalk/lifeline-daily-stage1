@@ -34,19 +34,42 @@ async function saveGoal(page) {
   await page.waitForLoadState('load');
 }
 
+/** Press a button of a Healthy Weight joining step and wait for the page its post returns, as saveGoal() does. */
+async function step(page, button) {
+  const answered = page.waitForResponse((r) => r.request().method() === 'POST' && r.url().includes('/members/goal'));
+  await button.click();
+  await answered;
+  await page.waitForLoadState('load');
+}
+
+/**
+ * A weight-loss goal in the signed Healthy Weight order (P3-35; FR3-97, FR3-98, FR3-100), as goal-journey.spec.mjs sets
+ * it: where you are now with the goal (current, target, waist), then the quick questions (skipped), then the pace
+ * (kg a week) or a date instead. A refused goal (for example below a healthy BMI) stays on the goal step.
+ */
 async function weightGoal(page, { current = 90, target = 84, rate = '0.5', date = '', waist = '' } = {}) {
   await page.goto('/members/goal/?type=lose_weight');
   await expect(page.locator('[data-lld-goal-step="details"]')).toBeVisible();
+  await page.waitForLoadState('load'); // the page's script moves focus once loaded; a fill before that can be lost (WebKit)
   await page.locator('#lld_current').fill(String(current));
   await page.locator('#lld_target').fill(String(target));
+  if (waist) await page.locator('#lld_waist').fill(String(waist));
+  await expect(page.locator('#lld_target')).toHaveValue(String(target));
+  await saveGoal(page);
+  if (await page.locator('[data-lld-refused]').count()) return;
+  await expect(page).toHaveURL(/\/members\/goal\/\?done=\d+&hw=(questions|pace)$/);
+  if (/&hw=questions$/.test(page.url())) {
+    await step(page, page.locator('[data-lld-goal-step="questions"] form').getByRole('button', { name: 'Next' }));
+  }
+  const pace = page.locator('[data-lld-goal-step="pace"]');
+  await expect(pace).toBeVisible();
   if (date) {
-    await page.locator('input[name="lld_rate"][value="date"]').check();
+    await pace.locator('input[name="lld_hw_pace"][value="date"]').check();
     await page.locator('#lld_date').fill(date);
   } else {
-    await page.locator(`input[name="lld_rate"][value="${rate}"]`).check();
+    await pace.locator(`input[name="lld_hw_pace"][value="${rate}"]`).check();
   }
-  if (waist) await page.locator('#lld_waist').fill(String(waist));
-  await saveGoal(page);
+  await step(page, pace.getByRole('button', { name: 'Next' }));
 }
 
 const at = (day, hour = 9) => { const d = new Date(Date.UTC(2026, 8, 28, hour)); d.setUTCDate(d.getUTCDate() + day); return d.toISOString().slice(0, 19).replace('T', ' '); };

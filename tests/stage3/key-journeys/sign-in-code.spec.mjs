@@ -26,8 +26,16 @@ async function latestCode(email, after = 0) {
 }
 
 async function enterCode(page, code) {
+  // The code box is on the page "Email me a code" opens: wait for it to load before typing (WebKit could lose a fill
+  // made while it was still loading), check the code is there, and wait for the page the code leads to.
+  await page.waitForLoadState('load');
   await page.locator('#lld_code').fill(code);
-  await page.locator('#lld_code').press('Enter');
+  await expect(page.locator('#lld_code')).toHaveValue(code);
+  await Promise.all([
+    page.waitForEvent('framenavigated', (frame) => frame === page.mainFrame()),
+    page.locator('#lld_code').press('Enter'),
+  ]);
+  await page.waitForLoadState('load');
 }
 
 test.describe.serial('email codes', () => {

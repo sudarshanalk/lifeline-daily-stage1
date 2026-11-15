@@ -72,6 +72,7 @@ class LLD_Members_Progress_Page {
 		$html .= '<section class="lld-card" data-lld-section="streak" data-lld-streak="' . (int) $streak . '"><h2>Streak</h2>';
 		$html .= '<p class="lld-stat"><strong>' . (int) $streak . '</strong> ' . ( 1 === $streak ? 'day' : 'days' ) . ' in a row</p>';
 		$html .= '<p class="lld-hint">A day counts when you log something or mark a step done. Missing a day pauses the streak; it never takes your progress away.</p></section>';
+		$html .= self::hw_milestones_html( $member_id, $facts );
 
 		// Weekly bars with the same numbers as a table (AS-01, AS-02). The table is the accessible form of the chart.
 		$summary = 'Active days a week, the last 4 weeks';
@@ -154,6 +155,99 @@ class LLD_Members_Progress_Page {
 			$html .= '<tr><td>' . esc_html( LLD_Members_Goal_Rules::nice_date( $r['date'] ) ) . '</td><td data-lld-value>' . esc_html( LLD_Members_Today_Screen::show_value( $type, $r['value'], $facts['imperial'] ) ) . '</td></tr>';
 		}
 		return $html . '</tbody></table></div>';
+	}
+
+	/**
+	 * Healthy Weight milestones (P3-35 · FR3-101, R-HW-NUM-04 and R-HW-MOT-02): the celebration of the furthest milestone
+	 * reached, in the signed T-HW-MOT-02 line followed by its approved health line (HW-MS-03, its 65-and-over variant, or
+	 * HW-MS-04), then the milestones list. Never with an eating-disorder flag; no badge names kilograms (AS-04).
+	 *
+	 * @param int   $member_id Member number.
+	 * @param array $facts     facts().
+	 */
+	private static function hw_milestones_html( $member_id, array $facts ) {
+		if ( ! class_exists( 'LLD_Members_Hw_Screen_Parts' ) || empty( $facts['health'] ) || LLD_Members_Hw_Screen_Parts::ed( $facts ) ) {
+			return '';
+		}
+		$c    = 'LLD_Members_Hw_Screen_Parts';
+		$view = $c::plan_view( $member_id, (string) $facts['today'] );
+		if ( ! $view || empty( $view['milestones'] ) || ! is_array( $view['milestones'] ) ) {
+			return '';
+		}
+		$html = self::celebration_html( self::reached( $member_id, $view, $facts ), $facts );
+		$list = LLD_Members_Hw_Plan_Screen::milestones_html( $view['milestones'] );
+		if ( '' !== $list ) {
+			$html .= '<section class="lld-card" data-lld-section="hw-milestones"><h2>' . esc_html( $c::LABELS['milestones_title'] ) . '</h2>' . $list . '</section>';
+		}
+		return $html;
+	}
+
+	/**
+	 * The milestone reached: the view's own, else the signed R-HW-MOT-02 on the 7-day mean weight (D3-09).
+	 *
+	 * @param int   $member_id Member number.
+	 * @param array $view      plan_view().
+	 * @param array $facts     facts().
+	 * @return array|null {kind, text}
+	 */
+	private static function reached( $member_id, array $view, array $facts ) {
+		if ( isset( $view['milestone_reached'] ) && is_array( $view['milestone_reached'] ) ) {
+			return ! empty( $view['milestone_reached']['kind'] ) ? $view['milestone_reached'] : null;
+		}
+		if ( ! class_exists( 'LLD_Members_HW_Rules' ) ) {
+			return null;
+		}
+		$daily = LLD_Members_Goal_Journey::daily( $member_id, 'weight' );
+		$sum   = 0.0;
+		$n     = 0;
+		foreach ( (array) $daily as $date => $kg ) {
+			if ( is_numeric( $kg ) && LLD_Members_Goal_Rules::days_between( (string) $date, (string) $facts['today'] ) < 7 && LLD_Members_Goal_Rules::days_between( (string) $date, (string) $facts['today'] ) >= 0 ) {
+				$sum += (float) $kg;
+				++$n;
+			}
+		}
+		$r = LLD_Members_HW_Rules::milestone_reached(
+			array(
+				'milestones'      => $view['milestones'],
+				'mean7'           => $n ? $sum / $n : null,
+				'celebrated'      => isset( $view['celebrated'] ) ? (array) $view['celebrated'] : array(),
+				'eating_disorder' => 'no',
+			)
+		);
+		return ! empty( $r['kind'] ) ? $r : null;
+	}
+
+	/**
+	 * The celebration: the signed line, its approved health line, and Start Keep It Off at the goal.
+	 *
+	 * @param array|null $reached reached().
+	 * @param array      $facts   facts().
+	 */
+	private static function celebration_html( $reached, array $facts ) {
+		if ( ! $reached ) {
+			return '';
+		}
+		$c    = 'LLD_Members_Hw_Screen_Parts';
+		$kind = (string) $reached['kind'];
+		$text = $c::text_of( $reached );
+		if ( '' === $text ) {
+			return '';
+		}
+		$lines = array(
+			'healthy' => isset( $facts['age'] ) && (int) $facts['age'] >= 65 ? 'HW-MS-03-older' : 'HW-MS-03',
+			'goal'    => 'HW-MS-04',
+		);
+		$html = '<section class="lld-card lld-hw-celebrate" data-lld-section="hw-celebrate" data-lld-milestone="' . esc_attr( $kind ) . '"><p>' . $c::rich( $text ) . '</p>';
+		if ( isset( $lines[ $kind ] ) ) {
+			$health = $c::block_text( $lines[ $kind ] );
+			if ( '' !== $health ) {
+				$html .= '<p data-lld-health-line>' . esc_html( $health ) . '</p>';
+			}
+		}
+		if ( 'goal' === $kind ) {
+			$html .= LLD_Members_Hw_Blocks_Screen::keep_it_off_html( $facts );
+		}
+		return $html . '</section>';
 	}
 
 	/**

@@ -424,7 +424,51 @@ class LLD_Members_Account_Hub {
 				'type'  => 'submit',
 			)
 		);
-		$html .= '</form></section>';
+		$html .= '</form>';
+		$html .= self::hw_answers_html( (int) $row->id );
+		$html .= '</section>';
+		return $html;
+	}
+
+	/**
+	 * P3-35: the member's Healthy Weight answers (each approved question with its answer) and the way to change them
+	 * and the activity level (/members/goal/?hw=answers). Shown only once the programme is built and answers exist.
+	 *
+	 * @param int $member_id Member id.
+	 */
+	private static function hw_answers_html( $member_id ) {
+		if ( ! class_exists( 'LLD_Members_Hw_Screen_Parts' ) || ! class_exists( 'LLD_Members_Goal_Setting' ) || ! LLD_Members_Goal_Setting::hw_flow() || ! LLD_Members_Account::has_consent( $member_id, 'health' ) ) {
+			return '';
+		}
+		$c       = 'LLD_Members_Hw_Screen_Parts';
+		$answers = $c::answers( $member_id );
+		$rows    = '';
+		foreach ( array_merge( array( 'activity_level' ), LLD_Members_Hw_Questions_Screen::JOINING ) as $key ) {
+			$q = isset( $answers[ $key ] ) ? $c::question( $key ) : null;
+			if ( ! $q ) {
+				continue;
+			}
+			$shown = array();
+			foreach ( (array) $answers[ $key ] as $v ) {
+				foreach ( $q['choices'] as $choice ) {
+					if ( (string) $v === $choice[0] ) {
+						$shown[] = $choice[1];
+					}
+				}
+				if ( ! $q['choices'] && is_scalar( $v ) ) {
+					$shown[] = (string) $v;
+				}
+			}
+			if ( $shown ) {
+				$rows .= '<dt>' . esc_html( $q['text'] ) . '</dt><dd data-lld-answer="' . esc_attr( $key ) . '">' . esc_html( implode( ', ', $shown ) ) . '</dd>';
+			}
+		}
+		if ( '' === $rows ) {
+			return '';
+		}
+		$html  = '<div class="lld-hw-answers" data-lld-section="hw-answers"><h3>' . esc_html( $c::LABELS['questions_title'] ) . '</h3>';
+		$html .= '<p class="lld-muted">' . esc_html( $c::LABELS['questions_intro'] ) . '</p><dl class="lld-account-state">' . $rows . '</dl>';
+		$html .= '<p><a class="lld-account-link" href="' . esc_url( home_url( '/members/goal/?hw=answers' ) ) . '">Change your answers</a></p></div>';
 		return $html;
 	}
 
