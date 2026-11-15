@@ -55,6 +55,26 @@
       "file": "tests/stage2/e2e/account-review.spec.mjs",
       "decision": "Owner, 10 Nov 2026 (\"fix the test\"): TC-FR2-02-AS-01 failed by chance in WebKit on #241 and #123 because the reload cancelled the Save POST; a timing fix, no change of behaviour or requirement",
       "change": "TC-FR2-02-AS-01 waits for the POST to /members/settings/ to answer, and for the page to load, before reloading settings; every assertion is unchanged."
+    },
+    {
+      "file": "tests/stage2/e2e/premium.spec.mjs",
+      "decision": "Owner, 15 Nov 2026 (\"Yes, fix the tests\", P3-36): the Stage 2 browser tests TC-FR2-34-AS-04, TC-FR2-09-AS-02, TC-FR2-15-AS-05 and TC-FR2-02-AS-01 fail at random in WebKit because a step acts before the page has answered the form post before it; a timing fix, no change of behaviour or requirement",
+      "change": "TC-FR2-34-AS-04 only: 'Choose this plan', each 'Done' and 'Move up a level' wait for the page their form post returns (submitAndWait) before the next step; every assertion is unchanged."
+    },
+    {
+      "file": "tests/stage2/e2e/programme.spec.mjs",
+      "decision": "Owner, 15 Nov 2026 (\"Yes, fix the tests\", P3-36): the Stage 2 browser tests TC-FR2-34-AS-04, TC-FR2-09-AS-02, TC-FR2-15-AS-05 and TC-FR2-02-AS-01 fail at random in WebKit because a step acts before the page has answered the form post before it; a timing fix, no change of behaviour or requirement",
+      "change": "TC-FR2-09-AS-02 only: each screening 'Continue' waits for the page its post returns (submitAndWait), and the second step's lld_start field must be present before the second click; every assertion is unchanged."
+    },
+    {
+      "file": "tests/stage2/e2e/payments.spec.mjs",
+      "decision": "Owner, 15 Nov 2026 (\"Yes, fix the tests\", P3-36): the Stage 2 browser tests TC-FR2-34-AS-04, TC-FR2-09-AS-02, TC-FR2-15-AS-05 and TC-FR2-02-AS-01 fail at random in WebKit because a step acts before the page has answered the form post before it; a timing fix, no change of behaviour or requirement",
+      "change": "TC-FR2-15-AS-05 (and the other tests using confirmRefund()): 'Refund' is waited for until visible, 'Refund' and 'Confirm refund' wait for the page their post returns, and the payments admin page is waited for until loaded; every assertion is unchanged."
+    },
+    {
+      "file": "tests/stage2/e2e/accounts-privacy.spec.mjs",
+      "decision": "Owner, 15 Nov 2026 (\"Yes, fix the tests\", P3-36): the Stage 2 browser tests TC-FR2-34-AS-04, TC-FR2-09-AS-02, TC-FR2-15-AS-05 and TC-FR2-02-AS-01 fail at random in WebKit because a step acts before the page has answered the form post before it; a timing fix, no change of behaviour or requirement",
+      "change": "TC-FR2-02-AS-01 only: Save waits for the page its post returns (submitAndWait) before the checks and the reload; every assertion is unchanged."
     }
   ]
 }
