@@ -171,3 +171,26 @@ test("TC-FR3-38-AS-03 (sleep): a night logged on the member's clock keeps its ho
   expect(stored.value_1).toBe(8);
   expect(stored.value_2).toBe(1380);
 });
+
+test("TC-FR3-38-AS-03 (clock change): a time the member's clocks skipped is refused before anything is sent", () => {
+  // London's clocks go forward at 01:00 on 29 March 2026, so 01:30 that night never happens there. Without a check
+  // the page would quietly store it an hour off. 00:59 and 02:00 exist; the hour that happens twice in October is
+  // allowed (either reading of it is a real time).
+  const zone = new Function(`${js.slice(js.indexOf('const RD_AT'), js.indexOf('function rdComputeSleepHours'))}
+    return { rdLocalExists };`)();
+  expect(zone.rdLocalExists('2026-03-29 01:30:00', 'Europe/London')).toBe(false);
+  expect(zone.rdLocalExists('2026-03-29 00:59:00', 'Europe/London')).toBe(true);
+  expect(zone.rdLocalExists('2026-03-29 02:00:00', 'Europe/London')).toBe(true);
+  expect(zone.rdLocalExists('2026-10-25 01:30:00', 'Europe/London')).toBe(true);
+  expect(zone.rdLocalExists('2026-03-08 02:15:00', 'America/New_York')).toBe(false);
+  expect(zone.rdLocalExists('2026-03-29 01:30:00', 'UTC')).toBe(true);
+  expect(zone.rdLocalExists('2026-03-29 01:30:00', '')).toBe(true);
+  // Both places the page sends a typed time check it first and show the refusal instead of saving.
+  const read = js.slice(js.indexOf('function initReadings('));
+  const submit = read.slice(read.indexOf("els.form.addEventListener('submit'"));
+  expect(submit.indexOf('rdSkippedTimeError(')).toBeGreaterThan(-1);
+  expect(submit.indexOf('rdSkippedTimeError(')).toBeLessThan(submit.indexOf('submitPayload('));
+  const water = read.slice(read.indexOf('els.waterQuickBtns.forEach'));
+  expect(water.indexOf('rdSkippedTimeError(')).toBeGreaterThan(-1);
+  expect(water.indexOf('rdSkippedTimeError(')).toBeLessThan(water.indexOf('submitPayload('));
+});
