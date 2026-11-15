@@ -1,0 +1,64 @@
+{
+  "ev_id": "EV-NFR1-03-20261115-1533",
+  "req_id": "NFR1-03",
+  "tc_id": "TC-NFR1-03",
+  "commit": "28bc915fef1778bd308e0e59d7dba92e27485f71",
+  "tool_hashes": {
+    "protein": "48696de472ee353094542f8cc7ee3dfe5f851bafc6c1bfc0d325fd67997ba365",
+    "diabetes": "4ebf15240ef7eff74a5bd8c93753c4957213f3d52579f26e3f6da61cff16834d"
+  },
+  "fixtures": [
+    "FX-MAIL-NEG-06",
+    "FX-MAIL-RATE-01"
+  ],
+  "results": [
+    {
+      "assertion": "TC-NFR1-03-AS-01",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-03-AS-02",
+      "outcome": "skipped",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-03-AS-03",
+      "outcome": "skipped",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-03-AS-04",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-03-AS-05",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-03-AS-06",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    },
+    {
+      "assertion": "TC-NFR1-03-AS-07",
+      "outcome": "pass",
+      "artefact": "artefacts/vitest.json",
+      "oracle": "characterisation"
+    }
+  ],
+  "mutations": [],
+  "red_run": null,
+  "green_run": "local-20261115-1533",
+  "human_gate": null,
+  "started_at": "2026-11-15T15:33:43Z",
+  "finished_at": "2026-11-15T15:33:43Z"
+}
