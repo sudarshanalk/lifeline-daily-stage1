@@ -159,6 +159,7 @@
 			recipeIngredients: [],
 			recipes: [],
 			editingRecipeId: null,
+			editingIngIdx: null,
 			favourites: [],
 			recentFoods: [],
 			customFoods: [],
@@ -341,7 +342,7 @@
 			if (day.over_note) {
 				rightNote = '<span class="lld-food-over-note">' + esc(day.over_note) + '</span>';
 			} else if (over && over.kcal > 0) {
-				rightNote = '<span class="lld-food-over-note">Over by ' + fmtNum(over.kcal) + ' kcal today.</span>';
+				rightNote = '<span class="lld-food-over-note">' + fmtNum(over.kcal) + ' kcal over today</span>';
 			} else if (left && left.kcal !== null && left.kcal !== undefined) {
 				rightNote = '<span class="lld-food-left-note">' + fmtNum(left.kcal) + ' kcal left</span>';
 			}
@@ -1225,19 +1226,75 @@
 			els.recipePicked.innerHTML = state.recipeIngredients
 				.map(function (ing, idx) {
 					var label = state.edMode ? esc(ing.name || 'Ingredient') : esc(ing.name || 'Ingredient') + ' (' + esc(ing.grams) + ' g)';
+					// Change an ingredient's amount in place (no amounts in eating-disorder mode, so no Edit there).
+					if (!state.edMode && state.editingIngIdx === idx) {
+						return (
+							'<li class="lld-search-item"><span>' +
+							esc(ing.name || 'Ingredient') +
+							'</span><span class="lld-food-item-actions">' +
+							'<label class="lld-food-field-inline"><span class="lld-sr">Amount in grams</span>' +
+							'<input type="number" min="0.1" max="5000" step="0.1" class="lld-gram-input" value="' +
+							esc(ing.grams) +
+							'" data-lld-ing-grams="' +
+							idx +
+							'" /></label>' +
+							'<button type="button" class="lld-pill-btn lld-btn-sm" data-lld-save-ing="' +
+							idx +
+							'">Save</button>' +
+							'<button type="button" class="lld-btn-ghost lld-btn-sm" data-lld-cancel-ing="' +
+							idx +
+							'">Cancel</button></span></li>'
+						);
+					}
+					var editIng = state.edMode
+						? ''
+						: '<button type="button" class="lld-btn-ghost lld-btn-sm" data-lld-edit-ing="' + idx + '">Edit</button>';
 					return (
 						'<li class="lld-search-item"><span>' +
 						label +
-						'</span><button type="button" class="lld-btn-ghost lld-btn-sm" data-lld-rm-ing="' +
+						'</span><span class="lld-food-item-actions">' +
+						editIng +
+						'<button type="button" class="lld-btn-ghost lld-btn-sm" data-lld-rm-ing="' +
 						idx +
-						'">Remove</button></li>'
+						'">Remove</button></span></li>'
 					);
 				})
 				.join('');
 		}
 
+		// A new amount for one ingredient: its nutrients scale with it (the server works them out again on save).
+		function saveIngredientAmount(idx) {
+			var ing = state.recipeIngredients[idx];
+			var input = els.recipePicked ? els.recipePicked.querySelector('[data-lld-ing-grams="' + idx + '"]') : null;
+			if (!ing || !input) {
+				return;
+			}
+			var g = Math.round(Number(input.value) * 10) / 10;
+			if (!(g >= 0.1 && g <= 5000)) {
+				setMsg(els.recipeMsg, 'Check the value of grams.', true);
+				input.focus();
+				return;
+			}
+			var old = Number(ing.grams);
+			var fac = old > 0 ? g / old : 1;
+			['kcal', 'protein_g', 'carb_g', 'fat_g', 'fibre_g'].forEach(function (key) {
+				if (ing[key] !== null && ing[key] !== undefined && !isNaN(Number(ing[key]))) {
+					ing[key] = Number(ing[key]) * fac;
+				}
+			});
+			ing.grams = g;
+			state.editingIngIdx = null;
+			setMsg(els.recipeMsg, '');
+			renderRecipeIngredients();
+			var back = els.recipePicked.querySelector('[data-lld-edit-ing="' + idx + '"]');
+			if (back) {
+				back.focus();
+			}
+		}
+
 		function resetRecipeEditor() {
 			state.editingRecipeId = null;
+			state.editingIngIdx = null;
 			state.recipeIngredients = [];
 			renderRecipeIngredients();
 			if (els.recipeForm) {
@@ -1270,6 +1327,7 @@
 				els.recipeForm.elements.servings.value = found.servings || 1;
 			}
 			state.recipeIngredients = parseJsonList(found.ingredients);
+			state.editingIngIdx = null;
 			renderRecipeIngredients();
 			if (els.recipeSubmit) {
 				els.recipeSubmit.textContent = 'Update recipe';
@@ -1621,9 +1679,37 @@
 				}
 				return;
 			}
+			btn = target.closest('[data-lld-edit-ing]');
+			if (btn && !state.edMode) {
+				var editIdx = Number(btn.getAttribute('data-lld-edit-ing'));
+				state.editingIngIdx = editIdx;
+				renderRecipeIngredients();
+				var ingInput = els.recipePicked.querySelector('[data-lld-ing-grams="' + editIdx + '"]');
+				if (ingInput) {
+					ingInput.focus();
+				}
+				return;
+			}
+			btn = target.closest('[data-lld-save-ing]');
+			if (btn) {
+				saveIngredientAmount(Number(btn.getAttribute('data-lld-save-ing')));
+				return;
+			}
+			btn = target.closest('[data-lld-cancel-ing]');
+			if (btn) {
+				var cancelIdx = Number(btn.getAttribute('data-lld-cancel-ing'));
+				state.editingIngIdx = null;
+				renderRecipeIngredients();
+				var editAgain = els.recipePicked.querySelector('[data-lld-edit-ing="' + cancelIdx + '"]');
+				if (editAgain) {
+					editAgain.focus();
+				}
+				return;
+			}
 			btn = target.closest('[data-lld-rm-ing]');
 			if (btn) {
 				state.recipeIngredients.splice(Number(btn.getAttribute('data-lld-rm-ing')), 1);
+				state.editingIngIdx = null;
 				renderRecipeIngredients();
 			}
 		});
@@ -1710,6 +1796,15 @@
 			}
 			if (form === els.recipeForm) {
 				ev.preventDefault();
+				// An ingredient amount being changed: Enter in its box saves that amount only; the form's own button
+				// keeps the new amount, then saves the recipe.
+				if (state.editingIngIdx !== null) {
+					var enterOnIng = !!(document.activeElement && document.activeElement.hasAttribute && document.activeElement.hasAttribute('data-lld-ing-grams'));
+					saveIngredientAmount(state.editingIngIdx);
+					if (enterOnIng || state.editingIngIdx !== null) {
+						return;
+					}
+				}
 				if (!state.recipeIngredients.length) {
 					setMsg(els.recipeMsg, 'Add at least one ingredient first.', true);
 					return;

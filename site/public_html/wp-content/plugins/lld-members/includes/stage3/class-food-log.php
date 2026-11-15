@@ -27,6 +27,9 @@ class LLD_Members_Food_Log {
 
 	const EARLIER_LABEL = 'Earlier diary entry, nutrition unknown';
 
+	/** The signed over-target sentence (safety matrix 'food-tracker.over-target'; TC-FR3-29-AS-03). {n} is the kcal over. */
+	const OVER_NOTE = '{n} kcal over today';
+
 	/**
 	 * Premium is the access state stored for the membership. "Premium ended" is not Premium.
 	 *
@@ -306,7 +309,7 @@ class LLD_Members_Food_Log {
 				}
 			}
 		}
-		$note = isset( $over['kcal'] ) && $over['kcal'] > 0 ? 'Over by ' . self::format_amount( $over['kcal'] ) . ' kcal today.' : null;
+		$note = isset( $over['kcal'] ) && $over['kcal'] > 0 ? self::over_note( $over['kcal'] ) : null;
 		return array(
 			'date'      => $date,
 			'locked'    => false,
@@ -839,6 +842,15 @@ class LLD_Members_Food_Log {
 	 */
 	private static function round_nutrient( $value, $key ) {
 		return round( (float) $value, 'kcal' === $key ? 1 : 2 );
+	}
+
+	/**
+	 * The signed over-target sentence for this many kcal over (OVER_NOTE).
+	 *
+	 * @param float|int $kcal Amount over.
+	 */
+	public static function over_note( $kcal ) {
+		return str_replace( '{n}', self::format_amount( $kcal ), self::OVER_NOTE );
 	}
 
 	/**
