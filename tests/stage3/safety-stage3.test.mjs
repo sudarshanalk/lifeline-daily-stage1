@@ -24,7 +24,7 @@ define('ABSPATH', '/'); define('DAY_IN_SECONDS', 86400);
 class WP_REST_Response { public $data; public $status; function __construct($d, $s = 200) { $this->data = $d; $this->status = $s; } }
 $GLOBALS['filters'] = [];
 function add_action() {} function add_filter($h, $cb) { $GLOBALS['filters'][$h] = $cb; }
-function apply_filters($h, $v) { return $v; }
+function apply_filters($h, $v, ...$a) { return isset($GLOBALS['af'][$h]) ? ($GLOBALS['af'][$h])($v, ...$a) : $v; } // a test may hook one filter
 function wp_json_encode($v) { return json_encode($v); }
 class LLD_Members_Schema { static function table($s) { return 'wp_lld_' . $s; } }
 class LLD_Members_Features { public static $on = [7 => true, 8 => false]; static function enabled($f, $m = 0) { return !empty(self::$on[$m]); } static function state($f) { return 'test_accounts'; } }
@@ -96,6 +96,47 @@ test('TC-FR3-69-AS-01', () => {
   expect(api).toMatch(/apply_filters\( 'lld_members_stage3_api_rows', \$view, 'calculator-results', \$member_id \)/);
   expect(src('loader.php')).toMatch(/LLD_Members_Stage3_Safety::boot\(\)/);
   expect(src('class-safety-stage3.php')).toMatch(/add_filter\( 'lld_members_stage3_api_rows'/);
+});
+
+test('TC-FR3-69-AS-01 (Healthy Weight food types): the drinks list, the repeat meal and a logged drink lose their numbers in the interface rows', () => {
+  const r = run(`
+    LLD_Members_Safety::$stage2 = [7 => ['eating-disorder'], 9 => ['kidney']]; profile(7, ['eating-disorder']); profile(9, ['kidney']); LLD_Members_Features::$on[9] = true; LLD_Members_Account::$consent[9] = true;
+    $drinks = ['drinks' => [['key' => 'wine_175', 'label' => 'Glass of wine, 175 ml', 'ml' => 175, 'kind' => 'drink', 'food_id' => 5, 'kcal' => 140]]];
+    $repeat = ['meal' => ['meal' => 'lunch', 'from_date' => '2026-11-10', 'items' => 2, 'kcal' => 390, 'times' => 2]];
+    $drink = ['id' => 4, 'entry' => ['entry_date' => '2026-11-12', 'portion_label' => 'Glass of wine, 175 ml', 'kcal' => 140, 'protein_g' => 0.2, 'carb_g' => 3.5, 'fat_g' => 0, 'fibre_g' => 0]];
+    $out = [];
+    foreach ([7, 8, 9] as $m) $out[$m] = [LLD_Members_Stage3_Safety::api_rows($drinks, 'food-drinks', $m), LLD_Members_Stage3_Safety::api_rows($repeat, 'food-repeat', $m), LLD_Members_Stage3_Safety::api_rows($drink, 'food-drink', $m)];
+    return $out;
+  `);
+  const [drinks, repeat, drink] = r[7];
+  expect(drinks.drinks[0]).toMatchObject({ key: 'wine_175', label: 'Glass of wine, 175 ml', kcal: null, nutrition_hidden: true });
+  expect(repeat.meal).toMatchObject({ meal: 'lunch', kcal: null, nutrition_hidden: true });
+  expect(drink.entry).toMatchObject({ portion_label: 'Glass of wine, 175 ml', kcal: null, protein_g: null, carb_g: null, fat_g: null, fibre_g: null, nutrition_hidden: true });
+  expect(r[8][0].drinks[0].kcal).toBe(140); // the matrix off: Stage 2 behaviour
+  expect(r[9][2].entry).toMatchObject({ kcal: 140, protein_g: null }); // kidney disease: only protein goes
+});
+
+test('TC-FR3-69-AS-01 (a situation added by the filter): what lld_members_stage3_safety_situations adds hides the numbers in every food type and refuses the targets', () => {
+  // The Healthy Weight Check's "yes" (LLD_Members_HW_Answers::safety_situations) arrives through this filter; member 7
+  // has no Stage 2 eating-disorder flag.
+  const r = run(`
+    LLD_Members_Safety::$stage2 = [7 => ['none']]; profile(7, []);
+    $before = LLD_Members_Stage3_Safety::situations(7);
+    $GLOBALS['af']['lld_members_stage3_safety_situations'] = function ($s, $m) { return 7 === (int) $m ? array_merge($s, ['eating_disorder']) : $s; };
+    $log = LLD_Members_Stage3_Safety::api_rows([['id' => 1, 'kcal' => 310, 'protein_g' => 12]], 'food-log', 7);
+    $recent = LLD_Members_Stage3_Safety::api_rows([['id' => 1, 'kcal' => 310]], 'food-recent', 7);
+    $search = LLD_Members_Stage3_Safety::api_rows(['enabled' => true, 'foods' => [['id' => 5, 'name' => 'Rice', 'kcal' => 130]]], 'food-search', 7);
+    $barcode = LLD_Members_Stage3_Safety::api_rows(['food' => ['name' => 'Bar', 'per' => ['kcal' => 250]]], 'food-barcode', 7);
+    $recipe = LLD_Members_Stage3_Safety::api_rows(['id' => 3, 'name' => 'Soup', 'kcal_per_serving' => 220], 'recipes', 7);
+    $plan = LLD_Members_Stage3_Safety::api_rows([['id' => 2, 'calorie_target' => 1600]], 'plans', 7);
+    $targets = LLD_Members_Stage3_Safety::api_refuse(null, 'targets', 7);
+    return ['before' => $before, 'after' => LLD_Members_Stage3_Safety::situations(7), 'log' => $log[0]['kcal'], 'recent' => $recent[0]['kcal'], 'search' => $search['foods'][0]['kcal'],
+      'barcode' => $barcode['food']['per']['kcal'], 'recipe' => $recipe['kcal_per_serving'], 'plan' => $plan[0]['calorie_target'], 'targets' => $targets ? $targets->status : null];
+  `);
+  expect(r.before).not.toContain('eating_disorder');
+  expect(r.after).toContain('eating_disorder');
+  expect(r).toMatchObject({ log: null, recent: null, search: null, barcode: null, recipe: null, plan: null, targets: 403 });
+  expect(src('class-safety-stage3.php')).toContain("apply_filters( 'lld_members_stage3_safety_situations', $out, $member_id )");
 });
 
 test('TC-FR3-69-AS-02', () => {

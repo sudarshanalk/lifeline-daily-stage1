@@ -615,6 +615,9 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 		if ( 'food-search' === $type && isset( $rows['foods'] ) && is_array( $rows['foods'] ) ) {
 			return self::search_shown( $rows, self::applies( $member_id, 'food_tracker' ) );
 		}
+		if ( in_array( $type, array( 'food-drinks', 'food-repeat', 'food-drink' ), true ) ) {
+			return self::hw_food_shown( $rows, $type, self::applies( $member_id, 'food_tracker' ) );
+		}
 		if ( 'insights' === $type ) {
 			return self::insights_shown( $rows, $member_id );
 		}
@@ -701,6 +704,46 @@ If you also have chest pain, shortness of breath, a severe headache, weakness or
 			if ( $h['all'] ) {
 				$rows['foods'][ $i ]['nutrition_hidden'] = true;
 			}
+		}
+		return $rows;
+	}
+
+	/**
+	 * The Healthy Weight food types (P3-35): the drinks list ({drinks: [{kcal}]}), the repeat meal ({meal: {kcal}}) and a
+	 * logged drink ({id, entry: {kcal, protein_g, …}}) lose their numbers where the matrix hides them, as food search
+	 * hits do (FR3-69 AS-01, AS-02).
+	 *
+	 * @param array<string,mixed> $rows Rows.
+	 * @param string              $type food-drinks, food-repeat or food-drink.
+	 * @param array<string,mixed> $a    applies() or combine() for food_tracker.
+	 * @return array<string,mixed>
+	 */
+	public static function hw_food_shown( array $rows, $type, array $a ) {
+		$h = self::nutrition_hidden( $a );
+		if ( ! $h['all'] && ! $h['protein'] ) {
+			return $rows;
+		}
+		$keys  = $h['all'] ? array( 'kcal', 'protein_g', 'carb_g', 'fat_g', 'fibre_g' ) : array( 'protein_g' );
+		$strip = function ( $row ) use ( $keys, $h ) {
+			if ( ! is_array( $row ) ) {
+				return $row;
+			}
+			foreach ( $keys as $k ) {
+				if ( array_key_exists( $k, $row ) ) {
+					$row[ $k ] = null;
+				}
+			}
+			if ( $h['all'] ) {
+				$row['nutrition_hidden'] = true;
+			}
+			return $row;
+		};
+		if ( 'food-drinks' === $type && isset( $rows['drinks'] ) && is_array( $rows['drinks'] ) ) {
+			$rows['drinks'] = array_map( $strip, $rows['drinks'] );
+		} elseif ( 'food-repeat' === $type && isset( $rows['meal'] ) && is_array( $rows['meal'] ) ) {
+			$rows['meal'] = $strip( $rows['meal'] );
+		} elseif ( 'food-drink' === $type && isset( $rows['entry'] ) && is_array( $rows['entry'] ) ) {
+			$rows['entry'] = $strip( $rows['entry'] );
 		}
 		return $rows;
 	}

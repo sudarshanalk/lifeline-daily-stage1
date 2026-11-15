@@ -184,7 +184,8 @@ test('TC-FR3-38-AS-03 the history and trend lists ask for one reading type and a
   // ?type=weight is a query value: WordPress hands it back for $request['type'] before the route's own {type}, and
   // every list answered "Not available." gate() moves it to its own name first, and query_type() reads it there.
   const api = readFileSync(resolve(plugin, 'includes/stage3/class-api.php'), 'utf8');
-  const gate = api.slice(api.indexOf('private static function gate('), api.indexOf('self::$request = $request;'));
+  const gateAt = api.indexOf('private static function gate(');
+  const gate = api.slice(gateAt, api.indexOf('self::$request = $request;', gateAt));
   expect(gate.indexOf('self::keep_query_type( $request );')).toBeGreaterThan(-1);
   expect(gate.indexOf('self::keep_query_type( $request );')).toBeLessThan(gate.indexOf("$request['type']"));
   const out = execFileSync('php', ['-r', `define('ABSPATH', '/');

@@ -1,0 +1,210 @@
+{
+  "group": "Mindset notes R-HW-NOTE-01 to -05 (section 9.7, FR3-106)",
+  "tool": "healthy-weight-programme",
+  "fixtures": [
+    {
+      "id": "FX-HWP-HWNO01-01",
+      "purpose": "HWNO-01a: mood 2 today: \"Talk to yourself like a friend\" today, with the support wording",
+      "inputs": {
+        "source_id": "HWNO-01a",
+        "fn": "note_for_day",
+        "args": {
+          "date": "2026-11-20",
+          "programme_day": 15,
+          "queue": "@default_from:15",
+          "shown": {},
+          "mood_today": 2
+        }
+      },
+      "expected": {
+        "note": "HW-MN-W4-4",
+        "rule": "R-HW-NOTE-01",
+        "support_wording": true
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWNO02-01",
+      "purpose": "HWNO-02a: stress 8, sleep 6 to 7: both notes in week 1 (day 2 \"Stress and eating\", day 4 \"Sleep and appetite\")",
+      "inputs": {
+        "source_id": "HWNO-02a",
+        "fn": "note_sequence",
+        "args": {
+          "start": "2026-11-06",
+          "days": 4,
+          "answers": {
+            "stress": 8,
+            "sleep": "6_7"
+          }
+        }
+      },
+      "expected": {
+        "notes": [
+          "HW-MN-W1-1",
+          "HW-MN-W8-1",
+          "HW-MN-W1-2",
+          "HW-MN-W1-6"
+        ]
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWNO03-01",
+      "purpose": "HWNO-03a: last food entry D-4: fires",
+      "inputs": {
+        "source_id": "HWNO-03a",
+        "fn": "note_for_day",
+        "args": {
+          "date": "2026-11-20",
+          "programme_day": 15,
+          "queue": "@default_from:15",
+          "shown": {},
+          "counts_calories": true,
+          "last_food_date": "2026-11-16"
+        }
+      },
+      "expected": {
+        "note": "HW-MN-W2-6",
+        "rule": "R-HW-NOTE-03"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWNO03-02",
+      "purpose": "HWNO-03b: entry on D-2: does not",
+      "inputs": {
+        "source_id": "HWNO-03b",
+        "fn": "note_for_day",
+        "args": {
+          "date": "2026-11-20",
+          "programme_day": 15,
+          "queue": "@default_from:15",
+          "shown": {},
+          "counts_calories": true,
+          "last_food_date": "2026-11-18"
+        }
+      },
+      "expected": {
+        "note": "HW-MN-W3-1",
+        "rule": null
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWNO04-01",
+      "purpose": "HWNO-04a: weigh-ins 79.1 then 79.5: fires",
+      "inputs": {
+        "source_id": "HWNO-04a",
+        "fn": "note_for_day",
+        "args": {
+          "date": "2026-11-20",
+          "programme_day": 15,
+          "queue": "@default_from:15",
+          "shown": {},
+          "weigh_in_last_week": 79.1,
+          "weigh_in_this_week": 79.5
+        }
+      },
+      "expected": {
+        "note": "HW-MN-W1-4",
+        "rule": "R-HW-NOTE-04"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWNO04-02",
+      "purpose": "HWNO-04b: weigh-ins 79.1 then 79.3: does not",
+      "inputs": {
+        "source_id": "HWNO-04b",
+        "fn": "note_for_day",
+        "args": {
+          "date": "2026-11-20",
+          "programme_day": 15,
+          "queue": "@default_from:15",
+          "shown": {},
+          "weigh_in_last_week": 79.1,
+          "weigh_in_this_week": 79.3
+        }
+      },
+      "expected": {
+        "rule": null
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWNO05-01",
+      "purpose": "HWNO-05a: plateau holds: \"Plateaus are part of the process\"",
+      "inputs": {
+        "source_id": "HWNO-05a",
+        "fn": "note_for_day",
+        "args": {
+          "date": "2026-11-20",
+          "programme_day": 15,
+          "queue": "@default_from:15",
+          "shown": {},
+          "plateau": true
+        }
+      },
+      "expected": {
+        "note": "HW-MN-W7-4",
+        "rule": "R-HW-NOTE-05"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWNO06-01",
+      "purpose": "HWNO-06a: member B (stress 8, sleep under 6) days 1 to 9: two days behind the default order, the brought-forward note skipped when its slot comes",
+      "inputs": {
+        "source_id": "HWNO-06a",
+        "fn": "note_sequence",
+        "args": {
+          "start": "2026-11-06",
+          "days": 9,
+          "answers": {
+            "stress": 8,
+            "sleep": "under_6"
+          }
+        }
+      },
+      "expected": {
+        "notes": [
+          "HW-MN-W1-1",
+          "HW-MN-W8-1",
+          "HW-MN-W1-2",
+          "HW-MN-W1-6",
+          "HW-MN-W1-3",
+          "HW-MN-W1-4",
+          "HW-MN-W1-5",
+          "HW-MN-W1-7",
+          "HW-MN-W2-1"
+        ]
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded",
+      "notes": "The worked example in the approved notes file HW-P3-35-01 (\"Notes for the build\"), from R-HW-NOTE-02 and FR3-106."
+    }
+  ]
+}

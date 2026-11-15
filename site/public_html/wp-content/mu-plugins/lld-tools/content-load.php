@@ -14,7 +14,8 @@ if (!defined('ABSPATH')) exit;
 /* ---------------------------------------------------------------- pure builders ----------------------------------- */
 
 const LLD_CONTENT_TYPES = ['lld_goal', 'lld_track', 'lld_week', 'lld_lesson', 'lld_activity', 'lld_challenge', 'lld_recipe', 'lld_meal',
-  'lld_workout', 'lld_rule', 'lld_badge', 'lld_matrix', 'lld_wording'];
+  'lld_workout', 'lld_rule', 'lld_badge', 'lld_matrix', 'lld_wording', 'lld_note', 'lld_question'];
+// lld_note and lld_question: the Healthy Weight programme's mindset notes and questions (P3-35; Owner Question 160).
 
 /** Replace "@key" references with post ids: a value that is one reference becomes an int, references inside a longer
  *  string (an "@a,@b" list) become their ids. Keys not in $ids are added to $missing and left as they were. */
@@ -70,7 +71,7 @@ function lld_content_safety_missing(array $it, string $track = ''): array {
 function lld_content_check(array $bundle): array {
   $problems = [];
   if (!isset($bundle['items']) || !is_array($bundle['items']) || !$bundle['items']) return ['the bundle has no items'];
-  $seen = []; $titles = [];
+  $seen = []; $titles = []; $blocks = [];
   foreach ($bundle['items'] as $i => $it) {
     $where = 'item ' . ($i + 1) . (isset($it['key']) ? ' (' . $it['key'] . ')' : '');
     if (!is_array($it)) { $problems[] = "$where is not an object"; continue; }
@@ -88,11 +89,40 @@ function lld_content_check(array $bundle): array {
     if (preg_match('/(?<!never |not |n\'t |do not |without |avoid |no )(breath[- ]?holding|hold(ing)? your breath)/', $text)) $problems[] = "$where mentions breath-holding";
     $track_ref = (string)($it['fields']['track_id'] ?? '');
     $track = preg_match('/^@([A-Za-z0-9:._-]+)$/', $track_ref, $m) ? (string)($titles[$m[1]] ?? '') : '';
+    if (lld_content_hw_tags_only($it, isset($m[1]) && isset($blocks[$m[1]]))) $track = '';
     foreach (lld_content_safety_missing($it, $track) as $line) $problems[] = "$where lacks $line (NFR2-07)";
     $ap = (array)($it['approval'] ?? []);
     if (!preg_match('/^d-[a-z0-9-]+$/', (string)($ap['decision'] ?? '')) || !preg_match('/^[0-9a-f]{16}$/', (string)($ap['sha'] ?? ''))) $problems[] = "$where has no approval decision and fingerprint";
     if (array_key_exists('stage', $it) && $it['stage'] !== 3) $problems[] = "$where has a stage that is not 3";
     if ($key !== '') { $seen[$key] = true; $titles[$key] = (string)($it['title'] ?? ''); }
+    if ($key !== '' && ($it['fields']['track_kind'] ?? '') === 'focus_block') $blocks[$key] = true;
+  }
+  return array_merge($problems, lld_content_hw_problems($bundle));
+}
+
+/** P3-35 (owner, FB06-Q1 = A and the 8 and 9 Nov 2026 decisions for sleep content): the Stage 3 Healthy Weight content
+ *  (its mindset notes, its sleep, stress and alcohol steps, and everything in the nine focus blocks) takes its safety
+ *  lines from its own goal tags only, never from its track's title, so "Sleep and weight" content tagged sleep gets the
+ *  snoring advice and no urgent-help line, and only stress and mood items get that line. Stage 2 tracks keep the
+ *  title rule. $in_block: the item belongs to a focus block. */
+function lld_content_hw_tags_only(array $it, bool $in_block): bool {
+  if (($it['stage'] ?? null) !== 3) return false;
+  return $in_block || ($it['type'] ?? '') === 'lld_note' || (bool)preg_match('/^act:HW-(SL|ST|AL)-\d\d$/', (string)($it['key'] ?? ''));
+}
+
+/** The Healthy Weight programme's own checks (P3-35), only for a bundle that carries its content: notes, questions,
+ *  activity versions (habit tags), food-rule tags or the festival calendar. A Stage 2 bundle gets none of them. The
+ *  checks themselves are LLD_Members_HW_Content's (lld-members), so a bundle that needs them cannot load without it. */
+function lld_content_hw_problems(array $bundle): array {
+  $items = array_values(array_filter((array)$bundle['items'], 'is_array'));
+  $hw = array_key_exists('festivals', $bundle) || (bool)array_filter($items, fn($it) => in_array($it['type'] ?? '', ['lld_note', 'lld_question'], true)
+    || !empty($it['fields']['habit_tags']) || array_key_exists('food_rules', (array)($it['fields'] ?? [])));
+  if (!$hw) return [];
+  if (!class_exists('LLD_Members_HW_Content')) return ['the bundle carries Healthy Weight programme content, but lld-members has no LLD_Members_HW_Content to check it: deploy the plugin first'];
+  $problems = LLD_Members_HW_Content::content_problems($items);
+  if (array_key_exists('festivals', $bundle)) {
+    if (!is_array($bundle['festivals'])) $problems[] = 'the festival calendar is not a list';
+    else foreach (LLD_Members_HW_Content::festival_problems($bundle['festivals']) as $p) $problems[] = $p;
   }
   return $problems;
 }
@@ -122,6 +152,13 @@ function lld_content_plan(array $bundle, array $loaded): array {
     $plan[$key] = !isset($loaded[$key]) ? 'create' : ($loaded[$key] === lld_content_item_hash($it) ? 'same' : 'update');
   }
   return $plan;
+}
+
+/** Hand the bundle's approved festival calendar (P3-35) to LLD_Members_HW_Content::load_festivals() and report it. */
+function lld_content_load_festivals(array $festivals): void {
+  $r = LLD_Members_HW_Content::load_festivals($festivals);
+  if ($r['skipped'] !== '') WP_CLI::warning('festival calendar not written: ' . $r['skipped'] . ($r['problems'] ? "\n- " . implode("\n- ", array_slice($r['problems'], 0, 20)) : ''));
+  else WP_CLI::log("festival calendar: {$r['written']} entries written ({$r['created']} added, {$r['updated']} updated)");
 }
 
 if (!function_exists('add_filter')) return;
@@ -166,12 +203,17 @@ if (defined('WP_CLI') && WP_CLI) {
     ksort($by);
     foreach ($by as $type => $n) WP_CLI::log(sprintf('%-24s %s', $type, implode(', ', array_map(fn($a, $c) => "$c $a", array_keys($n), $n))));
     $changes = count(array_filter($plan, fn($a) => $a !== 'same'));
+    $festivals = is_array($bundle['festivals'] ?? null) ? $bundle['festivals'] : [];
+    if ($festivals) WP_CLI::log(count($festivals) . ' festival calendar entries (written to the festival calendar table after the items)');
     if (!empty($assoc['dry-run'])) { WP_CLI::success("dry run: $changes of " . count($plan) . ' items would be created or updated'); return; }
     if (!current_user_can('manage_options')) WP_CLI::error('run it as the owner admin with --user=<login>: the approval records name who approved');
     $missing_tags = [];
     foreach ($bundle['items'] as $it) foreach ((array)($it['tags'] ?? []) as $t) if (!term_exists($t, 'lld_tag')) $missing_tags[$t] = true;
     if ($missing_tags) WP_CLI::error('these tags are not in the managed tag list: ' . implode(', ', array_keys($missing_tags)));
-    if (!$changes) { WP_CLI::success('the library already matches the bundle: nothing to change'); return; }
+    if (!$changes) {
+      if ($festivals) lld_content_load_festivals($festivals);
+      WP_CLI::success('the library already matches the bundle: nothing to change'); return;
+    }
 
     // backup of every library item the bundle touches, outside the web root
     $env = defined('LLD_ENV') && LLD_ENV === 'staging' ? 'staging' : 'production';
@@ -227,6 +269,7 @@ if (defined('WP_CLI') && WP_CLI) {
       $relinked++;
     }
     if ($relinked) WP_CLI::log("$relinked items re-approved because an item they link to changed");
+    if ($festivals) lld_content_load_festivals($festivals);
     if (has_action('litespeed_purge_all')) do_action('litespeed_purge_all');
     WP_CLI::success("$done items created or updated and approved as " . wp_get_current_user()->user_login . '; check with: wp lld content verify --file=' . $file);
   });

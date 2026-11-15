@@ -1,0 +1,352 @@
+{
+  "group": "Where you are now: R-HW-NUM-01, -02 and the D3-54 background choice (P3-35 method sheet)",
+  "tool": "healthy-weight-programme",
+  "fixtures": [
+    {
+      "id": "FX-HWP-HWN01-01",
+      "purpose": "HWN-01a: 80 kg, 163 cm, waist 98, standard: BMI 30.1 obesity; WHtR 0.60 high risk",
+      "inputs": {
+        "source_id": "HWN-01a",
+        "fn": "where_now",
+        "args": {
+          "weight_kg": 80,
+          "height_cm": 163,
+          "waist_cm": 98,
+          "age": 45,
+          "ethnicity": "WhiteNA",
+          "bmi_background": "White"
+        }
+      },
+      "expected": {
+        "stop": null,
+        "bmi": 30.1,
+        "category": "obese1",
+        "adjusted": false,
+        "waist.ratio": 0.6,
+        "waist.band": "high",
+        "range.lowKg": 49.1,
+        "range.highKg": 66.2
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWN01-02",
+      "purpose": "HWN-01b: same, South Asian: BMI 30.1, obesity range (27.5 or more)",
+      "inputs": {
+        "source_id": "HWN-01b",
+        "fn": "where_now",
+        "args": {
+          "weight_kg": 80,
+          "height_cm": 163,
+          "waist_cm": 98,
+          "age": 45,
+          "ethnicity": "Pakistani"
+        }
+      },
+      "expected": {
+        "bmi": 30.1,
+        "category": "obese1",
+        "adjusted": true,
+        "ask_background": false,
+        "range.lowKg": 49.1,
+        "range.highKg": 60.9
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWN01-31",
+      "purpose": "HWN-01c-1: 70 kg, 163 cm, South Asian: BMI 26.3, overweight (standard would say overweight too)",
+      "inputs": {
+        "source_id": "HWN-01c-1",
+        "fn": "where_now",
+        "args": {
+          "weight_kg": 70,
+          "height_cm": 163,
+          "age": 45,
+          "ethnicity": "Bangladeshi"
+        }
+      },
+      "expected": {
+        "bmi": 26.3,
+        "category": "overweight",
+        "adjusted": true
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWN01-32",
+      "purpose": "HWN-01c-2: 62 kg, 163 cm, South Asian: BMI 23.3, overweight under the lower cut-offs",
+      "inputs": {
+        "source_id": "HWN-01c-2",
+        "fn": "where_now",
+        "args": {
+          "weight_kg": 62,
+          "height_cm": 163,
+          "age": 45,
+          "ethnicity": "Indian"
+        }
+      },
+      "expected": {
+        "bmi": 23.3,
+        "category": "overweight",
+        "adjusted": true
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWN01-33",
+      "purpose": "HWN-01c-3: 62 kg, 163 cm, standard: BMI 23.3, healthy under the standard bands",
+      "inputs": {
+        "source_id": "HWN-01c-3",
+        "fn": "where_now",
+        "args": {
+          "weight_kg": 62,
+          "height_cm": 163,
+          "age": 45,
+          "ethnicity": "WhiteNA",
+          "bmi_background": "White"
+        }
+      },
+      "expected": {
+        "bmi": 23.3,
+        "category": "healthy",
+        "adjusted": false
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWN02-01",
+      "purpose": "HWN-02a: 163 cm, standard: 49.1 to 66.2 kg",
+      "inputs": {
+        "source_id": "HWN-02a",
+        "fn": "range",
+        "args": {
+          "height_cm": 163,
+          "adjusted": false
+        }
+      },
+      "expected": {
+        "lowKg": 49.1,
+        "highKg": 66.2
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWN02-02",
+      "purpose": "HWN-02b: 163 cm, lower cut-offs: 49.1 to 60.9 kg",
+      "inputs": {
+        "source_id": "HWN-02b",
+        "fn": "range",
+        "args": {
+          "height_cm": 163,
+          "adjusted": true
+        }
+      },
+      "expected": {
+        "lowKg": 49.1,
+        "highKg": 60.9
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWN02-31",
+      "purpose": "HWN-02c-1: 162.5 cm: 48.8 to 65.8 kg (the Check's FX-HW-RANGE-03)",
+      "inputs": {
+        "source_id": "HWN-02c-1",
+        "fn": "range",
+        "args": {
+          "height_cm": 162.5,
+          "adjusted": false
+        }
+      },
+      "expected": {
+        "lowKg": 48.8,
+        "highKg": 65.8
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWN02-32",
+      "purpose": "HWN-02c-2: 162.5 cm, lower cut-offs: 48.8 to 60.6 kg (FX-HW-RANGE-04)",
+      "inputs": {
+        "source_id": "HWN-02c-2",
+        "fn": "range",
+        "args": {
+          "height_cm": 162.5,
+          "adjusted": true
+        }
+      },
+      "expected": {
+        "lowKg": 48.8,
+        "highKg": 60.6
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-BGD-01",
+      "purpose": "BGD-01: D3-54: profile names a lower cut-off background, no question",
+      "inputs": {
+        "source_id": "BGD-01",
+        "fn": "background_group",
+        "args": {
+          "ethnicity": "Chinese",
+          "answer": null
+        }
+      },
+      "expected": {
+        "group": "adjusted"
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-BGD-02",
+      "purpose": "BGD-02: D3-54: profile \"Other / mixed\", not yet asked: ask the Check's question",
+      "inputs": {
+        "source_id": "BGD-02",
+        "fn": "background_group",
+        "args": {
+          "ethnicity": "Other",
+          "answer": null
+        }
+      },
+      "expected": {
+        "group": "ask"
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-BGD-03",
+      "purpose": "BGD-03: D3-54: profile \"Other / mixed\", answered Middle Eastern: lower cut-offs",
+      "inputs": {
+        "source_id": "BGD-03",
+        "fn": "background_group",
+        "args": {
+          "ethnicity": "Other",
+          "answer": "MiddleEastern"
+        }
+      },
+      "expected": {
+        "group": "adjusted"
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-BGD-04",
+      "purpose": "BGD-04: D3-54: profile \"White / not stated\", answered Mixed, follow-up yes: lower cut-offs",
+      "inputs": {
+        "source_id": "BGD-04",
+        "fn": "background_group",
+        "args": {
+          "ethnicity": "WhiteNA",
+          "answer": {
+            "bg": "Mixed",
+            "mixed": "yes"
+          }
+        }
+      },
+      "expected": {
+        "group": "adjusted"
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-BGD-05",
+      "purpose": "BGD-05: D3-54: Mixed, follow-up \"not sure\": standard bands",
+      "inputs": {
+        "source_id": "BGD-05",
+        "fn": "background_group",
+        "args": {
+          "ethnicity": "Other",
+          "answer": {
+            "bg": "Mixed",
+            "mixed": "notsure"
+          }
+        }
+      },
+      "expected": {
+        "group": "standard"
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-BGD-06",
+      "purpose": "BGD-06: D3-54: \"prefer not to say\": standard bands",
+      "inputs": {
+        "source_id": "BGD-06",
+        "fn": "background_group",
+        "args": {
+          "ethnicity": "",
+          "answer": "NotSay"
+        }
+      },
+      "expected": {
+        "group": "standard"
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-BGD-07",
+      "purpose": "BGD-07: D3-54: empty profile, not yet asked: ask",
+      "inputs": {
+        "source_id": "BGD-07",
+        "fn": "background_group",
+        "args": {
+          "ethnicity": null,
+          "answer": null
+        }
+      },
+      "expected": {
+        "group": "ask"
+      },
+      "oracle": "clinical",
+      "source_version": "ab4868ca828562c0a63459d1081b180422d4addfe0afeed5f5ceea3237f74bc1",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    }
+  ]
+}

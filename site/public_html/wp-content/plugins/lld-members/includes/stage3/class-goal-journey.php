@@ -375,7 +375,9 @@ class LLD_Members_Goal_Journey {
 		}
 		if ( 'main' === $role ) {
 			$goal = LLD_Members_Stage3_Data::row( 'goals', $member_id, $goal_id, self::SEALED_GOAL );
-			self::build_plan( $member_id, $goal, $facts, $check );
+			// The Healthy Weight flow (P3-35): the pace is chosen on the next step, so the plan stores no rate and no
+			// calorie target until it is (LLD_Members_HW_Programme::join).
+			self::build_plan( $member_id, $goal, $facts, $check, array( 'no_rate' => ! empty( $in['hw_flow'] ) && 'lose_weight' === $type ) );
 		}
 		return $goal_id;
 	}
@@ -463,7 +465,7 @@ class LLD_Members_Goal_Journey {
 	 * @param array|null $check     The weight_check() answer for a weight goal.
 	 * @return int Plan id.
 	 */
-	public static function build_plan( $member_id, array $goal, array $facts, $check = null ) {
+	public static function build_plan( $member_id, array $goal, array $facts, $check = null, array $opts = array() ) {
 		$types = LLD_Members_Goal_Rules::types();
 		$type  = (string) $goal['goal_type'];
 		$def   = isset( $types[ $type ] ) ? $types[ $type ] : $types['activity'];
@@ -487,7 +489,9 @@ class LLD_Members_Goal_Journey {
 			'valid_from'            => $today,
 			'created_by'            => 'engine',
 		);
-		if ( in_array( $type, array( 'lose_weight', 'keep_weight' ), true ) && is_array( $check ) ) {
+		if ( in_array( $type, array( 'lose_weight', 'keep_weight' ), true ) && ! empty( $opts['no_rate'] ) ) {
+			$schedule['weigh_ins'] = 'weekly'; // P3-35: no rate and no calorie target before the pace is chosen
+		} elseif ( in_array( $type, array( 'lose_weight', 'keep_weight' ), true ) && is_array( $check ) ) {
 			// The rate only: the cap and the 5 % milestone derive from the sealed starting weight, so they are recomputed
 			// from the opened goal where needed and never written in plain text (NFR3-10, Build Method §3.6).
 			$schedule['rate_kg_week'] = $check['rate'];
@@ -520,7 +524,8 @@ class LLD_Members_Goal_Journey {
 		if ( array_intersect( array( 'eating_disorder', 'pregnancy', 'unknown' ), $facts['situations'] ) ) {
 			return null;
 		}
-		$activity = array( 'low' => 'low', 'some' => 'some', 'active' => 'active', 'very-active' => 'very active' );
+		// The profile's very-active (and the programme's very_active) is the calculator's "very active" (P3-55, FR3-97).
+		$activity = array( 'low' => 'low', 'some' => 'some', 'active' => 'active', 'very-active' => 'very active', 'very_active' => 'very active' );
 		$result   = LLD_Members_Calorie_Target::compute(
 			array(
 				'sex'            => $facts['sex'],
@@ -894,6 +899,10 @@ class LLD_Members_Goal_Journey {
 			$latest = is_numeric( $reached['target_value'] ) ? (float) $reached['target_value'] : null;
 		}
 		$id = self::create_goal( $member_id, 'main', 'keep_weight', array( 'current' => $latest, 'facts' => $facts ) );
+		if ( ! is_wp_error( $id ) ) {
+			// Keep It Off keeps a daily target as a guide, at the P3-55 maintain level, no deficit (FR3-20, 10 Nov 2026).
+			self::save_target( $member_id, self::calorie_targets( $facts, 'maintain', null ), (string) $facts['today'] );
+		}
 		if ( ! is_wp_error( $id ) && class_exists( 'LLD_Members_Programme' ) ) {
 			$track = LLD_Members_Programme::track_exists( 'keep-it-off' ) ? 'keep-it-off' : 'healthy-weight';
 			if ( LLD_Members_Programme::track_exists( $track ) && LLD_Members_Programme::track_allowed( $member_id, $track ) ) {
@@ -1157,6 +1166,174 @@ class LLD_Members_Goal_Journey {
 	public static function filter_latest_weight( $weight, $member_id ) {
 		$latest = self::latest_value( $member_id, 'weight' );
 		return null === $latest ? $weight : (float) $latest;
+	}
+
+	// ---- Healthy Weight programme (P3-35, FR3-100 to FR3-102, FR3-20) -------------------------------------------------
+
+	/** Milestone weights are sealed (data model: Weight milestone). */
+	const SEALED_MILESTONE = array( 'target_value' );
+
+	/**
+	 * Save the recommended pace, the chosen pace and the rule that recommended it on the goal (FR3-100 AS-06), with the
+	 * date the chosen pace gives (weeks rounded up, P3-56) and the plan's rate.
+	 *
+	 * @param int         $member_id   Member number.
+	 * @param int         $goal_id     Goal id.
+	 * @param float       $recommended kg a week.
+	 * @param float       $chosen      kg a week, within the safe limit (checked by R-HW-SAFE-02 before this).
+	 * @param int|null    $rule_id     Catalogue id of R-HW-PACE-01.
+	 * @param string|null $date        Target date for the chosen pace.
+	 */
+	public static function save_pace( $member_id, $goal_id, $recommended, $chosen, $rule_id, $date = null ) {
+		$row = array(
+			'recommended_rate' => (float) $recommended,
+			'chosen_rate'      => (float) $chosen,
+			'pace_rule_id'     => null === $rule_id ? null : (int) $rule_id,
+		);
+		if ( is_string( $date ) && preg_match( '/^\d{4}-\d\d-\d\d$/', $date ) ) {
+			$row['target_date'] = $date;
+		}
+		$ok   = LLD_Members_Stage3_Data::update( 'goals', $member_id, (int) $goal_id, $row );
+		$plan = self::plan( $member_id, (int) $goal_id );
+		if ( $plan ) {
+			$schedule                 = $plan['schedule'];
+			$schedule['rate_kg_week'] = (float) $chosen;
+			LLD_Members_Stage3_Data::update( 'plans', $member_id, (int) $plan['id'], array( 'log_schedule' => wp_json_encode( $schedule ) ) );
+		}
+		return $ok;
+	}
+
+	/**
+	 * Replace the goal's milestones not yet reached with a new list (R-HW-NUM-04): milestones already passed or beyond
+	 * the goal are never created (the engine leaves them out). Weights sealed, in kg.
+	 *
+	 * @param int   $member_id Member number.
+	 * @param array $goal      Goal row.
+	 * @param array $list      LLD_Members_HW_Rules::milestones()['milestones'].
+	 * @return int Rows written.
+	 */
+	public static function save_milestones( $member_id, array $goal, array $list ) {
+		global $wpdb;
+		$kinds = array( '5pct' => 'five_percent', '10pct' => 'ten_percent', 'healthy' => 'healthy_range', 'goal' => 'goal' );
+		$keep  = array();
+		foreach ( self::milestone_rows( $member_id, (int) $goal['id'] ) as $r ) {
+			if ( $r['reached_at'] ) {
+				$keep[] = (string) $r['kind'];
+				continue;
+			}
+			$wpdb->delete( LLD_Members_Stage3_Schema::table( 'goal_milestones' ), array( 'id' => (int) $r['id'], 'member_id' => (int) $member_id ), array( '%d', '%d' ) );
+		}
+		$n = 0;
+		foreach ( $list as $m ) {
+			$kind = isset( $kinds[ $m['kind'] ] ) ? $kinds[ $m['kind'] ] : (string) $m['kind'];
+			if ( in_array( $kind, $keep, true ) ) {
+				continue;
+			}
+			$n += LLD_Members_Stage3_Data::insert( 'goal_milestones', $member_id, array( 'goal_id' => (int) $goal['id'], 'kind' => $kind, 'target_value' => (float) $m['kg'] ), self::SEALED_MILESTONE ) > 0 ? 1 : 0;
+		}
+		return $n;
+	}
+
+	/**
+	 * The goal's milestone rows, weights opened.
+	 *
+	 * @param int $member_id Member number.
+	 * @param int $goal_id   Goal id.
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function milestone_rows( $member_id, $goal_id ) {
+		$out = array();
+		foreach ( LLD_Members_Stage3_Data::rows( 'goal_milestones', $member_id, self::SEALED_MILESTONE, '', 50 ) as $r ) {
+			if ( (int) $r['goal_id'] === (int) $goal_id ) {
+				$r['target_value'] = is_numeric( $r['target_value'] ) ? (float) $r['target_value'] : null;
+				$out[]             = $r;
+			}
+		}
+		usort(
+			$out,
+			function ( $a, $b ) {
+				return (int) $a['id'] <=> (int) $b['id'];
+			}
+		);
+		return $out;
+	}
+
+	/**
+	 * The P3-55 maintain target (no deficit), or null when no target may be shown (FR3-20 AS-03).
+	 *
+	 * @param array $facts facts().
+	 * @return int|null
+	 */
+	public static function maintain_target( array $facts ) {
+		$t = self::calorie_targets( $facts, 'maintain', null );
+		return $t ? (int) $t['calorie_target'] : null;
+	}
+
+	/**
+	 * Work the main weight goal's target out again at once from the confirmed activity level and the chosen pace
+	 * (FR3-102 AS-05): the current plan version's numbers and the member's nutrition target. A reached goal keeps the
+	 * maintain target (Keep It Off). Nothing for a member the safety matrix keeps calorie numbers from.
+	 *
+	 * @param int         $member_id Member number.
+	 * @param array|null  $facts     facts(), or null to read them.
+	 * @param float|null  $rate      kg a week, or null for the goal's chosen pace.
+	 * @param string|null $method    Eating method to record (calorie_count), or null to keep it.
+	 * @return array|null The targets written.
+	 */
+	public static function retarget( $member_id, $facts = null, $rate = null, $method = null ) {
+		$facts = is_array( $facts ) ? $facts : self::facts( $member_id );
+		$goal  = null;
+		foreach ( self::goals( $member_id ) as $g ) {
+			if ( 'main' === (string) $g['role'] && 'weight' === (string) $g['measure'] && in_array( (string) $g['status'], array( 'active', 'reached' ), true ) ) {
+				$goal = $g;
+				break;
+			}
+		}
+		$plan = $goal ? self::plan( $member_id, (int) $goal['id'] ) : null;
+		if ( ! $plan ) {
+			return null;
+		}
+		if ( null === $rate ) {
+			$rate = isset( $goal['chosen_rate'] ) && is_numeric( $goal['chosen_rate'] ) ? (float) $goal['chosen_rate'] : ( isset( $plan['schedule']['rate_kg_week'] ) ? (float) $plan['schedule']['rate_kg_week'] : null );
+		}
+		$maintain = 'reached' === (string) $goal['status'] || 'keep_weight' === (string) $goal['goal_type'];
+		$targets  = self::calorie_targets( $facts, $maintain ? 'maintain' : 'lose', $rate );
+		$row      = $targets ? $targets : array();
+		// Calorie counting for every member at launch; never for a member with an eating-disorder flag (data model).
+		if ( null !== $method && ! in_array( 'eating_disorder', (array) $facts['situations'], true ) ) {
+			$row['eating_method'] = (string) $method;
+		}
+		if ( $row ) {
+			LLD_Members_Stage3_Data::update( 'plans', $member_id, (int) $plan['id'], $row );
+		}
+		self::save_target( $member_id, $targets, (string) $facts['today'] );
+		return $targets;
+	}
+
+	/**
+	 * The member's nutrition target from the plan, from a date (the food tracker reads the latest valid one).
+	 *
+	 * @param int        $member_id Member number.
+	 * @param array|null $targets   calorie_targets().
+	 * @param string     $from      Local date.
+	 */
+	private static function save_target( $member_id, $targets, $from ) {
+		if ( ! is_array( $targets ) || empty( $targets['calorie_target'] ) ) {
+			return 0;
+		}
+		return LLD_Members_Stage3_Data::insert(
+			'nutrition_targets',
+			$member_id,
+			array(
+				'kcal'       => (int) $targets['calorie_target'],
+				'protein_g'  => $targets['protein_g'],
+				'carb_g'     => $targets['carb_g'],
+				'fat_g'      => $targets['fat_g'],
+				'fibre_g'    => $targets['fibre_g'],
+				'set_by'     => 'plan',
+				'valid_from' => $from,
+			)
+		);
 	}
 
 	// ---- Helpers -----------------------------------------------------------------------------------------------------

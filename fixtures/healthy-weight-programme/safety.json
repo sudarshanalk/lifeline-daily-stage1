@@ -1,0 +1,270 @@
+{
+  "group": "Healthy Weight safety rules R-HW-SAFE-01 to -05 (rule catalogue v1.2 section 9.2)",
+  "tool": "healthy-weight-programme",
+  "fixtures": [
+    {
+      "id": "FX-HWP-HWS01-01",
+      "purpose": "HWS-01a: pregnancy = yes: Healthy Weight not offered, no calorie target stored",
+      "inputs": {
+        "source_id": "HWS-01a",
+        "fn": "eligibility",
+        "args": {
+          "pregnant": "yes",
+          "eating_disorder": "no",
+          "age": 45
+        }
+      },
+      "expected": {
+        "offered": false,
+        "stop": "pregnancy",
+        "calorie_target_stored": false,
+        "screen": "SCR-26"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWS01-02",
+      "purpose": "HWS-01b: eating disorder \"prefer not to say\" asks for 0.75: refused, 0.25 and 0.5 offered",
+      "inputs": {
+        "source_id": "HWS-01b",
+        "fn": "pace",
+        "args": {
+          "eating_disorder": "pnts",
+          "chosen": 0.75,
+          "weight_kg": 80,
+          "age": 45,
+          "confidence": 6,
+          "time": "10_30",
+          "work": "days",
+          "stress": 5,
+          "sleep": "7_9"
+        }
+      },
+      "expected": {
+        "refused": true,
+        "paces": [
+          0.25,
+          0.5
+        ],
+        "safe_pace": 0.5
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWS02-01",
+      "purpose": "HWS-02a: 80 kg member: cap 0.80, 1.0 kg a week not offered",
+      "inputs": {
+        "source_id": "HWS-02a",
+        "fn": "pace",
+        "args": {
+          "weight_kg": 80,
+          "age": 45,
+          "chosen": 1.0
+        }
+      },
+      "expected": {
+        "cap": 0.8,
+        "paces": [
+          0.25,
+          0.5,
+          0.75
+        ],
+        "refused": true,
+        "safe_pace": 0.75
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWS02-02",
+      "purpose": "HWS-02b: age 70: only 0.25 and 0.5",
+      "inputs": {
+        "source_id": "HWS-02b",
+        "fn": "pace",
+        "args": {
+          "weight_kg": 80,
+          "age": 70
+        }
+      },
+      "expected": {
+        "paces": [
+          0.25,
+          0.5
+        ]
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWS03-01",
+      "purpose": "HWS-03a: stress 9, sleep 7 to 9: support card shown",
+      "inputs": {
+        "source_id": "HWS-03a",
+        "fn": "support_cards",
+        "args": {
+          "stress": 9,
+          "sleep": "7_9",
+          "occasion": "joining"
+        }
+      },
+      "expected": {
+        "cards.length": 1,
+        "cards.0.rule": "R-HW-SAFE-03"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWS03-02",
+      "purpose": "HWS-03b: stress 8, sleep 6 to 7: not shown (R-HW-STEP-04 and -05 still apply)",
+      "inputs": {
+        "source_id": "HWS-03b",
+        "fn": "support_cards",
+        "args": {
+          "stress": 8,
+          "sleep": "6_7",
+          "occasion": "joining"
+        }
+      },
+      "expected": {
+        "cards.length": 0
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWS03-03",
+      "purpose": "HWS-03c: sleep under 6, stress 3: shown",
+      "inputs": {
+        "source_id": "HWS-03c",
+        "fn": "support_cards",
+        "args": {
+          "stress": 3,
+          "sleep": "under_6",
+          "occasion": "joining"
+        }
+      },
+      "expected": {
+        "cards.length": 1,
+        "cards.0.rule": "R-HW-SAFE-03"
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWS05-01",
+      "purpose": "HWS-05a: most days, 3 to 4 a time (21 a week): drinking card shown",
+      "inputs": {
+        "source_id": "HWS-05a",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "most_days",
+          "alcohol_amount": "3_4"
+        }
+      },
+      "expected": {
+        "weekly_drinks": 21,
+        "support_card": true
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWS05-02",
+      "purpose": "HWS-05b: less than once a week, 5 or more a time (2.5 a week): shown (5 or more a time)",
+      "inputs": {
+        "source_id": "HWS-05b",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "less_than_weekly",
+          "alcohol_amount": "5_plus"
+        }
+      },
+      "expected": {
+        "weekly_drinks": 2.5,
+        "support_card": true
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWS05-03",
+      "purpose": "HWS-05c: 3 to 4 days, 3 to 4 a time (12.25 a week): shown (above 8)",
+      "inputs": {
+        "source_id": "HWS-05c",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "3_4_days",
+          "alcohol_amount": "3_4"
+        }
+      },
+      "expected": {
+        "weekly_drinks": 12.25,
+        "support_card": true
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWS05-04",
+      "purpose": "HWS-05d: never: not shown",
+      "inputs": {
+        "source_id": "HWS-05d",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "never"
+        }
+      },
+      "expected": {
+        "support_card": false,
+        "drinks": false
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    },
+    {
+      "id": "FX-HWP-HWS05-05",
+      "purpose": "HWS-05e: 1 to 2 days, 3 to 4 a time (5.25 a week): not shown",
+      "inputs": {
+        "source_id": "HWS-05e",
+        "fn": "drinks",
+        "args": {
+          "alcohol_freq": "1_2_days",
+          "alcohol_amount": "3_4"
+        }
+      },
+      "expected": {
+        "weekly_drinks": 5.25,
+        "support_card": false
+      },
+      "oracle": "clinical",
+      "source_version": "033901479f31c0d70b378c1f2ab249d64d43570209cd7bb038f843d0f32846d4",
+      "reviewer": "Product owner (sudarshanalk), acting as clinical reviewer",
+      "status": "recorded"
+    }
+  ]
+}
