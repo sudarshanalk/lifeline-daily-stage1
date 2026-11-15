@@ -94,9 +94,20 @@
       el.scrollIntoView(false);
     }
   }
+  // A press with the mouse, a finger or a pen already puts the item where the visitor pointed, so only keyboard focus is
+  // brought into view. Scrolling on the press itself moved a button partly below the fold between mouse down and
+  // mouse up (smooth scrolling on v2 pages), so the click landed elsewhere and the form was never sent.
+  var pressing = false;
+  function pressed() {
+    pressing = true;
+    window.setTimeout(function () { pressing = false; }, 0);
+  }
+  document.addEventListener("pointerdown", pressed, true);
+  document.addEventListener("mousedown", pressed, true);
+  document.addEventListener("touchstart", pressed, { capture: true, passive: true });
   document.addEventListener("focusin", function (event) {
     if (event.target.matches("input, textarea, select")) keyboard(true);
-    keepInView(event.target);
+    if (!pressing) keepInView(event.target);
   });
   document.addEventListener("focusout", function () {
     window.setTimeout(function () {
