@@ -451,7 +451,7 @@ function lld_members_footer() {
 	$html  = '<footer class="lld-footer"><div class="lld-footer-inner"><p>&copy; ' . esc_html( gmdate( 'Y' ) ) . ' Lifeline Daily. Health information, not medical advice.</p>';
 	$html .= '<ul><li><a href="' . esc_url( home_url( '/medical-disclaimer/' ) ) . '">Medical disclaimer</a></li>';
 	$html .= '<li><a href="' . esc_url( home_url( '/privacy/' ) ) . '">Privacy policy</a></li>';
-	$html .= '<li><a href="' . esc_url( home_url( '/terms/' ) ) . '">Terms of membership</a></li>';
+	$html .= '<li><a href="' . esc_url( home_url( '/terms-conditions/' ) ) . '">Terms of membership</a></li>';
 	// Stage 3 (P3-71): "Cookie settings" while Google Analytics is set; empty otherwise, so Stage 2 is unchanged.
 	$html .= (string) apply_filters( 'lld_members_footer_links', '' );
 	$html .= '</ul></div></footer>';
