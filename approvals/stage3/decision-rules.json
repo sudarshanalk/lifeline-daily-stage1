@@ -34,7 +34,7 @@
     "rule.R-STEP-02": "3f724687b21a5ebffdab26a87e4bbc42085fe0247e5da16504acd5a716db6d3a",
     "rule.R-STEP-03": "291a3a8eca66322693928c8ae961beb7e17a2eb426a85c16275d430de94c242b",
     "rule.R-STEP-04": "6899800989b61d4bd884b4a7236aaf71ae4673f98c71b29853320cdde18c9b55",
-    "rule.R-STEP-05": "b16bb1c0dc000d1baff217ace84c647598a7a3af0143d8b43d2515912e87fbe3",
+    "rule.R-STEP-05": "5bb3b60234d370adcbf740cb84cf36461bf8bf6b29ab05936726c56e6afcc28c",
     "rule.R-ADJ-01": "90f9fcf06a164e2ba5a7b7552cd023a74b2ce668689637e8c4b13ff03542c999",
     "rule.R-ADJ-02": "97177bd35c5dd41c1610956896bd327e94cc1b2527325cddb486d43bfeadce74",
     "rule.R-ADJ-03": "75bfc6e1ef2b85e858b3bf8bf6c24fa5dd616e4b41d5bb53e7778aece4b3af2a",
@@ -59,13 +59,14 @@
     "D3-46",
     "D3-47",
     "D3-48",
-    "D3-49"
+    "D3-49",
+    "D3-61"
   ],
   "clinical_signoff": {
     "name": "Product owner (sudarshanalk), acting as clinical reviewer",
     "date": "2026-11-03",
     "decision": "approved",
-    "notes": "Version 1.1 signed 3 November 2026 ('Yes, A and A', in chat): D3-49, Owner_Questions 68 = B. R-ADJ-03 applies to every member with a calorie target, Free or Premium, and is never suppressed by R-SAFE-04; during the 7 low-mood days it shows the gentle wording T-ADJ-03g (A); a member with an eating-disorder flag gets the raise with no message and no insight (A). Record P3-02-R-ADJ-03-Q68-Change-Draft.md and a v1.1 row in Signoff-P3-02-Decision-Engine-Rule-Catalogue.md. Version 1: Signed 3 November 2026 ('Approve all, D3-10 = B', in chat with the clinical session). D3-43 the 23 rules and templates as drafted; D3-44 Skip after a low-mood day does not lower the weekly ring that week; D3-45 plateau never lowers calories, offers a logging focus and a meal-plan swap; D3-46 too fast: calorie target raised by 250 kcal automatically, member told, doctor line if the 7-day rule triggered; D3-47 sleep vs BP: >= 5 mmHg systolic difference, >= 14 paired days with >= 4 short (< 6 h) and >= 4 long (>= 7 h) nights, 42-day window; D3-48 run at 02:00 local nightly plus on demand after profile changes and warning-level readings. Quota 3 insights per rolling 7 days, 1 per night, 28-day cooldown (56 for habit praise); R-SAFE-04 suppresses all non-safety insights and adjustments for 7 days. Wording sign-off (every template T-SAFE-01, 01p, 03, 04, 04s; T-STEP-01 to 05; T-ADJ-01 to 03; T-INS-01 to 10; T-GEN-01) is joint with the P3-77 content approval of 3 November 2026."
+    "notes": "D3-61 (14 November 2026, P3-36 wording decision E8 = A, docs/stage3/05_Owner_Wording_Decisions_2026-11-14.md): T-STEP-05's link label is 'Open the diary', no longer 'Log something'; the step text and the rule are unchanged (catalogue v1.3.2, a wording change only; the owner's answer signs it). Version 1.1 signed 3 November 2026 ('Yes, A and A', in chat): D3-49, Owner_Questions 68 = B. R-ADJ-03 applies to every member with a calorie target, Free or Premium, and is never suppressed by R-SAFE-04; during the 7 low-mood days it shows the gentle wording T-ADJ-03g (A); a member with an eating-disorder flag gets the raise with no message and no insight (A). Record P3-02-R-ADJ-03-Q68-Change-Draft.md and a v1.1 row in Signoff-P3-02-Decision-Engine-Rule-Catalogue.md. Version 1: Signed 3 November 2026 ('Approve all, D3-10 = B', in chat with the clinical session). D3-43 the 23 rules and templates as drafted; D3-44 Skip after a low-mood day does not lower the weekly ring that week; D3-45 plateau never lowers calories, offers a logging focus and a meal-plan swap; D3-46 too fast: calorie target raised by 250 kcal automatically, member told, doctor line if the 7-day rule triggered; D3-47 sleep vs BP: >= 5 mmHg systolic difference, >= 14 paired days with >= 4 short (< 6 h) and >= 4 long (>= 7 h) nights, 42-day window; D3-48 run at 02:00 local nightly plus on demand after profile changes and warning-level readings. Quota 3 insights per rolling 7 days, 1 per night, 28-day cooldown (56 for habit praise); R-SAFE-04 suppresses all non-safety insights and adjustments for 7 days. Wording sign-off (every template T-SAFE-01, 01p, 03, 04, 04s; T-STEP-01 to 05; T-ADJ-01 to 03; T-INS-01 to 10; T-GEN-01) is joint with the P3-77 content approval of 3 November 2026."
   },
   "review_date": "2026-11-03",
   "next_review_date": "2027-11-03"
