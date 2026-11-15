@@ -124,7 +124,8 @@ function lld_v2_members_shell(string $part): string {
     case 'body':
       return "<script>try{if(localStorage.getItem('lld_circadian')==='night')document.body.classList.add('mode-night');}catch(e){}</script>";
     case 'header':
-      $lld_header = ['page' => 'page', 'current' => ''];
+      // Stage 3 calculator pages (lld_screen=calc3) sit under Calculators, same as the Health Tools hub.
+      $lld_header = ['page' => (function_exists('get_query_var') && 'calc3' === (string)get_query_var('lld_screen')) ? 'tools' : 'page', 'current' => ''];
       ob_start(); include __DIR__ . '/templates/parts/v2-header.php'; return (string)ob_get_clean();
     case 'footer':
       $lld_footer_plain = true;
