@@ -37,3 +37,10 @@
     Header always set Content-Security-Policy-Report-Only "frame-ancestors __LLD_ORIGIN__ https://lifelinedaily.com https://www.lifelinedaily.com"
   </FilesMatch>
 </IfModule>
+
+# C1 staging security checks (9 Nov 2026): WordPress's own readme.html, license.txt and wp-config-sample.php give
+# away the WordPress version and serve no visitor; they answer 403. WordPress updates put them back on disk, so the
+# rule lives here rather than in a one-off delete.
+<FilesMatch "^(readme\.html|license\.txt|wp-config-sample\.php)$">
+  Require all denied
+</FilesMatch>
