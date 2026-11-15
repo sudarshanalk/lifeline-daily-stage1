@@ -1001,3 +1001,43 @@
     init();
   }
 })();
+
+/**
+ * Phones (P3-36 C5 follow-up to #266): the Account tabs and the Admin sections are one row that scrolls sideways, so
+ * the current tab could start off screen to the right. On load each row scrolls sideways (only its own scrollLeft, so
+ * the page never moves up or down) to bring the current tab to the middle. A row that fits, or has no current tab, is
+ * left as it is; once the visitor has scrolled a row, the later pass at window load leaves it alone.
+ */
+(function () {
+  'use strict';
+  if (typeof document === 'undefined' || typeof document.querySelectorAll !== 'function') return;
+
+  var ROWS = '.lld-account-nav .lld-account-tabs, .lld-adm-tabs';
+  var CURRENT = '[aria-current="page"], .is-active';
+
+  function centreCurrentTab(row) {
+    var current = row.querySelector(CURRENT);
+    if (!current || typeof current.getBoundingClientRect !== 'function') return;
+    var room = row.scrollWidth - row.clientWidth;
+    if (!(room > 0)) return;
+    var set = row.getAttribute('data-lld-tab-scrolled');
+    if (set !== null && String(row.scrollLeft) !== set) return; // the visitor has moved the row since
+    var rowBox = row.getBoundingClientRect();
+    var tabBox = current.getBoundingClientRect();
+    var target = row.scrollLeft + (tabBox.left - rowBox.left) - (row.clientWidth - tabBox.width) / 2;
+    row.scrollLeft = Math.max(0, Math.min(room, Math.round(target)));
+    row.setAttribute('data-lld-tab-scrolled', String(row.scrollLeft));
+  }
+
+  function run() {
+    Array.prototype.forEach.call(document.querySelectorAll(ROWS), centreCurrentTab);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', run);
+  } else {
+    run();
+  }
+  // Web fonts can change the tabs' widths after the first pass.
+  if (document.readyState !== 'complete' && typeof window !== 'undefined') window.addEventListener('load', run);
+})();

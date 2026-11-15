@@ -163,7 +163,7 @@ class LLD_Members_Goal_Setting {
 			return;
 		}
 		if ( 'extra' === $role && ( ! $active_main || LLD_Members_Goal_Journey::active_goal( $member_id, 'extra' ) ) ) {
-			$main = '<h1>Add a goal</h1>' . lld_info( LLD_Members_Goal_Rules::MESSAGES['third_goal'] ) . '<p><a href="' . esc_url( home_url( '/members/goal/' ) ) . '">Back to your goal</a></p>';
+			$main = '<h1>Add a goal</h1>' . lld_info( LLD_Members_Goal_Rules::MESSAGES['third_goal'] ) . '<p><a class="lld-button lld-button-secondary" href="' . esc_url( home_url( '/members/goal/' ) ) . '">Back to your goal</a></p>';
 			self::output( 'Add a goal', $main );
 			return;
 		}
@@ -406,7 +406,7 @@ class LLD_Members_Goal_Setting {
 				$html .= '<p>Add your height, sex and activity level to your <a href="' . esc_url( home_url( '/members/health/' ) ) . '">health profile</a> and your daily calorie target appears here.</p>';
 			}
 			$html .= '<p>Activity: <strong>' . (int) ( $plan ? $plan['activity_minutes_week'] : LLD_Members_Goal_Rules::ACTIVITY_DEFAULT ) . ' minutes</strong> a week.</p>';
-			$html .= '<p><a href="' . esc_url( home_url( '/members/meals/' ) ) . '">This week\'s meal plan</a> · <a href="' . esc_url( home_url( '/members/workout/' ) ) . '">Workouts</a></p>';
+			$html .= '<p class="lld-link-row"><a href="' . esc_url( home_url( '/members/meals/' ) ) . '">This week\'s meal plan</a> · <a href="' . esc_url( home_url( '/members/workout/' ) ) . '">Workouts</a></p>';
 		} else {
 			$html .= '<h2>Your progress</h2><p>You can follow your goal progress on Today and the progress page.</p>';
 			$html .= lld_membership_lock( 'The full guided plan (daily targets, meal plans and workouts) is part of Premium.' );

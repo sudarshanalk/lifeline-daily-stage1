@@ -159,6 +159,7 @@
 			recipeIngredients: [],
 			recipes: [],
 			editingRecipeId: null,
+			editingIngIdx: null,
 			favourites: [],
 			recentFoods: [],
 			customFoods: [],
@@ -341,7 +342,7 @@
 			if (day.over_note) {
 				rightNote = '<span class="lld-food-over-note">' + esc(day.over_note) + '</span>';
 			} else if (over && over.kcal > 0) {
-				rightNote = '<span class="lld-food-over-note">Over by ' + fmtNum(over.kcal) + ' kcal today.</span>';
+				rightNote = '<span class="lld-food-over-note">' + fmtNum(over.kcal) + ' kcal over today</span>';
 			} else if (left && left.kcal !== null && left.kcal !== undefined) {
 				rightNote = '<span class="lld-food-left-note">' + fmtNum(left.kcal) + ' kcal left</span>';
 			}
@@ -1225,19 +1226,75 @@
 			els.recipePicked.innerHTML = state.recipeIngredients
 				.map(function (ing, idx) {
 					var label = state.edMode ? esc(ing.name || 'Ingredient') : esc(ing.name || 'Ingredient') + ' (' + esc(ing.grams) + ' g)';
+					// Change an ingredient's amount in place (no amounts in eating-disorder mode, so no Edit there).
+					if (!state.edMode && state.editingIngIdx === idx) {
+						return (
+							'<li class="lld-search-item"><span>' +
+							esc(ing.name || 'Ingredient') +
+							'</span><span class="lld-food-item-actions">' +
+							'<label class="lld-food-field-inline"><span class="lld-sr">Amount in grams</span>' +
+							'<input type="number" min="0.1" max="5000" step="0.1" class="lld-gram-input" value="' +
+							esc(ing.grams) +
+							'" data-lld-ing-grams="' +
+							idx +
+							'" /></label>' +
+							'<button type="button" class="lld-pill-btn lld-btn-sm" data-lld-save-ing="' +
+							idx +
+							'">Save</button>' +
+							'<button type="button" class="lld-btn-ghost lld-btn-sm" data-lld-cancel-ing="' +
+							idx +
+							'">Cancel</button></span></li>'
+						);
+					}
+					var editIng = state.edMode
+						? ''
+						: '<button type="button" class="lld-btn-ghost lld-btn-sm" data-lld-edit-ing="' + idx + '">Edit</button>';
 					return (
 						'<li class="lld-search-item"><span>' +
 						label +
-						'</span><button type="button" class="lld-btn-ghost lld-btn-sm" data-lld-rm-ing="' +
+						'</span><span class="lld-food-item-actions">' +
+						editIng +
+						'<button type="button" class="lld-btn-ghost lld-btn-sm" data-lld-rm-ing="' +
 						idx +
-						'">Remove</button></li>'
+						'">Remove</button></span></li>'
 					);
 				})
 				.join('');
 		}
 
+		// A new amount for one ingredient: its nutrients scale with it (the server works them out again on save).
+		function saveIngredientAmount(idx) {
+			var ing = state.recipeIngredients[idx];
+			var input = els.recipePicked ? els.recipePicked.querySelector('[data-lld-ing-grams="' + idx + '"]') : null;
+			if (!ing || !input) {
+				return;
+			}
+			var g = Math.round(Number(input.value) * 10) / 10;
+			if (!(g >= 0.1 && g <= 5000)) {
+				setMsg(els.recipeMsg, 'Check the value of grams.', true);
+				input.focus();
+				return;
+			}
+			var old = Number(ing.grams);
+			var fac = old > 0 ? g / old : 1;
+			['kcal', 'protein_g', 'carb_g', 'fat_g', 'fibre_g'].forEach(function (key) {
+				if (ing[key] !== null && ing[key] !== undefined && !isNaN(Number(ing[key]))) {
+					ing[key] = Number(ing[key]) * fac;
+				}
+			});
+			ing.grams = g;
+			state.editingIngIdx = null;
+			setMsg(els.recipeMsg, '');
+			renderRecipeIngredients();
+			var back = els.recipePicked.querySelector('[data-lld-edit-ing="' + idx + '"]');
+			if (back) {
+				back.focus();
+			}
+		}
+
 		function resetRecipeEditor() {
 			state.editingRecipeId = null;
+			state.editingIngIdx = null;
 			state.recipeIngredients = [];
 			renderRecipeIngredients();
 			if (els.recipeForm) {
@@ -1270,6 +1327,7 @@
 				els.recipeForm.elements.servings.value = found.servings || 1;
 			}
 			state.recipeIngredients = parseJsonList(found.ingredients);
+			state.editingIngIdx = null;
 			renderRecipeIngredients();
 			if (els.recipeSubmit) {
 				els.recipeSubmit.textContent = 'Update recipe';
@@ -1621,9 +1679,37 @@
 				}
 				return;
 			}
+			btn = target.closest('[data-lld-edit-ing]');
+			if (btn && !state.edMode) {
+				var editIdx = Number(btn.getAttribute('data-lld-edit-ing'));
+				state.editingIngIdx = editIdx;
+				renderRecipeIngredients();
+				var ingInput = els.recipePicked.querySelector('[data-lld-ing-grams="' + editIdx + '"]');
+				if (ingInput) {
+					ingInput.focus();
+				}
+				return;
+			}
+			btn = target.closest('[data-lld-save-ing]');
+			if (btn) {
+				saveIngredientAmount(Number(btn.getAttribute('data-lld-save-ing')));
+				return;
+			}
+			btn = target.closest('[data-lld-cancel-ing]');
+			if (btn) {
+				var cancelIdx = Number(btn.getAttribute('data-lld-cancel-ing'));
+				state.editingIngIdx = null;
+				renderRecipeIngredients();
+				var editAgain = els.recipePicked.querySelector('[data-lld-edit-ing="' + cancelIdx + '"]');
+				if (editAgain) {
+					editAgain.focus();
+				}
+				return;
+			}
 			btn = target.closest('[data-lld-rm-ing]');
 			if (btn) {
 				state.recipeIngredients.splice(Number(btn.getAttribute('data-lld-rm-ing')), 1);
+				state.editingIngIdx = null;
 				renderRecipeIngredients();
 			}
 		});
@@ -1710,6 +1796,15 @@
 			}
 			if (form === els.recipeForm) {
 				ev.preventDefault();
+				// An ingredient amount being changed: Enter in its box saves that amount only; the form's own button
+				// keeps the new amount, then saves the recipe.
+				if (state.editingIngIdx !== null) {
+					var enterOnIng = !!(document.activeElement && document.activeElement.hasAttribute && document.activeElement.hasAttribute('data-lld-ing-grams'));
+					saveIngredientAmount(state.editingIngIdx);
+					if (enterOnIng || state.editingIngIdx !== null) {
+						return;
+					}
+				}
 				if (!state.recipeIngredients.length) {
 					setMsg(els.recipeMsg, 'Add at least one ingredient first.', true);
 					return;
@@ -1855,8 +1950,46 @@
 		return (fallbackDay || new Date().toISOString().slice(0, 10)) + ' 09:00:00';
 	}
 
-	function rdDisplayDateTime(takenAt) {
-		const raw = String(takenAt || '');
+	// Readings are stored in UTC; the page shows and takes them on the member's own clock (cfg.timezone, the zone
+	// Today uses). rdZoneWall gives the wall-clock time in that zone as a UTC-based millisecond count.
+	const RD_AT = /^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})(?::(\d{2}))?/;
+
+	function rdZoneWall(ms, zone) {
+		const parts = {};
+		new Intl.DateTimeFormat('en-GB', {
+			timeZone: zone, hourCycle: 'h23', year: 'numeric', month: '2-digit', day: '2-digit',
+			hour: '2-digit', minute: '2-digit', second: '2-digit'
+		}).formatToParts(new Date(ms)).forEach(function (p) { parts[p.type] = Number(p.value); });
+		return Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour % 24, parts.minute, parts.second);
+	}
+
+	function rdIso(ms) {
+		return new Date(ms).toISOString().slice(0, 19).replace('T', ' ');
+	}
+
+	function rdShiftZone(value, zone, toLocal) {
+		const m = RD_AT.exec(String(value || '').trim());
+		if (!m) return String(value || '');
+		const ms = Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]), Number(m[4]), Number(m[5]), Number(m[6] || 0));
+		if (!zone || zone === 'UTC') return rdIso(ms);
+		try {
+			if (toLocal) return rdIso(rdZoneWall(ms, zone));
+			// Local to UTC: subtract the zone's offset at that moment, checked once more for a change of clocks.
+			const first = ms - (rdZoneWall(ms, zone) - ms);
+			return rdIso(ms - (rdZoneWall(first, zone) - first));
+		} catch (e) {
+			return rdIso(ms); // unknown zone in this browser: UTC, as stored
+		}
+	}
+
+	/** Stored UTC "Y-m-d H:i:s" to the member's local "Y-m-d H:i:s". */
+	function rdUtcToLocal(utc, zone) { return rdShiftZone(utc, zone, true); }
+
+	/** The member's local "Y-m-d H:i:s" to UTC for storage. */
+	function rdLocalToUtc(local, zone) { return rdShiftZone(local, zone, false); }
+
+	function rdDisplayDateTime(takenAt, zone) {
+		const raw = RD_AT.test(String(takenAt || '')) ? rdUtcToLocal(takenAt, zone) : String(takenAt || '');
 		const d = raw.slice(0, 10);
 		const t = raw.slice(11, 16);
 		if (!d) return raw;
@@ -2209,10 +2342,10 @@
 
 		function renderWaterTotal(rows) {
 			if (!els.waterTotal) return;
-			const today = cfg.utcToday || cfg.today || '';
+			const today = cfg.today || '';
 			let ml = 0;
 			rows.forEach(function (r) {
-				if (r.reading_type === 'water' && String(r.taken_at || '').slice(0, 10) === today && r.value_1 != null) {
+				if (r.reading_type === 'water' && rdUtcToLocal(r.taken_at, cfg.timezone).slice(0, 10) === today && r.value_1 != null) {
 					ml += Number(r.value_1) || 0;
 				}
 			});
@@ -2328,7 +2461,7 @@
 			if (els.saveBtn) els.saveBtn.textContent = 'Save changes';
 			if (els.cancelEditBtn) els.cancelEditBtn.hidden = false;
 
-			const dt = String(row.taken_at || '');
+			const dt = rdUtcToLocal(row.taken_at, cfg.timezone);
 			if (els.takenAt && dt.length >= 16) {
 				els.takenAt.value = dt.slice(0, 16).replace(' ', 'T');
 			}
@@ -2455,7 +2588,7 @@
 				rows.forEach(function (r) {
 					const note = extractRowNote(r);
 					tbl += '<tr data-lld-row-id="' + r.id + '">' +
-						'<td>' + rdEsc(rdDisplayDateTime(r.taken_at)) + '</td>' +
+						'<td>' + rdEsc(rdDisplayDateTime(r.taken_at, cfg.timezone)) + '</td>' +
 						'<td><strong>' + rdEsc(formatRowSummary(r)) + '</strong></td>' +
 						'<td>' + rdEsc(note || '\u2014') + '</td>' +
 						'<td class="lld-table-actions"><div class="lld-history-actions">' +
@@ -2567,10 +2700,20 @@
 			if (state.from) query += '&from=' + encodeURIComponent(state.from);
 			if (state.to) query += '&to=' + encodeURIComponent(state.to);
 
-			const resList = await rdRequest(cfg, 'readings?' + query);
+			// The plain list filters on the stored (UTC) date, so it is asked for a day either side and kept here to the
+			// member's own dates; the trend view filters on the member's dates itself.
+			let listQuery = 'type=' + encodeURIComponent(type);
+			if (state.from) listQuery += '&from=' + encodeURIComponent(rdShiftDate(state.from, -1) || state.from);
+			if (state.to) listQuery += '&to=' + encodeURIComponent(rdShiftDate(state.to, 1) || state.to);
+			const inRange = function (r) {
+				const day = rdUtcToLocal(r.taken_at, cfg.timezone).slice(0, 10);
+				return (!state.from || day >= state.from) && (!state.to || day <= state.to);
+			};
+
+			const resList = await rdRequest(cfg, 'readings?' + listQuery);
 			if (stale()) return;
 			if (resList.ok && Array.isArray(resList.data.rows)) {
-				state.rows = resList.data.rows.slice().sort(function (a, b) {
+				state.rows = resList.data.rows.filter(inRange).sort(function (a, b) {
 					const cmp = String(b.taken_at || '').localeCompare(String(a.taken_at || ''));
 					return cmp !== 0 ? cmp : (Number(b.id || 0) - Number(a.id || 0));
 				});
@@ -2632,10 +2775,26 @@
 			return Math.round((diff / 60) * 10) / 10;
 		}
 
+		// The form is on the member's clock; the reading is sent in UTC, as it is stored.
 		function buildPayload(isEdit, existingRow) {
+			const built = buildLocalPayload(isEdit, existingRow);
+			if (built.payload && built.payload.taken_at) {
+				// Sleep: the hours were worked out on the member's clock; send them with the bedtime as minutes
+				// (value_2, as stored), so the server never pairs a local bedtime with the UTC wake time.
+				if (built.payload.reading_type === 'sleep' && typeof built.payload.bedtime === 'string') {
+					const m = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(built.payload.bedtime.trim());
+					if (m) built.payload.value_2 = Number(m[1]) * 60 + Number(m[2]);
+					delete built.payload.bedtime;
+				}
+				built.payload.taken_at = rdLocalToUtc(built.payload.taken_at, cfg.timezone);
+			}
+			return built;
+		}
+
+		function buildLocalPayload(isEdit, existingRow) {
 			const typedAt = els.takenAt ? String(els.takenAt.value || '').trim() : '';
 			const takenAt = isEdit && existingRow && existingRow.taken_at && !typedAt
-				? String(existingRow.taken_at)
+				? rdUtcToLocal(existingRow.taken_at, cfg.timezone)
 				: rdFormatTakenAt(typedAt, cfg.today);
 			const base = { reading_type: state.type, taken_at: takenAt, source: 'manual' };
 
@@ -2854,7 +3013,7 @@
 					reading_type: 'water',
 					value_1: amount,
 					unit_shown: 'ml',
-					taken_at: rdFormatTakenAt(els.takenAt ? els.takenAt.value : '', cfg.today),
+					taken_at: rdLocalToUtc(rdFormatTakenAt(els.takenAt ? els.takenAt.value : '', cfg.today), cfg.timezone),
 					source: 'quick_tile'
 				}, 'Added ' + amount + ' ml.', null);
 			});
@@ -2960,6 +3119,8 @@
 			const delBtn = ev.target.closest('[data-lld-delete-row]');
 			if (delBtn) {
 				const id = Number(delBtn.getAttribute('data-lld-delete-row'));
+				// Nothing is deleted on the first tap: the member confirms first, and cancelling keeps the reading.
+				if (!window.confirm('Delete this reading?')) return;
 				clearFeedback();
 				const res = await rdRequest(cfg, 'readings/' + id, { method: 'DELETE' });
 				if (!res.ok) {

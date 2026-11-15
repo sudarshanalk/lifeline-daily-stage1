@@ -364,7 +364,7 @@ class LLD_Members_Sign_In {
 			}
 			$main .= self::code_form( 'Sign in' );
 			$main .= self::resend_form();
-			$main .= '<p><a href="' . esc_url( home_url( '/members/sign-in/?change=1' ) ) . '">Use a different email</a> · <a href="' . esc_url( home_url( '/members/sign-in/' ) ) . '">Sign in with your password</a></p>';
+			$main .= '<p class="lld-link-row"><a href="' . esc_url( home_url( '/members/sign-in/?change=1' ) ) . '">Use a different email</a> · <a href="' . esc_url( home_url( '/members/sign-in/' ) ) . '">Sign in with your password</a></p>';
 			lld_members_layout( array( 'title' => 'Enter your code', 'main' => $main, 'signed_in' => false ) );
 			exit;
 		}
@@ -1182,7 +1182,7 @@ class LLD_Members_Sign_In {
 	private static function destination( $raw ) {
 		$raw = esc_url_raw( (string) $raw );
 		if ( '' === $raw ) {
-			return home_url( '/members/home/' );
+			return current_user_can( 'lld_admin_panel' ) ? home_url( '/members/admin/' ) : home_url( '/members/home/' );
 		}
 		return wp_validate_redirect( $raw, home_url( '/members/home/' ) );
 	}

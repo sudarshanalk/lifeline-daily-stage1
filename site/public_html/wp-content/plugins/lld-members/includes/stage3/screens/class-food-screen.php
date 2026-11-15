@@ -729,7 +729,7 @@ class LLD_Members_Food_Screen {
 					<?php if ( ! empty( $day['over_note'] ) ) : ?>
 						<span class="lld-food-over-note"><?php echo esc_html( (string) $day['over_note'] ); ?></span>
 					<?php elseif ( $over && ! empty( $over['kcal'] ) ) : ?>
-						<span class="lld-food-over-note">Over by <?php echo esc_html( (string) round( (float) $over['kcal'] ) ); ?> kcal today.</span>
+						<span class="lld-food-over-note"><?php echo esc_html( LLD_Members_Food_Log::over_note( round( (float) $over['kcal'] ) ) ); ?></span>
 					<?php elseif ( $left && null !== ( $left['kcal'] ?? null ) ) : ?>
 						<span class="lld-food-left-note"><?php echo esc_html( number_format_i18n( round( (float) $left['kcal'] ) ) ); ?> kcal left</span>
 					<?php endif; ?>

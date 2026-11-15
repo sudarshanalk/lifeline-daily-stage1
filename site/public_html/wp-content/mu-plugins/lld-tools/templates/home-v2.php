@@ -58,11 +58,11 @@ $reads = lld_home_v2_reads();
           </p>
 
           <div class="pt-2 max-w-md">
-            <form role="search" method="get" action="<?php echo $u('/'); ?>" class="relative flex items-center shadow-sm rounded-full overflow-hidden border border-[#D5CCBE] border-day-soft bg-white bg-day-card">
-              <span class="pl-4 text-[#8C8880]" aria-hidden="true">🔍</span>
+            <form id="lld-home-search-form" role="search" method="get" action="<?php echo $u('/'); ?>" class="relative flex items-center shadow-sm rounded-full overflow-hidden border border-[#D5CCBE] border-day-soft bg-white bg-day-card">
+              <span class="pl-4 text-[#8C8880] pointer-events-none" aria-hidden="true">🔍</span>
               <label for="lld-home-search" class="sr-only">Search Lifeline Daily</label>
               <input id="lld-home-search" type="search" name="s" placeholder="Search protein, diabetes, sleep, fasting..." class="w-full py-3 pl-3 pr-24 text-xs text-[#1F1E1C] text-day-dark bg-transparent focus:outline-none">
-              <button type="submit" class="absolute right-1.5 bg-[#1D4E48] text-white text-xs font-semibold px-4 py-1.5 rounded-full hover:bg-[#143833] transition-colors">Search</button>
+              <button type="submit" form="lld-home-search-form" class="absolute right-1.5 z-10 min-h-[36px] bg-[#1D4E48] text-white text-xs font-semibold px-4 py-1.5 rounded-full hover:bg-[#143833] transition-colors">Search</button>
             </form>
             <div class="mt-2.5 flex items-center gap-2 text-[11px] text-[#62605A] text-day-muted flex-wrap">
               <span>Try:</span>
@@ -123,7 +123,7 @@ $reads = lld_home_v2_reads();
           <div>
             <div class="flex items-center justify-between gap-4">
               <span class="text-xs uppercase tracking-widest text-[#1D4E48] font-bold dark:text-[#4FA89B]">Interactive Health Check</span>
-              <a href="<?php echo $u('/health-tools/'); ?>" class="text-xs text-[#1D4E48] underline font-semibold dark:text-[#4FA89B]">View all 3 tools in full →</a>
+              <a href="<?php echo $u('/health-tools/'); ?>" class="text-xs text-[#1D4E48] underline font-semibold dark:text-[#4FA89B]">View all calculators →</a>
             </div>
             <h2 class="font-serif-editorial text-3xl sm:text-4xl text-[#1F1E1C] text-day-dark mt-1">Personalised checks backed by evidence.</h2>
           </div>
