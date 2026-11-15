@@ -285,8 +285,11 @@ test('TC-FR2-09-AS-02', async ({ page }) => {
   await page.locator('input[name="lld_harm"][value="no"]').check();
   await page.locator('input[name="lld_panic"][value="no"]').check();
   await page.locator('input[name="lld_mood"][value="no"]').check();
-  await page.getByRole('button', { name: 'Continue' }).click();
-  await page.getByRole('button', { name: 'Continue' }).click();
+  // each Continue posts a form: wait for the next page (and its own Continue) before the next step, so the second click
+  // never lands on the first page's button and the check-in is not opened before the track has started (WebKit)
+  await submitAndWait(page, page.getByRole('button', { name: 'Continue' }));
+  await expect(page.locator('input[name="lld_start"]')).toBeAttached();
+  await submitAndWait(page, page.getByRole('button', { name: 'Continue' }));
   await expectOnly(['#lld_sleep', '#lld_quality', '#lld_stress', '#lld_reflect_1', '#lld_reflect_2', '#lld_reflect_3'], ['#lld_weight', '#lld_waist', '#lld_chair', '#lld_activity', '#lld_push', '#lld_strength']);
 });
 

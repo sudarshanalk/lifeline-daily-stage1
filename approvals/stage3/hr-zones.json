@@ -1,7 +1,7 @@
 {
   "approval_id": "APR-HR-ZONES-2026-11-03",
   "tool_slug": "hr-zones",
-  "version_hash": "99b802ef0c776f54933b47961c56bd57edcf1f3939359d75159875176c644ad2",
+  "version_hash": "78436374d7f2ce08876f05b99582ae1d361e91fe9f5dc988f1d693fc78fca358",
   "engine_name": "Heart-Rate Training Zones: Tanaka 2001 age-predicted maximum heart rate (HRmax = 208 − 0.7 × age, or a measured HRmax 100–220 entered by the member), zones by heart-rate reserve (Karvonen) when resting heart rate is given and by % HRmax otherwise, ACSM 11th ed. table 5.2 fractions (Easy 30–39 % HRR / 57–63 % HRmax; Moderate 40–59 % / 64–76 %; Hard 60–89 % / 77–95 %), every bound rounded to whole bpm half-up (D3-31)",
   "intended_use": "Shows three heart-rate ranges in bpm (Easy, Moderate, Hard) with the talk-test line for each and the estimated maximum, as a guide for the workout plans (FR3-11). The talk test is the final guide.",
   "eligibility": "Adults aged 18 to 99; resting heart rate optional (30–120); measured HRmax optional (100–220, must exceed resting heart rate by at least 30). No zones for heart-rate-lowering medicine Yes or Not sure (FR3-53 AS-02), a declared heart condition or pregnancy; under 18 stops. Over 75 with no exercise history sees the safety-matrix 'check with your doctor before starting intense exercise' note.",
@@ -22,7 +22,8 @@
     "talk.moderate": "ac156d6da02b65f914be62faae8a51447268e6e13983b27ea927b19e101079f3",
     "talk.hard": "a6b707a7d3cfa9f3de4aa6c080c0ef41bd44af460211e8444a034df59b948194",
     "result.weekly": "34c791e93e7409062415ca541fdd932509b40bf9426e6d4562d63ed6f37fddf1",
-    "result.hrmax": "5f3f5ee36b871ba2b1547cc384e33c28b389cc826ba39a300cfffbe40548b05d",
+    "result.hrmax": "3bf9755b29e448c4aa0ef3dd34580f11cec4b268484c0e2a35009d62738cf87c",
+    "result.hrmax-measured": "1ddf2e6f432bc5ef79359b5a6fbf52201011d29c25e863b17b3b5d9bdd446153",
     "safety.medicine": "d0d1938c6554b82d1e8ecedde45e9a2a7d9910afae41e90d068dae1fd397d046",
     "safety.heartCondition": "bfbedcec26df93a71871a97d1438cde3546455ccac07e294b3f1bae0eabaa53b",
     "safety.pregnancy": "10344b39a625ff42136aef304a508418d0e258f5e02e339b6220a1e1ecbe62a3",
@@ -31,13 +32,14 @@
   },
   "oracle_report": "oracles/orc-12-hr-zones/results.json",
   "decisions_ratified": [
-    "D3-31"
+    "D3-31",
+    "D3-51"
   ],
   "clinical_signoff": {
     "name": "Product owner (sudarshanalk), acting as clinical reviewer",
-    "date": "2026-11-03",
+    "date": "2026-11-04",
     "decision": "approved",
-    "notes": "Signed 3 November 2026: 'Approved (\"Approve all, D3-10 = B\", in chat with the clinical session)'. D3-31 decided: Tanaka HRmax = 208 − 0.7 × age; Karvonen with resting HR when given; Easy 30–39 % HRR (57–63 % HRmax), Moderate 40–59 % (64–76 %), Hard 60–89 % (77–95 %); whole bpm half-up. Fixture table 2.4 (12 cases) is the frozen reference. Sheet hash refreshed after the owner's decisions of 3 Nov 2026 (Owner_Questions 62-65) were written into the sheet. Wording CW-17 to CW-18 (02 Content/Programme content/calculators/stage3-calculator-wording-draft.md v0.1, approved by the owner on 3 Nov 2026, Owner_Questions 92) added to MESSAGES and hashed here on 4 Nov 2026. Owner_Questions 97 (4 Nov 2026): a zone whose rounded bottom is at or below the zone below's top starts 1 bpm above it, in both methods; no fixture changed, and ORC-12 models it. Sheet hash refreshed on 4 Nov 2026 after the owner's decisions of that day were written into the sheet."
+    "notes": "Signed 3 November 2026: 'Approved (\"Approve all, D3-10 = B\", in chat with the clinical session)'. D3-31 decided: Tanaka HRmax = 208 − 0.7 × age; Karvonen with resting HR when given; Easy 30–39 % HRR (57–63 % HRmax), Moderate 40–59 % (64–76 %), Hard 60–89 % (77–95 %); whole bpm half-up. Fixture table 2.4 (12 cases) is the frozen reference. Sheet hash refreshed after the owner's decisions of 3 Nov 2026 (Owner_Questions 62-65) were written into the sheet. Wording CW-17 to CW-18 (02 Content/Programme content/calculators/stage3-calculator-wording-draft.md v0.1, approved by the owner on 3 Nov 2026, Owner_Questions 92) added to MESSAGES and hashed here on 4 Nov 2026. Owner_Questions 97 (4 Nov 2026): a zone whose rounded bottom is at or below the zone below's top starts 1 bpm above it, in both methods; no fixture changed, and ORC-12 models it. Sheet hash refreshed on 4 Nov 2026 after the owner's decisions of that day were written into the sheet. Version 1.1 approved on 4 November 2026 ('Two lines (Recommended)', in chat with the lead session): D3-51, the estimated maximum line with the unit, and a measured maximum line \"These zones use your measured maximum of {HRmax} beats a minute.\""
   },
   "review_date": "2026-11-03",
   "next_review_date": "2027-11-03"

@@ -230,12 +230,12 @@ class LLD_Members_Analytics {
 	 * Accept and Reject share one class, so they are the same size and weight (TC-FR3-67-AS-01).
 	 */
 	private static function css() {
-		return '.lld-consent{position:fixed;left:16px;right:16px;bottom:16px;z-index:99999;max-width:640px;margin:0 auto;padding:16px 20px;background:#fff;color:#1a2b3c;border:1px solid #c9d3dd;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}'
+		return '.lld-consent{position:fixed;left:16px;right:16px;bottom:16px;z-index:99999;max-width:640px;margin:0 auto;padding:16px 20px;background:#fff;color:#1a2b3c;border:1px solid #c9d3dd;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.18);font:15px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif}'
 			. '.lld-consent[hidden]{display:none}.lld-consent-title,.lld-consent-text{margin:0 0 12px}.lld-consent a{color:inherit;text-decoration:underline}'
 			. '.lld-consent-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px}'
 			. '.lld-consent-button{min-height:44px;padding:10px 16px;border:2px solid #0b3d5c;border-radius:8px;background:#0b3d5c;color:#fff;font:inherit;font-weight:600;cursor:pointer}'
 			. '.lld-consent-button:focus-visible{outline:3px solid #e8a33d;outline-offset:2px}'
-			. '.lld-consent-footer{margin:0;padding:8px 16px;text-align:center;font:14px/1.5 system-ui,sans-serif}.lld-members-body .lld-consent-footer{display:none}';
+			. '.lld-consent-footer{margin:0;padding:0 16px;text-align:center;font:14px/1.5 system-ui,sans-serif}.lld-consent-footer a{display:inline-flex;align-items:center;min-height:44px}.lld-members-body .lld-consent-footer{display:none}';
 	}
 
 	/**

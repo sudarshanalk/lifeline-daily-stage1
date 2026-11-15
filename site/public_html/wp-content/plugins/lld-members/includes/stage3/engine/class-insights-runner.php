@@ -334,6 +334,9 @@ class LLD_Members_Insights_Runner {
 			if ( '' === $name ) {
 				continue;
 			}
+			if ( LLD_Members_Rule_Catalogue::CLASS_STEP === $ids[ $name ]['class'] ) {
+				continue; // a Today step's stored numbers (write_today_step); today_steps holds one step a day, so no cooldown is read from here
+			}
 			$date = self::local( $row['shown_at'], $zone )->format( 'Y-m-d' );
 			if ( ! isset( $state['shown'][ $name ] ) || $date > $state['shown'][ $name ] ) {
 				$state['shown'][ $name ] = $date;
@@ -389,12 +392,21 @@ class LLD_Members_Insights_Runner {
 		);
 	}
 
-	/** Today's step, once a day; a step already shown, done or skipped today is left alone (FR3-12). */
+	/**
+	 * Today's step, once a day; a step already shown, done or skipped today is left alone (FR3-12).
+	 *
+	 * A step whose template has numbers (R-STEP-04: minutes done, target, suggestion) keeps them in a sealed insights
+	 * row under the step rule's id, the only place health numbers are stored; LLD_Members_Goal_Journey::step_text()
+	 * reads them back to fill the approved template.
+	 */
 	private static function write_today_step( $member_id, $date, array $step ) {
 		global $wpdb;
 		$exists = $wpdb->get_var( $wpdb->prepare( 'SELECT id FROM ' . LLD_Members_Stage3_Schema::table( 'today_steps' ) . ' WHERE member_id = %d AND step_date = %s', $member_id, $date ) );
 		if ( $exists ) {
 			return (int) $exists;
+		}
+		if ( $step['rule'] && ! empty( $step['values'] ) && isset( $step['class'] ) && LLD_Members_Rule_Catalogue::CLASS_STEP === $step['class'] ) {
+			self::write_insight( $member_id, $step );
 		}
 		return LLD_Members_Stage3_Data::insert(
 			'today_steps',

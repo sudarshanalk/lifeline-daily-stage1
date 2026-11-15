@@ -30,6 +30,51 @@
       "file": "tests/stage2/e2e/accounts-privacy.spec.mjs",
       "decision": "Requirements v0.3 FR3-60 (TC-FR3-60-AS-01): the Stage 2 'Download my data' file also includes all food and health logs, goals and saved results; built in P3-86 (#207, merged 4 Nov 2026). Owner instruction in chat, 4 Nov 2026: fix the staging break this caused",
       "change": "TC-FR2-04-AS-01 only: the expected table list of data.json is the Stage 2 list plus the 15 Stage 3 download tables (STAGE3_DOWNLOAD_TABLES), and each Stage 3 table's row count is checked against the database like the Stage 2 ones. Nothing is removed or loosened: the Stage 2 list, the never-downloaded list and every count stay as they were"
+    },
+    {
+      "file": "tests/stage2/data-model-map.json",
+      "decision": "Data model v0.2 (owner-approved, 3 Nov 2026, admin panel): the Stage 2 admin log (wp_lld_admin_log) is extended with who did it, the item, before and after, the reason and a scrambled IP (Admin activity log), and the Stage 2 member record with the Owner's block (Member block); FR3-83, FR3-86, built in P3-87.",
+      "change": "admin_log.admin_user_id, target, before_state, after_state, reason, ip_hash and member.blocked_at, blocked_reason are tied to the Stage 3 notes added to Data Model F2 and A1 (docs/stage2/02). New columns only (a declared Stage 2 file, Build Method Stage 3 §4)."
+    },
+    {
+      "file": "tests/stage2/e2e/payments.spec.mjs",
+      "decision": "FR3-96 Retire Paid Memberships Pro (owner, 6 Nov 2026; requirements v0.4, section 7 \"Paid Memberships Pro retired\"): Lifeline Daily Members is the only membership system, so the Premium plans are no longer copied into Paid Memberships Pro levels",
+      "change": "TC-FR2-13-AS-04 checks the same things on the site's own plan catalogue instead of the Paid Memberships Pro levels table: both plans with their names and periods, the owner prices, unchanged by the database update, following a price change, and no Stripe call in the database update. The checks of the copy's own fields (level ids, allow_signups, billing cycle numbers) go with the copy; the unit test also checks that no code still writes Paid Memberships Pro levels."
+    },
+    {
+      "file": "tests/stage2/payments-core.test.mjs",
+      "decision": "FR3-96 Retire Paid Memberships Pro (owner, 6 Nov 2026; requirements v0.4, section 7 \"Paid Memberships Pro retired\"): Lifeline Daily Members is the only membership system, so the Premium plans are no longer copied into Paid Memberships Pro levels",
+      "change": "TC-FR2-13-AS-04 checks the same things on the site's own plan catalogue instead of the Paid Memberships Pro levels table: both plans with their names and periods, the owner prices, unchanged by the database update, following a price change, and no Stripe call in the database update. The checks of the copy's own fields (level ids, allow_signups, billing cycle numbers) go with the copy; the unit test also checks that no code still writes Paid Memberships Pro levels."
+    },
+    {
+      "file": "tests/stage2/e2e/payments.spec.mjs",
+      "decision": "Owner, 8 Nov 2026 (Terms of Sale answers, D2a): web and app for every member, features differ by plan (FR4-11); TC-FR2-13-AS-05 revised in the requirements to 'Every member's record shows they are entitled to the future app, monthly and yearly alike'",
+      "change": "TC-FR2-13-AS-05 checks that both the yearly and the monthly member see 'The Lifeline Daily app is included with your membership when it launches.' and that both records show the app as included, in place of yearly-only."
+    },
+    {
+      "file": "tests/stage2/e2e/account-review.spec.mjs",
+      "decision": "Owner, 10 Nov 2026 (\"fix the test\"): TC-FR2-02-AS-01 failed by chance in WebKit on #241 and #123 because the reload cancelled the Save POST; a timing fix, no change of behaviour or requirement",
+      "change": "TC-FR2-02-AS-01 waits for the POST to /members/settings/ to answer, and for the page to load, before reloading settings; every assertion is unchanged."
+    },
+    {
+      "file": "tests/stage2/e2e/premium.spec.mjs",
+      "decision": "Owner, 15 Nov 2026 (\"Yes, fix the tests\", P3-36): the Stage 2 browser tests TC-FR2-34-AS-04, TC-FR2-09-AS-02, TC-FR2-15-AS-05 and TC-FR2-02-AS-01 fail at random in WebKit because a step acts before the page has answered the form post before it; a timing fix, no change of behaviour or requirement",
+      "change": "TC-FR2-34-AS-04 only: 'Choose this plan', each 'Done' and 'Move up a level' wait for the page their form post returns (submitAndWait) before the next step; every assertion is unchanged."
+    },
+    {
+      "file": "tests/stage2/e2e/programme.spec.mjs",
+      "decision": "Owner, 15 Nov 2026 (\"Yes, fix the tests\", P3-36): the Stage 2 browser tests TC-FR2-34-AS-04, TC-FR2-09-AS-02, TC-FR2-15-AS-05 and TC-FR2-02-AS-01 fail at random in WebKit because a step acts before the page has answered the form post before it; a timing fix, no change of behaviour or requirement",
+      "change": "TC-FR2-09-AS-02 only: each screening 'Continue' waits for the page its post returns (submitAndWait), and the second step's lld_start field must be present before the second click; every assertion is unchanged."
+    },
+    {
+      "file": "tests/stage2/e2e/payments.spec.mjs",
+      "decision": "Owner, 15 Nov 2026 (\"Yes, fix the tests\", P3-36): the Stage 2 browser tests TC-FR2-34-AS-04, TC-FR2-09-AS-02, TC-FR2-15-AS-05 and TC-FR2-02-AS-01 fail at random in WebKit because a step acts before the page has answered the form post before it; a timing fix, no change of behaviour or requirement",
+      "change": "TC-FR2-15-AS-05 (and the other tests using confirmRefund()): 'Refund' is waited for until visible, 'Refund' and 'Confirm refund' wait for the page their post returns, and the payments admin page is waited for until loaded; every assertion is unchanged."
+    },
+    {
+      "file": "tests/stage2/e2e/accounts-privacy.spec.mjs",
+      "decision": "Owner, 15 Nov 2026 (\"Yes, fix the tests\", P3-36): the Stage 2 browser tests TC-FR2-34-AS-04, TC-FR2-09-AS-02, TC-FR2-15-AS-05 and TC-FR2-02-AS-01 fail at random in WebKit because a step acts before the page has answered the form post before it; a timing fix, no change of behaviour or requirement",
+      "change": "TC-FR2-02-AS-01 only: Save waits for the page its post returns (submitAndWait) before the checks and the reload; every assertion is unchanged."
     }
   ]
 }

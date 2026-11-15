@@ -17,6 +17,7 @@ require_once __DIR__ . '/class-data.php';
 require_once __DIR__ . '/class-erasure-stage3.php';
 require_once __DIR__ . '/class-api.php';
 require_once __DIR__ . '/class-food-log.php';
+require_once __DIR__ . '/class-barcode.php';
 require_once __DIR__ . '/class-recipes.php';
 require_once __DIR__ . '/class-health-log.php';
 require_once __DIR__ . '/calculators/class-calorie-target.php';
@@ -31,6 +32,7 @@ require_once __DIR__ . '/class-saved-results.php';
 require_once __DIR__ . '/class-reminders.php';
 require_once __DIR__ . '/class-shares.php';
 require_once __DIR__ . '/class-installable.php';
+require_once __DIR__ . '/class-members-root.php';
 require_once __DIR__ . '/class-consent-stage3.php';
 require_once __DIR__ . '/class-export-stage3.php';
 require_once __DIR__ . '/class-content-stage3.php';
@@ -41,6 +43,7 @@ require_once __DIR__ . '/engine/class-insights-runner.php';
 require_once __DIR__ . '/class-stripe-api.php';
 require_once __DIR__ . '/class-access-tiers.php';
 require_once __DIR__ . '/class-membership.php';
+require_once __DIR__ . '/class-terms-gate.php';
 require_once __DIR__ . '/class-pause.php';
 require_once __DIR__ . '/class-analytics.php';
 require_once __DIR__ . '/class-weekly-report-stage3.php';
@@ -50,6 +53,13 @@ require_once __DIR__ . '/signin/class-identity-provider.php';
 require_once __DIR__ . '/signin/class-sign-in.php';
 require_once __DIR__ . '/class-goal-rules.php';
 require_once __DIR__ . '/class-goal-journey.php';
+require_once __DIR__ . '/admin/class-admin-log.php';
+require_once __DIR__ . '/admin/class-admin-roles.php';
+require_once __DIR__ . '/admin/class-admin-security.php';
+require_once __DIR__ . '/admin/class-admin-members.php';
+require_once __DIR__ . '/admin/class-admin-pages.php';
+require_once __DIR__ . '/admin/class-admin-front.php';
+require_once __DIR__ . '/admin/class-admin-test-routes.php';
 
 /**
  * Hooks the Stage 3 layer into the Stage 2 plugin. Called from LLD_Members_Plugin::boot().
@@ -64,6 +74,7 @@ function lld_members_stage3_boot() {
 	LLD_Members_Stripe_API::boot();
 	LLD_Members_Access_Tiers::boot();
 	LLD_Members_Membership::boot();
+	LLD_Members_Terms_Gate::boot();
 	LLD_Members_Pause::boot();
 	LLD_Members_Analytics::boot();
 	LLD_Members_Stage3_Report::boot();
@@ -73,8 +84,18 @@ function lld_members_stage3_boot() {
 	LLD_Members_Reminders::boot();
 	LLD_Members_Shares::boot();
 	LLD_Members_Installable::boot();
+	LLD_Members_Members_Root::boot(); // Bare /members/ goes to Today (staging review m3).
 	LLD_Members_Stage3_Consent::boot();
 	LLD_Members_Stage3_Export::boot();
+	// The admin panel (P3-87): always on, since it is how a feature is turned off in an emergency (FR3-74).
+	LLD_Members_Admin_Log::boot();
+	LLD_Members_Admin_Roles::boot();
+	LLD_Members_Admin_Security::boot();
+	LLD_Members_Admin_Members::boot();
+	LLD_Members_Admin_Pages::boot();
+	// The admin pages in My account (P3-87b, owner 6 Nov 2026).
+	LLD_Members_Admin_Front::boot();
+	LLD_Members_Admin_Test_Routes::boot();
 	add_action( 'rest_api_init', array( 'LLD_Members_Stage3_API', 'register' ) );
 	if ( defined( 'WP_CLI' ) && WP_CLI ) {
 		require_once __DIR__ . '/class-cli-stage3.php';

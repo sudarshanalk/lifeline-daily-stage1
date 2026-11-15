@@ -88,6 +88,22 @@ test('Owner_Questions 95 and 100: the heart risk check has wording for "no singl
   expect(Object.values(run(`echo json_encode(LLD_Members_Heart_Risk::wording(['whatif.noFall', 'headline.under1', 'comparison.under1']));`)).every((t) => typeof t === 'string' && t.length > 0)).toBe(true);
 });
 
+test('Owner_Questions 105: a what-if that lands on a 0 % cell reads "less than 1 %" (CW-24)', () => {
+  const out = run(`
+    $hit = null;
+    foreach (['Southern Latin America', 'Western Europe', 'High-income Asia Pacific', 'Australasia'] as $region) { foreach ([40, 42, 47] as $age) { foreach ([110, 125, 135, 145] as $sbp) { foreach ([3.5, 4.5, 5.5] as $tc) { foreach (['no', 'yes'] as $smoke) {
+      $r = LLD_Members_Heart_Risk::compute(['age' => $age, 'sex' => 'female', 'region' => $region, 'smoke' => $smoke, 'sbp' => $sbp, 'diabetes' => 'no', 'tc' => $tc, 'tcUnit' => 'mmol/L', 'bmi' => 24, 'cvd' => 'no', 'preg' => 'no', 'eat' => 'no']);
+      if (null === $hit && !empty($r['whatif']) && 0 === $r['whatif'][0]['risk']) { $hit = $r; }
+    } } } } }
+    echo json_encode(['hit' => $hit, 'w' => LLD_Members_Heart_Risk::wording(['whatif.under1', 'whatif'])]);
+  `);
+  expect(out.hit, 'a what-if to a 0 % cell').not.toBeNull();
+  expect(out.hit.messages).toContain('whatif.under1');
+  expect(out.hit.messages).not.toContain('whatif');
+  expect(out.w['whatif.under1']).toMatch(/ would take it to less than 1 %\.$/);
+  expect(out.w['whatif.under1'].replace(' would take it to less than 1 %.', '')).toBe(out.w.whatif.replace(' would take it to about {new_risk} %.', ''));
+});
+
 test('Owner_Questions 98: in pregnancy, 140 to 159 shows the same-day line before the stop, in both checks', () => {
   const base = { age: 35, sex: 'female', region: 'Western Europe', smoke: 'no', diabetes: 'no', tc: 5.0, tcUnit: 'mmol/L', bmi: 24, cvd: 'no', eat: 'no' };
   const out = run(`
@@ -152,8 +168,8 @@ test('Owner_Questions 101: a non-fasting glucose of 11.1 or more gets its own di
   expect(out.flags[4]).not.toContain('flags.glucoseLow'); // the low note stays about a fasting result
   // A non-fasting value still never counts towards the criterion.
   expect(out.criterion.slice(0, 3)).toEqual(['unknown', 'unknown', 'unknown']);
-  // Its wording (CW-23) waits for the owner: until it is signed and hashed, no text is shown.
-  expect(out.w['flags.glucoseDiagnosticNonFasting'] ?? null).toBeNull();
+  // Its wording is CW-23, approved by the owner on 4 Nov 2026 (Owner_Questions 104).
+  expect(out.w['flags.glucoseDiagnosticNonFasting']).toBe("A glucose of 11.1 or more, even when you haven't fasted, is in the range doctors use to diagnose diabetes. Please see your doctor soon to have it checked.");
 });
 
 test('Owner_Questions 85: the scheduled Monday run sends no email; the test route still runs the report', () => {

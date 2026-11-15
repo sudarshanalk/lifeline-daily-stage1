@@ -76,10 +76,19 @@ class LLD_Members_Goal_Setting {
 			self::output( 'Your goal', $main, $post ? 403 : 200 );
 			return;
 		}
+		// P3-36 A7 (FR3-09 AS-08, FR3-69 AS-05): a member who has never answered the Conditions question is taken to
+		// it; saving it there brings them back here to set the goal. Nothing is stored on the way.
+		$conditions = in_array( 'unknown', $facts['situations'], true ) && method_exists( 'LLD_Members_Stage3_Safety', 'conditions_state' ) ? LLD_Members_Stage3_Safety::conditions_state( $member_id ) : '';
+		if ( 'missing' === $conditions && ! $post && 'POST' !== ( $_SERVER['REQUEST_METHOD'] ?? '' ) ) {
+			wp_safe_redirect( LLD_Members_Stage3_Safety::conditions_link( 'goal', $role ) );
+			exit;
+		}
 		$allowed = LLD_Members_Goal_Rules::allowed_types( $facts['situations'] );
 		if ( ! $allowed ) {
-			$main = '<h1>Your goal</h1>' . lld_info( LLD_Members_Goal_Journey::note_texts()['general_wellbeing_path'] );
-			$main .= '<p>' . lld_button( array( 'label' => 'Answer the health questions', 'href' => home_url( '/members/health/' ) ) ) . ' <a href="' . esc_url( home_url( '/members/home/' ) ) . '">Go to Today</a></p>';
+			$line = 'missing' === $conditions ? LLD_Members_Stage3_Safety::CONDITIONS_WORDING['conditions.missing'] : LLD_Members_Goal_Journey::note_texts()['general_wellbeing_path'];
+			$link = '' !== $conditions ? LLD_Members_Stage3_Safety::conditions_link( 'goal', $role ) : home_url( '/members/health/' );
+			$main = '<h1>Your goal</h1>' . lld_info( $line );
+			$main .= '<p>' . lld_button( array( 'label' => 'Answer the health questions', 'href' => $link ) ) . ' <a href="' . esc_url( home_url( '/members/home/' ) ) . '">Go to Today</a></p>';
 			self::output( 'Your goal', $main, $post ? 403 : 200 );
 			return;
 		}
@@ -130,7 +139,7 @@ class LLD_Members_Goal_Setting {
 			return;
 		}
 		if ( 'extra' === $role && ( ! $active_main || LLD_Members_Goal_Journey::active_goal( $member_id, 'extra' ) ) ) {
-			$main = '<h1>Add a goal</h1>' . lld_info( LLD_Members_Goal_Rules::MESSAGES['third_goal'] ) . '<p><a href="' . esc_url( home_url( '/members/goal/' ) ) . '">Back to your goal</a></p>';
+			$main = '<h1>Add a goal</h1>' . lld_info( LLD_Members_Goal_Rules::MESSAGES['third_goal'] ) . '<p><a class="lld-button lld-button-secondary" href="' . esc_url( home_url( '/members/goal/' ) ) . '">Back to your goal</a></p>';
 			self::output( 'Add a goal', $main );
 			return;
 		}
@@ -352,7 +361,7 @@ class LLD_Members_Goal_Setting {
 				$html .= '<p>Add your height, sex and activity level to your <a href="' . esc_url( home_url( '/members/health/' ) ) . '">health profile</a> and your daily calorie target appears here.</p>';
 			}
 			$html .= '<p>Activity: <strong>' . (int) ( $plan ? $plan['activity_minutes_week'] : LLD_Members_Goal_Rules::ACTIVITY_DEFAULT ) . ' minutes</strong> a week.</p>';
-			$html .= '<p><a href="' . esc_url( home_url( '/members/meals/' ) ) . '">This week\'s meal plan</a> · <a href="' . esc_url( home_url( '/members/workout/' ) ) . '">Workouts</a></p>';
+			$html .= '<p class="lld-link-row"><a href="' . esc_url( home_url( '/members/meals/' ) ) . '">This week\'s meal plan</a> · <a href="' . esc_url( home_url( '/members/workout/' ) ) . '">Workouts</a></p>';
 		} else {
 			$html .= '<h2>Your progress</h2><p>You can follow your goal progress on Today and the progress page.</p>';
 			$html .= lld_membership_lock( 'The full guided plan (daily targets, meal plans and workouts) is part of Premium.' );

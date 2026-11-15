@@ -189,9 +189,10 @@ test('TC-FR3-49-AS-02', () => {
         if ($smoke === 'no' && in_array('smoking', array_column($w, 'factor'), true)) $bad[] = "$region: smoking offered to a non-smoker";
         if ($sbp < 120 && in_array('blood-pressure', array_column($w, 'factor'), true)) $bad[] = "$region $sbp: bp below 120";
         if ($r['first'] !== ($w ? $w[0]['factor'] : null)) $bad[] = "$region: first";
-        $lines = array_values(array_intersect($r['messages'], ['whatif', 'whatif.none', 'whatif.noFall']));
+        $lines = array_values(array_intersect($r['messages'], ['whatif', 'whatif.under1', 'whatif.none', 'whatif.noFall']));
         $lowest = $smoke === 'no' && $sbp < 120 && null !== $tc && $tc < 4; // BMI 33 is never the lowest band
-        $want = $w ? ['whatif'] : ($lowest ? ['whatif.none'] : ['whatif.noFall']);
+        // A move onto a 0 % cell uses CW-24's line (Owner_Questions 105), every other move the signed one.
+        $want = $w ? [0 === $w[0]['risk'] ? 'whatif.under1' : 'whatif'] : ($lowest ? ['whatif.none'] : ['whatif.noFall']);
         if ($lines !== $want) $bad[] = "$region $sex $smoke $age $sbp $tc: lines " . implode(',', $lines);
         if (!$w) $flat++;
       }

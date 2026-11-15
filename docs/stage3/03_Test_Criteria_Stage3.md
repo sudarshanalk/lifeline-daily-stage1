@@ -1,6 +1,6 @@
 # Stage 3 test criteria (extract)
 
-Extracted on 4 November 2026 from `01 Requirements/Lifeline_Daily_Requirements_All_Stages.md` v0.3 by the lead. Every `TC-FR3-nn-AS-nn` and `TC-NFR3-nn-AS-nn` used under `tests/stage3/` must appear here (`stage3-guards`). Do not edit by hand: re-extract from the requirements when they change.
+Extracted on 6 November 2026 (FR3-06, FR3-07, FR3-09, FR3-61, FR3-64, FR3-69 extended and FR3-111 to FR3-113 added on 14 November 2026 for the member area build list, P3-36) from `01 Requirements/Lifeline_Daily_Requirements_All_Stages.md` v0.4 by the lead. Every `TC-FR3-nn-AS-nn` and `TC-NFR3-nn-AS-nn` used under `tests/stage3/` must appear here (`stage3-guards`). Do not edit by hand: re-extract from the requirements when they change.
 
 #### FR3-01 Sign in with Google
 
@@ -66,6 +66,8 @@ The single long Settings form is replaced by an account hub with separate sectio
 | TC-FR3-06-AS-01 | Open Account: the five sections are listed and each opens its own page. |
 | TC-FR3-06-AS-02 | Change the display name in Profile and press Save: only Profile is saved and a confirmation is shown. |
 | TC-FR3-06-AS-03 | Privacy and consents lists every consent the member has given, with the date, and each can be withdrawn. |
+| TC-FR3-06-AS-04 | Open the old long settings address (?all=1) as a member: the matching section of Account opens instead. |
+| TC-FR3-06-AS-05 | Switch to imperial units in Profile: the health profile, the check-in and the logging pages show feet, inches and pounds, and none of them has its own units switch. |
 
 #### FR3-07 Account menu on desktop
 
@@ -78,6 +80,9 @@ On a desktop screen, clicking the member's name opens a small menu with Profile,
 | TC-FR3-07-AS-01 | At 1280 pixels wide, click the name chip: a menu with the five links opens. |
 | TC-FR3-07-AS-02 | Each link goes to the right page, and Sign out signs the member out. |
 | TC-FR3-07-AS-03 | The menu can be opened and used with the keyboard alone. |
+| TC-FR3-07-AS-04 | On every member page and every My account → Admin page, the name chip opens the same menu, and Sign out there signs the member out. |
+| TC-FR3-07-AS-05 | At 360 pixels wide, the menu in the header holds Sign out. |
+| TC-FR3-07-AS-06 | Sign-in and security offers signing out of this device only, next to signing out everywhere; the first ends only the current browser's session. |
 
 #### FR3-08 Helpful empty screens
 
@@ -105,6 +110,7 @@ Every new member who gives health consent sets one main goal when joining, and m
 | TC-FR3-09-AS-05 | A weight goal below a healthy BMI, or faster than the safe rate, is refused with a gentle message and a safe suggestion. |
 | TC-FR3-09-AS-06 | A member can add one extra goal but not a third. |
 | TC-FR3-09-AS-07 | A member who answers a pregnancy, eating-disorder or medicine safety question sees the safety wording before setting a goal. |
+| TC-FR3-09-AS-08 | A member who has not answered the health questions is taken to them while setting the goal, and the goal is saved once they are answered. |
 
 #### FR3-10 Starting measurements
 
@@ -758,6 +764,7 @@ When a member deletes their account, all their food and health logs, goals, cust
 |---|---|
 | TC-FR3-61-AS-01 | Delete a test account with logs: no food or health entries remain for that member in the database. |
 | TC-FR3-61-AS-02 | Shared progress links made by that member stop working. |
+| TC-FR3-61-AS-03 | After an account is deleted, no table holds the member's email, including the sign-in lock records. |
 
 #### FR3-62 Plans and prices at launch
 
@@ -802,6 +809,7 @@ My subscription shows a membership card: the plan and price, the renewal date, t
 | TC-FR3-64-AS-01 | A yearly Premium test member's card shows the yearly plan, price, renewal date and saving. |
 | TC-FR3-64-AS-02 | The card shows the member's own counts of completed workouts and logged days, matching the progress page. |
 | TC-FR3-64-AS-03 | A Free test member sees an upgrade card instead. |
+| TC-FR3-64-AS-04 | A member given free Premium by the Owner sees Premium on the name chip, in Account → Membership and on My subscription, with its end date, and no offer to buy Premium. |
 
 #### FR3-65 Pause subscription
 
@@ -817,6 +825,7 @@ Monthly Premium members can pause for 1, 2 or 3 months instead of cancelling. Th
 | TC-FR3-65-AS-04 | A failed payment at the end of the pause follows the Stage 2 failed-payment retries. |
 | TC-FR3-65-AS-05 | A yearly test member is not offered a pause. |
 | TC-FR3-65-AS-06 | Starting to cancel shows the pause option before the final cancel button. |
+| TC-FR3-65-AS-07 | A member can pause once in any 12 months: within 12 months of their last pause they are offered no pause, a new pause is refused with the date they can pause again, and a pause they undid does not count (owner, 8 Nov 2026). |
 
 #### FR3-66 Google Analytics 4
 
@@ -868,12 +877,14 @@ The Stage 2 safety matrix is extended to every Stage 3 feature. For a member wit
 | TC-FR3-69-AS-02 | For the same member, requests for calorie data through the programming interface are refused. |
 | TC-FR3-69-AS-03 | For a test member with kidney disease, no protein target appears anywhere. |
 | TC-FR3-69-AS-04 | Add the eating-disorder flag to a member who already has a weight-loss plan: the plan's calorie targets disappear at once and a safe plan is offered. |
+| TC-FR3-69-AS-05 | A member whose conditions answer is missing who tries to log a reading or set a goal is told which question is missing, with a link to it, and nothing is stored. |
+| TC-FR3-69-AS-06 | Health details in the health profile cannot be saved until the conditions question is answered; 'None of these' and 'Prefer not to answer' both count as answers. |
 
 #### FR3-70 Weekly owner report
 
 Stage 3 · Analytics · Must · Status: To be built
 
-The Monday report from Stage 2 (FR2-17) continues after the switch to Google Analytics. Sign-ups, upgrades, renewals, pauses, cancellations, revenue and member numbers come from Lifeline Daily's own database and Stripe; visits and calculator use come from Google Analytics totals. No personal or health data is included.
+Removed by the owner on 4 November 2026: no weekly email is sent, and the owner reads these figures in Stripe, Google Analytics and the admin panel instead. The text below is kept for the record. The Monday report from Stage 2 (FR2-17) continues after the switch to Google Analytics. Sign-ups, upgrades, renewals, pauses, cancellations, revenue and member numbers come from Lifeline Daily's own database and Stripe; visits and calculator use come from Google Analytics totals. No personal or health data is included.
 
 | Test ID | What the test checks |
 |---|---|
@@ -882,9 +893,9 @@ The Monday report from Stage 2 (FR2-17) continues after the switch to Google Ana
 
 #### FR3-71 Owner and Support admin roles
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#217); changed on 6 Nov 2026 (My account → Admin, simple toggles): to be rebuilt
 
-The admin panel has two roles. The Owner can do everything. A Support helper can find members, see their account details, resend account emails, add private notes, and pause or resume a membership when the member asks. Support cannot delete a member, send a data download, give or remove Premium, end a membership, issue refunds or change payments, mark test accounts, block or unblock, change features, approve content, manage admins, or see other admins' actions and payment counts. Only the Owner adds or removes Support helpers, and each helper has their own account. Every action checks the role on the server, not only by hiding buttons.
+The admin panel has two roles. The Owner can do everything. A Support helper can find members, see their account details, resend account emails, add private notes, and pause or resume a membership when the member asks. Support cannot delete a member, send a data download, give or remove Premium, end a membership, issue refunds or change payments, mark test accounts, block or unblock, change features, approve content, manage admins, or see other admins' actions and payment counts. Only the Owner adds or removes Support helpers, and each helper has their own account. Every action checks the role on the server, not only by hiding buttons. Both roles work in My account → Admin (FR3-87), and a Support helper never enters the WordPress admin (FR3-90). Section 3 lists every privilege.
 
 | Test ID | What the test checks |
 |---|---|
@@ -892,23 +903,24 @@ The admin panel has two roles. The Owner can do everything. A Support helper can
 | TC-FR3-71-AS-02 | For each Owner-only action, a Support test account sees no button, and a direct request to the action is refused. |
 | TC-FR3-71-AS-03 | Only an Owner account can add or remove a Support helper. |
 
-#### FR3-72 One Lifeline Daily admin menu
+#### FR3-72 Two admin areas: My account → Admin, and content in the WordPress admin
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#217); changed on 6 Nov 2026 (My account → Admin, simple toggles): to be rebuilt
 
-All owner screens sit under one 'Lifeline Daily' menu in wp-admin: the new Overview, Features, Members and Activity log pages, and the existing Payments, Content, Approvals, Safety matrix, Live Q&A, Testimonials, Weekly report, Group removals and Preview screens. The existing screens keep their addresses. A Support helper sees only the pages their role allows.
+Running members, tools and money happens in My account → Admin (FR3-87): Overview, Members, Tools, Features, Activity log, Helpers, Payments, Weekly report and Group removals. Content and the site stay in the WordPress admin, where the menu is called 'Lifeline Daily content' and holds Goals, Tracks, Weeks, Lessons, Activities, Challenges, Recipes, Meal plans, Workout plans, Suggestion rules, Badges, Screening wording, Tags, Approvals, Safety matrix, Live Q&A, Testimonials and Preview. The moved pages leave the WordPress admin only after their My account versions pass every check; until then both work. The old WordPress-admin address of a moved page takes the Owner to the same page in My account.
 
 | Test ID | What the test checks |
 |---|---|
-| TC-FR3-72-AS-01 | The Lifeline Daily menu lists every page named above, and the old separate Payments and Content menus are gone. |
-| TC-FR3-72-AS-02 | Each existing screen still opens at its old address (for example admin.php?page=lld-payments). |
-| TC-FR3-72-AS-03 | A Support test account sees only Overview and Members in the menu. |
+| TC-FR3-72-AS-01 | The WordPress admin's Lifeline Daily content menu lists exactly the content screens named above, and none of the moved pages. |
+| TC-FR3-72-AS-02 | Each content screen still opens at its old address (for example admin.php?page=lld-approvals). |
+| TC-FR3-72-AS-03 | The old WordPress-admin address of each moved page (for example admin.php?page=lld-payments) takes the Owner to the same page in My account → Admin. |
+| TC-FR3-72-AS-04 | Every action on a moved page gives the same result in My account as it did in the WordPress admin (the FR3-71 to FR3-86 tests run against the My account pages). |
 
 #### FR3-73 Overview page with counts only
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#217); changed on 6 Nov 2026 (My account → Admin, simple toggles): to be rebuilt
 
-The first admin page shows counts only: members in total, new this week and signed in within 7 and 30 days; Free, Premium, paused and cancelled members; monthly and yearly plans; open failed payments; content waiting for approval; unanswered Live Q&A questions; each feature and its state; and the last 10 admin actions. It never shows health figures, even as totals. Support sees the same page without the payment counts and the activity log.
+The first admin page shows counts only: members in total, new this week and signed in within 7 and 30 days; Free, Premium, paused and cancelled members; monthly and yearly plans; open failed payments; content waiting for approval; unanswered Live Q&A questions; each feature and its state; and the last 10 admin actions. It never shows health figures, even as totals. Support sees the same page without the payment counts and the activity log. The page is in My account → Admin. Test members are counted apart from real members: the counts show real members only, with the number of test members shown separately.
 
 | Test ID | What the test checks |
 |---|---|
@@ -918,22 +930,23 @@ The first admin page shows counts only: members in total, new this week and sign
 
 #### FR3-74 Emergency off for a feature
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#217); changed on 6 Nov 2026 (My account → Admin, simple toggles): to be rebuilt
 
-Every Stage 3 feature is on (decision of 3 Nov 2026). The Features page lists each feature with a one-line description and its state. The Owner can turn a feature off with one click, a confirmation and a short reason, and members stop seeing it at once; or limit it to test accounts while it is fixed. Turning a feature back on for everyone needs the feature's name typed, an approval note and the Owner's two-step code again. Each feature shows its change history (who, when, from and to, note), including changes made on the command line. The list of test-account emails is edited on this page. Full administrators (the Owner) count as test accounts automatically; Support helpers do not, unless their email is added to the list. Support can view the page but not change it.
+Every Stage 3 feature is on (decision of 3 Nov 2026). The Features page in My account → Admin lists each feature by its plain name with a one-line description and one simple on/off toggle. Flipping the toggle saves at once and shows 'Saved' with an Undo link, and members stop seeing a feature that is off on their next page load. A reason box beside the toggle is optional. There is no 'test accounts only' choice on the screen (the command line keeps that state for the automated tests only, NFR3-06), and turning a feature back on needs no typed name, note or fresh code. Each feature shows its change history (who, when, from and to, reason), including changes made on the command line. The tools' switches are on the Tools page (FR3-88). The list of test-account emails is edited on this page. Full administrators (the Owner) count as test accounts automatically; Support helpers do not, unless their email is added to the list. Support can view the page but not change it.
 
 | Test ID | What the test checks |
 |---|---|
-| TC-FR3-74-AS-01 | Turn a feature off: an ordinary test member no longer sees it on the next page load, and the change appears in its history with the reason. |
-| TC-FR3-74-AS-02 | Turning a feature back on for everyone is refused without the typed feature name, the note and a fresh two-step code. |
+| TC-FR3-74-AS-01 | Turn a feature off: an ordinary test member no longer sees it on the next page load, and the change appears in its history. |
+| TC-FR3-74-AS-02 | Flipping the toggle on or off, with or without a reason, saves at once, shows 'Saved' with Undo, and is recorded in the history and the activity log (with the reason when one was given). |
 | TC-FR3-74-AS-03 | A change made with 'wp lld-members feature' on the command line appears in the feature's history. |
 | TC-FR3-74-AS-04 | An email added to the test-account list on the page is treated as a test account. |
 | TC-FR3-74-AS-05 | A Support test account cannot change any feature or the test-account list. |
-| TC-FR3-74-AS-06 | With a feature limited to test accounts, the Owner's account sees it and a Support account not on the list does not. |
+| TC-FR3-74-AS-06 | The toggle offers only on and off; no 'test accounts only' choice appears on the page. |
+| TC-FR3-74-AS-07 | Undo straight after a change puts the feature back to its earlier state and records that too. |
 
 #### FR3-75 Find a member
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#217)
 
 Owner and Support can search members by email, name or member number, and filter by plan (Free, Premium), status (active, paused, cancelled, blocked) and test account.
 
@@ -944,7 +957,7 @@ Owner and Support can search members by email, name or member number, and filter
 
 #### FR3-76 Member account page without health data
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#217)
 
 A member's admin page shows name, email, sign-in methods (email, Google, and Apple from Stage 4), date joined, last sign-in, plan, status, renewal date, payment status from Stripe (never card details), whether it is a test account, Premium grants, AI allowance use (Stage 5) and private notes. It never shows the member's goal, track, health answers, health readings, food diary or calculator results, because even a track choice hints at a health condition. There is no way to sign in as the member.
 
@@ -956,7 +969,7 @@ A member's admin page shows name, email, sign-in methods (email, Google, and App
 
 #### FR3-77 Resend account emails
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#217)
 
 Owner and Support can resend a member's sign-in code, email confirmation or welcome email. The emails are the standard ones and contain no health details.
 
@@ -966,7 +979,7 @@ Owner and Support can resend a member's sign-in code, email confirmation or welc
 
 #### FR3-78 Private notes on a member
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#217)
 
 Owner and Support can add private notes to a member, for example about a support request. Members never see them. The note box reminds the writer not to include health details. Notes are deleted with the account.
 
@@ -977,7 +990,7 @@ Owner and Support can add private notes to a member, for example about a support
 
 #### FR3-79 Pause or resume a membership for a member
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#217)
 
 Owner and Support can pause or resume a Premium membership when the member asks, with the same rules as the member's own pause (FR3-65). Stripe is updated to match.
 
@@ -988,7 +1001,7 @@ Owner and Support can pause or resume a Premium membership when the member asks,
 
 #### FR3-80 Give or remove free Premium
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#217)
 
 The Owner can give a member free Premium with an end date and a reason, kept separate from Stripe, and remove it again. When it ends, the member returns to Free with the downgrade rules (FR3-68).
 
@@ -1000,7 +1013,7 @@ The Owner can give a member free Premium with an end date and a reason, kept sep
 
 #### FR3-81 End a membership
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#217)
 
 The Owner can end a member's Premium either at the end of the paid period or straight away, with a reason. The Stripe subscription is cancelled to match. Refunds stay in Stripe: the member's page has no refund button, only a link that opens this member's customer page in the Stripe dashboard (Owner only).
 
@@ -1012,17 +1025,17 @@ The Owner can end a member's Premium either at the end of the paid period or str
 
 #### FR3-82 Mark or unmark a test account
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#217); changed on 6 Nov 2026 (My account → Admin, simple toggles): to be rebuilt
 
 The Owner can mark a member as a test account, or unmark them, with a reason. This updates the same test-account list as the Features page.
 
 | Test ID | What the test checks |
 |---|---|
-| TC-FR3-82-AS-01 | Mark a member as a test account: features limited to test accounts appear for them, and the email appears in the Features page list. |
+| TC-FR3-82-AS-01 | Mark a member as a test account: they are labelled 'Test', left out of member counts and revenue, and the email appears in the Features page list. |
 
 #### FR3-83 Block or unblock a member
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#217)
 
 The Owner can block a member with a reason. A blocked member cannot sign in and is signed out at once, on the website and through the programming interface. While a paying member is blocked their billing is paused, using the same pause as FR3-65 but with no time limit and not counting towards the member's own pauses. Unblocking restores sign-in and restarts billing. The Owner can still end the membership separately (FR3-81).
 
@@ -1034,7 +1047,7 @@ The Owner can block a member with a reason. A blocked member cannot sign in and 
 
 #### FR3-84 Delete a member
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#217)
 
 The Owner can delete a member. It runs exactly the same erasure as the member's own deletion request (FR2-04, extended by FR3-61), after the Owner types the member's email, gives a reason and enters the two-step code again.
 
@@ -1045,7 +1058,7 @@ The Owner can delete a member. It runs exactly the same erasure as the member's 
 
 #### FR3-85 Send the member their data download
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#217)
 
 The Owner can send a member a link to their own data download. The member signs in to download it. The admin never sees the file or its contents.
 
@@ -1056,9 +1069,9 @@ The Owner can send a member a link to their own data download. The member signs 
 
 #### FR3-86 Admin activity log
 
-Stage 3 · Admin panel · Must · Status: To be built
+Stage 3 · Admin panel · Must · Status: Built, on staging (#217); changed on 6 Nov 2026 (My account → Admin, simple toggles): to be rebuilt
 
-The Stage 2 admin log is extended so that every admin action, from both roles and from the command line, is recorded: admin sign-ins and failed attempts, every member action, feature and test-account changes, and adding or removing helpers. Each entry has who, when, what, the member number, the before and after state and the reason. A reason is required for deleting, giving or removing Premium, ending a membership, blocking or unblocking, test-account changes, turning a feature off or back on, and adding or removing a helper. Entries can never be edited or deleted, contain no health data, and do not copy note text. The Owner sees the whole log and can download it as a CSV file; Support sees only their own actions. Entries are kept for 2 years. When a member is deleted, their entries keep only the member number.
+The Stage 2 admin log is extended so that every admin action, from both roles and from the command line, is recorded: admin sign-ins and failed attempts, every member action, feature and test-account changes, and adding or removing helpers. Each entry has who, when, what, the member number, the before and after state and the reason. A reason is required for deleting, giving or removing Premium, ending a membership, blocking or unblocking, test-account changes, and adding or removing a helper. A reason for turning a feature or tool off or on is optional (FR3-74). Entries can never be edited or deleted, contain no health data, and do not copy note text. The Owner sees the whole log and can download it as a CSV file; Support sees only their own actions. Entries are kept for 2 years. When a member is deleted, their entries keep only the member number.
 
 | Test ID | What the test checks |
 |---|---|
@@ -1068,6 +1081,129 @@ The Stage 2 admin log is extended so that every admin action, from both roles an
 | TC-FR3-86-AS-04 | A Support test account sees only its own entries; the Owner's CSV download matches the log. |
 | TC-FR3-86-AS-05 | After a test member is deleted, their log entries show the member number and no name or email. |
 | TC-FR3-86-AS-06 | Entries older than 2 years are removed automatically. |
+
+#### FR3-87 Admin pages in My account
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+The Owner and Support helpers reach their admin pages from My account → Admin, in the site's own design, at addresses under /members/admin/. Members never see the Admin link and get 'not found' at those addresses. The Owner's Admin section has a link, 'Content and site settings (WordPress)', that opens the WordPress admin without signing in again, and the WordPress admin has a link back. Sign-in, the email code, the 30-minute and 12-hour limits, reasons, confirmations and the activity log work as in FR3-71 to FR3-86 and NFR3-19 to NFR3-23.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-87-AS-01 | The Owner's My account shows an Admin link with Overview, Members, Tools, Features, Activity log, Helpers, Payments, Weekly report and Group removals. |
+| TC-FR3-87-AS-02 | A Support test account's Admin section shows only Overview and Members. |
+| TC-FR3-87-AS-03 | A Free and a Premium test member see no Admin link, and every /members/admin/ address answers 'not found' for them. |
+| TC-FR3-87-AS-04 | From Admin, the Owner opens the WordPress admin without a second sign-in, and its link returns to Admin. A Support account has no such link. |
+
+#### FR3-88 Tools page
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+One Tools page lists all 11 tools: the three standalone tools (Daily Protein Target, Diabetes Risk Check, Healthy Weight Check), the six calculator pages (Heart Risk Check, Blood Pressure Check, Metabolic Health Check, Fitness Age, Heart Rate Zones, Sleep and Stress Check) and the two members-only calculators (Calorie Target, Goal Timeline). For each it shows the name, its address, whether it is on or off, and when, by whom and why it last changed. Each tool has a simple on/off toggle with an optional reason, as in FR3-74, and a master toggle turns all eight newer calculators off at once. The page never shows results or any member's data.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-88-AS-01 | The page lists the 11 tools with their state, and the states on the page match the switches stored. |
+| TC-FR3-88-AS-02 | Turning one tool off removes its hub card and its page for a test member on the next page load, and leaves every other tool working. |
+| TC-FR3-88-AS-03 | Turning the master toggle off removes all eight newer calculators; the three standalone tools are unaffected. |
+| TC-FR3-88-AS-04 | Each tool's toggle offers only on and off, and the label shows the tool's plain name. |
+| TC-FR3-88-AS-05 | Every change is in the tool's history and the activity log, with the reason when one was given; a Support account sees the toggles but cannot change them. |
+
+#### FR3-89 Switching off a standalone tool
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+Turning off one of the three standalone tools uses their approved Stage 1 switch (tools/status.json, FR1-15): its card on the homepage and the Health Tools hub says 'Temporarily unavailable', its landing page and its file address (for example /tools/protein-requirement-tool.html) show the approved paused text instead of the form, and its email-the-result step is refused. A tool can be turned back on from the page only while its approved file is still the one deployed. It does not change the tool's frozen calculation, wording or fixtures (FR2-23, NFR3-14), so CI's engine-freeze and oracle-guard checks still pass. Turning it back on restores everything as it was.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-89-AS-01 | With a standalone tool off, its card on the hub says 'Temporarily unavailable' and tools/status.json shows it withdrawn. |
+| TC-FR3-89-AS-02 | With it off, the tool's own page shows the approved paused text and no form, and any email-the-result step is refused. |
+| TC-FR3-89-AS-03 | Turning it back on restores the card, the page and the email step, and engine-freeze and oracle-guard pass unchanged. |
+
+#### FR3-90 Support helpers kept out of the WordPress admin
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+A Support helper never enters the WordPress admin. Any WordPress-admin address sends them to My account → Admin, and the WordPress admin bar is not shown to them. The background addresses that forms use (admin-post.php and admin-ajax.php) still work for the actions their role allows, and refuse everything else.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-90-AS-01 | A Support test account opening /wp-admin/, /wp-admin/profile.php or /wp-admin/edit.php is sent to My account → Admin. |
+| TC-FR3-90-AS-02 | A Support test account sees no WordPress admin bar on any page. |
+| TC-FR3-90-AS-03 | A Support test account can still add a note and pause a membership from My account, and a direct request for an Owner-only action is refused. |
+
+#### FR3-91 Premium test member for the Owner
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+The Owner can see and test the site exactly as a paying member does (every tool, guide, track week, plan and challenge) without paying. On the Members page the Owner can make any member account a Premium test member with one action and a reason: it is marked as a test account and given free Premium with no end date, with no Stripe charge or subscription. The account then sees everything a paying Premium member sees, under the same safety rules. A Premium test member is labelled 'Test' on every admin page, is left out of member counts, revenue, the weekly report and analytics, and never receives marketing emails. Up to 5 accounts can be Premium test members. The Owner signs in to it with its own email and password or code, as any member does; it is never the Owner's admin account and never a way to sign in as a real member (FR3-76). Removing the status returns the account to Free.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-91-AS-01 | After making a Free test account a Premium test member, it can open every Premium item listed in FR3-63 and every track week, and no Stripe charge or subscription exists. |
+| TC-FR3-91-AS-02 | The Premium test member sees exactly the same screens, tools and content as a paying Premium test member. |
+| TC-FR3-91-AS-03 | The Overview, the weekly report and the revenue figures do not count the Premium test member, and it is labelled 'Test' on the Members page. |
+| TC-FR3-91-AS-04 | Safety rules still apply: with an eating-disorder flag in its health profile, the Premium test member sees no calorie numbers. |
+| TC-FR3-91-AS-05 | Removing the status returns the account to Free with nothing deleted, and both changes are in the activity log with the reason. |
+| TC-FR3-91-AS-06 | A 6th Premium test member is refused with a message saying the limit is 5. |
+
+#### FR3-92 Reset a test member
+
+Stage 3 · Admin panel · Should · Status: To be built
+
+So the Owner can walk through joining, goal setting and the first week again, the Owner can reset a test member to a clean start: goals, plans, logs, saved results and track progress are deleted, and the account, its sign-in and its Premium test status stay. Only accounts marked as test accounts can be reset; it needs a reason and the typed word RESET, and it is recorded in the activity log. The reset deletes the member's own data without anyone seeing it, so NFR3-19 still holds.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-92-AS-01 | Resetting a test member with goals and logs leaves the account and its Premium test status, and the member starts again at goal setting. |
+| TC-FR3-92-AS-02 | The reset is refused for an account that is not a test account, and without the reason or the typed word. |
+
+#### FR3-93 Staging emails for the Owner
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+Staging never sends real email; it catches every message (NFR1-14). On staging only, a Staging emails page in My account → Admin shows the Owner the caught emails, newest first, with the recipient, subject, time and text, so the Owner can read sign-in codes and see the emails members would get, without a developer. The page and its address exist only where the staging setting is on. Support cannot open it.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-93-AS-01 | On staging, after the Owner asks for a sign-in code, the newest message on the page holds that code. |
+| TC-FR3-93-AS-02 | A Support account and a member get 'not found' at the page's address. |
+| TC-FR3-93-AS-03 | With the staging setting absent, the page does not exist for anyone. |
+
+#### FR3-94 A switch change shows at once
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+Turning a tool or feature off or on also clears the site's page cache for the pages that show it (the homepage, the Health Tools hub and the tool's own page), so signed-out visitors never see a card for a tool that is off.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-94-AS-01 | After a signed-out visit has cached the hub, turning a tool off removes its card from the next signed-out visit to the hub. |
+
+#### FR3-95 Editors limited to articles and pages
+
+Stage 3 · Admin panel · Must · Status: To be built
+
+Editors write and edit articles and pages only. They cannot open, add or change Lifeline Daily content (goals, tracks, weeks, lessons, activities, challenges, recipes, meal plans, workouts, rules, badges, wording), approvals or the safety matrix, even by typing the address; those are the Owner's. (These content types use WordPress's standard post permissions today, which Editors have.)
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-95-AS-01 | An Editor test account can edit an article and a page. |
+| TC-FR3-95-AS-02 | An Editor test account opening edit.php?post_type=lld_recipe, or saving a change to a recipe, is refused. |
+
+#### FR3-96 Retire Paid Memberships Pro
+
+Stage 3 · Paid membership · Must · Status: To be built
+
+Lifeline Daily Members already runs Premium: prices, Stripe checkout, subscriptions, pause, cancellation, free Premium and blocking. Paid Memberships Pro is retired so there is one membership system with one set of rules. Lifeline Daily Members stops copying the two Premium plans into Paid Memberships Pro's levels list and stops relying on it in member deletion. Every page, shortcode, menu and sign-in step that came from it is checked and replaced or removed, including its 'Suspicious activity' sign-in block and its Memberships menu. Its records are backed up, then the plugin is deactivated and removed. The Stage 2 build documents and AGENTS.md, which say Premium runs 'through Stripe and Paid Memberships Pro', are updated.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-96-AS-01 | With Paid Memberships Pro deactivated, the full Stage 2 and Stage 3 test suites pass, including joining, checkout, renewal, pause, cancellation, free Premium and deletion. |
+| TC-FR3-96-AS-02 | No page, menu or sign-in step on the site comes from Paid Memberships Pro, and no Lifeline Daily code refers to it. |
+| TC-FR3-96-AS-03 | Free, Premium, paused and cancelled test members keep exactly the same access before and after it is removed. |
+| TC-FR3-96-AS-04 | A backup of its records is taken before removal, and after removal no leftover record names a member. |
 
 #### NFR3-01 Stage 2 keeps working
 
@@ -1279,7 +1415,7 @@ Email codes are random 6-digit numbers that last 10 minutes, work once and are l
 
 #### NFR3-19 No health data in the admin panel
 
-Stage 3 · Data and privacy · Must · Status: To be built
+Stage 3 · Data and privacy · Must · Status: Built, on staging (#217)
 
 No admin page, count, export, log entry or admin request shows members' health readings, food diaries, health answers, goals, tracks or calculator results, for any role, the Owner included. A member's data leaves their account only through their own download.
 
@@ -1290,20 +1426,20 @@ No admin page, count, export, log entry or admin request shows members' health r
 
 #### NFR3-20 Secure admin sign-in
 
-Stage 3 · Security · Must · Status: To be built
+Stage 3 · Security · Must · Status: Built, on staging (#217); changed on 6 Nov 2026 (My account → Admin, simple toggles): to be rebuilt
 
-Every admin role (Owner and Support) enters an emailed 6-digit code at every sign-in, extending NFR2-02. The code is asked for again before deleting a member, turning a feature back on for everyone, and adding or removing a helper. Admin sessions end after 30 minutes without activity and always after 12 hours. After 5 wrong passwords or codes the account is locked for 15 minutes and the Owner is emailed.
+Every admin role (Owner and Support) enters an emailed 6-digit code at every sign-in, extending NFR2-02. The code is asked for again before deleting a member and before adding or removing a helper; feature and tool toggles need no code (FR3-74). Admin sessions end after 30 minutes without activity and always after 12 hours. After 5 wrong passwords or codes the account is locked for 15 minutes and the Owner is emailed. The same rules apply to My account → Admin, and to the WordPress admin for the Owner.
 
 | Test ID | What the test checks |
 |---|---|
 | TC-NFR3-20-AS-01 | A Support test account must enter an email code to sign in. |
-| TC-NFR3-20-AS-02 | Each of the three risky actions asks for a fresh code. |
+| TC-NFR3-20-AS-02 | Deleting a member, and adding or removing a helper, each ask for a fresh code; a feature toggle does not. |
 | TC-NFR3-20-AS-03 | An admin session is signed out after 30 minutes idle, and after 12 hours even when active. |
 | TC-NFR3-20-AS-04 | The 6th failed attempt is refused for 15 minutes and an alert email is caught by the mail catcher. |
 
 #### NFR3-21 Limits and alerts on admin actions
 
-Stage 3 · Security · Must · Status: To be built
+Stage 3 · Security · Must · Status: Built, on staging (#217)
 
 Each admin can delete at most 5 members an hour; further deletions wait. The Owner is emailed when a helper is added or removed and when any admin signs in from a new device or browser.
 
@@ -1314,9 +1450,9 @@ Each admin can delete at most 5 members an hour; further deletions wait. The Own
 
 #### NFR3-22 Admin panel works on a phone and is hidden
 
-Stage 3 · Quality · Must · Status: To be built
+Stage 3 · Quality · Must · Status: Built, on staging (#217); changed on 6 Nov 2026 (My account → Admin, simple toggles): to be rebuilt
 
-Every new admin page works on a phone from 360 pixels wide and meets WCAG 2.2 AA, as the member pages do. Admin pages never load Google Analytics and are never indexed by search engines.
+Every new admin page works on a phone from 360 pixels wide and meets WCAG 2.2 AA, as the member pages do. Admin pages never load Google Analytics, are never indexed by search engines and are never cached. This covers every page in My account → Admin.
 
 | Test ID | What the test checks |
 |---|---|
@@ -1325,10 +1461,63 @@ Every new admin page works on a phone from 360 pixels wide and meets WCAG 2.2 AA
 
 #### NFR3-23 Erasure checker covers the admin records
 
-Stage 3 · Data and privacy · Must · Status: To be built
+Stage 3 · Data and privacy · Must · Status: Built, on staging (#217)
 
 The erasure checker that confirms a deleted member leaves nothing behind also covers private notes and Premium grants, and checks that activity log entries keep only the member number.
 
 | Test ID | What the test checks |
 |---|---|
 | TC-NFR3-23-AS-01 | After a test member with notes, a Premium grant and log entries is deleted, the erasure checker finds no note or grant, and log entries with only the member number. |
+
+#### NFR3-24 Admin screens are friendly and modern
+
+Stage 3 · Quality · Must · Status: To be built
+
+This covers the admin module: every screen in My account → Admin, and the Lifeline Daily screens the Owner still uses in the WordPress admin. Each is easy to use without training and looks as modern as the member pages, in the site's own design (UI2-01), not the plain WordPress-admin look. Plain words, never code names ('Heart Risk Check', not calc_heart_risk). Simple controls: on/off toggles for switches, clear buttons, and choices shown as options rather than typed in. Cards and a clear layout that starts with what matters most and fits a phone from 360 pixels wide (NFR3-22). Search and filters on every list longer than one screen. Instant feedback: every action shows 'Saved' (with Undo where it can be undone) or a plain message saying what went wrong and what to do. Helpful empty screens. A confirmation only for actions that cannot be undone (deleting a member, ending a membership), stating exactly what will happen. One look across every admin page. The admin screens are designed and approved by the owner before they are built, as the member screens were.
+
+| Test ID | What the test checks |
+|---|---|
+| TC-NFR3-24-AS-01 | No admin page shows a code name (a word with an underscore or a calc_ prefix) as a label. |
+| TC-NFR3-24-AS-02 | Every admin page uses the site's design styles, and a visual check at phone and desktop sizes matches the approved screen designs. |
+| TC-NFR3-24-AS-03 | Every admin action shows a success or error message, and every list longer than one screen has a search box. |
+| TC-NFR3-24-AS-04 | The Owner completes a set list of everyday tasks (find a member, pause them, turn a tool off and on, read a staging email) without help, in a usability check. |
+| TC-NFR3-24-AS-05 | An automated accessibility scan of every admin page finds no serious or critical problems. |
+
+#### FR3-111 A Library members can search
+
+Stage 3 · Member area · Must · Status: To be built (P3-36)
+
+The member Library shows each approved item once, as a card with its type and, where the item has one, its length. A search box and filters by type (recipes, workout plans, challenges, lessons) let a member find an item quickly. (Member area build list A8, 14 Nov 2026.)
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-111-AS-01 | Type part of a known approved title in the search box: that item is listed and items that don't match are hidden. |
+| TC-FR3-111-AS-02 | Choose one type filter: only items of that type are listed; clearing it lists every type again. |
+| TC-FR3-111-AS-03 | An approved item used on two tracks appears once, naming both tracks. |
+| TC-FR3-111-AS-04 | An unapproved or withdrawn item never appears, whatever the search or filter. |
+| TC-FR3-111-AS-05 | At 360 pixels wide the search and filters work, and both can be used with the keyboard alone. |
+
+#### FR3-112 Honest track progress
+
+Stage 3 · Member area · Must · Status: To be built (P3-36)
+
+A track week shows a tick and 'Completed' only when all seven of its days were done. Every past week shows how many days were done, so an ended track never looks finished when it wasn't. (Member area build list A2, 14 Nov 2026.)
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-112-AS-01 | A week with all seven days done shows a tick and 'Completed'. |
+| TC-FR3-112-AS-02 | A past week with fewer than seven days done shows no tick and 'N of 7 days done'. |
+| TC-FR3-112-AS-03 | A track that ended with no days done shows no tick and no 'Completed' on any week, and the total reads '0 of 28 done'. |
+
+#### FR3-113 Terms before the member area
+
+Stage 3 · Member area · Must · Status: To be built (P3-36)
+
+A member who has not accepted the current terms is taken to Agreements before any member page. Calculators, articles and Help stay open to them. (Member area build list A6, 14 Nov 2026.)
+
+| Test ID | What the test checks |
+|---|---|
+| TC-FR3-113-AS-01 | A confirmed member who has not accepted the terms signs in: Agreements opens before Today. |
+| TC-FR3-113-AS-02 | The same member opens /members/tracks/ directly: Agreements opens instead, and no track can be started. |
+| TC-FR3-113-AS-03 | The same member can still open the calculators, articles and Help. |
+| TC-FR3-113-AS-04 | After accepting, the member is taken to the page they were going to. |

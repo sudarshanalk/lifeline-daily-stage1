@@ -3,7 +3,7 @@ import { readFileSync, existsSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
-import { asOwner, createMember, signIn } from './helpers.mjs';
+import { asOwner, createMember, signIn, submitAndWait } from './helpers.mjs';
 import { fillProteinForm, submitProtein } from '../../e2e/helpers/protein-form.mjs';
 import { fillDiabetesForm, submitDiabetes } from '../../e2e/helpers/diabetes-form.mjs';
 
@@ -161,9 +161,12 @@ async function refCode(page, email) {
 }
 
 async function confirmRefund(page, orderId) {
-  await page.locator('form', { hasText: `Order ${orderId}` }).getByRole('button', { name: 'Refund' }).click();
+  // Both buttons post a form: wait for the page each post returns before the next step (in WebKit a click during the
+  // first page's load could be lost, and the next page.goto could cancel the refund's post); the checks are unchanged.
+  await expect(page.locator('form', { hasText: `Order ${orderId}` }).getByRole('button', { name: 'Refund' })).toBeVisible();
+  await submitAndWait(page, page.locator('form', { hasText: `Order ${orderId}` }).getByRole('button', { name: 'Refund' }));
   await expect(page.locator(`[data-lld-refund-confirm="${orderId}"]`)).toBeVisible();
-  await page.getByRole('button', { name: 'Confirm refund' }).click();
+  await submitAndWait(page, page.getByRole('button', { name: 'Confirm refund' }));
   await expect(page.locator('.notice', { hasText: 'Refunded' })).toBeVisible();
 }
 
@@ -297,29 +300,26 @@ test('TC-FR2-13-AS-04', async ({ page, request }) => {
   expect(full.text).toContain('US$8.99');
 });
 
-test('TC-FR2-13-AS-04 the plans are Paid Memberships Pro levels that follow the owner price', async ({ request }) => {
-  const levels = async () => billingAction(request, { action: 'pmpro_levels' });
-  let read = await levels();
-  expect(read.named).toBe(2);
-  expect(read.levels.yearly).toMatchObject({ name: 'Premium yearly', cycle_period: 'Year' });
-  expect(read.levels.monthly).toMatchObject({ name: 'Premium monthly', cycle_period: 'Month' });
-  expect(Number(read.levels.yearly.initial_payment)).toBe(59.99);
-  expect(Number(read.levels.yearly.billing_amount)).toBe(59.99);
-  expect(Number(read.levels.monthly.billing_amount)).toBe(7.99);
-  expect(Number(read.levels.monthly.cycle_number)).toBe(1);
-  expect(Number(read.levels.yearly.allow_signups)).toBe(0);
-  const ids = { yearly: read.levels.yearly.id, monthly: read.levels.monthly.id };
+test('TC-FR2-13-AS-04 the two Premium plans are the site\'s own catalogue and follow the owner price', async ({ request }) => {
+  // Paid Memberships Pro was retired on 6 Nov 2026 (FR3-96): the plans are Lifeline Daily Members' own catalogue, with no
+  // copy in another plugin. The same checks as before: names, periods, prices, kept by the database update, following a
+  // price change.
+  const plans = async () => (await billingAction(request, { action: 'plans' })).plans;
+  let read = await plans();
+  expect(Object.keys(read).sort()).toEqual(['monthly', 'yearly']);
+  expect(read.yearly).toMatchObject({ name: 'Premium yearly', period: 'Year' });
+  expect(read.monthly).toMatchObject({ name: 'Premium monthly', period: 'Month' });
+  expect(Number(read.yearly.price)).toBe(59.99);
+  expect(Number(read.monthly.price)).toBe(7.99);
   const update = await request.post('/wp-json/lld-members/v1/test/db-update', { data: {} });
   expect(update.ok(), await update.text()).toBeTruthy();
   expect((await update.json()).version).toBeGreaterThanOrEqual(3);
-  read = await levels();
-  expect(read.named).toBe(2);
-  expect({ yearly: read.levels.yearly.id, monthly: read.levels.monthly.id }).toEqual(ids);
+  read = await plans();
+  expect(read.yearly).toMatchObject({ name: 'Premium yearly', period: 'Year', price: '59.99' });
   await billingAction(request, { action: 'prices', monthly: 899, yearly: 6999 });
-  read = await levels();
-  expect(Number(read.levels.yearly.billing_amount)).toBe(69.99);
-  expect(Number(read.levels.monthly.billing_amount)).toBe(8.99);
-  expect(read.levels.yearly.id).toBe(ids.yearly);
+  read = await plans();
+  expect(Number(read.yearly.price)).toBe(69.99);
+  expect(Number(read.monthly.price)).toBe(8.99);
 });
 
 test('TC-FR2-14-AS-03 orders are stamped in UTC, and the refund window uses the member local date', async ({ page, request }) => {
@@ -395,14 +395,15 @@ test('TC-FR2-13-AS-05', async ({ page, request }) => {
   await createMember(request, { email: monthly, password, first_name: 'Month', role: 'member', access_state: 'Premium', plan: 'monthly' });
   await signIn(page, yearly, password);
   await page.goto('/members/subscription/');
-  await expect(page.locator('[data-lld-app="included"]')).toHaveText('The Lifeline Daily app is included with your yearly plan when it launches.');
+  // TC-FR2-13-AS-05 (revised 8 Nov 2026, FR4-11): every member is entitled to the app, monthly and yearly alike.
+  await expect(page.locator('[data-lld-app="included"]')).toHaveText('The Lifeline Daily app is included with your membership when it launches.');
   const yearSnap = await readMember(request, yearly);
   expect(yearSnap.app).toBe('included');
   await signIn(page, monthly, password);
   await page.goto('/members/subscription/');
-  await expect(page.locator('[data-lld-app="not included"]')).toHaveText('The Lifeline Daily app, when it launches, is included with yearly plans.');
+  await expect(page.locator('[data-lld-app="included"]')).toHaveText('The Lifeline Daily app is included with your membership when it launches.');
   const monthSnap = await readMember(request, monthly);
-  expect(monthSnap.app).toBe('not included');
+  expect(monthSnap.app).toBe('included');
 });
 
 test('TC-FR2-14-AS-01', async ({ page, request }) => {
@@ -1027,6 +1028,7 @@ test('TC-FR2-15-AS-05', async ({ page, request }) => {
       await asOwner(page);
       await page.goto('/wp-admin/admin.php?page=lld-payments');
       if (page.url().includes('pmpro-wizard')) await page.goto('/wp-admin/admin.php?page=lld-payments');
+      await page.waitForLoadState('load');
       await confirmRefund(page, orderId);
     } else {
       await pay(page, email, { plan: 'monthly', country: 'US' });

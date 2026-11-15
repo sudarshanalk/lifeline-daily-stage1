@@ -61,9 +61,10 @@ class LLD_Members_Billing {
 	}
 
 	/**
-	 * Paid Memberships Pro levels for the two Premium plans (Data Model P1). Free has no level.
+	 * The two Premium plans (Data Model P1). Free has no plan. Lifeline Daily Members is the only membership system:
+	 * Paid Memberships Pro was retired on 6 Nov 2026 (FR3-96), so no copy of these plans is kept anywhere else.
 	 */
-	const PMPRO_LEVELS = array(
+	const PLANS = array(
 		'yearly'  => array(
 			'name'   => 'Premium yearly',
 			'period' => 'Year',
@@ -79,7 +80,25 @@ class LLD_Members_Billing {
 	 */
 	public static function db_update() {
 		self::rename_statuses();
-		self::sync_pmpro_levels();
+		delete_option( 'lld_pmpro_levels' ); // the ids of the retired Paid Memberships Pro copies (FR3-96)
+	}
+
+	/**
+	 * The two Premium plans with their current catalogue prices (FR2-13).
+	 *
+	 * @return array<string,array{name:string,period:string,price:string}>
+	 */
+	public static function plans() {
+		$prices = self::prices();
+		$out    = array();
+		foreach ( self::PLANS as $plan => $row ) {
+			$out[ $plan ] = array(
+				'name'   => $row['name'],
+				'period' => $row['period'],
+				'price'  => number_format( (int) $prices[ $plan ] / 100, 2, '.', '' ),
+			);
+		}
+		return $out;
 	}
 
 	/**
@@ -94,62 +113,6 @@ class LLD_Members_Billing {
 		foreach ( array( 'limited' => 'limit', 'self' => 'self', 'refunded' => 'refunded' ) as $old => $why ) {
 			$wpdb->query( $wpdb->prepare( "UPDATE {$referral} SET status = %s WHERE status = %s", 'not_qualified_' . $why, $old ) );
 		}
-	}
-
-	/**
-	 * Create or update the Premium levels in Paid Memberships Pro at the current catalogue prices.
-	 * Levels never take sign-ups through Paid Memberships Pro's own checkout: Stripe Checkout is the only way in.
-	 *
-	 * @return array<string,int> Level id for each plan; empty when Paid Memberships Pro is not installed.
-	 */
-	public static function sync_pmpro_levels() {
-		global $wpdb;
-		$table = $wpdb->prefix . 'pmpro_membership_levels';
-		if ( $table !== $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) ) ) {
-			return array();
-		}
-		$columns = $wpdb->get_col( "SHOW COLUMNS FROM {$table}", 0 ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- table name is internal.
-		$prices  = self::prices();
-		$stored  = get_option( 'lld_pmpro_levels' );
-		$stored  = is_array( $stored ) ? $stored : array();
-		$ids     = array();
-		foreach ( self::PMPRO_LEVELS as $plan => $level ) {
-			$amount = number_format( (int) $prices[ $plan ] / 100, 2, '.', '' );
-			$row    = array(
-				'name'              => $level['name'],
-				'description'       => 'Lifeline Daily Premium, paid ' . $plan . ' through Stripe. Tax included.',
-				'confirmation'      => '',
-				'initial_payment'   => $amount,
-				'billing_amount'    => $amount,
-				'cycle_number'      => 1,
-				'cycle_period'      => $level['period'],
-				'billing_limit'     => 0,
-				'trial_amount'      => 0,
-				'trial_limit'       => 0,
-				'allow_signups'     => 0,
-				'expiration_number' => 0,
-			);
-			$row = array_intersect_key( $row, array_flip( $columns ) );
-			$id  = isset( $stored[ $plan ] ) ? (int) $stored[ $plan ] : 0;
-			if ( $id > 0 && ! $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE id = %d", $id ) ) ) {
-				$id = 0;
-			}
-			if ( $id < 1 ) {
-				$id = (int) $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$table} WHERE name = %s ORDER BY id ASC LIMIT 1", $level['name'] ) );
-			}
-			if ( $id > 0 ) {
-				$wpdb->update( $table, $row, array( 'id' => $id ) );
-			} elseif ( false !== $wpdb->insert( $table, $row ) ) {
-				$id = (int) $wpdb->insert_id;
-			}
-			if ( $id > 0 ) {
-				$ids[ $plan ] = $id;
-			}
-		}
-		if ( $ids !== $stored ) {
-			update_option( 'lld_pmpro_levels', $ids, false );
-		}
-		return $ids;
 	}
 
 	/**
@@ -376,11 +339,24 @@ class LLD_Members_Billing {
 	 */
 	public static function daily() {
 		self::settle_rewards();
+		self::rewards_to_stripe();
 		self::retry_window();
 		self::close_elapsed();
 		self::renewal_reminders();
 		self::mismatch_mail();
 		self::purge_notices();
+	}
+
+	/**
+	 * D2a: each member with a waiting reward is offered to the Stripe connection again, so a discount that could not be
+	 * attached, or that Stripe used up on a voided invoice, is put back before the next real invoice. No-op without Stripe.
+	 */
+	private static function rewards_to_stripe() {
+		global $wpdb;
+		$ids = $wpdb->get_col( 'SELECT DISTINCT recipient_member_id FROM ' . LLD_Members_Schema::table( 'reward' ) . " WHERE status = 'pending'" );
+		foreach ( (array) $ids as $id ) {
+			do_action( 'lld_members_reward_ready', (int) $id );
+		}
 	}
 
 	/**
@@ -404,6 +380,7 @@ class LLD_Members_Billing {
 		$main  .= '<article class="lld-card lld-plan" data-lld-plan="monthly"><p class="lld-plan-name">Monthly</p><p class="lld-plan-price">' . esc_html( self::money( $prices['monthly'], 'usd' ) . ' a month' ) . '</p><p class="lld-plan-tax">tax included</p>';
 		$main  .= '<p class="lld-plan-line">The same Premium content, month by month. Cancel in 3 clicks from My subscription.</p>';
 		$main  .= ( $premium ? '' : lld_button( array( 'label' => 'Choose monthly', 'href' => home_url( '/members/checkout/?plan=monthly' ), 'variant' => 'secondary' ) ) ) . '</article></div>';
+		$main  .= (string) apply_filters( 'lld_members_pricing_note', '', $prices );
 		$main  .= '<p class="lld-plan-intro">Week 1 of every track is free. Premium opens the rest.</p>';
 		$main  .= '<p data-lld-sale-terms><a href="' . esc_url( self::terms_of_sale_url() ) . '">Terms of sale</a>: price, plans, renewal, cancellation, refunds, discounts and referral rewards.</p>';
 		$main  .= self::pricing_features() . self::pricing_questions();
@@ -413,18 +390,20 @@ class LLD_Members_Billing {
 				'description' => 'Premium is ' . self::money( $prices['yearly'], 'usd' ) . ' a year or ' . self::money( $prices['monthly'], 'usd' ) . ' a month, tax included.',
 				'main'        => $main,
 				'wide'        => true,
+				'v2'          => true,
 			)
 		);
 	}
 
 	/**
-	 * SCR-01 item 2: what is free and what is Premium, as listed in Requirements section 3.
+	 * SCR-01 item 2: what is free and what is Premium, as listed in Requirements section 3. The members' Facebook group and
+	 * the live Q&A are deferred (owner, Stage 3; Owner_Questions 157), so Premium does not list them.
 	 */
 	private static function pricing_features() {
 		$columns = array(
 			'Free for everyone'    => array( 'Daily Protein Target calculator', 'Diabetes Risk Check and Healthy Weight Check', 'All public articles', 'A free starter guide for each track' ),
 			'Free with an account' => array( 'General wellbeing suggestions', 'Health goals (with health consent)', 'Your personal dashboard', 'Week 1 of each track, once per track', 'The food diary during week 1' ),
-			'Premium'              => array( 'Weeks 2 to 4 of every track', 'Weekly meal plans and shopping lists', 'A new challenge every month', 'Progressive workout plans', 'The food diary, ongoing', 'Weekly action plan and weekly review', 'Long-term progress, charts and milestones', 'The members\' Facebook group and a monthly live Q&A', 'Premium-only articles', 'Premium in the Lifeline Daily app when it launches (yearly members)' ),
+			'Premium'              => array( 'Weeks 2 to 4 of every track', 'Weekly meal plans and shopping lists', 'A new challenge every month', 'Progressive workout plans', 'The food diary, ongoing', 'Weekly action plan and weekly review', 'Long-term progress, charts and milestones', 'Premium-only articles', 'Premium in the Lifeline Daily app when it launches' ),
 		);
 		// Labels, not headings: the pricing page keeps its single heading (UI2-01 snapshot).
 		$html = '<section class="lld-card lld-pricing-features" data-lld-features aria-label="What you get"><p class="lld-section-title"><strong>What you get</strong></p><div class="lld-feature-columns">';
@@ -447,7 +426,7 @@ class LLD_Members_Billing {
 			'How do I cancel?'               => 'Cancel in 3 clicks from My subscription. Premium stays open to the end of the period you have paid for.',
 			'Can I get a refund?'            => 'Your first payment can be refunded within 14 days.',
 			'Which currency do I pay in?'    => 'Prices are shown in US dollars with tax included. Stripe\'s secure checkout shows the price in your own currency.',
-			'Is the app included?'           => 'Yes, for yearly members, when the Lifeline Daily app launches.',
+			'Is the app included?'           => 'Yes. Every member can use the Lifeline Daily app when it launches, with the same features as on the web for their plan.',
 		);
 		$html = '<section class="lld-card lld-faq" data-lld-pricing-faq aria-label="Questions and answers"><p class="lld-section-title"><strong>Questions and answers</strong></p>';
 		foreach ( $questions as $question => $answer ) {
@@ -1095,16 +1074,32 @@ class LLD_Members_Billing {
 		LLD_Members_Personal::require_page();
 		$member_id = LLD_Members_Access::current_member_id();
 		$posted    = 'POST' === ( $_SERVER['REQUEST_METHOD'] ?? '' );
-		$failed    = false;
-		$switching = (bool) apply_filters( 'lld_members_can_switch_yearly', true, $member_id );
+		$failed        = false;
+		$switch_failed = false;
+		$switching     = (bool) apply_filters( 'lld_members_can_switch_yearly', true, $member_id );
 		if ( $posted && isset( $_POST['lld_sub_nonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['lld_sub_nonce'] ) ), 'lld_sub' ) ) {
 			$action = isset( $_POST['lld_sub_action'] ) ? sanitize_key( wp_unslash( $_POST['lld_sub_action'] ) ) : '';
 			if ( 'cancel' === $action ) {
 				$failed = is_wp_error( self::cancel_at_period_end( $member_id ) );
-			} elseif ( 'switch' === $action && $switching ) {
-				self::queue_yearly( $member_id );
+			} elseif ( 'switch' === $action && $switching && self::queue_yearly( $member_id ) ) {
+				// A waiting reward now reduces the yearly payment, so it takes the yearly form (13 % off).
+				self::reward_forms( $member_id, 'percent_13' );
+				// With real Stripe the change is scheduled there too (D2a); if Stripe refuses, nothing is queued here.
+				$done = apply_filters( 'lld_members_stripe_switch', true, $member_id, 'yearly' );
+				if ( is_wp_error( $done ) ) {
+					self::save_sub( $member_id, array( 'pending_yearly_on' => null ) );
+					self::reward_forms( $member_id, 'month_free' );
+					$switch_failed = true;
+				}
 			} elseif ( 'undo' === $action ) {
-				self::save_sub( $member_id, array( 'pending_yearly_on' => null ) );
+				$done = apply_filters( 'lld_members_stripe_switch', true, $member_id, 'undo' );
+				if ( is_wp_error( $done ) ) {
+					$switch_failed = true;
+				} else {
+					self::save_sub( $member_id, array( 'pending_yearly_on' => null ) );
+					self::reward_forms( $member_id, 'month_free' );
+					do_action( 'lld_members_reward_ready', $member_id );
+				}
 			}
 			// Stage 3 actions on this page (P3-63 pause).
 			do_action( 'lld_members_subscription_post', $action, $member_id );
@@ -1116,9 +1111,19 @@ class LLD_Members_Billing {
 		if ( $failed ) {
 			$main .= '<div class="lld-fail" role="alert"><p>Your subscription was not cancelled. ' . esc_html( LLD_Members_Stripe::try_again_message() ) . '</p></div>';
 		}
-		if ( ! $sub || 'free' === strtolower( (string) $sub->access_state ) ) {
+		if ( $switch_failed ) {
+			$main .= '<div class="lld-fail" role="alert"><p>Your plan was not changed. ' . esc_html( LLD_Members_Stripe::try_again_message() ) . '</p></div>';
+		}
+		// P3-36 A1 (TC-FR3-64-AS-04): free Premium given by the Owner reads as Premium, with its end date and no offer to buy.
+		$status = LLD_Members_Access::premium_status( $member_id );
+		if ( 'grant' === $status['source'] ) {
+			// The Stage 3 membership card already says it, with the end date; say it once.
+			if ( ! ( class_exists( 'LLD_Members_Features' ) && LLD_Members_Features::enabled( 'membership_card', $member_id ) ) ) {
+				$main .= '<p data-lld-premium-source="grant">' . esc_html( LLD_Members_Access::grant_line( $status ) ) . '</p>';
+			}
+		} elseif ( ! $sub || 'free' === strtolower( (string) $sub->access_state ) ) {
 			$main .= '<p>Your membership is Free.</p>';
-			$main .= '<p><a href="' . esc_url( home_url( '/pricing/' ) ) . '">See pricing</a></p>';
+			$main .= '<p class="lld-pill-actions"><a href="' . esc_url( home_url( '/pricing/' ) ) . '">See pricing</a></p>';
 		} else {
 			$main .= '<p>Plan: ' . esc_html( ucfirst( (string) $sub->plan ) ) . '</p>';
 			$main .= '<p>Your membership is ' . esc_html( (string) $sub->access_state ) . '.</p>';
@@ -1134,9 +1139,8 @@ class LLD_Members_Billing {
 			if ( 'past_due' === (string) $sub->stripe_state ) {
 				$main .= '<p>Update your card</p>';
 			}
-			$app = ( 'yearly' === (string) $sub->plan && self::paid_open( $member_id ) ) ? 'included' : 'not included';
-			// The Stage 3 app entitlement (FR2-13), in members' words.
-			$main .= '<p data-lld-app="' . esc_attr( $app ) . '">' . esc_html( 'included' === $app ? 'The Lifeline Daily app is included with your yearly plan when it launches.' : 'The Lifeline Daily app, when it launches, is included with yearly plans.' ) . '</p>';
+			// The app entitlement (FR2-13, FR4-11; owner, 8 Nov 2026): web and app for every member, features by plan.
+			$main .= '<p data-lld-app="included">The Lifeline Daily app is included with your membership when it launches.</p>';
 			$next = self::next_charge( $member_id );
 			$main .= '<p data-lld-next="' . (int) $next['charged'] . '" data-lld-next-currency="' . esc_attr( $next['currency'] ) . '">Next payment ' . esc_html( self::money( $next['charged'], $next['currency'] ) ) . '</p>';
 			if ( $sub->pending_yearly_on ) {
@@ -1151,14 +1155,15 @@ class LLD_Members_Billing {
 		$main .= '<button type="button" class="lld-button lld-button-secondary" data-lld-share="' . esc_attr( $link ) . '" hidden>Share referral link</button></p>';
 		$main .= '<form method="post" id="lld-plan-actions">';
 		$main .= wp_nonce_field( 'lld_sub', 'lld_sub_nonce', true, false );
-		if ( $switching && $sub && 'monthly' === (string) $sub->plan && self::paid_open( $member_id ) && ! $sub->pending_yearly_on ) {
+		if ( 'grant' !== $status['source'] && $switching && $sub && 'monthly' === (string) $sub->plan && self::paid_open( $member_id ) && ! $sub->pending_yearly_on ) {
 			$main .= '<button class="lld-button" type="submit" name="lld_sub_action" value="switch">Switch to yearly</button> ';
 		}
 		if ( $sub && $sub->pending_yearly_on ) {
 			$main .= '<button class="lld-button" type="submit" name="lld_sub_action" value="undo">Undo</button> ';
 		}
 		// paid_state: a paused member can still cancel.
-		if ( self::paid_state( $member_id ) && ( ! $sub || 'cancelled' !== strtolower( (string) $sub->access_state ) ) ) {
+		// A grant has no payment to cancel (P3-36 A1): the Owner removes it.
+		if ( 'grant' !== $status['source'] && self::paid_state( $member_id ) && ( ! $sub || 'cancelled' !== strtolower( (string) $sub->access_state ) ) ) {
 			$confirm = isset( $_GET['confirm'] );
 			if ( ! $confirm ) {
 				$main .= '<p><a href="' . esc_url( home_url( '/members/subscription/?confirm=1' ) ) . '">Cancel</a></p>';
@@ -1395,7 +1400,6 @@ class LLD_Members_Billing {
 			delete_option( 'lld_reward_stop' );
 			delete_option( 'lld_notice_fail' );
 			delete_option( 'lld_members_stripe_unreachable' );
-			self::sync_pmpro_levels();
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
 		}
 		if ( 'launch' === $action && ! empty( $params['on'] ) ) {
@@ -1426,17 +1430,9 @@ class LLD_Members_Billing {
 		if ( 'codes' === $action ) {
 			return new WP_REST_Response( array( 'codes' => self::codes() ), 200 );
 		}
-		if ( 'pmpro_levels' === $action ) {
-			global $wpdb;
+		if ( 'plans' === $action ) {
 			LLD_Members_Billing::db_update();
-			$ids   = self::sync_pmpro_levels();
-			$table = $wpdb->prefix . 'pmpro_membership_levels';
-			$rows  = array();
-			foreach ( $ids as $plan => $id ) {
-				$rows[ $plan ] = $wpdb->get_row( $wpdb->prepare( "SELECT id, name, initial_payment, billing_amount, cycle_number, cycle_period, allow_signups FROM {$table} WHERE id = %d", $id ), ARRAY_A );
-			}
-			$named = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE name IN (%s, %s)", self::PMPRO_LEVELS['yearly']['name'], self::PMPRO_LEVELS['monthly']['name'] ) );
-			return new WP_REST_Response( array( 'levels' => $rows, 'named' => $named ), 200 );
+			return new WP_REST_Response( array( 'plans' => self::plans() ), 200 );
 		}
 		if ( 'admin_log' === $action ) {
 			global $wpdb;
@@ -1550,17 +1546,19 @@ class LLD_Members_Billing {
 		if ( self::live_keys_refused() ) {
 			echo '<div class="notice notice-error"><p>A live Stripe key is set outside production. Checkout is switched off until it is replaced with a test key.</p></div>';
 		}
-		echo '<form method="post">';
+		// P3-36 A3: field classes (stage3-account.css) so each box shows its border and fill, with its label above and
+		// "US$" before the prices. Names, values, rules and wording are unchanged.
+		echo '<form method="post" class="lld-pay-form">';
 		wp_nonce_field( 'lld_pay', 'lld_pay_nonce' );
-		echo '<p><label>Terms of sale address <input name="lld_sale_path" value="' . esc_attr( self::sale_terms_setting()['path'] ) . '"></label>';
-		echo ' <label>Terms of sale version <input name="lld_sale_version" value="' . esc_attr( self::sale_terms_setting()['version'] ) . '"></label></p>';
-		echo '<p><label>Monthly price US$ <input name="lld_monthly" value="' . esc_attr( number_format( $prices['monthly'] / 100, 2, '.', '' ) ) . '"></label></p>';
-		echo '<p><label>Yearly price US$ <input name="lld_yearly" value="' . esc_attr( number_format( $prices['yearly'] / 100, 2, '.', '' ) ) . '"></label></p>';
-		echo '<p><label>New code <input name="lld_new_code"></label> <label>Percent off the first payment <input name="lld_percent" value="50"></label></p>';
-		echo '<p><label>Applies to <select name="lld_code_plans"><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="both">Monthly and yearly</option></select></label>';
-		echo ' <label>Valid from <input type="date" name="lld_valid_from" value="' . esc_attr( gmdate( 'Y-m-d' ) ) . '"></label>';
-		echo ' <label>Valid to <input type="date" name="lld_valid_to" value="' . esc_attr( gmdate( 'Y-m-d', time() + 30 * DAY_IN_SECONDS ) ) . '"></label></p>';
-		echo '<p><label><input type="checkbox" name="lld_confirm_free" value="1"> I confirm a price of 0 or a 100 % code</label></p>';
+		echo '<p class="lld-pay-row"><label class="lld-pay-field"><span class="lld-pay-label">Terms of sale address</span> <input type="text" class="lld-pay-input" name="lld_sale_path" value="' . esc_attr( self::sale_terms_setting()['path'] ) . '"></label>';
+		echo ' <label class="lld-pay-field"><span class="lld-pay-label">Terms of sale version</span> <input type="text" class="lld-pay-input" name="lld_sale_version" value="' . esc_attr( self::sale_terms_setting()['version'] ) . '"></label></p>';
+		echo '<p class="lld-pay-row"><label class="lld-pay-field"><span class="lld-pay-label">Monthly price</span> <span class="lld-pay-affix"><span class="lld-pay-prefix">US$</span> <input type="text" class="lld-pay-input" inputmode="decimal" name="lld_monthly" value="' . esc_attr( number_format( $prices['monthly'] / 100, 2, '.', '' ) ) . '"></span></label></p>';
+		echo '<p class="lld-pay-row"><label class="lld-pay-field"><span class="lld-pay-label">Yearly price</span> <span class="lld-pay-affix"><span class="lld-pay-prefix">US$</span> <input type="text" class="lld-pay-input" inputmode="decimal" name="lld_yearly" value="' . esc_attr( number_format( $prices['yearly'] / 100, 2, '.', '' ) ) . '"></span></label></p>';
+		echo '<p class="lld-pay-row"><label class="lld-pay-field"><span class="lld-pay-label">New code</span> <input type="text" class="lld-pay-input" name="lld_new_code"></label> <label class="lld-pay-field"><span class="lld-pay-label">Percent off the first payment</span> <input type="text" class="lld-pay-input" inputmode="numeric" name="lld_percent" value="50"></label></p>';
+		echo '<p class="lld-pay-row"><label class="lld-pay-field"><span class="lld-pay-label">Applies to</span> <select class="lld-pay-input" name="lld_code_plans"><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="both">Monthly and yearly</option></select></label>';
+		echo ' <label class="lld-pay-field"><span class="lld-pay-label">Valid from</span> <input type="date" class="lld-pay-input" name="lld_valid_from" value="' . esc_attr( gmdate( 'Y-m-d' ) ) . '"></label>';
+		echo ' <label class="lld-pay-field"><span class="lld-pay-label">Valid to</span> <input type="date" class="lld-pay-input" name="lld_valid_to" value="' . esc_attr( gmdate( 'Y-m-d', time() + 30 * DAY_IN_SECONDS ) ) . '"></label></p>';
+		echo '<p><label class="lld-check lld-pay-check"><input type="checkbox" name="lld_confirm_free" value="1"> <span>I confirm a price of 0 or a 100 % code</span></label></p>';
 		echo '<p><button class="button button-primary">Save prices</button></p></form>';
 		echo '<h2>Discount codes</h2><table class="widefat" data-lld-codes><thead><tr><th>Code</th><th>Percent off</th><th>Plans</th><th>Valid from</th><th>Valid to</th><th>Times used</th></tr></thead><tbody>';
 		foreach ( self::codes() as $row ) {
@@ -1845,7 +1843,7 @@ class LLD_Members_Billing {
 		LLD_Members_Programme::premium_restored( $member_id );
 		self::remember_card( $member_id, $fingerprint );
 		self::note_referral( $member_id, isset( $stored['ref'] ) ? (string) $stored['ref'] : '', $email, $fingerprint );
-		self::mail_member( $member_id, 'Your receipt', 'Your receipt. Amount ' . self::money( (int) $quote['charged'], (string) $quote['currency'] ) . ', tax included. Date ' . $today . '.' );
+		self::receipt_mail( $member_id, self::money( (int) $quote['charged'], (string) $quote['currency'] ), $today );
 		if ( self::cancel_was_held( $stripe ) ) {
 			// The subscription ended before its payment notice arrived: T4 maps that to Premium ended.
 			do_action( 'lld_members_event', 'cancelled', $member_id, array() );
@@ -1879,7 +1877,7 @@ class LLD_Members_Billing {
 			'plan'     => $plan,
 			'country'  => 'gbp' === $next['currency'] ? 'GB' : ( 'eur' === $next['currency'] ? 'DE' : 'US' ),
 			'currency' => $next['currency'],
-			'base'     => (int) $row->locked_amount,
+			'base'     => (int) $next['base'],
 			'charged'  => $amount,
 			'tax'      => self::tax_inside( $amount, 'gbp' === $next['currency'] ? 'GB' : ( 'eur' === $next['currency'] ? 'DE' : 'US' ) ),
 			'code'     => '',
@@ -1899,20 +1897,23 @@ class LLD_Members_Billing {
 		if ( ! empty( $next['reward_id'] ) ) {
 			self::consume_reward( (int) $next['reward_id'], $order_id );
 		}
-		self::save_sub(
-			$member_id,
-			array(
-				'plan'              => $plan,
-				'access_state'      => 'Premium',
-				'stripe_state'      => 'active',
-				'period_ends_on'    => self::add_period( $today, $plan ),
-				'pending_yearly_on' => null,
-			)
+		$fields = array(
+			'plan'              => $plan,
+			'access_state'      => 'Premium',
+			'stripe_state'      => 'active',
+			'period_ends_on'    => self::add_period( $today, $plan ),
+			'pending_yearly_on' => null,
 		);
+		if ( 'yearly' === $plan && 'yearly' !== (string) $row->plan && 'usd' === (string) $next['currency'] ) {
+			$fields['locked_amount'] = (int) $next['base'];   // the price lock now holds the yearly price
+		}
+		self::save_sub( $member_id, $fields );
+		// A further waiting reward goes onto the next real Stripe invoice (D2a).
+		do_action( 'lld_members_reward_ready', $member_id );
 		do_action( 'lld_members_event', 'renewed', $member_id, array( 'switched' => 'yearly' === $plan && 'yearly' !== (string) $row->plan ) );
 		LLD_Members_Programme::premium_restored( $member_id );
 		self::clear_retry( $member_id );
-		self::mail_member( $member_id, 'Your receipt', 'Your receipt. Amount ' . self::money( $amount, $next['currency'] ) . ', tax included. Date ' . $today . '.' );
+		self::receipt_mail( $member_id, self::money( $amount, $next['currency'] ), $today );
 	}
 
 	/**
@@ -1977,11 +1978,29 @@ class LLD_Members_Billing {
 			)
 		);
 		self::close_week( $member_id, $as_of );
+		self::lapse_rewards( $member_id );
 		if ( class_exists( 'LLD_Members_Premium' ) ) {
 			LLD_Members_Premium::note_ended( $member_id, $as_of );
 		}
 		if ( 'failed' === $why ) {
 			self::mail_member( $member_id, 'Premium has ended', 'Premium has ended after a failed payment. The rest of your current track week stays open.' );
+		}
+	}
+
+	/**
+	 * Owner, 8 Nov 2026 (Terms of Sale 12): a reward still waiting when Premium ends is lost. Logged for the owner.
+	 *
+	 * @param int $member_id Member number.
+	 */
+	private static function lapse_rewards( $member_id ) {
+		global $wpdb;
+		$table   = LLD_Members_Schema::table( 'reward' );
+		$pending = $wpdb->get_results( $wpdb->prepare( "SELECT id, form FROM {$table} WHERE recipient_member_id = %d AND status = 'pending'", (int) $member_id ) );
+		foreach ( (array) $pending as $reward ) {
+			$done = $wpdb->query( $wpdb->prepare( "UPDATE {$table} SET status = 'withdrawn', withdrawn_on = %s, withdrawn_why = %s WHERE id = %d AND status = 'pending'", lld_members_now_mysql(), 'premium_ended', (int) $reward->id ) );
+			if ( 1 === $done ) {
+				self::admin_log( 'reward_withdrawn', (int) $member_id, 'Reward ' . (int) $reward->id . ' (' . (string) $reward->form . ') lost: Premium ended before it was used.' );
+			}
 		}
 	}
 
@@ -2001,8 +2020,9 @@ class LLD_Members_Billing {
 		self::save_sub(
 			$member_id,
 			array(
-				'access_state' => 'cancelled',
-				'stripe_state' => 'cancel_at_period_end',
+				'access_state'      => 'cancelled',
+				'stripe_state'      => 'cancel_at_period_end',
+				'pending_yearly_on' => null,   // a queued switch to yearly ends with the cancellation
 			)
 		);
 		return true;
@@ -2014,9 +2034,22 @@ class LLD_Members_Billing {
 	private static function queue_yearly( $member_id ) {
 		$sub = self::subscription_row( $member_id );
 		if ( ! $sub || 'monthly' !== (string) $sub->plan || ! $sub->period_ends_on ) {
-			return;
+			return false;
 		}
 		self::save_sub( $member_id, array( 'pending_yearly_on' => (string) $sub->period_ends_on ) );
+		return true;
+	}
+
+	/**
+	 * A member's waiting rewards take the form of the payment they will reduce: one month free on a monthly payment,
+	 * 13 % off a yearly one (D2a: a switch to yearly, or its undo, changes which payment comes next).
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $form      month_free or percent_13.
+	 */
+	private static function reward_forms( $member_id, $form ) {
+		global $wpdb;
+		$wpdb->query( $wpdb->prepare( 'UPDATE ' . LLD_Members_Schema::table( 'reward' ) . " SET form = %s WHERE recipient_member_id = %d AND status = 'pending'", 'percent_13' === $form ? 'percent_13' : 'month_free', (int) $member_id ) );
 	}
 
 	/**
@@ -2177,7 +2210,20 @@ class LLD_Members_Billing {
 			return false;
 		}
 		self::insert_reward( $referral_id, $friend, 'friend-' . $referral_id );
+		// With real Stripe, each waiting reward is put on the member's next invoice (D2a).
+		do_action( 'lld_members_reward_ready', $referrer );
+		do_action( 'lld_members_reward_ready', $friend );
 		return true;
+	}
+
+	/**
+	 * The next charge the site expects for this member (amount, currency, reward and base), for the Stripe connection.
+	 *
+	 * @param int $member_id Member number.
+	 * @return array<string,mixed>
+	 */
+	public static function next_charge_for( $member_id ) {
+		return self::next_charge( (int) $member_id );
 	}
 
 	/**
@@ -2188,7 +2234,7 @@ class LLD_Members_Billing {
 	private static function insert_reward( $referral_id, $member_id, $key ) {
 		global $wpdb;
 		$sub  = self::subscription_row( $member_id );
-		$form = ( $sub && 'yearly' === (string) $sub->plan ) ? 'percent_13' : 'month_free';
+		$form = ( $sub && ( 'yearly' === (string) $sub->plan || ! empty( $sub->pending_yearly_on ) ) ) ? 'percent_13' : 'month_free';
 		$wpdb->suppress_errors( true );
 		$wpdb->insert(
 			LLD_Members_Schema::table( 'reward' ),
@@ -2201,6 +2247,9 @@ class LLD_Members_Billing {
 			)
 		);
 		$wpdb->suppress_errors( false );
+		if ( $sub && in_array( (string) $sub->access_state, array( 'Premium ended', 'Refunded' ), true ) ) {
+			self::lapse_rewards( $member_id );   // owner, 8 Nov 2026: a reward is lost once Premium has ended
+		}
 	}
 
 	/**
@@ -2343,6 +2392,38 @@ class LLD_Members_Billing {
 	}
 
 	/**
+	 * The Owner ends a member's Premium from the admin panel (P3-87, FR3-81): at the end of the paid period (Stripe
+	 * cancels then, the member keeps Premium until that date) or now (Stripe cancels now, Premium stops at once).
+	 * Refunds stay in Stripe. The same Stage 2 steps as the member's own cancellation and an ended subscription.
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $when      period_end or now.
+	 * @return true|WP_Error
+	 */
+	public static function admin_end_membership( $member_id, $when ) {
+		$member_id = (int) $member_id;
+		$sub       = self::subscription_row( $member_id );
+		if ( ! $sub || ! self::paid_state( $member_id ) ) {
+			return new WP_Error( 'lld_admin_end', 'This member has no Premium membership to end.' );
+		}
+		if ( 'period_end' === $when ) {
+			return self::cancel_at_period_end( $member_id );
+		}
+		if ( 'now' !== $when ) {
+			return new WP_Error( 'lld_admin_end', 'Choose when the membership ends.' );
+		}
+		$ref = (string) $sub->stripe_subscription;
+		if ( '' !== $ref ) {
+			$asked = apply_filters( 'lld_members_stripe_cancel_member', null, $member_id, $ref );
+			if ( is_wp_error( $asked ) ) {
+				return $asked;
+			}
+		}
+		self::end_premium( $member_id, 'expired', LLD_Members_Programme::local_today( $member_id ) );
+		return true;
+	}
+
+	/**
 	 * The Stage 2 subscription row, for Stage 3 (P3-62, P3-63).
 	 *
 	 * @param int $member_id Member number.
@@ -2401,7 +2482,6 @@ class LLD_Members_Billing {
 			}
 		}
 		if ( $changes ) {
-			self::sync_pmpro_levels();
 			self::admin_log( 'price_change', 0, implode( '; ', $changes ) . ( $confirmed && ( 0 === $monthly || 0 === $yearly ) ? ' (price of 0 confirmed)' : '' ) );
 		}
 		if ( ! $new ) {
@@ -2744,6 +2824,11 @@ class LLD_Members_Billing {
 		$prices   = self::prices();
 		$currency = ( $sub && $sub->locked_currency ) ? (string) $sub->locked_currency : 'usd';
 		$base     = ( $sub && $sub->locked_amount ) ? (int) $sub->locked_amount : ( 'yearly' === $plan ? (int) $prices['yearly'] : (int) $prices['monthly'] );
+		// A queued switch to yearly that is due (owner, 8 Nov 2026, D2a): the renewal is charged the yearly price, which
+		// is what Stripe's schedule charges; until now the monthly price was expected and a real invoice would not match.
+		if ( $sub && 'monthly' === $plan && ! empty( $sub->pending_yearly_on ) && 'usd' === $currency && (string) $sub->pending_yearly_on <= LLD_Members_Programme::local_today( $member_id ) ) {
+			$base = (int) $prices['yearly'];
+		}
 		$reward   = self::pending_reward( $member_id );
 		$charged  = $base;
 		$reward_id = 0;
@@ -2755,6 +2840,7 @@ class LLD_Members_Billing {
 			'charged'   => $charged,
 			'currency'  => $currency,
 			'reward_id' => $reward_id,
+			'base'      => $base,
 		);
 	}
 
@@ -3245,6 +3331,27 @@ class LLD_Members_Billing {
 	}
 
 	/**
+	 * The email after each payment. Stage 3 changes it when Onelink sends the receipt (FR3-62, Managed Payments).
+	 *
+	 * @param int    $member_id Member number.
+	 * @param string $amount    Amount charged, formatted.
+	 * @param string $today     Date Y-m-d.
+	 */
+	private static function receipt_mail( $member_id, $amount, $today ) {
+		$mail = apply_filters(
+			'lld_members_receipt_mail',
+			array(
+				'subject' => 'Your receipt',
+				'body'    => 'Your receipt. Amount ' . $amount . ', tax included. Date ' . $today . '.',
+			),
+			$member_id,
+			$amount,
+			$today
+		);
+		self::mail_member( $member_id, (string) $mail['subject'], (string) $mail['body'] );
+	}
+
+	/**
 	 * @param int    $member_id Member number.
 	 * @param string $subject   Subject.
 	 * @param string $body      Plain text with no health details.
@@ -3297,7 +3404,7 @@ class LLD_Members_Billing {
 			'rewards'      => $wpdb->get_results( $wpdb->prepare( 'SELECT id, form, status, operation_key FROM ' . LLD_Members_Schema::table( 'reward' ) . ' WHERE recipient_member_id = %d ORDER BY id ASC', $member_id ), ARRAY_A ),
 			'referrals'    => $wpdb->get_results( $wpdb->prepare( 'SELECT id, status, self_referral, friend_member_id FROM ' . LLD_Members_Schema::table( 'referral' ) . ' WHERE referrer_member_id = %d OR friend_member_id = %d ORDER BY id ASC', $member_id, $member_id ), ARRAY_A ),
 			'next'         => $member_id ? self::next_charge( $member_id ) : array(),
-			'app'          => ( $sub && 'yearly' === (string) $sub->plan && self::paid_open( $member_id ) ) ? 'included' : 'not included',
+			'app'          => 'included', // every member (FR4-11; owner, 8 Nov 2026)
 			'sale_consent' => $wpdb->get_results( $wpdb->prepare( 'SELECT consent_type, change_kind, document_version, occurred_at FROM ' . LLD_Members_Schema::table( 'consent' ) . " WHERE member_id = %d AND consent_type = 'sale' ORDER BY id ASC", $member_id ), ARRAY_A ),
 		);
 	}

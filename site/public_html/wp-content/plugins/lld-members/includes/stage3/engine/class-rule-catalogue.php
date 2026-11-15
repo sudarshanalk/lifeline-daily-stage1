@@ -46,7 +46,7 @@ class LLD_Members_Rule_Catalogue {
 		'rule.R-STEP-02'            => 'Weigh-in day. Same time, same scales, before breakfast gives the steadiest trend. [Log my weight]',
 		'rule.R-STEP-03'            => 'Your weekly check-in is ready: 2 minutes to see how the week went and keep the plan right for you. [Start check-in]',
 		'rule.R-STEP-04'            => "You're at **{done}** of **{target}** minutes this week. A **{suggest}**-minute brisk walk today keeps you on track. [Done] [Skip]",
-		'rule.R-STEP-05'            => 'Welcome back. One quick log today, water, a meal or your mood, keeps your week going. [Log something]',
+		'rule.R-STEP-05'            => 'Welcome back. One quick log today, water, a meal or your mood, keeps your week going. [Open the diary]',
 		'rule.R-ADJ-01'             => "Your trend shows you'd reach **{goal} kg** around **{projected}** rather than **{target}**. That's normal: bodies don't lose weight in a straight line. Would you like to move your date to **{new_date}**, keep the plan as it is, or try a different meal plan this week?",
 		'rule.R-ADJ-02'             => 'Your weight has held steady at about **{weight} kg** for three weeks. Plateaus are normal and usually pass. This week, logging every meal and drink often shows where a few extra calories hide. Try that, or swap to a different meal plan?',
 		'rule.R-ADJ-03'             => "You're losing weight faster than the safe rate of about **{cap} kg** a week. We've raised your daily target to **{kcal} kcal** so your body keeps muscle and energy. If you're not trying to lose this fast, or feel unwell, please see your doctor.",
@@ -151,17 +151,25 @@ class LLD_Members_Rule_Catalogue {
 	 * Fill a template's gaps. Only the named gaps are replaced, only with numbers, dates or the plain goal text the
 	 * engine computed; every other character of the template stays (FR3-17 AS-04, NFR3-17 AS-02).
 	 *
+	 * P3-36 A4: a stored insight row's values column holds {"values": {...}, "text", "notes": [...], "template"}, and
+	 * the goal journey passes that whole object here. Its gaps are then read from the inner "values"; a list-valued
+	 * field (notes, offers, the inner values themselves) is never a gap's value, so it is left out instead of
+	 * printing "Array" with an "Array to string conversion" warning.
+	 *
 	 * @param string              $template Template key.
-	 * @param array<string,mixed> $values   Gap name => value.
+	 * @param array<string,mixed> $values   Gap name => value, or a stored insight row's values.
 	 * @return string|null Null for an unknown template.
 	 */
 	public static function fill( $template, array $values ) {
 		if ( ! isset( self::TEMPLATES[ $template ] ) ) {
 			return null;
 		}
+		if ( isset( $values['values'] ) && is_array( $values['values'] ) ) {
+			$values = $values['values'];
+		}
 		$text = self::TEMPLATES[ $template ];
 		foreach ( $values as $gap => $value ) {
-			if ( ! preg_match( '/^[a-z_]+$/', (string) $gap ) ) {
+			if ( ! preg_match( '/^[a-z_]+$/', (string) $gap ) || ! ( is_scalar( $value ) || null === $value ) ) {
 				continue;
 			}
 			$text = str_replace( '{' . $gap . '}', self::plain( $value ), $text );

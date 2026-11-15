@@ -114,6 +114,7 @@ class LLD_Members_Metabolic {
 		'lifestyle.waist'                  => 'Losing 5 to 10 % of body weight reduces waist and improves every other result',
 		'stops.pregnancy'                  => "Waist, blood fats and glucose all change during pregnancy and breastfeeding, so this check isn't suitable. Your midwife or doctor can advise.",
 		'flags.glucoseDiagnostic'          => 'A fasting glucose of 11.1 or more is in the range doctors use to diagnose diabetes. Please see your doctor soon to have it confirmed.',
+		'flags.glucoseDiagnosticNonFasting' => "A glucose of 11.1 or more, even when you haven't fasted, is in the range doctors use to diagnose diabetes. Please see your doctor soon to have it checked.", // CW-23 (Owner_Questions 104)
 		'flags.glucoseLow'                 => "That's a low fasting glucose. If you take diabetes medicine, talk to your doctor; if you had symptoms (shaky, sweaty, confused), see your doctor.",
 		'flags.triglyceridesHigh'          => 'Very high triglycerides need medical review soon: please contact your doctor.',
 		'notes.diabetes'                   => 'With diabetes, your diabetes team already monitors these results.',
@@ -367,8 +368,7 @@ class LLD_Members_Metabolic {
 
 		// The check's own flags and notes (sheet section 4), after the urgent levels above. A non-fasting glucose of
 		// 11.1 (200) or more gets its own diagnostic-range line, since 11.1 is the random-glucose level too
-		// (Owner_Questions 101, decided 4 Nov 2026); its wording, CW-23 (Owner_Questions 104), waits for the owner, so it maps to no text
-		// until then. The low line stays about a fasting result.
+		// (Owner_Questions 101, decided 4 Nov 2026), with its own wording, CW-23 (Owner_Questions 104). The low line stays about a fasting result.
 		if ( null !== $fpg['value'] && ! $fasting && null === $out['glucoseUrgent'] && $fpg['value'] >= self::FLAG_LEVELS['glucose_diagnostic'][ $fpg['unit'] ] ) {
 			$flags[] = 'flags.glucoseDiagnosticNonFasting';
 		}

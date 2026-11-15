@@ -27,6 +27,9 @@ class LLD_Members_Food_Log {
 
 	const EARLIER_LABEL = 'Earlier diary entry, nutrition unknown';
 
+	/** The signed over-target sentence (safety matrix 'food-tracker.over-target'; TC-FR3-29-AS-03). {n} is the kcal over. */
+	const OVER_NOTE = '{n} kcal over today';
+
 	/**
 	 * Premium is the access state stored for the membership. "Premium ended" is not Premium.
 	 *
@@ -306,7 +309,7 @@ class LLD_Members_Food_Log {
 				}
 			}
 		}
-		$note = isset( $over['kcal'] ) && $over['kcal'] > 0 ? 'Over by ' . self::format_amount( $over['kcal'] ) . ' kcal today.' : null;
+		$note = isset( $over['kcal'] ) && $over['kcal'] > 0 ? self::over_note( $over['kcal'] ) : null;
 		return array(
 			'date'      => $date,
 			'locked'    => false,
@@ -700,7 +703,7 @@ class LLD_Members_Food_Log {
 			if ( ! self::history_open( $date, $today, $premium ) ) {
 				return self::locked_day( $date );
 			}
-			$rows    = self::rows_for( 'food_log', $member_id );
+			$rows    = self::named( $member_id, self::rows_for( 'food_log', $member_id ), $date );
 			$targets = self::rows_for( 'nutrition_targets', $member_id );
 			$day     = self::day( $rows, $date, self::target_for_day( $targets, $date ) );
 			$earlier = self::earlier_stored( $member_id, $date );
@@ -710,10 +713,65 @@ class LLD_Members_Food_Log {
 			return array( 'foods' => self::search_member( $member_id, $query['q'] ?? '' ) );
 		}
 		if ( 'recent' === $which ) {
-			$rows = self::limit_history( self::rows_for( 'food_log', $member_id ), self::premium( $member_id ), gmdate( 'Y-m-d' ) );
+			$rows = self::named( $member_id, self::limit_history( self::rows_for( 'food_log', $member_id ), self::premium( $member_id ), gmdate( 'Y-m-d' ) ) );
 			return array( 'foods' => self::recent( $rows ) );
 		}
 		return array( 'error' => 'Not available.' );
+	}
+
+	/**
+	 * Each log row with the name of its food, so a day and the Recent list can be read (P3-36 B1). The log stores
+	 * the food's number, not its name: the name is looked up in the food table, the member's own foods (a deleted
+	 * one keeps its name on past entries, FR3-30 AS-03) or the member's recipes. Nothing is stored.
+	 *
+	 * @param int                            $member_id Member number.
+	 * @param array<int,array<string,mixed>> $rows      Log rows.
+	 * @param string|null                    $date      Only name the rows of this day (the others are returned as they are).
+	 * @return array<int,array<string,mixed>>
+	 */
+	public static function named( $member_id, array $rows, $date = null ) {
+		global $wpdb;
+		if ( ! isset( $wpdb ) || ! is_object( $wpdb ) || ! class_exists( 'LLD_Members_Stage3_Schema' ) ) {
+			return $rows;
+		}
+		$ids = array( 'food' => array(), 'custom' => array(), 'recipe' => array() );
+		foreach ( $rows as $row ) {
+			if ( ! is_array( $row ) || ! empty( $row['deleted_at'] ) || ( null !== $date && ( $row['entry_date'] ?? '' ) !== $date ) ) {
+				continue;
+			}
+			$kind = (string) ( $row['food_kind'] ?? 'food' );
+			$id   = (int) ( $row['food_id'] ?? 0 );
+			if ( isset( $ids[ $kind ] ) && $id > 0 ) {
+				$ids[ $kind ][ $id ] = $id;
+			}
+		}
+		$names  = array();
+		$tables = array( 'food' => 'foods', 'custom' => 'custom_foods', 'recipe' => 'recipes' );
+		foreach ( $ids as $kind => $list ) {
+			if ( ! $list ) {
+				continue;
+			}
+			$table = LLD_Members_Stage3_Schema::table( $tables[ $kind ] );
+			$in    = implode( ',', array_map( 'intval', array_slice( array_values( $list ), 0, 500 ) ) );
+			// phpcs:disable WordPress.DB.PreparedSQL.InterpolatedNotPrepared, WordPress.DB.PreparedSQL.NotPrepared -- table name is internal; the ids are integers.
+			$found = 'food' === $kind
+				? $wpdb->get_results( "SELECT id, name FROM {$table} WHERE id IN ({$in})", ARRAY_A )
+				: $wpdb->get_results( $wpdb->prepare( "SELECT id, name FROM {$table} WHERE member_id = %d AND id IN ({$in})", (int) $member_id ), ARRAY_A );
+			// phpcs:enable
+			foreach ( is_array( $found ) ? $found : array() as $hit ) {
+				$names[ $kind . ':' . (int) $hit['id'] ] = (string) $hit['name'];
+			}
+		}
+		foreach ( $rows as $i => $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$key = (string) ( $row['food_kind'] ?? 'food' ) . ':' . (int) ( $row['food_id'] ?? 0 );
+			if ( isset( $names[ $key ] ) ) {
+				$rows[ $i ]['name'] = $names[ $key ];
+			}
+		}
+		return $rows;
 	}
 
 	/**
@@ -784,6 +842,15 @@ class LLD_Members_Food_Log {
 	 */
 	private static function round_nutrient( $value, $key ) {
 		return round( (float) $value, 'kcal' === $key ? 1 : 2 );
+	}
+
+	/**
+	 * The signed over-target sentence for this many kcal over (OVER_NOTE).
+	 *
+	 * @param float|int $kcal Amount over.
+	 */
+	public static function over_note( $kcal ) {
+		return str_replace( '{n}', self::format_amount( $kcal ), self::OVER_NOTE );
 	}
 
 	/**

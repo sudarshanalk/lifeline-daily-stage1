@@ -45,6 +45,41 @@ class LLD_Members_Membership {
 		add_filter( 'lld_members_price_option', array( __CLASS__, 'price_option' ) );
 		add_filter( 'lld_members_default_prices', array( __CLASS__, 'default_prices' ) );
 		add_filter( 'lld_members_subscription_top', array( __CLASS__, 'subscription_top' ), 10, 3 );
+		add_filter( 'lld_members_pricing_note', array( __CLASS__, 'pricing_note' ) );
+		add_filter( 'lld_members_receipt_mail', array( __CLASS__, 'receipt_mail' ), 10, 4 );
+	}
+
+	/** TC-FR3-62-AS-05 (Owner question 70a): Stripe may show a converted amount carrying its conversion fee. */
+	const CURRENCY_NOTE = 'Prices in US$; your bank or Stripe may convert.';
+
+	/**
+	 * Filter: the line under the plans on the pricing page.
+	 *
+	 * @param string $html Earlier content.
+	 */
+	public static function pricing_note( $html ) {
+		return self::launch_on() ? $html . '<p class="lld-plan-currency" data-lld-currency-note>' . esc_html( self::CURRENCY_NOTE ) . '</p>' : $html;
+	}
+
+	/**
+	 * Filter: with Stripe Managed Payments, Onelink sends the receipt, so the site's email confirms the payment and
+	 * says where the receipt comes from, without calling itself a receipt (TC-FR3-62-AS-06, Owner question 70b).
+	 *
+	 * @param array{subject:string,body:string} $mail      Stage 2 email.
+	 * @param int                               $member_id Member number.
+	 * @param string                            $amount    Amount charged, formatted.
+	 * @param string                            $today     Date Y-m-d.
+	 */
+	public static function receipt_mail( $mail, $member_id, $amount, $today ) {
+		if ( ! class_exists( 'LLD_Members_Stripe_API' ) || ! LLD_Members_Stripe_API::on( $member_id ) ) {
+			return $mail;
+		}
+		return array(
+			'subject' => 'Your Premium payment is confirmed',
+			'body'    => 'Thank you. Your payment of ' . $amount . ', tax included, on ' . LLD_Members_Pause::day( $today ) . ' is confirmed.'
+				. "\n\n" . 'The receipt comes in a separate email from Onelink, the Stripe partner that sells Lifeline Daily Premium. Your bank statement shows the payment as sold through Onelink.'
+				. "\n\n" . 'You can see your plan, or cancel at any time, in My subscription: ' . home_url( '/members/subscription/' ),
+		);
 	}
 
 	public static function launch_on() {
@@ -162,6 +197,11 @@ class LLD_Members_Membership {
 	public static function card( $member_id, $sub ) {
 		$prices = LLD_Members_Billing::shown_prices();
 		$pause  = class_exists( 'LLD_Members_Pause' ) ? LLD_Members_Pause::open( $member_id ) : null;
+		// P3-36 A1 (TC-FR3-64-AS-04): Premium given free by the Owner shows as Premium with its end date, never "Go Premium".
+		$status = class_exists( 'LLD_Members_Access' ) ? LLD_Members_Access::premium_status( $member_id ) : null;
+		if ( $status && 'grant' === $status['source'] ) {
+			return self::grant_card( $member_id, $status );
+		}
 		$paid   = $sub && in_array( strtolower( (string) $sub->access_state ), array( 'premium', 'cancelled' ), true ) && ( LLD_Members_Billing::has_premium( $member_id ) || ( $pause && 'active' === (string) $pause->status ) );
 		if ( ! $paid ) {
 			return self::upgrade_card( $prices );
@@ -200,6 +240,27 @@ class LLD_Members_Membership {
 				'variant' => 'secondary',
 			)
 		) . '</p></section>';
+		return $html;
+	}
+
+	/**
+	 * P3-36 A1 (TC-FR3-64-AS-04): the card for free Premium given by the Owner: Premium, its end date, what it
+	 * includes and what the member has done, with no price and no offer to buy.
+	 *
+	 * @param int                                            $member_id Member number.
+	 * @param array{premium:bool,source:string,until:string} $status    From LLD_Members_Access::premium_status().
+	 */
+	public static function grant_card( $member_id, array $status ) {
+		$counts = self::counts( $member_id );
+		$html   = '<section class="lld-card lld-membership-card" data-lld-membership="grant"><h2>Your membership</h2>';
+		$html  .= '<p class="lld-plan-name" data-lld-card-plan>Premium</p>';
+		$html  .= '<p data-lld-card-renews="' . esc_attr( $status['until'] ) . '">' . esc_html( LLD_Members_Access::grant_line( $status ) ) . '</p>';
+		$html  .= '<h3>What Premium includes</h3><ul>';
+		foreach ( self::INCLUDES as $line ) {
+			$html .= '<li>' . esc_html( $line ) . '</li>';
+		}
+		$html .= '</ul><h3>What you have done</h3>';
+		$html .= '<p data-lld-card-counts data-workouts="' . $counts['workouts'] . '" data-days="' . $counts['days_logged'] . '">' . esc_html( 'Workouts completed: ' . $counts['workouts'] . '. Days logged: ' . $counts['days_logged'] . '.' ) . '</p></section>';
 		return $html;
 	}
 
