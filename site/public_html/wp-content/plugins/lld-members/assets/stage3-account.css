@@ -75,7 +75,8 @@
 }
 
 /* ---- The chip in the v2 header (same look as it had in the member bar) ------------------------------------------- */
-body.lld-members-v2 .lld-v2-account .lld-chip {
+/* On the member pages (body.lld-members-v2) and, for a signed-in member, on the public v2 pages (body.lld-v2-account-menu). */
+body:is(.lld-members-v2, .lld-v2-account-menu) .lld-v2-account .lld-chip {
   display: inline-flex !important;
   align-items: center !important;
   gap: .5rem !important;
@@ -93,14 +94,14 @@ body.lld-members-v2 .lld-v2-account .lld-chip {
   text-decoration: none !important;
 }
 
-body.lld-members-v2 .lld-v2-account .lld-chip:hover { border-color: #1d4e48 !important; }
+body:is(.lld-members-v2, .lld-v2-account-menu) .lld-v2-account .lld-chip:hover { border-color: #1d4e48 !important; }
 
-body.lld-members-v2 .lld-v2-account .lld-chip:focus-visible {
+body:is(.lld-members-v2, .lld-v2-account-menu) .lld-v2-account .lld-chip:focus-visible {
   outline: 3px solid #1d4e48 !important;
   outline-offset: 2px !important;
 }
 
-body.lld-members-v2 .lld-v2-account .lld-chip-initial {
+body:is(.lld-members-v2, .lld-v2-account-menu) .lld-v2-account .lld-chip-initial {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
@@ -113,7 +114,7 @@ body.lld-members-v2 .lld-v2-account .lld-chip-initial {
   font-weight: 800 !important;
 }
 
-body.lld-members-v2 .lld-v2-account :is(.lld-chip-name, .lld-chip-badge) {
+body:is(.lld-members-v2, .lld-v2-account-menu) .lld-v2-account :is(.lld-chip-name, .lld-chip-badge) {
   position: static !important;
   width: auto !important;
   height: auto !important;
@@ -121,7 +122,7 @@ body.lld-members-v2 .lld-v2-account :is(.lld-chip-name, .lld-chip-badge) {
   clip: auto !important;
 }
 
-body.lld-members-v2 .lld-v2-account .lld-chip-badge {
+body:is(.lld-members-v2, .lld-v2-account-menu) .lld-v2-account .lld-chip-badge {
   padding: .1875rem .625rem !important;
   border-radius: 9999px !important;
   background: #1d4e48 !important;
@@ -132,28 +133,28 @@ body.lld-members-v2 .lld-v2-account .lld-chip-badge {
   line-height: 1.4 !important;
 }
 
-body.lld-members-v2 .lld-v2-account .lld-chip-badge.is-free { background: #efeae2 !important; color: #3a3834 !important; }
+body:is(.lld-members-v2, .lld-v2-account-menu) .lld-v2-account .lld-chip-badge.is-free { background: #efeae2 !important; color: #3a3834 !important; }
 
-body.mode-night.lld-members-v2 .lld-v2-account .lld-chip { background: #16201e !important; border-color: #354f49 !important; color: #f4f1ea !important; }
-body.mode-night.lld-members-v2 .lld-v2-account .lld-chip:hover { border-color: #79d1c3 !important; }
-body.mode-night.lld-members-v2 .lld-v2-account :is(.lld-chip-initial, .lld-chip-badge:not(.is-free)) { background: #79d1c3 !important; color: #101413 !important; }
-body.mode-night.lld-members-v2 .lld-v2-account .lld-chip-badge.is-free { background: #1e2a28 !important; color: #d6d1c7 !important; }
-body.mode-night.lld-members-v2 .lld-desktop-menu { background: #16201e; border-color: #354f49; }
-body.mode-night.lld-members-v2 .lld-desktop-menu .lld-menu-item { color: #f4f1ea; }
-body.mode-night.lld-members-v2 .lld-desktop-menu .lld-menu-item:is(:hover, :focus-visible) { background-color: #192e2b; color: #79d1c3; }
-body.mode-night.lld-members-v2 .lld-desktop-menu .lld-menu-signout { color: #f2a196; }
+body.mode-night:is(.lld-members-v2, .lld-v2-account-menu) .lld-v2-account .lld-chip { background: #16201e !important; border-color: #354f49 !important; color: #f4f1ea !important; }
+body.mode-night:is(.lld-members-v2, .lld-v2-account-menu) .lld-v2-account .lld-chip:hover { border-color: #79d1c3 !important; }
+body.mode-night:is(.lld-members-v2, .lld-v2-account-menu) .lld-v2-account :is(.lld-chip-initial, .lld-chip-badge:not(.is-free)) { background: #79d1c3 !important; color: #101413 !important; }
+body.mode-night:is(.lld-members-v2, .lld-v2-account-menu) .lld-v2-account .lld-chip-badge.is-free { background: #1e2a28 !important; color: #d6d1c7 !important; }
+body.mode-night:is(.lld-members-v2, .lld-v2-account-menu) .lld-desktop-menu { background: #16201e; border-color: #354f49; }
+body.mode-night:is(.lld-members-v2, .lld-v2-account-menu) .lld-desktop-menu .lld-menu-item { color: #f4f1ea; }
+body.mode-night:is(.lld-members-v2, .lld-v2-account-menu) .lld-desktop-menu .lld-menu-item:is(:hover, :focus-visible) { background-color: #192e2b; color: #79d1c3; }
+body.mode-night:is(.lld-members-v2, .lld-v2-account-menu) .lld-desktop-menu .lld-menu-signout { color: #f2a196; }
 
 /* ---- Phones ----------------------------------------------------------------------------------------------------- */
 @media (max-width: 767px) {
   /* the chip is the initial alone; its name and badge stay for screen readers */
-  body.lld-members-v2 .lld-v2-account :is(.lld-chip-name, .lld-chip-badge) {
+  body:is(.lld-members-v2, .lld-v2-account-menu) .lld-v2-account :is(.lld-chip-name, .lld-chip-badge) {
     position: absolute !important;
     width: 1px !important;
     height: 1px !important;
     overflow: hidden !important;
     clip: rect(0 0 0 0) !important;
   }
-  body.lld-members-v2 .lld-v2-account .lld-chip { justify-content: center !important; gap: 0 !important; padding: .25rem !important; }
+  body:is(.lld-members-v2, .lld-v2-account-menu) .lld-v2-account .lld-chip { justify-content: center !important; gap: 0 !important; padding: .25rem !important; }
   /* the chip is in the header, so the member bar under it would be an empty band (its links are in the bottom bar) */
   body.lld-has-account-menu .lld-member-bar { display: none !important; }
 }
